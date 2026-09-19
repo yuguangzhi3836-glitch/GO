@@ -48,6 +48,11 @@ READINESS_COMPONENT = ROOT.parent / "command-center-deploy-readiness-v1"
 REQUESTS_COMPONENT = ROOT.parent / "command-center-request-visibility-v1"
 FACT_EXPORTER = REQUESTS_COMPONENT / "command-center" / "go-request-fact-export"
 FACT_CONTRACT = REQUESTS_COMPONENT / "contracts" / "request_fact_v1.schema.json"
+# The Bridge is where a Request is accepted or refused, so its channel config is
+# the authority for what an action may be. Loaded from the outside for the same
+# reason as the two above: a constant compared against a fixture built from that
+# constant cannot fail.
+BRIDGE_COMPONENT = ROOT.parent / "boss-deploy-request-v1"
 READINESS_EVALUATOR = READINESS_COMPONENT / "command-center" / "go-deploy-readiness"
 READINESS_FIXTURES = READINESS_COMPONENT / "tests" / "test_deploy_readiness.py"
 _SIBLINGS = {}
@@ -835,11 +840,18 @@ class ValidationTests(unittest.TestCase):
         with self.assertRaises(sp.Malformed):
             sp.validate_request(dict(base, plan_id="plan-1"))
 
-    def test_deploy_request_takes_only_plan_id(self):
+    def test_deploy_request_takes_only_the_five_common_fields(self):
+        # A deploy is the same shape as a verify, a canary and a rollback. The plan
+        # is derived by the Command Center, so a plan_id is not a field at all: it
+        # names a caller-chosen deployment, and the Bridge refuses it on the exact
+        # field set rather than reading around it.
         value = {"schema_version": "1", "request_id": "boss-deploy-1",
                  "action_id": "HK_STAGING_DEPLOY", "environment": "HK-STAGING-01",
-                 "requested_at": sp.iso(AT), "plan_id": "reviewed-plan-1"}
-        self.assertEqual(sp.validate_request(value)["plan_id"], "reviewed-plan-1")
+                 "requested_at": sp.iso(AT)}
+        self.assertEqual(sp.validate_request(value)["action_id"], "HK_STAGING_DEPLOY")
+        self.assertEqual(sp.REQUEST_EXTRA_FIELDS["HK_STAGING_DEPLOY"], set())
+        with self.assertRaises(sp.Malformed):
+            sp.validate_request(dict(value, plan_id="reviewed-plan-1"))
         value["image"] = "sha256:" + "a" * 64
         with self.assertRaises(sp.Malformed):
             sp.validate_request(value)
@@ -1270,12 +1282,29 @@ class RequestChannelTests(unittest.TestCase):
             sp.validate_request(self.request("CONTROL_PLANE_HEALTH", environment="PRODUCTION"))
 
     def test_an_unknown_action_is_still_refused(self):
-        # HK_STAGING_CANARY left this list when it became a requestable action;
-        # ROLLBACK and every unknown token are still refused outright.
-        for bogus in ("CONTROL_PLANE_HEALTH_V2", "HK_STAGING_ROLLBACK", "HK_STAGING_CANARY_V2",
+        # HK_STAGING_CANARY and HK_STAGING_ROLLBACK each left this list when it became
+        # a requestable action; every unknown token is still refused outright.
+        for bogus in ("CONTROL_PLANE_HEALTH_V2", "HK_STAGING_ROLLBACK_V2", "HK_STAGING_CANARY_V2",
                       "canary", "HK_STAGING_CANARY "):
             with self.assertRaises(sp.Malformed, msg=bogus):
                 sp.validate_request(self.request(bogus))
+
+    def test_a_rollback_request_carries_the_five_common_fields_and_no_target(self):
+        # The Request names no deployment, no image and no service: the Command
+        # Center derives all three from its own side. The contract must therefore
+        # refuse every field a caller could use to aim a rollback of its own
+        # choosing, even though it can ask for the undo.
+        payload = self.request("HK_STAGING_ROLLBACK")
+        self.assertEqual(sorted(sp.validate_request(payload)), sorted(sp.REQUEST_REQUIRED))
+        self.assertEqual(sp.REQUEST_EXTRA_FIELDS["HK_STAGING_ROLLBACK"], set())
+        for extra in ("release_id", "source_deploy_task_id", "approval_id", "canary_evidence_id",
+                      "image", "image_id", "service", "services", "compose_file", "target",
+                      "path", "force_recreate", "plan_id", "pr_number", "rollback_image",
+                      "expected_current_image_id", "candidate_image_id"):
+            payload = self.request("HK_STAGING_ROLLBACK")
+            payload[extra] = "x"
+            with self.assertRaises(sp.Malformed, msg=extra):
+                sp.validate_request(payload)
 
     def test_health_can_never_be_read_as_one_of_the_execution_actions(self):
         """A platform probe is not a degraded VERIFY / TEST_PR / DEPLOY."""
@@ -1288,7 +1317,7 @@ class RequestChannelTests(unittest.TestCase):
     def test_the_human_and_platform_classes_are_separate(self):
         self.assertEqual(list(sp.HUMAN_REQUEST_ACTIONS),
                          ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
-                          "HK_STAGING_CANARY"])
+                          "HK_STAGING_CANARY", "HK_STAGING_ROLLBACK"])
         self.assertEqual(list(sp.PLATFORM_REQUEST_ACTIONS), ["CONTROL_PLANE_HEALTH"])
         self.assertEqual(set(sp.HUMAN_REQUEST_ACTIONS) & set(sp.PLATFORM_REQUEST_ACTIONS), set())
 
@@ -1296,11 +1325,36 @@ class RequestChannelTests(unittest.TestCase):
         self.assertNotIn("CONTROL_PLANE_HEALTH", sp.ENABLED_HUMAN_REQUEST_ACTIONS)
         self.assertIn("CONTROL_PLANE_HEALTH", sp.ENABLED_PLATFORM_REQUEST_ACTIONS)
         self.assertEqual(list(sp.ENABLED_REQUEST_ACTIONS),
-                         ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_CANARY",
-                          "CONTROL_PLANE_HEALTH"])
-        # Expressing DEPLOY as a human Request is a different claim from the
-        # channel being able to create one; the switch is still off.
-        self.assertNotIn("HK_STAGING_DEPLOY", sp.ENABLED_REQUEST_ACTIONS)
+                         ["HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_DEPLOY",
+                          "HK_STAGING_CANARY", "HK_STAGING_ROLLBACK", "CONTROL_PLANE_HEALTH"])
+        # There is no deploy switch. Its absence from this set would be a claim
+        # that the contract refuses the action, and a connector reads absence
+        # exactly that way -- so the one direction this constant must never take
+        # is the one it used to.
+        self.assertIn("HK_STAGING_DEPLOY", sp.ENABLED_REQUEST_ACTIONS)
+
+    def test_the_enabled_set_is_pinned_to_the_bridge_channel_contract(self):
+        """Measured on 2026-09-17, the failure this pins was live.
+
+        These constants said DEPLOY was not requestable for as long as the
+        deployment authorisation model had been different, and CONTROL_STATUS_V1
+        told the connector not to deploy -- the one action V1 exists for. Nothing
+        caught it, because nothing tied the constant to the contract it describes.
+        The Bridge's own shipped config is that contract, and the
+        request-visibility component already pins its action registry to it.
+        """
+        config = json.loads((BRIDGE_COMPONENT / "config.json").read_text(encoding="utf-8"))
+        allowed = config["allowed_actions"]
+        self.assertEqual(sorted(sp.ENABLED_REQUEST_ACTIONS), sorted(allowed))
+        self.assertEqual(sorted(list(sp.HUMAN_REQUEST_ACTIONS) + list(sp.PLATFORM_REQUEST_ACTIONS)),
+                         sorted(allowed))
+        self.assertEqual(set(sp.PLATFORM_REQUEST_ACTIONS),
+                         set(allowed) - set(sp.HUMAN_REQUEST_ACTIONS))
+        # The set the connector is told it may write for is the human half, and it
+        # has to be the enabled half too -- otherwise "enabled" and "allowed to
+        # write" disagree, which is precisely how the wrong answer was produced.
+        self.assertEqual(set(sp.ENABLED_HUMAN_REQUEST_ACTIONS) & set(sp.HUMAN_REQUEST_ACTIONS),
+                         set(sp.ENABLED_HUMAN_REQUEST_ACTIONS))
 
     def test_a_real_health_request_is_not_reported_as_forbidden(self):
         root, req = layout(requests=[("h.json", self.request("CONTROL_PLANE_HEALTH"))])
@@ -1324,7 +1378,7 @@ class RequestChannelTests(unittest.TestCase):
         self.assertIs(properties["human_deploy_authority"], False)
         self.assertEqual(channel["capability_classification"]["CONTROL_PLANE_HEALTH"],
                          "SUPPORTED_PROVEN_PLATFORM_ONLY")
-        self.assertFalse(channel["deploy_request_enabled"])
+        self.assertTrue(channel["deploy_request_enabled"])
 
     def test_the_platform_properties_are_constants_not_read_from_a_request(self):
         for action, properties in sp.PLATFORM_ACTION_PROPERTIES.items():
@@ -1339,29 +1393,41 @@ class RequestChannelTests(unittest.TestCase):
         for action in sp.HUMAN_REQUEST_ACTIONS:
             self.assertEqual(source[action], "HUMAN_REQUEST", action)
 
-    def test_deploy_is_a_known_capability_that_is_not_enabled(self):
+    def test_deploy_is_a_known_capability_that_is_enabled(self):
+        # The capability/enablement split this test exists for is still the point.
+        # What changed is which side DEPLOY is on: the channel contract enables it
+        # and there is no switch, so the report must say so, while the live-host
+        # half stays UNKNOWN because this projection cannot observe it.
         _, _, status = build(*layout())
         channel = status["answers"]["request_channel"]
         self.assertIn("HK_STAGING_DEPLOY", channel["known_capabilities"])
-        self.assertNotIn("HK_STAGING_DEPLOY", channel["enabled_request_actions"])
+        self.assertIn("HK_STAGING_DEPLOY", channel["enabled_request_actions"])
+        self.assertIn("HK_STAGING_DEPLOY", channel["enabled_human_request_actions"])
         self.assertEqual(channel["capability_classification"]["HK_STAGING_DEPLOY"],
-                         "CAPABILITY_PRESENT_BUT_DISABLED")
-        self.assertFalse(channel["deploy_request_enabled"])
+                         "SUPPORTED_PROVEN")
+        self.assertTrue(channel["deploy_request_enabled"])
         self.assertEqual(channel["live_request_switch"]["state"], sp.STATE_UNKNOWN)
 
-    def test_canary_is_requestable_without_a_switch_while_rollback_is_not(self):
+    def test_canary_and_rollback_are_requestable_without_a_separate_switch(self):
         # CANARY left "not requestable" when it became a channel action.  It stays
         # outside the deploy switch on purpose: a canary is what a deployment plan
         # must cite, so it has to be obtainable before a plan can exist at all.
+        # ROLLBACK left it in the revision that connected the proven rollback chain:
+        # it is the undo of a deployment, so it is gated by the same declaration that
+        # gates one rather than by a switch of its own.
         _, _, status = build(*layout())
         channel = status["answers"]["request_channel"]
         classification = channel["capability_classification"]
         self.assertEqual(classification["HK_STAGING_CANARY"], "CAPABILITY_PRESENT_REQUESTABLE")
-        self.assertEqual(classification["HK_STAGING_ROLLBACK"], "NOT_REQUESTABLE")
+        self.assertEqual(classification["HK_STAGING_ROLLBACK"], "CAPABILITY_PRESENT_REQUESTABLE")
         self.assertIn("HK_STAGING_CANARY", channel["enabled_human_request_actions"])
+        self.assertIn("HK_STAGING_ROLLBACK", channel["enabled_human_request_actions"])
         self.assertIn("HK_STAGING_CANARY", channel["known_capabilities"])
-        self.assertNotIn("HK_STAGING_ROLLBACK", channel["human_request_actions"])
+        self.assertIn("HK_STAGING_ROLLBACK", channel["human_request_actions"])
         self.assertEqual(channel["request_action_source_class"]["HK_STAGING_CANARY"], "HUMAN_REQUEST")
+        self.assertEqual(channel["request_action_source_class"]["HK_STAGING_ROLLBACK"], "HUMAN_REQUEST")
+        # A rollback is not read-only and must never be classified as a probe.
+        self.assertNotIn("HK_STAGING_ROLLBACK", channel["platform_action_properties"])
         # The canary carries the candidate binding, and nothing else.
         self.assertEqual(sp.ACTION_PARAMETERS["HK_STAGING_CANARY"],
                          {"release_id", "candidate_image_id", "candidate_package_sha256",
@@ -1382,13 +1448,12 @@ class RequestChannelTests(unittest.TestCase):
         state = project(root, req)
         self.assertTrue(state["requests"][0]["requestable_by_current_channel"])
 
-    def test_deploy_request_is_flagged_not_requestable(self):
-        root, req = layout(requests=[("d.json", self.request("HK_STAGING_DEPLOY",
-                                                             plan_id="reviewed-plan-1"))])
+    def test_deploy_request_is_flagged_requestable(self):
+        root, req = layout(requests=[("d.json", self.request("HK_STAGING_DEPLOY"))])
         state = project(root, req)
         entry = state["requests"][0]
-        self.assertFalse(entry["requestable_by_current_channel"])
-        self.assertEqual(entry["capability_classification"], "CAPABILITY_PRESENT_BUT_DISABLED")
+        self.assertTrue(entry["requestable_by_current_channel"])
+        self.assertEqual(entry["capability_classification"], "SUPPORTED_PROVEN")
 
     def test_requests_never_hold_execution_authority(self):
         root, req = layout(requests=[("r.json", self.request("HK_STAGING_VERIFY"))])
@@ -1448,12 +1513,12 @@ class ContractTests(unittest.TestCase):
     def test_deploy_capability_is_classification_only(self):
         _, state, status = self.build_contract()
         capability = state["control_state"]["deploy_capability"]
-        self.assertEqual(capability["value"]["capability"], "CAPABILITY_PRESENT_BUT_DISABLED")
-        self.assertIs(capability["value"]["request_enabled"], False)
+        self.assertEqual(capability["value"]["capability"], "SUPPORTED_PROVEN")
+        self.assertIs(capability["value"]["request_enabled"], True)
         self.assertEqual(capability["value"]["readiness_evaluation"], "NOT_IN_SCOPE")
         self.assertEqual(status["answers"]["request_channel"]["readiness_evaluation"],
                          "NOT_IN_SCOPE")
-        self.assertFalse(status["answers"]["request_channel"]["deploy_request_enabled"])
+        self.assertTrue(status["answers"]["request_channel"]["deploy_request_enabled"])
 
     def test_no_deploy_readiness_value_is_computed_anywhere(self):
         _, state, status = self.build_contract()
@@ -1529,7 +1594,7 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(status["answers"]["runtime_verification"]["state"], sp.STATE_UNKNOWN)
         self.assertEqual(status["answers"]["stuck_tasks"]["answer"]["value"], "NO")
         self.assertEqual(state["control_state"]["deploy_capability"]["value"]["capability"],
-                         "CAPABILITY_PRESENT_BUT_DISABLED")
+                         "SUPPORTED_PROVEN")
 
     def test_manifest_files_are_not_treated_as_requests(self):
         root, req = layout(requests=[("good.json",

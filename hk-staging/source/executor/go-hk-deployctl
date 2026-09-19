@@ -47,14 +47,15 @@ _RELEASE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 _CONTRACT = re.compile(r"^[0-9a-f]{64}$")
 _COLLECTOR_SHA256 = "dff91265a5e3e80704277664f1952129ff19c6c7174d78e9b3e66125b9618ccc"
 _CANARY_SHA256 = "f93d4365116a52942c457accb41be53625d3f3f1a7a6eafe92d53c457c86aed1"
-# Updated by CCV1-85 (WP-4A) and again by WP-9's product decision of 2026-09-19:
+# Updated by CCV1-85 (WP-4A), again by WP-9's product decision of 2026-09-19, and again
+# by the 2026-09-19 convergence that carried the rollback channel onto this main line:
 # deploy_runtime.py resolves the candidate the Task names, applies the migration rule, and
 # recreates the containers through the shared media-mount builder; rollback_runtime.py
-# recreates them through the same builder.  Both values changed because both runtimes now
-# delegate their Compose command instead of assembling it; the other three pins and the
-# shape of the pin set are untouched.
+# recreates them through that same builder, pins the images it restores and waits for the
+# api it restored to answer.  The deploy pin is untouched by the convergence -- those bytes
+# are unchanged -- and the rollback pin is recomputed from the merged file.
 _DEPLOY_SHA256 = "7d185ce7dd73e62bbafdba55386b4f98c679aa522364ef61ab0463b1b26dbdb4"
-_ROLLBACK_SHA256 = "d5ce99c91b562af4187181613c481b25d11000a7f956e216f50b3ab0c3e42af4"
+_ROLLBACK_SHA256 = "8467c240f7e3f7a096515f6e47a6760033d3c5ab20fbb452cfb504133bf8db1f"
 _ARTIFACT_SHA256 = "736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b"
 
 

@@ -870,21 +870,50 @@ class ActionRegistryTests(unittest.TestCase):
         An action the Bridge would refuse is one nothing may be built on, so a
         submission claiming it yields no fact and keeps saying so.
 
-        HK_STAGING_CANARY was this test's example until it joined the registry.
-        ROLLBACK is still outside it -- the channel contract has never accepted it
-        -- so it carries the same property.
+        HK_STAGING_CANARY was this test's example until it joined the registry,
+        and HK_STAGING_ROLLBACK was the next one until it joined too. Because the
+        property has to survive every widening, it is asserted against a name one
+        revision ahead of the registry, which is never the one that moves.
         """
-        task = dict(health_task(), action_id="HK_STAGING_ROLLBACK")
+        task = dict(health_task(), action_id="HK_STAGING_ROLLBACK_V2")
+        root = workdir(ledger={"version": 1, "requests": {"7:" + HEAD: {
+                        "status": "published", "request_id": REQUEST_ID, "task": task,
+                        "task_sha256": X.digest(task)}}},
+                       requests=[collected(body=request_body(
+                           action_id="HK_STAGING_ROLLBACK_V2"))])
+        index = run_export(root)
+        self.assertEqual(index["counts"]["facts"], 0)
+        self.assertEqual([a["kind"] for a in index["anomalies"]],
+                         ["SUBMISSION_WITHOUT_REQUEST_FACT"])
+        self.assertIn("request_action_unresolved", index["anomalies"][0]["detail"])
+
+    def test_a_rollback_submission_inside_the_registry_does_mint_a_fact(self):
+        """Joining the registry is not a pass either: it is the same judgement.
+
+        ROLLBACK resolves only because the ledger carries a published Task the
+        Bridge signed under that action, which is the same evidence every other
+        action has to produce. The fact must name the action the Bridge signed.
+        """
+        task = dict(health_task(), action_id="HK_STAGING_ROLLBACK",
+                    task_id="go-boss-hk-staging-rollback-20260915T153628Z-"
+                            + hashlib.sha256(REQUEST_ID.encode()).hexdigest()[:12],
+                    parameters={"release_id": "boss-rollback-1",
+                                "source_deploy_task_id": "go-boss-hk-staging-deploy-1",
+                                "approval_id": "approval-rollback-1"})
         root = workdir(ledger={"version": 1, "requests": {"7:" + HEAD: {
                         "status": "published", "request_id": REQUEST_ID, "task": task,
                         "task_sha256": X.digest(task)}}},
                        requests=[collected(body=request_body(
                            action_id="HK_STAGING_ROLLBACK"))])
         index = run_export(root)
-        self.assertEqual(index["counts"]["facts"], 0)
-        self.assertEqual([a["kind"] for a in index["anomalies"]],
-                         ["SUBMISSION_WITHOUT_REQUEST_FACT"])
-        self.assertIn("request_action_unresolved", index["anomalies"][0]["detail"])
+        self.assertEqual(index["counts"]["by_kind"], {"REQUEST_VALIDATED": 1},
+                         index["anomalies"])
+        self.assertEqual(index["counts"]["submissions_without_fact"], 0)
+        self.assertEqual([a["kind"] for a in index["anomalies"]], [])
+        fact = only_fact(root)[0]
+        self.assertEqual(fact["action_id"], "HK_STAGING_ROLLBACK")
+        self.assertEqual(fact["kind"], "REQUEST_VALIDATED")
+        self.assertEqual(fact["binding"]["task_id"], task["task_id"])
 
 
 class InjectedSourceTests(unittest.TestCase):

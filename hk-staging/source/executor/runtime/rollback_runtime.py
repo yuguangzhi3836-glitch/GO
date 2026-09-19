@@ -12,7 +12,7 @@ running.  `MEDIA_MOUNT` is part of this rollback's result for the same reason it
 part of a deployment's -- a rollback that left the media directory unmounted is not a
 rollback that succeeded.
 """
-import base64, hashlib, importlib.util, json, os, pathlib, re, stat, tempfile
+import base64, hashlib, importlib.util, json, os, pathlib, re, stat, tempfile, time
 from cryptography.hazmat.primitives import serialization
 
 PROJECT="go-822-staging"
@@ -23,9 +23,12 @@ EVIDENCE_KEY="/etc/go-hk-agent/keys/evidence-signing.pub"
 HANDOFF_DIR="/var/lib/go-hk-agent/rollback-source-handoff"
 DEPLOY_RECORD_DIR="/var/lib/go-hk-deployctl/deploy-records"
 ROLLBACK_RECORD_DIR="/var/lib/go-hk-deployctl/rollback-records"
+TEMP_DIR="/run/go-hk-deployctl"
 SERVICES=("api","recovery-worker","outbox-worker","mobile-push-receipt-worker","reconciliation-worker","mobile-push-worker","mobile-engagement-worker","judgment-worker")
 PROTECTED=("redis","caddy")
 HEX=re.compile(r"^[0-9a-f]{64}$")
+API_READINESS_ATTEMPTS=12
+API_READINESS_INTERVAL_SECONDS=5
 
 # The rollback recreates the same eight business containers as a deployment, so it goes
 # through the same shared command builder and is pinned to the same definition of the
@@ -114,10 +117,37 @@ def _load_media_mount():
     module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     return module
 
-def _run(runner,argv):
+def _run(runner,argv,code="docker read"):
     out=runner.run(argv)
-    if getattr(out,"returncode",None)!=0: raise Reject("docker read")
+    if getattr(out,"returncode",None)!=0: raise Reject(code)
     return getattr(out,"stdout","")
+
+def _override(targets):
+    """Pin the eight services to the immutable ids the source record carries.
+
+    The frozen R3.1.5 base file names its services by tag and this host holds the
+    images by id only, so the base file on its own makes Compose resolve a tag that
+    is not present and attempt a pull.  DEPLOY already merges such an override for
+    its candidate; a rollback needs the same shape for the ids it restores.
+    """
+    root=TEMP_DIR
+    pathlib.Path(root).mkdir(mode=0o700,parents=True,exist_ok=True)
+    fd,path=tempfile.mkstemp(prefix="rollback-",suffix=".yaml",dir=root,text=True)
+    os.fchmod(fd,0o600)
+    with os.fdopen(fd,"w") as f:
+        f.write("services:\n")
+        for target in targets: f.write("  "+target["service"]+":\n    image: "+target["image_id"]+"\n")
+    return path
+
+def _await_api_health(runner,collector,expected,sleeper,
+                      attempts=API_READINESS_ATTEMPTS,interval=API_READINESS_INTERVAL_SECONDS):
+    """The eight are not restored until the api the record names is answering."""
+    for attempt in range(attempts):
+        try:
+            collector.collect_api(runner,expected); return
+        except ValueError:
+            if attempt+1==attempts: raise Reject("rollback readiness")
+            sleeper(interval)
 
 def _inventory(runner,services):
     result=[]
@@ -147,7 +177,7 @@ def _atomic_record(record, directory=ROLLBACK_RECORD_DIR):
         raise Reject("record persist")
     return rid,sha
 
-def run_rollback(release,source_task_id,binding,runner,collector, *, handoff_dir=HANDOFF_DIR, deploy_dir=DEPLOY_RECORD_DIR, rollback_dir=ROLLBACK_RECORD_DIR, task_key=TASK_KEY, evidence_key=EVIDENCE_KEY):
+def run_rollback(release,source_task_id,binding,runner,collector, *, handoff_dir=HANDOFF_DIR, deploy_dir=DEPLOY_RECORD_DIR, rollback_dir=ROLLBACK_RECORD_DIR, task_key=TASK_KEY, evidence_key=EVIDENCE_KEY, sleeper=time.sleep):
     if not isinstance(binding,dict) or set(binding)!={"task_id","nonce","authority","canonical_sha256"}: raise Reject("binding")
     source_task,source_evidence,source_record,targets=resolve_source(release,source_task_id,binding["task_id"],handoff_dir=handoff_dir,deploy_dir=deploy_dir,task_key=task_key,evidence_key=evidence_key)
     # A durable pre-mutation record is consuming even if a later Agent parser
@@ -174,9 +204,22 @@ def run_rollback(release,source_task_id,binding,runner,collector, *, handoff_dir
     # Fixed argv, exactly eight services; no pull/migration/non-target path exists.  The
     # command and the fixed media bind mount come from the shared builder, so a rollback
     # cannot recreate the containers without mounting the media directory -- and the
-    # check reads the containers that are running, not the command that was built.
+    # check reads the containers that are running, not the command that was built.  The
+    # source record names the images by id while the base file names them by tag, so the
+    # override is handed to that same builder as an extra `-f`: the media overlay stays
+    # the last word, and a rollback needs no Compose command of its own.
     media=_load_media_mount()
-    media_result=media.recreate(runner,lambda argv:_run(runner,argv))
+    override=None
+    try:
+        override=_override(targets)
+        media_result=media.recreate(runner,lambda argv:_run(runner,argv,"docker rollback"),extra_files=[override])
+    finally:
+        if override is not None:
+            # Best effort: the file holds nothing but image ids, and a cleanup failure
+            # must never replace the real reason a rollback was refused.
+            try: os.unlink(override)
+            except OSError: pass
+    _await_api_health(runner,collector,targets[0]["image_id"],sleeper)
     after=_inventory(runner,SERVICES); after_protected=_inventory(runner,PROTECTED)
     if any(x["running"] is not True or x["status"]!="running" for x in after) or [x["container_id"] for x in after_protected] != [x["container_id"] for x in protected]: raise Reject("postcheck")
     return {"rollback_source":"PASS","lineage":"PASS","target_derivation":"PASS","fresh_drift":"PASS","rollback_record":"PASS","fixed_scope":"PASS","postcheck":"PASS",**media_result,"source_deploy_task_id":source_task_id,"source_deploy_record_id":source_record["record_id"],"source_deploy_record_sha256":source_sha,"rollback_record_id":rid,"rollback_record_sha256":rsha}

@@ -30,7 +30,7 @@ CANARY 与预检 VERIFY 之后才发布。实际请求时间使用当时 UTC；�
 4. CANARY 必须针对同一候选且不超过 30 分钟；只读 VERIFY 必须针对预期当前镜像且不超过 5 分钟；发布任务的有效期受审批和只读核验窗口共同约束。此外必须有一份**本候选的签名 TEST_PR**：它证明部署将加载的产物就是这份源码封存出来的（源 commit、产物身份、封存包内容地址、封存已 proven 逐字段相等），且该证明**不设时效**——候选不可变，绑定是内容绑定。三端 UX / 六品类闭环 / Sealed Node / 最终发布四项**不再是本入口的阻断项**：它们是上游的产品发布结论，CC 不重新评判（见 `PLAN_CONTRACT.md` 与 `#103` Authority Boundary）。
 5. 每个计划和每个审批只消费一次。先将原始签名 Task 和版本绑定以锁、原子替换和 fsync 持久化，再复核开关、PR HEAD、计划和时效，最后通过既有 Tasks writer 发布并逐字节回读。发送结果不明时只查询原 Task，绝不自动重签或重发。
 
-保留既有 VERIFY 与 TEST_PR 请求格式、固定 TEST_PR 构建配置、签名和证据通道；兼容 v2/v3 配置。v4 配置的 action 合同自 **Bridge 修订 `1.6.0-canary-channel`** 起固定为五项：`HK_STAGING_VERIFY`、`HK_STAGING_TEST_PR`、`HK_STAGING_DEPLOY`、`HK_STAGING_CANARY`、`CONTROL_PLANE_HEALTH`，比较方式是**整份列表精确相等**而非成员判断，因此增删动作需要新的 Bridge 修订，不能靠改一个 root 文件蒙混。**不再有部署开关**：v4 配置只声明*如何*授权部署（`deployment_authorization`，本修订只实现 `request` 一种取值），而这个声明本身不授予任何权限——转成 `request` 什么也拿不到，因为一次部署仍必须由授权身份开的合法 Request、新鲜的 canary 与预检、以及精确的候选共同成立。取任何别的值只会拒绝 DEPLOY Request 而不影响只读探活，因此它仍是一个应急停止阀，而不是每次部署都要人工掰一次的前置开关。旧单次/预演模式仍限定 VERIFY，不能把 DEPLOY 降格为 VERIFY。
+保留既有 VERIFY 与 TEST_PR 请求格式、固定 TEST_PR 构建配置、签名和证据通道；兼容 v2/v3 配置。v4 配置的 action 合同自 **Bridge 修订 `1.9.0-rollback-channel`** 起固定为六项：`HK_STAGING_VERIFY`、`HK_STAGING_TEST_PR`、`HK_STAGING_DEPLOY`、`HK_STAGING_ROLLBACK`、`HK_STAGING_CANARY`、`CONTROL_PLANE_HEALTH`，比较方式是**整份列表精确相等**而非成员判断，因此增删动作需要新的 Bridge 修订，不能靠改一个 root 文件蒙混。**不再有部署开关**：v4 配置只声明*如何*授权部署（`deployment_authorization`，本修订只实现 `request` 一种取值），而这个声明本身不授予任何权限——转成 `request` 什么也拿不到，因为一次部署仍必须由授权身份开的合法 Request、新鲜的 canary 与预检、以及精确的候选共同成立。取任何别的值只会拒绝 DEPLOY Request 而不影响只读探活，因此它仍是一个应急停止阀，而不是每次部署都要人工掰一次的前置开关。旧单次/预演模式仍限定 VERIFY，不能把 DEPLOY 降格为 VERIFY。
 
 ### DEPLOY 请求与派生计划（Bridge 1.8 新增）
 
