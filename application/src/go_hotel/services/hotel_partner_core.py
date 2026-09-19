@@ -360,12 +360,21 @@ class HotelPartnerCoreService:
             self._property(s,pid,supplier_id)
             def rows(model):return [out(x) for x in s.scalars(select(model).where(model.property_id==pid)).all()]
             return {'product_graph':self.graph(supplier_id,pid),'facility_assignments':rows(HotelPartnerFacilityAssignmentRow),'policies':rows(HotelPartnerPolicyRow),'ari_date_overrides':rows(HotelPartnerAriOverrideRow),'operational_inbox':rows(HotelPartnerOperationalInboxRow),'go_offer_authorities':rows(HotelPartnerGoOfferAuthorityRow),'change_requests':rows(HotelPartnerChangeRequestRow)}
-    def webpage_workspace(self,supplier_id):
+    def webpage_workspace(self,supplier_id,property_id=None):
         with SessionLocal() as s:
-            prop=s.scalar(select(HotelPartnerPropertyRow).where(HotelPartnerPropertyRow.supplier_id==supplier_id).order_by(HotelPartnerPropertyRow.updated_at.desc()))
-            reg=s.scalar(select(HotelRegistrationDirectRow).where(HotelRegistrationDirectRow.supplier_id==supplier_id).order_by(HotelRegistrationDirectRow.created_at.desc()))
+            if property_id:
+                prop=self._property(s,property_id,supplier_id)
+            else:
+                props=s.scalars(select(HotelPartnerPropertyRow).where(HotelPartnerPropertyRow.supplier_id==supplier_id)).all()
+                if len(props)>1:raise ValueError('PROPERTY_SELECTION_REQUIRED')
+                prop=props[0] if props else None
+            # A supplier account can own multiple hotels. A registration belongs
+            # to this property only when its explicit property identity matches.
+            registrations=s.scalars(select(HotelRegistrationDirectRow).where(HotelRegistrationDirectRow.supplier_id==supplier_id).order_by(HotelRegistrationDirectRow.created_at.desc())).all()
+            reg=next((r for r in registrations if prop is not None and
+                (r.official_supplement_json or {}).get('property_id')==prop.property_id),None)
             if not reg:
-                return {'mapped':False,'property':out(prop),'message':'酒店网页尚未与 Canonical Hotel 绑定；酒店资料仍可继续维护。','publication_state':'NOT_MAPPED','page':None}
+                return {'mapped':False,'property':out(prop),'message':'该酒店尚未完成官方网页身份绑定；酒店资料仍可继续维护。','publication_state':'NOT_MAPPED','page':None}
             profile=s.get(HotelCanonicalProfileRow,reg.hotel_id)
             latest=s.scalar(select(HotelAutoPageVersionRow).where(HotelAutoPageVersionRow.hotel_id==reg.hotel_id).order_by(HotelAutoPageVersionRow.version.desc())) if profile else None
             return {'mapped':bool(profile),'property':out(prop),'registration':out(reg),'hotel_id':reg.hotel_id,'profile':out(profile),'publication_state':profile.page_state if profile else 'NOT_MAPPED','go_direct_state':profile.go_direct_state if profile else 'NOT_REGISTERED','page':(latest.page_json if latest else None),'page_version':(latest.version if latest else None),'page_hash':(latest.page_hash if latest else None),'supplier_can_edit_facts':True,'supplier_can_bypass_rights_gate':False}
