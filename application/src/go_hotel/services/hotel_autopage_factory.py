@@ -17,7 +17,7 @@ SOURCE_PRIORITY={
     'HOTEL_OFFICIAL_SUBMISSION':100,'OFFICIAL_WEBSITE':95,'GROUP_OFFICIAL':94,'CRS_PMS':90,
     'CONTENT_PROVIDER':80,'AUTHORIZED_DISTRIBUTOR':70,'OTA_DISTRIBUTION':68,'OTA_DISCOVERY':46,'PUBLIC_SOURCE':45,
 }
-PAGE_FIELDS=['name','name_zh','name_en','brand','group','address','latitude','longitude','description','facilities','media','rooms','policies','poi','website','media_candidates','catalog_manifest']
+PAGE_FIELDS=['name','name_zh','name_en','brand','group','address','latitude','longitude','description','facilities','media','rooms','policies','poi','website','media_candidates','catalog_manifest','direct_submission']
 
 
 def now(): return datetime.now(timezone.utc)
@@ -104,6 +104,11 @@ class HotelAutoPageFactoryService:
             verify_asset=media_harvester_service.content_path)
 
     def _catalog_media(self,hotel_id,catalog):
+        if isinstance(catalog,dict) and 'direct_submission' in catalog:
+            from go_hotel.services.hotel_direct_submission_publication import direct_media
+            try:return direct_media(catalog,hotel_id)
+            except (ValueError,KeyError,TypeError,OSError):
+                return {'hero':[],'gallery':[],'rooms':{},'dining':[],'facility':[],'meeting':[],'poi':[]}
         expected={(x.get('role'),x.get('room_type_id'),x.get('source_url'))
             for x in (catalog or {}).get('media_candidates',[]) if isinstance(x,dict)}
         allowed=set()
@@ -245,7 +250,7 @@ class HotelAutoPageFactoryService:
         s.add(row);self._event(s,profile.hotel_id,'AUTO_PAGE_PUBLISHED' if state=='PUBLISHED' else 'AUTO_PAGE_CANDIDATE_COMPOSED',{'page_version':version,'page_hash':h,'go_direct_state':profile.go_direct_state,'page_state':state,'catalog_quality':report},actor)
         return row
 
-    def ingest(self,b,actor='SYSTEM'):
+    def ingest(self,b,actor='SYSTEM',*,require_publishable=False,preserve_current_facts=False):
         if b.get('rights_status') not in ALLOWED_RIGHTS:raise ValueError('CONTENT_RIGHTS_NOT_ALLOWED')
         if b.get('source_type') not in SOURCE_PRIORITY:raise ValueError('UNSUPPORTED_CONTENT_SOURCE_TYPE')
         if not b.get('source_key') or not b.get('external_hotel_id') or not isinstance(b.get('payload'),dict):raise ValueError('INVALID_CONTENT_SOURCE_PAYLOAD')
@@ -270,7 +275,13 @@ class HotelAutoPageFactoryService:
                 hid=b.get('canonical_hotel_id') or ident('hotel');name=b['payload'].get('name') or b['payload'].get('name_zh') or b['payload'].get('name_en') or b['external_hotel_id']
                 p=HotelCanonicalProfileRow(hotel_id=hid,slug=self._unique_slug(s,name,hid),canonical_json={},field_provenance_json={},source_snapshot_ids_json=[],completeness_bps=0,go_direct_state='NOT_REGISTERED',page_state='DRAFT',version=0,created_at=t,updated_at=t);s.add(p);s.flush()
             snap=HotelContentSourceSnapshotRow(content_source_snapshot_id=ident('hcss'),source_key=b['source_key'],source_type=b['source_type'],external_hotel_id=b['external_hotel_id'],source_url=b.get('source_url'),rights_status=b['rights_status'],confidence_bps=int(b.get('confidence_bps',5000)),payload_json=b['payload'],payload_hash=ph,canonical_hotel_id=p.hotel_id,observed_at=b.get('observed_at') or t,created_at=t)
-            s.add(snap);s.flush();self._upsert_contacts(s,p.hotel_id,snap,b);self._merge(s,p);page=self._publish_version(s,p,actor);self._event(s,p.hotel_id,'SOURCE_INGESTED',{'snapshot_id':snap.content_source_snapshot_id,'source_key':b['source_key'],'source_type':b['source_type'],'rights_status':b['rights_status']},actor);s.flush()
+            prior_facts={k:v for k,v in (p.canonical_json or {}).items() if k!='direct_submission'}
+            s.add(snap);s.flush();self._upsert_contacts(s,p.hotel_id,snap,b);self._merge(s,p)
+            if preserve_current_facts and sha(prior_facts)!=sha({k:v for k,v in (p.canonical_json or {}).items() if k!='direct_submission'}):
+                raise ValueError('DIRECT_PUBLICATION_CANONICAL_FACTS_CHANGED')
+            if require_publishable and (self._paused(s,p.hotel_id) or not self.catalog_quality(p)['passed']):
+                raise ValueError('HOTEL_CATALOG_QUALITY_HOLD')
+            page=self._publish_version(s,p,actor);self._event(s,p.hotel_id,'SOURCE_INGESTED',{'snapshot_id':snap.content_source_snapshot_id,'source_key':b['source_key'],'source_type':b['source_type'],'rights_status':b['rights_status']},actor);s.flush()
             return {'idempotent':False,'snapshot':out(snap),'profile':out(p),'page_version':out(page),'catalog_quality':self.catalog_quality(p)}
 
     def compose(self,hotel_id,actor='SYSTEM'):
@@ -313,6 +324,9 @@ class HotelAutoPageFactoryService:
             if not v:return None
             page=dict(v.page_json or {})
             evidence=page.pop('_catalog_evidence',{})
+            if 'direct_submission' in (evidence.get('catalog') or {}):
+                report=quality(evidence.get('catalog'),evidence.get('provenance'),[],hotel_id=hotel_id,verify_asset=None)
+                if not report['passed']:raise ValueError('HOTEL_PAGE_QUALITY_HOLD')
             current_media=self._catalog_media(hotel_id,evidence.get('catalog'))
             page['media']=current_media
             page['hero']=dict(page.get('hero') or {})
@@ -506,4 +520,3 @@ class HotelAutoPageFactoryService:
             r.do_not_contact=True;r.marketing_eligibility='SUPPRESSED';r.updated_at=now();self._event(s,r.hotel_id,'CONTACT_SUPPRESSED',{'contact_id':contact_id,'reason':reason},actor);s.commit();return out(r)
 
 hotel_autopage_factory_service=HotelAutoPageFactoryService()
-

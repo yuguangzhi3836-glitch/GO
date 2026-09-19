@@ -1,0 +1,28 @@
+{
+  "base_commit": "5200c0a2f440781749a0183842b60f0ed6b03920",
+  "source_sha256": {
+    "application/src/go_hotel/services/hotel_direct_submission_review.py": "0ad9d06ceb52f3c1d78353ca17e2b80200e29265fbc813b72972b34f0f612156",
+    "application/src/go_hotel/services/hotel_direct_submission_verification.py": "e666f0c85fe15ac4927a70d159c75ac9fc8329e532277ca4e361cdff9874a339",
+    "application/src/go_hotel/services/hotel_direct_submission_publication.py": "2fc2f9e74b7d7acdac7f5e98b98a5ce116f768e4b2f4b7da2aa2127cc46b78c5",
+    "application/src/go_hotel/services/hotel_autopage_factory.py": "12b866e7267ec9388ba37949e3a071360747a3aaf311b8a68c8aec30753d2722",
+    "application/src/go_hotel/services/hotel_catalog_quality.py": "7282c4b090067685c9992f0979847dc7b142793de31ade05baeb4a47111f1f11",
+    "application/src/go_hotel/api/routes/hotel_direct_submission.py": "19f2db8b6abdc13c8e1b800b3d3875dd0275154cb765e27b7543fe691f2055e0",
+    "application/src/go_hotel/api/routes/hotel_autopage_factory.py": "217f8467290f0abae14ec7b32c657a8d7c938a6a065a57079353326d6a316fbd",
+    "application/tests/test_hotel_direct_submission_review.py": "ddcb6b3a2e7ca02057c20d5a5541f1b9a0f9e5ea60aad33bd43e93f4927732de",
+    "application/tests/test_hotel_direct_submission_publication.py": "dc8b4bcc79a8e8567c02ced8a5beeca5bc2edad872efe33ec330bf382fcff9d8",
+    "application/tests/test_hotel_direct_submission_api.py": "3de84ad245fd9b51deda5c7ea20631da670ea3197b0337155437362bbd8c5758"
+  },
+  "tests": {
+    "regression_pass": 98,
+    "regression_subtests_pass": 40,
+    "final_changed_source_pass": 35,
+    "independent_final_pass": 20
+  },
+  "limitations": [
+    "Synthetic identities; no production login",
+    "No real browser acceptance",
+    "No full app startup",
+    "No PostgreSQL concurrency or load validation",
+    "No real hotel publication"
+  ]
+}

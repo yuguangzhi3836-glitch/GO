@@ -91,6 +91,8 @@ def media_public_content(asset_id:str):
     try:
         from go_hotel.db.session import SessionLocal
         rec=media_svc.get(asset_id)
+        if rec.get('source_type') == 'HOTEL_DIRECT_UPLOAD':
+            raise ValueError('DIRECT_MEDIA_REQUIRES_ACTIVE_REVIEW_PAGE')
         with SessionLocal() as s:catalog_scope.require_hotel(s,rec.get('hotel_id'))
         path=media_svc.content_path(asset_id,require_publishable=True)
         return FileResponse(path,media_type=rec['mime_type'],headers={'Cache-Control':'no-store','ETag':rec['sha256'],'X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'"})
@@ -203,3 +205,8 @@ def scoped_media(hotel_ids, operation):
 
 def scoped_media_asset(asset_id, operation):
     return scoped_media([media_svc.get(asset_id).get('hotel_id')],operation)
+
+
+# Uses the existing administrator catalogue permission and current public gates.
+from go_hotel.api.routes.hotel_direct_submission import router as direct_submission_router
+router.include_router(direct_submission_router)

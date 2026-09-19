@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "/workspace/scratch/7375eae00ed5/go-depth-venv/bin/python",
+    "-m",
+    "pytest",
+    "evidence/depth-round6-20260919/review_publication_probe.py",
+    "application/tests/test_hotel_direct_submission_publication.py",
+    "application/tests/test_hotel_direct_submission_api.py",
+    "-q",
+    "--tb=short"
+  ],
+  "env": {
+    "PYTHONPATH": "application/src:application/tests",
+    "DATABASE_URL": "sqlite+pysqlite:///:memory:"
+  },
+  "exit_code": 0
+}

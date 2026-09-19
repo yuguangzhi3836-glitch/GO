@@ -1,7 +1,7 @@
 """Read-only inspection of a direct-submission proposal against current server facts.
 
-No trusted canonical room association writer exists yet. This endpoint therefore
-always retains that blocker and never grants rights or publication authority.
+This read-only endpoint never grants rights or publication authority.
+Trusted review is held separately from supplier-editable metadata.
 Supplier-editable JSON and strings in the manifest cannot clear this blocker.
 """
 from datetime import datetime, timezone
@@ -43,9 +43,20 @@ class HotelDirectSubmissionVerificationService:
             if not association_matches:
                 block('REGISTRATION_ASSOCIATION_NOT_FOUND')
             # Presence of reviewer metadata is not an approval of this manifest.
-            block('REGISTRATION_REVIEW_NOT_VERIFIED')
+            if not (association_matches and registration.state == 'APPROVED' and registration.reviewed_by and registration.reviewed_at):
+                block('REGISTRATION_REVIEW_NOT_VERIFIED')
             profile = session.get(HotelCanonicalProfileRow, identity['canonical_hotel_id']) if association_matches else None
             if profile is None: block('CANONICAL_PROFILE_NOT_FOUND')
+            elif profile.go_direct_state not in {'GO_DIRECT_VERIFIED', 'GO_DIRECT_LIVE'}:
+                block('CANONICAL_REGISTRATION_NOT_ACTIVE')
+            canonical_rooms = (profile.canonical_json or {}).get('rooms', []) if profile else []
+            if not isinstance(canonical_rooms, list): canonical_rooms = []
+            canonical_ids = [r.get('room_type_id') for r in canonical_rooms if isinstance(r, dict)]
+            if (not canonical_ids or len(canonical_ids) != len(canonical_rooms)
+                    or any(not isinstance(r, str) or not r for r in canonical_ids)
+                    or len(set(canonical_ids)) != len(canonical_ids)
+                    or set(canonical_ids) != set(data['inventory']['canonical_room_ids'])):
+                block('CANONICAL_ROOM_INVENTORY_MISMATCH')
             rooms = set(session.scalars(select(HotelPartnerRoomTypeRow.room_type_id).where(
                 HotelPartnerRoomTypeRow.property_id == property_id)).all())
             if rooms != set(data['inventory']['partner_room_ids']):
