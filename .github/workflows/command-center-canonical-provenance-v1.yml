@@ -37,7 +37,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: false
+          # The credential stays configured, because a later step fetches the branch heads the
+          # proof reads and the only alternative is to put the token on a command line.  This
+          # workflow grants `contents: read`, so a credential that is persisted here cannot
+          # write anything -- which is what that setting was protecting.
+          persist-credentials: true
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
