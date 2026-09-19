@@ -804,6 +804,21 @@ def load_installation(launcher_path, runtime_dir):
         with open(marker, "w", encoding="utf-8") as handle:
             json.dump({"launcher_path": launcher_path, "runtime_dir": runtime_dir}, handle)
     raise ValueError("E_STUB_REACHED")
+
+
+FACT = {"schema": "go.hk-install-fact.v1", "installation_id": "stub-installation",
+        "source_commit": "0" * 40, "launcher_version": "stub",
+        "launcher_sha256": "1" * 64, "runtime_digest": "2" * 64}
+
+
+def installed_identity(document):
+    """The one projection of the installation, so the launcher meets the real interface."""
+    return {"schema": "go.hk-installed-identity.v1",
+            "installation_id": document["installation_id"],
+            "source_commit": document["source_commit"],
+            "launcher_version": document["launcher_version"],
+            "launcher_sha256": document["launcher_sha256"],
+            "runtime_digest": document["runtime_digest"]}
 '''
 
 
@@ -897,7 +912,7 @@ class LauncherGateTests(InstallCase):
 
     def test_the_argument_contract_is_still_checked_after_the_gate(self):
         """The gate is a predecessor of the contract, not a replacement for it."""
-        self.stub(STUB.replace('raise ValueError("E_STUB_REACHED")', "return {}"))
+        self.stub(STUB.replace('raise ValueError("E_STUB_REACHED")', "return FACT"))
         argv = self.arguments()["verify"]
         argv[argv.index("--release-id") + 1] = "not a release id!"
         document, _ = self.run_action(argv)
@@ -915,16 +930,26 @@ class LauncherWiringTests(unittest.TestCase):
         self.assertIn('VERSION = "0.7.0-environment-lock"', self.source)
 
     def test_all_four_actions_verify_the_installation_first(self):
-        for action, marker in (("_deploy", "_load_deploy()"),
-                               ("_rollback", "_load_rollback()"),
-                               ("_canary", "_load_canary()"),
-                               ("_verify", "_collect_verify(")):
+        """One call now does both: it verifies, and it derives the block from what it read.
+
+        The property is unchanged and is the reason the two were merged rather than
+        sequenced: an action cannot obtain the identity without passing the verification,
+        and cannot pass the verification without carrying the identity to its document.
+        """
+        for action, marker, carried in (("_deploy", "_load_deploy()", '"DEPLOY_OK",identity)'),
+                                        ("_rollback", "_load_rollback()", '"ROLLBACK_OK",identity)'),
+                                        ("_canary", "_load_canary()", '"CANARY_OK",identity)'),
+                                        ("_verify", "_collect_verify(",
+                                         '"VERIFY_OK",\n                         identity)')):
             with self.subTest(action=action):
                 body = self.source.split("def %s(" % action, 1)[1].split("\ndef ", 1)[0]
-                self.assertIn("_verify_installation()", body)
-                self.assertLess(body.index("_verify_installation()"), body.index(marker),
+                self.assertIn("_installed_identity()", body)
+                self.assertLess(body.index("_installed_identity()"), body.index(marker),
                                 "%s loads its runtime before the installation is verified"
                                 % action)
+                self.assertIn(carried, body,
+                              "%s verified the installation but did not carry the identity"
+                              % action)
 
     def test_the_pin_set_is_unchanged_and_the_fact_did_not_add_one(self):
         """Dual verification: the pins remain, and the fact is not smuggled in as a pin."""

@@ -85,8 +85,15 @@ def _load_collector():
 
 
 def _document(status, release_id, candidate_image_id, expected_current_image_id,
-              gates, result):
-    return {
+              gates, result, installed_identity=None):
+    """The one shape every action's output has.
+
+    `installed_identity` is present on an action that ran under a verified installation and
+    absent from a refusal, which is the honest distinction: a document that reports a
+    refusal did not necessarily get far enough to know what it was installed as.  The agent
+    requires one exact key set per action, so an absence is refused rather than ignored.
+    """
+    document = {
         "schema_version": "1",
         "executor_version": VERSION,
         "action_id": "HK_STAGING_VERIFY",
@@ -97,6 +104,9 @@ def _document(status, release_id, candidate_image_id, expected_current_image_id,
         "result": result,
         "gate_results": gates,
     }
+    if installed_identity is not None:
+        document["installed_identity"] = installed_identity
+    return document
 
 def _load_canary():
     executable_dir = os.path.dirname(os.path.abspath(__file__))
@@ -193,6 +203,18 @@ def _verify_installation():
     return _load_install_fact().load_installation(os.path.abspath(__file__),runtime_dir)
 
 
+def _installed_identity():
+    """The block an Evidence carries: which bytes were installed when this action ran.
+
+    It is derived from the document `_verify_installation()` has just returned, by the
+    module that defines the block, so the answer comes from the verification that already
+    gates every action rather than from something assembled beside it.  An identity a
+    caller could produce without that check would be a claim; this one is a reading.
+    """
+    fact=_verify_installation()
+    return _load_install_fact().installed_identity(fact)
+
+
 try:
     import fcntl
 except ImportError:                      # this host has no flock; see _lock_exclusive
@@ -266,7 +288,7 @@ def _deploy(release,candidate,package,expected,approval,canary_evidence,candidat
     """
     gates={}
     try:
-        _verify_installation()
+        identity=_installed_identity()
         if not isinstance(approval,str) or not _RELEASE.fullmatch(approval): raise ValueError("approval")
         if not isinstance(canary_evidence,str) or not _RELEASE.fullmatch(canary_evidence): raise ValueError("canary evidence")
         if not isinstance(candidate_contract_sha256,str) or not _CONTRACT.fullmatch(candidate_contract_sha256): raise ValueError("candidate_digest_absent")
@@ -280,7 +302,7 @@ def _deploy(release,candidate,package,expected,approval,canary_evidence,candidat
         record={key:gates.pop(key) for key in ("deploy_record_schema_version","deploy_record_id","deploy_record_sha256")}
         verified_digest=gates.pop("candidate_contract_sha256",None)
         if not isinstance(verified_digest,str) or not _CONTRACT.fullmatch(verified_digest): raise ValueError("candidate_digest_unverified")
-        out=_document("SUCCESS",release,candidate,expected,gates,"DEPLOY_OK"); out["action_id"]="HK_STAGING_DEPLOY"; out.update(record); out["candidate_contract_sha256"]=verified_digest; return out,0
+        out=_document("SUCCESS",release,candidate,expected,gates,"DEPLOY_OK",identity); out["action_id"]="HK_STAGING_DEPLOY"; out.update(record); out["candidate_contract_sha256"]=verified_digest; return out,0
     except (OSError,ValueError,TypeError) as exc:
         # A refusal that already knows its gate results reports them.  `MEDIA_MOUNT=FAILED`
         # and its reason are findings about the operation rather than sentences to be read
@@ -292,10 +314,10 @@ def _deploy(release,candidate,package,expected,approval,canary_evidence,candidat
 def _canary(release_id,candidate_image_id,candidate_package_sha256,expected_current_image_id,runner=None,inputs=None):
     gates={}
     try:
-        _verify_installation()
+        identity=_installed_identity()
         runtime=_load_canary(); artifact=_load_artifact()
         gates=runtime.run_canary(release_id,candidate_image_id,candidate_package_sha256,expected_current_image_id,runner,inputs,artifact)
-        output=_document("SUCCESS",release_id,candidate_image_id,expected_current_image_id,gates,"CANARY_OK")
+        output=_document("SUCCESS",release_id,candidate_image_id,expected_current_image_id,gates,"CANARY_OK",identity)
         output["action_id"]="HK_STAGING_CANARY"
         return output,0
     except (OSError,ValueError,TypeError) as exc:
@@ -306,14 +328,14 @@ def _canary(release_id,candidate_image_id,candidate_package_sha256,expected_curr
 def _rollback(release,source_task_id,binding,runner=None):
     gates={}
     try:
-        _verify_installation()
+        identity=_installed_identity()
         # A rollback mutates the same eight containers as a deployment, so it takes the
         # same environment lock: `deploy` and `rollback` share one slot, and a rollback
         # cannot start while a deployment is mid-flight (nor the reverse).
         with _environment_lock():
             runtime=_load_rollback(); collector=_load_collector()
             gates=runtime.run_rollback(release,source_task_id,binding,runner or collector.ProductionRunner(),collector)
-        out=_document("SUCCESS",release,"","",gates,"ROLLBACK_OK"); out["action_id"]="HK_STAGING_ROLLBACK"
+        out=_document("SUCCESS",release,"","",gates,"ROLLBACK_OK",identity); out["action_id"]="HK_STAGING_ROLLBACK"
         out.update({key:gates[key] for key in ("source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256")})
         return out,0
     except (OSError,ValueError,TypeError) as exc:
@@ -326,7 +348,7 @@ def _verify(release_id, candidate_image_id, expected_current_image_id,
             runner=None, inputs=None, sleeper=None):
     gates = {}
     try:
-        _verify_installation()
+        identity = _installed_identity()
         if not isinstance(release_id, str) or not _RELEASE.fullmatch(release_id):
             raise ValueError("release id")
         if not isinstance(candidate_image_id, str) or not _IMAGE.fullmatch(candidate_image_id):
@@ -355,7 +377,8 @@ def _verify(release_id, candidate_image_id, expected_current_image_id,
         if result["target_service_count"] != 8 or result["application_health_proven_count"] != 0:
             raise ValueError("collector result")
         return _document("SUCCESS", release_id, candidate_image_id,
-                         expected_current_image_id, gates, "VERIFY_OK"), 0
+                         expected_current_image_id, gates, "VERIFY_OK",
+                         identity), 0
     except (OSError, ValueError, TypeError):
         return _document("REJECTED", release_id, candidate_image_id,
                          expected_current_image_id, gates, "VERIFY_REJECTED"), 2

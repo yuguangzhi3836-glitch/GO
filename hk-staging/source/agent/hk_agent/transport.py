@@ -145,11 +145,11 @@ def evidence(task,result):
     stamp=utcnow()
     record = {"schema_version":"1","task_id":task["task_id"],"nonce":task["nonce"],"action_id":task["action_id"],"environment":task["environment"],"status":"SUCCESS","started_at":stamp,"completed_at":stamp,"agent_version":VERSION,"gate_results":{"schema":"PASS","environment":"PASS","authority":"PASS","signature":"PASS","expiry":"PASS","replay":"PASS","allowlist":"PASS"},"executor_result":result}
     if task["action_id"] != "CONTROL_PLANE_HEALTH":
-        required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results"}
+        required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results","installed_identity"}
         if task["action_id"]=="HK_STAGING_DEPLOY": required |= {"deploy_record_schema_version","deploy_record_id","deploy_record_sha256","candidate_contract_sha256"}
         if task["action_id"]=="HK_STAGING_ROLLBACK": required |= {"source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256"}
         if not isinstance(result,dict) or set(result) != required: raise Reject("EXECUTOR_RESULT_REJECT")
-        record.update({"executor_version":result["executor_version"],"release_id":result["release_id"],"candidate_image_id":result["candidate_image_id"],"expected_current_image_id":result["expected_current_image_id"],"executor_result":result["result"],"gate_results":result["gate_results"]})
+        record.update({"executor_version":result["executor_version"],"release_id":result["release_id"],"candidate_image_id":result["candidate_image_id"],"expected_current_image_id":result["expected_current_image_id"],"executor_result":result["result"],"gate_results":result["gate_results"],"installed_identity":result["installed_identity"]})
         if task["action_id"]=="HK_STAGING_DEPLOY":
             record.update({"deploy_record_schema_version":result["deploy_record_schema_version"],"deploy_record_id":result["deploy_record_id"],"deploy_record_sha256":result["deploy_record_sha256"],
                 # The digest the executor loaded and recomputed, recorded on the Evidence so

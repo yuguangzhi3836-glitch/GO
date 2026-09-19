@@ -11,7 +11,7 @@ TASK={"action_id":"HK_STAGING_VERIFY","parameters":{"release_id":"r31-5-baseline
 EXPECTED=["/usr/bin/sudo","-n","/usr/local/libexec/go-hk-deployctl","verify","--release-id","r31-5-baseline-20260906","--candidate-image-id",IMAGE,"--expected-current-image-id",IMAGE]
 
 def _stdout():
- return json.dumps({"schema_version":"1","executor_version":"0.1.3-readonly-verify-runtime","action_id":"HK_STAGING_VERIFY","status":"SUCCESS","release_id":TASK["parameters"]["release_id"],"candidate_image_id":IMAGE,"expected_current_image_id":IMAGE,"result":"VERIFY_OK","gate_results":{"all":"PASS"}},separators=(",",":"))
+ return json.dumps({"schema_version":"1","executor_version":"0.1.3-readonly-verify-runtime","action_id":"HK_STAGING_VERIFY","status":"SUCCESS","release_id":TASK["parameters"]["release_id"],"candidate_image_id":IMAGE,"expected_current_image_id":IMAGE,"result":"VERIFY_OK","gate_results":{"all":"PASS"},"installed_identity":{"schema":"go.hk-installed-identity.v1","installation_id":"install-fixture","source_commit":"f"*40,"launcher_version":"0.7.0-environment-lock","launcher_sha256":"e"*64,"runtime_digest":"d"*64}},separators=(",",":"))
 
 def run():
  out={}
@@ -35,7 +35,7 @@ def run():
  frozen=importlib.util.module_from_spec(spec); spec.loader.exec_module(frozen)
  # Keep main() intact: patch only its collector-facing verify function so its
  # own print(json.dumps(...)) creates the exact frozen wire bytes.
- success={"schema_version":"1","executor_version":frozen.VERSION,"action_id":"HK_STAGING_VERIFY","status":"SUCCESS","release_id":TASK["parameters"]["release_id"],"candidate_image_id":IMAGE,"expected_current_image_id":IMAGE,"result":"VERIFY_OK","gate_results":{"all":"PASS"}}
+ success={"schema_version":"1","executor_version":frozen.VERSION,"action_id":"HK_STAGING_VERIFY","status":"SUCCESS","release_id":TASK["parameters"]["release_id"],"candidate_image_id":IMAGE,"expected_current_image_id":IMAGE,"result":"VERIFY_OK","gate_results":{"all":"PASS"},"installed_identity":{"schema":"go.hk-installed-identity.v1","installation_id":"install-fixture","source_commit":"f"*40,"launcher_version":"0.7.0-environment-lock","launcher_sha256":"e"*64,"runtime_digest":"d"*64}}
  stream=io.StringIO()
  verifier = "_verify" if hasattr(frozen,"_verify") else "verify"
  verified = (success,0) if verifier == "_verify" else success

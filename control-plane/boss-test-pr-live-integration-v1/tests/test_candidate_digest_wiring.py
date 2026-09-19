@@ -45,6 +45,9 @@ from hk_agent import deployment_actions, transport  # noqa: E402
 IMAGE = "sha256:" + "1" * 64
 OTHER_IMAGE = "sha256:" + "2" * 64
 PACKAGE = "3" * 64
+IDENTITY = {"schema": "go.hk-installed-identity.v1", "installation_id": "install-fixture",
+            "source_commit": "f" * 40, "launcher_version": "0.7.0-environment-lock",
+            "launcher_sha256": "e" * 64, "runtime_digest": "d" * 64}
 HEAD = "0133_flight_change_plan"
 OTHER_HEAD = "0135_some_other_head"
 
@@ -570,14 +573,25 @@ class EvidenceTests(unittest.TestCase):
                 "expected_current_image_id": OTHER_IMAGE, "result": "DEPLOY_OK",
                 "gate_results": {"all": "PASS"}, "deploy_record_schema_version": "2",
                 "deploy_record_id": "a" * 64, "deploy_record_sha256": "b" * 64,
-                "candidate_contract_sha256": digest}
+                "candidate_contract_sha256": digest, "installed_identity": dict(IDENTITY)}
 
     def test_new_deploy_evidence_carries_the_digest_the_task_carried(self):
         record = transport.evidence(self.task(), self.result())
         self.assertEqual(record["candidate_contract_sha256"], "e" * 64)
 
-    def test_pending_is_forbidden_scope_and_the_rest_are_untouched(self):
-        for name in ("time_authorization", "installed_identity", "execution_window"):
+    def test_the_evidence_carries_the_installation_the_executor_ran_under(self):
+        """WP-4's remaining item: the block the launcher derived, on the signed Evidence.
+
+        The agent relays it rather than re-deriving it.  `install_fact.installed_identity()`
+        on the host is the only implementation of the block, and a second one here would be
+        a second answer to a question that has to have exactly one.
+        """
+        record = transport.evidence(self.task(), self.result())
+        self.assertEqual(record["installed_identity"], IDENTITY)
+
+    def test_the_fields_this_round_did_not_touch_are_still_absent(self):
+        """`time_authorization` and `execution_window` are not part of this change."""
+        for name in ("time_authorization", "execution_window"):
             self.assertNotIn(name, transport.evidence(self.task(), self.result()))
 
     def test_an_executor_that_omits_the_digest_is_refused(self):
@@ -612,6 +626,7 @@ class EvidenceTests(unittest.TestCase):
             'VERSION = "0.5.8-candidate-digest"',
             '"deploy_record_schema_version","deploy_record_id","deploy_record_sha256","candidate_contract_sha256"',
             '"candidate_contract_sha256":result["candidate_contract_sha256"]',
+            '"installed_identity":result["installed_identity"]',
         )
         copies = {"installed (canonical)": ROOT / "hk-staging" / "hk_agent" / "transport.py",
                   "reviewed (hk-staging/source)": REPO / "hk-staging" / "source" / "agent"

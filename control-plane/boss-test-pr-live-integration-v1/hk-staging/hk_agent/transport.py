@@ -337,11 +337,11 @@ def evidence(task,result):
         record.update({"executor_version":result["executor_version"],"executor_result":result["result"],"source_pr_number":result["source_pr_number"],"source_commit_sha":result["source_commit_sha"],"task_canonical_sha256":result["task_canonical_sha256"],"built_image_id":result["built_image_id"],"artifact_durability":result["artifact_durability"],"artifact_package":package,"gate_results":result["gate_results"],"application_health_proven":False,"deployment_performed":False})
         return record
     if task["action_id"] != "CONTROL_PLANE_HEALTH":
-        required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results"}
+        required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results","installed_identity"}
         if task["action_id"]=="HK_STAGING_DEPLOY": required |= {"deploy_record_schema_version","deploy_record_id","deploy_record_sha256","candidate_contract_sha256"}
         if task["action_id"]=="HK_STAGING_ROLLBACK": required |= {"source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256"}
         if not isinstance(result,dict) or set(result) != required: raise Reject("EXECUTOR_RESULT_REJECT", stage=STAGE_EVIDENCE_BUILD)
-        record.update({"executor_version":result["executor_version"],"release_id":result["release_id"],"candidate_image_id":result["candidate_image_id"],"expected_current_image_id":result["expected_current_image_id"],"executor_result":result["result"],"gate_results":result["gate_results"]})
+        record.update({"executor_version":result["executor_version"],"release_id":result["release_id"],"candidate_image_id":result["candidate_image_id"],"expected_current_image_id":result["expected_current_image_id"],"executor_result":result["result"],"gate_results":result["gate_results"],"installed_identity":result["installed_identity"]})
         if task["action_id"]=="HK_STAGING_DEPLOY":
             record.update({"deploy_record_schema_version":result["deploy_record_schema_version"],"deploy_record_id":result["deploy_record_id"],"deploy_record_sha256":result["deploy_record_sha256"],
                 # The digest the executor loaded and recomputed, recorded on the Evidence so

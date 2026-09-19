@@ -276,12 +276,15 @@ def run():
 
         originals = {name: getattr(deployctl, name) for name in
                      ("_load_deploy", "_load_collector", "_load_artifact",
-                      "_verify_installation")}
+                      "_installed_identity")}
         deployctl._load_deploy = lambda: Runtime()
         deployctl._load_collector = lambda: Runtime()
         deployctl._load_artifact = lambda: Runtime()
         gate_seen = []
-        deployctl._verify_installation = lambda: gate_seen.append("install")
+        # The gate is one call since CCV1-100: it verifies the installation and derives the
+        # block the document carries.  Substituting it leaves this regression about the lock
+        # rather than about the fact, which is what substituting `_verify_installation` did.
+        deployctl._installed_identity = lambda: gate_seen.append("install")
         arguments = ("r", "sha256:" + "a" * 64, "f" * 64, "sha256:" + "b" * 64,
                      "approval-1", "canary-1", "e" * 64,
                      {"task_id": "t", "nonce": "n", "authority": "GO-COMMAND-CENTER",

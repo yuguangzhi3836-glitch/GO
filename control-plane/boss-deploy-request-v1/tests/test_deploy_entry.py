@@ -53,6 +53,16 @@ def signed(value, key, encoding='hex'):
     return {**value, 'signature': sig.hex() if encoding == 'hex' else base64.b64encode(sig).decode()}
 
 
+# The block the Hong Kong executor derives from the installation fact it has verified.
+# This fixture builds the executor's wire form by hand, so it carries the same block: a
+# fixture that omitted it would describe a document no executor emits, and the agent
+# refuses those on purpose.
+INSTALLED_IDENTITY = {"schema": "go.hk-installed-identity.v1",
+                      "installation_id": "install-fixture", "source_commit": "f" * 40,
+                      "launcher_version": "0.7.0-environment-lock",
+                      "launcher_sha256": "e" * 64, "runtime_digest": "d" * 64}
+
+
 class Fixture:
     def __init__(self, test_pr_age=3600):
         self.at = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
@@ -111,7 +121,8 @@ class Fixture:
         result = {'schema_version': '1', 'executor_version': 'synthetic-only', 'action_id': action,
             'status': 'SUCCESS', 'release_id': params['release_id'], 'candidate_image_id': params['candidate_image_id'],
             'expected_current_image_id': self.current, 'result': 'CANARY_OK' if action.endswith('CANARY') else 'VERIFY_OK',
-            'gate_results': {**{k:'PASS' for k in gates}, 'application_health_proven': False}}
+            'gate_results': {**{k:'PASS' for k in gates}, 'application_health_proven': False},
+            'installed_identity': dict(INSTALLED_IDENTITY)}
         with patch.object(transport, 'utcnow', return_value=bridge.iso(completed)):
             evidence = transport.evidence(task, result)
         return task, signed(evidence, self.hk, 'base64')
