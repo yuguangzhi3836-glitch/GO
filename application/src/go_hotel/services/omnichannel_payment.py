@@ -151,22 +151,33 @@ class OmnichannelPaymentService:
    intents=s.scalars(select(Intent).where(*([] if payer is None else [Intent.payer_id==payer])).order_by(Intent.created_at.desc())).all();ids=[x.payment_intent_id for x in intents];ats=s.scalars(select(Attempt).where(Attempt.payment_intent_id.in_(ids))).all() if ids else [];recs=s.scalars(select(Recon).where(Recon.payment_intent_id.in_(ids))).all() if ids else [];return {'supported_channels':sorted(CHANNELS),'intents':[out(x) for x in intents],'attempts':[out(x) for x in ats],'reconciliations':[out(x) for x in recs],'external_live':False}
  def webhook(self,channel,b,signature):
   if channel not in CHANNELS:raise ValueError('UNSUPPORTED_PAYMENT_CHANNEL')
-  key=os.getenv(f'GO_PAYMENT_WEBHOOK_KEY_{channel}')
+  key=os.getenv(f'GO_PAYMENT_WEBHOOK_KEY_${channel}')
   if not key:raise ValueError('PAYMENT_WEBHOOK_KEY_NOT_CONFIGURED')
+  required=('external_event_id','payment_attempt_id','external_operation_id','state','operation','amount_minor','currency','occurred_at')
+  if any(b.get(x) in (None,'') for x in required):raise ValueError('PAYMENT_CALLBACK_FACTS_REQUIRED')
   raw=json.dumps(b,sort_keys=True,separators=(',',':'));expected=hmac.new(key.encode(),raw.encode(),hashlib.sha256).hexdigest()
   if not hmac.compare_digest(expected,signature):raise ValueError('PAYMENT_WEBHOOK_SIGNATURE_INVALID')
   occurred=b.get('occurred_at')
-  if not occurred:raise ValueError('PAYMENT_CALLBACK_OCCURRED_AT_REQUIRED')
   event_at=datetime.fromisoformat(occurred.replace('Z','+00:00'))
   if event_at<now()-timedelta(hours=24) or event_at>now()+timedelta(minutes=5):raise ValueError('PAYMENT_CALLBACK_OUTSIDE_REPLAY_WINDOW')
+  payload_hash=digest(b)
   with SessionLocal() as s:
-   old=s.scalar(select(Receipt).where(Receipt.channel==channel,Receipt.external_event_id==b['external_event_id']))
-   if old:return {'duplicate':True,'receipt':out(old)}
+   old=s.scalar(select(Receipt).where(Receipt.channel==channel,Receipt.external_event_id==b['external_event_id']).with_for_update())
+   if old:
+    if old.payload_hash!=payload_hash:raise ValueError('PAYMENT_CALLBACK_EVENT_PAYLOAD_CONFLICT')
+    return {'duplicate':True,'receipt':out(old)}
    a=s.scalar(select(Attempt).where(Attempt.payment_attempt_id==b['payment_attempt_id']).with_for_update());i=s.scalar(select(Intent).where(Intent.payment_intent_id==a.payment_intent_id).with_for_update()) if a else None
    if not a or a.channel!=channel:raise ValueError('PAYMENT_ATTEMPT_CHANNEL_MISMATCH')
+   # Generic HMAC is only the contract-simulator receipt boundary. A real PSP
+   # callback must be verified by the provider-specific adapter before ingress.
+   if a.external_invoked:raise ValueError('REAL_PSP_WEBHOOK_VERIFIER_NOT_INSTALLED')
+   if str(b['operation'])!=i.operation:raise ValueError('PAYMENT_CALLBACK_OPERATION_MISMATCH')
+   if int(b['amount_minor'])!=i.amount_minor:raise ValueError('PAYMENT_CALLBACK_AMOUNT_MISMATCH')
+   if str(b['currency'])!=i.currency:raise ValueError('PAYMENT_CALLBACK_CURRENCY_MISMATCH')
+   if a.external_operation_id and b['external_operation_id']!=a.external_operation_id:raise ValueError('PAYMENT_CALLBACK_EXTERNAL_OPERATION_MISMATCH')
    mapped={'SUCCEEDED':'SUCCEEDED','FAILED':'FAILED','PENDING':'UNKNOWN_EXTERNAL_STATE'}.get(b['state'])
    if not mapped:raise ValueError('INVALID_EXTERNAL_PAYMENT_STATE')
-   r=Receipt(webhook_receipt_id=ident('owr'),channel=channel,external_event_id=b['external_event_id'],payment_attempt_id=a.payment_attempt_id,signature_verified=True,payload_hash=digest(b),received_at=now());s.add(r);self._transition(s,a,i,mapped,b.get('external_operation_id'));s.commit();return {'duplicate':False,'receipt':out(r),'intent':out(i)}
+   r=Receipt(webhook_receipt_id=ident('owr'),channel=channel,external_event_id=b['external_event_id'],payment_attempt_id=a.payment_attempt_id,signature_verified=True,payload_hash=payload_hash,received_at=now());s.add(r);self._transition(s,a,i,mapped,b['external_operation_id']);s.commit();return {'duplicate':False,'receipt':out(r),'intent':out(i)}
  def _ledger(self,s,i):
   raise ValueError('PAYMENT_SUCCESS_DOES_NOT_POST_GL_USE_CAPTURE_MOVEMENT')
  def _legacy_ledger_disabled(self,s,i):
