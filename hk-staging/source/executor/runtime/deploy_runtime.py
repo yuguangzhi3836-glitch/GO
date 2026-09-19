@@ -101,7 +101,7 @@ def _atomic_record(record):
         except OSError: pass
         raise Reject('E_DEPLOY_RECORD_PERSIST') from exc
     return {'deploy_record_schema_version':'2','deploy_record_id':record['record_id'],'deploy_record_sha256':hashlib.sha256(payload).hexdigest(),'record_path':str(final)}
-def _record_v2(release,candidate,package,expected,data,runner,binding,media_record=None):
+def _record_v2(release,candidate,package,expected,data,runner,binding):
     binding=_task_binding(binding)
     targets=[]
     for service,container in zip(SERVICES,data):
@@ -112,7 +112,6 @@ def _record_v2(release,candidate,package,expected,data,runner,binding,media_reco
     record_identity=hashlib.sha256(json.dumps({'task_id':binding['task_id'],'nonce':binding['nonce'],'release_id':release},sort_keys=True,separators=(',',':')).encode()).hexdigest()
     protected_inventory,protected_hash=_protected_non_target_snapshot(runner)
     record={'deploy_record_schema_version':'2','record_id':record_identity,'created_at':int(time.time()),'environment':'HK-STAGING-01','action_id':'HK_STAGING_DEPLOY','task_id':binding['task_id'],'nonce':binding['nonce'],'authority':binding['authority'],'task_canonical_sha256':binding['canonical_sha256'],'release_id':release,'candidate_image_id':candidate,'candidate_package_sha256':package,'expected_current_image_id':expected,'compose_path':COMPOSE,'compose_sha256':COMPOSE_SHA,'runtime_env_path':ENV,'env_sha256':ENV_SHA,'target_count':8,'targets':targets,'non_target_container_inventory_sha256':_non_target_snapshot(runner,[x['container_id'] for x in targets]),'protected_non_target_inventory':protected_inventory,'protected_non_target_inventory_sha256':protected_hash}
-    if media_record: record.update(media_record)
     return _atomic_record(record)
 def rollback_source_eligible(record,record_sha256,task,evidence):
     """Pure future-rollback source validator; it performs no Docker operation."""
@@ -173,7 +172,7 @@ def _wait_for_api_health(runner,candidate,sleeper=time.sleep):
 # five modules; only its value for this file changes.)
 _CANDIDATE_SOURCE_SHA256 = "f9855b4c706678f9dfd79eac46343ca79fd7e8f3536fd92e60d8c4e37178c373"
 _MIGRATION_GUARD_SHA256 = "89a0cc3007eafe7533ba88f6f8eb2982a10fa9a1c90789f480530329cda5634a"
-_MEDIA_GUARD_SHA256 = "bc88130bf21aa758b481176dfd8bb32eefd15f86a0ba4c8d03ad7c41a1a97511"
+_MEDIA_MOUNT_SHA256 = "92af6bfc444510f44819719a48a6309e1712393916e69a4fc95f9037914fd059"
 
 
 def _load_sibling(name, expected_sha256, module_name):
@@ -199,8 +198,8 @@ def _load_migration_guard():
     return _load_sibling("migration_guard", _MIGRATION_GUARD_SHA256, "_go_hk_migration_guard")
 
 
-def _load_media_guard():
-    return _load_sibling("media_guard", _MEDIA_GUARD_SHA256, "_go_hk_media_guard")
+def _load_media_mount():
+    return _load_sibling("media_mount", _MEDIA_MOUNT_SHA256, "_go_hk_media_mount")
 
 
 def run_deploy(release,candidate,package,expected,binding,runner,collector,artifact,candidate_contract_sha256=None,sleeper=time.sleep):
@@ -220,36 +219,34 @@ def run_deploy(release,candidate,package,expected,binding,runner,collector,artif
     treating "nobody told me" as agreement.  That is why this parameter has no default
     that could be mistaken for consent: the default is None and None fails closed.
 
-    A third question -- *which storage is the media cache on* -- is asked before the
-    mutation and re-asked after it (CCV1-95 WP-9).  It is neither a candidate property
-    nor a migration rule but a fact about this host, which is why it is read from the
-    host and why nothing in it is caller-supplied.  See `media_guard` for why a
-    deployment that loses the cache does so without producing an error.
+    The compose invocation is not built here.  Every path that recreates the eight
+    business containers -- this one and rollback -- goes through
+    ``media_mount.recreate()``, which writes the fixed media bind mount into the command
+    and then checks the containers that are actually running (WP-9).  The media directory
+    is fixed infrastructure rather than a candidate property: nothing in the Task, the
+    plan or the candidate fact can add, remove or move it, and ``MEDIA_MOUNT`` is part of
+    this deployment's gate results because a deployment that lost the media directory is
+    not a deployment that succeeded.
     """
-    source=_load_candidate_source(); guard=_load_migration_guard(); media=_load_media_guard()
+    source=_load_candidate_source(); guard=_load_migration_guard(); media=_load_media_mount()
     fact=source.load_candidate_fact(candidate_contract_sha256)
     source.require_same_artifact(fact,candidate,package)
     guard.precheck(fact,source.environment_migration_head())
     data=_precheck(runner,candidate,package,expected,artifact)
-    media_state=media.before(data,expected)
-    record=_record_v2(release,candidate,package,expected,data,runner,binding,
-                      media.record_fields(media_state))
+    record=_record_v2(release,candidate,package,expected,data,runner,binding)
     override=None
     try:
         try:
             override=_override(candidate)
         except OSError as exc:
             raise Reject('E_DEPLOY_TEMP_CREATION') from exc
-        # Same-image deployments are intentionally a fixed, scoped recreation.
-        # The flag is executor-owned: no Task parameter can add, remove, or vary it.
-        _run(runner,[DOCKER,'compose','--env-file',ENV,'-p',PROJECT,'-f',COMPOSE,'-f',override,'up','-d','--no-deps','--force-recreate',*SERVICES],300)
+        # Same-image deployments are intentionally a fixed, scoped recreation.  The flags
+        # are executor-owned: no Task parameter can add, remove or vary them, and the
+        # fixed media mount is added by the shared builder rather than here.
+        media_result=media.recreate(runner,lambda argv:_run(runner,argv,300),extra_files=[override])
         _,post_protected_hash=_protected_non_target_snapshot(runner)
         if post_protected_hash!=json.loads(pathlib.Path(record['record_path']).read_text(encoding='utf-8'))['protected_non_target_inventory_sha256']:
             raise Reject('E_DEPLOY_PROTECTED_NON_TARGET_MUTATION')
-        # Read off the containers that are running now, plus the directory itself.
-        # This runs before the readiness wait: a deploy that has already lost the
-        # cache does not become acceptable by waiting.
-        media_result=media.after(media_state,_inspect(runner,_ids(runner)),candidate)
         _wait_for_api_health(runner,candidate,sleeper)
         check=collector._collect_verify(runner,candidate,candidate,collector._PRODUCTION_VERIFY_INPUTS,sleeper)
         if check.get('target_service_count')!=8: raise Reject('E_DEPLOY_PARTIAL_CONVERGENCE')
@@ -257,7 +254,7 @@ def run_deploy(release,candidate,package,expected,binding,runner,collector,artif
         # not the Task's value echoed back: the two agreeing is the finding the Evidence
         # reports, and echoing would make that finding vacuous.  `no_migration` is a gate
         # result rather than a declaration now -- the guard above is what established it.
-        return {'durable_previous_state':'PASS','candidate_binding':'PASS','current_state':'PASS','fixed_scope':'PASS','no_migration':'PASS','post_deploy_verify':'PASS',**media.gates(media_result),'candidate_contract_sha256':candidate_contract_sha256,**record}
+        return {'durable_previous_state':'PASS','candidate_binding':'PASS','current_state':'PASS','fixed_scope':'PASS','no_migration':'PASS','post_deploy_verify':'PASS',**media_result,'candidate_contract_sha256':candidate_contract_sha256,**record}
     finally:
         if override:
             try: os.unlink(override)

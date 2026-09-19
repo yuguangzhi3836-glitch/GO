@@ -47,12 +47,14 @@ _RELEASE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 _CONTRACT = re.compile(r"^[0-9a-f]{64}$")
 _COLLECTOR_SHA256 = "dff91265a5e3e80704277664f1952129ff19c6c7174d78e9b3e66125b9618ccc"
 _CANARY_SHA256 = "f93d4365116a52942c457accb41be53625d3f3f1a7a6eafe92d53c457c86aed1"
-# Updated by CCV1-85 (WP-4A) and again by CCV1-95 (WP-9): deploy_runtime.py resolves
-# the candidate the Task names, applies the migration rule, and reads the media cache
-# on both sides of the mutation.  Only this value changed; the other four pins and the
+# Updated by CCV1-85 (WP-4A) and again by WP-9's product decision of 2026-09-19:
+# deploy_runtime.py resolves the candidate the Task names, applies the migration rule, and
+# recreates the containers through the shared media-mount builder; rollback_runtime.py
+# recreates them through the same builder.  Both values changed because both runtimes now
+# delegate their Compose command instead of assembling it; the other three pins and the
 # shape of the pin set are untouched.
-_DEPLOY_SHA256 = "8337066f247497a0afa96695470d1cf3639a1e4114f315f2244ced56d38f7dd9"
-_ROLLBACK_SHA256 = "a49e12eafab85331477241a4db791ad1c38133b9a7925eade627c1c27cf5e9f5"
+_DEPLOY_SHA256 = "7d185ce7dd73e62bbafdba55386b4f98c679aa522364ef61ab0463b1b26dbdb4"
+_ROLLBACK_SHA256 = "d5ce99c91b562af4187181613c481b25d11000a7f956e216f50b3ab0c3e42af4"
 _ARTIFACT_SHA256 = "736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b"
 
 
@@ -280,6 +282,11 @@ def _deploy(release,candidate,package,expected,approval,canary_evidence,candidat
         if not isinstance(verified_digest,str) or not _CONTRACT.fullmatch(verified_digest): raise ValueError("candidate_digest_unverified")
         out=_document("SUCCESS",release,candidate,expected,gates,"DEPLOY_OK"); out["action_id"]="HK_STAGING_DEPLOY"; out.update(record); out["candidate_contract_sha256"]=verified_digest; return out,0
     except (OSError,ValueError,TypeError) as exc:
+        # A refusal that already knows its gate results reports them.  `MEDIA_MOUNT=FAILED`
+        # and its reason are findings about the operation rather than sentences to be read
+        # out of an error string, and keeping them here is what makes
+        # `DEPLOY=SUCCESS` with `MEDIA_MOUNT=FAILED` unrepresentable.
+        gates=getattr(exc,"gate_results",None) or gates
         out=_document("REJECTED",release,candidate,expected,gates,"DEPLOY_REJECTED"); out["action_id"]="HK_STAGING_DEPLOY"; out["error_code"]=str(exc)[:80]; return out,2
 
 def _canary(release_id,candidate_image_id,candidate_package_sha256,expected_current_image_id,runner=None,inputs=None):
@@ -310,6 +317,7 @@ def _rollback(release,source_task_id,binding,runner=None):
         out.update({key:gates[key] for key in ("source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256")})
         return out,0
     except (OSError,ValueError,TypeError) as exc:
+        gates=getattr(exc,"gate_results",None) or gates
         out=_document("REJECTED",release,"","",gates,"ROLLBACK_REJECTED"); out["action_id"]="HK_STAGING_ROLLBACK"; out["error_code"]=str(exc)[:80]
         return out,2
 

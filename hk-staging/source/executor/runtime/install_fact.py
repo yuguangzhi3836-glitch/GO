@@ -83,7 +83,7 @@ RUNTIME_MODULES = (
     'artifact_runtime',
     'candidate_source',
     'migration_guard',
-    'media_guard',
+    'media_mount',
     'candidate_fact',
 )
 

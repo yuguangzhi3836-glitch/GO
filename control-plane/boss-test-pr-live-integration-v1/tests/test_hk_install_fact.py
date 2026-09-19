@@ -541,7 +541,7 @@ class InstallFactTests(InstallCase):
         self.install()
         names = {module["name"] for module in self.read_fact()["runtime_modules"]}
         self.assertEqual(names, set(install_fact.RUNTIME_MODULES))
-        for dynamic in ("candidate_source", "migration_guard", "media_guard",
+        for dynamic in ("candidate_source", "migration_guard", "media_mount",
                         "candidate_fact", "install_fact"):
             self.assertIn(dynamic, names, "a second-level module was left out")
 
@@ -951,7 +951,7 @@ class PinAndFactAgreementTests(InstallCase):
         deploy_source = (RUNTIME / "deploy_runtime.py").read_text(encoding="utf-8")
         for constant, module in (("_CANDIDATE_SOURCE_SHA256", "candidate_source"),
                                  ("_MIGRATION_GUARD_SHA256", "migration_guard"),
-                                 ("_MEDIA_GUARD_SHA256", "media_guard")):
+                                 ("_MEDIA_MOUNT_SHA256", "media_mount")):
             pins[module] = re.search(constant + PIN_VALUE,
                                      deploy_source).group(1)
         pins["candidate_fact"] = re.search("CANDIDATE_FACT_SHA256" + PIN_VALUE,
