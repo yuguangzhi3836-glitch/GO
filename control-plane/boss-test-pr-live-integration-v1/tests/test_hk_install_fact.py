@@ -982,24 +982,39 @@ class PinAndFactAgreementTests(InstallCase):
         That difference is the checkout, not the contract: it disappears the moment the
         installed bytes are the repository blobs, which the test above demonstrates. This
         one records it rather than leaving a reader to wonder why two numbers differ.
+
+        Which means the difference is only there on a checkout that actually produces CRLF.
+        Both shapes are asserted, and neither passes by having nothing to compare: the two
+        numbers are compared for every module either way, and the shape the test ran in is
+        named.  Demanding a non-empty difference -- as this test first did -- is a statement
+        about the checkout, and it is false on an all-LF one.
         """
         self.install()
         facts = {module["name"]: module["sha256"]
                  for module in self.read_fact()["runtime_modules"]}
-        differing = []
+        differing, crlf = set(), set()
         for name, pinned in sorted(self.all_pins().items()):
-            raw = hashlib.sha256((RUNTIME / (name + ".py")).read_bytes()).hexdigest()
-            normalised = hashlib.sha256((RUNTIME / (name + ".py")).read_bytes()
-                                        .replace(b"\r\n", b"\n")).hexdigest()
+            bytes_ = (RUNTIME / (name + ".py")).read_bytes()
+            raw = hashlib.sha256(bytes_).hexdigest()
+            normalised = hashlib.sha256(bytes_.replace(b"\r\n", b"\n")).hexdigest()
             with self.subTest(module=name):
                 self.assertEqual(pinned, normalised,
                                  "the pin is not this module's repository blob")
                 self.assertEqual(facts[name], raw, "the fact is not this module's bytes")
             if raw != normalised:
-                differing.append(name)
-        self.assertTrue(differing,
-                        "if this checkout were already LF the normalisation above would be "
-                        "doing nothing; it is not, and saying so is the point of this test")
+                differing.add(name)
+            if b"\r\n" in bytes_:
+                crlf.add(name)
+        if crlf:
+            self.assertEqual(differing, crlf,
+                             "the pin and the fact may differ only where this checkout's bytes "
+                             "differ from the blob's, so the difference is fully explained by "
+                             "line endings; checkout shape=%s" % (sorted(crlf),))
+        else:
+            self.assertEqual(differing, set(),
+                             "this checkout is already LF, so the normalisation above is a "
+                             "no-op and the two definitions coincide; that is the checkout's "
+                             "shape, not a property of the contract")
 
     def test_the_fact_covers_more_than_the_pins_ever_did(self):
         self.install()
