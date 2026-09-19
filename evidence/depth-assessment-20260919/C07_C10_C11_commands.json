@@ -1,0 +1,43 @@
+{
+  "cwd": "application",
+  "python": "/workspace/scratch/7375eae00ed5/go-depth-venv/bin/python",
+  "env": {
+    "PYTHONPATH": "src"
+  },
+  "runs": [
+    {
+      "args": [
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_external_order_verification_clock.py",
+        "tests/test_external_orders_in_go_trips.py",
+        "tests/test_external_order_money_projection.py",
+        "--tb=short"
+      ],
+      "exit_code": 0,
+      "passed": 34,
+      "stdout_file": "C10_C11_pytest.log"
+    },
+    {
+      "args": [
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_member_comparison_quote_validity.py",
+        "tests/test_supplier_onboarding_and_member_comparison.py",
+        "-k",
+        "not member_context_api",
+        "--tb=short"
+      ],
+      "exit_code": 0,
+      "passed": 26,
+      "deselected": 1,
+      "stdout_file": "C07_pytest.log"
+    }
+  ],
+  "source_sha256": {
+    "application/src/go_hotel/services/consumer_unified_lifecycle.py": "60e9ce2d9da9d96ca5bfbfdefe58eff9a9ffa01ac9f14a2aa027d440baca710a",
+    "application/tests/test_external_order_verification_clock.py": "edea9d947fcbb81bf00c4ffe206531459187c3e630498f05665c396f1252dbfc"
+  }
+}
