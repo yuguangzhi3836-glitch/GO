@@ -436,7 +436,7 @@ class HotelAutoPageFactoryService:
         limit=max(1,min(int(limit or 200),1000))
         with SessionLocal() as s:
             active=catalog_scope.state(s)
-            visible=HotelCanonicalProfileRow.hotel_id.in_(active['protected_ids']) if active else True
+            visible=catalog_scope.hotel_filter(s, HotelCanonicalProfileRow.hotel_id)
             profiles=s.scalars(select(HotelCanonicalProfileRow).where(visible).order_by(HotelCanonicalProfileRow.updated_at.desc()).limit(limit)).all()
             items=[]
             counters={k:0 for k in ['WAIT_BUILD','COLLECTING','WAIT_MERGE','WAIT_MEDIA_REVIEW','WAIT_PUBLISH','PUBLISHED','WAIT_CLAIM','CLAIMED','GO_DIRECT','NEEDS_ENRICHMENT']}

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from go_hotel.core.config import settings
 from go_hotel.security.service import identity_service, Principal, uid, now
 from go_hotel.security.deps import current_principal
@@ -25,13 +25,26 @@ SUPPLIER_REGISTRATION_TERMS={
     "platform_operating_rules":"2026-08-25-v1",
 }
 class SupplierRegisterBody(BaseModel):
-    email:str
-    password:str=Field(min_length=10)
+    model_config=ConfigDict(extra="forbid")
+    email:str=Field(max_length=128)
+    password:str=Field(min_length=10,max_length=128)
     organization_name:str=Field(min_length=2,max_length=160)
     contact_name:str=Field(min_length=1,max_length=80)
     phone:str|None=None
     accepted_terms:bool=False
-    term_versions:dict[str,str]={}
+    term_versions:dict[str,str]=Field(default_factory=dict)
+    hotel_name:str|None=Field(default=None,min_length=2,max_length=160)
+    province:str=Field(default='',max_length=80)
+    city:str=Field(default='',max_length=80)
+    street_address:str=Field(default='',max_length=300)
+
+    @field_validator('organization_name','contact_name','hotel_name')
+    @classmethod
+    def nonblank_identity(cls,value):
+        if value is not None and not value.strip():
+            raise ValueError('NONBLANK_IDENTITY_REQUIRED')
+        return value.strip() if value is not None else value
+
 
 class MFAEnrollStartBody(BaseModel):
     username:str
@@ -60,7 +73,7 @@ def bff_auth_policy():
 
 @router.get('/bff/auth/supplier/registration-terms')
 def supplier_registration_terms():
-    return {'data':{'required':True,'versions':SUPPLIER_REGISTRATION_TERMS,'titles':{
+    return {'data':{'required':True,'registration_scope':'NATIONWIDE','publication_requires_verification':True,'versions':SUPPLIER_REGISTRATION_TERMS,'titles':{
         'supplier_service_terms':'GO 合作伙伴服务协议',
         'privacy_policy':'隐私政策',
         'data_processing_terms':'数据处理条款',
@@ -75,25 +88,28 @@ def supplier_register(body:SupplierRegisterBody,request:Request,response:Respons
         raise HTTPException(422,detail='SUPPLIER_TERMS_ACCEPTANCE_REQUIRED')
     if any(body.term_versions.get(k)!=v for k,v in SUPPLIER_REGISTRATION_TERMS.items()):
         raise HTTPException(409,detail='SUPPLIER_TERMS_VERSION_MISMATCH')
-    try:
-        registration=supplier_onboarding_service.register({'username':email,'password':body.password,'hotel':{
-            'name_zh':body.organization_name,'property_type':'HOTEL','contacts':{'contact_name':body.contact_name,'phone':body.phone},
-        }})
-    except ValueError as exc:
-        raise HTTPException(409,detail=str(exc)) from exc
-    supplier_id=registration['supplier_id'];user_id=registration['user_id'];property_id=registration['property_id']
-    t=now()
-    with SessionLocal() as s:
-        s.add(AuditEventRow(
+    def registration_audit(user_id,supplier_id,property_id):
+        t=now()
+        return AuditEventRow(
             audit_id=uid('aud'),actor_id=user_id,actor_type='SUPPLIER_USER',supplier_id=supplier_id,roles=['SUPPLIER_OWNER'],session_id=None,
             action='SUPPLIER_REGISTRATION_TERMS_ACCEPTED',resource_type='SUPPLIER_REGISTRATION',resource_id=supplier_id,request_id=getattr(request.state,'request_id',None),
             client_ip=request.client.host if request.client else None,http_method='POST',path='/bff/auth/supplier/register',before_state=None,
             after_state={'registration_state':'ACCOUNT_CREATED_TERMS_ACCEPTED'},decision_id=None,evidence_id=None,approval_id=None,
             metadata_json={'organization_name':body.organization_name,'contact_name':body.contact_name,'phone_provided':bool(body.phone),'term_versions':SUPPLIER_REGISTRATION_TERMS,'accepted_once':True},created_at=t,
-        ));s.commit()
+        )
+    try:
+        registration=supplier_onboarding_service.register({'username':email,'password':body.password,'hotel':{
+            'name_zh':body.hotel_name or body.organization_name,'property_type':'HOTEL',
+            'address':{'country_code':'CN','province':body.province.strip(),'city':body.city.strip(),'street':body.street_address.strip()},
+            'legal':{'declared_organization_name':body.organization_name},
+            'contacts':{'contact_name':body.contact_name,'phone':body.phone,'email':email},
+        }}, audit_factory=registration_audit)
+    except ValueError as exc:
+        raise HTTPException(409,detail=str(exc)) from exc
+    supplier_id=registration['supplier_id'];user_id=registration['user_id'];property_id=registration['property_id']
     tokens=identity_service.login(email,body.password,request.client.host if request.client else None,request.headers.get('user-agent'))
     set_session_cookies(response,tokens)
-    return {'data':{'authenticated':True,'supplier_id':supplier_id,'property_id':property_id,'registration_state':'ACCOUNT_CREATED_TERMS_ACCEPTED','next_step':'BUILD_HOTEL_LIBRARY'}}
+    return {'data':{'authenticated':True,'supplier_id':supplier_id,'property_id':property_id,'registration_state':'ACCOUNT_CREATED_TERMS_ACCEPTED','next_step':'BUILD_HOTEL_LIBRARY','registration_scope':'NATIONWIDE','ownership_status':'DECLARED','publication_state':'DRAFT'}}
 
 @router.post('/bff/auth/login')
 def bff_login(body:LoginBody,request:Request,response:Response):

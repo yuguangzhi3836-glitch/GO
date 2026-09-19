@@ -210,3 +210,17 @@ def scoped_media_asset(asset_id, operation):
 # Uses the existing administrator catalogue permission and current public gates.
 from go_hotel.api.routes.hotel_direct_submission import router as direct_submission_router
 router.include_router(direct_submission_router)
+
+
+@router.get('/internal/v1/hotel-infrastructure/catalog-scope/status')
+def catalog_scope_status(p:Principal=Depends(admin_principal)):
+    return call(catalog_scope.status)
+
+@router.get('/internal/v1/hotel-infrastructure/catalog-scope/nationwide/preview')
+def catalog_scope_nationwide_preview(p:Principal=Depends(catalog_writer)):
+    return call(catalog_scope.nationwide_preview)
+
+@router.post('/internal/v1/hotel-infrastructure/catalog-scope/nationwide/activate')
+def catalog_scope_nationwide_activate(b:Payload,p:Principal=Depends(catalog_writer)):
+    d=b.model_dump(exclude_none=True)
+    return call(catalog_scope.activate_nationwide,d.get('scope_sha256',''),p.user_id,d.get('reason',''))

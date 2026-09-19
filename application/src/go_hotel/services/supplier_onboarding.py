@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import uuid
+import re
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from go_hotel.db.models import IdentityUserRow, HotelPartnerPropertyRow, HotelPartnerAuditEventRow
 from go_hotel.db.session import SessionLocal
@@ -21,14 +23,14 @@ def _now() -> datetime:
 class SupplierOnboardingService:
     """Public supplier sign-up without weakening authenticated hotel ownership checks."""
 
-    def register(self, body: dict) -> dict:
+    def register(self, body: dict, *, audit_factory=None) -> dict:
         username = str(body.get("username") or "").strip().lower()
         password = str(body.get("password") or "")
         hotel = body.get("hotel") or {}
-        if "@" not in username or len(username) > 128:
+        if len(username) > 128 or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", username):
             raise ValueError("VALID_EMAIL_REQUIRED")
-        if len(password) < 10:
-            raise ValueError("PASSWORD_TOO_SHORT")
+        if len(password) < 10 or len(password) > 128:
+            raise ValueError("PASSWORD_LENGTH_INVALID")
         if not str(hotel.get("name_zh") or "").strip():
             raise ValueError("HOTEL_NAME_REQUIRED")
         if not str(hotel.get("property_type") or "").strip():
@@ -64,7 +66,15 @@ class SupplierOnboardingService:
                     "ownership_status": "DECLARED", "publication_blocked_until_verified": True},
                 actor_id=user_id, created_at=created,
             )])
-            session.commit()
+            if audit_factory is not None:
+                session.add(audit_factory(user_id, supplier_id, property_id))
+            try:
+                session.commit()
+            except IntegrityError:
+                session.rollback()
+                if session.scalar(select(IdentityUserRow).where(IdentityUserRow.username == username)):
+                    raise ValueError("USERNAME_ALREADY_REGISTERED") from None
+                raise
         return {
             "status": "REGISTERED", "user_id": user_id, "supplier_id": supplier_id,
             "property_id": property_id, "next_step": "LOGIN_AND_BUILD_HOTEL_LIBRARY",
