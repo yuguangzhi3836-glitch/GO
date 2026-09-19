@@ -100,3 +100,39 @@ test('publication requires selection and confirmation, submission does not claim
 test('foreign asset cannot be submitted and failed binding remains actionable',async()=>{
  const s=await setup();s.media([{asset_id:'asset-1',revision:3,width:1920,height:1080}]);await s.$('#refreshHotelMedia').onclick();s.selectMedia(['foreign-asset']);s.$('#hotelMediaPublishConfirm').checked=true;await s.$('#requestHotelMediaPublication').onclick();assert.equal(s.requests.length,0);s.$('#mediaBindRole0').value='GALLERY';s.fail('MEDIA_REVISION_CONFLICT');await s.$('#mediaBindSave0').onclick();assert.match(s.$('#hotelMediaPublicationStatus').textContent,/选择已保留/);assert.doesNotMatch(s.$('#hotelMediaPublicationStatus').textContent,/MEDIA_/);
 });
+const directManifest=()=>({schema:'HOTEL_DIRECT_SUBMISSION_V1',identity:{property_id:'prop-test',supplier_id:'supplier-own',canonical_hotel_id:'canonical-own',registration_id:'reg-own',association_evidence_reference:'酒店登记资料'},inventory:{complete_confirmed:true},room_mappings:[{partner_room_id:'room-own',canonical_room_id:'canonical-room',confirmed:true,evidence_reference:'已核对物理房型'}],assets:[{asset_id:'asset-own',property_id:'prop-test',supplier_id:'supplier-own',canonical_hotel_id:'canonical-own',role:'ROOM',partner_room_id:'room-own',canonical_room_id:'canonical-room',width:1920,height:1080,rights:{rights_holder:'酒店',evidence_reference:'自有原图'}}]});
+async function loadManifest(s,m=directManifest()){s.$('#directManifestFile').files=[{size:1200,text:async()=>JSON.stringify(m)}];await s.$('#directManifestFile').onchange()}
+test('trusted manifest is previewed without writing and requires explicit confirmation',async()=>{
+ const s=await setup();await loadManifest(s);assert.equal(s.requests.length,0);assert.equal(s.$('#submitDirectManifest').disabled,true);assert.match(s.$('#directManifestPreview').innerHTML,/canonical-room/);assert.match(s.$('#directManifestPreview').innerHTML,/酒店/);
+ await s.$('#submitDirectManifest').onclick();assert.equal(s.requests.length,0);
+ s.$('#directManifestConfirm').checked=true;s.$('#directManifestConfirm').onchange();s.respond({state:'SUBMITTED',review_id:'review-1'});await s.$('#submitDirectManifest').onclick();assert.match(s.requests[0].url,/\/properties\/prop-test\/direct-submission-reviews$/);assert.deepEqual(s.requests[0].opts.body.manifest,directManifest());assert.match(s.$('#directManifestStatus').textContent,/尚未批准或发布/);assert.equal(s.$('#submitDirectManifest').disabled,true);
+});
+test('foreign property, foreign image and duplicate room targets cannot be submitted',async()=>{
+ for(const change of [m=>m.identity.property_id='other',m=>m.assets[0].property_id='other',m=>m.room_mappings.push({...m.room_mappings[0]})]){const s=await setup(),m=directManifest();change(m);await loadManifest(s,m);s.$('#directManifestConfirm').checked=true;await s.$('#submitDirectManifest').onclick();assert.equal(s.requests.length,0);assert.equal(s.$('#submitDirectManifest').disabled,true);assert.doesNotMatch(s.$('#directManifestStatus').textContent,/DIRECT_SUBMISSION/)}
+});
+test('manifest preview escapes text and explicitly treats rights as declarations',async()=>{
+ const s=await setup(),m=directManifest();m.assets[0].rights.rights_holder='<img src=x onerror=alert(1)>';await loadManifest(s,m);assert.doesNotMatch(s.$('#directManifestPreview').innerHTML,/<img/);assert.match(s.$('#directManifestPreview').innerHTML,/&lt;img/);assert.match(s.$('#directManifestPreview').innerHTML,/清单声明/);
+});
+test('file read completing after hotel switch cannot update preview or post',async()=>{
+ const s=await setup();let release;s.$('#directManifestFile').files=[{size:1200,text:()=>new Promise(resolve=>release=resolve)}];const pending=s.$('#directManifestFile').onchange();await s.ctx.supplierSwitchProperty('prop-second');release(JSON.stringify(directManifest()));await pending;s.$('#directManifestConfirm').checked=true;await s.$('#submitDirectManifest').onclick();assert.equal(s.requests.length,0);assert.doesNotMatch(s.$('#directManifestPreview').innerHTML,/canonical-own/);
+});
+test('new file invalidates confirmation and older asynchronous read cannot replace it',async()=>{
+ const s=await setup();let release;s.$('#directManifestFile').files=[{size:1200,text:()=>new Promise(resolve=>release=resolve)}];const pending=s.$('#directManifestFile').onchange();await loadManifest(s);s.$('#directManifestConfirm').checked=true;s.$('#directManifestConfirm').onchange();const old=directManifest();old.identity.canonical_hotel_id='stale-hotel';release(JSON.stringify(old));await pending;assert.doesNotMatch(s.$('#directManifestPreview').innerHTML,/stale-hotel/);assert.equal(s.$('#submitDirectManifest').disabled,false);
+});
+test('approved review is not announced publicly available without successful server read',async()=>{
+ const s=await setup();s.ctx.api.request=async url=>url.endsWith('/direct-submission-reviews')?{items:[{review_id:'review-1',state:'APPROVED'}]}:{review:{state:'APPROVED'},publication:{publicly_available:false,live_read_verified:false},conflicts:[{code:'INTERNAL_PRIVATE_DETAIL'}]};await s.$('#refreshDirectReviews').onclick();await s.$('#directReviewDetail0').onclick();assert.match(s.$('#directReviewResult0').textContent,/尚未确认可公开访问/);assert.match(s.$('#directReviewResult0').textContent,/1项/);assert.doesNotMatch(s.$('#directReviewResult0').textContent,/INTERNAL_PRIVATE_DETAIL/);
+ s.ctx.api.request=async()=>({review:{state:'APPROVED'},publication:{publicly_available:true,live_read_verified:true},conflicts:[]});await s.$('#directReviewDetail0').onclick();assert.match(s.$('#directReviewResult0').textContent,/已发布，服务端页面回读通过/);
+});
+test('trusted submit failure preserves file and confirmation but never leaks internal error',async()=>{
+ const s=await setup();await loadManifest(s);s.$('#directManifestConfirm').checked=true;s.fail('DIRECT_SUBMISSION_PRIVATE_INTERNAL');await s.$('#submitDirectManifest').onclick();assert.match(s.$('#directManifestStatus').textContent,/清单已保留/);assert.doesNotMatch(s.$('#directManifestStatus').textContent,/PRIVATE_INTERNAL/);assert.equal(s.$('#directManifestFile').disabled,false);assert.equal(s.$('#directManifestConfirm').checked,true);
+});
+test('supplier review history paginates beyond first 25 and stale detail cannot overwrite new list',async()=>{
+ const s=await setup(),urls=[];let release;
+ s.ctx.api.request=async url=>{urls.push(url);if(url.includes('/review-'))return new Promise(resolve=>release=resolve);const second=url.includes('offset=25');return {items:Array.from({length:second?1:25},(_,i)=>({review_id:'review-'+(second?25:i),state:'SUBMITTED'})),total:26}};
+ await s.$('#refreshDirectReviews').onclick();assert.match(s.$('#directReviews').innerHTML,/共26条/);const pending=s.$('#directReviewDetail0').onclick();await s.$('#directReviewsNext').onclick();assert.match(urls.at(-1),/offset=25&limit=25/);assert.match(s.$('#directReviews').innerHTML,/26–26/);release({state:'APPROVED',publication:{publicly_available:true,live_read_verified:true}});await pending;assert.doesNotMatch(s.$('#directReviewResult0').textContent,/已发布/);await s.$('#directReviewsPrev').onclick();assert.match(s.$('#directReviews').innerHTML,/1–25/);
+});
+test('trusted manifest submit rejects concurrent duplicate click and hotel switch',async()=>{
+ const s=await setup();await loadManifest(s);s.$('#directManifestConfirm').checked=true;let release,writes=0;
+ s.ctx.api.request=async(url,opts)=>{if(opts){writes++;return new Promise(resolve=>release=resolve)}return {items:[]}};
+ const pending=s.$('#submitDirectManifest').onclick();await s.$('#submitDirectManifest').onclick();assert.equal(writes,1);assert.equal(await s.ctx.supplierSwitchProperty('prop-second'),false);release({state:'SUBMITTED',review_id:'review-1'});await pending;assert.match(s.$('#directManifestStatus').textContent,/正式审核已提交/);
+});

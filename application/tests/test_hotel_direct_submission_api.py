@@ -44,9 +44,10 @@ def test_submit_exact_hash_publish_original_and_revoke(api):
     response=client.post(path,json={'manifest':manifest}); assert response.status_code==201
     row=response.json()['data']; prefix='/internal/v1/hotel-autopage/direct-submission-reviews/'+row['review_id']
     login()
-    assert client.post(prefix+'/approve',json={'expected_sha256':'0'*64}).status_code==409
+    facts_hash=client.get(prefix+'/inspection').json()['data']['facts_sha256']
+    assert client.post(prefix+'/approve',json={'expected_sha256':'0'*64,'expected_facts_sha256':facts_hash}).status_code==409
     assert client.get(prefix).json()['data']['state']=='SUBMITTED'
-    assert client.post(prefix+'/approve',json={'expected_sha256':row['manifest_sha256']}).status_code==200
+    assert client.post(prefix+'/approve',json={'expected_sha256':row['manifest_sha256'],'expected_facts_sha256':facts_hash}).status_code==200
     url='/v1/hotel-pages/direct-submissions/'+row['review_id']+'/media/'+manifest['assets'][0]['asset_id']
     assert client.get(url).status_code==404
     response=client.post(prefix+'/publish'); assert response.status_code==200, response.text

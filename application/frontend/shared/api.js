@@ -26,11 +26,14 @@ export class ApiClient{
       return this.raw(path,opts,true);
     }
   }
+  async requestBlob(path){return this.request(path,{responseType:'blob'})}
   async raw(path,opts={},auth=true){
     const headers={'Content-Type':'application/json','X-Request-ID':requestId(),...(opts.headers||{}),'X-GO-Session':'console'};
     if(this.expectedActor)headers['X-GO-Actor']=this.expectedActor;
     if(!['GET','HEAD','OPTIONS'].includes((opts.method||'GET').toUpperCase())){const c=this.csrf();if(c)headers['X-CSRF-Token']=c}
-    const res=await fetch(this.base+path,{...opts,headers,credentials:'same-origin',body:opts.body===undefined?undefined:JSON.stringify(opts.body)});
+    const {responseType,...fetchOpts}=opts;
+    const res=await fetch(this.base+path,{...fetchOpts,headers,credentials:'same-origin',body:opts.body===undefined?undefined:JSON.stringify(opts.body)});
+    if(res.ok&&responseType==='blob'){if(!/^image\/(jpeg|png|webp)(?:;|$)/i.test(res.headers.get('Content-Type')||''))throw new Error('MEDIA_TYPE_UNSUPPORTED');return res.blob()}
     let data={};try{data=await res.json()}catch{}
     if(!res.ok){const e=new Error(data.detail||data.error?.code||`HTTP_${res.status}`);e.status=res.status;e.payload=data;if(data.detail==='ACTOR_CONTEXT_CHANGED')this.onSessionChanged?.();throw e}return data
   }
@@ -40,3 +43,4 @@ export const money=v=>v==null?'—':new Intl.NumberFormat('zh-CN',{style:'curren
 export const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 export const statusClass=s=>/COMPLETED|CONFIRMED|ACTIVE|CLEARED|HEALTHY|APPROVED|RECOMMENDED/i.test(s||'')?'ok':/FAILED|DEAD|UNHEALTHY|REJECTED|NEGATIVE|SUSPENDED/i.test(s||'')?'bad':/PENDING|REVIEW|DEGRADED|PROCESSING|OBSERVATION/i.test(s||'')?'warn':'';
 export const unwrap=r=>r?.data??r;
+

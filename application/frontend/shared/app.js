@@ -1,4 +1,4 @@
-import {api,esc,statusClass,unwrap,money} from './api.js?v=20260909-depth27';
+import {api,esc,statusClass,unwrap,money} from './api.js?v=20260919-review';
 const config=window.GO_CONSOLE, $=s=>document.querySelector(s), nav=config.nav, hiddenNav=config.hiddenNav||[], routeCatalog=[...nav,...hiddenNav]; let me=null;
 api.expectedActor=config.actorType;api.onSessionChanged=()=>{me=null;loginView();$('#loginErr').textContent='账号已在其他页面切换，请重新登录当前平台。'};
 function userFacingError(message){if(message&&typeof message==='object')message=message.message||message.detail||message.code||'操作未完成';const map={INVALID_CREDENTIALS:'用户名或密码错误',MFA_REQUIRED_OR_INVALID:'MFA 动态码无效或缺失',MFA_ENROLLMENT_REQUIRED:'需要完成首次 MFA 绑定',INVALID_MFA_CODE:'MFA 动态码无效',MFA_ALREADY_ENABLED:'MFA 已绑定',USER_INACTIVE:'账号已停用',ACCOUNT_TYPE_MISMATCH:'该账号不属于当前平台，请使用对应账号登录',ACTOR_CONTEXT_CHANGED:'账号已在其他页面切换，请重新登录当前平台'};return map[message]||message}
@@ -439,6 +439,56 @@ function hotelSelectedPackage(pack,selected){
  for(const key of selected){if(key==='room_types'){result.room_types=(pack.room_types||[]).map(room=>{const {media,media_json,...facts}=room;return facts})}else{result.hotel||={};result.hotel[key.slice(6)]=pack.hotel[key.slice(6)]}}
  return result;
 }
+function supplierManifestPreview(raw,property,rooms){
+ let m;try{m=JSON.parse(raw)}catch{throw new Error('清单文件格式不正确。')}
+ if(!m||m.schema!=='HOTEL_DIRECT_SUBMISSION_V1'||!m.identity||!Array.isArray(m.room_mappings)||!Array.isArray(m.assets)||!m.inventory)throw new Error('请选择完整的酒店审核清单文件。');
+ if(m.identity.property_id!==property.property_id||(property.supplier_id&&m.identity.supplier_id!==property.supplier_id))throw new Error('清单不属于当前酒店，请切换到对应酒店。');
+ if(!m.room_mappings.length||!m.assets.length||!m.inventory.complete_confirmed)throw new Error('清单缺少完整房型或图片，请先补齐资料。');
+ const seen=new Set(),targets=new Set();
+ for(const r of m.room_mappings){if(!r||!r.confirmed||!r.canonical_room_id||!rooms.some(x=>x.room_type_id===r.partner_room_id)||seen.has(r.partner_room_id)||targets.has(r.canonical_room_id))throw new Error('房型对应不完整、重复或不属于当前酒店，请核对。');seen.add(r.partner_room_id);targets.add(r.canonical_room_id)}
+ if(rooms.some(r=>!seen.has(r.room_type_id)))throw new Error('清单未覆盖当前酒店全部房型，请核对。');
+ if(m.assets.some(a=>!a||a.property_id!==property.property_id||a.supplier_id!==m.identity.supplier_id||a.canonical_hotel_id!==m.identity.canonical_hotel_id||!a.rights||(a.role==='ROOM'&&!m.room_mappings.some(r=>r.partner_room_id===a.partner_room_id&&r.canonical_room_id===a.canonical_room_id))))throw new Error('图片所属酒店、房型或授权资料不完整，请核对。');
+ return m;
+}
+function supplierManifestSummary(m,rooms){
+ const id=m.identity,cell=x=>`<td style="overflow-wrap:anywhere">${esc(x??'待核对')}</td>`;
+ return `<h4>酒店身份</h4><p>酒店编号：${esc(id.property_id)} · 正式酒店编号：${esc(id.canonical_hotel_id)} · 登记编号：${esc(id.registration_id)}</p><p>关联依据：${esc(id.association_evidence_reference)}</p><h4>房型对应（${m.room_mappings.length}）</h4><div style="overflow-x:auto"><table><thead><tr><th>酒店房型</th><th>正式房型</th><th>核对依据</th></tr></thead><tbody>${m.room_mappings.map(r=>`<tr>${cell(rooms.find(x=>x.room_type_id===r.partner_room_id)?.name_zh||r.partner_room_id)}${cell(r.canonical_room_id)}${cell(r.evidence_reference)}</tr>`).join('')}</tbody></table></div><h4>原图与授权（${m.assets.length}）</h4><p>以下是清单声明；原图文件、当前授权及资料冲突仍由服务端核验。</p><div style="overflow-x:auto"><table><thead><tr><th>图片编号 / 用途</th><th>原图尺寸</th><th>权利人</th><th>授权依据</th><th>授权截止</th></tr></thead><tbody>${m.assets.map(a=>`<tr>${cell(a.asset_id+' / '+a.role)}${cell(a.width+'×'+a.height)}${cell(a.rights.rights_holder)}${cell(a.rights.evidence_reference)}${cell(a.rights.expires_at||'未声明到期时间')}</tr>`).join('')}</tbody></table></div>`;
+}
+function supplierTrustedReviewPanel(){return `<section class="card"><h3>正式酒店、房型与图片审核</h3><p>上传已整理的审核清单文件，核对后提交管理员审核。清单需要正式酒店登记、完整物理房型对应、酒店高清原图及授权依据；来源平台房型和图片数量不会自动认定为正式资料。</p><p>尚无清单时，请先由资料整理人员完成上述核对。本入口不会自动生成对应关系或批准图片授权。</p><label>审核清单文件<input id="directManifestFile" type="file" accept=".json,application/json"></label><div id="directManifestPreview" aria-live="polite"></div><label><input id="directManifestConfirm" type="checkbox">已核对当前酒店、全部物理房型及图片授权资料</label><button class="btn primary" id="submitDirectManifest" disabled>提交正式审核</button><p id="directManifestStatus" role="status"></p><button class="btn" id="refreshDirectReviews">刷新审核与发布状态</button><div id="directReviews" aria-live="polite"></div></section>`}
+async function supplierMountTrustedReview(property,rooms,endpoint,isCurrent){
+ let manifest=null,fileSequence=0,reading=false,submitting=false,listSequence=0,reviewOffset=0;
+ const status=()=>$('#directManifestStatus'),button=()=>$('#submitDirectManifest');
+ const update=()=>{if(isCurrent())button().disabled=!manifest||reading||submitting||!$('#directManifestConfirm').checked};
+ $('#directManifestConfirm').onchange=update;
+ $('#directManifestFile').onchange=async()=>{
+  if(!isCurrent()||submitting)return;const seq=++fileSequence,file=$('#directManifestFile').files?.[0];manifest=null;reading=true;$('#directManifestConfirm').checked=false;$('#directManifestPreview').innerHTML='';update();
+  try{if(!file)throw new Error('请选择审核清单文件。');if(file.size>5*1024*1024)throw new Error('清单超过5MB，请检查文件。');const raw=await file.text();if(!isCurrent()||seq!==fileSequence)return;manifest=supplierManifestPreview(raw,property,rooms);$('#directManifestPreview').innerHTML=supplierManifestSummary(manifest,rooms);status().textContent='仅预览，尚未提交；请核对后勾选确认。'}
+  catch(e){if(isCurrent()&&seq===fileSequence)status().textContent=e instanceof SyntaxError?'清单文件格式不正确。':(e.message||'文件无法读取，请重新选择。')}
+  finally{if(seq===fileSequence){reading=false;update()}}
+ };
+ async function refresh(){
+  const seq=++listSequence;
+  try{const result=unwrap(await api.request(endpoint+'/direct-submission-reviews'+(reviewOffset?'?offset='+reviewOffset+'&limit=25':'')));if(!isCurrent()||seq!==listSequence)return;if(!Array.isArray(result?.items))throw new Error('INVALID_RESPONSE');
+   const labels={SUBMITTED:'待管理员审核',APPROVED:'审核通过（发布状态需另行核验）',REVOKED:'审核已撤销'};
+   $('#directReviews').innerHTML=result.items.map((r,i)=>`<section><p>${esc(labels[r.state]||'状态待核验')} · ${esc(r.review_id)}</p><button class="btn" id="directReviewDetail${i}">查看当前核验及发布状态</button><div id="directReviewResult${i}" role="status"></div></section>`).join('')||'<p>当前酒店尚无正式审核申请。</p>';
+   const total=Number.isInteger(result.total)?result.total:result.items.length;
+   $('#directReviews').innerHTML+=`<p>共${total}条审核记录，当前${result.items.length?reviewOffset+1:0}–${reviewOffset+result.items.length}条</p><button class="btn" id="directReviewsPrev" ${reviewOffset===0?'disabled':''}>上一页</button><button class="btn" id="directReviewsNext" ${reviewOffset+result.items.length>=total?'disabled':''}>下一页</button>`;
+   $('#directReviewsPrev').onclick=()=>{if(reviewOffset>0){reviewOffset=Math.max(0,reviewOffset-25);return refresh()}};
+   $('#directReviewsNext').onclick=()=>{if(reviewOffset+result.items.length<total){reviewOffset+=25;return refresh()}};
+   result.items.forEach((r,i)=>{$('#directReviewDetail'+i).onclick=async()=>{try{const detail=unwrap(await api.request(endpoint+'/direct-submission-reviews/'+encodeURIComponent(r.review_id)));if(!isCurrent()||seq!==listSequence)return;const pub=detail.publication||{},conflicts=detail.conflicts||[];$('#directReviewResult'+i).textContent=(pub.publicly_available&&pub.live_read_verified?'已发布，服务端页面回读通过。':'尚未确认可公开访问。')+(conflicts.length?` 发现${conflicts.length}项资料或授权冲突，请管理员查看并处理。`:'')+' '+(labels[detail.review?.state||detail.state||r.state]||'状态待核验')}catch(e){if(isCurrent()&&seq===listSequence)$('#directReviewResult'+i).textContent='状态读取未完成，请重试。'}}});
+  }catch(e){if(isCurrent()&&seq===listSequence)$('#directReviews').textContent='审核状态暂时无法读取，请重试。'}
+ }
+ $('#refreshDirectReviews').onclick=()=>{reviewOffset=0;return refresh()};
+ button().onclick=async()=>{
+  if(!isCurrent()||!manifest||reading||submitting||supplierImportBusy||!$('#directManifestConfirm').checked)return;
+  submitting=true;supplierImportBusy=true;update();$('#directManifestFile').disabled=true;
+  try{const result=unwrap(await api.request(endpoint+'/direct-submission-reviews',{method:'POST',body:{manifest}}));if(!isCurrent())return;if(result?.state!=='SUBMITTED'||!result.review_id)throw new Error('INVALID_RESPONSE');manifest=null;$('#directManifestConfirm').checked=false;status().textContent='正式审核已提交，尚未批准或发布。';await refresh()}
+  catch(e){if(isCurrent())status().textContent='提交未确认，请先刷新审核记录再决定是否重试；清单已保留。'}
+  finally{submitting=false;supplierImportBusy=false;if(isCurrent()){$('#directManifestFile').disabled=false;update()}}
+ };
+ await refresh();
+}
+
 async function supplierOneClickBuild(){
  const buildSequence=++supplierBuildSequence,buildRoute=typeof location==='undefined'?null:location.hash,stillBuilding=()=>buildSequence===supplierBuildSequence&&(typeof location==='undefined'||location.hash===buildRoute);
  const props=unwrap(await api.request('/v1/supplier/properties'))||[];if(!stillBuilding())return;const p=supplierChooseProperty(props);
@@ -448,8 +498,8 @@ async function supplierOneClickBuild(){
  const options=Object.entries(providers).map(([key,value])=>`<option value="${esc(key)}">${esc(value.label||key)}</option>`).join('');
  const endpoint=`/v1/supplier/properties/${encodeURIComponent(p.property_id)}`;
  const graph=unwrap(await api.request(endpoint+'/product-graph'))||{},rooms=graph.room_types||[];if(!stillBuilding())return;
- const body=`<section class="card"><h3>酒店资料导入</h3><p>当前酒店：${esc(p.name_zh)}。酒店自主选择导入内容；预览只在当前页面整理，不保存资料。</p><label>来源平台<select id="buildProvider">${options}</select></label><button class="btn" id="connectProvider">关联平台账号</button><p>账号、密码和验证码不进入GO。平台授权暂不可用时，可使用酒店资料包。</p></section><section class="card"><h3>选择要导入的资料</h3><p>粘贴酒店资料包后点击预览，再勾选需要保存的内容。图片由酒店直接上传高清文件；资料包里的图片不会搬入。</p><label for="hotelPackage">酒店资料包</label><textarea id="hotelPackage" rows="12" placeholder='{"hotel":{"name_zh":"酒店名称"},"room_types":[]}'></textarea><button class="btn" id="previewHotelPackage">预览资料（不保存）</button><div id="hotelImportPreview" aria-live="polite"></div><button class="btn primary" id="importHotelPackage" disabled>确认导入所选资料</button><p id="hotelImportStatus" role="status"></p></section><section class="card"><h3>酒店直接上传高清图片</h3><p>支持JPEG、PNG、WEBP，单张不超过15MB及4000万像素，短边至少720、长边至少1280像素。上传后进入草稿，尚未发布。</p><label>图片文件<input id="hotelMediaFile" type="file" accept="image/jpeg,image/png,image/webp"></label><label>图片用途<select id="hotelMediaRole"><option value="GALLERY">酒店图库</option><option value="HERO">酒店首图</option><option value="ROOM">房型图片</option></select></label><label>对应房型<select id="hotelMediaRoom"><option value="">请选择房型</option>${rooms.map(r=>`<option value="${esc(r.room_type_id)}">${esc(r.name_zh)}</option>`).join('')}</select></label><label>图片权利人<input id="hotelMediaHolder"></label><label>授权依据或酒店自有素材记录<input id="hotelMediaEvidence"></label><label><input id="hotelMediaRights" type="checkbox">酒店确认有权将该图片用于GO展示</label><button class="btn primary" id="uploadHotelMedia">上传高清图片</button><p id="hotelMediaStatus" role="status"></p></section><section class="card"><h3>图片绑定与发布审核</h3><p>先绑定到酒店首图、图库或具体房型，再提交审核。提交后仍需通过授权及酒店网页发布检查。</p><button class="btn" id="refreshHotelMedia">刷新图片</button><div id="hotelMediaList"></div><label><input type="checkbox" id="hotelMediaPublishConfirm">已核对选中图片的酒店、房型及展示授权</label><button class="btn primary" id="requestHotelMediaPublication">提交图片发布审核</button><p id="hotelMediaPublicationStatus" role="status"></p></section>`;
- $('#view').innerHTML=supplierStructuredShell('/one-click-build',body,{'当前酒店':p.name_zh,'资料状态':supplierFriendlyValue(p.publication_state),'导入方式':'酒店自主选择','图片':'酒店直接上传'});
+ const body=`<section class="card"><h3>酒店资料导入</h3><p>当前酒店：${esc(p.name_zh)}。酒店自主选择导入内容；预览只在当前页面整理，不保存资料。</p><label>来源平台<select id="buildProvider">${options}</select></label><button class="btn" id="connectProvider">关联平台账号</button><p>账号、密码和验证码不进入GO。平台授权暂不可用时，可使用酒店资料包。</p></section><section class="card"><h3>选择要导入的资料</h3><p>粘贴酒店资料包后点击预览，再勾选需要保存的内容。图片由酒店直接上传高清文件；资料包里的图片不会搬入。</p><label for="hotelPackage">酒店资料包</label><textarea id="hotelPackage" rows="12" placeholder='{"hotel":{"name_zh":"酒店名称"},"room_types":[]}'></textarea><button class="btn" id="previewHotelPackage">预览资料（不保存）</button><div id="hotelImportPreview" aria-live="polite"></div><button class="btn primary" id="importHotelPackage" disabled>确认导入所选资料</button><p id="hotelImportStatus" role="status"></p></section><section class="card"><h3>酒店直接上传高清图片</h3><p>支持JPEG、PNG、WEBP，单张不超过15MB及4000万像素，短边至少720、长边至少1280像素。上传后进入草稿，尚未发布。</p><label>图片文件<input id="hotelMediaFile" type="file" accept="image/jpeg,image/png,image/webp"></label><label>图片用途<select id="hotelMediaRole"><option value="GALLERY">酒店图库</option><option value="HERO">酒店首图</option><option value="ROOM">房型图片</option></select></label><label>对应房型<select id="hotelMediaRoom"><option value="">请选择房型</option>${rooms.map(r=>`<option value="${esc(r.room_type_id)}">${esc(r.name_zh)}</option>`).join('')}</select></label><label>图片权利人<input id="hotelMediaHolder"></label><label>授权依据或酒店自有素材记录<input id="hotelMediaEvidence"></label><label><input id="hotelMediaRights" type="checkbox">酒店确认有权将该图片用于GO展示</label><button class="btn primary" id="uploadHotelMedia">上传高清图片</button><p id="hotelMediaStatus" role="status"></p></section><section class="card"><h3>图片绑定与发布意向</h3><p>这里仅登记图片发布意向，不能代替下方正式酒店、房型与图片审核，也不会发布网页。</p><button class="btn" id="refreshHotelMedia">刷新图片</button><div id="hotelMediaList"></div><label><input type="checkbox" id="hotelMediaPublishConfirm">已核对选中图片的酒店、房型及展示授权</label><button class="btn primary" id="requestHotelMediaPublication">登记图片发布意向</button><p id="hotelMediaPublicationStatus" role="status"></p></section>`;
+ $('#view').innerHTML=supplierStructuredShell('/one-click-build',body+supplierTrustedReviewPanel(),{'当前酒店':p.name_zh,'资料状态':supplierFriendlyValue(p.publication_state),'导入方式':'酒店自主选择','图片':'酒店直接上传'});
  const packageNode=$('#hotelPackage'),isCurrent=()=>stillBuilding()&&supplierSelectedPropertyId===p.property_id&&$('#hotelPackage')===packageNode;
  let preview=null,busy=false;
  const invalidate=()=>{preview=null;$('#importHotelPackage').disabled=true;$('#hotelImportPreview').innerHTML='';$('#hotelImportStatus').textContent='资料已变化，请重新预览。'};
@@ -520,10 +570,11 @@ async function supplierOneClickBuild(){
   supplierImportBusy=true;
   try{const result=unwrap(await api.request(endpoint+'/media-publication-requests',{method:'POST',body:{asset_ids:ids,confirmed:true}}));if(!isCurrent())return;
    if(result.state!=='SUBMITTED'||result.publication_state!=='PUBLISH_REQUESTED')throw new Error('PUBLICATION_NOT_CONFIRMED');
-   $('#hotelMediaPublicationStatus').textContent='图片发布审核已提交，尚未发布；请等待授权及酒店网页审核结果。';
+   $('#hotelMediaPublicationStatus').textContent='图片发布意向已登记，尚未发布；请继续提交正式酒店、房型与图片审核。';
   }catch(e){if(isCurrent())$('#hotelMediaPublicationStatus').textContent=hotelImportError(e)}finally{supplierImportBusy=false}
  };
  await refreshMedia();
+ if(isCurrent())await supplierMountTrustedReview(p,rooms,endpoint,isCurrent);
 
 }
 async function supplierPropertyProfile(){const rows=unwrap(await api.request('/v1/supplier/properties'))||[];const p=supplierChooseProperty(rows);if(!p){const create=`<section class="card"><h3>添加我的酒店</h3><p class="muted">GO 会自动建立全国酒店库。若您的酒店尚未被发现，可在酒店端补充最少身份信息；后续资料可由 GO AI 导入并请您核对。</p><div class="business-form-grid"><label class="business-field"><span>酒店中文名*</span><input id="propNameZh"></label><label class="business-field"><span>酒店英文名</span><input id="propNameEn"></label><label class="business-field"><span>酒店类型*</span><select id="propType"><option value="HOTEL">酒店</option><option value="RESORT">度假酒店</option></select></label><label class="business-field"><span>联系电话</span><input id="propPhone" type="tel"></label></div><button class="btn primary" id="createProperty">添加我的酒店</button></section>`;$('#view').innerHTML=supplierStructuredShell('/property',create+supplierStructuredEmpty('/property','后续资料'),{'资料完整度':'0%','基础资料':'待建立','政策':'待完善','媒体':'待完善'});$('#createProperty').onclick=async()=>{try{await api.request('/v1/supplier/properties',{method:'POST',body:{name_zh:$('#propNameZh').value,name_en:$('#propNameEn').value||null,property_type:$('#propType').value,contacts:{phone:$('#propPhone').value},operations:{}}});notice('酒店已添加，后续将进入资料核对与绑定流程');supplierPropertyProfile()}catch(e){notice(e.message,true)}};return}
