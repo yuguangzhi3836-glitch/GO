@@ -110,7 +110,9 @@ class UnifiedMoneyMovementService:
     roots_by_intent={x.payment_intent_id:x.business_id for x in s.scalars(select(OrderRoot).where(OrderRoot.payment_intent_id.in_({m.root_payment_intent_id for m in movements}))).all()} if movements else {}
     block+=production_connector_runtime_service.unresolved_incident_blockers(set(roots_by_intent.values()))
    except Exception:
-    pass
+    # The incident authority is part of close admissibility. A failed lookup
+    # cannot be interpreted as "no incidents".
+    block.append('FINANCE_INCIDENT_CHECK_UNAVAILABLE')
    payload=scope|{'movements':[x.money_movement_id for x in movements],'debit':debit,'credit':credit,'blockers':block}
    r=Close(finance_scoped_close_batch_id=ident('fscb'),legal_entity_id=b['legal_entity_id'],currency=b['currency'],period_start=b['period_start'],period_end=b['period_end'],cutoff_at=cutoff,state='BLOCKED' if block or debit!=credit else 'PENDING_APPROVAL',movement_count=len(movements),debit_minor=debit,credit_minor=credit,difference_minor=debit-credit,blockers_json=block,scope_hash=scope_hash,evidence_hash=digest(payload),requested_by=actor,created_at=now());s.add(r);s.flush()
    for x in movements:s.add(Line(finance_scoped_close_line_id=ident('fscl'),finance_scoped_close_batch_id=r.finance_scoped_close_batch_id,source_type='MONEY_MOVEMENT',source_id=x.money_movement_id,state=x.state,amount_minor=x.amount_minor,evidence_hash=digest(out(x))))
@@ -128,7 +130,9 @@ class UnifiedMoneyMovementService:
     roots_by_intent={x.payment_intent_id:x.business_id for x in s.scalars(select(OrderRoot).where(OrderRoot.payment_intent_id.in_({m.root_payment_intent_id for m in movements}))).all()} if movements else {}
     block+=production_connector_runtime_service.unresolved_incident_blockers(set(roots_by_intent.values()))
    except Exception:
-    pass
+    # The incident authority is part of close admissibility. A failed lookup
+    # cannot be interpreted as "no incidents".
+    block.append('FINANCE_INCIDENT_CHECK_UNAVAILABLE')
    if block or debit!=credit or len(movements)!=r.movement_count or debit!=r.debit_minor or credit!=r.credit_minor:raise ValueError('FINANCE_CLOSE_SCOPE_CHANGED_REPREPARE_REQUIRED')
    if r.state!='PENDING_APPROVAL':raise ValueError('FINANCE_CLOSE_NOT_PENDING_APPROVAL')
    r.state='CLOSED';r.approved_by=actor;r.closed_at=now();s.commit();return out(r)
