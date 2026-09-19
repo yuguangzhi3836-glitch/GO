@@ -10,9 +10,12 @@ and takes its lock with whatever primitive the host actually has.
 The lock is taken here rather than borrowed from the Bridge on purpose.  On a Windows
 workstation the Bridge's `fcntl` is a no-op stand-in installed by the audit harness, so a
 race guarded by *that* would prove nothing.  `fcntl.flock` and `msvcrt.locking` are both
-exclusive, non-blocking, and released by the kernel when the descriptor or the process
-goes away, which is the discipline `Ledger.held()` applies where it runs for real.  Which
-one ran travels with the outcome, so a green result can never be read as more than it is.
+exclusive and released by the kernel when the descriptor or the process goes away, which
+is the discipline `Ledger.held()` applies where it runs for real -- and, as there, it
+waits: `flock(LOCK_EX)` with no `LOCK_NB`.  A second tick does not crash against a held
+lock, it waits and then reads what the first one wrote, which is the whole reason the
+second of two racers is expected to record a refusal rather than to fail.  Which primitive
+ran travels with the outcome, so a green result can never be read as more than it is.
 """
 import datetime as dt
 import json
@@ -33,17 +36,18 @@ PRIMITIVE = "fcntl.flock" if fcntl else ("msvcrt.locking" if msvcrt else None)
 
 
 def lock(descriptor):
-    """Exclusive, non-blocking, or an OSError whose errno says which failure it was."""
+    """Exclusive and waiting, exactly as `Ledger.held()` takes it -- or an OSError naming a
+    host with no locking primitive at all."""
     if fcntl is not None:
-        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(descriptor, fcntl.LOCK_EX)
         return
     if msvcrt is not None:
         # A byte-range lock needs a byte to lock; the lock file is ours and holds
-        # nothing, so giving it one costs nothing.
+        # nothing, so giving it one costs nothing.  LK_LOCK waits for the range.
         if os.fstat(descriptor).st_size == 0:
             os.write(descriptor, b"\0")
         os.lseek(descriptor, 0, os.SEEK_SET)
-        msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
+        msvcrt.locking(descriptor, msvcrt.LK_LOCK, 1)
         return
     raise OSError(38, "no file locking primitive on this host")
 
