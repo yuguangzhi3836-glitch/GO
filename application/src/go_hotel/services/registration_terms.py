@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 _REGISTRY_ROOT = Path(__file__).resolve().parents[1] / 'legal' / 'registration'
-_DRAFT_VERSION = '2026-09-19-draft-v1'
+_DRAFT_VERSION = '2026-09-19-draft-v2'
 _REQUIRED = {
     'consumer': ('consumer_service_terms', 'privacy_policy', 'personal_vault_terms'),
     'supplier': ('supplier_service_terms', 'privacy_policy', 'data_processing_terms',
