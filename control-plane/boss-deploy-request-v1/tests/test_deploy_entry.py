@@ -2694,3 +2694,65 @@ class RemoteReadTests(unittest.TestCase):
         self.assertEqual(outcome, "readable_file_unavailable")
         removals = [c for c in calls if "/usr/bin/rm" in c]
         self.assertEqual(len(removals), 1)
+
+
+class ShippedUnitTests(unittest.TestCase):
+    """The unit that ships has to name every directory the bridge writes.
+
+    `ProtectSystem=strict` makes the filesystem read-only for the service except for the
+    paths in `ReadWritePaths`, so a directory the code writes but the unit does not name
+    is a directory the service cannot write.  The code already turns that into
+    `Reject('plan_store_unwritable')` so that one unprocessable DEPLOY Request cannot end
+    the poll tick -- the refusal is right, the unit being wrong is not.
+
+    It is also invisible from the code side.  The failure mode was found by reading the
+    live unit, was handled in the code, and the unit still did not name the plan store,
+    so on a host installed from this repository every DEPLOY is refused.  A test that
+    only reads the unit would have agreed with the unit.  These assertions bind the
+    shipped unit to the path the code actually writes, which is the only comparison that
+    can catch it.
+    """
+
+    UNIT = ROOT.parents[1] / 'command-center/systemd/go-boss-request-bridge.service'
+
+    def directives(self, name):
+        """Every value of a systemd directive, with the line endings normalised."""
+        text = self.UNIT.read_bytes().decode('utf-8').replace('\r\n', '\n')
+        values = []
+        for line in text.split('\n'):
+            if line.startswith(name + '='):
+                values.extend(line.split('=', 1)[1].split())
+        return values
+
+    def test_the_unit_is_shipped_and_is_actually_sandboxed(self):
+        self.assertTrue(self.UNIT.is_file(), str(self.UNIT))
+        self.assertIn('strict', self.directives('ProtectSystem'))
+
+    def test_the_plan_store_the_code_writes_is_named_in_readwrite_paths(self):
+        allowed = self.directives('ReadWritePaths')
+        store = str(gate.STORE)
+        self.assertIn(store, allowed,
+                      'the bridge registers derived plans under %s and the shipped unit '
+                      'does not allow writing it, so every DEPLOY would be refused with '
+                      'plan_store_unwritable' % store)
+
+    def test_the_other_directories_the_bridge_writes_are_named_too(self):
+        """A unit that named a subset of the writable paths would sandbox the rest.
+
+        The ledger and the channel config are written by the same process; naming only
+        the plan store would move the failure rather than remove it.
+        """
+        allowed = self.directives('ReadWritePaths')
+        self.assertTrue(any(path.startswith('/var/lib/go-command-center/')
+                            for path in allowed), allowed)
+        self.assertTrue(any(path.endswith('boss-request-bridge-v1.json')
+                            for path in allowed), allowed)
+
+    def test_the_path_in_the_unit_is_the_path_in_the_code(self):
+        """systemd cannot import Python, so the literal has to be compared somewhere.
+
+        `gate.STORE` is the single definition of where a plan lands; this is what keeps
+        the unit's literal honest against a rename on either side.
+        """
+        self.assertEqual(str(gate.STORE), '/etc/go-command-center/deployment-plans-v1')
+        self.assertIn(str(gate.STORE), self.directives('ReadWritePaths'))
