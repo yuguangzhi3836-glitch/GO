@@ -47,10 +47,11 @@ _RELEASE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 _CONTRACT = re.compile(r"^[0-9a-f]{64}$")
 _COLLECTOR_SHA256 = "dff91265a5e3e80704277664f1952129ff19c6c7174d78e9b3e66125b9618ccc"
 _CANARY_SHA256 = "f93d4365116a52942c457accb41be53625d3f3f1a7a6eafe92d53c457c86aed1"
-# Updated by CCV1-85 (WP-4A): deploy_runtime.py now resolves the candidate the
-# Task names and applies the migration rule before it mutates anything.  Only this
-# value changed; the other four pins and the shape of the pin set are untouched.
-_DEPLOY_SHA256 = "ef43bd50da9a3a8ca79a274fd909bd7690b42fbbe570e7d89255c5a200a4ff96"
+# Updated by CCV1-85 (WP-4A) and again by CCV1-95 (WP-9): deploy_runtime.py resolves
+# the candidate the Task names, applies the migration rule, and reads the media cache
+# on both sides of the mutation.  Only this value changed; the other four pins and the
+# shape of the pin set are untouched.
+_DEPLOY_SHA256 = "8337066f247497a0afa96695470d1cf3639a1e4114f315f2244ced56d38f7dd9"
 _ROLLBACK_SHA256 = "a49e12eafab85331477241a4db791ad1c38133b9a7925eade627c1c27cf5e9f5"
 _ARTIFACT_SHA256 = "736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b"
 
