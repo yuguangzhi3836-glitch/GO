@@ -1,0 +1,21 @@
+PASS candidate component bytes and full-source SHA are served unchanged
+PASS two selected hotel endpoints return their distinct room sets
+PASS selected-field mapped room import and repeat preserve room count and other hotel
+PASS decoded high-resolution upload and exact original bytes round trip
+PASS cross-hotel room binding rejected and selected room binding remains nonpublic
+PASS publication request does not publish hotel or leak media to other hotel
+{
+  "status": "PASS",
+  "passed": 6,
+  "tests": [
+    "candidate component bytes and full-source SHA are served unchanged",
+    "two selected hotel endpoints return their distinct room sets",
+    "selected-field mapped room import and repeat preserve room count and other hotel",
+    "decoded high-resolution upload and exact original bytes round trip",
+    "cross-hotel room binding rejected and selected room binding remains nonpublic",
+    "publication request does not publish hotel or leak media to other hotel"
+  ],
+  "app_js_sha256": "d367c454789387cd2437821e0c55edc4dc30625daaee9fcaf766af8b4020e7f2",
+  "browser_acceptance": "BLOCKED_ERR_BLOCKED_BY_CLIENT",
+  "authentication": "SYNTHETIC_TEST_DEPENDENCY_OVERRIDE"
+}

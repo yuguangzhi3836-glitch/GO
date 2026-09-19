@@ -1,0 +1,29 @@
+✔ preview is local and explicitly unsaved; only chosen fields are submitted without OTA images (4.00875ms)
+✔ empty selection and stale preview never write hotel data (0.92929ms)
+✔ failed import retains text and choices and suppresses internal error codes (0.999235ms)
+✔ unexpected import response cannot report success (0.869841ms)
+✔ direct image upload sends bytes and rights and reports verified dimensions as unpublished draft (1.034098ms)
+✔ image rejection keeps file and rights available for retry with Chinese quality feedback (1.664498ms)
+✔ missing rights or oversized file never sends an upload (0.680605ms)
+✔ invalid JSON never enables confirmation (0.668717ms)
+✔ source room selection requires mapping confirmation without blocking hotel fields (0.995219ms)
+✔ malformed room collection cannot enable import (1.909497ms)
+✔ preview escapes supplied hotel markup (0.696269ms)
+✔ upload response must confirm nonpublished draft and valid dimensions (1.316594ms)
+✔ double submission during pending import sends a single request (0.834217ms)
+✔ explicit source room mapping sends confirmed target outside hotel package (0.768268ms)
+✔ new physical room is explicit and changing target clears confirmation (0.785894ms)
+✔ mapping refuses foreign target and duplicated target (0.697231ms)
+✔ hotel selection scopes writes and preserves per-hotel import draft (1.102851ms)
+✔ switch refused during in-flight mutation; completion cannot write to another hotel (1.666982ms)
+✔ binding uses current asset revision and selected property room (0.810031ms)
+✔ publication requires selection and confirmation, submission does not claim published (0.706825ms)
+✔ foreign asset cannot be submitted and failed binding remains actionable (0.664892ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 110.009711
