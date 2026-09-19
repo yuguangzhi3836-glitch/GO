@@ -4,7 +4,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from . import deployment_actions
 
-VERSION = "0.5.7-rebuilt"
+VERSION = "0.5.8-candidate-digest"
 MAX_EXECUTOR_ATTEMPTS_PER_TASK = 1
 ALLOWLIST = {"CONTROL_PLANE_HEALTH", "HK_STAGING_CANARY", "HK_STAGING_DEPLOY", "HK_STAGING_VERIFY", "HK_STAGING_ROLLBACK"}
 
@@ -146,12 +146,17 @@ def evidence(task,result):
     record = {"schema_version":"1","task_id":task["task_id"],"nonce":task["nonce"],"action_id":task["action_id"],"environment":task["environment"],"status":"SUCCESS","started_at":stamp,"completed_at":stamp,"agent_version":VERSION,"gate_results":{"schema":"PASS","environment":"PASS","authority":"PASS","signature":"PASS","expiry":"PASS","replay":"PASS","allowlist":"PASS"},"executor_result":result}
     if task["action_id"] != "CONTROL_PLANE_HEALTH":
         required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results"}
-        if task["action_id"]=="HK_STAGING_DEPLOY": required |= {"deploy_record_schema_version","deploy_record_id","deploy_record_sha256"}
+        if task["action_id"]=="HK_STAGING_DEPLOY": required |= {"deploy_record_schema_version","deploy_record_id","deploy_record_sha256","candidate_contract_sha256"}
         if task["action_id"]=="HK_STAGING_ROLLBACK": required |= {"source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256"}
         if not isinstance(result,dict) or set(result) != required: raise Reject("EXECUTOR_RESULT_REJECT")
         record.update({"executor_version":result["executor_version"],"release_id":result["release_id"],"candidate_image_id":result["candidate_image_id"],"expected_current_image_id":result["expected_current_image_id"],"executor_result":result["result"],"gate_results":result["gate_results"]})
         if task["action_id"]=="HK_STAGING_DEPLOY":
-            record.update({"deploy_record_schema_version":result["deploy_record_schema_version"],"deploy_record_id":result["deploy_record_id"],"deploy_record_sha256":result["deploy_record_sha256"]})
+            record.update({"deploy_record_schema_version":result["deploy_record_schema_version"],"deploy_record_id":result["deploy_record_id"],"deploy_record_sha256":result["deploy_record_sha256"],
+                # The digest the executor loaded and recomputed, recorded on the Evidence so
+                # the Command Center can check that the plan, the Task and the execution all
+                # named one candidate.  It also has to equal what the Task asked for, which
+                # the parser above already refused to accept otherwise.
+                "candidate_contract_sha256":result["candidate_contract_sha256"]})
         if task["action_id"]=="HK_STAGING_ROLLBACK":
             record.update({key:result[key] for key in ("source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256")})
     return record

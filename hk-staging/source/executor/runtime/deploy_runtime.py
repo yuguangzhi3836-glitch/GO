@@ -1,5 +1,5 @@
 """Fixed, fail-closed HK-STAGING DEPLOY runtime.  No caller controls Docker argv."""
-import hashlib,json,os,pathlib,re,secrets,tempfile,time
+import hashlib,importlib.util,json,os,pathlib,re,secrets,stat,tempfile,time
 
 DOCKER='/usr/bin/docker'; PROJECT='go-822-staging'
 COMPOSE='/home/go-stg/releases/r31-5-final-completion-20260906/GO_HYATT_DIRECT_BOOKING_R3_1_5_TEST_BOOTSTRAP_IDENTITY_FIX_20260906/deploy/docker-compose.r31-hk-staging.yml'
@@ -165,7 +165,59 @@ def _wait_for_api_health(runner,candidate,sleeper=time.sleep):
             if attempt + 1 == API_READINESS_ATTEMPTS:
                 raise Reject('E_DEPLOY_API_READINESS_TIMEOUT')
             sleeper(API_READINESS_INTERVAL_SECONDS)
-def run_deploy(release,candidate,package,expected,binding,runner,collector,artifact,sleeper=time.sleep):
+# The two helpers this runtime composes are pinned here, beside the code that loads
+# them.  The launcher pins this file and this file pins its own direct dependencies, so
+# the trust root stays a chain rather than a list: none of the three can be swapped
+# without the layer above it noticing.  (CCV1-85 keeps the launcher's own pin set at
+# five modules; only its value for this file changes.)
+_CANDIDATE_SOURCE_SHA256 = "f9855b4c706678f9dfd79eac46343ca79fd7e8f3536fd92e60d8c4e37178c373"
+_MIGRATION_GUARD_SHA256 = "89a0cc3007eafe7533ba88f6f8eb2982a10fa9a1c90789f480530329cda5634a"
+
+
+def _load_sibling(name, expected_sha256, module_name):
+    runtime_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)))
+    path = os.path.join(runtime_dir, name + ".py")
+    try:
+        if not stat.S_ISREG(os.lstat(path).st_mode): raise ValueError(name+" path")
+        with open(path, "rb") as handle:
+            if hashlib.sha256(handle.read()).hexdigest() != expected_sha256: raise ValueError(name+" integrity")
+    except (OSError, ValueError) as exc:
+        raise Reject("E_DEPLOY_SIBLING_INTEGRITY") from exc
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None: raise Reject("E_DEPLOY_SIBLING_INTEGRITY")
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+
+def _load_candidate_source():
+    return _load_sibling("candidate_source", _CANDIDATE_SOURCE_SHA256, "_go_hk_candidate_source")
+
+
+def _load_migration_guard():
+    return _load_sibling("migration_guard", _MIGRATION_GUARD_SHA256, "_go_hk_migration_guard")
+
+
+def run_deploy(release,candidate,package,expected,binding,runner,collector,artifact,candidate_contract_sha256=None,sleeper=time.sleep):
+    """The DEPLOY path, with the candidate's identity and the migration rule settled first.
+
+    CCV1-85 (WP-4A).  Two questions are answered before this function can reach any
+    mutation: *which candidate is this,* answered by loading the converged fact the
+    Task's digest addresses and recomputing that digest on this host, and *may it be
+    deployed at all,* answered by the migration rule that V1 never runs a database
+    migration.  Both are resolved before the compose invocation is built, before the
+    candidate image is materialised, and before any container is replaced -- so a Task
+    that names a candidate this host cannot produce, or one that would need a migration,
+    ends as a refusal rather than as a half-applied deployment.
+
+    The digest is not optional.  An omitted one is an absent digest, and an absent digest
+    names no candidate; the guard refuses that in the migration graph code rather than
+    treating "nobody told me" as agreement.  That is why this parameter has no default
+    that could be mistaken for consent: the default is None and None fails closed.
+    """
+    source=_load_candidate_source(); guard=_load_migration_guard()
+    fact=source.load_candidate_fact(candidate_contract_sha256)
+    source.require_same_artifact(fact,candidate,package)
+    guard.precheck(fact,source.environment_migration_head())
     data=_precheck(runner,candidate,package,expected,artifact)
     record=_record_v2(release,candidate,package,expected,data,runner,binding)
     override=None
@@ -183,7 +235,11 @@ def run_deploy(release,candidate,package,expected,binding,runner,collector,artif
         _wait_for_api_health(runner,candidate,sleeper)
         check=collector._collect_verify(runner,candidate,candidate,collector._PRODUCTION_VERIFY_INPUTS,sleeper)
         if check.get('target_service_count')!=8: raise Reject('E_DEPLOY_PARTIAL_CONVERGENCE')
-        return {'durable_previous_state':'PASS','candidate_binding':'PASS','current_state':'PASS','fixed_scope':'PASS','no_migration':'PASS','post_deploy_verify':'PASS',**record}
+        # `candidate_contract_sha256` here is the digest this host loaded and recomputed,
+        # not the Task's value echoed back: the two agreeing is the finding the Evidence
+        # reports, and echoing would make that finding vacuous.  `no_migration` is a gate
+        # result rather than a declaration now -- the guard above is what established it.
+        return {'durable_previous_state':'PASS','candidate_binding':'PASS','current_state':'PASS','fixed_scope':'PASS','no_migration':'PASS','post_deploy_verify':'PASS','candidate_contract_sha256':candidate_contract_sha256,**record}
     finally:
         if override:
             try: os.unlink(override)

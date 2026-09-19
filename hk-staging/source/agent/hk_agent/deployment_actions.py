@@ -35,7 +35,7 @@ class FakeExecutor:
         action={"canary":"HK_STAGING_CANARY","deploy":"HK_STAGING_DEPLOY","verify":"HK_STAGING_VERIFY","rollback":"HK_STAGING_ROLLBACK"}[argv[1]]
         values=dict(zip(argv[2::2],argv[3::2]))
         result={"schema_version":"1","executor_version":"0.4.0-rollback-runtime","action_id":action,"status":"SUCCESS","release_id":values["--release-id"],"candidate_image_id":values.get("--candidate-image-id"),"expected_current_image_id":values.get("--expected-current-image-id"),"result":"DEPLOY_OK" if action=="HK_STAGING_DEPLOY" else ("ROLLBACK_OK" if action=="HK_STAGING_ROLLBACK" else "VERIFY_OK"),"gate_results":{"fake":"PASS"}}
-        if action=="HK_STAGING_DEPLOY": result.update({"deploy_record_schema_version":"2","deploy_record_id":"a"*64,"deploy_record_sha256":"b"*64})
+        if action=="HK_STAGING_DEPLOY": result.update({"deploy_record_schema_version":"2","deploy_record_id":"a"*64,"deploy_record_sha256":"b"*64,"candidate_contract_sha256":values["--candidate-contract-sha256"]})
         if action=="HK_STAGING_ROLLBACK": result.update({"source_deploy_task_id":values["--source-deploy-task-id"],"source_deploy_record_id":"a"*64,"source_deploy_record_sha256":"b"*64,"rollback_record_id":"c"*64,"rollback_record_sha256":"d"*64})
         return {"stdout":json.dumps(result,separators=(",",":"))}
 
@@ -65,6 +65,17 @@ def _image(value, name):
     if not isinstance(value,str) or not IMAGE.fullmatch(value): raise Reject(name+" rejected")
     return value
 
+def _digest(value):
+    """The candidate's content address: 64 lowercase hex, and nothing else.
+
+    A malformed digest is refused here rather than forwarded, because a value the
+    executor cannot load a fact for would otherwise become a deployment attempt whose
+    only outcome is a rejection from the far end of a subprocess.
+    """
+    if not isinstance(value,str) or not re.fullmatch(r"[0-9a-f]{64}",value): raise Reject("candidate_contract_sha256 rejected")
+    return value
+
+
 def _package(value):
     """The sealed package content address; a registry digest is not one.
 
@@ -85,8 +96,8 @@ def validate(action, params):
         p=_exact(params,("release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id"))
         return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_package_sha256":p["candidate_package_sha256"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id")}
     if action == "HK_STAGING_DEPLOY":
-        p=_exact(params,("release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","approval_id"))
-        return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_package_sha256":p["candidate_package_sha256"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id"),"canary_evidence_id":_id(p["canary_evidence_id"],"canary_evidence_id"),"approval_id":_id(p["approval_id"],"approval_id")}
+        p=_exact(params,("release_id","candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","approval_id","candidate_contract_sha256"))
+        return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"candidate_package_sha256":p["candidate_package_sha256"],"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id"),"canary_evidence_id":_id(p["canary_evidence_id"],"canary_evidence_id"),"approval_id":_id(p["approval_id"],"approval_id"),"candidate_contract_sha256":_digest(p["candidate_contract_sha256"])}
     if action == "HK_STAGING_VERIFY":
         p=_exact(params,("release_id","candidate_image_id","expected_current_image_id"))
         return {"release_id":_id(p["release_id"],"release_id"),"candidate_image_id":_image(p["candidate_image_id"],"candidate_image_id"),"expected_current_image_id":_image(p["expected_current_image_id"],"expected_current_image_id")}
@@ -104,7 +115,7 @@ def argv(action, params, task_binding=None):
         _package(p["candidate_package_sha256"])
     name={"HK_STAGING_CANARY":"canary","HK_STAGING_DEPLOY":"deploy","HK_STAGING_VERIFY":"verify","HK_STAGING_ROLLBACK":"rollback"}[action]
     out=[EXECUTOR_PATH,name,"--release-id",p["release_id"]]
-    for key in ("candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","source_deploy_task_id","approval_id"):
+    for key in ("candidate_image_id","candidate_package_sha256","expected_current_image_id","canary_evidence_id","source_deploy_task_id","approval_id","candidate_contract_sha256"):
         if key in p: out += ["--"+key.replace("_","-"),p[key]]
     if action in ("HK_STAGING_DEPLOY","HK_STAGING_ROLLBACK"):
         b=_binding(task_binding)
@@ -126,7 +137,7 @@ def parse_executor_output(raw, action, params):
     try: out=json.loads(raw)
     except (TypeError, ValueError) as exc: raise Reject("executor json rejected", stdout=raw, stage="parser") from exc
     required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results"}
-    if action=="HK_STAGING_DEPLOY": required |= {"deploy_record_schema_version","deploy_record_id","deploy_record_sha256"}
+    if action=="HK_STAGING_DEPLOY": required |= {"deploy_record_schema_version","deploy_record_id","deploy_record_sha256","candidate_contract_sha256"}
     if action=="HK_STAGING_ROLLBACK": required |= {"source_deploy_task_id","source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256"}
     if not isinstance(out,dict) or set(out) != required: raise Reject("executor result schema rejected", stdout=raw, stage="parser")
     if out["schema_version"] != "1" or out["action_id"] != action or out["status"] != "SUCCESS": raise Reject("executor result rejected", stdout=raw, stage="parser")
@@ -134,7 +145,7 @@ def parse_executor_output(raw, action, params):
     if not isinstance(out["result"],str) or not isinstance(out["gate_results"],dict): raise Reject("executor result rejected", stdout=raw, stage="parser")
     if action=="HK_STAGING_DEPLOY" and (out["result"]!="DEPLOY_OK" or out["deploy_record_schema_version"]!="2" or not SHA256.fullmatch(out["deploy_record_id"]) or not SHA256.fullmatch(out["deploy_record_sha256"])): raise Reject("executor record rejected", stdout=raw, stage="parser")
     if action=="HK_STAGING_ROLLBACK" and (out["result"]!="ROLLBACK_OK" or out["source_deploy_task_id"]!=params["source_deploy_task_id"] or any(not SHA256.fullmatch(out[x]) for x in ("source_deploy_record_id","source_deploy_record_sha256","rollback_record_id","rollback_record_sha256"))): raise Reject("executor rollback record rejected", stdout=raw, stage="parser")
-    correlation=("release_id","source_deploy_task_id") if action=="HK_STAGING_ROLLBACK" else ("release_id","candidate_image_id","expected_current_image_id")
+    correlation=("release_id","source_deploy_task_id") if action=="HK_STAGING_ROLLBACK" else (("release_id","candidate_image_id","expected_current_image_id","candidate_contract_sha256") if action=="HK_STAGING_DEPLOY" else ("release_id","candidate_image_id","expected_current_image_id"))
     for key in correlation:
         expected=params.get(key)
         if out.get(key) != expected: raise Reject("executor correlation rejected", stdout=raw, stage="parser")
