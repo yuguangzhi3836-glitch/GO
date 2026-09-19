@@ -54,8 +54,8 @@
       "description": "The Alembic head the candidate expects. Always stated, so the absence of a migration is a declaration rather than a missing field."
     },
     "migration_required": {
-      "type": "boolean",
-      "description": "Whether deploying this candidate runs a migration. The live deploy contract forbids migration, so this is false for every candidate V1 can support; it is stated explicitly so that a candidate needing one is refused here rather than discovered by the executor."
+      "const": false,
+      "description": "PROHIBITED_CONDITION_DECLARATION, not a deploy mode and not a migration switch. CCV1 does not execute database migrations, so this is false for every candidate V1 can support; it is stated explicitly so that the absence of a migration is a declaration rather than a missing field, and so that a candidate needing one is refused at admission rather than discovered by the executor. A candidate that declares it true has no converged form and therefore admits no candidate digest."
     },
     "build_definition": {
       "type": "object",
@@ -216,7 +216,12 @@
     }
   },
   "x-go-refusals": {
-    "note": "The closed set of reasons admission refuses a candidate. Tokens are reused from the live deploy contract wherever one already means the same thing, so this component adds vocabulary only where the existing words cannot express the refusal.",
+    "note": "The closed set of reasons admission refuses a candidate. Tokens are reused from the live deploy contract wherever one already means the same thing, so this component adds vocabulary only where the existing words cannot express the refusal. Since CCV1-84 WP-2 the whole migration family is exactly two public codes, shared verbatim with the plan derivation and the executor precheck, and the tokens this component used before then are mapped in legacy_aliases rather than left to become unknown strings.",
+    "legacy_aliases": {
+      "note": "Refusal tokens this component emitted before the WP-2 convergence. Nothing emits them any more; an admission document written earlier still cites them, so they are mapped rather than forgotten. Read old, write new.",
+      "candidate_migration_head": "E_DATABASE_MIGRATION_GRAPH_MISMATCH",
+      "candidate_migration_required": "E_DATABASE_MIGRATION_REQUIRED"
+    },
     "source": [
       "release_candidate_absent",
       "release_candidate_not_an_object",
@@ -229,8 +234,8 @@
       "candidate_application_tree",
       "candidate_source_fingerprint",
       "source_identity_disagrees_with_the_lineage_pointer",
-      "candidate_migration_head",
-      "candidate_migration_required",
+      "E_DATABASE_MIGRATION_GRAPH_MISMATCH",
+      "E_DATABASE_MIGRATION_REQUIRED",
       "candidate_build_definition",
       "candidate_build_profile",
       "candidate_build_dockerfile",
