@@ -1,5 +1,6 @@
 from datetime import datetime,timezone,timedelta
 import hashlib,hmac,json,os
+import pytest
 from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (OrderRow,ExternalSandboxCredentialBindingRow as Cred,NamedSupplierAdapterRow as Adapter,
@@ -44,9 +45,9 @@ def test_0100_signed_psp_and_supplier_callbacks_drive_0099_truth_chain(monkeypat
  setup_auth();i=seed_order();iid=i['payment_intent_id']
  monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
  op=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'real-auth-0100'})
- p={'state':'SUCCEEDED','external_operation_id':'ext-authorize','amount_minor':12000};r=real.payment_callback(op['external_truth_operation_id'],'pay-delivery-auth',p,sig(p));assert r['intent']['state']=='SUCCEEDED' and r['money_movement']['movement_type']=='AUTHORIZATION'
+ p={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY'};r=real.payment_callback(op['external_truth_operation_id'],'pay-delivery-auth',p,sig(p));assert r['intent']['state']=='SUCCEEDED' and r['money_movement']['movement_type']=='AUTHORIZATION'
  capop=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'real-cap-0100','amount_minor':12000})
- cp={'state':'SUCCEEDED','external_operation_id':'ext-capture','amount_minor':12000};cr=real.payment_callback(capop['external_truth_operation_id'],'pay-delivery-cap',cp,sig(cp));assert cr['money_movement']['movement_type']=='CAPTURE'
+ cp={'state':'SUCCEEDED','operation':'CAPTURE','external_operation_id':'ext-capture','amount_minor':12000,'currency':'CNY'};cr=real.payment_callback(capop['external_truth_operation_id'],'pay-delivery-cap',cp,sig(cp));assert cr['money_movement']['movement_type']=='CAPTURE'
  with SessionLocal() as s:
   f=s.scalar(select(OrderSupplierFulfillmentRow).where(OrderSupplierFulfillmentRow.payment_intent_id==iid));assert f.state=='CAPTURE_CONFIRMED_READY_FOR_SUPPLIER';fid=f.order_supplier_fulfillment_id
  sop=real.execute_supplier(fid,'auth-0100',{'operation':'BOOK','idempotency_key':'real-book-0100','facts':{'room':'DLX'}})
@@ -55,6 +56,21 @@ def test_0100_signed_psp_and_supplier_callbacks_drive_0099_truth_chain(monkeypat
   assert s.get(OrderRow,'hotel-order-0100').status=='CONFIRMED'
   life=s.scalar(select(ConsumerUnifiedLifecycleRow).where(ConsumerUnifiedLifecycleRow.vertical=='HOTEL',ConsumerUnifiedLifecycleRow.order_id=='hotel-order-0100'));assert life and life.payment_state=='PAID'
   assert len(s.scalars(select(ExternalTruthWebhookReceiptRow)).all())==3
+
+
+def test_0100_callback_fact_mutations_are_refused_before_money_movement(monkeypatch):
+ setup_auth();i=seed_order();iid=i['payment_intent_id']
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
+ op=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'real-auth-mutations'})
+ base={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY'}
+ cases=[({'operation':'CAPTURE'},'OPERATION_MISMATCH'),({'amount_minor':1},'AMOUNT_MISMATCH'),({'currency':'USD'},'CURRENCY_MISMATCH'),({'external_operation_id':'forged'},'OPERATION_REFERENCE_MISMATCH')]
+ for n,(mutation,reason) in enumerate(cases):
+  body={**base,**mutation}
+  with pytest.raises(ValueError,match=reason):
+   real.payment_callback(op['external_truth_operation_id'],f'mutation-{n}',body,sig(body))
+ with SessionLocal() as s:
+  assert not s.scalars(select(ExternalTruthWebhookReceiptRow)).all()
+  assert not s.scalars(select(OmnichannelMoneyMovementRow)).all()
 
 def test_0100_signed_settlement_bank_feed_and_reconciliation(monkeypatch):
  setup_auth();i=seed_order();iid=i['payment_intent_id'];monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
