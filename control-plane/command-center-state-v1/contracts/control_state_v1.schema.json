@@ -199,7 +199,8 @@
         "known_capabilities": {"type": "array", "items": {"type": "string"},
           "description": "Everything the Control Plane can execute, whether or not it is requestable."},
         "capability_classification": {"type": "object"},
-        "deploy_request_enabled": {"const": false},
+        "deploy_request_enabled": {"const": true,
+          "description": "The DEPLOY Request is enabled and there is no switch to open: the authenticated Request is itself the authorisation. This is the contract-level answer, not the live-host state -- whether the host currently accepts one is a live-host fact, and a host with deployments suspended refuses the Request with deployment_authorization_mode_unsupported."},
         "live_request_switch": {"$ref": "#/$defs/assertion"},
         "note": {"type": "string"}
       }
@@ -250,7 +251,7 @@
         "verify_status": {"$ref": "#/$defs/assertion"},
         "test_pr_status": {"$ref": "#/$defs/assertion"},
         "deploy_capability": {"$ref": "#/$defs/assertion",
-          "description": "Capability classification only: CAPABILITY_PRESENT_BUT_DISABLED with request_enabled=false and readiness_evaluation=NOT_IN_SCOPE. Never a readiness verdict."},
+          "description": "Capability classification only: SUPPORTED_PROVEN with request_enabled=true and readiness_evaluation=NOT_IN_SCOPE. The DEPLOY capability is proven and its Request is enabled, with no switch to open. Never a readiness verdict."},
         "repository_runtime_pointer": {"$ref": "#/$defs/assertion",
           "description": "What the repository DECLARES. Never the truth about what is running on Hong Kong, so never PROVEN."},
         "live_verified_runtime": {"$ref": "#/$defs/assertion",

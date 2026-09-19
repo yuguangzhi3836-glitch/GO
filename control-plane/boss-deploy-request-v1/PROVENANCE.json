@@ -30,5 +30,23 @@
   "authorization": "user: 现在补齐布署请求入口; source implementation and isolated verification",
   "installation_performed": false,
   "deployment_performed": false,
-  "different_image_formal_hk_e2e": "NOT_PROVEN"
+  "different_image_formal_hk_e2e": "NOT_PROVEN",
+  "superseded_note": {
+    "also_superseded": "the deploy switch and the approved-plan contract named in candidate_revision_note: a deployment is authorised by the authenticated DEPLOY Request itself, and the plan is derived",
+    "current_bridge_path": "control-plane/boss-deploy-request-v1/go-boss-request-bridge",
+    "current_bridge_sha256": "74336fd1943d26663ac5b42cdf7cc918ecebb3e6f4ab4a01c50f4cb30ee1f770",
+    "current_bridge_version": "1.10.0-post-action-verify",
+    "current_channel_actions": [
+      "HK_STAGING_VERIFY",
+      "HK_STAGING_TEST_PR",
+      "HK_STAGING_DEPLOY",
+      "HK_STAGING_ROLLBACK",
+      "HK_STAGING_CANARY",
+      "CONTROL_PLANE_HEALTH"
+    ],
+    "current_source_commit": "6d896bfe8c7f149b6f949ffad2af1721dc60e45f",
+    "status": "HISTORICAL - never read this file as the current bridge identity",
+    "why": "Every value above describes the 1.5.0-control-plane-health candidate built from base_main_commit 9645c6f. None of them is the installed bridge any more, and bridge_sources[].sha256 no longer lists it, so the install skill's phase-2 drift gate stops on this file. The values are deliberately NOT rewritten: a provenance record that gets edited every release stops being a provenance record. This annotation is the correction, and it is additive.",
+    "written_at": "2026-09-17"
+  }
 }

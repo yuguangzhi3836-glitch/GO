@@ -296,10 +296,11 @@ agent ledger          /var/lib/go-command-center? 否 —— /var/lib/go-hk-agen
 [SYNTHETIC] 组件级：failure_evidence / deploy dry-run / queue replay / mid-flight /
             transport 有界性（真实 git 30 项）/ readiness 契约漂移守卫
 
-[NOT_YET_PROVEN] fresh VERIFY（最近一次真实 VERIFY 已过期）
-[NOT_YET_PROVEN] CANARY（从未执行）
-[NOT_YET_PROVEN] DEPLOY（从未执行；deployment_requests_enabled=false）
-[NOT_YET_PROVEN] ROLLBACK（从未执行）
+[REAL] CANARY（2026-09-17 通道内成功多次；最新一次 09:22:36Z `CANARY_OK`）
+[REAL] VERIFY（2026-09-17 通道内成功并作为 DEPLOY 预检；最新一次 09:24:58Z `VERIFY_OK`）
+[REAL] DEPLOY（2026-09-17 通道内成功三次；最新一次 09:29:10Z `DEPLOY_OK`，记录 `98073b05…`）
+[REAL] ROLLBACK（2026-09-17 **首次成功**：`6b92050e… → 1c9598d6…` 镜像真的变化，五项 gate 全 PASS —— 见 §11 CCV1-59；
+           此前 08:14:07Z 的一次失败已定位为旧字节缺镜像钉，修复见 §11 CCV1-57b）
 ```
 
 ## 8. 已完成、**不要再重做**（DO_NOT_REOPEN / DO_NOT_REDESIGN）
@@ -552,6 +553,101 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 
 ## 11. 下一会话唯一入口
 
+> **2026-09-17 / CCV1-59 —— 再优先读这一段：真实回滚已跑通，镜像真的变化。**
+>
+> **① 结果**：闸口 B 要的那次「镜像真的变化」的真实回滚，在修复后的执行器上成功。`6b92050e… → 1c9598d6…`，
+> 八个业务服务全部换过去，`ROLLBACK_OK`，`gate_results` 五项（`fixed_scope` / `fresh_drift` / `lineage` / `postcheck` /
+> `rollback_record`）全 PASS。Request 仍然只带五个公共字段，源由 CC 从自己账本派生，`caller_controlled_rollback_image: false` 仍成立。
+>
+> **② 三件套**：Request PR #48（head `150346d3…`）→ Task `go-boss-rollback-f189b33e16eff15db3b53e74`
+> （issued 09:18:06Z / expires 09:22:57Z，`approval_id=approval-rollback-6eab851a26447678`，`approval_identity=chenzhenxi1-sudo`）
+> → Evidence `ROLLBACK_OK`（completed 09:20:08Z，`rollback_record_id=8a08f446…159b2b`、`_sha256=80942d46…c43747`）。
+> HK agent 账本：`processed.status=completed`、`evidence_ref=4116c5b9…`（claimed 09:19:22Z → completed 09:20:15Z，共 53s；
+> 对照失败那次 16s 且 `gate_results:{}` —— 多出来的时间正是 8 个目标 inspect ＋ 生成 override ＋ `compose up` ＋ 等 api 健康）。
+>
+> **③ 源是现场新产生的**：CC 派生「最新一条已发布 DEPLOY」＝ `go-boss-deploy-11c806af6339f53e0f77428d`
+> （账本 `parameters.source_deploy_task_id` 与之逐字一致），其 record `e3b8dfa0…`（`_sha256=5801c297…6794`）写着
+> candidate `6b92050e…` / expected-current `1c9598d6…`；回滚记录里 `target_images` 8×`1c9598d6`、`current_targets` 8×`6b92050e`，
+> 这就是「镜像确实变了」的直接证据。
+>
+> **④ 完整重演四阶段**（UTC）：渠道外 seed 回 `1c9598d6` → 通道内 CANARY(#45 `442664d3`) / VERIFY(#46 `b536e8db`) /
+> DEPLOY(#47 `5c7ea7e0` → `11c806af`) → **ROLLBACK(#48)** → 通道内 CANARY(#49 `9a1f5fc4`) / VERIFY(#50 `51be1d4d`) /
+> DEPLOY(#51 `acadcb01` → `7d4da12a`)。阶段 2 耗时 12m06s、阶段 4 耗时 8m45s。
+>
+> **⑤ 独立验签**：本轮 6 个签名对象（3 个 Task × CC 任务钥 hex、3 个 Evidence × HK 证据钥 base64）用仓里公钥
+> 在本机重建规范形式后逐条验签，**6/6 OK**（`tmp/ccv159/verify_signatures.py`）。
+>
+> **⑥ 源消费守卫实测**（CC 上**已安装**的谓词 `go_deploy_request.py` sha256 `51aa135b…` 对 live 账本）：
+> `11c806af…`（刚被回滚）REFUSED `rollback_source_already_rolled_back`；`7d4da12a…`（最新、未回滚）ACCEPTED；
+> `6344dcdd…`（CCV1-56 源）REFUSED；未知源 ACCEPTED ⇒ 守卫按**源**判定，不是一刀切。
+>
+> **⑦ HK 结束状态**：8 个业务服务在候选 `6b92050e…`、10 个容器重启数全 0、api `HTTP 200`；
+> caddy `958524e1…` / redis `0a52d623…` 的容器 id 与 09-03T10:25:46Z 启动时间**未变**。
+> 执行器字节仍是 CCV1-57b 装机后的 `b13b5002…` / `c7c1bf04…` —— **本轮没有改动 HK 上任何程序字节**。
+> 部署记录 9 条 / 回滚记录 4 条。HK 上现存一个**未被消费的新回滚源**（`go-boss-deploy-7d4da12a…`），属复原动作的正常副产物。
+> 详见 `CCV1-59-ROLLBACK-RE-ENACTMENT-2026-09-17.md`。
+>
+> **2026-09-17 / CCV1-57b —— 再优先读这一段：回滚执行器缺镜像钉，已修复并重装。**
+>
+> **① 闸口 B 的真实失败**：真实 ROLLBACK Request PR #43（head `61e791e2…`）已发布，Bridge 派生并签名 Task
+> `go-boss-rollback-be119fa22df0a096b2dd5ed1`（源 `go-boss-deploy-6344dcdd3ccd103d5efdc1b6`，`expires_at` 08:17:43Z）；
+> HK agent 08:13:51Z 认领、08:14:07Z 完成并失败，失败证据 `3fde3d32…`。执行器 stdout：
+> `status=REJECTED`、`result=ROLLBACK_REJECTED`、`error_code="docker read"`、**`gate_results: {}`** —— 门为空说明失败发生在
+> **任何门被记录之前**，即 compose 变更那一步。HK 业务面零影响（10 容器、8 业务服务仍在 `6b92050e…`、重启数 0、api healthy）。
+> **② 根因**：`rollback_runtime.run_rollback` 只用 `-f <base>` 组 argv；base 写的是
+> `image: ${R31_IMAGE_TAG:-go-hotel:aoluguya-direct-r3-1-20260906}`，而 `R31_IMAGE_TAG` **在 env 文件里没有设置**（实测），
+> 宿主也**没有**该 tag（`No such image`）⇒ Compose 去 pull 一个不存在的仓库，`insufficient_scope: authorization failed`，`up` 退出非零。
+> DEPLOY 一直没事，是因为它**始终**合入一份按 id 钉死候选的 override。⇒ **该方向在旧字节下根本不可能成功**，与源/签名/授权无关。
+> **③ 修法（HK 字节；提交 `decd26e`，目前仅本地）**：`run_rollback` 合入 `_override(targets)`（把八个服务钉到源 record `targets` 的 id；
+> mode 0600；成功与失败两条路径都清理），变更步失败改报 `docker rollback`（读仍报 `docker read`）；并把**一直被传入却从未使用**的
+> `collector` 用起来，按 runbook 第 6 步的 **bounded readiness/postcheck** 要求，`ROLLBACK_OK` 前先等被恢复的 api 健康。
+> 契约未放松：`caller_controlled_rollback_image: false` 仍成立，目标仍只来自 `DEPLOY_RECORD_V2` 前态。
+> **④ 已装并实测**（2026-09-17T08:37:52Z）：`/usr/local/libexec/go-hk-deployctl` `b13b5002…`（755，12024 B）、
+> `.../go-hk-deployctl-runtime/rollback_runtime.py` `c7c1bf04…`（644，13968 B）；备份
+> `/var/backups/HK-CHANGE-20260917T083752Z-rollback-image-pin/`（逐条 re-hash OK）；原子换装 2.67 ms；五个 `_load_*` 全 PASS；
+> 新回归 `rollback_runtime_regression.py` **31/31**（本机 / CC Linux / HK root / HK `go-hk-agent` 四处全绿）；
+> 只读实证（`--dry-run`，零变更）：仅 base → `pull access denied … authorization failed`（rc=1），base＋**执行器自产** override →
+> 八个 `Started`（rc=0）；容器指纹与重启数前后一致。轮询已恢复，tick 无 Traceback、无 integrity 报错。
+> `hk-staging/SOURCE_SHA256SUMS.txt` 618→619 条（0 mismatch），两处文档的执行器摘要已同步。
+> **⑤ 该源已 `AMBIGUOUS_CONSUMED`**：rollback record `fe2f07a8…` 在 mutation 前落盘，且 CC 的 `ensure_rollback_unused`
+> 对**任何已发布**的 ROLLBACK Task 都拒绝（已用**已安装的**谓词对 live 账本实测：该源 `rollback_source_already_rolled_back`，
+> 未知源作对照 accepted）。契约 `automatic_retry_allowed=false` / `automatic_recovery_allowed=false`、runbook 明确要求
+> 标记 `AMBIGUOUS_CONSUMED` 且**禁止自动重试**。⇒ 要再演示真实回滚，必须先产生**新部署源**（即第三步；且因回滚 fresh-drift 门要求
+> 执行时当前镜像等于源 record 的 candidate，想要镜像真变化的演示需先渠道外 seed 回 `1c9598d6…`）。详见 `CCV1-58-ROLLBACK-EXECUTOR-IMAGE-PIN-2026-09-17.md`。
+
+> **2026-09-17 / B4-B1.11（CCV1-57）—— 再优先读这一段：回滚已通道化。**
+>
+> **① ROLLBACK 已接入 Boss Request 通道**：Bridge 修订 `1.9.0-rollback-channel`，v4 action 合同由五项变六项
+> （`HK_STAGING_VERIFY` / `HK_STAGING_TEST_PR` / `HK_STAGING_DEPLOY` / `HK_STAGING_ROLLBACK` / `HK_STAGING_CANARY` /
+> `CONTROL_PLANE_HEALTH`）。比较方式仍是**整份列表精确相等** ⇒ **换 Bridge 必须成套换 config**：
+> 五项旧配置不会被「少一个动作」地接受，而是整份 `invalid_channel_configuration` 拒绝。
+> **② 回滚 Request 与 CANARY 同形**：只有五个公共字段，**不携带任何目标** —— 没有 `release_id`、没有源 Task id、
+> 没有 `approval_id`、没有镜像、没有服务名。要撤的那次部署由**指挥中心从自己的账本派生**：取「最新一次由本 Bridge
+> 发布、且签名证据为 SUCCESS ＋ `DEPLOY_OK` ＋ record v2 ＋ 六门全 PASS」的 `HK_STAGING_DEPLOY`；源证据不可读
+> 或不存在即**拒绝**，绝不回退到更早的成功项。一次性授权＝Request 本身（作者＝平台报告的 PR 作者、`approved_at`
+> ＝PR `created_at`、`approval_id = 'approval-rollback-' + request_sha256[:16]` 派生），且必须**晚于**源部署证据的
+> 完成时间；Task deadline = min(Request 过期, 授权＋300s)。
+> **③ 同一源只能被消费一次**：只有**已发布**的 ROLLBACK Task 才算消费（claiming / preparing / publishing 不算）；
+> 发布前会用**持久账本重读**再派生一次并比对，窗口内源发生漂移（出现更新的成功部署）一律拒绝。
+> **④ HK 侧零字节改动**：回滚链早已完整在位（`go-hk-deployctl` `f0804521…` 的 rollback 动词、
+> `_ROLLBACK_SHA256=a49e12ea…`、live agent `transport.py` 的 `prepare_rollback_handoff`、
+> `deployment_actions.ACTIONS` 里的 `HK_STAGING_ROLLBACK`，参数契约 `{release_id, source_deploy_task_id, approval_id}`），
+> 本轮只做 CC 侧（**该状态已被 §11 顶部 CCV1-57b 取代**：`go-hk-deployctl` 现为 `b13b5002…`、`_ROLLBACK_SHA256=c7c1bf04…`，旧钉 `f0804521… / a49e12ea…` 不再是现值）。执行器**先验源、再现查八个容器的漂移**，然后**先落 rollback record 再强制重建**八个业务服务。
+> **⑤ 闸口 A 已完成（2026-09-17T08:06:02Z）**：CC 四件套已成套换装 —— `/usr/local/libexec/go-boss-request-bridge` `d2ae9c88…`、
+> `/usr/local/libexec/go_deploy_request.py` `51aa135b…`、`/usr/local/libexec/plan_derivation.py` `342e9a6e…`、
+> `/etc/go-command-center/boss-request-bridge-v1.json` `cd7f8d3f…`（四项都等于本分支已提交字节 `4e7ce63`；权限沿用宿主更紧的
+> 0750/0640/0640/0600）。换装前备份 10 份文件到 `/var/lib/go-command-center/ccv157-rollback-channel-install-backup-20260917T080150Z`
+> 并逐条复算 OK，换装窗口 4.8 ms；`/etc/go-command-center/boss-request-bridge-v1.manifest.json` 已按新修订重写
+> （`bridge_version` `1.9.0-rollback-channel`，退役字段 `deployment_requests_enabled` 不再出现，改记 `deployment_authorization`）。
+> 宿主机 23 项行为验证全 PASS：六动作合同精确相等、两份 root 基线可读、ROLLBACK Request 仍是五个公共字段且**拒绝**任何目标字段、
+> 对 live 账本＋真实签名证据派生出源 `go-boss-deploy-6344dcdd3ccd103d5efdc1b6`、应急停止对 DEPLOY 与 ROLLBACK 都是 reject
+> （SIGN=0 / PUBLISH=0）而只读探活照常签发。轮询已恢复，首个新字节 tick（16:04:18→16:04:40 CST）打 `1.9.0-rollback-channel`，
+> `already_seen: 40 / rejected: 2`，与装前 20 个 tick 逐项相同（那两条 `stale_or_future_request` 属既有稳态）；日志无 Traceback/Error，
+> ledger sha 仍 `8a5cbd62…`，tasks 仓 `main` HEAD 仍 `a5feefa7…`，HK 业务指纹仍 `3742895e…`（HK 零字节改动）。
+> **闸口 B 已发并失败**：真实 ROLLBACK Request PR #43 → Task `go-boss-rollback-be119fa22df0a096b2dd5ed1` 被执行器以
+> `EXECUTOR_NONZERO_EXIT` / `error_code="docker read"` 拒绝；根因、修法、装机与只读实证见 §11 顶部新增段 CCV1-57b。
+> HK 业务面零影响；该源已 `AMBIGUOUS_CONSUMED`，重试需先有新部署源。
+
 > **2026-09-17 / B4-B1.10（CCV1-53）—— 再优先读这一段，它取代所有「部署开关」口径。**
 >
 > **① 部署开关已退役**。`deployment_requests_enabled` 不再存在：它要求「先有一份常备授权，才允许那份授权它的请求出现」，
@@ -572,6 +668,32 @@ readiness 读它得到 `APPROVED_CANDIDATE=PASS` / `SOURCE_BINDING=PASS`；
 >
 > 仍然有效的旧表述：上面 150 / 197 / 301 / 486 / 675 / 677 行关于 `deployment_requests_enabled=false` 的记述属于**当时状态**；
 > 自本修订起该字段不存在，读到时按本块口径理解。
+
+> **2026-09-17 / CCV1-63 —— 优先读这一段：派生状态与读侧文档的 DEPLOY 口径已更正。**
+>
+> **① 问题本身**：`command-center-state-v1` 里描述「可请求动作集合」的那几个值是**仓侧常量**
+> （`state_projection.py` 的 `ENABLED_HUMAN_REQUEST_ACTIONS` / `CAPABILITY_CLASSIFICATION` /
+> `deploy_request_enabled`，以及两份契约 schema 里的 `{"const": false}`）。部署授权模型改变之后
+> 它们与现场相反，于是 `CONTROL_STATUS_V1` 会告诉连接器「DEPLOY 未启用、不要提交」——
+> 而那正好是 V1 的唯一成功标准。**现场重算投影救不了它们**：值不是从现场读来的。
+> **② 已更正**（分支 `cc/bridge-remote-default-branch-v1`，本机校验 199 + 50 + 67 + 65 + 137 全绿）：
+> `ENABLED_HUMAN_REQUEST_ACTIONS` 加入 `HK_STAGING_DEPLOY`；`CAPABILITY_CLASSIFICATION` 由
+> `CAPABILITY_PRESENT_BUT_DISABLED` 改为 `SUPPORTED_PROVEN`；`deploy_request_enabled` 由 `false`
+> 改为 `true`（`control_state_v1` / `control_status_v1` 两份 schema 的 `const` 同步，并补说明）；
+> `request_v1.schema.json` 删掉「DEPLOY 必填 `plan_id`」那条（现场恰恰**拒** `plan_id`）、
+> `plan_id` 移入 `x-go-forbidden-fields`、`currently_enabled_request_action` 补上 DEPLOY；
+> `CHATGPT_CONTRACT_V1.md` 与组件 README 的通道表、架构表、计数同步；
+> `request_fact_v1.schema.json` 的 `action_id` 枚举补上 `HK_STAGING_ROLLBACK` 与
+> `CONTROL_PLANE_HEALTH`（此前合法的 ROLLBACK fact 过不了自己组件发布的 schema）；
+> `boss-deploy-request-v1` 的 `rollback_requestable` 由 `NO` 改为 `YES`。
+> **③ 未改动、只加注**：`boss-deploy-request-v1/PROVENANCE.json`（1.5.0 血统记录）追加
+> `superseded_note`，其原有值一字未动——改写血统记录等于毁掉血统记录。
+> 本文件下方 B4-B1.8 块中「`HK_STAGING_ROLLBACK` 仍不可请求」与
+> 「`deployment_requests_enabled` 仍为 false」同属**当时状态**。
+> **④ 口径**：判「现在能请求什么」以**现场通道配置**为准
+> （`/etc/go-command-center/boss-request-bridge-v1.json` 的 `allowed_actions` 与
+> `deployment_authorization`），不以任何派生文档为准；本轮的客观尺子是仓库自己的
+> `boss-deploy-request-v1/config.json`，它本来就写着六项 action。
 
 > **2026-09-17 / B4-B1.9（CCV1-52）—— 优先读这一段，它取代上面 ①④ 的计划口径。**
 >
@@ -760,3 +882,71 @@ liveness-request-transport / projection / state-publication）。
       container 内 `alembic current`
 未读取、未复制、未记录任何私钥、token、password 或云 AK/SK。
 ```
+
+
+---
+
+## 2026-09-17 现场事实：动作后自动 VERIFY 已装机并在真实通道上跑通（CCV1-62）
+
+> 本节是**新增的当天事实**。上文（2026-09-16 及更早）的 `NOT_PROVEN` 陈述是**当时的历史状态**，
+> 不因本节自动改写；本节只陈述下面这些条目现在是什么。
+
+### 装机（GO Command Center）
+
+```text
+Bridge              /usr/local/libexec/go-boss-request-bridge
+版本                1.9.0-rollback-channel  ->  1.10.0-post-action-verify
+SHA256              d2ae9c88…  ->  74336fd1943d26663ac5b42cdf7cc918ecebb3e6f4ab4a01c50f4cb30ee1f770
+来源                cc/bridge-remote-default-branch-v1 @ 6d896bfe8c7f149b6f949ffad2af1721dc60e45f
+备份                /var/lib/go-command-center/ccv161-post-action-verify-backup-20260917T115042Z
+装机单元             一个文件；gate / plan / channel config 与 PR head 逐字节相同，故未替换
+通道                 v4 PERSISTENT，六项 action；deployment_authorization = request（无部署开关）
+```
+
+### 现在自动发生的事
+
+一个 DEPLOY 或 ROLLBACK 完成后，Bridge 在随后的 tick 里自行派生并发布**一个独立的 VERIFY Task**：
+镜像来自该动作的**签名字节**（DEPLOY 用它的 candidate；ROLLBACK 用它源部署的 expected_current），
+参数恰为 `{release_id, candidate_image_id, expected_current_image_id}`，一源一名，30 分钟新鲜度窗口，
+幂等记录写在 `post-action-verifies.json`（**不写**账本 `requests`）。不再需要有人看到动作完成后
+再手动补发一次 VERIFY —— 这正是本文件上文「验收」一节的第 4 条所要求的那个步骤。
+
+### 本轮真实通道的身份
+
+```text
+ROLLBACK  Task      go-boss-rollback-7a7d24bf55eb0c26e54d92f4        ROLLBACK_OK，7 门全 PASS
+          8 服务     6b92050e…  ->  1c9598d6…
+自动 VERIFY（回滚）  go-boss-post-rollback-verify-5f2598d70b05       VERIFY_OK，断言 1c9598d6
+CANARY    Task      go-boss-request-canary-20260917T120348Z-89179436aecf   CANARY_OK
+DEPLOY    Task      go-boss-deploy-37a902d0ed88254dbdba7fef          DEPLOY_OK，6 门全 PASS
+          plan_id   hkstg-bd25d7acca1b-6b92050ed42c-bc12be3e7a5d
+          8 服务     1c9598d6…  ->  6b92050e…
+自动 VERIFY（部署）  go-boss-post-deploy-verify-0f1a8ce9c20a         VERIFY_OK，断言 6b92050e
+控制状态            现场重算：live_verified_runtime = PROVEN，image_config_id = sha256:6b92050e…（与 docker ps 一致）
+结束态              8 业务服务 = 6b92050e…，10 容器，重启 0；caddy / redis 全程未重建
+PRODUCTION          NOT_TOUCHED
+```
+
+六件产物（4 个 Task/Evidence 对 + 预检）在本地进程内用
+`control-plane/command-center-state-v1/identity/keys/` 的两把公钥独立验签，全部 OK。
+
+### 仍未达成的（不要读成已交付）
+
+```text
+CHATGPT_COMMAND_CONTRACT   NOT_PROVEN   仓库内无该合同产物（#107）
+#103                       未关闭        其 Scope Clarification 纳入的 Alembic forward migration 未实现
+#106                       未关闭        存在「成功执行被记成 EVIDENCE_AFTER_EXPIRY」的实测反例
+COMMAND_CENTER_V1          未宣称 DELIVERED    #108 依赖 V1-01…V1-12 全 CLOSED，未满足
+MERGE_AUTHORIZED           NO           PR #179 保持 Draft，未合并，等待人工最终 Review
+```
+
+**已知技术债（`TECHNICAL_DEBT_V2`）：** DEPLOY Task 的 `expires_at` 继承自预检窗口
+（`min(approval_expires, 预检证据 + 300 s, now + 5 min)`），而一次**真实**镜像切换约 4.6 分钟。
+本例 issued `12:26:53Z` / expires `12:28:28Z` / Evidence `12:29:20Z` ⇒ 投影把它记为
+`FAILED_RECORD · EVIDENCE_TIMEOUT · EVIDENCE_AFTER_EXPIRY`，尽管执行是 `DEPLOY_OK`、宿主确实切换、
+其自动 post-deploy VERIFY 也 `VERIFY_OK`。修法要么改授权窗口的推导，要么让投影区分「交付晚到」与
+「执行失败」，两者都在 V1 合同面上，本轮按「不扩大范围」未动。
+
+**另一处既有欠账：** 同目录 `control-plane/boss-deploy-request-v1/PROVENANCE.json` 自述
+`bridge 1.5.0-control-plane-health`，与现场（此前 `1.9.0-rollback-channel`、现在
+`1.10.0-post-action-verify`）不符；装机技能的漂移门若以它为判据会恒停。本轮未改它，登记为发现项。

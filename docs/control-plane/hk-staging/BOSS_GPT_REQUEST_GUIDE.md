@@ -39,8 +39,15 @@ Confirmed Boss Request capability:
   evidence a deployment plan must cite, so it has to be obtainable before a plan
   can exist. It runs even while deployments are suspended. A canary older than 30 minutes cannot be used by a plan,
   so run it per candidate, close to the deployment.
-- ROLLBACK — do not invent a Boss Request schema. The underlying Control Plane may
-  have action runbooks, but that does not by itself expose a Boss Request action.
+- `HK_STAGING_ROLLBACK` — **SUPPORTED / REQUESTABLE** since Command Center channel
+  revision `1.9.0-rollback-channel`. It is the undo of the newest deployment Command
+  Center itself published. The Request carries the five common fields only and names
+  no deployment, no source Task, no image and no service, because Command Center
+  derives all of those from its own ledger. It needs no plan and no separate switch,
+  but unlike a canary it is **not** read-only: it takes the same authenticated Request
+  a deployment takes, and the executor verifies the source deployment's own record and
+  re-reads the eight business containers before it rebuilds them. A rollback older than
+  five minutes cannot run, and one source deployment can be rolled back only once.
 
 Do not use the archived 2026-09-11 Bridge 1.2.0 / VERIFY-only snapshot under
 `command-center/` as the current capability inventory.
@@ -57,6 +64,12 @@ Treat requests such as these as `HK_STAGING_CANARY`:
 
 - "Run a canary for the current candidate."
 - "Canary the candidate on Hong Kong."
+
+Treat requests such as these as `HK_STAGING_ROLLBACK`:
+
+- "Roll back Hong Kong staging."
+- "Undo the last deployment on HK."
+- "Put Hong Kong back the way it was before the last deploy."
 
 Treat requests such as these as `HK_STAGING_TEST_PR`:
 
@@ -242,7 +255,10 @@ anyone. If a step is refused, report the machine-readable reason it came back
 with and stop; do not retry a step blindly, do not re-use a consumed plan (a retry
 needs a fresh canary), and do not construct a plan or an approval by hand.
 
-`ROLLBACK` still has no Boss Request schema. Do not invent one.
+`ROLLBACK` has a Boss Request schema now, and it is the five common fields: see the
+`HK_STAGING_ROLLBACK` entry in **Current confirmed status**. It selects nothing. If
+you want to undo something other than the newest deployment Command Center published,
+there is no Request that expresses it, and you must not invent one.
 
 ## Hard boundary
 
