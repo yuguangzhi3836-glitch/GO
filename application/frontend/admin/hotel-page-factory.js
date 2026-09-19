@@ -353,11 +353,19 @@
     };
   }
 
+  function directReviewEntry(ctx){
+    const {root}=ctx;
+    root.insertAdjacentHTML('afterbegin','<section class="card"><h3>酒店自主提交审核</h3><p>核对正式酒店与房型对应、原图及授权，审批后发布并回读。</p><button class="btn primary" id="directReviewOpen">审核酒店资料与图片</button></section>');
+    const button=root.querySelector('#directReviewOpen');
+    button.onclick=()=>window.GO_HOTEL_DIRECT_REVIEW.mount({...ctx,back:()=>render(ctx)});
+    return button;
+  }
   async function render(ctx){
     const {api,root,notice}=ctx; let overview;
-    root.innerHTML='<div class="card"><h2>全国酒店数字基础设施控制台</h2><p>正在读取全国建库与页面生产状态…</p></div>';
+    root.innerHTML='<div class="card"><h2>全国酒店数字基础设施控制台</h2><p id="factoryLoadingStatus">正在读取全国建库与页面生产状态…</p></div>';
+    const entry=directReviewEntry(ctx),current=()=>root.querySelector('#directReviewOpen')===entry;
     let infra={runs:[],provider_count:0},exceptions={items:[]};
-    try{overview=(await api.request('/internal/v1/hotel-autopage/factory/overview?limit=500')).data||{};infra=(await api.request('/internal/v1/hotel-infrastructure/build-runs')).data||infra;exceptions=(await api.request('/internal/v1/hotel-infrastructure/exceptions?limit=100')).data||exceptions}catch(e){notice(e.message,true);return}
+    try{overview=(await api.request('/internal/v1/hotel-autopage/factory/overview?limit=500')).data||{};if(!current())return;infra=(await api.request('/internal/v1/hotel-infrastructure/build-runs')).data||infra;if(!current())return;exceptions=(await api.request('/internal/v1/hotel-infrastructure/exceptions?limit=100')).data||exceptions;if(!current())return}catch(e){if(current()){const message='全国建库概览暂时无法读取，您仍可进入酒店资料审核。';root.querySelector('#factoryLoadingStatus').textContent=message;notice(message,true)}return}
     const runs=infra.runs||[],provinceSummary=infra.province_summary||[],latest=runs[0]||{};
     // RC19: do not add historical retry batches into production totals. The previous UI could show
     // 1,342 "generated pages" while only 113 Canonical hotels existed because every retry was summed.
@@ -388,7 +396,7 @@
       <section class="card"><div class="section-head"><h2>异常中心摘要</h2><span>${totalFailures} 项需人工 · ${autoRecovering} 项待重试</span></div>${exceptionRows}</section>
       <section class="card"><div class="section-head"><h2>页面产量与酒店档案</h2><span>${Number((overview.items||[]).length)} 家</span></div><div class="toolbar"><input id="factorySearch" placeholder="搜索 Canonical 酒店"><button class="btn factory-stage active" data-stage="ALL">全部</button>${stageTabs(overview.counts||{})}</div><div class="factory-card-grid" id="factoryList">${(overview.items||[]).map(factoryRow).join('')||'<div class="card structured-empty"><div><h3>尚无 Canonical 酒店档案</h3><p>启动全国或指定区域建库后，系统自动发现并建立酒店库。</p></div></div>'}</div></section>
       <section class="card admin-ops-bar"><div><h3>自动化边界</h3><p>自动建库不等于自动 GO Direct；媒体继续受 Rights Gate 控制；内容事实、供给事实与交易路由保持分离。Admin 不再以单店人工录入作为建库主路径。</p></div><div class="structured-actions"><a class="btn" href="#/audit">审计日志</a></div></section>`;
-    root.insertAdjacentHTML('afterbegin','<section class="card"><h3>酒店自主提交审核</h3><p>核对正式酒店与房型对应、原图及授权，审批后发布并回读。</p><button class="btn primary" id="directReviewOpen">审核酒店资料与图片</button></section>'+scopeEntry());root.querySelector('#directReviewOpen').onclick=()=>window.GO_HOTEL_DIRECT_REVIEW.mount({...ctx,back:()=>render(ctx)});root.querySelector('#catalogScopeOpen').onclick=()=>openScope(ctx);
+    root.insertAdjacentHTML('afterbegin',scopeEntry());directReviewEntry(ctx);root.querySelector('#catalogScopeOpen').onclick=()=>openScope(ctx);
     const search=root.querySelector('#factorySearch'); let active='ALL';
     const filter=()=>root.querySelectorAll('.factory-hotel-card').forEach(el=>{const stage=el.dataset.factoryStage||'';const q=(search.value||'').trim().toLowerCase();const okStage=active==='ALL'||stage===active;const okQ=!q||(el.dataset.name||'').includes(q);el.style.display=okStage&&okQ?'':'none'});
     search.oninput=filter;root.querySelectorAll('[data-stage]').forEach(b=>b.onclick=()=>{active=b.dataset.stage;root.querySelectorAll('[data-stage]').forEach(x=>x.classList.toggle('active',x===b));filter()});

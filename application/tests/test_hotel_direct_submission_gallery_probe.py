@@ -35,15 +35,19 @@ def test_twenty_original_gallery_read_amplification(publishing, monkeypatch):
         return original_reader(record)
     monkeypatch.setattr(verifier.media,'_read_bytes',traced)
     samples = []
-    for kind in ['page','image']:
+    for kind in ['page','image','inspection']:
         for repetition in range(3):
             reads.clear(); started = time.perf_counter()
             if kind == 'page':
                 result = hotel_autopage_factory_service.public_page('test')
                 assert len(result['media']['gallery']) == 18
-            else:
+            elif kind == 'image':
                 raw, mime = pub.public_content(row['review_id'],manifest['assets'][0]['asset_id'])
                 assert raw.startswith(b'\xff\xd8') and mime == 'image/jpeg'
+            else:
+                result = review.inspection(row['review_id'])
+                assert result['publication']['publicly_available']
+                assert result['facts_sha256'] and len(result['assets']) == 20
             samples.append({'operation':kind,'milliseconds':round((time.perf_counter()-started)*1000,3),'original_reads':len(reads),'distinct_assets_read':len(set(reads))})
     print('GALLERY_PROBE='+json.dumps({'synthetic_assets':20,'dimensions':[1600,900],'image_pattern':'solid-color JPEG; not representative hotel filesize','publish_ms':round(publish_ms,3),'samples':samples},sort_keys=True))
     review.revoke(row['review_id'],'admin')

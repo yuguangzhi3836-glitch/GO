@@ -62,3 +62,15 @@ test('changed hotel or room facts with same manifest hash require a new confirma
 test('missing trusted facts snapshot cannot arm approval',async()=>{
  const d=inspect();delete d.facts_sha256;const c=module().createController({request:async()=>({data:d})},()=>{});await c.open('r1');assert.equal(c.prepare('approve'),false);assert.match(module().inspectionHtml(d),/data-action="approve" disabled/);
 });
+function factoryHarness(request){
+ let html='',nodes=new Map(),mounted=0;
+ const root={get innerHTML(){return html},set innerHTML(v){html=v;nodes=new Map();if(v.includes('factoryLoadingStatus'))nodes.set('#factoryLoadingStatus',{textContent:''})},insertAdjacentHTML(_,v){html=v+html;if(v.includes('directReviewOpen'))nodes.set('#directReviewOpen',{})},querySelector:s=>nodes.get(s)||null};
+ const context={window:{GO_HOTEL_DIRECT_REVIEW:{mount:()=>{mounted++;root.innerHTML='<div>review interface</div>'}}}};vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(__dirname,'../frontend/admin/hotel-page-factory.js'),'utf8'),context);
+ return{root,mounted:()=>mounted,render:()=>context.window.GO_HOTEL_PAGE_FACTORY.render({root,api:{request},notice:()=>{}})};
+}
+test('failed legacy factory overview leaves review entry available and functional',async()=>{
+ const f=factoryHarness(async()=>{throw Error('LEGACY_FAILURE')});await f.render();assert.match(f.root.querySelector('#factoryLoadingStatus').textContent,/仍可进入酒店资料审核/);f.root.querySelector('#directReviewOpen').onclick();assert.equal(f.mounted(),1);
+});
+test('opening review during legacy overview prevents stale factory redraw and further legacy requests',async()=>{
+ const wait=deferred();let calls=0;const f=factoryHarness(()=>{calls++;return wait.promise});const loading=f.render();f.root.querySelector('#directReviewOpen').onclick();wait.resolve({data:{}});await loading;assert.equal(calls,1);assert.match(f.root.innerHTML,/review interface/);
+});

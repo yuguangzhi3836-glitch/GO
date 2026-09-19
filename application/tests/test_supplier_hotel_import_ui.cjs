@@ -136,3 +136,12 @@ test('trusted manifest submit rejects concurrent duplicate click and hotel switc
  s.ctx.api.request=async(url,opts)=>{if(opts){writes++;return new Promise(resolve=>release=resolve)}return {items:[]}};
  const pending=s.$('#submitDirectManifest').onclick();await s.$('#submitDirectManifest').onclick();assert.equal(writes,1);assert.equal(await s.ctx.supplierSwitchProperty('prop-second'),false);release({state:'SUBMITTED',review_id:'review-1'});await pending;assert.match(s.$('#directManifestStatus').textContent,/正式审核已提交/);
 });
+test('session cookie change during manifest read cannot render prior session or submit',async()=>{
+ const s=await setup();let cookie='session-a';s.ctx.api.csrf=()=>cookie;await s.ctx.supplierOneClickBuild();let release;
+ s.$('#directManifestFile').files=[{size:1200,text:()=>new Promise(resolve=>release=resolve)}];const pending=s.$('#directManifestFile').onchange();cookie='session-b';release(JSON.stringify(directManifest()));await pending;s.$('#directManifestConfirm').checked=true;await s.$('#submitDirectManifest').onclick();assert.equal(s.requests.length,0);assert.doesNotMatch(s.$('#directManifestPreview').innerHTML,/canonical-own/);
+});
+test('session cookie change invalidates already previewed manifest and pending review detail',async()=>{
+ const s=await setup();let cookie='session-a';s.ctx.api.csrf=()=>cookie;await s.ctx.supplierOneClickBuild();await loadManifest(s);s.$('#directManifestConfirm').checked=true;let release;
+ s.ctx.api.request=async url=>url.endsWith('/direct-submission-reviews')?{items:[{review_id:'review-1',state:'SUBMITTED'}]}:new Promise(resolve=>release=resolve);
+ await s.$('#refreshDirectReviews').onclick();const pending=s.$('#directReviewDetail0').onclick();cookie='session-b';release({state:'APPROVED',publication:{publicly_available:true,live_read_verified:true}});await pending;await s.$('#submitDirectManifest').onclick();assert.equal(s.requests.length,0);assert.doesNotMatch(s.$('#directReviewResult0').textContent,/已发布/);
+});

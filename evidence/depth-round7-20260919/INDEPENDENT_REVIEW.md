@@ -41,6 +41,10 @@ PYTHONPATH=src /workspace/scratch/7375eae00ed5/go-depth-venv/bin/python -m pytes
 
 The Python integration uses isolated synthetic accounts with actual password/JWT/database-session behavior. It is a scoped FastAPI router application backed by SQLite, not the full deployed application or production login.
 
+## Later full-application evidence reviewed
+
+The runtime agent subsequently supplied `test_hotel_direct_submission_full_app.py` and `full-app.log/xml` (2 passing scenarios). This reviewer inspected the test definition: it enters the actual `go_hotel.main` lifespan, uses the real BFF password/MFA/cookie/CSRF path, rejects missing/wrong CSRF, approves with both hashes, publishes/repeats/revokes, checks logout, reads two owned hotels and denies a foreign hotel, and checks the direct JS/CSS references of three HTML entry pages. All imported database factories point to the same temporary SQLite fixture; background workers and external egress are disabled. No authentication dependency override is present. These are runtime-agent executed tests, separate from the independently executed counts above. They materially improve full-application HTTP coverage but do not demonstrate rendering, mobile interactions, current staging state or PostgreSQL concurrency.
+
 ## Remaining limits
 
 - The cloud browser was reported blocked by the root agent's permitted navigation attempt. No network/policy workaround was attempted by this reviewer, and no screenshot, responsive-layout or real mobile journey is claimed.

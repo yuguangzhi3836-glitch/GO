@@ -10,11 +10,15 @@ Result: 4 tests passed. See raw `runtime-probes.log` and JUnit XML. Synthetic ac
 
 Three tests use the real IdentityService password hashing/login, administrator MFA enrollment/TOTP, signed JWT, persisted sessions and original authorization dependencies. No principal dependency override. They verify unauthenticated rejection, supplier/admin role separation, read-only administrator rejection, wrong actor header rejection, session revocation, two-supplier property isolation, and original-image publish/retry/revoke. Accounts are generated only inside the isolated fixture. This is actual authentication-service and scoped-router integration, not the application's login UI or full authentication middleware acceptance.
 
-## Full application and browser boundary
+## Full application and browser boundary — checkout blocker resolved
 
-Fetched unmodified `application/src/go_hotel/main.py` at the exact baseline. AST inspection found 120 direct internal import statements, 115 referenced modules absent from this partial local checkout. Actual `import go_hotel.main` failed at the first missing module: `go_hotel.api.routes.autonomy_execution`. The complete missing-module inventory and main hash are recorded in `runtime-material-check.json`. This is a checkout completeness blocker, not evidence that the repository application is broken. No dummy modules or replacement main were introduced to label a partial app as complete.
+Initially, unmodified `application/src/go_hotel/main.py` at the exact baseline had 115 absent direct imports. This local completeness problem was resolved in the same task: fetched missing files at the exact baseline, completing all 458 source Python files and 81 previously absent frontend text/SVG assets, preserving current product edits. `import go_hotel.main` then succeeded. No dummy modules or replacement main were introduced. Initial gaps and final resolution are recorded separately in `runtime-material-check.json`.
 
-Therefore full-app startup, middleware/CSRF behavior, real UI login, browser/mobile flow, and current runtime/source binding remain unverified. Browser work belongs to the parent task; this assessment did not open a browser. The exact prerequisite is a complete runnable checkout or an already approved isolated runtime bound to the candidate source, with test identities. No production or hotel identity is necessary for synthetic UI acceptance.
+`tests/test_hotel_direct_submission_full_app.py` ran the real main application and lifespan, with actual audit/security/observability middleware. Two tests passed in 7.711 seconds; `full-app.log` and `full-app.xml` are the raw evidence. Every imported SessionLocal binding points to one temporary fixture SQLite database. Optional expiry workers and external model/SSO settings are disabled. Passwords and identities are generated locally; authentication dependencies are not overridden.
+
+Verified through the actual BFF endpoints: password login, mandatory admin MFA enrollment/TOTP, session cookies, missing/wrong CSRF rejected with 403, inspected manifest/facts hashes approved with the correct cookie and CSRF, publication, idempotent retry, revocation stopping original-image reads, logout invalidating access, same-owner two-hotel switching and foreign-hotel rejection. All three HTML entry routes and their 49 directly referenced JS/CSS assets return HTTP 200.
+
+This is full-application ASGI TestClient integration, not a real TCP/browser run. It does not execute frontend JavaScript, verify visual layout, check every dynamic module/image reference, or establish mobile-browser acceptance. Browser work belongs to the parent task; this assessment did not open a browser. PostgreSQL and current staging runtime/source binding remain unverified.
 
 ## 敖麓谷雅首家实证材料
 
@@ -24,15 +28,18 @@ All 19 source room IDs/names are listed individually in `runtime-material-check.
 
 The source package includes basic address/contact material and policy/facility page snapshots, but its existing status explicitly lists incomplete room-specific facilities, facility subdetails such as hours/fees, and some highlight descriptions. Neither 100% content completeness nor current GO field equality is demonstrated. Next inputs: current canonical hotel and 17-room IDs, hotel-uploaded originals with rights declarations, and the approved isolated destination readback. Do not convert source room-count metadata into availability or source rate cancellation terms into a hotel-wide policy.
 
+Historical archives were subsequently recovered and decoded; see `AOLUGUYA_ARCHIVE_RECOVERY.md/json`. They contain 229 distinct image byte objects, 69 meeting current dimensions/format requirements, but include unrelated properties, unknown/inferred rights and two room-ID conflicts. These findings do not establish current canonical bindings or authorization.
+
 ## Gallery performance observation
 
-One actual service probe uploads 18 additional originals beside a hero and room image, reviews all 20, publishes through the existing canonical factory, reads the page three times and a single image three times, then verifies revocation denies access. Synthetic images are 1600×900 solid-colour JPEGs; their small byte sizes are not representative of real hotel photography.
+One actual service probe uploads 18 additional originals beside a hero and room image, reviews all 20, publishes through the existing canonical factory, reads the page, a single image and the administrator inspection three times each, then verifies revocation denies access. Synthetic images are 1600×900 solid-colour JPEGs; their small byte sizes are not representative of real hotel photography. Timings below reflect the final parent-extended probe run.
 
 | Operation | Observed elapsed time | Original file reads per request |
 |---|---:|---:|
-| Publish 20 assets | 460.838 ms | Not instrumented |
-| Read page, 3 samples | 100.809–101.825 ms | 40 across all 20 assets |
-| Read one image, 3 samples | 154.465–158.248 ms | 61 across all 20 assets |
+| Publish 20 assets | 461.844 ms | Not instrumented |
+| Read page, 3 samples | 101.154–108.589 ms | 40 across all 20 assets |
+| Read one image, 3 samples | 152.878–161.619 ms | 61 across all 20 assets |
+| Administrator inspection, 3 samples | 307.241–312.274 ms | 120 across all 20 assets |
 
 This exposes repeated whole-gallery verification within one request. A full page followed by 20 image requests would trigger substantially more work than verifying 20 originals once; actual concurrent browser/network loading was not measured. Next optimization should remove duplicate checks within a single request and examine target-image verification while retaining current approval, ownership, inventory, expiry and revocation checks. Do not introduce stale approval caching or skip corruption checks merely to improve these timings. These observations are not a throughput, p95, 1000-user or full-gallery acceptance result.
 
