@@ -67,6 +67,19 @@ jobs:
       - name: Confirm the candidate admission suite still passes
         working-directory: control-plane/command-center-candidate-admission-v1
         run: python run_checks.py "$RUNNER_TEMP/cc-candidate-admission-checks"
+      # The proof compares real commits, so it needs the ones a pull-request checkout does not
+      # carry: canonical main, and the commit the live Hong Kong runtime corresponds to. Both are
+      # branch heads of this repository, so one refspec gets them. Commits and trees only -- this
+      # repository holds ~1.7 GB of blobs and the verifier reads none of them out of the object
+      # store -- and no --depth, because the ancestry question is the point and main's whole
+      # history is 251 commits. Untested against a branch that is deleted, not against a commit
+      # that is unreachable: if the live runtime's branch ever goes away, this job should say so
+      # rather than quietly prove less.
+      - name: Fetch the branch heads the proof reads
+        run: |
+          if [ -f .git/shallow ]; then unshallow=--unshallow; else unshallow=; fi
+          git fetch --no-tags --filter=blob:none $unshallow origin "+refs/heads/*:refs/remotes/origin/*"
+
       # The real proof, on the real repository, against real commits: the published candidate,
       # a file that is its blob, a file that is not, and the commit the live Hong Kong runtime
       # corresponds to. A step that only exercised the synthetic fixtures would not have found
@@ -105,6 +118,14 @@ jobs:
           check('origin/main_resolves', bool(main), main)
           check('the_live_hk_commit_is_a_real_commit',
                 repository.has_commit('9b93274569ed0aaff75f43f2e330aef8acb14335'))
+
+          # Both are inputs to every check below, and the fetch step above is what provides them.
+          # Stopping here by name is the difference between a red that says what is missing and a
+          # traceback from plumbing that was handed a commit it cannot use -- which is what this
+          # step did on its first run in CI, before the fetch existed.
+          if failures:
+              print('E2E_FAILED: %s' % ', '.join(failures), flush=True)
+              sys.exit(1)
 
           # 1. the candidate the repository publishes, with the signed result of the same build
           pointer = json.loads((repo / 'docs' / 'canonical-baseline'
