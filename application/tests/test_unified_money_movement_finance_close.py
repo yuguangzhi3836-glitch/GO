@@ -49,3 +49,8 @@ def test_close_approval_rechecks_incident_authority(monkeypatch):
  module.production_connector_runtime_service=BrokenRuntime()
  monkeypatch.setitem(sys.modules,'go_hotel.services.production_connector_runtime',module)
  with pytest.raises(ValueError,match='SCOPE_CHANGED_REPREPARE'):svc.approve_close(c['finance_scoped_close_batch_id'],'checker')
+
+
+def test_caller_cannot_self_certify_external_money_fact():
+ with pytest.raises(ValueError,match='TRUSTED_INGRESS_REQUIRED'):
+  svc.create('forged-intent',{'movement_type':'AUTHORIZATION','amount_minor':1,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':'forged','evidence':[{'reference':'forged://receipt'}]},'forged','untrusted-caller')
