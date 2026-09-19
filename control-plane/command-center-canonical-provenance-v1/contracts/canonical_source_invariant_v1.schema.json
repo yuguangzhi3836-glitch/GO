@@ -1,0 +1,318 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "go.canonical-source-invariant.v1",
+  "title": "CANONICAL_SOURCE_INVARIANT verdict",
+  "description": "The verdict of the six-step canonical provenance proof (CCV1-82 CONTRACT SPEC section 7.3). One document per proof. It states what was proved, against which canonical commit, and -- when the proof failed -- exactly which files disagree. It grants nothing: x-go-authority is false throughout.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "contract",
+    "phase",
+    "verdict",
+    "canonical_ref",
+    "canonical_commit",
+    "authorized_deploy_commit",
+    "application_path",
+    "candidate_contract_sha256",
+    "source_tree",
+    "steps",
+    "refusal",
+    "drift",
+    "modules",
+    "codes",
+    "conditions",
+    "authority"
+  ],
+  "properties": {
+    "schema": {
+      "const": "go.canonical-source-invariant.v1"
+    },
+    "contract": {
+      "const": "CANONICAL_SOURCE_INVARIANT"
+    },
+    "phase": {
+      "description": "Which composition was asked for. Named after what the caller had to hand, not after what it hoped to conclude.",
+      "enum": ["PRE_DEPLOY", "INSTALL_SOURCE", "POST_DEPLOY", "CHECKOUT"]
+    },
+    "verdict": {
+      "enum": ["PASS", "REFUSED"]
+    },
+    "canonical_ref": {
+      "description": "The ref the proof was measured against. It is an input: this verifier never fetches.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "canonical_commit": {
+      "description": "What that ref resolved to at proof time. A stale reference is therefore a recorded fact, not a silent one.",
+      "type": ["string", "null"],
+      "pattern": "^([0-9a-f]{40})?$"
+    },
+    "authorized_deploy_commit": {
+      "description": "The commit the proof is about: the candidate's source_commit, the installation's recorded source, or the commit being checked out.",
+      "type": ["string", "null"],
+      "pattern": "^([0-9a-f]{40})?$"
+    },
+    "application_path": {
+      "description": "The subtree the declared tree was compared against. Null means the commit's whole tree.",
+      "type": ["string", "null"],
+      "maxLength": 256
+    },
+    "candidate_contract_sha256": {
+      "description": "The converged candidate digest, when the proof had a candidate fact. Produced by the one implementation of that digest (WP-1), never recomputed here.",
+      "type": ["string", "null"],
+      "pattern": "^([0-9a-f]{64})?$"
+    },
+    "source_tree": {
+      "description": "The tree the installation recorded, when the proof had one.",
+      "type": ["string", "null"],
+      "pattern": "^([0-9a-f]{40})?$"
+    },
+    "steps": {
+      "description": "All six steps of section 7.3, always. A step that was not part of this composition is NOT_EVALUATED with a reason; nothing is omitted, because an omitted step and a passing step look the same to a reader scanning for gaps.",
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["step", "state", "code", "condition", "observed", "drift"],
+        "properties": {
+          "step": {
+            "enum": [
+              "commit_is_canonical",
+              "application_tree_matches",
+              "artifact_matches_the_signed_result",
+              "installed_identity_is_the_authorized_commit",
+              "installed_modules_are_the_commit_blobs",
+              "disk_blobs_match_the_commit"
+            ]
+          },
+          "state": {
+            "enum": ["PASS", "FAIL", "NOT_EVALUATED"]
+          },
+          "code": {
+            "type": ["string", "null"],
+            "enum": [
+              "E_COMMIT_NOT_CANONICAL",
+              "E_TREE_MISMATCH",
+              "E_ARTIFACT_MISMATCH",
+              "E_BLOB_DRIFT",
+              "E_INSTALL_DRIFT",
+              null
+            ]
+          },
+          "condition": {
+            "type": ["string", "null"],
+            "enum": ["UNRESOLVABLE", "PROVENANCE_BROKEN", "DRIFT", "NOT_THE_AUTHORIZED_COMMIT", null]
+          },
+          "observed": {
+            "type": "object"
+          },
+          "expected": {
+            "type": "object"
+          },
+          "drift": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": ["kind", "path", "expected", "observed"],
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "module_absent_from_the_commit",
+                    "module_bytes_differ_from_the_commit",
+                    "file_bytes_differ_from_the_commit"
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "file": {
+                  "type": "string"
+                },
+                "expected": {
+                  "type": ["string", "null"]
+                },
+                "observed": {
+                  "type": ["string", "null"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "refusal": {
+      "description": "The first failure, and only the first: the chain stops there because a later step had nothing trustworthy to consume. Every failure is still reported in steps; drift lists them all.",
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "required": ["step", "code", "condition"],
+      "properties": {
+        "step": {
+          "type": "string"
+        },
+        "code": {
+          "enum": [
+            "E_COMMIT_NOT_CANONICAL",
+            "E_TREE_MISMATCH",
+            "E_ARTIFACT_MISMATCH",
+            "E_BLOB_DRIFT",
+            "E_INSTALL_DRIFT"
+          ]
+        },
+        "condition": {
+          "enum": ["UNRESOLVABLE", "PROVENANCE_BROKEN", "DRIFT", "NOT_THE_AUTHORIZED_COMMIT"]
+        },
+        "observed": {
+          "type": "object"
+        },
+        "expected": {
+          "type": "object"
+        }
+      }
+    },
+    "drift": {
+      "description": "Every disagreement the proof found, across all steps, with one entry per file or module. This is the list section 7.3 step 6 asks for.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "modules": {
+      "description": "Each module the proof resolved out of the commit, with the hash it compared. Empty when the composition resolved none.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "path", "sha256", "blob"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "blob": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          }
+        }
+      }
+    },
+    "codes": {
+      "description": "The closed refusal vocabulary, restated in the document so a reader of a verdict does not have to fetch the contract to classify a code.",
+      "const": [
+        "E_COMMIT_NOT_CANONICAL",
+        "E_TREE_MISMATCH",
+        "E_ARTIFACT_MISMATCH",
+        "E_BLOB_DRIFT",
+        "E_INSTALL_DRIFT"
+      ]
+    },
+    "conditions": {
+      "const": ["UNRESOLVABLE", "PROVENANCE_BROKEN", "DRIFT", "NOT_THE_AUTHORIZED_COMMIT"]
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "may_read_the_repository",
+        "may_read_the_candidate_and_its_evidence",
+        "deploys",
+        "publishes",
+        "signs",
+        "activates",
+        "authorises",
+        "writes_to_the_repository",
+        "calls_the_network",
+        "note"
+      ],
+      "properties": {
+        "may_read_the_repository": {
+          "const": true
+        },
+        "may_read_the_candidate_and_its_evidence": {
+          "const": true
+        },
+        "deploys": {
+          "const": false
+        },
+        "publishes": {
+          "const": false
+        },
+        "signs": {
+          "const": false
+        },
+        "activates": {
+          "const": false
+        },
+        "authorises": {
+          "const": false
+        },
+        "writes_to_the_repository": {
+          "const": false
+        },
+        "calls_the_network": {
+          "const": false
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "x-go-verdicts": {
+    "values": ["PASS", "REFUSED"],
+    "note": "A proof either holds or it does not. There is no third value: an input the proof could not evaluate refuses rather than being carried as UNKNOWN, because a deployment gated on an unevaluated proof would be a deployment gated on nothing."
+  },
+  "x-go-refusals": {
+    "source": [
+      "E_COMMIT_NOT_CANONICAL",
+      "E_TREE_MISMATCH",
+      "E_ARTIFACT_MISMATCH",
+      "E_BLOB_DRIFT",
+      "E_INSTALL_DRIFT"
+    ],
+    "conditions": [
+      "UNRESOLVABLE",
+      "PROVENANCE_BROKEN",
+      "DRIFT",
+      "NOT_THE_AUTHORIZED_COMMIT"
+    ],
+    "note": "Five codes, three of them from the level table of section 7.2 and two describing the installed side. A code says whether the proof may proceed; a condition says what exactly is wrong, so that DRIFT and PROVENANCE_BROKEN stay distinguishable without a sixth code."
+  },
+  "x-go-steps": {
+    "order": [
+      "commit_is_canonical",
+      "application_tree_matches",
+      "artifact_matches_the_signed_result",
+      "installed_identity_is_the_authorized_commit",
+      "installed_modules_are_the_commit_blobs",
+      "disk_blobs_match_the_commit"
+    ],
+    "note": "Section 7.3's sequence. The chain stops at the first failure; steps 5 and 6 compare every file and report the complete list."
+  },
+  "x-go-authority": {
+    "may_read_the_repository": true,
+    "may_read_the_candidate_and_its_evidence": true,
+    "deploys": false,
+    "publishes": false,
+    "signs": false,
+    "activates": false,
+    "authorises": false,
+    "writes_to_the_repository": false,
+    "calls_the_network": false,
+    "note": "The verifier reads local git objects and facts it is handed. It does not fetch, write, sign, publish or deploy."
+  }
+}

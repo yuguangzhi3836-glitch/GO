@@ -1,0 +1,461 @@
+#!/usr/bin/env python3
+"""go-canonical-provenance -- run the CANONICAL_SOURCE_INVARIANT proof and report it.
+
+    go-canonical-provenance candidate       --candidate C.json --test-pr-evidence E.json
+    go-canonical-provenance install-source  --repository R --source-commit C --source-tree T
+                                            --runtime-dir D --module-prefix P
+    go-canonical-provenance installation    --repository R --authorized-commit C
+                                            --installed-identity I.json --modules F.json
+                                            --module-prefix P
+    go-canonical-provenance checkout        --repository R --commit C --file P=F ...
+    go-canonical-provenance selftest
+
+The proof is `canonical_provenance.py`; this program is the way it is run. It reads local
+git objects, a candidate fact, a signed result and an installation record, and writes one
+verdict document. It does not fetch, does not write to the repository, and does not decide
+what a refusal should cause -- `--expect` decides only what exit code this program returns,
+so that a caller can *record* a refusal without pretending it did not happen.
+
+Exit codes: 0 the verdict matched `--expect`; 1 an internal failure; 2 the request could not
+be answered as asked (an unreadable input, a contract that is not the one being implemented);
+3 the verdict did not match `--expect`.
+"""
+import argparse
+import hashlib
+import importlib.util
+import json
+import os
+import pathlib
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+import canonical_provenance as P  # noqa: E402
+import git_repository as G  # noqa: E402
+from git_repository import GitRepository  # noqa: E402
+
+COMPONENT = 'command-center-canonical-provenance-v1'
+CONTRACT_FILE = 'contracts/canonical_source_invariant_v1.schema.json'
+OUTPUT_NAME = 'CANONICAL_PROVENANCE.json'
+DEFAULT_OUT = '/tmp/go-cc-canonical-provenance'
+
+VERDICT_FIELDS = ('schema', 'contract', 'phase', 'verdict', 'canonical_ref',
+                  'canonical_commit', 'authorized_deploy_commit', 'application_path',
+                  'candidate_contract_sha256', 'source_tree', 'steps', 'refusal',
+                  'drift', 'modules', 'codes', 'conditions', 'authority')
+
+VERDICTS = ('PASS', 'REFUSED')
+
+# What an installation record's module hash is compared against, when no prefix is given.
+DEFAULT_MODULE_PREFIX = 'hk-staging/source/executor/runtime'
+
+
+class Unusable(Exception):
+    """The request cannot be answered as asked. Not a verdict."""
+
+
+# --------------------------------------------------------------------------- #
+# the contract
+# --------------------------------------------------------------------------- #
+def read_json(path, limit=4 * 1024 * 1024):
+    raw = pathlib.Path(path).read_bytes()
+    if len(raw) > limit:
+        raise Unusable('document_oversized:%s' % path)
+    return json.loads(raw.decode('utf-8'))
+
+
+class Contract:
+    """The verdict contract, read rather than assumed.
+
+    The same discipline the other Control Plane components apply: a component that ships a
+    contract must prove the contract it ships is the one it implements, and that the
+    contract grants nothing. A refusal code this program can emit but the contract does not
+    declare would be a refusal nobody downstream can classify.
+    """
+
+    def __init__(self, path):
+        self.path = str(path)
+        try:
+            document = read_json(path)
+        except Exception as exc:  # noqa: BLE001 - fail closed and say why
+            raise Unusable('contract_unreadable:%s' % type(exc).__name__) from exc
+        if not isinstance(document, dict) or document.get('$id') != P.SCHEMA:
+            raise Unusable('not_the_canonical_source_invariant_contract')
+        if set(document.get('required') or ()) != set(VERDICT_FIELDS):
+            raise Unusable('contract_does_not_declare_the_verdict_fields')
+        if document.get('properties', {}).get('verdict', {}).get('enum') != list(VERDICTS):
+            raise Unusable('contract_verdict_set_is_not_closed')
+        refusals = (document.get('x-go-refusals') or {})
+        self.codes = tuple(refusals.get('source') or ())
+        self.conditions = tuple(refusals.get('conditions') or ())
+        if self.codes != P.CODES:
+            raise Unusable('contract_refusal_codes_are_not_the_implemented_ones')
+        if self.conditions != P.CONDITIONS:
+            raise Unusable('contract_conditions_are_not_the_implemented_ones')
+        steps = (document.get('x-go-steps') or {}).get('order')
+        if steps != list(P.STEPS):
+            raise Unusable('contract_steps_are_not_the_implemented_ones')
+        authority = document.get('x-go-authority') or {}
+        if authority.get('deploys') is not False or authority.get('publishes') is not False \
+                or authority.get('signs') is not False or authority.get('activates') is not False \
+                or authority.get('authorises') is not False \
+                or authority.get('writes_to_the_repository') is not False \
+                or authority.get('calls_the_network') is not False:
+            raise Unusable('contract_grants_authority')
+
+    def refuses(self, code):
+        """Every code this program emits must be in the contract's own list."""
+        if code not in self.codes:
+            raise Unusable('code_not_in_the_contract:%s' % code)
+        return code
+
+
+def assert_shape(verdict, contract):
+    """The emitted document must say what the contract says a verdict is.
+
+    Not a schema engine: the checks that matter are the ones a wrong implementation would
+    actually fail -- the field set, the step list, the closed vocabulary, and that a refusal
+    names a declared code.
+    """
+    if sorted(verdict) != sorted(VERDICT_FIELDS):
+        raise Unusable('verdict_fields_are_not_the_contract_fields:%s'
+                       % ','.join(sorted(set(verdict) ^ set(VERDICT_FIELDS))))
+    if verdict['verdict'] not in VERDICTS:
+        raise Unusable('verdict_is_not_in_the_closed_set')
+    if [step['step'] for step in verdict['steps']] != list(P.STEPS):
+        raise Unusable('verdict_steps_are_not_the_six_steps')
+    if verdict['codes'] != list(P.CODES):
+        raise Unusable('verdict_codes_are_not_the_contract_codes')
+    refusal = verdict['refusal']
+    if (refusal is None) != (verdict['verdict'] == 'PASS'):
+        raise Unusable('refusal_and_verdict_disagree')
+    if refusal is not None:
+        contract.refuses(refusal['code'])
+    for step in verdict['steps']:
+        if step['state'] not in (P.PASS, P.FAIL, P.NOT_EVALUATED):
+            raise Unusable('step_state_is_not_in_the_closed_set')
+        if step['state'] == P.FAIL:
+            contract.refuses(step['code'])
+    return verdict
+
+
+# --------------------------------------------------------------------------- #
+# the inputs
+# --------------------------------------------------------------------------- #
+def repository_from(arguments):
+    if not arguments.repository:
+        raise Unusable('repository_required')
+    try:
+        return GitRepository(arguments.repository)
+    except (OSError, ValueError) as exc:
+        raise Unusable('repository_unusable:%s' % type(exc).__name__) from exc
+
+
+def runtime_modules(directory, declared):
+    """The modules to compare: the ones named, or every module in the directory.
+
+    The default is the whole directory rather than the installed set, and that is
+    deliberate: a `.py` file sitting in the runtime directory that the commit does not hold
+    is a module the host has and canonical main does not, which is a difference worth
+    knowing about even when the fact does not mention it.
+    """
+    if declared:
+        modules = []
+        for entry in declared:
+            name, _, filename = entry.partition('=')
+            if not name or not filename:
+                raise Unusable('module_must_be_name=filename:%s' % entry)
+            path = os.path.join(directory, filename)
+            try:
+                raw = pathlib.Path(path).read_bytes()
+            except OSError as exc:
+                raise Unusable('module_unreadable:%s' % name) from exc
+            modules.append({'name': name, 'sha256': hashlib.sha256(raw).hexdigest()})
+        return modules
+    try:
+        names = sorted(p.name for p in pathlib.Path(directory).iterdir()
+                       if p.is_file() and p.suffix == '.py' and not p.name.startswith('.'))
+    except OSError as exc:
+        raise Unusable('runtime_directory_unreadable') from exc
+    if not names:
+        raise Unusable('runtime_directory_has_no_modules')
+    modules = []
+    for name in names:
+        raw = (pathlib.Path(directory) / name).read_bytes()
+        modules.append({'name': name[:-3], 'sha256': hashlib.sha256(raw).hexdigest()})
+    return modules
+
+
+def declared_files(arguments):
+    files = []
+    for entry in arguments.file or ():
+        repo_path, _, filename = entry.partition('=')
+        if not repo_path or not filename:
+            raise Unusable('file_must_be_repo_path=filename:%s' % entry)
+        files.append((repo_path, filename))
+    if not files:
+        raise Unusable('at_least_one_file_is_required')
+    return files
+
+
+# --------------------------------------------------------------------------- #
+# the commands
+# --------------------------------------------------------------------------- #
+def command_candidate(arguments, contract):
+    repository = repository_from(arguments)
+    if not arguments.test_pr_evidence:
+        # Step 3 is one of the three steps of the pre-deployment proof. Without the signed
+        # result there is no proof to make, and reporting PASS on two of three steps is
+        # exactly the failure mode this component exists to prevent.
+        raise Unusable('test_pr_evidence_required')
+    document = read_json(arguments.candidate)
+    block = document.get('release_candidate_v1') if isinstance(document, dict) else None
+    if not isinstance(block, dict):
+        # A pointer may also be a bare candidate fact; both shapes are accepted, and which
+        # one was read is stated in the verdict's candidate digest.
+        block = document
+    evidence = read_json(arguments.test_pr_evidence)
+    return P.prove_candidate(repository, block, evidence,
+                             canonical_ref=arguments.canonical_ref,
+                             application_path=arguments.application_path)
+
+
+def command_install_source(arguments, contract):
+    repository = repository_from(arguments)
+    if not arguments.source_commit or not arguments.source_tree:
+        raise Unusable('source_commit_and_source_tree_are_required')
+    modules = runtime_modules(arguments.runtime_dir, arguments.module)
+    return P.prove_install_source(repository, arguments.source_commit,
+                                  arguments.source_tree, modules,
+                                  module_prefix=arguments.module_prefix,
+                                  canonical_ref=arguments.canonical_ref)
+
+
+def command_installation(arguments, contract):
+    repository = repository_from(arguments)
+    identity = read_json(arguments.installed_identity)
+    fact = read_json(arguments.modules)
+    modules = fact.get('runtime_modules') if isinstance(fact, dict) else None
+    if not isinstance(modules, list) or not modules:
+        raise Unusable('the_installation_record_names_no_modules')
+    source_tree = fact.get('source_tree') if isinstance(fact, dict) else None
+    if not isinstance(source_tree, str) or not source_tree:
+        raise Unusable('the_installation_record_states_no_source_tree')
+    return P.prove_installation(repository, arguments.authorized_commit, identity,
+                                source_tree, modules,
+                                module_prefix=arguments.module_prefix,
+                                canonical_ref=arguments.canonical_ref,
+                                application_path=arguments.application_path)
+
+
+def command_checkout(arguments, contract):
+    repository = repository_from(arguments)
+    if not arguments.commit:
+        raise Unusable('commit_required')
+    return P.prove_checkout(repository, arguments.commit, declared_files(arguments),
+                            canonical_ref=arguments.canonical_ref)
+
+
+# --------------------------------------------------------------------------- #
+# selftest -- no repository, no subprocess, no network
+# --------------------------------------------------------------------------- #
+def _the_proof_never_runs_a_program():
+    """The proof module itself must contain no way to start a process.
+
+    A claim about a file, checked by reading the file: the only program in this component is
+    `git_repository.py`, so `canonical_provenance.py` can be read as a statement of the rule
+    rather than as one more thing that has to be trusted.
+    """
+    source = (ROOT / 'canonical_provenance.py').read_text(encoding='utf-8')
+    for forbidden in ('subprocess', 'os.system', 'os.popen', 'Popen', 'import socket',
+                      'urllib'):
+        if forbidden in source:
+            return False
+    return True
+
+
+def selftest(out):
+    """What this component claims about itself, checked without a repository.
+
+    The honest boundary of a selftest: it can prove the vocabulary is closed, the contract
+    is the implemented one, the digest still comes from its owner, and the git adapter can
+    reach only the read-only plumbing it says it can. Everything about actual bytes is
+    proved by the suite, which is where a repository exists.
+    """
+    contract = Contract(ROOT / CONTRACT_FILE)
+    adapter = (ROOT / 'git_repository.py').read_text(encoding='utf-8')
+    checks = []
+    checks.append(('the_contract_is_the_one_being_implemented',
+                   contract.codes == P.CODES and contract.conditions == P.CONDITIONS))
+    checks.append(('there_are_exactly_five_refusal_codes', len(P.CODES) == 5))
+    checks.append(('the_six_steps_are_the_spec_order', P.STEPS == (
+        'commit_is_canonical', 'application_tree_matches',
+        'artifact_matches_the_signed_result',
+        'installed_identity_is_the_authorized_commit',
+        'installed_modules_are_the_commit_blobs', 'disk_blobs_match_the_commit')))
+    checks.append(('the_verifier_grants_nothing',
+                   not [key for key, value in P.AUTHORITY.items()
+                        if value is True and not key.startswith('may_read')]))
+    checks.append(('the_verifier_grants_only_reads',
+                   sorted(key for key, value in P.AUTHORITY.items() if value is True)
+                   == ['may_read_the_candidate_and_its_evidence',
+                       'may_read_the_repository']))
+    checks.append(('no_network_subcommand_is_reachable',
+                   not set(G.ALLOWED_SUBCOMMANDS) & set(G.FORBIDDEN_SUBCOMMANDS)))
+    checks.append(('every_forbidden_subcommand_is_named',
+                   'fetch' in G.FORBIDDEN_SUBCOMMANDS and 'push' in G.FORBIDDEN_SUBCOMMANDS
+                   and 'ls-remote' in G.FORBIDDEN_SUBCOMMANDS
+                   and 'update-ref' in G.FORBIDDEN_SUBCOMMANDS
+                   and 'config' in G.FORBIDDEN_SUBCOMMANDS))
+    checks.append(('the_write_form_of_hash_object_is_not_available',
+                   '-w' not in G.ALLOWED_FLAGS))
+    checks.append(('replace_refs_are_disabled_in_every_invocation',
+                   'GIT_NO_REPLACE_OBJECTS' in adapter
+                   or '--no-replace-objects' in adapter))
+    checks.append(('the_proof_module_starts_no_process',
+                   _the_proof_never_runs_a_program()))
+    checks.append(('the_candidate_digest_comes_from_its_owner_component',
+                   P.candidate_fact_module().CONTRACT_NAME == 'RELEASE_CANDIDATE_V1_CONVERGED'))
+    checks.append(('the_candidate_component_is_the_one_that_implements_the_digest',
+                   os.path.basename(P.CANDIDATE_FACT_PATH) == 'candidate_fact.py'
+                   and P.CANDIDATE_COMPONENT.endswith(
+                       os.path.join('control-plane',
+                                    'command-center-candidate-admission-v1'))))
+    checks.append(('the_blob_object_id_is_the_git_sha1_form',
+                   P.blob_object_id(b'x\n') == hashlib.sha1(b'blob 2\0x\n').hexdigest()))
+    checks.append(('an_undeclared_code_is_refused',
+                   _raise_or_false(contract.refuses, 'E_NOT_A_DECLARED_CODE')))
+    checks.append(('a_verdict_missing_a_field_is_refused',
+                   _raise_or_false(assert_shape,
+                                   {'schema': P.SCHEMA, 'verdict': 'PASS'}, contract)))
+
+    failed = [name for name, ok in checks if not ok]
+    summary = {
+        'schema': 'go.canonical-source-invariant.selftest.v1',
+        'component': COMPONENT,
+        'status': 'PASS' if not failed else 'FAIL',
+        'checks': len(checks),
+        'failed': failed,
+        'refusal_codes': list(P.CODES),
+        'conditions': list(P.CONDITIONS),
+        'steps': list(P.STEPS),
+        'git_subcommands_reachable': list(G.ALLOWED_SUBCOMMANDS),
+        'git_subcommands_unreachable': len(G.FORBIDDEN_SUBCOMMANDS),
+        'repository_required': True,
+        'fetches': 'NEVER',
+        'writes_to_the_repository': 'NEVER',
+        'network_access': 'FORBIDDEN',
+        'hong_kong': 'NOT_ACCESSED',
+        'production': 'NOT_ACCESSED',
+        'deployed': 'NO',
+        'installed': 'NO',
+    }
+    out.mkdir(parents=True, exist_ok=True)
+    (out / 'selftest.json').write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    print(json.dumps(summary, sort_keys=True))
+    return 0 if not failed else 1
+
+
+def _raise_or_false(function, *arguments):
+    try:
+        function(*arguments)
+    except Exception:  # noqa: BLE001 - refusing is the expected outcome here
+        return True
+    return False
+
+
+# --------------------------------------------------------------------------- #
+# entry
+# --------------------------------------------------------------------------- #
+def build_parser():
+    parser = argparse.ArgumentParser(description='CANONICAL_SOURCE_INVARIANT proof')
+    subparsers = parser.add_subparsers(dest='command')
+
+    def common(sub):
+        sub.add_argument('--repository', default=None,
+                         help='path to a local clone; never fetched')
+        sub.add_argument('--canonical-ref', default=P.DEFAULT_CANONICAL_REF)
+        sub.add_argument('--out', default=os.environ.get('GO_CC_OUT', DEFAULT_OUT))
+        sub.add_argument('--expect', choices=('PASS', 'REFUSED', 'ANY'), default='PASS')
+
+    candidate = subparsers.add_parser('candidate')
+    common(candidate)
+    candidate.add_argument('--candidate', required=True)
+    candidate.add_argument('--test-pr-evidence', default=None)
+    candidate.add_argument('--application-path', default=P.DEFAULT_APPLICATION_PATH)
+
+    source = subparsers.add_parser('install-source')
+    common(source)
+    source.add_argument('--source-commit', required=True)
+    source.add_argument('--source-tree', required=True)
+    source.add_argument('--runtime-dir',
+                        default=str(ROOT.parents[1] / 'hk-staging' / 'source' / 'executor'
+                                    / 'runtime'))
+    source.add_argument('--module-prefix', default=DEFAULT_MODULE_PREFIX)
+    source.add_argument('--module', action='append', default=[],
+                        metavar='NAME=FILENAME')
+
+    installation = subparsers.add_parser('installation')
+    common(installation)
+    installation.add_argument('--authorized-commit', required=True)
+    installation.add_argument('--installed-identity', required=True)
+    installation.add_argument('--modules', required=True,
+                              help='the install fact the installation record came from')
+    installation.add_argument('--module-prefix', default=DEFAULT_MODULE_PREFIX)
+    installation.add_argument('--application-path', default=None)
+
+    checkout = subparsers.add_parser('checkout')
+    common(checkout)
+    checkout.add_argument('--commit', required=True)
+    checkout.add_argument('--file', action='append', default=[],
+                          metavar='REPO_PATH=FILENAME')
+
+    selftest_parser = subparsers.add_parser('selftest')
+    selftest_parser.add_argument('--out', default=os.environ.get('GO_CC_OUT', DEFAULT_OUT))
+    return parser
+
+
+def main(argv=None):
+    parser = build_parser()
+    arguments = parser.parse_args(argv)
+    if not arguments.command:
+        parser.print_help()
+        return 2
+    out = pathlib.Path(arguments.out)
+    if arguments.command == 'selftest':
+        return selftest(out)
+
+    handlers = {'candidate': command_candidate, 'install-source': command_install_source,
+                'installation': command_installation, 'checkout': command_checkout}
+    contract = Contract(ROOT / CONTRACT_FILE)
+    try:
+        verdict = handlers[arguments.command](arguments, contract)
+        assert_shape(verdict, contract)
+    except Unusable as refusal:
+        print(json.dumps({'status': 'UNUSABLE', 'reason': str(refusal)}, sort_keys=True))
+        return 2
+    except P.ProvenanceError as failure:
+        print(json.dumps({'status': 'UNUSABLE', 'reason': 'provenance:%s' % failure},
+                         sort_keys=True))
+        return 2
+
+    out.mkdir(parents=True, exist_ok=True)
+    (out / OUTPUT_NAME).write_text(json.dumps(verdict, indent=2, sort_keys=True) + '\n',
+                                   encoding='utf-8')
+    print(json.dumps({'status': 'OK', 'command': arguments.command,
+                      'verdict': verdict['verdict'],
+                      'phase': verdict['phase'],
+                      'canonical_commit': verdict['canonical_commit'],
+                      'authorized_deploy_commit': verdict['authorized_deploy_commit'],
+                      'code': P.refusal_code(verdict),
+                      'drift': [entry.get('path') for entry in verdict['drift']],
+                      'wrote': str(out / OUTPUT_NAME)}, sort_keys=True))
+    if arguments.expect == 'ANY' or arguments.expect == verdict['verdict']:
+        return 0
+    return 3
+
+
+if __name__ == '__main__':
+    sys.exit(main())
