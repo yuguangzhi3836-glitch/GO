@@ -31,3 +31,7 @@ markers = [
   "no_db: static/contract test that does not require database reset",
   "integration: runtime/API integration tests; may depend on application lifecycle"
 ]
+
+
+[tool.setuptools.package-data]
+go_hotel = ["legal/registration/*/*.md", "legal/registration/*/*.json"]

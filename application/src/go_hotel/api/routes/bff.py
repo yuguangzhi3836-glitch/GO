@@ -8,6 +8,7 @@ from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import AuditEventRow
 from typing import Literal
 from go_hotel.services.supplier_onboarding import supplier_onboarding_service
+from go_hotel.services import registration_terms as registration_terms_service
 
 router=APIRouter(tags=['production-bff'])
 
@@ -33,6 +34,7 @@ class SupplierRegisterBody(BaseModel):
     phone:str|None=None
     accepted_terms:bool=False
     term_versions:dict[str,str]=Field(default_factory=dict)
+    term_hashes:dict[str,str]=Field(default_factory=dict)
     hotel_name:str|None=Field(default=None,min_length=2,max_length=160)
     province:str=Field(default='',max_length=80)
     city:str=Field(default='',max_length=80)
@@ -73,21 +75,27 @@ def bff_auth_policy():
 
 @router.get('/bff/auth/supplier/registration-terms')
 def supplier_registration_terms():
-    return {'data':{'required':True,'registration_scope':'NATIONWIDE','publication_requires_verification':True,'versions':SUPPLIER_REGISTRATION_TERMS,'titles':{
-        'supplier_service_terms':'GO 合作伙伴服务协议',
-        'privacy_policy':'隐私政策',
-        'data_processing_terms':'数据处理条款',
-        'electronic_signature_authorization':'电子签约授权',
-        'platform_operating_rules':'平台运营规范',
-    }}}
+    try:
+        policy=registration_terms_service.registration_terms_status('supplier')
+    except (ValueError, OSError, KeyError) as exc:
+        raise HTTPException(503,detail='REGISTRATION_TERMS_UNAVAILABLE') from exc
+    return {'data':{**policy,'required':True,'enabled':policy['acceptance_enabled'],
+        'registration_scope':'NATIONWIDE','publication_requires_verification':True,
+        'titles':{d['id']:d['title'] for d in policy['documents']}}}
 
 @router.post('/bff/auth/supplier/register',status_code=201)
 def supplier_register(body:SupplierRegisterBody,request:Request,response:Response):
     email=body.email.strip().lower()
     if not body.accepted_terms:
         raise HTTPException(422,detail='SUPPLIER_TERMS_ACCEPTANCE_REQUIRED')
-    if any(body.term_versions.get(k)!=v for k,v in SUPPLIER_REGISTRATION_TERMS.items()):
+    try:
+        policy=registration_terms_service.require_registration_terms_ready('supplier')
+    except (ValueError, OSError, KeyError) as exc:
+        raise HTTPException(503,detail='REGISTRATION_TERMS_NOT_READY') from exc
+    if body.term_versions != policy['versions']:
         raise HTTPException(409,detail='SUPPLIER_TERMS_VERSION_MISMATCH')
+    if body.term_hashes != policy['term_hashes']:
+        raise HTTPException(409,detail='SUPPLIER_TERMS_CONTENT_MISMATCH')
     def registration_audit(user_id,supplier_id,property_id):
         t=now()
         return AuditEventRow(
@@ -95,7 +103,7 @@ def supplier_register(body:SupplierRegisterBody,request:Request,response:Respons
             action='SUPPLIER_REGISTRATION_TERMS_ACCEPTED',resource_type='SUPPLIER_REGISTRATION',resource_id=supplier_id,request_id=getattr(request.state,'request_id',None),
             client_ip=request.client.host if request.client else None,http_method='POST',path='/bff/auth/supplier/register',before_state=None,
             after_state={'registration_state':'ACCOUNT_CREATED_TERMS_ACCEPTED'},decision_id=None,evidence_id=None,approval_id=None,
-            metadata_json={'organization_name':body.organization_name,'contact_name':body.contact_name,'phone_provided':bool(body.phone),'term_versions':SUPPLIER_REGISTRATION_TERMS,'accepted_once':True},created_at=t,
+            metadata_json={'organization_name':body.organization_name,'contact_name':body.contact_name,'phone_provided':bool(body.phone),'term_versions':policy['versions'],'term_hashes':policy['term_hashes'],'accepted_once':True},created_at=t,
         )
     try:
         registration=supplier_onboarding_service.register({'username':email,'password':body.password,'hotel':{

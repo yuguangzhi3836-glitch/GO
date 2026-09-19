@@ -1,12 +1,13 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const fixture=require('./registration_terms_fixture.cjs');
 const source=fs.readFileSync(path.join(__dirname,'../frontend/shared/app.js'),'utf8');
 const start=source.indexOf('async function supplierRegisterView()');
 const code=source.slice(start,source.indexOf('\n',start));
-async function setup(){
+async function setup(policy=fixture.policy,document=fixture.document){
  const nodes=new Map(),calls=[];let finish,fail;
- const $=id=>{if(!nodes.has(id))nodes.set(id,{value:id,checked:true,isConnected:true,disabled:false});return nodes.get(id)};
- const ctx={$,esc:x=>String(x),unwrap:x=>x?.data??x,userFacingError:x=>x,loginView(){},notice(){},me:null,document:{body:{innerHTML:''}},window:{location:{hash:''}},shell(){ctx.opened=true},api:{supplierRegistrationTerms:async()=>({versions:{supplier_service_terms:'v1'},titles:{supplier_service_terms:'服务协议'}}),supplierRegister:body=>{calls.push(body);return new Promise((resolve,reject)=>{finish=resolve;fail=reject})}}};
- vm.createContext(ctx);vm.runInContext(code,ctx);await ctx.supplierRegisterView();
+ const $=id=>{if(!nodes.has(id))nodes.set(id,{...fixture.element(),value:id,checked:true,isConnected:true,disabled:false});return nodes.get(id)};
+ const ctx={$,esc:x=>String(x),unwrap:x=>x?.data??x,userFacingError:x=>x,loginView(){},notice(){},me:null,document:{body:{innerHTML:''}},window:{location:{hash:''}},shell(){ctx.opened=true},api:{supplierRegistrationTerms:async()=>policy,raw:async()=>document,supplierRegister:body=>{calls.push(body);return new Promise((resolve,reject)=>{finish=resolve;fail=reject})}}};
+ vm.createContext(ctx);fixture.install(ctx);vm.runInContext(code,ctx);await ctx.supplierRegisterView();$('#acceptTerms').checked=true;
  return {ctx,$,calls,fail:()=>fail(new Error('FAILED')),finish:()=>finish({actor_type:'SUPPLIER_USER',registration:{property_id:'new'}})};
 }
 test('nationwide supplier registration sends independent hotel geography and opens library',async()=>{
@@ -53,4 +54,13 @@ test('late registration failure ignores disconnected error nodes',async()=>{
  const s=await setup(),pending=s.$('#supplierRegister').onsubmit({preventDefault(){}});
  s.$('#supplierRegister').isConnected=false;s.fail();await pending;
  assert.equal(s.$('#supplierRegisterErr').innerHTML,undefined);assert.equal(s.ctx.opened,undefined);
+});
+
+test('draft supplier terms cannot submit despite synthetic checked checkbox',async()=>{
+ const document={...fixture.document,status:'DRAFT'},policy={...fixture.policy,enabled:false,acceptance_enabled:false,documents:[document]};const s=await setup(policy,document);
+ assert.equal(s.$('#acceptTerms').disabled,true);await s.$('#supplierRegister').onsubmit({preventDefault(){}});assert.equal(s.calls.length,0);assert.equal(s.$('#supplierRegisterSubmit').disabled,true);
+});
+test('supplier failure locks stale consent pending full reload',async()=>{
+ const s=await setup(),pending=s.$('#supplierRegister').onsubmit({preventDefault(){}});s.fail();await pending;
+ assert.equal(s.$('#acceptTerms').checked,false);assert.equal(s.$('#acceptTerms').disabled,true);assert.equal(s.$('#supplierRegisterSubmit').disabled,true);
 });

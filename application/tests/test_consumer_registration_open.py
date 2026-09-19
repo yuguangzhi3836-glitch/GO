@@ -1,5 +1,6 @@
 """Real persisted consumer signup, without session/principal overrides."""
 import pytest
+from registration_terms_test_support import approved_terms_fixture, hashes
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
@@ -11,6 +12,7 @@ from go_hotel.api.routes import consumer_identity as routes
 
 @pytest.fixture
 def signup(tmp_path, monkeypatch):
+    approved_terms_fixture(monkeypatch)
     engine=create_engine('sqlite:///'+str(tmp_path/'signup.db'),connect_args={'check_same_thread':False})
     Base.metadata.create_all(engine)
     factory=sessionmaker(bind=engine)
@@ -19,7 +21,7 @@ def signup(tmp_path, monkeypatch):
     with TestClient(app) as client:yield client,factory
     engine.dispose()
 
-def body():return dict(email='traveler@example.test',password='Long-test-pass-123',accepted_terms=True,term_versions=routes.CONSUMER_REGISTRATION_TERMS)
+def body():return dict(email='traveler@example.test',password='Long-test-pass-123',accepted_terms=True,term_versions=routes.CONSUMER_REGISTRATION_TERMS,term_hashes=hashes(routes.CONSUMER_REGISTRATION_TERMS))
 
 def test_national_registration_real_identity_cookie_and_audit(signup):
     client,factory=signup

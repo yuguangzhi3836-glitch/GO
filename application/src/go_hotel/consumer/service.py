@@ -28,7 +28,7 @@ class ConsumerService:
                     ConsumerWalletRow(wallet_id=new_id("wal"),user_id=user_id,status="ACTIVE",created_at=t,updated_at=t),
                 ])
                 if registration_audit is not None:
-                    s.add(AuditEventRow(audit_id=new_id("aud"),actor_id=user_id,actor_type="CONSUMER",supplier_id=None,roles=["CONSUMER"],session_id=None,action="CONSUMER_REGISTRATION_TERMS_ACCEPTED",resource_type="CONSUMER_REGISTRATION",resource_id=user_id,request_id=registration_audit.get("request_id"),client_ip=registration_audit.get("client_ip"),http_method="POST",path="/v1/consumer/auth/register",before_state=None,after_state={"registration_state":"ACCOUNT_CREATED"},decision_id=None,evidence_id=None,approval_id=None,metadata_json={"term_versions":registration_audit["term_versions"],"accepted_once":True,"personal_vault_opt_in":False},created_at=t))
+                    s.add(AuditEventRow(audit_id=new_id("aud"),actor_id=user_id,actor_type="CONSUMER",supplier_id=None,roles=["CONSUMER"],session_id=None,action="CONSUMER_REGISTRATION_TERMS_ACCEPTED",resource_type="CONSUMER_REGISTRATION",resource_id=user_id,request_id=registration_audit.get("request_id"),client_ip=registration_audit.get("client_ip"),http_method="POST",path="/v1/consumer/auth/register",before_state=None,after_state={"registration_state":"ACCOUNT_CREATED"},decision_id=None,evidence_id=None,approval_id=None,metadata_json={"term_versions":registration_audit["term_versions"],"term_hashes":registration_audit.get("term_hashes",{}),"accepted_once":True,"personal_vault_opt_in":False},created_at=t))
         except IntegrityError:
             with SessionLocal() as s:
                 if s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==email)):

@@ -7,6 +7,7 @@ from go_hotel.core.config import settings
 from go_hotel.security.service import identity_service, Principal
 from go_hotel.security.deps import consumer_principal, assert_consumer_order
 from go_hotel.consumer.service import consumer_service
+from go_hotel.services import registration_terms as registration_terms_service
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import OrderRow, AuditEventRow
 from go_hotel.services.booking import booking_service
@@ -26,6 +27,7 @@ class RegisterBody(BaseModel):
     phone: str | None = Field(default=None, max_length=32)
     accepted_terms: bool = Field(strict=True)
     term_versions: dict[str, str]
+    term_hashes: dict[str, str] = Field(default_factory=dict)
 
     @field_validator("email")
     @classmethod
@@ -57,18 +59,28 @@ def _clear(response):
 
 @router.get("/v1/consumer/auth/registration")
 def registration_options():
-    return {"data": {"enabled": True, "coverage": "CN_NATIONWIDE", "method": "EMAIL_PASSWORD", "terms": CONSUMER_REGISTRATION_TERMS, "phone_verified": False}}
+    try:
+        policy = registration_terms_service.registration_terms_status("consumer")
+    except (ValueError, OSError, KeyError) as exc:
+        raise HTTPException(503, detail="REGISTRATION_TERMS_UNAVAILABLE") from exc
+    return {"data": {**policy, "enabled": policy["acceptance_enabled"], "coverage": "CN_NATIONWIDE", "method": "EMAIL_PASSWORD", "terms": policy["versions"], "phone_verified": False}}
 
 @router.post("/v1/consumer/auth/register")
 def register(body:RegisterBody,request:Request,response:Response):
     try:
         if body.accepted_terms is not True:
             raise HTTPException(422, detail="CONSUMER_TERMS_ACCEPTANCE_REQUIRED")
-        if body.term_versions != CONSUMER_REGISTRATION_TERMS:
+        try:
+            policy = registration_terms_service.require_registration_terms_ready("consumer")
+        except (ValueError, OSError, KeyError) as exc:
+            raise HTTPException(503, detail="REGISTRATION_TERMS_NOT_READY") from exc
+        if body.term_versions != policy["versions"]:
             raise HTTPException(409,detail="CONSUMER_TERMS_VERSION_MISMATCH")
-        profile=consumer_service.register(body.email,body.password,body.display_name,body.phone,registration_audit={"request_id":getattr(request.state,"request_id",None),"client_ip":request.client.host if request.client else None,"term_versions":CONSUMER_REGISTRATION_TERMS})
+        if body.term_hashes != policy["term_hashes"]:
+            raise HTTPException(409,detail="CONSUMER_TERMS_CONTENT_MISMATCH")
+        profile=consumer_service.register(body.email,body.password,body.display_name,body.phone,registration_audit={"request_id":getattr(request.state,"request_id",None),"client_ip":request.client.host if request.client else None,"term_versions":policy["versions"],"term_hashes":policy["term_hashes"]})
         t=consumer_service.login(body.email,body.password,request.client.host if request.client else None,request.headers.get("user-agent")); _set(response,t)
-        return {"data":{"authenticated":True,"profile":profile,"terms":CONSUMER_REGISTRATION_TERMS}}
+        return {"data":{"authenticated":True,"profile":profile,"terms":policy["versions"],"term_hashes":policy["term_hashes"]}}
     except ValueError as e: raise HTTPException(409,detail=str(e))
 
 @router.post("/v1/consumer/auth/login")

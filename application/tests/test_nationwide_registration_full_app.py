@@ -1,6 +1,7 @@
 """National self-registration through the real app; isolated SQLite only."""
 import secrets
 import pytest
+from registration_terms_test_support import approved_terms_fixture
 from go_hotel.core.config import settings
 from go_hotel.db.models import HotelPartnerPropertyRow, IdentityUserRow
 from test_hotel_direct_submission_full_app import full_application
@@ -9,14 +10,15 @@ from test_hotel_direct_submission_review import ready
 from test_hotel_direct_submission_verification import setup
 
 
-def test_consumer_registration_cookie_has_no_supplier_or_admin_access(full_application):
+def test_consumer_registration_cookie_has_no_supplier_or_admin_access(full_application,monkeypatch):
+    approved_terms_fixture(monkeypatch)
     client, data = full_application
     policy = client.get('/v1/consumer/auth/registration')
     assert policy.status_code == 200
     config = policy.json()['data']
     assert config['enabled'] and config['coverage'] == 'CN_NATIONWIDE'
     body = {'email':'new-traveler@example.com','password':secrets.token_urlsafe(24),
-            'display_name':'测试旅客','accepted_terms':True,'term_versions':config['terms']}
+            'display_name':'测试旅客','accepted_terms':True,'term_versions':config['terms'],'term_hashes':config['term_hashes']}
     response = client.post('/v1/consumer/auth/register', json=body)
     assert response.status_code in {200,201}, response.text
     assert client.get('/v1/consumer/me').status_code == 200
@@ -28,14 +30,16 @@ def test_consumer_registration_cookie_has_no_supplier_or_admin_access(full_appli
 
 
 @pytest.mark.parametrize('province,city',[('黑龙江','哈尔滨'),('广东','广州'),('新疆','喀什')])
-def test_national_supplier_signup_opens_only_own_draft_library(full_application,province,city):
+def test_national_supplier_signup_opens_only_own_draft_library(full_application,province,city,monkeypatch):
+    approved_terms_fixture(monkeypatch)
     client, data = full_application
     foreign_pid=data[2]; factory=data[4]
-    terms=client.get('/bff/auth/supplier/registration-terms').json()['data']['versions']
+    policy=client.get('/bff/auth/supplier/registration-terms').json()['data']
+    terms=policy['versions']
     body={'email':'new-hotel@example.com','password':secrets.token_urlsafe(24),
           'organization_name':'测试酒店主体','hotel_name':city+'测试酒店','contact_name':'测试联系人',
           'province':province,'city':city,'street_address':'测试地址一号',
-          'accepted_terms':True,'term_versions':terms}
+          'accepted_terms':True,'term_versions':terms,'term_hashes':policy['term_hashes']}
     response=client.post('/bff/auth/supplier/register',json=body)
     assert response.status_code==201,response.text
     result=response.json()['data']; pid=result['property_id']

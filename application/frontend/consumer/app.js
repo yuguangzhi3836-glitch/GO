@@ -62,22 +62,22 @@ async function logoutConsumer(){try{await api('/v1/consumer/auth/logout',{method
 
 async function showConsumerRegister(){
  setVerticalVIMode(false);
- document.querySelector('#app').innerHTML=shell(`<h1 class="screen-title">注册 GO ID</h1><p class="sub">全国用户均可注册。使用邮箱和密码登录，手机号选填。</p><form class="card" id="consumerRegister"><div class="field"><label for="regName">姓名</label><input id="regName" autocomplete="name" maxlength="100" required></div><div class="field"><label for="regEmail">邮箱</label><input id="regEmail" type="email" autocomplete="email" maxlength="254" required></div><div class="field"><label for="regPhone">手机号（选填，不作为已验证身份）</label><input id="regPhone" type="tel" autocomplete="tel" maxlength="32"></div><div class="field"><label for="regPwd">设置密码（至少 10 位）</label><input id="regPwd" type="password" minlength="10" maxlength="128" autocomplete="new-password" required></div><label><input id="regTerms" type="checkbox" required>我同意 GO 用户服务条款、隐私政策及个人旅行信息库规则。旅行资料仅在我授权的旅行用途下释放。</label><p id="consumerRegisterError" role="alert"></p><button class="btn primary" id="doRegister" type="submit" disabled>正在获取注册规则…</button><button class="btn ghost" id="backLogin" type="button">返回登录</button></form>`,'home');
+ document.querySelector('#app').innerHTML=shell(`<h1 class="screen-title">注册 GO ID</h1><p class="sub">注册面向全国用户；条款正式确认后可提交。使用邮箱和密码登录，手机号选填。</p><form class="card" id="consumerRegister"><div class="field"><label for="regName">姓名</label><input id="regName" autocomplete="name" maxlength="100" required></div><div class="field"><label for="regEmail">邮箱</label><input id="regEmail" type="email" autocomplete="email" maxlength="254" required></div><div class="field"><label for="regPhone">手机号（选填，不作为已验证身份）</label><input id="regPhone" type="tel" autocomplete="tel" maxlength="32"></div><div class="field"><label for="regPwd">设置密码（至少 10 位）</label><input id="regPwd" type="password" minlength="10" maxlength="128" autocomplete="new-password" required></div><section id="registrationDocuments" aria-label="注册条款全文"></section><label><input id="regTerms" type="checkbox" required disabled>我同意 GO 用户服务条款、隐私政策及个人旅行信息库规则。旅行资料仅在我授权的旅行用途下释放。</label><p id="consumerRegisterError" role="alert"></p><button class="btn primary" id="doRegister" type="submit" disabled>正在获取注册规则…</button><button class="btn ghost" id="backLogin" type="button">返回登录</button></form>`,'home');
  bindNav();const form=$('#consumerRegister'),button=$('#doRegister'),errorBox=$('#consumerRegisterError');
  $('#backLogin').onclick=showAuth;
  let terms;
  form.onsubmit=async event=>{
-  event.preventDefault();if(button.disabled||!form.isConnected||!form.reportValidity())return;
+  event.preventDefault();if(button.disabled||!terms?.enabled||!form.isConnected||!form.reportValidity())return;
   if(!$('#regTerms').checked){errorBox.textContent='请先阅读并同意注册条款';return}
   button.disabled=true;button.textContent='正在注册…';errorBox.textContent='';
   try{
-   await api('/v1/consumer/auth/register',{method:'POST',body:JSON.stringify({email:$('#regEmail').value.trim(),password:$('#regPwd').value,display_name:$('#regName').value.trim(),phone:$('#regPhone').value.trim()||null,accepted_terms:true,term_versions:terms})});
+   await api('/v1/consumer/auth/register',{method:'POST',body:JSON.stringify({email:$('#regEmail').value.trim(),password:$('#regPwd').value,display_name:$('#regName').value.trim(),phone:$('#regPhone').value.trim()||null,accepted_terms:true,term_versions:terms.versions,term_hashes:terms.hashes})});
    await bootstrapConsumer();if(!form.isConnected)return;
    if(!state.me)throw new Error('账号已创建，但登录状态未确认，请返回登录。');
    showAccount(true);
-  }catch(error){if(!form.isConnected)return;errorBox.textContent=({EMAIL_ALREADY_REGISTERED:'此邮箱已注册，请返回登录。',CONSUMER_TERMS_VERSION_MISMATCH:'注册条款已更新，请重新进入注册页面。'})[error.message]||error.message;button.disabled=false;button.textContent='注册 GO ID'}
+  }catch(error){if(!form.isConnected)return;errorBox.textContent=({EMAIL_ALREADY_REGISTERED:'此邮箱已注册，请返回登录。',CONSUMER_TERMS_VERSION_MISMATCH:'注册条款已更新，请重新进入注册页面。'})[error.message]||error.message;button.disabled=true;$('#regTerms').checked=false;$('#regTerms').disabled=true;button.textContent='请重新进入注册页面'}
  };
- try{const options=await api('/v1/consumer/auth/registration');if(!form.isConnected)return;if(!options.enabled)throw new Error('注册暂未开放');terms=options.terms;button.disabled=false;button.textContent='注册 GO ID'}catch(error){if(form.isConnected){errorBox.textContent='无法获取注册规则，请稍后重新进入。';button.textContent='注册暂不可用'}}
+ try{const options=await api('/v1/consumer/auth/registration');if(!form.isConnected)return;terms=await GORegistrationTerms.mount({container:$('#registrationDocuments'),policy:options,request:api,isCurrent:()=>form.isConnected});if(!form.isConnected||!terms)return;$('#regTerms').checked=false;$('#regTerms').disabled=!terms.enabled;button.disabled=!terms.enabled;button.textContent=terms.enabled?'注册 GO ID':'条款待确认，暂不可注册'}catch(error){if(form.isConnected){errorBox.textContent='无法获取注册规则，请稍后重新进入。';button.textContent='注册暂不可用'}}
 }
 
 async function bootstrapConsumer(){try{state.me=await api('/v1/consumer/me');state.wallet=await api('/v1/consumer/wallet');try{state.vaultCompleteness=await api('/v1/consumer/profile/completeness')}catch{state.vaultCompleteness=null}}catch{state.me=null;state.wallet=null;state.vaultCompleteness=null}}
