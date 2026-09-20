@@ -1,0 +1,32 @@
+name: Payment Draft Truth Regression
+on:
+  push:
+    branches: [payment-depth-command-center-20260919]
+    paths:
+      - application/src/go_hotel/services/omnichannel_payment.py
+      - application/src/go_hotel/services/real_external_execution.py
+      - application/src/go_hotel/services/unified_money_movement.py
+      - application/tests/test_omnichannel_payment_finance_os.py
+      - application/tests/test_p0_0100_real_external_execution.py
+      - application/tests/test_unified_money_movement_finance_close.py
+      - .github/workflows/payment-draft-truth-regression.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  payment-draft-truth:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: application
+    env:
+      LIVE_MONEY: LOCKED
+      GO_EXTERNAL_SANDBOX_NETWORK_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -e '.[dev]'
+      - run: python -m compileall -q src/go_hotel/services/omnichannel_payment.py src/go_hotel/services/real_external_execution.py src/go_hotel/services/unified_money_movement.py
+      - run: pytest -q tests/test_omnichannel_payment_finance_os.py tests/test_p0_0100_real_external_execution.py tests/test_unified_money_movement_finance_close.py
