@@ -211,6 +211,11 @@ class ProductionConnectorRuntimeService:
    op.state=terminal;op.response_json={'payment_truth_operation_id':external_truth_operation_id,'verified_terminal_state':truth.state};op.updated_at=now()
    rec.state='CONVERGED';rec.resolved_at=now();rec.resolved_by='VERIFIED_PAYMENT_CALLBACK';rec.claimed_by=None;rec.lease_expires_at=None;rec.evidence_due_at=None;rec.operator_sla_due_at=None;rec.superseded_reason='SUPERSEDED_BY_VERIFIED_PAYMENT_TRUTH';rec.resolution_result_json={'decision':'VERIFIED_CALLBACK','terminal_state':terminal,'payment_truth_operation_id':external_truth_operation_id};rec.updated_at=now()
    s.commit();return {'operation':out(op),'reconciliation':out(rec)}
+ def recover_verified_payment_truth_cases(self,limit=100):
+  """Replay-safe recovery for a crash after payment truth commits but before case convergence."""
+  with SessionLocal() as s:
+   ids=s.scalars(select(ExternalTruthOperationRow.external_truth_operation_id).where(ExternalTruthOperationRow.vertical=='PAYMENT',ExternalTruthOperationRow.state.in_({'CALLBACK_SUCCEEDED','CALLBACK_FAILED'})).order_by(ExternalTruthOperationRow.completed_at).limit(limit)).all()
+  return [x for x in (self.converge_payment_truth_from_callback(operation_id) for operation_id in ids) if x]
  def due_reconciliations(self,limit=100):
   with SessionLocal() as s:
    rows=s.scalars(select(ConnectorRuntimeReconciliationRow).where(ConnectorRuntimeReconciliationRow.state.in_({'PENDING','MANUAL_REVIEW','CLAIMED','PENDING_CHECKER'})).order_by(ConnectorRuntimeReconciliationRow.updated_at).limit(limit)).all(); result=[]
@@ -271,6 +276,7 @@ class ProductionConnectorRuntimeService:
    if rec.state=='RESOLVED':return {'reconciliation':out(rec),'result':rec.resolution_result_json,'replay':True}
    if rec.state!='PENDING_CHECKER':raise ValueError('RESOLUTION_NOT_PENDING_CHECKER')
    payload=rec.resolution_payload_json or {}
+   if op and op.operation_type=='RECONCILE_PAYMENT_TRUTH':raise ValueError('PAYMENT_TRUTH_REQUIRES_VERIFIED_SIGNED_CALLBACK')
    if digest(payload)!=rec.resolution_evidence_digest:
     op=s.get(ConnectorRuntimeOperationRow,rec.runtime_operation_id);self._safety(s,op.connector_id,'RESOLUTION_EVIDENCE_DIGEST_MISMATCH','CRITICAL',['RESOLUTION_EVIDENCE_DIGEST_MISMATCH'],{'reconciliation_id':reconciliation_id});s.commit();raise ValueError('RESOLUTION_EVIDENCE_DIGEST_MISMATCH')
    rec.checker_id=checker;rec.checker_evidence_reference=checker_evidence_reference;rec.updated_at=now()
