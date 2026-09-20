@@ -259,10 +259,17 @@ class RealExternalExecutionService:
         if not hmac.compare_digest(expected,signature):raise ValueError('BANK_FEED_SIGNATURE_INVALID')
         payload_hash=digest(payload)
         with SessionLocal() as s:
+            if s.bind.dialect.name=='postgresql':
+                s.execute(text("SELECT pg_advisory_xact_lock(hashtext(:delivery))"),{'delivery':f'bank-feed-delivery:{provider_key}:{delivery_id}'})
+            elif s.bind.dialect.name=='sqlite':
+                s.execute(text('BEGIN IMMEDIATE'))
             old=s.scalar(select(BankFeedReceipt).where(BankFeedReceipt.delivery_id==delivery_id).with_for_update())
             if old:
                 if old.payload_hash!=payload_hash:raise ValueError('BANK_FEED_DELIVERY_PAYLOAD_CONFLICT')
                 return {'duplicate':True,'receipt':out(old)}
+            if s.bind.dialect.name=='postgresql':
+                for line_identity in sorted({str(line.get('bank_line_identity','')) for line in payload.get('lines',[])}):
+                    s.execute(text("SELECT pg_advisory_xact_lock(hashtext(:line))"),{'line':f'bank-feed-line:{line_identity}'})
             lines=[omnichannel_payment_service.ingest_bank_line_in_session(s,line) for line in payload.get('lines',[])]
             r=BankFeedReceipt(bank_feed_receipt_id=ident('bfr'),provider_key=provider_key,delivery_id=delivery_id,signature_verified=True,payload_hash=payload_hash,imported_line_count=len(lines),evidence_reference=payload.get('evidence_reference',f'bank-feed://{provider_key}/{delivery_id}'),received_at=now());s.add(r);s.flush()
             receipt=out(r);s.commit();return {'duplicate':False,'receipt':receipt,'lines':lines}
