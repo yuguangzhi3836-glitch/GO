@@ -305,3 +305,14 @@ def test_0100_checker_cannot_replace_verified_payment_truth(monkeypatch):
  command_center.submit_resolution(case['reconciliation_id'],'maker',{'terminal_state':'CONFIRMED','evidence':{'provider':'unverified'},'evidence_reference':'operator://claim'})
  with pytest.raises(ValueError,match='REQUIRES_VERIFIED_SIGNED_CALLBACK'):
   command_center.review_resolution(case['reconciliation_id'],'checker','APPROVE','checker://review')
+
+
+def test_0100_payment_case_convergence_replay_does_not_rewrite_audit_state(monkeypatch):
+ setup_auth();i=seed_order()
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:(_ for _ in ()).throw(httpx.TimeoutException('unknown')))
+ pending=real.execute_payment(i['payment_intent_id'],'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'queue-idempotent-recovery'})
+ body={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-idempotent','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ first=real.payment_callback(pending['external_truth_operation_id'],'queue-idempotent-callback',body,sig(body))['command_center_reconciliation']
+ replay=command_center.converge_payment_truth_from_callback(pending['external_truth_operation_id'])
+ assert first['reconciliation']['resolved_at']==replay['reconciliation']['resolved_at']
+ assert replay['replay'] is True
