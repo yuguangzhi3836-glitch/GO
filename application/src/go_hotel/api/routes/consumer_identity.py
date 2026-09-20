@@ -63,7 +63,8 @@ def registration_options():
         policy = registration_terms_service.registration_terms_status("consumer")
     except (ValueError, OSError, KeyError) as exc:
         raise HTTPException(503, detail="REGISTRATION_TERMS_UNAVAILABLE") from exc
-    return {"data": {**policy, "enabled": policy["acceptance_enabled"], "coverage": "CN_NATIONWIDE", "method": "EMAIL_PASSWORD", "terms": policy["versions"], "phone_verified": False, "release_gate": {"registration_verification": {"required": True, "implemented": False, "status": "BLOCKED", "reason": "LIVE_EMAIL_OR_PHONE_VERIFICATION_EVIDENCE_REQUIRED"}, "candidate_runtime": {"required": True, "status": "BLOCKED", "reason": "SIGNED_HK_STAGING_TEST_PR_EVIDENCE_REQUIRED"}, "page_acceptance": {"required": True, "status": "BLOCKED", "reason": "EXACT_CANDIDATE_C_B_MOBILE_ACCEPTANCE_REQUIRED"}}}}
+    verification_ready = bool(settings.registration_verification_enabled)
+    return {"data": {**policy, "enabled": bool(policy["acceptance_enabled"] and verification_ready), "coverage": "CN_NATIONWIDE", "method": "EMAIL_PASSWORD", "terms": policy["versions"], "phone_verified": False, "release_gate": {"registration_verification": {"required": True, "implemented": verification_ready, "status": "READY" if verification_ready else "BLOCKED", "reason": None if verification_ready else "LIVE_EMAIL_OR_PHONE_VERIFICATION_EVIDENCE_REQUIRED"}, "candidate_runtime": {"required": True, "status": "BLOCKED", "reason": "SIGNED_HK_STAGING_TEST_PR_EVIDENCE_REQUIRED"}, "page_acceptance": {"required": True, "status": "BLOCKED", "reason": "EXACT_CANDIDATE_C_B_MOBILE_ACCEPTANCE_REQUIRED"}}}}
 
 @router.post("/v1/consumer/auth/register")
 def register(body:RegisterBody,request:Request,response:Response):
