@@ -132,11 +132,13 @@ class OmnichannelPaymentService:
  def ingest_psp_line(self,iid,b):
   with SessionLocal() as s:
    r=self.ingest_psp_line_in_session(s,iid,b);s.commit();return r
- def ingest_bank_line(self,b):
+ def ingest_bank_line_in_session(self,s,b):
   required=('bank_line_identity','legal_entity_id','amount_minor','currency','payment_reference','evidence_reference','booked_at')
   if any(b.get(x) in (None,'') for x in required):raise ValueError('BANK_STATEMENT_FACT_REQUIRED')
+  r=BankLine(bank_statement_line_id=ident('bsl'),bank_line_identity=b['bank_line_identity'],legal_entity_id=b['legal_entity_id'],amount_minor=int(b['amount_minor']),currency=b['currency'],payment_reference=b['payment_reference'],evidence_reference=b['evidence_reference'],booked_at=datetime.fromisoformat(b['booked_at'].replace('Z','+00:00')));s.add(r);s.flush();return out(r)
+ def ingest_bank_line(self,b):
   with SessionLocal() as s:
-   r=BankLine(bank_statement_line_id=ident('bsl'),bank_line_identity=b['bank_line_identity'],legal_entity_id=b['legal_entity_id'],amount_minor=int(b['amount_minor']),currency=b['currency'],payment_reference=b['payment_reference'],evidence_reference=b['evidence_reference'],booked_at=datetime.fromisoformat(b['booked_at'].replace('Z','+00:00')));s.add(r);s.commit();return out(r)
+   r=self.ingest_bank_line_in_session(s,b);s.commit();return r
  def reconcile(self,iid,b):
   with SessionLocal() as s:
    i=s.scalar(select(Intent).where(Intent.payment_intent_id==iid).with_for_update());root=s.scalar(select(OrderRoot).where(OrderRoot.payment_intent_id==iid))
