@@ -12,6 +12,7 @@ from go_hotel.services.vertical_source_runtime import vertical_source_runtime_se
 from go_hotel.services.omnichannel_payment import omnichannel_payment_service as pay
 from go_hotel.services.real_external_execution import real_external_execution_service as real
 from go_hotel.services.production_connector_runtime import production_connector_runtime_service as command_center
+from go_hotel.services.unified_money_movement import unified_money_movement_service as finance
 
 SECRET='p0-0100-secret'
 def sig(payload):return hmac.new(SECRET.encode(),json.dumps(payload,sort_keys=True,separators=(',',':'),default=str).encode(),hashlib.sha256).hexdigest()
@@ -316,3 +317,18 @@ def test_0100_payment_case_convergence_replay_does_not_rewrite_audit_state(monke
  replay=command_center.converge_payment_truth_from_callback(pending['external_truth_operation_id'])
  assert first['reconciliation']['resolved_at']==replay['reconciliation']['resolved_at']
  assert replay['replay'] is True
+
+
+def test_0100_pending_callback_remains_close_blocking_payment_truth(monkeypatch):
+ setup_auth();i=seed_order()
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-pending'}))
+ op=real.execute_payment(i['payment_intent_id'],'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'pending-callback'})
+ body={'state':'PENDING','operation':'AUTHORIZE','external_operation_id':'ext-pending','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(op['external_truth_operation_id'],'pending-callback-delivery',body,sig(body))
+ with SessionLocal() as s:
+  assert s.get(ExternalTruthOperationRow,op['external_truth_operation_id']).state=='UNKNOWN_EXTERNAL_STATE'
+ queue=command_center.get_operation(op['command_center_reconciliation']['operation']['runtime_operation_id'])
+ assert queue['reconciliation']['state']=='MANUAL_REVIEW'
+ day=datetime.now(timezone.utc).date()
+ close=finance.prepare_close({'legal_entity_id':'GO_CN','currency':'CNY','period_start':day.isoformat(),'period_end':day.isoformat(),'cutoff_at':datetime.combine(day,datetime.max.time(),tzinfo=timezone.utc).isoformat()},'maker')
+ assert close['state']=='BLOCKED' and any(x.startswith('EXTERNAL_PAYMENT_RECONCILIATION:') for x in close['blockers_json'])
