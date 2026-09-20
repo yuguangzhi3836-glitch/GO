@@ -22,6 +22,7 @@ ORDER_TYPES={
 }
 TERMINAL={'SUCCEEDED','FAILED'}
 def now():return datetime.now(timezone.utc)
+def utc(v):return v.replace(tzinfo=timezone.utc) if v and v.tzinfo is None else v
 def ident(p):return f'{p}_{uuid.uuid4().hex}'
 def digest(x):return hashlib.sha256(json.dumps(x,sort_keys=True,separators=(',',':'),default=str).encode()).hexdigest()
 def out(r):return {c.name:(getattr(r,c.name).isoformat() if isinstance(getattr(r,c.name),datetime) else getattr(r,c.name)) for c in r.__table__.columns}
@@ -131,8 +132,8 @@ class OmnichannelPaymentService:
   occurred_at=datetime.fromisoformat(b['occurred_at'].replace('Z','+00:00'))
   old=s.scalar(select(PspLine).where(PspLine.external_transaction_id==b['external_transaction_id']).with_for_update())
   if old:
-   prior=(old.payment_intent_id,old.legal_entity_id,old.amount_minor,old.currency,old.evidence_reference,old.occurred_at)
-   incoming=(iid,root.legal_entity_id,int(b['amount_minor']),b['currency'],b['evidence_reference'],occurred_at)
+   prior=(old.payment_intent_id,old.legal_entity_id,old.amount_minor,old.currency,old.evidence_reference,utc(old.occurred_at))
+   incoming=(iid,root.legal_entity_id,int(b['amount_minor']),b['currency'],b['evidence_reference'],utc(occurred_at))
    if prior!=incoming:raise ValueError('PSP_SETTLEMENT_TRANSACTION_FACT_CONFLICT')
    return out(old)
   r=PspLine(psp_settlement_line_id=ident('psp'),payment_intent_id=iid,external_transaction_id=b['external_transaction_id'],channel=i.selected_channel or 'UNSELECTED',legal_entity_id=root.legal_entity_id,amount_minor=int(b['amount_minor']),currency=b['currency'],evidence_reference=b['evidence_reference'],occurred_at=occurred_at);s.add(r);s.flush();return out(r)
@@ -145,8 +146,8 @@ class OmnichannelPaymentService:
   booked_at=datetime.fromisoformat(b['booked_at'].replace('Z','+00:00'))
   old=s.scalar(select(BankLine).where(BankLine.bank_line_identity==b['bank_line_identity']).with_for_update())
   if old:
-   prior=(old.legal_entity_id,old.amount_minor,old.currency,old.payment_reference,old.evidence_reference,old.booked_at)
-   incoming=(b['legal_entity_id'],int(b['amount_minor']),b['currency'],b['payment_reference'],b['evidence_reference'],booked_at)
+   prior=(old.legal_entity_id,old.amount_minor,old.currency,old.payment_reference,old.evidence_reference,utc(old.booked_at))
+   incoming=(b['legal_entity_id'],int(b['amount_minor']),b['currency'],b['payment_reference'],b['evidence_reference'],utc(booked_at))
    if prior!=incoming:raise ValueError('BANK_STATEMENT_LINE_FACT_CONFLICT')
    return out(old)
   r=BankLine(bank_statement_line_id=ident('bsl'),bank_line_identity=b['bank_line_identity'],legal_entity_id=b['legal_entity_id'],amount_minor=int(b['amount_minor']),currency=b['currency'],payment_reference=b['payment_reference'],evidence_reference=b['evidence_reference'],booked_at=booked_at);s.add(r);s.flush();return out(r)
