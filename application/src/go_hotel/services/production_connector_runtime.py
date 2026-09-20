@@ -276,6 +276,7 @@ class ProductionConnectorRuntimeService:
    if rec.state=='RESOLVED':return {'reconciliation':out(rec),'result':rec.resolution_result_json,'replay':True}
    if rec.state!='PENDING_CHECKER':raise ValueError('RESOLUTION_NOT_PENDING_CHECKER')
    payload=rec.resolution_payload_json or {}
+   op=s.get(ConnectorRuntimeOperationRow,rec.runtime_operation_id)
    if op and op.operation_type=='RECONCILE_PAYMENT_TRUTH':raise ValueError('PAYMENT_TRUTH_REQUIRES_VERIFIED_SIGNED_CALLBACK')
    if digest(payload)!=rec.resolution_evidence_digest:
     op=s.get(ConnectorRuntimeOperationRow,rec.runtime_operation_id);self._safety(s,op.connector_id,'RESOLUTION_EVIDENCE_DIGEST_MISMATCH','CRITICAL',['RESOLUTION_EVIDENCE_DIGEST_MISMATCH'],{'reconciliation_id':reconciliation_id});s.commit();raise ValueError('RESOLUTION_EVIDENCE_DIGEST_MISMATCH')
