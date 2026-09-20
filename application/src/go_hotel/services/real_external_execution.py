@@ -239,13 +239,15 @@ class RealExternalExecutionService:
         if not key:raise ValueError('BANK_FEED_SIGNATURE_KEY_NOT_CONFIGURED')
         raw=json.dumps(payload,sort_keys=True,separators=(',',':'),default=str).encode();expected=hmac.new(key.encode(),raw,hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected,signature):raise ValueError('BANK_FEED_SIGNATURE_INVALID')
+        payload_hash=digest(payload)
         with SessionLocal() as s:
-            old=s.scalar(select(BankFeedReceipt).where(BankFeedReceipt.delivery_id==delivery_id))
-            if old:return {'duplicate':True,'receipt':out(old)}
-        lines=[]
-        for line in payload.get('lines',[]):lines.append(omnichannel_payment_service.ingest_bank_line(line))
-        with SessionLocal() as s:
-            r=BankFeedReceipt(bank_feed_receipt_id=ident('bfr'),provider_key=provider_key,delivery_id=delivery_id,signature_verified=True,payload_hash=digest(payload),imported_line_count=len(lines),evidence_reference=payload.get('evidence_reference',f'bank-feed://{provider_key}/{delivery_id}'),received_at=now());s.add(r);s.commit();return {'duplicate':False,'receipt':out(r),'lines':lines}
+            old=s.scalar(select(BankFeedReceipt).where(BankFeedReceipt.delivery_id==delivery_id).with_for_update())
+            if old:
+                if old.payload_hash!=payload_hash:raise ValueError('BANK_FEED_DELIVERY_PAYLOAD_CONFLICT')
+                return {'duplicate':True,'receipt':out(old)}
+            lines=[omnichannel_payment_service.ingest_bank_line_in_session(s,line) for line in payload.get('lines',[])]
+            r=BankFeedReceipt(bank_feed_receipt_id=ident('bfr'),provider_key=provider_key,delivery_id=delivery_id,signature_verified=True,payload_hash=payload_hash,imported_line_count=len(lines),evidence_reference=payload.get('evidence_reference',f'bank-feed://{provider_key}/{delivery_id}'),received_at=now());s.add(r);s.flush()
+            receipt=out(r);s.commit();return {'duplicate':False,'receipt':receipt,'lines':lines}
     def reconcile(self,intent_id,external_transaction_id):
         return omnichannel_payment_service.reconcile(intent_id,{'external_transaction_id':external_transaction_id})
     def readiness(self):
