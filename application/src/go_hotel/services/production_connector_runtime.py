@@ -208,6 +208,8 @@ class ProductionConnectorRuntimeService:
    rec=s.scalar(select(ConnectorRuntimeReconciliationRow).where(ConnectorRuntimeReconciliationRow.runtime_operation_id==op.runtime_operation_id).with_for_update())
    if not rec:return None
    terminal='CONFIRMED' if truth.state=='CALLBACK_SUCCEEDED' else 'FAILED'
+   if rec.state=='CONVERGED' and op.state==terminal:
+    return {'operation':out(op),'reconciliation':out(rec),'replay':True}
    op.state=terminal;op.response_json={'payment_truth_operation_id':external_truth_operation_id,'verified_terminal_state':truth.state};op.updated_at=now()
    rec.state='CONVERGED';rec.resolved_at=now();rec.resolved_by='VERIFIED_PAYMENT_CALLBACK';rec.claimed_by=None;rec.lease_expires_at=None;rec.evidence_due_at=None;rec.operator_sla_due_at=None;rec.superseded_reason='SUPERSEDED_BY_VERIFIED_PAYMENT_TRUTH';rec.resolution_result_json={'decision':'VERIFIED_CALLBACK','terminal_state':terminal,'payment_truth_operation_id':external_truth_operation_id};rec.updated_at=now()
    s.commit();return {'operation':out(op),'reconciliation':out(rec)}
