@@ -4,8 +4,7 @@ import uuid
 os.environ['DATABASE_URL']='sqlite:////tmp/go_money_movement_test.db'
 import pytest
 from datetime import datetime,timezone
-from go_hotel.db.models import ExternalTruthOperationRow,
- Base,OrderRow,VerticalSourceDecisionRow
+from go_hotel.db.models import ExternalTruthOperationRow,Base,OrderRow,VerticalSourceDecisionRow
 from go_hotel.db.session import engine,SessionLocal
 from go_hotel.services.omnichannel_payment import omnichannel_payment_service as pay
 from go_hotel.services.unified_money_movement import unified_money_movement_service as svc
