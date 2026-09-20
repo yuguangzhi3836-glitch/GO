@@ -225,12 +225,20 @@ class RealExternalExecutionService:
         return {'duplicate':False,'receipt':out(r),'result':result}
     def psp_settlement_callback(self,operation_id,delivery_id,payload,signature):
         with SessionLocal() as s:
+            # A receipt row does not exist on first delivery. Serialize it explicitly,
+            # then serialize the independent PSP transaction identity after signature verification.
+            if s.bind.dialect.name=='postgresql':
+                s.execute(text("SELECT pg_advisory_xact_lock(hashtext(:delivery))"),{'delivery':f'psp-settlement-delivery:{delivery_id}'})
+            elif s.bind.dialect.name=='sqlite':
+                s.execute(text('BEGIN IMMEDIATE'))
             op,old=self._verify_callback(s,operation_id,delivery_id,payload,signature)
             if old:return {'duplicate':True,'receipt':out(old)}
             if op.vertical!='PAYMENT':raise ValueError('PAYMENT_OPERATION_REQUIRED')
             if op.operation_type!='CAPTURE':raise ValueError('PSP_SETTLEMENT_CAPTURE_OPERATION_REQUIRED')
             required=('external_transaction_id','amount_minor','currency','evidence_reference','occurred_at')
             if any(payload.get(x) in (None,'') for x in required):raise ValueError('PSP_SETTLEMENT_FACT_REQUIRED')
+            if s.bind.dialect.name=='postgresql':
+                s.execute(text("SELECT pg_advisory_xact_lock(hashtext(:transaction))"),{'transaction':f"psp-settlement-transaction:{payload['external_transaction_id']}"})
             intent=s.get(Intent,op.payment_intent_id)
             if not intent or int(payload['amount_minor'])!=intent.amount_minor or payload['currency']!=intent.currency:
                 raise ValueError('PSP_SETTLEMENT_PAYMENT_FACT_MISMATCH')
