@@ -79,9 +79,10 @@ def supplier_registration_terms():
         policy=registration_terms_service.registration_terms_status('supplier')
     except (ValueError, OSError, KeyError) as exc:
         raise HTTPException(503,detail='REGISTRATION_TERMS_UNAVAILABLE') from exc
-    return {'data':{**policy,'required':True,'enabled':policy['acceptance_enabled'],
+    verification_ready=bool(settings.registration_verification_enabled)
+    return {'data':{**policy,'required':True,'enabled':bool(policy['acceptance_enabled'] and verification_ready),
         'registration_scope':'NATIONWIDE','publication_requires_verification':True,
-        'release_gate':{'registration_verification':{'required':True,'implemented':False,'status':'BLOCKED','reason':'LIVE_EMAIL_OR_PHONE_VERIFICATION_EVIDENCE_REQUIRED'},
+        'release_gate':{'registration_verification':{'required':True,'implemented':verification_ready,'status':'READY' if verification_ready else 'BLOCKED','reason':None if verification_ready else 'LIVE_EMAIL_OR_PHONE_VERIFICATION_EVIDENCE_REQUIRED'},
                         'candidate_runtime':{'required':True,'status':'BLOCKED','reason':'SIGNED_HK_STAGING_TEST_PR_EVIDENCE_REQUIRED'},
                         'page_acceptance':{'required':True,'status':'BLOCKED','reason':'EXACT_CANDIDATE_C_B_MOBILE_ACCEPTANCE_REQUIRED'}},
         'titles':{d['id']:d['title'] for d in policy['documents']}}}
