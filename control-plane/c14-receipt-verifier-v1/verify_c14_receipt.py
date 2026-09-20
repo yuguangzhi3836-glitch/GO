@@ -52,11 +52,13 @@ def verify(envelope:Any,key:ec.EllipticCurvePublicKey,now:datetime,max_age:int)-
  except InvalidSignature as e: raise VerificationError("SIGNATURE_INVALID") from e
  return {k:r[k] for k in FIELDS if k!="schema" and k!="gate"}
 def main()->int:
- p=argparse.ArgumentParser(); p.add_argument("--receipt",required=True,type=Path); p.add_argument("--trusted-public-key",required=True,type=Path); p.add_argument("--expected-fingerprint",required=True); p.add_argument("--max-age-seconds",type=int,default=900); p.add_argument("--verification-time"); a=p.parse_args()
+ p=argparse.ArgumentParser(); p.add_argument("--receipt",required=True,type=Path); p.add_argument("--trusted-public-key",required=True,type=Path); p.add_argument("--expected-fingerprint",required=True); p.add_argument("--expected-issuer",required=True); p.add_argument("--expected-candidate-sha",required=True); p.add_argument("--expected-application-tree",required=True); p.add_argument("--expected-verdict",required=True,choices=("PASS","FAIL")); p.add_argument("--expected-evidence-manifest-sha256",required=True); p.add_argument("--max-age-seconds",type=int,default=900); p.add_argument("--verification-time"); a=p.parse_args()
  try:
   if a.max_age_seconds<=0: raise VerificationError("INVALID_MAX_AGE_SECONDS")
   now=parse_time(a.verification_time) if a.verification_time else datetime.now(timezone.utc)
   summary=verify(json.loads(a.receipt.read_text()),load_key(a.trusted_public_key,a.expected_fingerprint),now,a.max_age_seconds)
+  expected={"issuer":a.expected_issuer,"candidate_sha":a.expected_candidate_sha,"application_tree":a.expected_application_tree,"verdict":a.expected_verdict,"evidence_manifest_sha256":a.expected_evidence_manifest_sha256}
+  if any(summary[k]!=value for k,value in expected.items()): raise VerificationError("FIXED_BINDING_MISMATCH")
  except (OSError,json.JSONDecodeError,VerificationError) as e: print(f"VERIFY_FAIL: {e}",file=sys.stderr); return 2
  print(json.dumps({"verified":True,"receipt":summary},sort_keys=True,separators=(",",":"))); return 0
 if __name__=="__main__": raise SystemExit(main())
