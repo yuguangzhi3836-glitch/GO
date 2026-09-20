@@ -142,6 +142,8 @@ class RealExternalExecutionService:
     def _verify_callback(self,s,operation_id,delivery_id,payload,signature):
         old=s.scalar(select(TruthWebhook).where(TruthWebhook.delivery_id==delivery_id))
         if old:
+            if old.external_truth_operation_id!=operation_id:
+                raise ValueError('EXTERNAL_CALLBACK_DELIVERY_OPERATION_CONFLICT')
             if old.payload_hash!=digest(payload):
                 raise ValueError('EXTERNAL_CALLBACK_DELIVERY_PAYLOAD_CONFLICT')
             return None,old
