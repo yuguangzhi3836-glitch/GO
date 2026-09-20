@@ -65,3 +65,26 @@ def test_real_registry_synthetic_approved_text_binds_persisted_consent(full_appl
         audit=session.scalar(select(AuditEventRow).where(AuditEventRow.action==action))
         assert audit.metadata_json['term_hashes']==policy['term_hashes']
         assert audit.metadata_json['term_versions']==policy['versions']
+
+
+@pytest.mark.parametrize('audience',['consumer','supplier'])
+def test_approved_terms_cannot_open_registration_without_verified_delivery_runtime(full_application,monkeypatch,audience):
+    approved_terms_fixture(monkeypatch)
+    from go_hotel.core.config import settings
+    monkeypatch.setattr(settings, 'registration_verification_enabled', False)
+    client, _ = full_application
+    route='/v1/consumer/auth/registration' if audience=='consumer' else '/bff/auth/supplier/registration-terms'
+    policy=client.get(route).json()['data']
+    assert policy['acceptance_enabled'] is True
+    assert policy['enabled'] is False
+    verification=policy['release_gate']['registration_verification']
+    assert verification == {'required':True,'implemented':False,'status':'BLOCKED',
+                            'reason':'LIVE_EMAIL_OR_PHONE_VERIFICATION_EVIDENCE_REQUIRED'}
+    payload={'email':'verification-blocked@example.test','password':secrets.token_urlsafe(24),
+             'accepted_terms':True,'term_versions':policy['versions'],'term_hashes':policy['term_hashes']}
+    if audience=='supplier':
+        payload.update(organization_name='测试主体',contact_name='测试联系人')
+    endpoint='/v1/consumer/auth/register' if audience=='consumer' else '/bff/auth/supplier/register'
+    response=client.post(endpoint,json=payload)
+    assert response.status_code==503
+    assert response.json()['detail']=='REGISTRATION_VERIFICATION_NOT_READY'
