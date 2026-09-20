@@ -95,6 +95,8 @@ def supplier_register(body:SupplierRegisterBody,request:Request,response:Respons
         policy=registration_terms_service.require_registration_terms_ready('supplier')
     except (ValueError, OSError, KeyError) as exc:
         raise HTTPException(503,detail='REGISTRATION_TERMS_NOT_READY') from exc
+    if not settings.registration_verification_enabled:
+        raise HTTPException(503,detail='REGISTRATION_VERIFICATION_NOT_READY')
     if body.term_versions != policy['versions']:
         raise HTTPException(409,detail='SUPPLIER_TERMS_VERSION_MISMATCH')
     if body.term_hashes != policy['term_hashes']:
