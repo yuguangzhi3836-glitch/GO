@@ -2,7 +2,7 @@ from datetime import datetime,timezone,timedelta
 import hashlib,hmac,json,os,uuid
 from urllib.parse import urlparse
 import httpx
-from sqlalchemy import select,func
+from sqlalchemy import select,func,text
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (
     ExternalSandboxExecutionAuthorizationRow as Authorization,
@@ -154,6 +154,13 @@ class RealExternalExecutionService:
     def payment_callback(self,operation_id,delivery_id,payload,signature):
         """Commit a verified receipt, payment state, and money movement as one fact."""
         with SessionLocal() as s:
+            # Serialize on the provider delivery identity before checking for an
+            # existing receipt. Row locks alone cannot lock a receipt that does
+            # not yet exist, so this closes the first-delivery race on PostgreSQL.
+            if s.bind.dialect.name=='postgresql':
+                s.execute(text("SELECT pg_advisory_xact_lock(hashtext(:delivery))"),{'delivery':f'payment-callback:{delivery_id}'})
+            elif s.bind.dialect.name=='sqlite':
+                s.execute(text('BEGIN IMMEDIATE'))
             op,old=self._verify_callback(s,operation_id,delivery_id,payload,signature)
             if old:return {'duplicate':True,'receipt':out(old)}
             if op.vertical!='PAYMENT':raise ValueError('PAYMENT_OPERATION_REQUIRED')
