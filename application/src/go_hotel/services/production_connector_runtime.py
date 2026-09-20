@@ -202,7 +202,7 @@ class ProductionConnectorRuntimeService:
    truth=s.get(ExternalTruthOperationRow,external_truth_operation_id)
    if not truth or truth.vertical!='PAYMENT':raise ValueError('PAYMENT_TRUTH_OPERATION_REQUIRED')
    if truth.state not in {'CALLBACK_SUCCEEDED','CALLBACK_FAILED'}:return None
-   key=f'PAYMENT_TRUTH_RECON:${external_truth_operation_id}'
+   key=f'PAYMENT_TRUTH_RECON:{external_truth_operation_id}'
    op=s.scalar(select(ConnectorRuntimeOperationRow).where(ConnectorRuntimeOperationRow.idempotency_key==key).with_for_update())
    if not op:return None
    rec=s.scalar(select(ConnectorRuntimeReconciliationRow).where(ConnectorRuntimeReconciliationRow.runtime_operation_id==op.runtime_operation_id).with_for_update())
