@@ -75,55 +75,45 @@ class RealExternalExecutionService:
             auth,binding,adapter,credential=self._authorization(s,authorization_id,'PAYMENT')
             intent=s.scalar(select(Intent).where(Intent.payment_intent_id==intent_id).with_for_update())
             if not intent: raise ValueError('PAYMENT_INTENT_NOT_FOUND')
-            inflight=s.scalar(select(TruthOp).where(
-                TruthOp.payment_intent_id==intent_id,
-                TruthOp.operation_type==operation,
-                TruthOp.state.in_(['TRANSPORT_ACCEPTED_PENDING_SIGNED_CALLBACK','UNKNOWN_EXTERNAL_STATE']),
-            ).with_for_update())
+            inflight=s.scalar(select(TruthOp).where(TruthOp.payment_intent_id==intent_id,TruthOp.operation_type==operation,TruthOp.state.in_(['DISPATCHING','TRANSPORT_ACCEPTED_PENDING_SIGNED_CALLBACK','UNKNOWN_EXTERNAL_STATE'])).with_for_update())
             if inflight: raise ValueError('EXTERNAL_PAYMENT_OPERATION_RECONCILIATION_REQUIRED')
             if operation=='AUTHORIZE' and intent.state!='READY': raise ValueError('PAYMENT_INTENT_NOT_READY_FOR_EXTERNAL_AUTHORIZE')
             if operation in {'CAPTURE','REFUND'} and intent.state!='SUCCEEDED': raise ValueError('PAYMENT_SUCCESS_REQUIRED_FOR_EXTERNAL_MONEY_OPERATION')
             if 'amount_minor' in b and int(b['amount_minor'])!=intent.amount_minor: raise ValueError('EXTERNAL_PAYMENT_PARTIAL_AMOUNT_NOT_SUPPORTED')
-            # Dispatch is not a harmless validation step: prove the money-graph
-            # precondition before crossing the external boundary.
-            movements=s.scalars(select(Movement).where(
-                Movement.root_payment_intent_id==intent_id,
-                Movement.state=='CONFIRMED',
-            ).with_for_update()).all()
-            authorized=sum(x.amount_minor for x in movements if x.movement_type=='AUTHORIZATION')
-            captured=sum(x.amount_minor for x in movements if x.movement_type=='CAPTURE')
-            refunded=sum(x.amount_minor for x in movements if x.movement_type=='REFUND')
-            if operation=='CAPTURE' and authorized<intent.amount_minor:
-                raise ValueError('EXTERNAL_CAPTURE_REQUIRES_CONFIRMED_AUTHORIZATION')
-            if operation=='CAPTURE' and captured+intent.amount_minor>authorized:
-                raise ValueError('EXTERNAL_CAPTURE_EXCEEDS_CONFIRMED_AUTHORIZATION')
-            if operation=='REFUND' and captured<intent.amount_minor:
-                raise ValueError('EXTERNAL_REFUND_REQUIRES_CONFIRMED_CAPTURE')
-            if operation=='REFUND' and refunded+intent.amount_minor>captured:
-                raise ValueError('EXTERNAL_REFUND_EXCEEDS_CONFIRMED_CAPTURE')
+            movements=s.scalars(select(Movement).where(Movement.root_payment_intent_id==intent_id,Movement.state=='CONFIRMED').with_for_update()).all()
+            authorized=sum(x.amount_minor for x in movements if x.movement_type=='AUTHORIZATION');captured=sum(x.amount_minor for x in movements if x.movement_type=='CAPTURE');refunded=sum(x.amount_minor for x in movements if x.movement_type=='REFUND')
+            if operation=='CAPTURE' and authorized<intent.amount_minor: raise ValueError('EXTERNAL_CAPTURE_REQUIRES_CONFIRMED_AUTHORIZATION')
+            if operation=='CAPTURE' and captured+intent.amount_minor>authorized: raise ValueError('EXTERNAL_CAPTURE_EXCEEDS_CONFIRMED_AUTHORIZATION')
+            if operation=='REFUND' and captured<intent.amount_minor: raise ValueError('EXTERNAL_REFUND_REQUIRES_CONFIRMED_CAPTURE')
+            if operation=='REFUND' and refunded+intent.amount_minor>captured: raise ValueError('EXTERNAL_REFUND_EXCEEDS_CONFIRMED_CAPTURE')
             if operation=='AUTHORIZE':
                 active=s.scalar(select(Attempt).where(Attempt.payment_intent_id==intent_id,Attempt.state.in_(['PROCESSING','UNKNOWN_EXTERNAL_STATE'])).with_for_update())
                 if active:raise ValueError('ACTIVE_OR_UNKNOWN_ATTEMPT_BLOCKS_RESEND')
                 n=(s.scalar(select(func.max(Attempt.attempt_no)).where(Attempt.payment_intent_id==intent_id)) or 0)+1
                 attempt=Attempt(payment_attempt_id=ident('opa'),payment_intent_id=intent_id,channel=intent.selected_channel,attempt_no=n,external_operation_id=None,channel_idempotency_key=b['idempotency_key'],state='PROCESSING',external_invoked=True,created_at=now(),updated_at=now());s.add(attempt);s.flush()
-            else:attempt=None
+            else: attempt=None
             payload={'contract_version':'GO_EXTERNAL_TRUTH_V1','vertical':'PAYMENT','operation':operation,'payment_intent_id':intent_id,'payment_attempt_id':attempt.payment_attempt_id if attempt else None,'amount_minor':intent.amount_minor,'currency':intent.currency,'payer_id':intent.payer_id,'payee_id':intent.payee_id,'idempotency_key':b['idempotency_key']}
             secret=self._secret(credential);url=self._endpoint(binding);headers=self._signed_headers(secret,b['idempotency_key'],payload);req_hash=digest(payload)
-            s.commit()
+            # Durable dispatch claim commits before any network boundary. A process
+            # death after this point is reconciliation-only, never permission to resend.
+            record=TruthOp(external_truth_operation_id=ident('eto'),execution_authorization_id=authorization_id,payment_intent_id=intent_id,supplier_fulfillment_id=None,vertical='PAYMENT',operation_type=operation,idempotency_key=b['idempotency_key'],endpoint_reference=url,external_operation_id=None,http_status=None,state='DISPATCHING',request_hash=req_hash,response_hash=None,evidence_reference=None,started_at=now(),completed_at=None)
+            s.add(record);s.flush();operation_id=record.external_truth_operation_id;s.commit()
         try:
-            resp=self._post_json(url,payload,headers); body=resp.json() if resp.content else {}; status=resp.status_code
-            ext=body.get('external_operation_id') or body.get('transaction_id')
-            # A success status without an immutable provider operation reference is
-            # an unknown state: it cannot later be matched safely or retried.
+            resp=self._post_json(url,payload,headers);body=resp.json() if resp.content else {};status=resp.status_code;ext=body.get('external_operation_id') or body.get('transaction_id')
             transport_state='TRANSPORT_ACCEPTED_PENDING_SIGNED_CALLBACK' if 200<=status<300 and ext else ('UNKNOWN_EXTERNAL_STATE' if 200<=status<300 else 'TRANSPORT_REJECTED')
         except (httpx.TimeoutException,httpx.TransportError) as e:
             body={'transport_error':type(e).__name__};status=None;ext=None;transport_state='UNKNOWN_EXTERNAL_STATE'
         with SessionLocal() as s:
+            record=s.scalar(select(TruthOp).where(TruthOp.external_truth_operation_id==operation_id).with_for_update())
+            if not record or record.state!='DISPATCHING':raise ValueError('EXTERNAL_PAYMENT_DISPATCH_CLAIM_CHANGED_RECONCILIATION_REQUIRED')
+            record.external_operation_id=ext;record.http_status=status;record.state=transport_state;record.response_hash=digest(body);record.evidence_reference=body.get('evidence_reference');record.completed_at=now()
             if attempt:
                 a=s.scalar(select(Attempt).where(Attempt.payment_attempt_id==attempt.payment_attempt_id).with_for_update());i=s.scalar(select(Intent).where(Intent.payment_intent_id==intent_id).with_for_update())
                 a.external_operation_id=ext;a.state='UNKNOWN_EXTERNAL_STATE' if transport_state=='UNKNOWN_EXTERNAL_STATE' else ('PROCESSING' if transport_state.startswith('TRANSPORT_ACCEPTED') else 'FAILED');a.updated_at=now()
                 if transport_state=='UNKNOWN_EXTERNAL_STATE':i.state='UNKNOWN_EXTERNAL_STATE';i.updated_at=now()
-            r=TruthOp(external_truth_operation_id=ident('eto'),execution_authorization_id=authorization_id,payment_intent_id=intent_id,supplier_fulfillment_id=None,vertical='PAYMENT',operation_type=operation,idempotency_key=b['idempotency_key'],endpoint_reference=url,external_operation_id=ext,http_status=status,state=transport_state,request_hash=req_hash,response_hash=digest(body),evidence_reference=body.get('evidence_reference'),started_at=now(),completed_at=now());s.add(r);s.commit();return out(r)
+            elif transport_state=='UNKNOWN_EXTERNAL_STATE':
+                i=s.scalar(select(Intent).where(Intent.payment_intent_id==intent_id).with_for_update());i.state='UNKNOWN_EXTERNAL_STATE';i.updated_at=now()
+            s.commit();return out(record)
     def execute_supplier(self,fulfillment_id,authorization_id,b):
         operation=b.get('operation','BOOK')
         if operation not in SUPPLIER_OPS:raise ValueError('UNSUPPORTED_REAL_SUPPLIER_OPERATION')
