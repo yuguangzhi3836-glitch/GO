@@ -171,6 +171,11 @@ class RealExternalExecutionService:
             if op.external_operation_id and callback_operation_id!=op.external_operation_id:raise ValueError('EXTERNAL_PAYMENT_CALLBACK_OPERATION_REFERENCE_MISMATCH')
             mapped={'SUCCEEDED':'SUCCEEDED','FAILED':'FAILED','PENDING':'UNKNOWN_EXTERNAL_STATE'}.get(payload['state'])
             if not mapped:raise ValueError('INVALID_EXTERNAL_PAYMENT_STATE')
+            terminal=f'CALLBACK_{mapped}'
+            if op.state in {'CALLBACK_SUCCEEDED','CALLBACK_FAILED'}:
+                if op.state!=terminal:raise ValueError('EXTERNAL_PAYMENT_TERMINAL_STATE_CONFLICT')
+            else:
+                op.state=terminal
             if op.operation_type=='AUTHORIZE':
                 a=s.scalar(select(Attempt).where(Attempt.payment_intent_id==op.payment_intent_id,Attempt.channel_idempotency_key==op.idempotency_key).with_for_update())
                 if not a:raise ValueError('EXTERNAL_PAYMENT_ATTEMPT_NOT_FOUND')
