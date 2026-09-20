@@ -63,3 +63,11 @@ def test_close_blocks_on_unresolved_payment_external_truth_without_movement():
   s.add(ExternalTruthOperationRow(external_truth_operation_id='eto-close-'+uuid.uuid4().hex,execution_authorization_id='test-auth',payment_intent_id=i['payment_intent_id'],supplier_fulfillment_id=None,vertical='PAYMENT',operation_type='AUTHORIZE',idempotency_key='close-unknown-'+uuid.uuid4().hex,endpoint_reference='test://psp',external_operation_id=None,http_status=202,state='UNKNOWN_EXTERNAL_STATE',request_hash='0'*64,response_hash='1'*64,evidence_reference='test://unknown',started_at=datetime.now(timezone.utc),completed_at=datetime.now(timezone.utc)));s.commit()
  c=svc.prepare_close(close_scope(),'maker')
  assert c['state']=='BLOCKED' and any(x.startswith('EXTERNAL_PAYMENT_RECONCILIATION:') for x in c['blockers_json'])
+
+
+def test_close_blocks_on_payment_dispatch_crash_window_without_movement():
+ i=root()
+ with SessionLocal() as s:
+  s.add(ExternalTruthOperationRow(external_truth_operation_id='eto-dispatch-'+uuid.uuid4().hex,execution_authorization_id='test-auth',payment_intent_id=i['payment_intent_id'],supplier_fulfillment_id=None,vertical='PAYMENT',operation_type='AUTHORIZE',idempotency_key='close-dispatch-'+uuid.uuid4().hex,endpoint_reference='test://psp',external_operation_id=None,http_status=None,state='DISPATCHING',request_hash='0'*64,response_hash=None,evidence_reference=None,started_at=datetime.now(timezone.utc),completed_at=None));s.commit()
+ c=svc.prepare_close(close_scope(),'maker')
+ assert c['state']=='BLOCKED' and any(x.startswith('EXTERNAL_PAYMENT_RECONCILIATION:') for x in c['blockers_json'])
