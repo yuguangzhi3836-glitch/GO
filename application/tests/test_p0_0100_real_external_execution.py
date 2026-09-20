@@ -166,3 +166,32 @@ def test_0100_bank_feed_batch_is_atomic_and_conflicting_delivery_is_rejected():
  with SessionLocal() as s:
   assert len(s.scalars(select(BankStatementLineRow)).all())==1
   assert len(s.scalars(select(ExternalTruthBankFeedReceiptRow)).all())==1
+
+
+def test_0100_identical_external_facts_are_idempotent_and_mutations_are_refused(monkeypatch):
+ setup_auth();i=seed_order();iid=i['payment_intent_id']
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
+ auth=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'fact-replay-auth'})
+ ap={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(auth['external_truth_operation_id'],'fact-replay-auth-callback',ap,sig(ap))
+ cap=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'fact-replay-cap'})
+ cp={'state':'SUCCEEDED','operation':'CAPTURE','external_operation_id':'ext-capture','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(cap['external_truth_operation_id'],'fact-replay-cap-callback',cp,sig(cp))
+ settlement={'external_transaction_id':'fact-replay-psp','amount_minor':12000,'currency':'CNY','evidence_reference':'psp://fact/replay','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.psp_settlement_callback(cap['external_truth_operation_id'],'fact-replay-settle-1',settlement,sig(settlement))
+ same=real.psp_settlement_callback(cap['external_truth_operation_id'],'fact-replay-settle-2',settlement,sig(settlement))
+ assert same['psp_line']['external_transaction_id']=='fact-replay-psp'
+ changed={**settlement,'evidence_reference':'psp://fact/mutated'}
+ with pytest.raises(ValueError,match='PSP_SETTLEMENT_TRANSACTION_FACT_CONFLICT'):
+  real.psp_settlement_callback(cap['external_truth_operation_id'],'fact-replay-settle-3',changed,sig(changed))
+ os.environ['GO_BANK_FEED_KEY_TESTBANK']=SECRET
+ line={'bank_line_identity':'fact-replay-bank','legal_entity_id':'GO_CN','amount_minor':12000,'currency':'CNY','payment_reference':'fact-replay-psp','evidence_reference':'bank://fact/replay','booked_at':settlement['occurred_at']}
+ feed={'evidence_reference':'bank://fact/feed','lines':[line]}
+ real.bank_feed('testbank','fact-replay-bank-1',feed,sig(feed))
+ same_feed=real.bank_feed('testbank','fact-replay-bank-2',feed,sig(feed))
+ assert same_feed['lines'][0]['bank_line_identity']=='fact-replay-bank'
+ mutated_feed={'evidence_reference':'bank://fact/feed','lines':[{**line,'amount_minor':1}]}
+ with pytest.raises(ValueError,match='BANK_STATEMENT_LINE_FACT_CONFLICT'):
+  real.bank_feed('testbank','fact-replay-bank-3',mutated_feed,sig(mutated_feed))
+ with SessionLocal() as s:
+  assert len(s.scalars(select(BankStatementLineRow).where(BankStatementLineRow.bank_line_identity=='fact-replay-bank')).all())==1
