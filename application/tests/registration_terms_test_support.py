@@ -12,6 +12,10 @@ def hashes(versions):
     return {k:hashlib.sha256(('SYNTHETIC TEST BODY '+k).encode()).hexdigest() for k in versions}
 
 def approved_terms_fixture(monkeypatch):
+    # Synthetic fixture models an approved verification runtime only for local
+    # identity-flow tests. It never approves the shipped legal drafts.
+    from go_hotel.core.config import settings
+    monkeypatch.setattr(settings, 'registration_verification_enabled', True)
     def policy(audience):
         versions=CONSUMER_REGISTRATION_TERMS if audience=='consumer' else SUPPLIER_REGISTRATION_TERMS
         digest=hashes(versions)
