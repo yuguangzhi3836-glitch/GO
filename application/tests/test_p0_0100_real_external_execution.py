@@ -5,7 +5,7 @@ from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (OrderRow,ExternalSandboxCredentialBindingRow as Cred,NamedSupplierAdapterRow as Adapter,
  NamedSupplierAdapterBindingRow as Binding,ExternalSandboxExecutionAuthorizationRow as Auth,OrderSupplierFulfillmentRow,
- ConsumerUnifiedLifecycleRow,OmnichannelMoneyMovementRow,ExternalTruthWebhookReceiptRow,BankStatementLineRow,ExternalTruthBankFeedReceiptRow)
+ ConsumerUnifiedLifecycleRow,OmnichannelMoneyMovementRow,ExternalTruthWebhookReceiptRow,BankStatementLineRow,ExternalTruthBankFeedReceiptRow,ExternalTruthOperationRow)
 from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service as source
 from go_hotel.services.omnichannel_payment import omnichannel_payment_service as pay
 from go_hotel.services.real_external_execution import real_external_execution_service as real
@@ -195,3 +195,22 @@ def test_0100_identical_external_facts_are_idempotent_and_mutations_are_refused(
   real.bank_feed('testbank','fact-replay-bank-3',mutated_feed,sig(mutated_feed))
  with SessionLocal() as s:
   assert len(s.scalars(select(BankStatementLineRow).where(BankStatementLineRow.bank_line_identity=='fact-replay-bank')).all())==1
+
+
+def test_0100_capture_dispatch_claim_exists_before_network_and_blocks_replay(monkeypatch):
+ setup_auth();i=seed_order();iid=i['payment_intent_id']
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-authorize'}))
+ auth=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'claim-auth'})
+ body={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(auth['external_truth_operation_id'],'claim-auth-callback',body,sig(body))
+ observed=[]
+ def crash_window(url,payload,headers):
+  with SessionLocal() as s:
+   row=s.scalar(select(ExternalTruthOperationRow).where(ExternalTruthOperationRow.payment_intent_id==iid,ExternalTruthOperationRow.operation_type=='CAPTURE'))
+   observed.append(row.state if row else None)
+  raise httpx.TimeoutException('simulated crash window')
+ monkeypatch.setattr(real,'_post_json',crash_window)
+ first=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'claim-capture'})
+ assert observed==['DISPATCHING'] and first['state']=='UNKNOWN_EXTERNAL_STATE'
+ with pytest.raises(ValueError,match='OPERATION_RECONCILIATION_REQUIRED'):
+  real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'claim-capture-retry'})
