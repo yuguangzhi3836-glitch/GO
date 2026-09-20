@@ -262,3 +262,18 @@ def test_0100_concurrent_same_delivery_creates_one_receipt_and_movement(monkeypa
  with SessionLocal() as s:
   assert len(s.scalars(select(ExternalTruthWebhookReceiptRow).where(ExternalTruthWebhookReceiptRow.external_truth_operation_id==op['external_truth_operation_id'])).all())==1
   assert len(s.scalars(select(OmnichannelMoneyMovementRow).where(OmnichannelMoneyMovementRow.root_payment_intent_id==iid,OmnichannelMoneyMovementRow.movement_type=='AUTHORIZATION')).all())==1
+
+
+def test_0100_verified_callback_converges_claimed_command_center_case(monkeypatch):
+ setup_auth();i=seed_order()
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:(_ for _ in ()).throw(httpx.TimeoutException('unknown')))
+ pending=real.execute_payment(i['payment_intent_id'],'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'queue-converge'})
+ case=pending['command_center_reconciliation']['reconciliation']
+ command_center.claim(case['reconciliation_id'],'payment-operator',60)
+ body={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-recovered','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ resolved=real.payment_callback(pending['external_truth_operation_id'],'queue-converge-callback',body,sig(body))['command_center_reconciliation']
+ assert resolved['operation']['state']=='CONFIRMED'
+ assert resolved['reconciliation']['state']=='CONVERGED'
+ assert resolved['reconciliation']['claimed_by'] is None and resolved['reconciliation']['lease_expires_at'] is None
+ with pytest.raises(ValueError,match='INCIDENT_NOT_CLAIMABLE'):
+  command_center.claim(case['reconciliation_id'],'another-operator',60)
