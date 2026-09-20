@@ -30,3 +30,4 @@ jobs:
       - run: pip install -e '.[dev]'
       - run: python -m compileall -q src/go_hotel/services/omnichannel_payment.py src/go_hotel/services/real_external_execution.py src/go_hotel/services/unified_money_movement.py
       - run: pytest -q tests/test_omnichannel_payment_finance_os.py tests/test_p0_0100_real_external_execution.py tests/test_unified_money_movement_finance_close.py
+# Draft-only regression; no PSP, credentials, network, deployment, or money movement.
