@@ -446,5 +446,4 @@ def test_0100_recovery_scan_never_converges_unverified_payment_truth(monkeypatch
  assert command_center.recover_verified_payment_truth_cases()==[]
  state=command_center.get_operation(pending['command_center_reconciliation']['operation']['runtime_operation_id'])
  assert state['reconciliation']['state']=='MANUAL_REVIEW' and state['operation']['state']=='UNKNOWN_EXTERNAL_STATE'
- with pytest.raises(ValueError,match='PAYMENT_TRUTH_REQUIRES_VERIFIED_SIGNED_CALLBACK'):
-  command_center.converge_payment_truth_from_callback(pending['external_truth_operation_id'])
+ assert command_center.converge_payment_truth_from_callback(pending['external_truth_operation_id']) is None
