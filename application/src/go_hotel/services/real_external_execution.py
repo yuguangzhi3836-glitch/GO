@@ -182,7 +182,7 @@ class RealExternalExecutionService:
             if op.external_operation_id and callback_operation_id!=op.external_operation_id:raise ValueError('EXTERNAL_PAYMENT_CALLBACK_OPERATION_REFERENCE_MISMATCH')
             mapped={'SUCCEEDED':'SUCCEEDED','FAILED':'FAILED','PENDING':'UNKNOWN_EXTERNAL_STATE'}.get(payload['state'])
             if not mapped:raise ValueError('INVALID_EXTERNAL_PAYMENT_STATE')
-            terminal=f'CALLBACK_{mapped}'
+            terminal=f'CALLBACK_{mapped}' if mapped in {'SUCCEEDED','FAILED'} else 'UNKNOWN_EXTERNAL_STATE'
             if op.state in {'CALLBACK_SUCCEEDED','CALLBACK_FAILED'}:
                 if op.state!=terminal:raise ValueError('EXTERNAL_PAYMENT_TERMINAL_STATE_CONFLICT')
             else:
