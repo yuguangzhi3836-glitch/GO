@@ -400,3 +400,19 @@ def test_0100_terminal_success_rejects_late_pending_callback(monkeypatch):
  late={**success,'state':'PENDING','occurred_at':datetime.now(timezone.utc).isoformat()}
  with pytest.raises(ValueError,match='TERMINAL_STATE_CONFLICT'):
   real.payment_callback(op['external_truth_operation_id'],'success-before-pending-late',late,sig(late))
+
+
+def test_0100_capture_only_authorizes_supplier_execution_not_order_confirmation(monkeypatch):
+ setup_auth();i=seed_order();iid=i['payment_intent_id']
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
+ auth=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'capture-boundary-auth'})
+ ap={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(auth['external_truth_operation_id'],'capture-boundary-auth-callback',ap,sig(ap))
+ cap=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'capture-boundary-cap'})
+ cp={'state':'SUCCEEDED','operation':'CAPTURE','external_operation_id':'ext-capture','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(cap['external_truth_operation_id'],'capture-boundary-cap-callback',cp,sig(cp))
+ with SessionLocal() as s:
+  fulfillment=s.scalar(select(OrderSupplierFulfillmentRow).where(OrderSupplierFulfillmentRow.payment_intent_id==iid))
+  assert fulfillment.state=='CAPTURE_CONFIRMED_READY_FOR_SUPPLIER'
+  assert s.get(OrderRow,'hotel-order-0100').status=='PENDING_PAYMENT'
+  assert not s.scalars(select(ConsumerUnifiedLifecycleRow).where(ConsumerUnifiedLifecycleRow.order_id=='hotel-order-0100',ConsumerUnifiedLifecycleRow.lifecycle_state=='CONFIRMED')).all()
