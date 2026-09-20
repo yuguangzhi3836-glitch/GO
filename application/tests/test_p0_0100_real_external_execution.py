@@ -10,6 +10,7 @@ from go_hotel.db.models import (OrderRow,ExternalSandboxCredentialBindingRow as 
 from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service as source
 from go_hotel.services.omnichannel_payment import omnichannel_payment_service as pay
 from go_hotel.services.real_external_execution import real_external_execution_service as real
+from go_hotel.services.production_connector_runtime import production_connector_runtime_service as command_center
 
 SECRET='p0-0100-secret'
 def sig(payload):return hmac.new(SECRET.encode(),json.dumps(payload,sort_keys=True,separators=(',',':'),default=str).encode(),hashlib.sha256).hexdigest()
@@ -234,3 +235,15 @@ def test_0100_capture_terminal_callback_cannot_be_reversed_by_late_delivery(monk
   assert op.state=='CALLBACK_SUCCEEDED'
   assert len(s.scalars(select(ExternalTruthWebhookReceiptRow).where(ExternalTruthWebhookReceiptRow.external_truth_operation_id==cap['external_truth_operation_id'])).all())==1
   assert len(s.scalars(select(OmnichannelMoneyMovementRow).where(OmnichannelMoneyMovementRow.root_payment_intent_id==iid,OmnichannelMoneyMovementRow.movement_type=='CAPTURE')).all())==1
+
+
+def test_0100_unknown_payment_dispatch_enters_command_center_lease_queue(monkeypatch):
+ setup_auth();i=seed_order()
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:(_ for _ in ()).throw(httpx.TimeoutException('unknown')))
+ result=real.execute_payment(i['payment_intent_id'],'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'queue-unknown'})
+ case=result['command_center_reconciliation']['reconciliation']
+ assert result['state']=='UNKNOWN_EXTERNAL_STATE' and case['state']=='MANUAL_REVIEW'
+ claim=command_center.claim(case['reconciliation_id'],'payment-operator',60)
+ assert claim['reconciliation']['claimed_by']=='payment-operator'
+ replay=command_center.claim(case['reconciliation_id'],'payment-operator',60)
+ assert replay['replay'] is True
