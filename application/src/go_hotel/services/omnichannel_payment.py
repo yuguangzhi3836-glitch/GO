@@ -128,14 +128,28 @@ class OmnichannelPaymentService:
   i=s.get(Intent,iid);root=s.scalar(select(OrderRoot).where(OrderRoot.payment_intent_id==iid))
   if not i or not root:raise ValueError('PAYMENT_ORDER_ROOT_REQUIRED')
   if int(b['amount_minor'])!=i.amount_minor or b['currency']!=i.currency:raise ValueError('PSP_SETTLEMENT_PAYMENT_FACT_MISMATCH')
-  r=PspLine(psp_settlement_line_id=ident('psp'),payment_intent_id=iid,external_transaction_id=b['external_transaction_id'],channel=i.selected_channel or 'UNSELECTED',legal_entity_id=root.legal_entity_id,amount_minor=int(b['amount_minor']),currency=b['currency'],evidence_reference=b['evidence_reference'],occurred_at=datetime.fromisoformat(b['occurred_at'].replace('Z','+00:00')));s.add(r);s.flush();return out(r)
+  occurred_at=datetime.fromisoformat(b['occurred_at'].replace('Z','+00:00'))
+  old=s.scalar(select(PspLine).where(PspLine.external_transaction_id==b['external_transaction_id']).with_for_update())
+  if old:
+   prior=(old.payment_intent_id,old.legal_entity_id,old.amount_minor,old.currency,old.evidence_reference,old.occurred_at)
+   incoming=(iid,root.legal_entity_id,int(b['amount_minor']),b['currency'],b['evidence_reference'],occurred_at)
+   if prior!=incoming:raise ValueError('PSP_SETTLEMENT_TRANSACTION_FACT_CONFLICT')
+   return out(old)
+  r=PspLine(psp_settlement_line_id=ident('psp'),payment_intent_id=iid,external_transaction_id=b['external_transaction_id'],channel=i.selected_channel or 'UNSELECTED',legal_entity_id=root.legal_entity_id,amount_minor=int(b['amount_minor']),currency=b['currency'],evidence_reference=b['evidence_reference'],occurred_at=occurred_at);s.add(r);s.flush();return out(r)
  def ingest_psp_line(self,iid,b):
   with SessionLocal() as s:
    r=self.ingest_psp_line_in_session(s,iid,b);s.commit();return r
  def ingest_bank_line_in_session(self,s,b):
   required=('bank_line_identity','legal_entity_id','amount_minor','currency','payment_reference','evidence_reference','booked_at')
   if any(b.get(x) in (None,'') for x in required):raise ValueError('BANK_STATEMENT_FACT_REQUIRED')
-  r=BankLine(bank_statement_line_id=ident('bsl'),bank_line_identity=b['bank_line_identity'],legal_entity_id=b['legal_entity_id'],amount_minor=int(b['amount_minor']),currency=b['currency'],payment_reference=b['payment_reference'],evidence_reference=b['evidence_reference'],booked_at=datetime.fromisoformat(b['booked_at'].replace('Z','+00:00')));s.add(r);s.flush();return out(r)
+  booked_at=datetime.fromisoformat(b['booked_at'].replace('Z','+00:00'))
+  old=s.scalar(select(BankLine).where(BankLine.bank_line_identity==b['bank_line_identity']).with_for_update())
+  if old:
+   prior=(old.legal_entity_id,old.amount_minor,old.currency,old.payment_reference,old.evidence_reference,old.booked_at)
+   incoming=(b['legal_entity_id'],int(b['amount_minor']),b['currency'],b['payment_reference'],b['evidence_reference'],booked_at)
+   if prior!=incoming:raise ValueError('BANK_STATEMENT_LINE_FACT_CONFLICT')
+   return out(old)
+  r=BankLine(bank_statement_line_id=ident('bsl'),bank_line_identity=b['bank_line_identity'],legal_entity_id=b['legal_entity_id'],amount_minor=int(b['amount_minor']),currency=b['currency'],payment_reference=b['payment_reference'],evidence_reference=b['evidence_reference'],booked_at=booked_at);s.add(r);s.flush();return out(r)
  def ingest_bank_line(self,b):
   with SessionLocal() as s:
    r=self.ingest_bank_line_in_session(s,b);s.commit();return r
