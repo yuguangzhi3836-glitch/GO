@@ -215,3 +215,22 @@ def test_0100_capture_dispatch_claim_exists_before_network_and_blocks_replay(mon
  assert observed==['DISPATCHING'] and first['state']=='UNKNOWN_EXTERNAL_STATE'
  with pytest.raises(ValueError,match='OPERATION_RECONCILIATION_REQUIRED'):
   real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'claim-capture-retry'})
+
+
+def test_0100_capture_terminal_callback_cannot_be_reversed_by_late_delivery(monkeypatch):
+ setup_auth();i=seed_order();iid=i['payment_intent_id']
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
+ auth=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'terminal-auth'})
+ ap={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(auth['external_truth_operation_id'],'terminal-auth-callback',ap,sig(ap))
+ cap=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'terminal-capture'})
+ success={'state':'SUCCEEDED','operation':'CAPTURE','external_operation_id':'ext-capture','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(cap['external_truth_operation_id'],'terminal-capture-success',success,sig(success))
+ late_failure={**success,'state':'FAILED'}
+ with pytest.raises(ValueError,match='TERMINAL_STATE_CONFLICT'):
+  real.payment_callback(cap['external_truth_operation_id'],'terminal-capture-late-failure',late_failure,sig(late_failure))
+ with SessionLocal() as s:
+  op=s.get(ExternalTruthOperationRow,cap['external_truth_operation_id'])
+  assert op.state=='CALLBACK_SUCCEEDED'
+  assert len(s.scalars(select(ExternalTruthWebhookReceiptRow).where(ExternalTruthWebhookReceiptRow.external_truth_operation_id==cap['external_truth_operation_id'])).all())==1
+  assert len(s.scalars(select(OmnichannelMoneyMovementRow).where(OmnichannelMoneyMovementRow.root_payment_intent_id==iid,OmnichannelMoneyMovementRow.movement_type=='CAPTURE')).all())==1
