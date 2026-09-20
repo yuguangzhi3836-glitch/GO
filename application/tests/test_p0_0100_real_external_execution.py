@@ -1,6 +1,7 @@
 from datetime import datetime,timezone,timedelta
 import hashlib,hmac,json,os
 import httpx
+from concurrent.futures import ThreadPoolExecutor
 import pytest
 from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
@@ -247,3 +248,17 @@ def test_0100_unknown_payment_dispatch_enters_command_center_lease_queue(monkeyp
  assert claim['reconciliation']['claimed_by']=='payment-operator'
  replay=command_center.claim(case['reconciliation_id'],'payment-operator',60)
  assert replay['replay'] is True
+
+
+def test_0100_concurrent_same_delivery_creates_one_receipt_and_movement(monkeypatch):
+ setup_auth();i=seed_order();iid=i['payment_intent_id']
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-authorize'}))
+ op=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'concurrent-delivery'})
+ body={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ signature=sig(body)
+ with ThreadPoolExecutor(max_workers=2) as pool:
+  results=list(pool.map(lambda _:real.payment_callback(op['external_truth_operation_id'],'concurrent-delivery',body,signature),range(2)))
+ assert sorted(x['duplicate'] for x in results)==[False,True]
+ with SessionLocal() as s:
+  assert len(s.scalars(select(ExternalTruthWebhookReceiptRow).where(ExternalTruthWebhookReceiptRow.external_truth_operation_id==op['external_truth_operation_id'])).all())==1
+  assert len(s.scalars(select(OmnichannelMoneyMovementRow).where(OmnichannelMoneyMovementRow.root_payment_intent_id==iid,OmnichannelMoneyMovementRow.movement_type=='AUTHORIZATION')).all())==1
