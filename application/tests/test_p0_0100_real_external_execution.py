@@ -103,9 +103,9 @@ def test_0100_capture_and_refund_are_blocked_before_external_dispatch(monkeypatc
  setup_auth();i=seed_order();iid=i['payment_intent_id']
  dispatched=[]
  monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:dispatched.append(payload) or Resp({'external_operation_id':'unexpected'}))
- with pytest.raises(ValueError,match='EXTERNAL_CAPTURE_REQUIRES_CONFIRMED_AUTHORIZATION'):
+ with pytest.raises(ValueError,match='PAYMENT_SUCCESS_REQUIRED_FOR_EXTERNAL_MONEY_OPERATION'):
   real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'cap-before-auth'})
- with pytest.raises(ValueError,match='EXTERNAL_REFUND_REQUIRES_CONFIRMED_CAPTURE'):
+ with pytest.raises(ValueError,match='PAYMENT_SUCCESS_REQUIRED_FOR_EXTERNAL_MONEY_OPERATION'):
   real.execute_payment(iid,'auth-0100',{'operation':'REFUND','idempotency_key':'refund-before-capture'})
  assert dispatched==[]
 
