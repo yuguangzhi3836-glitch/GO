@@ -436,3 +436,15 @@ def test_0100_supplier_failure_after_capture_does_not_create_unverified_refund(m
  with SessionLocal() as s:
   assert s.get(OrderRow,'hotel-order-0100').status=='FAILED'
   assert not s.scalars(select(OmnichannelMoneyMovementRow).where(OmnichannelMoneyMovementRow.root_payment_intent_id==iid,OmnichannelMoneyMovementRow.movement_type.in_({'REFUND','COMPENSATION'}))).all()
+
+
+def test_0100_recovery_scan_never_converges_unverified_payment_truth(monkeypatch):
+ setup_auth();i=seed_order()
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:(_ for _ in ()).throw(httpx.TimeoutException('unknown')))
+ pending=real.execute_payment(i['payment_intent_id'],'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'recovery-unverified'})
+ case=pending['command_center_reconciliation']['reconciliation']
+ assert command_center.recover_verified_payment_truth_cases()==[]
+ state=command_center.get_operation(pending['command_center_reconciliation']['operation']['runtime_operation_id'])
+ assert state['reconciliation']['state']=='MANUAL_REVIEW' and state['operation']['state']=='UNKNOWN_EXTERNAL_STATE'
+ with pytest.raises(ValueError,match='PAYMENT_TRUTH_REQUIRES_VERIFIED_SIGNED_CALLBACK'):
+  command_center.converge_payment_truth_from_callback(pending['external_truth_operation_id'])
