@@ -1,5 +1,6 @@
 from datetime import datetime,timezone,timedelta
 import hashlib,hmac,json,os
+import httpx
 import pytest
 from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
