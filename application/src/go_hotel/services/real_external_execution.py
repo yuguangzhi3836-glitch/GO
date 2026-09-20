@@ -113,7 +113,11 @@ class RealExternalExecutionService:
                 if transport_state=='UNKNOWN_EXTERNAL_STATE':i.state='UNKNOWN_EXTERNAL_STATE';i.updated_at=now()
             elif transport_state=='UNKNOWN_EXTERNAL_STATE':
                 i=s.scalar(select(Intent).where(Intent.payment_intent_id==intent_id).with_for_update());i.state='UNKNOWN_EXTERNAL_STATE';i.updated_at=now()
-            s.commit();return out(record)
+            result=out(record);s.commit()
+        if transport_state in {'UNKNOWN_EXTERNAL_STATE','TRANSPORT_ACCEPTED_PENDING_SIGNED_CALLBACK'}:
+            from go_hotel.services.production_connector_runtime import production_connector_runtime_service
+            result['command_center_reconciliation']=production_connector_runtime_service.admit_payment_unknown(operation_id)
+        return result
     def execute_supplier(self,fulfillment_id,authorization_id,b):
         operation=b.get('operation','BOOK')
         if operation not in SUPPLIER_OPS:raise ValueError('UNSUPPORTED_REAL_SUPPLIER_OPERATION')
