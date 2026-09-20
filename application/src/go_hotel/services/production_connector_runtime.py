@@ -6,6 +6,7 @@ from go_hotel.db.models import (
  ProductionConnectorRow, ConnectorAuthorityRow, ConnectorCredentialReferenceRow, ConnectorRuntimeHealthRow, ConnectorKillSwitchRow,
  ConnectorRuntimeAuthorizationRow, ConnectorRuntimeOperationRow, ConnectorWebhookReceiptRow,
  ConnectorRuntimeObservationRow, ConnectorRuntimeReconciliationRow, ConnectorRuntimeSafetyEventRow,
+ ExternalTruthOperationRow,
 )
 
 FINAL_STATES={'CONFIRMED','FAILED','CANCELLED','REFUNDED'}
@@ -175,6 +176,26 @@ class ProductionConnectorRuntimeService:
    row=s.get(ConnectorRuntimeOperationRow,payload.get('runtime_operation_id'))
    if not row or row.connector_id!=connector_id: raise ValueError('WEBHOOK_OPERATION_BINDING_INVALID')
    obs,rec=self._observe(s,row,'WEBHOOK',payload['external_state'].upper(),payload,payload.get('supplier_reference')); s.commit(); return {'receipt':out(receipt),'operation':out(row),'observation':out(obs),'reconciliation':out(rec),'replay':False}
+ def admit_payment_unknown(self,external_truth_operation_id):
+  """Bridge an existing payment truth operation into the Command Center case queue.
+  It never writes payment state, movements, or ledger entries; only a verified
+  external callback can resolve the payment authority chain.
+  """
+  with SessionLocal() as s:
+   truth=s.get(ExternalTruthOperationRow,external_truth_operation_id)
+   if not truth or truth.vertical!='PAYMENT':raise ValueError('PAYMENT_TRUTH_OPERATION_REQUIRED')
+   if truth.state not in {'DISPATCHING','UNKNOWN_EXTERNAL_STATE','TRANSPORT_ACCEPTED_PENDING_SIGNED_CALLBACK'}:raise ValueError('PAYMENT_TRUTH_OPERATION_NOT_RECONCILABLE')
+   key=f'PAYMENT_TRUTH_RECON:{external_truth_operation_id}'
+   existing=s.scalar(select(ConnectorRuntimeOperationRow).where(ConnectorRuntimeOperationRow.idempotency_key==key))
+   if existing:
+    rec=s.scalar(select(ConnectorRuntimeReconciliationRow).where(ConnectorRuntimeReconciliationRow.runtime_operation_id==existing.runtime_operation_id))
+    return {'operation':out(existing),'reconciliation':out(rec),'replay':True}
+   connector_id='COMMAND_CENTER_PAYMENT_RECONCILIATION'
+   connector=s.get(ProductionConnectorRow,connector_id)
+   if not connector:
+    connector=ProductionConnectorRow(connector_id=connector_id,connector_key='command-center-payment-reconciliation',display_name='Command Center Payment Reconciliation',vertical='PAYMENT',supplier_legal_name='GO Command Center Internal Control',environment='CONTROL_PLANE',lifecycle_state='INTERNAL',active_capability_version=1,created_by='PAYMENT_TRUTH_BRIDGE',created_at=now(),updated_at=now());s.add(connector)
+   op=ConnectorRuntimeOperationRow(runtime_operation_id=ident('rop'),connector_id=connector_id,operation_type='RECONCILE_PAYMENT_TRUTH',idempotency_key=key,request_hash=digest({'external_truth_operation_id':external_truth_operation_id,'request_hash':truth.request_hash}),request_json={'external_truth_operation_id':external_truth_operation_id,'payment_intent_id':truth.payment_intent_id,'operation_type':truth.operation_type},state='UNKNOWN_EXTERNAL_STATE',response_json={},authorization_id='PAYMENT_TRUTH_BRIDGE_NO_EXTERNAL_AUTHORIZATION',created_at=now(),updated_at=now());s.add(op);s.flush()
+   rec=ConnectorRuntimeReconciliationRow(reconciliation_id=ident('recon'),runtime_operation_id=op.runtime_operation_id,state='MANUAL_REVIEW',attempt_count=0,max_attempts=0,manual_review_reason='PAYMENT_EXTERNAL_TRUTH_RECONCILIATION_REQUIRED',claimed_by=None,lease_expires_at=None,evidence_due_at=None,resolution_requested_by=None,checker_id=None,escalation_level=0,operator_sla_due_at=None,resolved_at=None,resolution_payload_json=None,resolution_evidence_digest=None,checker_evidence_reference=None,resolution_result_json=None,resolved_by=None,superseded_reason=None,updated_at=now());s.add(rec);s.commit();return {'operation':out(op),'reconciliation':out(rec),'replay':False}
  def due_reconciliations(self,limit=100):
   with SessionLocal() as s:
    rows=s.scalars(select(ConnectorRuntimeReconciliationRow).where(ConnectorRuntimeReconciliationRow.state.in_({'PENDING','MANUAL_REVIEW','CLAIMED','PENDING_CHECKER'})).order_by(ConnectorRuntimeReconciliationRow.updated_at).limit(limit)).all(); result=[]
