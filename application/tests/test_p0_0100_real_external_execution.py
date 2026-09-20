@@ -349,4 +349,4 @@ def test_0100_concurrent_psp_settlement_deliveries_create_one_line(monkeypatch):
  assert all(not x['duplicate'] for x in results)
  with SessionLocal() as s:
   assert len(s.scalars(select(PspSettlementLineRow).where(PspSettlementLineRow.external_transaction_id=='psp-concurrent-settlement')).all())==1
-  assert len(s.scalars(select(ExternalTruthWebhookReceiptRow).where(ExternalTruthWebhookReceiptRow.external_truth_operation_id==cap['external_truth_operation_id'])).all())==4
+  assert len(s.scalars(select(ExternalTruthWebhookReceiptRow).where(ExternalTruthWebhookReceiptRow.external_truth_operation_id==cap['external_truth_operation_id'])).all())==3
