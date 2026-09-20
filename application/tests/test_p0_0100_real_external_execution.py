@@ -129,3 +129,18 @@ def test_0100_settlement_requires_confirmed_capture_and_stays_atomic(monkeypatch
   real.psp_settlement_callback(op['external_truth_operation_id'],'settle-before-capture',payload,sig(payload))
  with SessionLocal() as s:
   assert not s.scalars(select(ExternalTruthWebhookReceiptRow)).all()
+
+
+def test_0100_accepted_capture_without_provider_operation_id_blocks_resend(monkeypatch):
+ setup_auth();i=seed_order();iid=i['payment_intent_id']
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
+ auth=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'missing-op-auth'})
+ body={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(auth['external_truth_operation_id'],'missing-op-auth-callback',body,sig(body))
+ dispatched=[]
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:dispatched.append(payload) or Resp({}))
+ first=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'missing-op-capture'})
+ assert first['state']=='UNKNOWN_EXTERNAL_STATE' and dispatched
+ with pytest.raises(ValueError,match='OPERATION_RECONCILIATION_REQUIRED'):
+  real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'missing-op-capture-retry'})
+ assert len(dispatched)==1
