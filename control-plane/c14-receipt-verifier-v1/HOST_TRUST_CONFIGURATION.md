@@ -14,6 +14,11 @@ GO_C14_TRUSTED_P256_PUBLIC_KEY_FILE=/etc/go-command-center/trust/c14-p256-public
 GO_C14_TRUSTED_P256_SPKI_SHA256=sha256:REPLACE_WITH_LOWERCASE_SPKI_DER_SHA256
 GO_C14_RECEIPT_MAX_AGE_SECONDS=900
 GO_C14_ALLOWED_ISSUER=REPLACE_WITH_INDEPENDENT_C14_HOST_IDENTITY
+# The following are injected only from the fixed, read-only task binding:
+# GO_C14_EXPECTED_CANDIDATE_SHA=...
+# GO_C14_EXPECTED_APPLICATION_TREE=...
+# GO_C14_EXPECTED_VERDICT=PASS
+# GO_C14_EXPECTED_EVIDENCE_MANIFEST_SHA256=...
 ```
 
 The host administrator exports only the existing HSM P-256 public key. A second
@@ -26,6 +31,8 @@ GitHub-write, Runner-registration or deployment permission.
 Before any activation, record a fail-closed test matrix: wrong key/fingerprint,
 malformed envelope, altered candidate/tree/verdict/signature, stale/future
 timestamp, wrong issuer and wrong evidence-manifest binding must all return
-`VERIFY_FAIL`. The one valid synthetic receipt must be signed solely by the
+`VERIFY_FAIL`. The verifier invocation must pass the five matching expected
+bindings (issuer, candidate SHA, application tree, verdict, evidence digest).
+The one valid synthetic receipt must be signed solely by the
 independent issuer and verified by a separate operator. This remains short of
 C14/C13 execution.
