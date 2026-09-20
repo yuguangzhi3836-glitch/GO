@@ -13,9 +13,14 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+# One superseding run per Draft branch: a new candidate cancels stale work.
+concurrency:
+  group: payment-draft-truth-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   payment-draft-truth:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: application
@@ -29,5 +34,12 @@ jobs:
           python-version: "3.13"
       - run: pip install -e '.[dev]'
       - run: python -m compileall -q src/go_hotel/services/omnichannel_payment.py src/go_hotel/services/real_external_execution.py src/go_hotel/services/unified_money_movement.py
-      - run: pytest -q tests/test_omnichannel_payment_finance_os.py tests/test_p0_0100_real_external_execution.py tests/test_unified_money_movement_finance_close.py
+      - run: pytest -q --junitxml=payment-draft-truth.junit.xml tests/test_omnichannel_payment_finance_os.py tests/test_p0_0100_real_external_execution.py tests/test_unified_money_movement_finance_close.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: payment-draft-truth-${{ github.sha }}
+          path: application/payment-draft-truth.junit.xml
+          if-no-files-found: error
+          retention-days: 7
 # Draft-only regression; no PSP, credentials, network, deployment, or money movement.
