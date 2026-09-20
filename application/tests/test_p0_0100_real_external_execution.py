@@ -416,3 +416,23 @@ def test_0100_capture_only_authorizes_supplier_execution_not_order_confirmation(
   assert fulfillment.state=='CAPTURE_CONFIRMED_READY_FOR_SUPPLIER'
   assert s.get(OrderRow,'hotel-order-0100').status=='PENDING_PAYMENT'
   assert not s.scalars(select(ConsumerUnifiedLifecycleRow).where(ConsumerUnifiedLifecycleRow.order_id=='hotel-order-0100',ConsumerUnifiedLifecycleRow.lifecycle_state=='CONFIRMED')).all()
+
+
+def test_0100_supplier_failure_after_capture_does_not_create_unverified_refund(monkeypatch):
+ setup_auth();i=seed_order();iid=i['payment_intent_id']
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
+ auth=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'supplier-failure-auth'})
+ ap={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(auth['external_truth_operation_id'],'supplier-failure-auth-callback',ap,sig(ap))
+ cap=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'supplier-failure-cap'})
+ cp={'state':'SUCCEEDED','operation':'CAPTURE','external_operation_id':'ext-capture','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(cap['external_truth_operation_id'],'supplier-failure-cap-callback',cp,sig(cp))
+ with SessionLocal() as s:
+  fulfillment=s.scalar(select(OrderSupplierFulfillmentRow).where(OrderSupplierFulfillmentRow.payment_intent_id==iid))
+ supplier=real.execute_supplier(fulfillment.order_supplier_fulfillment_id,'auth-0100',{'operation':'BOOK','idempotency_key':'supplier-failure-book','facts':{'room':'DLX'}})
+ failed={'state':'FAILED','external_operation_id':'ext-book'}
+ result=real.supplier_callback(supplier['external_truth_operation_id'],'supplier-failure-callback',failed,sig(failed))
+ assert result['result']['unified_lifecycle']['lifecycle_state']=='FAILED'
+ with SessionLocal() as s:
+  assert s.get(OrderRow,'hotel-order-0100').status=='FAILED'
+  assert not s.scalars(select(OmnichannelMoneyMovementRow).where(OmnichannelMoneyMovementRow.root_payment_intent_id==iid,OmnichannelMoneyMovementRow.movement_type.in_({'REFUND','COMPENSATION'}))).all()
