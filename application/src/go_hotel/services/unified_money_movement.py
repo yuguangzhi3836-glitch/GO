@@ -113,6 +113,13 @@ class UnifiedMoneyMovementService:
   for r in recs:
    if r.payment_intent_id not in latest or r.reconciled_at>latest[r.payment_intent_id].reconciled_at:latest[r.payment_intent_id]=r
   return [f'RECON_MISSING:{iid}' for iid in captured_ids if iid not in latest]+[f'RECON:{latest[iid].reconciliation_id}' for iid in captured_ids if iid in latest and latest[iid].state!='MATCHED']
+ def _external_truth_blockers(self,s,legal_entity_id,currency,cutoff):
+  roots=s.scalars(select(OrderRoot).where(OrderRoot.legal_entity_id==legal_entity_id)).all()
+  root_ids={x.payment_intent_id for x in roots}
+  if not root_ids:return []
+  intents={x.payment_intent_id for x in s.scalars(select(Intent).where(Intent.payment_intent_id.in_(root_ids),Intent.currency==currency)).all()}
+  ops=s.scalars(select(ExternalTruthOperation).where(ExternalTruthOperation.payment_intent_id.in_(intents),ExternalTruthOperation.vertical=='PAYMENT',ExternalTruthOperation.state.in_({'UNKNOWN_EXTERNAL_STATE','TRANSPORT_ACCEPTED_PENDING_SIGNED_CALLBACK'}),ExternalTruthOperation.started_at<=cutoff)).all() if intents else []
+  return [f'EXTERNAL_PAYMENT_RECONCILIATION:{x.external_truth_operation_id}' for x in ops]
  def prepare_close(self,b,actor):
   required=('legal_entity_id','currency','period_start','period_end','cutoff_at')
   if any(not b.get(x) for x in required):raise ValueError('SCOPED_CLOSE_FIELDS_REQUIRED')
@@ -123,7 +130,7 @@ class UnifiedMoneyMovementService:
    if old:return out(old)
    movements,ledger,recs=self._scope(s,b['legal_entity_id'],b['currency'],b['period_start'],b['period_end'],cutoff)
    debit=sum(x.amount_minor for x in ledger if x.direction=='DEBIT');credit=sum(x.amount_minor for x in ledger if x.direction=='CREDIT')
-   block=[f'MOVEMENT:{x.money_movement_id}' for x in movements if x.state in {'UNKNOWN_EXTERNAL_STATE','EXTERNAL_EXECUTOR_REQUIRED'}]+self._recon_blockers(recs,movements)
+   block=[f'MOVEMENT:{x.money_movement_id}' for x in movements if x.state in {'UNKNOWN_EXTERNAL_STATE','EXTERNAL_EXECUTOR_REQUIRED'}]+self._recon_blockers(recs,movements)+self._external_truth_blockers(s,r.legal_entity_id,r.currency,r.cutoff_at)+self._external_truth_blockers(s,b['legal_entity_id'],b['currency'],cutoff)
    try:
     from go_hotel.services.production_connector_runtime import production_connector_runtime_service
     roots_by_intent={x.payment_intent_id:x.business_id for x in s.scalars(select(OrderRoot).where(OrderRoot.payment_intent_id.in_({m.root_payment_intent_id for m in movements}))).all()} if movements else {}
