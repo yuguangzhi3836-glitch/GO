@@ -208,7 +208,11 @@ class RealExternalExecutionService:
                     movement=unified_money_movement_service.record_verified_external_fact_in_session(s,op.payment_intent_id,{'movement_type':'REFUND','parent_movement_id':parent.money_movement_id,'amount_minor':int(payload['amount_minor']),'evidence':evidence,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':callback_operation_id},'ext-ref:'+op.idempotency_key,'p0-0100',r.external_truth_webhook_receipt_id)
             receipt=out(r);intent=out(i)
             s.commit()
-            return {'duplicate':False,'receipt':receipt,'intent':intent,'money_movement':movement}
+        command_center_reconciliation=None
+        if mapped in {'SUCCEEDED','FAILED'}:
+            from go_hotel.services.production_connector_runtime import production_connector_runtime_service
+            command_center_reconciliation=production_connector_runtime_service.converge_payment_truth_from_callback(operation_id)
+        return {'duplicate':False,'receipt':receipt,'intent':intent,'money_movement':movement,'command_center_reconciliation':command_center_reconciliation}
     def supplier_callback(self,operation_id,delivery_id,payload,signature):
         with SessionLocal() as s:
             op,old=self._verify_callback(s,operation_id,delivery_id,payload,signature)
