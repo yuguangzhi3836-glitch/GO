@@ -118,7 +118,7 @@ class UnifiedMoneyMovementService:
   root_ids={x.payment_intent_id for x in roots}
   if not root_ids:return []
   intents={x.payment_intent_id for x in s.scalars(select(Intent).where(Intent.payment_intent_id.in_(root_ids),Intent.currency==currency)).all()}
-  ops=s.scalars(select(ExternalTruthOperation).where(ExternalTruthOperation.payment_intent_id.in_(intents),ExternalTruthOperation.vertical=='PAYMENT',ExternalTruthOperation.state.in_({'UNKNOWN_EXTERNAL_STATE','TRANSPORT_ACCEPTED_PENDING_SIGNED_CALLBACK'}),ExternalTruthOperation.started_at<=cutoff)).all() if intents else []
+  ops=s.scalars(select(ExternalTruthOperation).where(ExternalTruthOperation.payment_intent_id.in_(intents),ExternalTruthOperation.vertical=='PAYMENT',ExternalTruthOperation.state.in_({'DISPATCHING','UNKNOWN_EXTERNAL_STATE','TRANSPORT_ACCEPTED_PENDING_SIGNED_CALLBACK'}),ExternalTruthOperation.started_at<=cutoff)).all() if intents else []
   return [f'EXTERNAL_PAYMENT_RECONCILIATION:{x.external_truth_operation_id}' for x in ops]
  def prepare_close(self,b,actor):
   required=('legal_entity_id','currency','period_start','period_end','cutoff_at')
