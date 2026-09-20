@@ -122,7 +122,10 @@ class RealExternalExecutionService:
             r=TruthOp(external_truth_operation_id=ident('eto'),execution_authorization_id=authorization_id,payment_intent_id=f.payment_intent_id,supplier_fulfillment_id=fulfillment_id,vertical='HOTEL',operation_type=operation,idempotency_key=b['idempotency_key'],endpoint_reference=url,external_operation_id=ext,http_status=status,state=transport_state,request_hash=req_hash,response_hash=digest(body),evidence_reference=body.get('evidence_reference'),started_at=now(),completed_at=now());s.add(r);s.commit();return out(r)
     def _verify_callback(self,s,operation_id,delivery_id,payload,signature):
         old=s.scalar(select(TruthWebhook).where(TruthWebhook.delivery_id==delivery_id))
-        if old:return None,old
+        if old:
+            if old.payload_hash!=digest(payload):
+                raise ValueError('EXTERNAL_CALLBACK_DELIVERY_PAYLOAD_CONFLICT')
+            return None,old
         op=s.get(TruthOp,operation_id)
         if not op:raise ValueError('EXTERNAL_TRUTH_OPERATION_NOT_FOUND')
         auth,binding,adapter,credential=self._authorization(s,op.execution_authorization_id,op.vertical)
@@ -130,18 +133,19 @@ class RealExternalExecutionService:
         if not hmac.compare_digest(expected,signature):raise ValueError('EXTERNAL_CALLBACK_SIGNATURE_INVALID')
         return op,None
     def payment_callback(self,operation_id,delivery_id,payload,signature):
+        """Commit a verified receipt, payment state, and money movement as one fact."""
         with SessionLocal() as s:
             op,old=self._verify_callback(s,operation_id,delivery_id,payload,signature)
             if old:return {'duplicate':True,'receipt':out(old)}
             if op.vertical!='PAYMENT':raise ValueError('PAYMENT_OPERATION_REQUIRED')
-            required=('state','operation','amount_minor','currency')
+            required=('state','operation','amount_minor','currency','external_operation_id')
             if any(payload.get(x) in (None,'') for x in required):raise ValueError('EXTERNAL_PAYMENT_CALLBACK_FACTS_REQUIRED')
             i=s.scalar(select(Intent).where(Intent.payment_intent_id==op.payment_intent_id).with_for_update())
             if not i:raise ValueError('PAYMENT_INTENT_NOT_FOUND')
             if payload['operation']!=op.operation_type:raise ValueError('EXTERNAL_PAYMENT_CALLBACK_OPERATION_MISMATCH')
             if int(payload['amount_minor'])!=i.amount_minor:raise ValueError('EXTERNAL_PAYMENT_CALLBACK_AMOUNT_MISMATCH')
             if payload['currency']!=i.currency:raise ValueError('EXTERNAL_PAYMENT_CALLBACK_CURRENCY_MISMATCH')
-            callback_operation_id=payload.get('external_operation_id') or op.external_operation_id
+            callback_operation_id=payload['external_operation_id']
             if op.external_operation_id and callback_operation_id!=op.external_operation_id:raise ValueError('EXTERNAL_PAYMENT_CALLBACK_OPERATION_REFERENCE_MISMATCH')
             mapped={'SUCCEEDED':'SUCCEEDED','FAILED':'FAILED','PENDING':'UNKNOWN_EXTERNAL_STATE'}.get(payload['state'])
             if not mapped:raise ValueError('INVALID_EXTERNAL_PAYMENT_STATE')
@@ -149,24 +153,24 @@ class RealExternalExecutionService:
                 a=s.scalar(select(Attempt).where(Attempt.payment_intent_id==op.payment_intent_id,Attempt.channel_idempotency_key==op.idempotency_key).with_for_update())
                 if not a:raise ValueError('EXTERNAL_PAYMENT_ATTEMPT_NOT_FOUND')
                 omnichannel_payment_service._transition(s,a,i,mapped,callback_operation_id)
-            r=TruthWebhook(external_truth_webhook_receipt_id=ident('etw'),external_truth_operation_id=operation_id,source_vertical='PAYMENT',delivery_id=delivery_id,signature_scheme='HMAC_SHA256',signature_verified=True,supplier_state=mapped,payload_hash=digest(payload),received_at=now());s.add(r);s.commit()
-        movement=None
-        if mapped=='SUCCEEDED':
-            ext=callback_operation_id or f'callback:{delivery_id}'
-            evidence=[f'external-webhook://{delivery_id}']
-            if op.operation_type=='AUTHORIZE':
-                movement=unified_money_movement_service.record_verified_external_fact(op.payment_intent_id,{'movement_type':'AUTHORIZATION','amount_minor':int(payload['amount_minor']),'evidence':evidence,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':ext},'ext-auth:'+op.idempotency_key,'p0-0100',r.external_truth_webhook_receipt_id)
-            elif op.operation_type=='CAPTURE':
-                with SessionLocal() as s:
-                    parent=s.scalar(select(Movement).where(Movement.root_payment_intent_id==op.payment_intent_id,Movement.movement_type=='AUTHORIZATION',Movement.state=='CONFIRMED').order_by(Movement.created_at.desc()))
-                if not parent:raise ValueError('CONFIRMED_EXTERNAL_AUTHORIZATION_REQUIRED_BEFORE_CAPTURE')
-                movement=unified_money_movement_service.record_verified_external_fact(op.payment_intent_id,{'movement_type':'CAPTURE','parent_movement_id':parent.money_movement_id,'amount_minor':int(payload['amount_minor']),'evidence':evidence,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':ext},'ext-cap:'+op.idempotency_key,'p0-0100',r.external_truth_webhook_receipt_id)
-            elif op.operation_type=='REFUND':
-                with SessionLocal() as s:
-                    parent=s.scalar(select(Movement).where(Movement.root_payment_intent_id==op.payment_intent_id,Movement.movement_type=='CAPTURE',Movement.state=='CONFIRMED').order_by(Movement.created_at.desc()))
-                if not parent:raise ValueError('CONFIRMED_EXTERNAL_CAPTURE_REQUIRED_BEFORE_REFUND')
-                movement=unified_money_movement_service.record_verified_external_fact(op.payment_intent_id,{'movement_type':'REFUND','parent_movement_id':parent.money_movement_id,'amount_minor':int(payload['amount_minor']),'evidence':evidence,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':ext},'ext-ref:'+op.idempotency_key,'p0-0100',r.external_truth_webhook_receipt_id)
-        return {'duplicate':False,'receipt':out(r),'intent':out(i),'money_movement':movement}
+            r=TruthWebhook(external_truth_webhook_receipt_id=ident('etw'),external_truth_operation_id=operation_id,source_vertical='PAYMENT',delivery_id=delivery_id,signature_scheme='HMAC_SHA256',signature_verified=True,supplier_state=mapped,payload_hash=digest(payload),received_at=now())
+            s.add(r);s.flush()
+            movement=None
+            if mapped=='SUCCEEDED':
+                evidence=[f'external-webhook://{delivery_id}']
+                if op.operation_type=='AUTHORIZE':
+                    movement=unified_money_movement_service.record_verified_external_fact_in_session(s,op.payment_intent_id,{'movement_type':'AUTHORIZATION','amount_minor':int(payload['amount_minor']),'evidence':evidence,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':callback_operation_id},'ext-auth:'+op.idempotency_key,'p0-0100',r.external_truth_webhook_receipt_id)
+                elif op.operation_type=='CAPTURE':
+                    parent=s.scalar(select(Movement).where(Movement.root_payment_intent_id==op.payment_intent_id,Movement.movement_type=='AUTHORIZATION',Movement.state=='CONFIRMED').order_by(Movement.created_at.desc()).with_for_update())
+                    if not parent:raise ValueError('CONFIRMED_EXTERNAL_AUTHORIZATION_REQUIRED_BEFORE_CAPTURE')
+                    movement=unified_money_movement_service.record_verified_external_fact_in_session(s,op.payment_intent_id,{'movement_type':'CAPTURE','parent_movement_id':parent.money_movement_id,'amount_minor':int(payload['amount_minor']),'evidence':evidence,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':callback_operation_id},'ext-cap:'+op.idempotency_key,'p0-0100',r.external_truth_webhook_receipt_id)
+                elif op.operation_type=='REFUND':
+                    parent=s.scalar(select(Movement).where(Movement.root_payment_intent_id==op.payment_intent_id,Movement.movement_type=='CAPTURE',Movement.state=='CONFIRMED').order_by(Movement.created_at.desc()).with_for_update())
+                    if not parent:raise ValueError('CONFIRMED_EXTERNAL_CAPTURE_REQUIRED_BEFORE_REFUND')
+                    movement=unified_money_movement_service.record_verified_external_fact_in_session(s,op.payment_intent_id,{'movement_type':'REFUND','parent_movement_id':parent.money_movement_id,'amount_minor':int(payload['amount_minor']),'evidence':evidence,'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':callback_operation_id},'ext-ref:'+op.idempotency_key,'p0-0100',r.external_truth_webhook_receipt_id)
+            receipt=out(r);intent=out(i)
+            s.commit()
+            return {'duplicate':False,'receipt':receipt,'intent':intent,'money_movement':movement}
     def supplier_callback(self,operation_id,delivery_id,payload,signature):
         with SessionLocal() as s:
             op,old=self._verify_callback(s,operation_id,delivery_id,payload,signature)
