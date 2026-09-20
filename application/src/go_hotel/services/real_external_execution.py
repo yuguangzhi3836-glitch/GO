@@ -1,4 +1,4 @@
-from datetime import datetime,timezone
+from datetime import datetime,timezone,timedelta
 import hashlib,hmac,json,os,uuid
 from urllib.parse import urlparse
 import httpx
@@ -78,6 +78,23 @@ class RealExternalExecutionService:
             if operation=='AUTHORIZE' and intent.state!='READY': raise ValueError('PAYMENT_INTENT_NOT_READY_FOR_EXTERNAL_AUTHORIZE')
             if operation in {'CAPTURE','REFUND'} and intent.state!='SUCCEEDED': raise ValueError('PAYMENT_SUCCESS_REQUIRED_FOR_EXTERNAL_MONEY_OPERATION')
             if 'amount_minor' in b and int(b['amount_minor'])!=intent.amount_minor: raise ValueError('EXTERNAL_PAYMENT_PARTIAL_AMOUNT_NOT_SUPPORTED')
+            # Dispatch is not a harmless validation step: prove the money-graph
+            # precondition before crossing the external boundary.
+            movements=s.scalars(select(Movement).where(
+                Movement.root_payment_intent_id==intent_id,
+                Movement.state=='CONFIRMED',
+            ).with_for_update()).all()
+            authorized=sum(x.amount_minor for x in movements if x.movement_type=='AUTHORIZATION')
+            captured=sum(x.amount_minor for x in movements if x.movement_type=='CAPTURE')
+            refunded=sum(x.amount_minor for x in movements if x.movement_type=='REFUND')
+            if operation=='CAPTURE' and authorized<intent.amount_minor:
+                raise ValueError('EXTERNAL_CAPTURE_REQUIRES_CONFIRMED_AUTHORIZATION')
+            if operation=='CAPTURE' and captured+intent.amount_minor>authorized:
+                raise ValueError('EXTERNAL_CAPTURE_EXCEEDS_CONFIRMED_AUTHORIZATION')
+            if operation=='REFUND' and captured<intent.amount_minor:
+                raise ValueError('EXTERNAL_REFUND_REQUIRES_CONFIRMED_CAPTURE')
+            if operation=='REFUND' and refunded+intent.amount_minor>captured:
+                raise ValueError('EXTERNAL_REFUND_EXCEEDS_CONFIRMED_CAPTURE')
             if operation=='AUTHORIZE':
                 active=s.scalar(select(Attempt).where(Attempt.payment_intent_id==intent_id,Attempt.state.in_(['PROCESSING','UNKNOWN_EXTERNAL_STATE'])).with_for_update())
                 if active:raise ValueError('ACTIVE_OR_UNKNOWN_ATTEMPT_BLOCKS_RESEND')
@@ -138,8 +155,15 @@ class RealExternalExecutionService:
             op,old=self._verify_callback(s,operation_id,delivery_id,payload,signature)
             if old:return {'duplicate':True,'receipt':out(old)}
             if op.vertical!='PAYMENT':raise ValueError('PAYMENT_OPERATION_REQUIRED')
-            required=('state','operation','amount_minor','currency','external_operation_id')
+            required=('state','operation','amount_minor','currency','external_operation_id','occurred_at')
             if any(payload.get(x) in (None,'') for x in required):raise ValueError('EXTERNAL_PAYMENT_CALLBACK_FACTS_REQUIRED')
+            try:
+                occurred_at=datetime.fromisoformat(str(payload['occurred_at']).replace('Z','+00:00'))
+            except ValueError as exc:
+                raise ValueError('EXTERNAL_PAYMENT_CALLBACK_TIMESTAMP_INVALID') from exc
+            occurred_at=utc(occurred_at)
+            if occurred_at<now()-timedelta(hours=24) or occurred_at>now()+timedelta(minutes=5):
+                raise ValueError('EXTERNAL_PAYMENT_CALLBACK_OUTSIDE_REPLAY_WINDOW')
             i=s.scalar(select(Intent).where(Intent.payment_intent_id==op.payment_intent_id).with_for_update())
             if not i:raise ValueError('PAYMENT_INTENT_NOT_FOUND')
             if payload['operation']!=op.operation_type:raise ValueError('EXTERNAL_PAYMENT_CALLBACK_OPERATION_MISMATCH')
@@ -186,9 +210,22 @@ class RealExternalExecutionService:
             op,old=self._verify_callback(s,operation_id,delivery_id,payload,signature)
             if old:return {'duplicate':True,'receipt':out(old)}
             if op.vertical!='PAYMENT':raise ValueError('PAYMENT_OPERATION_REQUIRED')
-            r=TruthWebhook(external_truth_webhook_receipt_id=ident('etw'),external_truth_operation_id=operation_id,source_vertical='PAYMENT',delivery_id=delivery_id,signature_scheme='HMAC_SHA256',signature_verified=True,supplier_state='SETTLEMENT_FACT_RECEIVED',payload_hash=digest(payload),received_at=now());s.add(r);s.commit()
-        line=omnichannel_payment_service.ingest_psp_line(op.payment_intent_id,payload)
-        return {'duplicate':False,'receipt':out(r),'psp_line':line}
+            if op.operation_type!='CAPTURE':raise ValueError('PSP_SETTLEMENT_CAPTURE_OPERATION_REQUIRED')
+            required=('external_transaction_id','amount_minor','currency','evidence_reference','occurred_at')
+            if any(payload.get(x) in (None,'') for x in required):raise ValueError('PSP_SETTLEMENT_FACT_REQUIRED')
+            intent=s.get(Intent,op.payment_intent_id)
+            if not intent or int(payload['amount_minor'])!=intent.amount_minor or payload['currency']!=intent.currency:
+                raise ValueError('PSP_SETTLEMENT_PAYMENT_FACT_MISMATCH')
+            capture=s.scalar(select(Movement).where(
+                Movement.root_payment_intent_id==op.payment_intent_id,
+                Movement.movement_type=='CAPTURE',
+                Movement.state=='CONFIRMED',
+            ))
+            if not capture:raise ValueError('PSP_SETTLEMENT_CONFIRMED_CAPTURE_REQUIRED')
+            r=TruthWebhook(external_truth_webhook_receipt_id=ident('etw'),external_truth_operation_id=operation_id,source_vertical='PAYMENT',delivery_id=delivery_id,signature_scheme='HMAC_SHA256',signature_verified=True,supplier_state='SETTLEMENT_FACT_RECEIVED',payload_hash=digest(payload),received_at=now());s.add(r);s.flush()
+            line=omnichannel_payment_service.ingest_psp_line_in_session(s,op.payment_intent_id,payload)
+            receipt=out(r);s.commit()
+        return {'duplicate':False,'receipt':receipt,'psp_line':line}
     def bank_feed(self,provider_key,delivery_id,payload,signature):
         key=os.getenv(f'GO_BANK_FEED_KEY_{provider_key.upper()}')
         if not key:raise ValueError('BANK_FEED_SIGNATURE_KEY_NOT_CONFIGURED')
