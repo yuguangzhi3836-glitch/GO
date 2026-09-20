@@ -45,9 +45,9 @@ def test_0100_signed_psp_and_supplier_callbacks_drive_0099_truth_chain(monkeypat
  setup_auth();i=seed_order();iid=i['payment_intent_id']
  monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
  op=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'real-auth-0100'})
- p={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY'};r=real.payment_callback(op['external_truth_operation_id'],'pay-delivery-auth',p,sig(p));assert r['intent']['state']=='SUCCEEDED' and r['money_movement']['movement_type']=='AUTHORIZATION'
+ p={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()};r=real.payment_callback(op['external_truth_operation_id'],'pay-delivery-auth',p,sig(p));assert r['intent']['state']=='SUCCEEDED' and r['money_movement']['movement_type']=='AUTHORIZATION'
  capop=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'real-cap-0100','amount_minor':12000})
- cp={'state':'SUCCEEDED','operation':'CAPTURE','external_operation_id':'ext-capture','amount_minor':12000,'currency':'CNY'};cr=real.payment_callback(capop['external_truth_operation_id'],'pay-delivery-cap',cp,sig(cp));assert cr['money_movement']['movement_type']=='CAPTURE'
+ cp={'state':'SUCCEEDED','operation':'CAPTURE','external_operation_id':'ext-capture','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()};cr=real.payment_callback(capop['external_truth_operation_id'],'pay-delivery-cap',cp,sig(cp));assert cr['money_movement']['movement_type']=='CAPTURE'
  with SessionLocal() as s:
   f=s.scalar(select(OrderSupplierFulfillmentRow).where(OrderSupplierFulfillmentRow.payment_intent_id==iid));assert f.state=='CAPTURE_CONFIRMED_READY_FOR_SUPPLIER';fid=f.order_supplier_fulfillment_id
  sop=real.execute_supplier(fid,'auth-0100',{'operation':'BOOK','idempotency_key':'real-book-0100','facts':{'room':'DLX'}})
@@ -62,7 +62,7 @@ def test_0100_callback_fact_mutations_are_refused_before_money_movement(monkeypa
  setup_auth();i=seed_order();iid=i['payment_intent_id']
  monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
  op=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'real-auth-mutations'})
- base={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY'}
+ base={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
  cases=[({'operation':'CAPTURE'},'OPERATION_MISMATCH'),({'amount_minor':1},'AMOUNT_MISMATCH'),({'currency':'USD'},'CURRENCY_MISMATCH'),({'external_operation_id':'forged'},'OPERATION_REFERENCE_MISMATCH')]
  for n,(mutation,reason) in enumerate(cases):
   body={**base,**mutation}
@@ -76,10 +76,10 @@ def test_0100_payment_callback_requires_external_operation_and_rejects_delivery_
  setup_auth();i=seed_order();iid=i['payment_intent_id']
  monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
  op=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'real-auth-delivery'})
- missing={'state':'SUCCEEDED','operation':'AUTHORIZE','amount_minor':12000,'currency':'CNY'}
+ missing={'state':'SUCCEEDED','operation':'AUTHORIZE','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
  with pytest.raises(ValueError,match='CALLBACK_FACTS_REQUIRED'):
   real.payment_callback(op['external_truth_operation_id'],'payment-delivery-missing',missing,sig(missing))
- body={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY'}
+ body={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
  first=real.payment_callback(op['external_truth_operation_id'],'payment-delivery-conflict',body,sig(body))
  assert first['money_movement']['movement_type']=='AUTHORIZATION'
  changed={**body,'state':'FAILED'}
@@ -91,9 +91,41 @@ def test_0100_payment_callback_requires_external_operation_and_rejects_delivery_
 
 def test_0100_signed_settlement_bank_feed_and_reconciliation(monkeypatch):
  setup_auth();i=seed_order();iid=i['payment_intent_id'];monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
- op=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'real-auth-0100'});p={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY'};real.payment_callback(op['external_truth_operation_id'],'d-a',p,sig(p))
- cap=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'real-cap-0100'});cp={'state':'SUCCEEDED','operation':'CAPTURE','external_operation_id':'ext-capture','amount_minor':12000,'currency':'CNY'};real.payment_callback(cap['external_truth_operation_id'],'d-c',cp,sig(cp))
+ op=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'real-auth-0100'});p={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()};real.payment_callback(op['external_truth_operation_id'],'d-a',p,sig(p))
+ cap=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'real-cap-0100'});cp={'state':'SUCCEEDED','operation':'CAPTURE','external_operation_id':'ext-capture','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()};real.payment_callback(cap['external_truth_operation_id'],'d-c',cp,sig(cp))
  t=datetime.now(timezone.utc).isoformat();sett={'external_transaction_id':'psp-tx-0100','amount_minor':12000,'currency':'CNY','evidence_reference':'psp://settlement/0100','occurred_at':t};real.psp_settlement_callback(cap['external_truth_operation_id'],'d-settle',sett,sig(sett))
  os.environ['GO_BANK_FEED_KEY_TESTBANK']=SECRET
  feed={'evidence_reference':'bank://feed/0100','lines':[{'bank_line_identity':'bank-line-0100','legal_entity_id':'GO_CN','amount_minor':12000,'currency':'CNY','payment_reference':'psp-tx-0100','evidence_reference':'bank://line/0100','booked_at':t}]};real.bank_feed('testbank','bank-delivery-0100',feed,sig(feed))
  rec=real.reconcile(iid,'psp-tx-0100');assert rec['state']=='MATCHED' and rec['ledger_amount_minor']==12000
+
+
+def test_0100_capture_and_refund_are_blocked_before_external_dispatch(monkeypatch):
+ setup_auth();i=seed_order();iid=i['payment_intent_id']
+ dispatched=[]
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:dispatched.append(payload) or Resp({'external_operation_id':'unexpected'}))
+ with pytest.raises(ValueError,match='EXTERNAL_CAPTURE_REQUIRES_CONFIRMED_AUTHORIZATION'):
+  real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'cap-before-auth'})
+ with pytest.raises(ValueError,match='EXTERNAL_REFUND_REQUIRES_CONFIRMED_CAPTURE'):
+  real.execute_payment(iid,'auth-0100',{'operation':'REFUND','idempotency_key':'refund-before-capture'})
+ assert dispatched==[]
+
+def test_0100_stale_payment_callback_is_rejected_without_receipt_or_movement(monkeypatch):
+ setup_auth();i=seed_order()
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-authorize'}))
+ op=real.execute_payment(i['payment_intent_id'],'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'stale-callback'})
+ stale={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':(datetime.now(timezone.utc)-timedelta(hours=25)).isoformat()}
+ with pytest.raises(ValueError,match='OUTSIDE_REPLAY_WINDOW'):
+  real.payment_callback(op['external_truth_operation_id'],'stale-delivery',stale,sig(stale))
+ with SessionLocal() as s:
+  assert not s.scalars(select(ExternalTruthWebhookReceiptRow)).all()
+  assert not s.scalars(select(OmnichannelMoneyMovementRow)).all()
+
+def test_0100_settlement_requires_confirmed_capture_and_stays_atomic(monkeypatch):
+ setup_auth();i=seed_order()
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-authorize'}))
+ op=real.execute_payment(i['payment_intent_id'],'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'settle-before-capture'})
+ payload={'external_transaction_id':'psp-before-capture','amount_minor':12000,'currency':'CNY','evidence_reference':'psp://settlement/before-capture','occurred_at':datetime.now(timezone.utc).isoformat()}
+ with pytest.raises(ValueError,match='PSP_SETTLEMENT_CAPTURE_OPERATION_REQUIRED'):
+  real.psp_settlement_callback(op['external_truth_operation_id'],'settle-before-capture',payload,sig(payload))
+ with SessionLocal() as s:
+  assert not s.scalars(select(ExternalTruthWebhookReceiptRow)).all()
