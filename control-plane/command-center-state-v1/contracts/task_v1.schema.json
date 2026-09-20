@@ -27,7 +27,7 @@
     "CONTROL_PLANE_HEALTH": [],
     "HK_STAGING_VERIFY": ["release_id", "candidate_image_id", "expected_current_image_id"],
     "HK_STAGING_CANARY": ["release_id", "candidate_image_id", "candidate_package_sha256", "expected_current_image_id"],
-    "HK_STAGING_DEPLOY": ["release_id", "candidate_image_id", "candidate_package_sha256", "expected_current_image_id", "canary_evidence_id", "approval_id"],
+    "HK_STAGING_DEPLOY": ["release_id", "candidate_image_id", "candidate_package_sha256", "expected_current_image_id", "canary_evidence_id", "approval_id", "candidate_contract_sha256"],
     "HK_STAGING_ROLLBACK": ["release_id", "source_deploy_task_id", "approval_id"],
     "HK_STAGING_TEST_PR": ["builder_profile", "source"]
   },
