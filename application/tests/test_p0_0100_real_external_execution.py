@@ -376,3 +376,27 @@ def test_0100_callback_delivery_cannot_be_replayed_against_another_payment_opera
   real.payment_callback(cap['external_truth_operation_id'],'delivery-binding',body,sig(body))
  with SessionLocal() as s:
   assert len(s.scalars(select(ExternalTruthWebhookReceiptRow).where(ExternalTruthWebhookReceiptRow.delivery_id=='delivery-binding')).all())==1
+
+
+def test_0100_pending_callback_can_converge_once_to_success(monkeypatch):
+ setup_auth();i=seed_order()
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-pending-success'}))
+ op=real.execute_payment(i['payment_intent_id'],'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'pending-to-success'})
+ pending={'state':'PENDING','operation':'AUTHORIZE','external_operation_id':'ext-pending-success','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(op['external_truth_operation_id'],'pending-to-success-pending',pending,sig(pending))
+ succeeded={**pending,'state':'SUCCEEDED','occurred_at':datetime.now(timezone.utc).isoformat()}
+ result=real.payment_callback(op['external_truth_operation_id'],'pending-to-success-success',succeeded,sig(succeeded))
+ assert result['intent']['state']=='SUCCEEDED' and result['money_movement']['movement_type']=='AUTHORIZATION'
+ with SessionLocal() as s:
+  assert len(s.scalars(select(OmnichannelMoneyMovementRow).where(OmnichannelMoneyMovementRow.root_payment_intent_id==i['payment_intent_id'])).all())==1
+
+
+def test_0100_terminal_success_rejects_late_pending_callback(monkeypatch):
+ setup_auth();i=seed_order()
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-terminal-pending'}))
+ op=real.execute_payment(i['payment_intent_id'],'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'success-before-pending'})
+ success={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-terminal-pending','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(op['external_truth_operation_id'],'success-before-pending-success',success,sig(success))
+ late={**success,'state':'PENDING','occurred_at':datetime.now(timezone.utc).isoformat()}
+ with pytest.raises(ValueError,match='TERMINAL_STATE_CONFLICT'):
+  real.payment_callback(op['external_truth_operation_id'],'success-before-pending-late',late,sig(late))
