@@ -1,0 +1,58 @@
+name: Payment Draft PostgreSQL Regression
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - application/src/go_hotel/services/omnichannel_payment.py
+      - application/src/go_hotel/services/real_external_execution.py
+      - application/src/go_hotel/services/unified_money_movement.py
+      - application/tests/conftest.py
+      - application/tests/test_omnichannel_payment_finance_os.py
+      - application/tests/test_p0_0100_real_external_execution.py
+      - application/tests/test_unified_money_movement_finance_close.py
+      - .github/workflows/payment-draft-postgres-regression.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: payment-draft-postgres-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  payment-postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: go_payment
+          POSTGRES_PASSWORD: isolated_only
+          POSTGRES_DB: go_payment_test
+        options: >-
+          --health-cmd "pg_isready -U go_payment -d go_payment_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+        ports:
+          - 5432:5432
+    defaults:
+      run:
+        working-directory: application
+    env:
+      LIVE_MONEY: LOCKED
+      GO_EXTERNAL_SANDBOX_NETWORK_ENABLED: "0"
+      GO_TEST_DATABASE_URL: postgresql+psycopg://go_payment:isolated_only@localhost:5432/go_payment_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -e '.[dev]'
+      - run: python -m compileall -q src/go_hotel/services/omnichannel_payment.py src/go_hotel/services/real_external_execution.py src/go_hotel/services/unified_money_movement.py
+      - run: pytest -q --junitxml=payment-draft-postgres.junit.xml tests/test_omnichannel_payment_finance_os.py tests/test_p0_0100_real_external_execution.py tests/test_unified_money_movement_finance_close.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: payment-draft-postgres-${{ github.sha }}
+          path: application/payment-draft-postgres.junit.xml
+          if-no-files-found: error
+          retention-days: 7
+# Disposable database only. No PSP, credentials, external network, deployment, or money movement.
