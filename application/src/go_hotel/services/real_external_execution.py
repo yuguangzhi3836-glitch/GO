@@ -75,6 +75,12 @@ class RealExternalExecutionService:
             auth,binding,adapter,credential=self._authorization(s,authorization_id,'PAYMENT')
             intent=s.scalar(select(Intent).where(Intent.payment_intent_id==intent_id).with_for_update())
             if not intent: raise ValueError('PAYMENT_INTENT_NOT_FOUND')
+            inflight=s.scalar(select(TruthOp).where(
+                TruthOp.payment_intent_id==intent_id,
+                TruthOp.operation_type==operation,
+                TruthOp.state.in_(['TRANSPORT_ACCEPTED_PENDING_SIGNED_CALLBACK','UNKNOWN_EXTERNAL_STATE']),
+            ).with_for_update())
+            if inflight: raise ValueError('EXTERNAL_PAYMENT_OPERATION_RECONCILIATION_REQUIRED')
             if operation=='AUTHORIZE' and intent.state!='READY': raise ValueError('PAYMENT_INTENT_NOT_READY_FOR_EXTERNAL_AUTHORIZE')
             if operation in {'CAPTURE','REFUND'} and intent.state!='SUCCEEDED': raise ValueError('PAYMENT_SUCCESS_REQUIRED_FOR_EXTERNAL_MONEY_OPERATION')
             if 'amount_minor' in b and int(b['amount_minor'])!=intent.amount_minor: raise ValueError('EXTERNAL_PAYMENT_PARTIAL_AMOUNT_NOT_SUPPORTED')
@@ -107,7 +113,9 @@ class RealExternalExecutionService:
         try:
             resp=self._post_json(url,payload,headers); body=resp.json() if resp.content else {}; status=resp.status_code
             ext=body.get('external_operation_id') or body.get('transaction_id')
-            transport_state='TRANSPORT_ACCEPTED_PENDING_SIGNED_CALLBACK' if 200<=status<300 else 'TRANSPORT_REJECTED'
+            # A success status without an immutable provider operation reference is
+            # an unknown state: it cannot later be matched safely or retried.
+            transport_state='TRANSPORT_ACCEPTED_PENDING_SIGNED_CALLBACK' if 200<=status<300 and ext else ('UNKNOWN_EXTERNAL_STATE' if 200<=status<300 else 'TRANSPORT_REJECTED')
         except (httpx.TimeoutException,httpx.TransportError) as e:
             body={'transport_error':type(e).__name__};status=None;ext=None;transport_state='UNKNOWN_EXTERNAL_STATE'
         with SessionLocal() as s:
