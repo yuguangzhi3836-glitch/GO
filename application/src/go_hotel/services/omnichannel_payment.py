@@ -151,7 +151,7 @@ class OmnichannelPaymentService:
    intents=s.scalars(select(Intent).where(*([] if payer is None else [Intent.payer_id==payer])).order_by(Intent.created_at.desc())).all();ids=[x.payment_intent_id for x in intents];ats=s.scalars(select(Attempt).where(Attempt.payment_intent_id.in_(ids))).all() if ids else [];recs=s.scalars(select(Recon).where(Recon.payment_intent_id.in_(ids))).all() if ids else [];return {'supported_channels':sorted(CHANNELS),'intents':[out(x) for x in intents],'attempts':[out(x) for x in ats],'reconciliations':[out(x) for x in recs],'external_live':False}
  def webhook(self,channel,b,signature):
   if channel not in CHANNELS:raise ValueError('UNSUPPORTED_PAYMENT_CHANNEL')
-  key=os.getenv(f'GO_PAYMENT_WEBHOOK_KEY_${channel}')
+  key=os.getenv(f'GO_PAYMENT_WEBHOOK_KEY_{channel}')
   if not key:raise ValueError('PAYMENT_WEBHOOK_KEY_NOT_CONFIGURED')
   required=('external_event_id','payment_attempt_id','external_operation_id','state','operation','amount_minor','currency','occurred_at')
   if any(b.get(x) in (None,'') for x in required):raise ValueError('PAYMENT_CALLBACK_FACTS_REQUIRED')
