@@ -365,8 +365,20 @@ def rollback_source_proof(task,evidence,authority_key,hk_key):
     match(task['nonce'],re.compile(r'[A-Za-z0-9_-]{1,128}\Z'),'task_nonce')
     parameters=task['parameters']
     exact(parameters,{'release_id','candidate_image_id','candidate_package_sha256',
-                      'expected_current_image_id','canary_evidence_id','approval_id'},
+                      'expected_current_image_id','canary_evidence_id','approval_id',
+                      'candidate_contract_sha256'},
           'rollback_source_parameters')
+    # The converged candidate's own content address is part of the DEPLOY contract.
+    # `validate_bundle` puts it into every DEPLOY Task it derives and the Hong Kong
+    # agent echoes that same value into the Evidence it signs, so this proof requires
+    # it, refuses a value that is not a digest, and binds the two signed copies to each
+    # other: a Task and an Evidence naming different candidates are refused here rather
+    # than being read as "some deployment".  The exact set above still refuses every
+    # name the derivation does not emit, so the contract is widened by exactly the one
+    # field the derivation carries and by nothing else.
+    contract_sha=parameters['candidate_contract_sha256']
+    match(contract_sha,SHA,'contract_identity')
+    if evidence.get('candidate_contract_sha256')!=contract_sha: raise Reject('proof_contract_binding')
     for k in ['release_id','candidate_image_id','expected_current_image_id']:
         if evidence.get(k)!=parameters[k]: raise Reject('proof_image_or_release')
     match(parameters['release_id'],EXECUTOR_IDENT,'proof_release_id')

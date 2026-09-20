@@ -151,4 +151,11 @@ Task 的签名沿用 Ed25519/hex，回执沿用 Ed25519/base64。验证 action�
 ## 正式 Task 的参数
 
 精确为 `release_id`、`candidate_image_id`、`candidate_package_sha256`、`expected_current_image_id`、`canary_evidence_id`、
-`approval_id`。`release_id`、`task_id`、`nonce` 由指挥中心生成；签名、发布和回读仍使用原有通道。
+`approval_id`、`candidate_contract_sha256`。`release_id`、`task_id`、`nonce` 由指挥中心生成；签名、发布和回读仍使用原有通道。
+
+最后一项是收敛候选自己的**内容地址**——`candidate_fact.candidate_contract_sha256()` 对收敛候选文档算出的摘要，
+而不是按文件名索引的 `candidate_contracts-v1/<sha>.json` 存储身份；两者同名不同物，本契约只认前者。
+计划把它带进来，派生无条件写进每一个 DEPLOY Task，香港执行器把它回写成 Evidence 的同名字段。因此**回滚的源证明
+与事后复核都要求它存在、是摘要、且两份签名副本同值**：只认六项会把"两份签名单据指向不同候选"读成"某次部署"。
+六项的历史 Task 属于 `state_projection.SUPERSEDED_PARAMETERS` 里那种已退役形状，按 `rollback_source_parameters`
+拒绝，绝不当作当前证明。

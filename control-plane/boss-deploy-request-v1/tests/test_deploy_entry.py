@@ -137,7 +137,15 @@ class Fixture:
                       'candidate_package_sha256': self.package,
                       'expected_current_image_id': self.current,
                       'canary_evidence_id': self.bundle['canary_task']['parameters']['release_id'],
-                      'approval_id': 'approval-' + 'a' * 16}
+                      'approval_id': 'approval-' + 'a' * 16,
+                      # The seventh parameter the derivation writes: the converged
+                      # candidate's own content address.  The fixture carries it because
+                      # the source proof requires the Task and the Evidence to name the
+                      # same candidate; a fixture still holding the retired six-field
+                      # shape would be refused by the gate under test, and for the
+                      # wrong reason -- which is exactly how the six/seven split
+                      # survived every suite this file runs.
+                      'candidate_contract_sha256': self.candidate_contract}
         record_id = hashlib.sha256(task_id.encode()).hexdigest()
         task = signed({'schema_version': '1', 'task_id': task_id, 'nonce': nonce,
             'issued_at': bridge.iso(issued), 'expires_at': bridge.iso(expires),
@@ -762,6 +770,80 @@ class RollbackProofTests(unittest.TestCase):
         self.f.deploys[task['task_id']] = (task, self.source_evidence)
         with self.assertRaisesRegex(gate.Reject, 'rollback_source_parameters'):
             self.derive(records=self.records(deploy=task))
+
+    def test_a_source_without_the_candidates_content_address_is_refused(self):
+        """The retired six-field shape is not "a deployment with one field less".
+
+        The derivation has written a seventh parameter -- the converged candidate's own
+        content address -- since the shape that replaced the six.  That shape stays
+        readable as `SUPERSEDED_PARAMETERS` and never as current proof, so a source Task
+        still carrying it is refused here rather than being read as "a deployment of
+        some candidate".
+        """
+        parameters = {k: v for k, v in self.source_task['parameters'].items()
+                      if k != 'candidate_contract_sha256'}
+        task = self.f.resign({**self.source_task, 'parameters': parameters},
+                             self.f.authority, 'hex')
+        self.f.deploys[task['task_id']] = (task, self.source_evidence)
+        with self.assertRaisesRegex(gate.Reject, 'rollback_source_parameters'):
+            self.derive(records=self.records(deploy=task))
+
+    def test_the_source_proof_reads_the_parameters_the_derivation_writes(self):
+        """The two halves of the DEPLOY parameter contract, joined by a test.
+
+        The defect this guards lived in the seam: `derive_deployment` wrote a seventh
+        parameter while the source proof read an exact set of six, so every real
+        deployment -- and with it the follow-up VERIFY derived from that deployment --
+        was refused as `rollback_source_parameters`, and no rollback could be derived
+        either.  Neither half was wrong on its own, which is why nothing here noticed:
+        the writer was asserted against a literal and the reader was never run against
+        the writer's own output.  So this joins them -- the set the derivation writes,
+        the set this fixture stands for, and the pair the proof accepts are one contract.
+        """
+        context = self.f.validate()
+        derived = bridge.derive_deployment(self.f.request(), context, self.f.at)
+        self.assertEqual(set(derived['parameters']), set(self.source_task['parameters']))
+        self.assertEqual(derived['parameters']['candidate_contract_sha256'],
+                         self.f.candidate_contract)
+        proof = gate.rollback_source_proof(self.source_task, self.source_evidence,
+                                          self.f.authority.public_key(), self.f.hk.public_key())
+        self.assertEqual(proof['candidate_image_id'], self.f.candidate)
+        self.assertEqual(proof['expected_current_image_id'], self.f.current)
+
+    def test_the_source_must_name_the_same_candidate_in_both_signed_copies(self):
+        """The seventh parameter is bound, not merely present.
+
+        A Task and an Evidence that name different candidates are two signed objects
+        about two different deployments.  Reading them as one would authorise a rollback
+        against a record the executor then refuses -- or, worse, against one it accepts.
+        """
+        for field in ('candidate_contract_sha256', 'candidate_image_id'):
+            with self.subTest(field=field):
+                other = self.f.resign({**self.source_evidence, field: 'd1' * 32}, self.f.hk, 'base64')
+                self.f.deploys[self.source_task['task_id']] = (self.source_task, other)
+                with self.assertRaisesRegex(gate.Reject,
+                                            'proof_contract_binding|proof_image_or_release'):
+                    self.derive()
+        self.f.deploys[self.source_task['task_id']] = (self.source_task, self.source_evidence)
+        task = self.f.resign({**self.source_task,
+                              'parameters': {**self.source_task['parameters'],
+                                             'candidate_contract_sha256': 'e2' * 32}},
+                             self.f.authority, 'hex')
+        self.f.deploys[task['task_id']] = (task, self.source_evidence)
+        with self.assertRaisesRegex(gate.Reject, 'proof_contract_binding'):
+            self.derive(records=self.records(deploy=task))
+
+    def test_a_source_whose_candidate_address_is_not_a_digest_is_refused(self):
+        for value in ('not-a-digest', 'A' * 64, 'a' * 63, ''):
+            with self.subTest(value=value[:12]):
+                task = self.f.resign({**self.source_task,
+                                      'parameters': {**self.source_task['parameters'],
+                                                     'candidate_contract_sha256': value}},
+                                     self.f.authority, 'hex')
+                self.f.deploys[task['task_id']] = (task, self.source_evidence)
+                with self.assertRaisesRegex(gate.Reject,
+                                            'contract_identity|rollback_source_parameters'):
+                    self.derive(records=self.records(deploy=task))
 
     def test_an_unsigned_or_foreign_source_task_is_refused(self):
         task = {k: v for k, v in self.source_task.items() if k != 'signature'}
