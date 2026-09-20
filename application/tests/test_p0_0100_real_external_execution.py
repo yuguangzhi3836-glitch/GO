@@ -363,3 +363,16 @@ def test_0100_concurrent_bank_feed_deliveries_create_one_line():
  with SessionLocal() as s:
   assert len(s.scalars(select(BankStatementLineRow).where(BankStatementLineRow.bank_line_identity=='bank-concurrent-line')).all())==1
   assert len(s.scalars(select(ExternalTruthBankFeedReceiptRow).where(ExternalTruthBankFeedReceiptRow.provider_key=='testbank')).all())==2
+
+
+def test_0100_callback_delivery_cannot_be_replayed_against_another_payment_operation(monkeypatch):
+ setup_auth();i=seed_order();iid=i['payment_intent_id']
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
+ auth=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'delivery-binding-auth'})
+ body={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(auth['external_truth_operation_id'],'delivery-binding',body,sig(body))
+ cap=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'delivery-binding-cap'})
+ with pytest.raises(ValueError,match='DELIVERY_OPERATION_CONFLICT'):
+  real.payment_callback(cap['external_truth_operation_id'],'delivery-binding',body,sig(body))
+ with SessionLocal() as s:
+  assert len(s.scalars(select(ExternalTruthWebhookReceiptRow).where(ExternalTruthWebhookReceiptRow.delivery_id=='delivery-binding')).all())==1
