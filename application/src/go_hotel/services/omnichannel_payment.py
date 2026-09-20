@@ -122,13 +122,16 @@ class OmnichannelPaymentService:
    if i.state not in {'FAILED','REQUIRES_CHANNEL_SELECTION'}:raise ValueError('CHANNEL_FALLBACK_NOT_ALLOWED')
    if channel not in i.channel_priority_json:raise ValueError('CHANNEL_NOT_ALLOWED_FOR_INTENT')
    i.selected_channel=channel;i.user_channel_consent_at=now();i.state='READY';i.updated_at=now();s.commit();return out(i)
- def ingest_psp_line(self,iid,b):
+ def ingest_psp_line_in_session(self,s,iid,b):
   required=('external_transaction_id','amount_minor','currency','evidence_reference','occurred_at')
   if any(b.get(x) in (None,'') for x in required):raise ValueError('PSP_SETTLEMENT_FACT_REQUIRED')
+  i=s.get(Intent,iid);root=s.scalar(select(OrderRoot).where(OrderRoot.payment_intent_id==iid))
+  if not i or not root:raise ValueError('PAYMENT_ORDER_ROOT_REQUIRED')
+  if int(b['amount_minor'])!=i.amount_minor or b['currency']!=i.currency:raise ValueError('PSP_SETTLEMENT_PAYMENT_FACT_MISMATCH')
+  r=PspLine(psp_settlement_line_id=ident('psp'),payment_intent_id=iid,external_transaction_id=b['external_transaction_id'],channel=i.selected_channel or 'UNSELECTED',legal_entity_id=root.legal_entity_id,amount_minor=int(b['amount_minor']),currency=b['currency'],evidence_reference=b['evidence_reference'],occurred_at=datetime.fromisoformat(b['occurred_at'].replace('Z','+00:00')));s.add(r);s.flush();return out(r)
+ def ingest_psp_line(self,iid,b):
   with SessionLocal() as s:
-   i=s.get(Intent,iid);root=s.scalar(select(OrderRoot).where(OrderRoot.payment_intent_id==iid))
-   if not i or not root:raise ValueError('PAYMENT_ORDER_ROOT_REQUIRED')
-   r=PspLine(psp_settlement_line_id=ident('psp'),payment_intent_id=iid,external_transaction_id=b['external_transaction_id'],channel=i.selected_channel or 'UNSELECTED',legal_entity_id=root.legal_entity_id,amount_minor=int(b['amount_minor']),currency=b['currency'],evidence_reference=b['evidence_reference'],occurred_at=datetime.fromisoformat(b['occurred_at'].replace('Z','+00:00')));s.add(r);s.commit();return out(r)
+   r=self.ingest_psp_line_in_session(s,iid,b);s.commit();return r
  def ingest_bank_line(self,b):
   required=('bank_line_identity','legal_entity_id','amount_minor','currency','payment_reference','evidence_reference','booked_at')
   if any(b.get(x) in (None,'') for x in required):raise ValueError('BANK_STATEMENT_FACT_REQUIRED')
