@@ -7,7 +7,7 @@ from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (OrderRow,ExternalSandboxCredentialBindingRow as Cred,NamedSupplierAdapterRow as Adapter,
  NamedSupplierAdapterBindingRow as Binding,ExternalSandboxExecutionAuthorizationRow as Auth,OrderSupplierFulfillmentRow,
- ConsumerUnifiedLifecycleRow,OmnichannelMoneyMovementRow,ExternalTruthWebhookReceiptRow,BankStatementLineRow,ExternalTruthBankFeedReceiptRow,ExternalTruthOperationRow)
+ ConsumerUnifiedLifecycleRow,OmnichannelMoneyMovementRow,ExternalTruthWebhookReceiptRow,BankStatementLineRow,ExternalTruthBankFeedReceiptRow,ExternalTruthOperationRow,PspSettlementLineRow)
 from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service as source
 from go_hotel.services.omnichannel_payment import omnichannel_payment_service as pay
 from go_hotel.services.real_external_execution import real_external_execution_service as real
@@ -332,3 +332,21 @@ def test_0100_pending_callback_remains_close_blocking_payment_truth(monkeypatch)
  day=datetime.now(timezone.utc).date()
  close=finance.prepare_close({'legal_entity_id':'GO_CN','currency':'CNY','period_start':day.isoformat(),'period_end':day.isoformat(),'cutoff_at':datetime.combine(day,datetime.max.time(),tzinfo=timezone.utc).isoformat()},'maker')
  assert close['state']=='BLOCKED' and any(x.startswith('EXTERNAL_PAYMENT_RECONCILIATION:') for x in close['blockers_json'])
+
+
+def test_0100_concurrent_psp_settlement_deliveries_create_one_line(monkeypatch):
+ setup_auth();i=seed_order();iid=i['payment_intent_id']
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:Resp({'external_operation_id':'ext-'+payload['operation'].lower()}))
+ auth=real.execute_payment(iid,'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'concurrent-settlement-auth'})
+ ap={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-authorize','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(auth['external_truth_operation_id'],'concurrent-settlement-auth-callback',ap,sig(ap))
+ cap=real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'concurrent-settlement-cap'})
+ cp={'state':'SUCCEEDED','operation':'CAPTURE','external_operation_id':'ext-capture','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ real.payment_callback(cap['external_truth_operation_id'],'concurrent-settlement-cap-callback',cp,sig(cp))
+ settlement={'external_transaction_id':'psp-concurrent-settlement','amount_minor':12000,'currency':'CNY','evidence_reference':'psp://concurrent/settlement','occurred_at':datetime.now(timezone.utc).isoformat()}
+ with ThreadPoolExecutor(max_workers=2) as pool:
+  results=list(pool.map(lambda n:real.psp_settlement_callback(cap['external_truth_operation_id'],f'concurrent-settlement-{n}',settlement,sig(settlement)),range(2)))
+ assert all(not x['duplicate'] for x in results)
+ with SessionLocal() as s:
+  assert len(s.scalars(select(PspSettlementLineRow).where(PspSettlementLineRow.external_transaction_id=='psp-concurrent-settlement')).all())==1
+  assert len(s.scalars(select(ExternalTruthWebhookReceiptRow).where(ExternalTruthWebhookReceiptRow.external_truth_operation_id==cap['external_truth_operation_id'])).all())==4
