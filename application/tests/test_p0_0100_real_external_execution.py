@@ -277,3 +277,31 @@ def test_0100_verified_callback_converges_claimed_command_center_case(monkeypatc
  assert resolved['reconciliation']['claimed_by'] is None and resolved['reconciliation']['lease_expires_at'] is None
  with pytest.raises(ValueError,match='INCIDENT_NOT_CLAIMABLE'):
   command_center.claim(case['reconciliation_id'],'another-operator',60)
+
+
+def test_0100_recovery_sweep_converges_case_after_post_commit_worker_crash(monkeypatch):
+ setup_auth();i=seed_order()
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:(_ for _ in ()).throw(httpx.TimeoutException('unknown')))
+ pending=real.execute_payment(i['payment_intent_id'],'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'queue-recovery'})
+ original=command_center.converge_payment_truth_from_callback
+ monkeypatch.setattr(command_center,'converge_payment_truth_from_callback',lambda operation_id:(_ for _ in ()).throw(RuntimeError('simulated post-commit crash')))
+ body={'state':'SUCCEEDED','operation':'AUTHORIZE','external_operation_id':'ext-recovery','amount_minor':12000,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ with pytest.raises(RuntimeError,match='post-commit crash'):
+  real.payment_callback(pending['external_truth_operation_id'],'queue-recovery-callback',body,sig(body))
+ with SessionLocal() as s:
+  assert s.get(ExternalTruthOperationRow,pending['external_truth_operation_id']).state=='CALLBACK_SUCCEEDED'
+  assert len(s.scalars(select(OmnichannelMoneyMovementRow).where(OmnichannelMoneyMovementRow.root_payment_intent_id==i['payment_intent_id'])).all())==1
+ monkeypatch.setattr(command_center,'converge_payment_truth_from_callback',original)
+ recovered=command_center.recover_verified_payment_truth_cases()
+ assert any(x['reconciliation']['reconciliation_id']==pending['command_center_reconciliation']['reconciliation']['reconciliation_id'] for x in recovered)
+
+
+def test_0100_checker_cannot_replace_verified_payment_truth(monkeypatch):
+ setup_auth();i=seed_order()
+ monkeypatch.setattr(real,'_post_json',lambda url,payload,headers:(_ for _ in ()).throw(httpx.TimeoutException('unknown')))
+ pending=real.execute_payment(i['payment_intent_id'],'auth-0100',{'operation':'AUTHORIZE','idempotency_key':'queue-checker-guard'})
+ case=pending['command_center_reconciliation']['reconciliation']
+ command_center.claim(case['reconciliation_id'],'maker',60)
+ command_center.submit_resolution(case['reconciliation_id'],'maker',{'terminal_state':'CONFIRMED','evidence':{'provider':'unverified'},'evidence_reference':'operator://claim'})
+ with pytest.raises(ValueError,match='REQUIRES_VERIFIED_SIGNED_CALLBACK'):
+  command_center.review_resolution(case['reconciliation_id'],'checker','APPROVE','checker://review')
