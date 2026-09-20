@@ -350,3 +350,16 @@ def test_0100_concurrent_psp_settlement_deliveries_create_one_line(monkeypatch):
  with SessionLocal() as s:
   assert len(s.scalars(select(PspSettlementLineRow).where(PspSettlementLineRow.external_transaction_id=='psp-concurrent-settlement')).all())==1
   assert len(s.scalars(select(ExternalTruthWebhookReceiptRow).where(ExternalTruthWebhookReceiptRow.external_truth_operation_id==cap['external_truth_operation_id'])).all())==3
+
+
+def test_0100_concurrent_bank_feed_deliveries_create_one_line():
+ setup_auth();os.environ['GO_BANK_FEED_KEY_TESTBANK']=SECRET
+ timestamp=datetime.now(timezone.utc).isoformat()
+ line={'bank_line_identity':'bank-concurrent-line','legal_entity_id':'GO_CN','amount_minor':12000,'currency':'CNY','payment_reference':'psp-concurrent','evidence_reference':'bank://concurrent/line','booked_at':timestamp}
+ feed={'evidence_reference':'bank://concurrent/feed','lines':[line]}
+ with ThreadPoolExecutor(max_workers=2) as pool:
+  results=list(pool.map(lambda n:real.bank_feed('testbank',f'bank-concurrent-{n}',feed,sig(feed)),range(2)))
+ assert all(not x['duplicate'] for x in results)
+ with SessionLocal() as s:
+  assert len(s.scalars(select(BankStatementLineRow).where(BankStatementLineRow.bank_line_identity=='bank-concurrent-line')).all())==1
+  assert len(s.scalars(select(ExternalTruthBankFeedReceiptRow).where(ExternalTruthBankFeedReceiptRow.provider_key=='testbank')).all())==2
