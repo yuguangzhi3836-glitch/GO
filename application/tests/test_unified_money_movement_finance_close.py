@@ -1,7 +1,7 @@
 import os
 import sys,types
 import uuid
-os.environ['DATABASE_URL']='sqlite:////tmp/go_money_movement_test.db'
+os.environ['DATABASE_URL']=os.getenv('GO_TEST_DATABASE_URL','sqlite:////tmp/go_money_movement_test.db')
 import pytest
 from datetime import datetime,timezone
 from go_hotel.db.models import ExternalTruthOperationRow,Base,OrderRow,VerticalSourceDecisionRow
