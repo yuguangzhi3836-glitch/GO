@@ -130,7 +130,7 @@ class UnifiedMoneyMovementService:
    if old:return out(old)
    movements,ledger,recs=self._scope(s,b['legal_entity_id'],b['currency'],b['period_start'],b['period_end'],cutoff)
    debit=sum(x.amount_minor for x in ledger if x.direction=='DEBIT');credit=sum(x.amount_minor for x in ledger if x.direction=='CREDIT')
-   block=[f'MOVEMENT:{x.money_movement_id}' for x in movements if x.state in {'UNKNOWN_EXTERNAL_STATE','EXTERNAL_EXECUTOR_REQUIRED'}]+self._recon_blockers(recs,movements)+self._external_truth_blockers(s,r.legal_entity_id,r.currency,r.cutoff_at)+self._external_truth_blockers(s,b['legal_entity_id'],b['currency'],cutoff)
+   block=[f'MOVEMENT:{x.money_movement_id}' for x in movements if x.state in {'UNKNOWN_EXTERNAL_STATE','EXTERNAL_EXECUTOR_REQUIRED'}]+self._recon_blockers(recs,movements)+self._external_truth_blockers(s,b['legal_entity_id'],b['currency'],cutoff)
    try:
     from go_hotel.services.production_connector_runtime import production_connector_runtime_service
     roots_by_intent={x.payment_intent_id:x.business_id for x in s.scalars(select(OrderRoot).where(OrderRoot.payment_intent_id.in_({m.root_payment_intent_id for m in movements}))).all()} if movements else {}
@@ -150,7 +150,7 @@ class UnifiedMoneyMovementService:
    if r.requested_by==actor:raise ValueError('MAKER_CHECKER_REQUIRED')
    movements,ledger,recs=self._scope(s,r.legal_entity_id,r.currency,r.period_start,r.period_end,r.cutoff_at)
    debit=sum(x.amount_minor for x in ledger if x.direction=='DEBIT');credit=sum(x.amount_minor for x in ledger if x.direction=='CREDIT')
-   block=[f'MOVEMENT:{x.money_movement_id}' for x in movements if x.state in {'UNKNOWN_EXTERNAL_STATE','EXTERNAL_EXECUTOR_REQUIRED'}]+self._recon_blockers(recs,movements)
+   block=[f'MOVEMENT:{x.money_movement_id}' for x in movements if x.state in {'UNKNOWN_EXTERNAL_STATE','EXTERNAL_EXECUTOR_REQUIRED'}]+self._recon_blockers(recs,movements)+self._external_truth_blockers(s,r.legal_entity_id,r.currency,r.cutoff_at)
    try:
     from go_hotel.services.production_connector_runtime import production_connector_runtime_service
     roots_by_intent={x.payment_intent_id:x.business_id for x in s.scalars(select(OrderRoot).where(OrderRoot.payment_intent_id.in_({m.root_payment_intent_id for m in movements}))).all()} if movements else {}
