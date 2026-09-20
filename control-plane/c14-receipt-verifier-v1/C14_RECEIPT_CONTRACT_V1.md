@@ -27,7 +27,7 @@ separators, no whitespace, floats, NaN or Infinity.
 Verification succeeds only when: key parses as P-256; SPKI fingerprint exactly
 matches host configuration; all envelope fields, digests and UTC timestamp are
 valid; receipt age is 0–900 seconds (with at most 60 seconds future skew); and
-ECDSA SHA-256 validates. The caller must separately exact-match candidate SHA,
-application tree, required verdict, issuer allow-list and evidence manifest to
-its fixed task binding. Every mismatch is `VERIFY_FAIL`; a verified receipt is
-not authorization to execute C14 or C13.
+ECDSA SHA-256 validates; and the verifier receives exact expected candidate SHA,
+application tree, verdict, issuer and evidence manifest as required arguments.
+Every mismatch is `VERIFY_FAIL`; a verified receipt is not authorization to
+execute C14 or C13.
