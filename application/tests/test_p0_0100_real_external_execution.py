@@ -5,7 +5,7 @@ from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (OrderRow,ExternalSandboxCredentialBindingRow as Cred,NamedSupplierAdapterRow as Adapter,
  NamedSupplierAdapterBindingRow as Binding,ExternalSandboxExecutionAuthorizationRow as Auth,OrderSupplierFulfillmentRow,
- ConsumerUnifiedLifecycleRow,OmnichannelMoneyMovementRow,ExternalTruthWebhookReceiptRow)
+ ConsumerUnifiedLifecycleRow,OmnichannelMoneyMovementRow,ExternalTruthWebhookReceiptRow,BankStatementLineRow,ExternalTruthBankFeedReceiptRow)
 from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service as source
 from go_hotel.services.omnichannel_payment import omnichannel_payment_service as pay
 from go_hotel.services.real_external_execution import real_external_execution_service as real
@@ -144,3 +144,25 @@ def test_0100_accepted_capture_without_provider_operation_id_blocks_resend(monke
  with pytest.raises(ValueError,match='OPERATION_RECONCILIATION_REQUIRED'):
   real.execute_payment(iid,'auth-0100',{'operation':'CAPTURE','idempotency_key':'missing-op-capture-retry'})
  assert len(dispatched)==1
+
+
+def test_0100_bank_feed_batch_is_atomic_and_conflicting_delivery_is_rejected():
+ setup_auth();os.environ['GO_BANK_FEED_KEY_TESTBANK']=SECRET
+ timestamp=datetime.now(timezone.utc).isoformat()
+ good={'bank_line_identity':'atomic-line-1','legal_entity_id':'GO_CN','amount_minor':12000,'currency':'CNY','payment_reference':'atomic-psp','evidence_reference':'bank://atomic/1','booked_at':timestamp}
+ invalid={'bank_line_identity':'atomic-line-2','legal_entity_id':'GO_CN','amount_minor':12000,'currency':'CNY','payment_reference':'atomic-psp','evidence_reference':'bank://atomic/2'}
+ broken={'evidence_reference':'bank://atomic/feed','lines':[good,invalid]}
+ with pytest.raises(ValueError,match='BANK_STATEMENT_FACT_REQUIRED'):
+  real.bank_feed('testbank','atomic-batch',broken,sig(broken))
+ with SessionLocal() as s:
+  assert not s.scalars(select(BankStatementLineRow)).all()
+  assert not s.scalars(select(ExternalTruthBankFeedReceiptRow)).all()
+ valid={'evidence_reference':'bank://atomic/feed','lines':[good]}
+ first=real.bank_feed('testbank','atomic-batch',valid,sig(valid))
+ assert first['receipt']['imported_line_count']==1
+ changed={**valid,'evidence_reference':'bank://atomic/changed'}
+ with pytest.raises(ValueError,match='BANK_FEED_DELIVERY_PAYLOAD_CONFLICT'):
+  real.bank_feed('testbank','atomic-batch',changed,sig(changed))
+ with SessionLocal() as s:
+  assert len(s.scalars(select(BankStatementLineRow)).all())==1
+  assert len(s.scalars(select(ExternalTruthBankFeedReceiptRow)).all())==1
