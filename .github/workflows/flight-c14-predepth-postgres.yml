@@ -1,0 +1,98 @@
+name: Flight C14-predepth PostgreSQL acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - application/**
+      - .github/workflows/flight-c14-predepth-postgres.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flight-c14-predepth-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  isolated-flight-postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_c11_isolated
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_c11_isolated"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_C11_RUNTIME_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+      GO_C11_SOURCE_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install isolated test dependencies
+        working-directory: application
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+      - name: Verify migration lineage
+        working-directory: application
+        env:
+          PYTHONPATH: src
+        run: |
+          alembic heads
+          test "$(alembic heads | wc -l)" -eq 1
+      - name: Run flight callback recovery and idempotency regressions
+        working-directory: application
+        env:
+          PYTHONPATH: src
+        run: |
+          pytest -q tests/payments/test_c11_flight_idempotency_recovery.py tests/test_depth48_flight_changes.py
+      - name: Run isolated PostgreSQL process recovery and concurrency suite
+        working-directory: application
+        env:
+          PYTHONPATH: src
+        run: |
+          mkdir -p "$RUNNER_TEMP/flight-c14-predepth"
+          python -B ci/next_depth/c11_postgres.py --evidence-dir "$RUNNER_TEMP/flight-c14-predepth"
+      - name: Bind evidence to exact source
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          out = pathlib.Path(os.environ["RUNNER_TEMP"]) / "flight-c14-predepth"
+          out.mkdir(exist_ok=True)
+          files = {str(p.relative_to(out)): hashlib.sha256(p.read_bytes()).hexdigest()
+                   for p in sorted(out.rglob("*")) if p.is_file()}
+          report = {
+              "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+              "application_tree": subprocess.check_output(["git", "rev-parse", "HEAD:application"], text=True).strip(),
+              "files": files,
+              "environment": "disposable PostgreSQL 18.4 service",
+              "external_supplier_calls": False,
+              "real_psp_calls": False,
+              "hong_kong": "NOT_ACCESSED",
+              "deployment": "NOT_REQUESTED",
+              "production": "HOLD",
+              "C14": "NOT_EXECUTED",
+          }
+          (out / "EVIDENCE_BINDING.json").write_text(json.dumps(report, indent=2) + "\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flight-c14-predepth-${{ github.sha }}
+          path: ${{ runner.temp }}/flight-c14-predepth
+          if-no-files-found: error
+          retention-days: 90
