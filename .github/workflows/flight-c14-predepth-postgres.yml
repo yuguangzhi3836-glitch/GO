@@ -56,7 +56,7 @@ jobs:
       - name: Run flight callback recovery and idempotency regressions
         working-directory: application
         env:
-          PYTHONPATH: src
+          PYTHONPATH: src:.
         run: |
           pytest -q tests/payments/test_c11_flight_idempotency_recovery.py tests/test_depth48_flight_changes.py
       - name: Run isolated PostgreSQL process recovery and concurrency suite
