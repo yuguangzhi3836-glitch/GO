@@ -482,9 +482,12 @@ class SqlRepository:
                 request = s.scalar(select(IdempotencyRow).where(
                     IdempotencyRow.operation == operation, IdempotencyRow.resource_id == guard.resource_id,
                     IdempotencyRow.response_code == 102).with_for_update())
-                if not request or request.response_body != guard.response_body:
+                if (not request or request.response_body.get('status') != 'RUNNING'
+                        or request.response_body.get('execution_token') != body.get('execution_token')):
                     continue
-                payload = body.get('payload')
+                # The request row is authoritative for the reconstructable
+                # command payload; the resource row is its exclusion fence.
+                payload = request.response_body.get('payload')
                 if not isinstance(payload, dict):
                     # Legacy RUNNING rows cannot be reconstructed; retain the fence.
                     continue
