@@ -46,7 +46,11 @@ def run_recoverable_idempotent(operation, key, payload, resource_id, fn, recover
         raise HTTPException(409, detail={'code': 'IDEMPOTENCY_IN_PROGRESS', 'message': 'Execution is active or requires recovery review'})
     boundary = MutationBoundary(recovering=mode == 'RECOVER')
     try:
+        # A real, fenced heartbeat means a live command is not reclaimed while
+        # it crosses its local transactional/money boundary.
+        repo.heartbeat_recoverable_idempotency(operation, key, resource_id, token)
         response = (recover if boundary.recovering else fn)(boundary)
+        repo.heartbeat_recoverable_idempotency(operation, key, resource_id, token)
     except BaseException:
         try:
             repo.finish_recoverable_idempotency(operation, key, payload, resource_id, token,
