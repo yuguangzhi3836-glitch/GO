@@ -130,6 +130,7 @@ def main():
                         (output/(label+'-killed.log')).write_text(stdout+'\nexit='+str(active.returncode)+'\n');assert active.returncode<0;active=None
                         # SIGKILL leaves RUNNING.  Expire its persisted lease and
                         # run the normal recovery-worker in a second OS process.
+                        rid=qid or oid
                         with SessionLocal.begin() as s:
                             for claim in s.scalars(select(Claim).where(Claim.resource_id==rid, Claim.response_code==102)):
                                 if claim.response_body.get('status')=='RUNNING':
