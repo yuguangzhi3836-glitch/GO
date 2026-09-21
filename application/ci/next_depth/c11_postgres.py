@@ -18,6 +18,7 @@ from uuid import uuid4
 from xml.etree.ElementTree import Element,SubElement,ElementTree
 from sqlalchemy import create_engine,text,select
 from sqlalchemy.engine import make_url
+from sqlalchemy.orm.attributes import flag_modified
 
 
 def main():
@@ -135,6 +136,7 @@ def main():
                             for claim in s.scalars(select(Claim).where(Claim.resource_id==rid, Claim.response_code==102)):
                                 if claim.response_body.get('status')=='RUNNING':
                                     claim.response_body={**claim.response_body,'lease_until_ms':0}
+                                    flag_modified(claim, 'response_body')
                         recovery=subprocess.run([sys.executable,'-c',
                             'import asyncio,json; from go_hotel.services.recovery import recovery_worker; print(json.dumps(asyncio.run(recovery_worker.run_once())))'],
                             cwd=root,env=env,text=True,capture_output=True,timeout=35,check=False)
