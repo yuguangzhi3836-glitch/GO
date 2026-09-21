@@ -28,7 +28,7 @@ def main():
         'source_commit':os.getenv('GO_C11_SOURCE_COMMIT','UNSPECIFIED'),'started_at':datetime.now(timezone.utc).isoformat(),
         'python':sys.version,'status':'RUNNING','workers':'normal subprocesses','C14':'PENDING','C13':'PENDING'}
     source=['src/go_hotel/api/idempotency.py','src/go_hotel/repositories/sql.py','src/go_hotel/api/routes/flight.py',
-        'src/go_hotel/flight/service.py','src/go_hotel/flight/payment_recovery.py','src/go_hotel/services/mutation_boundary.py',
+        'src/go_hotel/flight/service.py','src/go_hotel/flight/payment_recovery.py','src/go_hotel/services/mutation_boundary.py','src/go_hotel/services/recovery.py',
         'ci/next_depth/c11_postgres.py','ci/next_depth/c11_process_actor.py']
     execution['source_files']=[{'path':f,'sha256':hashlib.sha256((root/f).read_bytes()).hexdigest()} for f in source]
     def save(): (output/'execution.json').write_text(json.dumps(execution,indent=2)+'\n')
@@ -128,11 +128,23 @@ def main():
                     elif scenario.startswith('kill_'):
                         active.kill();stdout,_=active.communicate(timeout=10)
                         (output/(label+'-killed.log')).write_text(stdout+'\nexit='+str(active.returncode)+'\n');assert active.returncode<0;active=None
-                        assert run(op,oid,qid,key,label+'-restart')['http']==409
-                        assert run(op,oid,qid,key+'-other',label+'-other')['http']==409
+                        # SIGKILL leaves RUNNING.  Expire its persisted lease and
+                        # run the normal recovery-worker in a second OS process.
+                        with SessionLocal.begin() as s:
+                            for claim in s.scalars(select(Claim).where(Claim.resource_id==rid, Claim.response_code==102)):
+                                if claim.response_body.get('status')=='RUNNING':
+                                    claim.response_body={**claim.response_body,'lease_until_ms':0}
+                        recovery=subprocess.run([sys.executable,'-c',
+                            'import asyncio,json; from go_hotel.services.recovery import recovery_worker; print(json.dumps(asyncio.run(recovery_worker.run_once())))'],
+                            cwd=root,env=env,text=True,capture_output=True,timeout=35,check=False)
+                        (output/(label+'-recovery-worker.log')).write_text(recovery.stdout+recovery.stderr)
+                        assert recovery.returncode==0,recovery.stdout+recovery.stderr
+                        assert json.loads(recovery.stdout.strip().splitlines()[-1])['recovered']>=1
+                        recovered=run(op,oid,qid,key,label+'-recovered')
+                        assert recovered['http']==200
                         after=observe(op,oid,qid,label+'-after')
                         assert after['money']==before['money'] and after['root_ids']==before['root_ids']
-                        assert any(c['operation'].startswith('RESOURCE:') and c['body'].get('status')=='RUNNING' for c in after['claims'])
+                        assert any(c['operation'].startswith('RESOURCE:') and c['code']==200 for c in after['claims'])
                     else:
                         second=key if scenario=='same_key' else key+'-other'
                         assert run(op,oid,qid,second,label+'-second')['http']==409
@@ -161,7 +173,7 @@ def main():
     suite.set('tests',str(len(cases)));suite.set('failures',str(failures));ElementTree(suite).write(output/'junit.xml',encoding='utf-8',xml_declaration=True)
     (output/'results.json').write_text(json.dumps(cases,indent=2)+'\n')
     execution.update(finished_at=datetime.now(timezone.utc).isoformat(),status='TEST_FAILED' if failures else 'EVIDENCE_READY',tests=len(cases),failures=failures,
-        hard_death_auto_recovery='HOLD: RUNNING is never automatically stolen; tests prove no duplicate execution')
+        hard_death_auto_recovery='PASS: SIGKILL + expired fenced lease is reclaimed by a separate recovery-worker process; roots and money stay singular')
     save();print(json.dumps({'status':execution['status'],'tests':len(cases),'failures':failures,'backend':execution['database_backend']}))
     return 1 if failures else 0
 
