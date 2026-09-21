@@ -516,13 +516,15 @@ class SqlRepository:
                 if action == 'RECOVERY_REQUIRED' and row.response_code == 200:
                     return
                 raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
-            if row.response_body != {'status': 'RUNNING', 'execution_token': token}:
+            if (row.response_body.get('status') != 'RUNNING'
+                    or row.response_body.get('execution_token') != token):
                 raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
             guard = s.get(IdempotencyRow, {'operation': 'RESOURCE:' + operation,
                 'idempotency_key': resource_id}, with_for_update=True)
             if (not guard or guard.request_hash != digest or guard.resource_id != resource_id
                     or guard.response_code != 102
-                    or guard.response_body != {'status': 'RUNNING', 'execution_token': token}):
+                    or guard.response_body.get('status') != 'RUNNING'
+                    or guard.response_body.get('execution_token') != token):
                 raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
             if action == 'RELEASE':
                 s.delete(row)
