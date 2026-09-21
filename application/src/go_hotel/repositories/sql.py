@@ -369,11 +369,11 @@ class SqlRepository:
                 s.delete(r)
 
     def bind_idempotency_resource(self, operation, key, payload, resource_id, token, *, new_claim):
-        """Bind before effects, or exclusively acquire a quiescent failed call.
+        """Bind a Flight recovery command to a fenced, renewable local lease.
 
-        RUNNING is never reclaimed by a timeout: a lease is not a fence around
-        an external side effect. A dead process therefore requires review.
-        """
+        The lease only permits automatic recovery after payment_snapshot proves
+        that no external payment was invoked. It is never an external fence."""
+        
         if not isinstance(resource_id, str) or not 1 <= len(resource_id) <= 64:
             raise ValueError("IDEMPOTENCY_RESOURCE_INVALID")
         digest = self.hash_payload(payload)
@@ -431,9 +431,73 @@ class SqlRepository:
             elif guard.response_body.get('status') != 'UNCLAIMED':
                 return 'IN_PROGRESS', None
             row.resource_id = resource_id
-            row.response_body = {'status': 'RUNNING', 'execution_token': token}
-            guard.response_body = {'status': 'RUNNING', 'execution_token': token}
+            lease_until_ms = int(now_utc().timestamp() * 1000) + 15000
+            running = {'status': 'RUNNING', 'execution_token': token, 'lease_until_ms': lease_until_ms,
+                       'heartbeat_ms': lease_until_ms - 15000, 'payload': payload}
+            row.response_body = running
+            guard.response_body = dict(running)
             return mode, None
+
+    def heartbeat_recoverable_idempotency(self, operation, key, resource_id, token, lease_ms=15000):
+        """Renew a running Flight command only while both request and resource fences match."""
+        if not 1000 <= lease_ms <= 60000:
+            raise ValueError('IDEMPOTENCY_LEASE_INVALID')
+        with SessionLocal.begin() as s:
+            if s.bind.dialect.name == 'sqlite':
+                s.execute(text('BEGIN IMMEDIATE'))
+            row = s.get(IdempotencyRow, {'operation': operation, 'idempotency_key': key}, with_for_update=True)
+            guard = s.get(IdempotencyRow, {'operation': 'RESOURCE:' + operation, 'idempotency_key': resource_id}, with_for_update=True)
+            if not row or not guard or row.resource_id != resource_id or guard.resource_id != resource_id:
+                raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
+            for record in (row, guard):
+                body = record.response_body
+                if record.response_code != 102 or body.get('status') != 'RUNNING' or body.get('execution_token') != token:
+                    raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
+            now_ms = int(now_utc().timestamp() * 1000)
+            body = {**row.response_body, 'heartbeat_ms': now_ms, 'lease_until_ms': now_ms + lease_ms}
+            row.response_body = body
+            guard.response_body = dict(body)
+            return body['lease_until_ms']
+
+    def claim_expired_flight_recovery(self, limit=20, lease_ms=15000):
+        """Atomically take over only a stale Flight local-simulation command.
+
+        The caller must still validate payment_snapshot before replaying it.
+        """
+        if not 1 <= limit <= 100 or not 1000 <= lease_ms <= 60000:
+            raise ValueError('IDEMPOTENCY_LEASE_INVALID')
+        claimed = []
+        with SessionLocal.begin() as s:
+            if s.bind.dialect.name == 'sqlite':
+                s.execute(text('BEGIN IMMEDIATE'))
+            now_ms = int(now_utc().timestamp() * 1000)
+            rows = s.scalars(select(IdempotencyRow).where(
+                IdempotencyRow.operation.in_(['RESOURCE:FLIGHT_CHECKOUT', 'RESOURCE:FLIGHT_EXECUTE_CHANGE']),
+                IdempotencyRow.response_code == 102).with_for_update()).all()
+            for guard in rows:
+                body = dict(guard.response_body or {})
+                if body.get('status') != 'RUNNING' or int(body.get('lease_until_ms') or now_ms + 1) > now_ms:
+                    continue
+                operation = guard.operation.removeprefix('RESOURCE:')
+                request = s.scalar(select(IdempotencyRow).where(
+                    IdempotencyRow.operation == operation, IdempotencyRow.resource_id == guard.resource_id,
+                    IdempotencyRow.response_code == 102).with_for_update())
+                if not request or request.response_body != guard.response_body:
+                    continue
+                payload = body.get('payload')
+                if not isinstance(payload, dict):
+                    # Legacy RUNNING rows cannot be reconstructed; retain the fence.
+                    continue
+                token = new_id('flight_recovery')
+                next_body = {'status': 'RUNNING', 'execution_token': token, 'heartbeat_ms': now_ms,
+                             'lease_until_ms': now_ms + lease_ms, 'payload': payload, 'recovered_from': body.get('execution_token')}
+                request.response_body = next_body
+                guard.response_body = dict(next_body)
+                claimed.append({'operation': operation, 'key': request.idempotency_key,
+                    'resource_id': guard.resource_id, 'payload': payload, 'token': token})
+                if len(claimed) >= limit:
+                    break
+        return claimed
 
     def finish_recoverable_idempotency(self, operation, key, payload, resource_id, token, action, response=None):
         """Fence every completion, failure marker and safe release by token."""
