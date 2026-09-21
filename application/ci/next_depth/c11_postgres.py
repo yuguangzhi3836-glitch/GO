@@ -133,10 +133,16 @@ def main():
                         # run the normal recovery-worker in a second OS process.
                         rid=qid or oid
                         with SessionLocal.begin() as s:
-                            for claim in s.scalars(select(Claim).where(Claim.resource_id==rid, Claim.response_code==102)):
-                                if claim.response_body.get('status')=='RUNNING':
-                                    claim.response_body={**claim.response_body,'lease_until_ms':0}
-                                    flag_modified(claim, 'response_body')
+                            # JSONB update is deliberately atomic: this verifies
+                            # the worker reads the persisted expired lease, rather
+                            # than an ORM in-memory value.
+                            if s.bind.dialect.name == 'postgresql':
+                                s.execute(text("UPDATE idempotency_record_runtime SET response_body = jsonb_set(response_body, '{lease_until_ms}', '0'::jsonb) WHERE resource_id = :rid AND response_code = 102"), {'rid':rid})
+                            else:
+                                for claim in s.scalars(select(Claim).where(Claim.resource_id==rid, Claim.response_code==102)):
+                                    if claim.response_body.get('status')=='RUNNING':
+                                        claim.response_body={**claim.response_body,'lease_until_ms':0}
+                                        flag_modified(claim, 'response_body')
                         recovery=subprocess.run([sys.executable,'-c',
                             'import asyncio,json; from go_hotel.services.recovery import recovery_worker; print(json.dumps(asyncio.run(recovery_worker.run_once())))'],
                             cwd=root,env=env,text=True,capture_output=True,timeout=35,check=False)
