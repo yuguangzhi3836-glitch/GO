@@ -80,7 +80,7 @@ def test_bad_trust_key_and_fingerprint_fail(tmp_path):
     private = ec.generate_private_key(ec.SECP256R1())
     path, fingerprint = keyfile(tmp_path, private.public_key())
     with pytest.raises(V.VerificationError):
-        V.load_key(path, fingerprint[:-1] + "0")
+        V.load_key(path, fingerprint[:-1] + ("1" if fingerprint[-1] == "0" else "0"))
 
 
 def test_missing_or_unsafe_expected_bindings_fail(tmp_path):
