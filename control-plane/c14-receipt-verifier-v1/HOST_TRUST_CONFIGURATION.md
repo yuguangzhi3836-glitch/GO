@@ -36,3 +36,13 @@ bindings (issuer, candidate SHA, application tree, verdict, evidence digest).
 The one valid synthetic receipt must be signed solely by the
 independent issuer and verified by a separate operator. This remains short of
 C14/C13 execution.
+
+For the single-person registration exception, pin PR #238 comment `5791654074`
+and the immutable source identifiers in `REGISTRATION_AUTHORITY_CONTRACT.md`.
+The host verifier must load the actual KMS authority public key from a trusted
+operator-controlled path, check its SPKI fingerprint, verify the exact signed
+621-byte registration and record the exception mode. The Owner is authorized
+at project scope for both KMS signing keys: an isolated public-key verification
+does not prove IAM separation, receipt-signer permission isolation, replay
+resistance or an audit trail. None of those checks may be inferred from the
+registration signature. Do not activate a signer from this documentation.
