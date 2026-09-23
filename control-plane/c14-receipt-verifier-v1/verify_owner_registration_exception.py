@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import argparse
+import sys
 from pathlib import Path
 
 from verify_c14_registration import RegistrationError, canonical, load_authority, verify
@@ -40,3 +42,29 @@ def accept(source: bytes, envelope: object, public_key: Path, *,
     return {"mode": exception_mode, "source_commit": commit, "source_blob": blob,
             "source_sha256": SHA256, "signer_key_version": registration["signer_key_version"],
             "status": "REGISTRATION_VERIFIED_ONLY"}
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Offline fixed Owner registration check; never issues a receipt")
+    parser.add_argument("--source", type=Path, required=True)
+    parser.add_argument("--signed-envelope", type=Path, required=True)
+    parser.add_argument("--trusted-authority-public-key", type=Path, required=True)
+    parser.add_argument("--source-commit", required=True)
+    parser.add_argument("--source-path", required=True)
+    parser.add_argument("--source-blob", required=True)
+    parser.add_argument("--exception-mode", required=True)
+    args = parser.parse_args()
+    try:
+        result = accept(args.source.read_bytes(), json.loads(args.signed_envelope.read_bytes()),
+                        args.trusted_authority_public_key, commit=args.source_commit,
+                        path=args.source_path, blob=args.source_blob,
+                        exception_mode=args.exception_mode)
+    except (OSError, ValueError, RegistrationError) as exc:
+        print(f"VERIFY_FAIL: {exc}", file=sys.stderr)
+        return 2
+    print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
