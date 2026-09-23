@@ -19,7 +19,11 @@ Change class: CONTROL_PLANE / TEST_ONLY / DOCUMENTATION. Candidate only, not ins
 
 An independent reviewer must obtain the **actual authority version 1 public key** via trusted host-side KMS read-only process, pin its SPKI SHA-256 to `87eb0ab66bd2e1f02331b2bb402ee214194b5f186c381222f9b7edd16c29dc7f`, obtain the immutable file bytes from the fixed commit/path and signed envelope from the archived PR comment, and invoke `verify_owner_registration_exception.py` with all explicit source bindings and `--exception-mode OWNER_SINGLE_PERSON_EXCEPTION`. The program returns `REGISTRATION_VERIFIED_ONLY` on success; every other mode, wrong byte, blob, path, commit, signature, authority public key or fingerprint must fail. Store the isolated command/result, reviewer identity, KMS effective IAM and impersonation checks, and evidence hashes outside this PR as signed evidence.
 
-The real authority PEM and isolated host access are not present in this scratch workspace. Consequently the real signed object has **not** been reverified by this new gate on the isolated host. The earlier independent OpenSSL verification is recorded in the archived PR comment; it is a separate check.
+The isolated host and its independent reviewer are not available in this scratch workspace. The real signed object has **not** been verified by this gate on that host. The earlier independent OpenSSL verification is recorded in the archived PR comment; it is a separate check.
+
+## Real signed-object offline check (2026-09-23)
+
+The Owner supplied the authority version 1 public PEM copied from a read-only Cloud Shell `get-public-key` command. Its SPKI DER SHA-256 was independently calculated here as `87eb0ab66bd2e1f02331b2bb402ee214194b5f186c381222f9b7edd16c29dc7f`. Using the fixed commit's file bytes, archived signed envelope, and this PEM, `verify_owner_registration_exception.py` returned `REGISTRATION_VERIFIED_ONLY` with fixed commit `a8a1191e…`, blob `74dc7c9c…`, and SHA-256 `07ba520c…`. Five negative checks against the real artifact rejected wrong exception mode, path, bytes, signature, and public key. The public PEM's KMS origin is based on the Owner's Cloud Shell transcript, not an independently witnessed retrieval. This check ran in local scratch, **not** on the independently controlled isolated host. It is not evidence of effective IAM or signer separation.
 
 ## Still HOLD
 
