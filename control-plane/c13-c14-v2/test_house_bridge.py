@@ -150,7 +150,7 @@ class HouseBridgeTests(unittest.TestCase):
         host.complete(task)
         evidence = __import__("json").loads(host.results[key])
         evidence["executor_result"]["candidate_sha"] = "e" * 40
-        host.results[key] = canonical(evidence)
+        host.results[key] = canonical(evidence) + b"\n"
         self.refuse("evidence_signature", lambda: read_evidence(task, 101, host))
 
     def test_no_deploy_action_or_caller_command(self):
@@ -167,6 +167,7 @@ class HouseBridgeTests(unittest.TestCase):
         legacy = {"CONTROL_PLANE_HEALTH", "HK_STAGING_CANARY", "HK_STAGING_DEPLOY",
                   "HK_STAGING_VERIFY", "HK_STAGING_ROLLBACK", "HK_STAGING_TEST_PR"}
         self.assertEqual(set(task["properties"]["action_id"]["enum"]), legacy | {C13_ACTION, C14_ACTION})
+        self.assertEqual(set(evidence["properties"]["action_id"]["enum"]), legacy | {C13_ACTION, C14_ACTION})
         self.assertEqual(task["properties"]["signature"]["pattern"], "^[0-9a-f]{128}$")
         for schema in (task, evidence):
             conditions = schema["allOf"]
