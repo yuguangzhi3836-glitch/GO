@@ -28,7 +28,8 @@ dispatch, Hong Kong change, provider/payment access, merge or deployment.
 `task_evidence.py` accepts **only an admission already derived by the gate**.
 It creates a deterministic task ID from the action, environment, independent
 runner, candidate SHA, application tree and frozen test-scope digest. A C14
-task also binds the verified C13 evidence SHA-256. It requires an injected
+task also binds the verified C13 evidence SHA-256; the host must independently
+re-read and verify that prerequisite at issuance. It requires an injected
 host signer, stores the signed envelope, reads it back and verifies its
 signature and exact bytes. No caller may supply a command, path, URL,
 provider, deployment or production action. Task lifetime is 30 minutes.
