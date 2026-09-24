@@ -29,6 +29,7 @@ MANIFEST_FIELDS = {"task_id", "action_id", "environment", "runner_id", "candidat
 
 
 class Host(Protocol):
+    def verify_c13_prerequisite(self, admission: dict) -> bool: ...
     def sign_task(self, canonical_bytes: bytes) -> str: ...
     def verify_task_signature(self, canonical_bytes: bytes, signature: str) -> bool: ...
     def publish_task(self, task_id: str, envelope: dict) -> None: ...
@@ -112,6 +113,8 @@ def issue_task(admission: dict, now: int, host: Host) -> dict:
     if admission["action_id"] == C14_ACTION:
         if (not isinstance(admission.get("c13_evidence_sha256"), str) or
                 not HEX64.fullmatch(admission["c13_evidence_sha256"])):
+            raise Refusal("c13_prerequisite")
+        if host.verify_c13_prerequisite(admission) is not True:
             raise Refusal("c13_prerequisite")
     elif "c13_evidence_sha256" in admission:
         raise Refusal("admission_schema")
