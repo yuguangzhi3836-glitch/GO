@@ -28,6 +28,9 @@ class MemoryHost:
     def sign_task(self, raw):
         return hmac.new(self.secret, raw, "sha256").hexdigest()
 
+    def verify_c13_prerequisite(self, admission):
+        return admission == C14
+
     def verify_task_signature(self, raw, signature):
         return hmac.compare_digest(self.sign_task(raw), signature)
 
@@ -101,6 +104,8 @@ class ProtocolTests(unittest.TestCase):
         host = MemoryHost()
         self.assert_refused("c13_prerequisite", lambda: issue_task({k: v for k, v in C14.items()
                                                                      if k != "c13_evidence_sha256"}, 100, host))
+        self.assertFalse(host.tasks)
+        self.assert_refused("c13_prerequisite", lambda: issue_task({**C14, "c13_evidence_sha256": "e" * 64}, 100, host))
         self.assertFalse(host.tasks)
 
     def test_identity_scope_capability_and_time_are_closed(self):
