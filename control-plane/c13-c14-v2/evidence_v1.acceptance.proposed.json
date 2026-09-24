@@ -1,0 +1,394 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/command-center-state-v1/contracts/evidence_v1.schema.json",
+  "title": "GO Command Center Signed Evidence V1 — isolated acceptance proposal",
+  "description": "DRAFT extension of GO signed Evidence V1. Existing HK actions retain their current signer. C13 and C14 use separately qualified acceptance Runner identities and their own restricted environments; this proposal is not installed.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "task_id",
+    "nonce",
+    "action_id",
+    "environment",
+    "status",
+    "started_at",
+    "agent_version",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "task_id": {
+      "type": "string"
+    },
+    "nonce": {
+      "type": "string"
+    },
+    "action_id": {
+      "type": "string"
+    },
+    "environment": {
+      "enum": [
+        "HK-STAGING-01",
+        "GO-ISOLATED-ACCEPTANCE-01",
+        "HK-ISOLATED-ACCEPTANCE-01"
+      ]
+    },
+    "status": {
+      "enum": [
+        "SUCCESS",
+        "REJECTED",
+        "FAILED"
+      ]
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "agent_version": {
+      "type": "string"
+    },
+    "failure": {
+      "type": "object",
+      "description": "present only when status is not SUCCESS; the closed failure semantics are described in contracts/failure_evidence_v1.schema.json"
+    },
+    "retry_permitted": {
+      "const": false
+    },
+    "replay_authorized": {
+      "const": false
+    },
+    "authorizes_any_action": {
+      "const": false
+    },
+    "signature": {
+      "type": "string",
+      "description": "Ed25519, base64. Verifies against /etc/go-hk-agent/keys/evidence-signing.pub, published as identity/keys/hk-evidence-signing.pub."
+    }
+  },
+  "oneOf": [
+    {
+      "title": "current generation",
+      "required": [
+        "completed_at",
+        "executor_version",
+        "executor_result",
+        "gate_results"
+      ],
+      "properties": {
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "executor_version": {
+          "type": "string"
+        },
+        "executor_result": {},
+        "gate_results": {
+          "type": "object"
+        }
+      }
+    },
+    {
+      "title": "legacy generation (pre 0.5.x agent)",
+      "required": [
+        "finished_at",
+        "result"
+      ],
+      "properties": {
+        "finished_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "result": {}
+      }
+    }
+  ],
+  "x-go-terminal-results": {
+    "HK_STAGING_VERIFY": "VERIFY_OK",
+    "HK_STAGING_CANARY": "CANARY_OK",
+    "HK_STAGING_DEPLOY": "DEPLOY_OK",
+    "HK_STAGING_ROLLBACK": "ROLLBACK_OK",
+    "HK_STAGING_TEST_PR": "TEST_PR_OK",
+    "CONTROL_PLANE_HEALTH": null,
+    "GO_C13_FIRST_ACCEPTANCE": "PASS_SCOPED",
+    "HK_ISOLATED_C14_RETEST": "PASS_SCOPED"
+  },
+  "x-go-notes": [
+    "Two generations exist on the control bus. completed_at/executor_result/gate_results is current; finished_at/result is legacy. A projection must normalise both and must not silently drop either.",
+    "CC V1-02: a Task whose claimed execution attempt fails now publishes a signed FAILED record, bound to the original task_id, nonce, action_id and environment and written to the same evidence/<task_id>-<nonce>.json path. Its closed semantics are in contracts/failure_evidence_v1.schema.json.",
+    "A Task rejected BEFORE its attempt was claimed still publishes nothing, because a Task whose own signature never verified must never be able to cause a write. Absence of Evidence therefore means 'never picked up or never authenticated', which is a different statement from 'nothing happened'.",
+    "A failure record authorizes nothing: retry_permitted, replay_authorized and authorizes_any_action are always false, and the one-attempt rule is enforced by the agent ledger rather than by this document.",
+    "TEST_PR Evidence must carry application_health_proven=false and deployment_performed=false. It proves an isolated offline build, not a deployment.",
+    "DRAFT: C13 and C14 evidence must verify against separate qualified Runner keys and cannot authorize any release action."
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "action_id": {
+            "const": "GO_C13_FIRST_ACCEPTANCE"
+          }
+        },
+        "required": [
+          "action_id"
+        ]
+      },
+      "then": {
+        "properties": {
+          "environment": {
+            "const": "GO-ISOLATED-ACCEPTANCE-01"
+          },
+          "status": {
+            "enum": [
+              "SUCCESS",
+              "FAILED",
+              "REJECTED"
+            ]
+          },
+          "executor_result": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "candidate_sha",
+              "application_tree",
+              "test_scope_sha256",
+              "runner_id",
+              "verdict",
+              "junit_sha256",
+              "stdout_sha256",
+              "manifest_sha256",
+              "test_count",
+              "failure_count",
+              "error_count",
+              "skipped_count"
+            ],
+            "properties": {
+              "candidate_sha": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "application_tree": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "test_scope_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "runner_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "verdict": {
+                "enum": [
+                  "PASS_SCOPED",
+                  "FAIL",
+                  "BLOCKED"
+                ]
+              },
+              "junit_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "stdout_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "manifest_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "test_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "failure_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "error_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "skipped_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "c13_evidence_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "gate_results": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "isolated_acceptance"
+            ],
+            "properties": {
+              "isolated_acceptance": {
+                "enum": [
+                  "PASS_SCOPED",
+                  "FAIL",
+                  "BLOCKED"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_id": {
+            "const": "HK_ISOLATED_C14_RETEST"
+          }
+        },
+        "required": [
+          "action_id"
+        ]
+      },
+      "then": {
+        "properties": {
+          "environment": {
+            "const": "HK-ISOLATED-ACCEPTANCE-01"
+          },
+          "status": {
+            "enum": [
+              "SUCCESS",
+              "FAILED",
+              "REJECTED"
+            ]
+          },
+          "executor_result": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "candidate_sha",
+              "application_tree",
+              "test_scope_sha256",
+              "runner_id",
+              "verdict",
+              "junit_sha256",
+              "stdout_sha256",
+              "manifest_sha256",
+              "test_count",
+              "failure_count",
+              "error_count",
+              "skipped_count",
+              "c13_evidence_sha256"
+            ],
+            "properties": {
+              "candidate_sha": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "application_tree": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "test_scope_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "runner_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "verdict": {
+                "enum": [
+                  "PASS_SCOPED",
+                  "FAIL",
+                  "BLOCKED"
+                ]
+              },
+              "junit_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "stdout_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "manifest_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "test_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "failure_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "error_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "skipped_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "c13_evidence_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "gate_results": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "isolated_acceptance"
+            ],
+            "properties": {
+              "isolated_acceptance": {
+                "enum": [
+                  "PASS_SCOPED",
+                  "FAIL",
+                  "BLOCKED"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_id": {
+            "enum": [
+              "CONTROL_PLANE_HEALTH",
+              "HK_STAGING_CANARY",
+              "HK_STAGING_DEPLOY",
+              "HK_STAGING_VERIFY",
+              "HK_STAGING_ROLLBACK",
+              "HK_STAGING_TEST_PR"
+            ]
+          }
+        },
+        "required": [
+          "action_id"
+        ]
+      },
+      "then": {
+        "properties": {
+          "environment": {
+            "const": "HK-STAGING-01"
+          }
+        }
+      }
+    }
+  ],
+  "x-go-acceptance-verification": {
+    "C13": "independent registered C13 Runner key",
+    "C14": "distinct registered Hong Kong isolated C14 Runner key",
+    "release_authority": false
+  }
+}
