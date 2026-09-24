@@ -53,7 +53,12 @@
                    "EVIDENCE_NOT_PUBLISHED", "EXECUTOR_INVOCATION_FAILED", "EXECUTOR_NONZERO_EXIT",
                    "EXECUTOR_OUTPUT_REJECTED", "EXECUTOR_RESULT_REJECT", "GITHUB_TRANSPORT_REJECT",
                    "ROLLBACK_HANDOFF_REJECT", "ROLLBACK_SOURCE_REJECT", "TASK_ID_REJECT",
-                   "TASK_NOT_FOUND", "UNCLASSIFIED_REJECT"],
+                   "TASK_NOT_FOUND", "UNCLASSIFIED_REJECT",
+                   "TEST_PR_PARAMETERS_REJECT", "TEST_PR_SOURCE_REJECT",
+                   "TEST_PR_BUILD_ROOT_REJECT", "TEST_PR_FETCH_MISMATCH",
+                   "TEST_PR_SOURCE_LAYOUT_REJECT", "TEST_PR_BUILDER_IMAGE_REJECT",
+                   "TEST_PR_DEPENDENCY_PROFILE_REJECT", "TEST_PR_DEPENDENCY_ENVIRONMENT_REJECT",
+                   "TEST_PR_IMAGE_ID_REJECT", "TEST_PR_SUBPROCESS_REJECT"],
           "description": "closed set. Free-form diagnostic text is never echoed; anything outside this set is reported as UNCLASSIFIED_REJECT."
         },
         "attempt_number": {"type": "integer", "minimum": 1},
