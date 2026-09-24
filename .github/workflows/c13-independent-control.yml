@@ -194,7 +194,7 @@ jobs:
           python -m pip install -r control-plane/c14-signer-v1/requirements.txt pytest
       - name: Execute frozen scope
         env:
-          PYTHONPATH: .
+          PYTHONPATH: .:control-plane/c14-signer-v1
         run: |
           mkdir -p "$RUNNER_TEMP/c13"
           set -euo pipefail
