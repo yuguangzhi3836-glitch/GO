@@ -18,16 +18,16 @@ jobs:
       postgres:
         image: postgres:18.4
         env:
-          POSTGRES_DB: go_c13_flight
+          POSTGRES_DB: go_c11_isolated
           POSTGRES_USER: go_ci
           POSTGRES_PASSWORD: isolated_ci_only
         ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U go_ci -d go_c13_flight"
+          --health-cmd "pg_isready -U go_ci -d go_c11_isolated"
           --health-interval 5s --health-timeout 5s --health-retries 20
     env:
       PYTHONDONTWRITEBYTECODE: '1'
-      GO_C11_RUNTIME_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c13_flight
+      GO_C11_RUNTIME_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
       GO_C11_SOURCE_COMMIT: d4376d6ae9a58eca3c7c32968ec96dffc5574122
       C13_EXPECTED_APPLICATION_TREE: bee89f356a43bf3445d2da3f60f64f7db02a28cd
     steps:
