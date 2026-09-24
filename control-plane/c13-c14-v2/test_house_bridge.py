@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 from acceptance_gate import C13_ACTION, C14_ACTION, C13_ENVIRONMENT, C14_ENVIRONMENT, Refusal
-from house_bridge import canonical, digest, issue, read_evidence
+from house_bridge import canonical, digest, issue, read_evidence, receive_evidence
 
 SHA, TREE, SCOPE = "a" * 40, "b" * 40, "c" * 64
 REQUEST = {"candidate_sha": SHA, "application_tree": TREE, "test_scope_sha256": SCOPE,
@@ -19,6 +19,7 @@ class Host:
         self.tasks = {}
         self.results = {}
         self.artifacts = {}
+        self.receipts = {}
         self.c13_verified = True
         self.evidence = {"candidate_sha": SHA, "application_tree": TREE,
                          "test_scope_sha256": SCOPE, "verdict": "PASS_SCOPED",
@@ -67,10 +68,32 @@ class Host:
     def read_house_artifact(self, task_id, nonce, name):
         return self.artifacts[(task_id, nonce, name)]
 
-    def complete(self, task):
+    def sign_control_receipt(self, raw):
+        return hashlib.sha512(b"control-receipt-key:" + raw).hexdigest()
+
+    def verify_control_receipt(self, raw, signature):
+        return self.sign_control_receipt(raw) == signature
+
+    def publish_control_receipt(self, task_id, nonce, raw):
+        key = (task_id, nonce)
+        previous = self.receipts.get(key)
+        if previous is not None and previous != raw:
+            raise Refusal("duplicate_receipt")
+        self.receipts[key] = raw
+
+    def read_control_receipt(self, task_id, nonce):
+        return self.receipts.get((task_id, nonce))
+
+    def complete(self, task, verdict="PASS_SCOPED"):
         task_id, nonce = task["task_id"], task["nonce"]
-        junit = b"<testsuite tests='1' failures='0' errors='0' skipped='0'/>"
-        stdout = b"1 passed\n"
+        if verdict == "PASS_SCOPED":
+            junit = b"<testsuite tests='1' failures='0' errors='0' skipped='0'/>"
+            stdout, failures, status, gate = b"1 passed\n", 0, "SUCCESS", "PASS_SCOPED"
+        elif verdict == "FAIL":
+            junit = b"<testsuite tests='1' failures='1' errors='0' skipped='0'/>"
+            stdout, failures, status, gate = b"1 failed\n", 1, "FAILED", "FAIL"
+        else:
+            raise ValueError("unsupported test verdict")
         manifest = {"task_id": task_id, "nonce": nonce, **task["parameters"],
                     "junit_sha256": digest(junit), "stdout_sha256": digest(stdout),
                     "command": "registered frozen suite"}
@@ -79,15 +102,15 @@ class Host:
         blobs = {"junit": junit, "stdout": stdout, "manifest": canonical(manifest)}
         for name, raw in blobs.items():
             self.artifacts[(task_id, nonce, name)] = raw
-        result = {**task["parameters"], "verdict": "PASS_SCOPED", "test_count": 1,
-                  "failure_count": 0, "error_count": 0, "skipped_count": 0,
+        result = {**task["parameters"], "verdict": verdict, "test_count": 1,
+                  "failure_count": failures, "error_count": 0, "skipped_count": 0,
                   **{name + "_sha256": digest(raw) for name, raw in blobs.items()}}
         evidence = {"schema_version": "1", "task_id": task_id, "nonce": nonce,
                     "action_id": task["action_id"], "environment": task["environment"],
-                    "status": "SUCCESS", "started_at": task["issued_at"],
+                    "status": status, "started_at": task["issued_at"],
                     "completed_at": task["issued_at"], "agent_version": "test-only",
                     "executor_version": "test-only", "executor_result": result,
-                    "gate_results": {"isolated_acceptance": "PASS_SCOPED"},
+                    "gate_results": {"isolated_acceptance": gate},
                     "retry_permitted": False, "replay_authorized": False,
                     "authorizes_any_action": False}
         evidence["signature"] = base64.b64encode(hashlib.sha256(
@@ -115,7 +138,18 @@ class HouseBridgeTests(unittest.TestCase):
                                      "parameters", "signature"})
         self.assertEqual(task["action_id"], C14_ACTION)
         host.complete(task)
-        self.assertEqual(read_evidence(task, 101, host)["verdict"], "PASS_SCOPED")
+        returned = receive_evidence(task, 101, host)
+        self.assertEqual(returned["result"]["verdict"], "PASS_SCOPED")
+        receipt = returned["receipt"]
+        self.assertEqual(receipt["contract"], "GO_C14_EVIDENCE_RECEIPT_V1")
+        self.assertEqual(receipt["verification_state"], "EVIDENCE_VERIFIED")
+        self.assertEqual(receipt["terminal_state"], "COMPLETE")
+        self.assertFalse(receipt["authorizes_any_action"])
+        self.assertEqual(receipt["candidate_sha"], SHA)
+        self.assertEqual(receipt["evidence_sha256"],
+                         digest(host.read_house_evidence(task["task_id"], task["nonce"])))
+        self.assertEqual(host.read_control_receipt(task["task_id"], task["nonce"]),
+                         canonical(receipt) + b"\n")
         self.assertEqual(read_evidence(task, 10_000, host)["verdict"], "PASS_SCOPED")
 
     def test_c14_requires_verified_c13_at_issuance(self):
@@ -158,6 +192,37 @@ class HouseBridgeTests(unittest.TestCase):
         host.results[key] = canonical(evidence) + b"\n"
         self.refuse("evidence_signature", lambda: read_evidence(task, 101, host))
 
+    def test_receipt_readback_tamper_refuses(self):
+        class BadReceiptHost(Host):
+            def publish_control_receipt(self, task_id, nonce, raw):
+                self.receipts[(task_id, nonce)] = b"altered"
+
+        host = BadReceiptHost()
+        task = issue(REQUEST, "C14", 100, host)
+        host.complete(task)
+        self.refuse("receipt_readback", lambda: receive_evidence(task, 101, host))
+
+    def test_missing_receipt_route_refuses_after_hk_evidence_verification(self):
+        class MissingReceiptHost(Host):
+            def read_control_receipt(self, task_id, nonce):
+                raise AttributeError("not installed")
+
+        host = MissingReceiptHost()
+        task = issue(REQUEST, "C14", 100, host)
+        host.complete(task)
+        self.refuse("receipt_route", lambda: receive_evidence(task, 101, host))
+
+    def test_failed_evidence_is_receipted_but_never_authorizes_release(self):
+        host = Host()
+        task = issue(REQUEST, "C14", 100, host)
+        host.complete(task, "FAIL")
+        receipt = receive_evidence(task, 101, host)["receipt"]
+        self.assertEqual(receipt["verdict"], "FAIL")
+        self.assertEqual(receipt["verification_state"], "EVIDENCE_VERIFIED")
+        self.assertEqual(receipt["terminal_state"], "COMPLETE")
+        self.assertFalse(receipt["authorizes_any_action"])
+        self.assertEqual(read_evidence(task, 10_000, host)["verdict"], "FAIL")
+
     def test_no_deploy_action_or_caller_command(self):
         host = Host()
         request = {"candidate_sha": SHA, "application_tree": TREE, "test_scope_sha256": SCOPE}
@@ -184,6 +249,14 @@ class HouseBridgeTests(unittest.TestCase):
                                set(r["if"]["properties"]["action_id"].get("enum", [])) == legacy)
             self.assertEqual(legacy_rule["then"]["properties"]["environment"]["const"], "HK-STAGING-01")
 
+
+    def test_receipt_schema_forbids_release_authorization(self):
+        schema = json.loads((Path(__file__).parent / "receipt_v1.acceptance.proposed.json").read_text())
+        self.assertFalse(schema["properties"]["authorizes_any_action"]["const"])
+        self.assertEqual(schema["properties"]["verification_state"]["const"], "EVIDENCE_VERIFIED")
+        self.assertEqual(schema["properties"]["terminal_state"]["const"], "COMPLETE")
+        self.assertEqual(schema["properties"]["verdict"]["enum"], ["PASS_SCOPED", "FAIL", "BLOCKED"])
+        self.assertFalse(schema["additionalProperties"])
 
 if __name__ == "__main__":
     unittest.main()
