@@ -26,7 +26,16 @@
       "type": "string"
     },
     "action_id": {
-      "type": "string"
+      "enum": [
+        "CONTROL_PLANE_HEALTH",
+        "HK_STAGING_CANARY",
+        "HK_STAGING_DEPLOY",
+        "HK_STAGING_VERIFY",
+        "HK_STAGING_ROLLBACK",
+        "HK_STAGING_TEST_PR",
+        "GO_C13_FIRST_ACCEPTANCE",
+        "HK_ISOLATED_C14_RETEST"
+      ]
     },
     "environment": {
       "enum": [
