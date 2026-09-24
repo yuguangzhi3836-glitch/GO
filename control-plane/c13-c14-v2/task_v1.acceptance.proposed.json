@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "go://control-plane/command-center-state-v1/contracts/task_v1.schema.json",
-  "title": "GO Command Center Signed Task V1 — C13/C14 acceptance proposal",
+  "title": "GO Command Center Signed Task V1 — C14 acceptance proposal",
   "description": "The only Execution Authority in the Control Plane. Command Center derives every parameter, signs the canonical form with the existing task-manifest signing key, and publishes it byte-identically to chenzhenxi1-sudo/go-control-tasks under tasks/<task_id>.json. DRAFT: acceptance actions are not installed on the live bus.",
   "type": "object",
   "additionalProperties": false,
@@ -43,7 +43,6 @@
     "environment": {
       "enum": [
         "HK-STAGING-01",
-        "GO-ISOLATED-ACCEPTANCE-01",
         "HK-ISOLATED-ACCEPTANCE-01"
       ]
     },
@@ -55,7 +54,6 @@
         "HK_STAGING_VERIFY",
         "HK_STAGING_ROLLBACK",
         "HK_STAGING_TEST_PR",
-        "GO_C13_FIRST_ACCEPTANCE",
         "HK_ISOLATED_C14_RETEST"
       ]
     },
@@ -99,12 +97,6 @@
       "builder_profile",
       "source"
     ],
-    "GO_C13_FIRST_ACCEPTANCE": [
-      "candidate_sha",
-      "application_tree",
-      "test_scope_sha256",
-      "runner_id"
-    ],
     "HK_ISOLATED_C14_RETEST": [
       "candidate_sha",
       "application_tree",
@@ -127,54 +119,6 @@
     "DRAFT: the new acceptance actions require separate registered runners and never reuse HK-STAGING-01 deployment execution."
   ],
   "allOf": [
-    {
-      "if": {
-        "properties": {
-          "action_id": {
-            "const": "GO_C13_FIRST_ACCEPTANCE"
-          }
-        },
-        "required": [
-          "action_id"
-        ]
-      },
-      "then": {
-        "properties": {
-          "environment": {
-            "const": "GO-ISOLATED-ACCEPTANCE-01"
-          },
-          "parameters": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "candidate_sha",
-              "application_tree",
-              "test_scope_sha256",
-              "runner_id"
-            ],
-            "properties": {
-              "candidate_sha": {
-                "type": "string",
-                "pattern": "^[0-9a-f]{40}$"
-              },
-              "application_tree": {
-                "type": "string",
-                "pattern": "^[0-9a-f]{40}$"
-              },
-              "test_scope_sha256": {
-                "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
-              },
-              "runner_id": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 128
-              }
-            }
-          }
-        }
-      }
-    },
     {
       "if": {
         "properties": {
