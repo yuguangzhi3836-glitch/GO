@@ -23,6 +23,14 @@ EVIDENCE_FIELDS = {"schema_version", "task_id", "nonce", "action_id", "environme
                    "status", "started_at", "completed_at", "agent_version",
                    "executor_version", "executor_result", "gate_results", "signature",
                    "retry_permitted", "replay_authorized", "authorizes_any_action"}
+RECEIPT_CONTRACT = "GO_C14_EVIDENCE_RECEIPT_V1"
+RECEIPT_FIELDS = {"schema_version", "contract", "task_id", "nonce", "action_id",
+                  "environment", "runner_id", "candidate_sha", "application_tree",
+                  "test_scope_sha256", "c13_evidence_sha256", "evidence_sha256",
+                  "junit_sha256", "stdout_sha256", "manifest_sha256", "test_count",
+                  "failure_count", "error_count", "skipped_count", "verdict",
+                  "verification_state", "terminal_state", "verified_at",
+                  "authorizes_any_action", "signature"}
 
 
 def canonical(value):
@@ -90,7 +98,7 @@ def issue(request, role, epoch, host):
     return signed
 
 
-def read_evidence(task, epoch, host):
+def _read_evidence(task, epoch, host):
     """Read the actual signed bus object and its three raw artifacts."""
     if type(task) is not dict or set(task) != TASK_FIELDS:
         raise Refusal("task_schema")
@@ -183,4 +191,96 @@ def read_evidence(task, epoch, host):
         raise Refusal("pass_without_tests")
     if result["verdict"] not in ("PASS_SCOPED", "FAIL", "BLOCKED"):
         raise Refusal("verdict")
-    return result
+    return result, raw
+
+
+def _receipt_binding(task, result, evidence_raw):
+    return {"schema_version": "1", "contract": RECEIPT_CONTRACT,
+            "task_id": task["task_id"], "nonce": task["nonce"],
+            "action_id": task["action_id"], "environment": task["environment"],
+            "runner_id": result["runner_id"], "candidate_sha": result["candidate_sha"],
+            "application_tree": result["application_tree"],
+            "test_scope_sha256": result["test_scope_sha256"],
+            "c13_evidence_sha256": result["c13_evidence_sha256"],
+            "evidence_sha256": digest(evidence_raw),
+            "junit_sha256": result["junit_sha256"], "stdout_sha256": result["stdout_sha256"],
+            "manifest_sha256": result["manifest_sha256"], "test_count": result["test_count"],
+            "failure_count": result["failure_count"], "error_count": result["error_count"],
+            "skipped_count": result["skipped_count"], "verdict": result["verdict"],
+            "verification_state": "EVIDENCE_VERIFIED", "terminal_state": "COMPLETE",
+            "authorizes_any_action": False}
+
+
+def _checked_receipt(raw, task, result, evidence_raw, host):
+    if type(raw) is not bytes or len(raw) > 32_000:
+        raise Refusal("receipt_readback")
+    try:
+        receipt = json.loads(raw)
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise Refusal("receipt_readback") from exc
+    if type(receipt) is not dict or set(receipt) != RECEIPT_FIELDS:
+        raise Refusal("receipt_readback")
+    if raw != canonical(receipt) + b"\n":
+        raise Refusal("receipt_readback")
+    expected = _receipt_binding(task, result, evidence_raw)
+    if any(receipt[key] != value for key, value in expected.items()):
+        raise Refusal("receipt_binding")
+    if not isinstance(receipt["verified_at"], str):
+        raise Refusal("receipt_time")
+    try:
+        dt.datetime.fromisoformat(receipt["verified_at"].replace("Z", "+00:00"))
+    except (ValueError, TypeError, OverflowError) as exc:
+        raise Refusal("receipt_time") from exc
+    unsigned = {key: value for key, value in receipt.items() if key != "signature"}
+    try:
+        receipt_signature_valid = host.verify_control_receipt(
+            canonical(unsigned), receipt["signature"])
+    except AttributeError as exc:
+        raise Refusal("receipt_route") from exc
+    if (not isinstance(receipt["signature"], str) or
+            not re.fullmatch(r"[0-9a-f]{128}", receipt["signature"]) or
+            receipt_signature_valid is not True):
+        raise Refusal("receipt_signature")
+    return receipt
+
+
+def _record_receipt(task, result, evidence_raw, epoch, host):
+    try:
+        existing = host.read_control_receipt(task["task_id"], task["nonce"])
+    except AttributeError as exc:
+        raise Refusal("receipt_route") from exc
+    if existing is not None:
+        return _checked_receipt(existing, task, result, evidence_raw, host)
+    try:
+        verified_at = iso(epoch)
+    except (ValueError, OverflowError, OSError) as exc:
+        raise Refusal("receipt_time") from exc
+    unsigned = {**_receipt_binding(task, result, evidence_raw), "verified_at": verified_at}
+    try:
+        signature = host.sign_control_receipt(canonical(unsigned))
+        receipt_signature_valid = host.verify_control_receipt(canonical(unsigned), signature)
+    except AttributeError as exc:
+        raise Refusal("receipt_route") from exc
+    if (not isinstance(signature, str) or not re.fullmatch(r"[0-9a-f]{128}", signature) or
+            receipt_signature_valid is not True):
+        raise Refusal("receipt_signature")
+    signed = {**unsigned, "signature": signature}
+    expected = canonical(signed) + b"\n"
+    try:
+        host.publish_control_receipt(task["task_id"], task["nonce"], expected)
+        stored = host.read_control_receipt(task["task_id"], task["nonce"])
+    except AttributeError as exc:
+        raise Refusal("receipt_route") from exc
+    return _checked_receipt(stored, task, result, evidence_raw, host)
+
+
+def receive_evidence(task, epoch, host):
+    """Verify the HK return and have Command Center atomically record its receipt."""
+    result, evidence_raw = _read_evidence(task, epoch, host)
+    return {"result": result, "receipt": _record_receipt(task, result, evidence_raw, epoch, host)}
+
+
+def read_evidence(task, epoch, host):
+    """Compatibility result reader that also requires the Command Center receipt."""
+    return receive_evidence(task, epoch, host)["result"]
+
