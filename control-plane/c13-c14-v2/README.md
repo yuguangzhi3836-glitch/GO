@@ -53,3 +53,13 @@ The real `go-control-tasks` contract, Command Center host adapter, isolated
 C13 Runner, Hong Kong isolated C14 Runner and signed evidence readback are not
 installed by this Draft. **No formal C13 or C14 can be claimed from these
 tests.** Do not route these action IDs through TEST_PR, CANARY or DEPLOY.
+
+**Integration mismatch to resolve:** this module's `{payload, signature}` is
+an internal test proposal, not the installed `task_v1.schema.json` house
+envelope. The installed contract allows only `HK-STAGING-01` and six existing
+actions; neither acceptance action/environment is registered. A host must
+derive the existing house envelope, extend and validate its closed action and
+environment contract through normal review, and provide a separate restricted
+acceptance executor before writing any real bus object. Passing a proposal
+directly to `go-control-tasks` is invalid. The in-memory `publish_task` test
+does not perform or prove that integration.
