@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 from acceptance_gate import (C14_ACTION, C14_ENVIRONMENT, Refusal, c14_admission)
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
@@ -55,6 +56,35 @@ def _p256_der_signature(value):
         return r > 0 and s > 0
     except (binascii.Error, ValueError):
         return False
+
+
+def frozen_junit_counts(junit):
+    """Require the exact 61+10 test identities from the frozen C13 artifact."""
+    try:
+        inventory = json.loads(Path(__file__).with_name("c14_frozen_test_inventory.json").read_text())
+        root = ET.fromstring(junit)
+        suites = list(root) if root.tag == "testsuites" else []
+        if [s.get("name") for s in suites] != ["pytest", "isolated_postgres"]:
+            raise Refusal("c14_frozen_junit_scope")
+        counts = [sum(int(s.get(key, "-1")) for s in suites)
+                  for key in ("tests", "failures", "errors", "skipped")]
+        for suite in suites:
+            actual = sorted([{"classname": case.get("classname", ""), "name": case.get("name", "")}
+                             for case in suite.findall("testcase")],
+                            key=lambda row: (row["classname"], row["name"]))
+            expected = inventory[suite.get("name")]
+            if actual != expected or len(actual) != int(suite.get("tests", "-1")):
+                raise Refusal("c14_frozen_junit_scope")
+            if any(len(suite.findall("testcase/" + key)) != int(suite.get(attr, "-1"))
+                   for key, attr in (("failure", "failures"), ("error", "errors"), ("skipped", "skipped"))):
+                raise Refusal("c14_junit_outcome")
+    except (OSError, KeyError, UnicodeError, ValueError, TypeError, ET.ParseError) as exc:
+        if isinstance(exc, Refusal):
+            raise
+        raise Refusal("c14_frozen_junit_scope") from exc
+    if counts[0] != 71:
+        raise Refusal("c14_frozen_junit_scope")
+    return counts
 
 
 def iso(epoch):
@@ -180,14 +210,9 @@ def _read_evidence(task, epoch, host):
         artifacts[name] = content
     try:
         manifest = json.loads(artifacts["manifest"])
-        root = ET.fromstring(artifacts["junit"])
-        suites = [root] if root.tag == "testsuite" else list(root) if root.tag == "testsuites" else []
-        counts = [sum(int(s.attrib.get(key, "0")) for s in suites)
-                  for key in ("tests", "failures", "errors", "skipped")]
+        counts = frozen_junit_counts(artifacts["junit"])
     except (UnicodeError, json.JSONDecodeError, ET.ParseError, ValueError, TypeError) as exc:
         raise Refusal("artifact_parse") from exc
-    if not suites or any(s.tag != "testsuite" for s in suites):
-        raise Refusal("junit_schema")
     required = {"task_id", "nonce", "candidate_sha", "application_tree", "test_scope_sha256",
                 "runner_id", "junit_sha256", "stdout_sha256", "command"}
     if (type(manifest) is not dict or set(manifest) != required or
