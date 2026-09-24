@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/c13-c14-v2/contracts/hk_c14_evidence_receipt_v1.schema.json",
+  "title": "GO Command Center C14 evidence receipt V1 — draft",
+  "description": "DRAFT. Only the Command Center may atomically write and re-read this receipt after it verifies a signed Hong Kong isolated C14 Evidence object and all referenced raw artifacts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "contract",
+    "task_id",
+    "nonce",
+    "action_id",
+    "environment",
+    "runner_id",
+    "candidate_sha",
+    "application_tree",
+    "test_scope_sha256",
+    "c13_evidence_sha256",
+    "evidence_sha256",
+    "junit_sha256",
+    "stdout_sha256",
+    "manifest_sha256",
+    "test_count",
+    "failure_count",
+    "error_count",
+    "skipped_count",
+    "verdict",
+    "verification_state",
+    "terminal_state",
+    "verified_at",
+    "authorizes_any_action",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "contract": {
+      "const": "GO_C14_EVIDENCE_RECEIPT_V1"
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nonce": {
+      "type": "string",
+      "minLength": 1
+    },
+    "action_id": {
+      "const": "HK_ISOLATED_C14_RETEST"
+    },
+    "environment": {
+      "const": "HK-ISOLATED-ACCEPTANCE-01"
+    },
+    "runner_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "application_tree": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "test_scope_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "c13_evidence_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "evidence_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "junit_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "stdout_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "test_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failure_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "error_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "skipped_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "verdict": {
+      "enum": [
+        "PASS_SCOPED",
+        "FAIL",
+        "BLOCKED"
+      ]
+    },
+    "verification_state": {
+      "const": "EVIDENCE_VERIFIED"
+    },
+    "terminal_state": {
+      "const": "COMPLETE"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authorizes_any_action": {
+      "const": false
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{128}$",
+      "description": "Command Center trust-root signature over canonical receipt bytes."
+    }
+  },
+  "x-go-receipt-route": {
+    "evidence_source": "evidence/<task_id>-<nonce>.json plus the three named raw artifacts",
+    "receipt_destination": "control-receipts/<task_id>-<nonce>.json",
+    "writer": "Command Center only; Hong Kong runner has no receipt write permission",
+    "write_semantics": "atomic create-if-absent; an exact re-read is idempotent, any different bytes are refused"
+  },
+  "x-go-notes": [
+    "terminal_state=COMPLETE means the Command Center finished recording the verified C14 outcome, not that C14 passed.",
+    "The verdict remains PASS_SCOPED, FAIL, or BLOCKED. No receipt, evidence signature, or verdict authorizes TEST_PR, CANARY, VERIFY, DEPLOY, merge, or Production.",
+    "Absent, unreadable, malformed, tampered, task-mismatched, or artifact-mismatched Evidence produces no receipt and remains HOLD until separately investigated."
+  ]
+}
+
