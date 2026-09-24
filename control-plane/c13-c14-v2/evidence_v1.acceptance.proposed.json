@@ -33,14 +33,12 @@
         "HK_STAGING_VERIFY",
         "HK_STAGING_ROLLBACK",
         "HK_STAGING_TEST_PR",
-        "GO_C13_FIRST_ACCEPTANCE",
         "HK_ISOLATED_C14_RETEST"
       ]
     },
     "environment": {
       "enum": [
         "HK-STAGING-01",
-        "GO-ISOLATED-ACCEPTANCE-01",
         "HK-ISOLATED-ACCEPTANCE-01"
       ]
     },
@@ -121,7 +119,6 @@
     "HK_STAGING_ROLLBACK": "ROLLBACK_OK",
     "HK_STAGING_TEST_PR": "TEST_PR_OK",
     "CONTROL_PLANE_HEALTH": null,
-    "GO_C13_FIRST_ACCEPTANCE": "PASS_SCOPED",
     "HK_ISOLATED_C14_RETEST": "PASS_SCOPED"
   },
   "x-go-notes": [
@@ -133,123 +130,6 @@
     "DRAFT: C13 and C14 evidence must verify against separate qualified Runner keys and cannot authorize any release action."
   ],
   "allOf": [
-    {
-      "if": {
-        "properties": {
-          "action_id": {
-            "const": "GO_C13_FIRST_ACCEPTANCE"
-          }
-        },
-        "required": [
-          "action_id"
-        ]
-      },
-      "then": {
-        "properties": {
-          "environment": {
-            "const": "GO-ISOLATED-ACCEPTANCE-01"
-          },
-          "status": {
-            "enum": [
-              "SUCCESS",
-              "FAILED",
-              "REJECTED"
-            ]
-          },
-          "executor_result": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "candidate_sha",
-              "application_tree",
-              "test_scope_sha256",
-              "runner_id",
-              "verdict",
-              "junit_sha256",
-              "stdout_sha256",
-              "manifest_sha256",
-              "test_count",
-              "failure_count",
-              "error_count",
-              "skipped_count"
-            ],
-            "properties": {
-              "candidate_sha": {
-                "type": "string",
-                "pattern": "^[0-9a-f]{40}$"
-              },
-              "application_tree": {
-                "type": "string",
-                "pattern": "^[0-9a-f]{40}$"
-              },
-              "test_scope_sha256": {
-                "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
-              },
-              "runner_id": {
-                "type": "string",
-                "minLength": 1
-              },
-              "verdict": {
-                "enum": [
-                  "PASS_SCOPED",
-                  "FAIL",
-                  "BLOCKED"
-                ]
-              },
-              "junit_sha256": {
-                "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
-              },
-              "stdout_sha256": {
-                "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
-              },
-              "manifest_sha256": {
-                "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
-              },
-              "test_count": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "failure_count": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "error_count": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "skipped_count": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "c13_evidence_sha256": {
-                "type": "string",
-                "pattern": "^[0-9a-f]{64}$"
-              }
-            }
-          },
-          "gate_results": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "isolated_acceptance"
-            ],
-            "properties": {
-              "isolated_acceptance": {
-                "enum": [
-                  "PASS_SCOPED",
-                  "FAIL",
-                  "BLOCKED"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
     {
       "if": {
         "properties": {
@@ -396,8 +276,8 @@
     }
   ],
   "x-go-acceptance-verification": {
-    "C13": "independent registered C13 Runner key",
     "C14": "distinct registered Hong Kong isolated C14 Runner key",
-    "release_authority": false
+    "release_authority": false,
+    "C13": "Developer-side GitHub/CI evidence only; no house Task or runtime installation"
   }
 }
