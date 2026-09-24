@@ -9,6 +9,8 @@ from acceptance_gate import C13_ACTION, C14_ACTION, C13_ENVIRONMENT, C14_ENVIRON
 from house_bridge import canonical, digest, issue, read_evidence
 
 SHA, TREE, SCOPE = "a" * 40, "b" * 40, "c" * 64
+REQUEST = {"candidate_sha": SHA, "application_tree": TREE, "test_scope_sha256": SCOPE,
+           "c13_evidence_reference": "host-evidence://c13/1"}
 
 
 class Host:
@@ -99,22 +101,26 @@ class HouseBridgeTests(unittest.TestCase):
             fn()
         self.assertEqual(str(got.exception), reason)
 
-    def test_c13_house_task_and_signed_artifacts(self):
+    def test_c13_never_enters_house_bus(self):
         host = Host()
         request = {"candidate_sha": SHA, "application_tree": TREE, "test_scope_sha256": SCOPE}
-        task = issue(request, "C13", 100, host)
+        self.refuse("c13_developer_side_only", lambda: issue(request, "C13", 100, host))
+        self.assertFalse(host.tasks)
+
+    def test_c14_house_task_and_signed_artifacts(self):
+        host = Host()
+        task = issue(REQUEST, "C14", 100, host)
         self.assertEqual(set(task), {"schema_version", "task_id", "nonce", "issued_at",
                                      "expires_at", "authority", "environment", "action_id",
                                      "parameters", "signature"})
-        self.assertEqual(task["action_id"], C13_ACTION)
+        self.assertEqual(task["action_id"], C14_ACTION)
         host.complete(task)
         self.assertEqual(read_evidence(task, 101, host)["verdict"], "PASS_SCOPED")
         self.assertEqual(read_evidence(task, 10_000, host)["verdict"], "PASS_SCOPED")
 
     def test_c14_requires_verified_c13_at_issuance(self):
         host = Host()
-        request = {"candidate_sha": SHA, "application_tree": TREE, "test_scope_sha256": SCOPE,
-                   "c13_evidence_reference": "host-evidence://c13/1"}
+        request = REQUEST
         host.c13_verified = False
         self.refuse("c13_prerequisite", lambda: issue(request, "C14", 100, host))
         self.assertFalse(host.tasks)
@@ -127,8 +133,8 @@ class HouseBridgeTests(unittest.TestCase):
 
     def test_task_signature_and_readback_refuse_before_acceptance(self):
         host = Host()
-        request = {"candidate_sha": SHA, "application_tree": TREE, "test_scope_sha256": SCOPE}
-        task = issue(request, "C13", 100, host)
+        request = REQUEST
+        task = issue(request, "C14", 100, host)
         host.complete(task)
         host.tasks[task["task_id"]] = b"altered"
         self.refuse("task_readback", lambda: read_evidence(task, 101, host))
@@ -136,13 +142,12 @@ class HouseBridgeTests(unittest.TestCase):
             def verify_house_task(self, raw, signature):
                 return False
         bad = BadSigner()
-        self.refuse("task_signature", lambda: issue(request, "C13", 100, bad))
+        self.refuse("task_signature", lambda: issue(request, "C14", 100, bad))
         self.assertFalse(bad.tasks)
 
     def test_evidence_and_raw_artifact_tamper_refuse(self):
         host = Host()
-        task = issue({"candidate_sha": SHA, "application_tree": TREE,
-                      "test_scope_sha256": SCOPE}, "C13", 100, host)
+        task = issue(REQUEST, "C14", 100, host)
         host.complete(task)
         key = (task["task_id"], task["nonce"])
         host.artifacts[(*key, "junit")] = b"<testsuite tests='0'/>"
@@ -156,8 +161,8 @@ class HouseBridgeTests(unittest.TestCase):
     def test_no_deploy_action_or_caller_command(self):
         host = Host()
         request = {"candidate_sha": SHA, "application_tree": TREE, "test_scope_sha256": SCOPE}
-        self.refuse("request_fields", lambda: issue({**request, "command": "deploy"}, "C13", 100, host))
-        self.refuse("role", lambda: issue(request, "HK_STAGING_DEPLOY", 100, host))
+        self.refuse("request_fields", lambda: issue({**REQUEST, "command": "deploy"}, "C14", 100, host))
+        self.refuse("c13_developer_side_only", lambda: issue(request, "HK_STAGING_DEPLOY", 100, host))
         self.assertFalse(host.tasks)
 
     def test_proposed_house_contract_preserves_legacy_environment(self):
@@ -166,13 +171,12 @@ class HouseBridgeTests(unittest.TestCase):
         evidence = json.loads((root / "evidence_v1.acceptance.proposed.json").read_text())
         legacy = {"CONTROL_PLANE_HEALTH", "HK_STAGING_CANARY", "HK_STAGING_DEPLOY",
                   "HK_STAGING_VERIFY", "HK_STAGING_ROLLBACK", "HK_STAGING_TEST_PR"}
-        self.assertEqual(set(task["properties"]["action_id"]["enum"]), legacy | {C13_ACTION, C14_ACTION})
-        self.assertEqual(set(evidence["properties"]["action_id"]["enum"]), legacy | {C13_ACTION, C14_ACTION})
+        self.assertEqual(set(task["properties"]["action_id"]["enum"]), legacy | {C14_ACTION})
+        self.assertEqual(set(evidence["properties"]["action_id"]["enum"]), legacy | {C14_ACTION})
         self.assertEqual(task["properties"]["signature"]["pattern"], "^[0-9a-f]{128}$")
         for schema in (task, evidence):
             conditions = schema["allOf"]
-            for action, environment in ((C13_ACTION, C13_ENVIRONMENT),
-                                        (C14_ACTION, C14_ENVIRONMENT)):
+            for action, environment in ((C14_ACTION, C14_ENVIRONMENT),):
                 rule = next(r for r in conditions if
                             r["if"]["properties"]["action_id"].get("const") == action)
                 self.assertEqual(rule["then"]["properties"]["environment"]["const"], environment)
