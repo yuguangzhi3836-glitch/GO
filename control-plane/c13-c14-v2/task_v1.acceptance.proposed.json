@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "go://control-plane/command-center-state-v1/contracts/task_v1.schema.json",
   "title": "GO Command Center Signed Task V1 — C14 acceptance proposal",
-  "description": "The only Execution Authority in the Control Plane. Command Center derives every parameter, signs the canonical form with the existing task-manifest signing key, and publishes it byte-identically to chenzhenxi1-sudo/go-control-tasks under tasks/<task_id>.json. DRAFT: acceptance actions are not installed on the live bus.",
+  "description": "The only Execution Authority in the Control Plane. Command Center derives every parameter, signs the canonical form with the existing task-manifest signing key, and publishes it byte-identically to chenzhenxi1-sudo/go-control-tasks under tasks/<task_id>.json. DRAFT: the isolated C14 action is not installed on the live bus.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -116,7 +116,7 @@
     "The agent allows exactly one executor attempt per task. A task that fails is never retried; a new task is required.",
     "History contains Tasks whose parameter sets predate the current contract. They are preserved for lineage and must be read as LEGACY_OR_UNKNOWN, never as current proof.",
     "The existence of a Task for an action does not mean that action is requestable. See request_v1.schema.json for the difference between known capability and enabled request action.",
-    "DRAFT: the new acceptance actions require separate registered runners and never reuse HK-STAGING-01 deployment execution."
+    "DRAFT: the isolated C14 action requires its own registered Runner and never reuse HK-STAGING-01 deployment execution."
   ],
   "allOf": [
     {
