@@ -3,6 +3,7 @@ import copy
 import hashlib
 import json
 import unittest
+import xml.etree.ElementTree as ET
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
@@ -96,11 +97,21 @@ class Host:
 
     def complete(self, task, verdict="PASS_SCOPED"):
         task_id, nonce = task["task_id"], task["nonce"]
+        inventory = json.loads((Path(__file__).parent / "c14_frozen_test_inventory.json").read_text())
+        root = ET.Element("testsuites")
+        for suite_name in ("pytest", "isolated_postgres"):
+            cases = inventory[suite_name]
+            suite = ET.SubElement(root, "testsuite", name=suite_name, tests=str(len(cases)),
+                                  failures="1" if verdict == "FAIL" and suite_name == "pytest" else "0",
+                                  errors="0", skipped="0")
+            for index, case in enumerate(cases):
+                child = ET.SubElement(suite, "testcase", **case)
+                if verdict == "FAIL" and suite_name == "pytest" and index == 0:
+                    ET.SubElement(child, "failure")
+        junit = ET.tostring(root)
         if verdict == "PASS_SCOPED":
-            junit = b"<testsuite tests='1' failures='0' errors='0' skipped='0'/>"
             stdout, failures, status, gate = b"1 passed\n", 0, "SUCCESS", "PASS_SCOPED"
         elif verdict == "FAIL":
-            junit = b"<testsuite tests='1' failures='1' errors='0' skipped='0'/>"
             stdout, failures, status, gate = b"1 failed\n", 1, "FAILED", "FAIL"
         else:
             raise ValueError("unsupported test verdict")
@@ -112,7 +123,7 @@ class Host:
         blobs = {"junit": junit, "stdout": stdout, "manifest": canonical(manifest)}
         for name, raw in blobs.items():
             self.artifacts[(task_id, nonce, name)] = raw
-        result = {**task["parameters"], "verdict": verdict, "test_count": 1,
+        result = {**task["parameters"], "verdict": verdict, "test_count": 71,
                   "failure_count": failures, "error_count": 0, "skipped_count": 0,
                   **{name + "_sha256": digest(raw) for name, raw in blobs.items()}}
         evidence = {"schema_version": "1", "task_id": task_id, "nonce": nonce,
