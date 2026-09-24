@@ -15,7 +15,7 @@ def run_probe():
     # Fixed request and fixed socket. No network URL, recipient, command, or secret is accepted as input.
     s=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM); s.settimeout(120); s.connect(SOCKET)
     try:
-        s.sendall(b'{"action":"registration-email-config-verify-v1"}\\n')
+        s.sendall(b'{"action":"registration-email-config-verify-v1"}\n')
         raw=s.makefile("rb").readline(4096)
     finally: s.close()
     result=json.loads(raw.decode("utf-8"))
