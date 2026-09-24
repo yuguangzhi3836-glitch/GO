@@ -27,6 +27,7 @@ jobs:
     env:
       C13_CANDIDATE_SHA: 4ddb0e5eef6f80d446d0b9c3bb973b5392906ade
       C13_APPLICATION_TREE: d374db789d6d9a8f34af5d4ebb0828031afbe05b
+      GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c13_isolated
       PYTHONDONTWRITEBYTECODE: '1'
       DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c13_isolated
     steps:
@@ -54,7 +55,7 @@ jobs:
           PYTHONPATH: src:.
         run: |
           mkdir -p "$RUNNER_TEMP/c13"
-          set -o pipefail
+          set -euo pipefail
           pytest -q --junitxml="$RUNNER_TEMP/c13/JUNIT.xml" tests/test_omnichannel_payment_finance_os.py tests/test_p0_0100_real_external_execution.py tests/test_unified_money_movement_finance_close.py 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
       - name: Bind raw evidence
         if: always()
@@ -73,6 +74,7 @@ jobs:
                   'test_scope':scope,'test_scope_sha256':hashlib.sha256(scope.encode()).hexdigest(),
                   'workflow_head':os.environ['GITHUB_SHA'],'C13':'PENDING_INDEPENDENT_REVIEW',
                   'C14':'NOT_EXECUTED','environment':'developer-side isolated CI',
+                  'test_database_backend':'postgresql' if os.environ.get('GO_TEST_DATABASE_URL','').startswith('postgresql') else 'sqlite',
                   'files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest()
                            for p in out.iterdir() if p.is_file()}}
           (out/'C13_SOURCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
@@ -128,7 +130,7 @@ jobs:
           PYTHONPATH: src:.
         run: |
           mkdir -p "$RUNNER_TEMP/c13"
-          set -o pipefail
+          set -euo pipefail
           pytest -q --junitxml="$RUNNER_TEMP/c13/JUNIT.xml" tests/test_catalog_scope_nationwide.py tests/test_consumer_registration_open.py tests/test_nationwide_registration_full_app.py tests/test_registration_terms_admission.py tests/test_registration_terms_registry.py tests/test_supplier_registration_nationwide.py 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
           node --test tests/test_catalog_scope_nationwide_ui.cjs tests/test_consumer_registration_ui.cjs tests/test_registration_terms_reader.cjs tests/test_supplier_registration_ui.cjs 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
       - name: Bind raw evidence
@@ -148,6 +150,7 @@ jobs:
                   'test_scope':scope,'test_scope_sha256':hashlib.sha256(scope.encode()).hexdigest(),
                   'workflow_head':os.environ['GITHUB_SHA'],'C13':'PENDING_INDEPENDENT_REVIEW',
                   'C14':'NOT_EXECUTED','environment':'developer-side isolated CI',
+                  'test_database_backend':'postgresql' if os.environ.get('GO_TEST_DATABASE_URL','').startswith('postgresql') else 'sqlite',
                   'files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest()
                            for p in out.iterdir() if p.is_file()}}
           (out/'C13_SOURCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
@@ -203,7 +206,7 @@ jobs:
           PYTHONPATH: src:.
         run: |
           mkdir -p "$RUNNER_TEMP/c13"
-          set -o pipefail
+          set -euo pipefail
           pytest -q --junitxml="$RUNNER_TEMP/c13/JUNIT.xml" tests/test_account_holder_http_integration.py tests/test_consumer_ota_acceptance_contract.py tests/test_consumer_ota_security_boundaries.py tests/test_external_orders_in_go_trips.py tests/test_supplier_import_migration.py tests/test_supplier_onboarding_and_member_comparison.py tests/test_c07_connection_transaction_boundaries.py 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
       - name: Bind raw evidence
         if: always()
@@ -222,6 +225,7 @@ jobs:
                   'test_scope':scope,'test_scope_sha256':hashlib.sha256(scope.encode()).hexdigest(),
                   'workflow_head':os.environ['GITHUB_SHA'],'C13':'PENDING_INDEPENDENT_REVIEW',
                   'C14':'NOT_EXECUTED','environment':'developer-side isolated CI',
+                  'test_database_backend':'postgresql' if os.environ.get('GO_TEST_DATABASE_URL','').startswith('postgresql') else 'sqlite',
                   'files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest()
                            for p in out.iterdir() if p.is_file()}}
           (out/'C13_SOURCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
@@ -277,7 +281,7 @@ jobs:
           PYTHONPATH: src:.
         run: |
           mkdir -p "$RUNNER_TEMP/c13"
-          set -o pipefail
+          set -euo pipefail
           pytest -q --junitxml="$RUNNER_TEMP/c13/JUNIT.xml" tests/flight/test_c02_airport_resolver.py 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
           node --test tests_frontend/date_range.test.mjs 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
           node --check frontend/consumer/app.js 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
@@ -300,6 +304,7 @@ jobs:
                   'test_scope':scope,'test_scope_sha256':hashlib.sha256(scope.encode()).hexdigest(),
                   'workflow_head':os.environ['GITHUB_SHA'],'C13':'PENDING_INDEPENDENT_REVIEW',
                   'C14':'NOT_EXECUTED','environment':'developer-side isolated CI',
+                  'test_database_backend':'postgresql' if os.environ.get('GO_TEST_DATABASE_URL','').startswith('postgresql') else 'sqlite',
                   'files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest()
                            for p in out.iterdir() if p.is_file()}}
           (out/'C13_SOURCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
