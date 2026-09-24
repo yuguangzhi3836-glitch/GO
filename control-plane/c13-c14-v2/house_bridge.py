@@ -11,8 +11,7 @@ import json
 import re
 import xml.etree.ElementTree as ET
 
-from acceptance_gate import (C13_ACTION, C14_ACTION, C13_ENVIRONMENT,
-                             C14_ENVIRONMENT, Refusal, c13_admission, c14_admission)
+from acceptance_gate import (C14_ACTION, C14_ENVIRONMENT, Refusal, c14_admission)
 
 HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 TASK_FIELDS = {"schema_version", "task_id", "nonce", "issued_at", "expires_at",
@@ -41,32 +40,32 @@ def iso(epoch):
 
 def _params(admission):
     pair = (admission.get("action_id"), admission.get("environment"))
-    if pair not in ((C13_ACTION, C13_ENVIRONMENT), (C14_ACTION, C14_ENVIRONMENT)):
+    if pair != (C14_ACTION, C14_ENVIRONMENT):
         raise Refusal("acceptance_action_environment")
-    expected = COMMON | (set() if pair[0] == C13_ACTION else {"c13_evidence_sha256"})
+    expected = COMMON | {"c13_evidence_sha256"}
     if type(admission) is not dict or set(admission) != expected | {
             "action_id", "environment", "network", "providers", "payments", "deployment", "production"}:
         raise Refusal("admission_schema")
     if any(admission[k] != "disabled" for k in ("network", "providers", "payments", "deployment", "production")):
         raise Refusal("capability")
-    if pair[0] == C14_ACTION and not HEX64.fullmatch(admission["c13_evidence_sha256"]):
+    if not HEX64.fullmatch(admission["c13_evidence_sha256"]):
         raise Refusal("c13_prerequisite")
     return {k: admission[k] for k in expected}
 
 
 def _task_identity(admission):
-    return "go-" + ("c13" if admission["action_id"] == C13_ACTION else "c14") + "-acceptance-" + digest(
+    return "go-c14-acceptance-" + digest(
         canonical({"action_id": admission["action_id"], "environment": admission["environment"],
                    "parameters": _params(admission)}))[:32]
 
 
 def issue(request, role, epoch, host):
     """Use the installed house envelope, never any deployment action or argument."""
-    if role not in ("C13", "C14"):
-        raise Refusal("role")
-    admission = c13_admission(request, host) if role == "C13" else c14_admission(request, host)
+    if role != "C14":
+        raise Refusal("c13_developer_side_only")
+    admission = c14_admission(request, host)
     params = _params(admission)
-    if role == "C14" and host.verify_c13_prerequisite(admission) is not True:
+    if host.verify_c13_prerequisite(admission) is not True:
         raise Refusal("c13_prerequisite")
     if type(epoch) is not int or epoch < 0:
         raise Refusal("task_time")
@@ -98,7 +97,7 @@ def read_evidence(task, epoch, host):
     unsigned = {k: v for k, v in task.items() if k != "signature"}
     if (task["authority"] != "GO-COMMAND-CENTER" or task["schema_version"] != "1" or
             (task["action_id"], task["environment"]) not in
-            ((C13_ACTION, C13_ENVIRONMENT), (C14_ACTION, C14_ENVIRONMENT))):
+            ((C14_ACTION, C14_ENVIRONMENT),)):
         raise Refusal("task_schema")
     if host.verify_house_task(canonical(unsigned), task["signature"]) is not True:
         raise Refusal("task_signature")
@@ -140,7 +139,7 @@ def read_evidence(task, epoch, host):
     if not issued <= started <= expires or not started <= completed <= started + 3600:
         raise Refusal("evidence_time")
     result = evidence["executor_result"]
-    fields = RESULT | ({"c13_evidence_sha256"} if task["action_id"] == C14_ACTION else set())
+    fields = RESULT | {"c13_evidence_sha256"}
     if type(result) is not dict or set(result) != fields:
         raise Refusal("result_schema")
     if any(result[k] != task["parameters"][k] for k in fields & set(task["parameters"])):
