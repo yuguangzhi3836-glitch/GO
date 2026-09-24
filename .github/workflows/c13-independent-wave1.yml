@@ -1,0 +1,313 @@
+name: C13 independent developer-side wave 1
+
+on:
+  pull_request:
+    branches: [main]
+    paths: [.github/workflows/c13-independent-wave1.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  c13-pr235:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_c13_isolated
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_c13_isolated"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      C13_CANDIDATE_SHA: 4ddb0e5eef6f80d446d0b9c3bb973b5392906ade
+      C13_APPLICATION_TREE: d374db789d6d9a8f34af5d4ebb0828031afbe05b
+      PYTHONDONTWRITEBYTECODE: '1'
+      DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c13_isolated
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 4ddb0e5eef6f80d446d0b9c3bb973b5392906ade
+          persist-credentials: false
+      - name: Bind immutable candidate
+        run: |
+          test "$(git rev-parse HEAD)" = "$C13_CANDIDATE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$C13_APPLICATION_TREE"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test dependencies
+        working-directory: application
+        run: |
+          python -m pip install -e '.[dev]'
+      - name: Execute frozen scope
+        working-directory: application
+        env:
+          PYTHONPATH: src:.
+        run: |
+          mkdir -p "$RUNNER_TEMP/c13"
+          set -o pipefail
+          pytest -q --junitxml="$RUNNER_TEMP/c13/JUNIT.xml" tests/test_omnichannel_payment_finance_os.py tests/test_p0_0100_real_external_execution.py tests/test_unified_money_movement_finance_close.py 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
+      - name: Bind raw evidence
+        if: always()
+        env:
+          C13_PR: '235'
+          C13_SCOPE: "pytest -q --junitxml=\"$RUNNER_TEMP/c13/JUNIT.xml\" tests/test_omnichannel_payment_finance_os.py tests/test_p0_0100_real_external_execution.py tests/test_unified_money_movement_finance_close.py"
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'c13'
+          out.mkdir(exist_ok=True)
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          tree=subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
+          scope=os.environ['C13_SCOPE']
+          report={'candidate_sha':sha,'application_tree':tree,'pr':int(os.environ['C13_PR']),
+                  'test_scope':scope,'test_scope_sha256':hashlib.sha256(scope.encode()).hexdigest(),
+                  'workflow_head':os.environ['GITHUB_SHA'],'C13':'PENDING_INDEPENDENT_REVIEW',
+                  'C14':'NOT_EXECUTED','environment':'developer-side isolated CI',
+                  'files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest()
+                           for p in out.iterdir() if p.is_file()}}
+          (out/'C13_SOURCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c13-pr235-4ddb0e5eef6f
+          path: ${{ runner.temp }}/c13
+          if-no-files-found: error
+          retention-days: 90
+  c13-pr227:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_c13_isolated
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_c13_isolated"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      C13_CANDIDATE_SHA: e6df6aca0779cdd6e17c021c7e257119d7b9a395
+      C13_APPLICATION_TREE: c17fa6902e0ffaabe9f69bd2d65c120c8a2da5ed
+      PYTHONDONTWRITEBYTECODE: '1'
+      DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c13_isolated
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: e6df6aca0779cdd6e17c021c7e257119d7b9a395
+          persist-credentials: false
+      - name: Bind immutable candidate
+        run: |
+          test "$(git rev-parse HEAD)" = "$C13_CANDIDATE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$C13_APPLICATION_TREE"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test dependencies
+        working-directory: application
+        run: |
+          python -m pip install -e '.[dev]'
+      - name: Execute frozen scope
+        working-directory: application
+        env:
+          PYTHONPATH: src:.
+        run: |
+          mkdir -p "$RUNNER_TEMP/c13"
+          set -o pipefail
+          pytest -q --junitxml="$RUNNER_TEMP/c13/JUNIT.xml" tests/test_catalog_scope_nationwide.py tests/test_consumer_registration_open.py tests/test_nationwide_registration_full_app.py tests/test_registration_terms_admission.py tests/test_registration_terms_registry.py tests/test_supplier_registration_nationwide.py 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
+          node --test tests/test_catalog_scope_nationwide_ui.cjs tests/test_consumer_registration_ui.cjs tests/test_registration_terms_reader.cjs tests/test_supplier_registration_ui.cjs 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
+      - name: Bind raw evidence
+        if: always()
+        env:
+          C13_PR: '227'
+          C13_SCOPE: "pytest -q --junitxml=\"$RUNNER_TEMP/c13/JUNIT.xml\" tests/test_catalog_scope_nationwide.py tests/test_consumer_registration_open.py tests/test_nationwide_registration_full_app.py tests/test_registration_terms_admission.py tests/test_registration_terms_registry.py tests/test_supplier_registration_nationwide.py\nnode --test tests/test_catalog_scope_nationwide_ui.cjs tests/test_consumer_registration_ui.cjs tests/test_registration_terms_reader.cjs tests/test_supplier_registration_ui.cjs"
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'c13'
+          out.mkdir(exist_ok=True)
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          tree=subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
+          scope=os.environ['C13_SCOPE']
+          report={'candidate_sha':sha,'application_tree':tree,'pr':int(os.environ['C13_PR']),
+                  'test_scope':scope,'test_scope_sha256':hashlib.sha256(scope.encode()).hexdigest(),
+                  'workflow_head':os.environ['GITHUB_SHA'],'C13':'PENDING_INDEPENDENT_REVIEW',
+                  'C14':'NOT_EXECUTED','environment':'developer-side isolated CI',
+                  'files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest()
+                           for p in out.iterdir() if p.is_file()}}
+          (out/'C13_SOURCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c13-pr227-e6df6aca0779
+          path: ${{ runner.temp }}/c13
+          if-no-files-found: error
+          retention-days: 90
+  c13-pr217:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_c13_isolated
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_c13_isolated"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      C13_CANDIDATE_SHA: 0c3da07bc32009dee16c69125111f8e4ea9d546b
+      C13_APPLICATION_TREE: f6d329352dd8484010036448810a927d5eec4be7
+      PYTHONDONTWRITEBYTECODE: '1'
+      DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c13_isolated
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 0c3da07bc32009dee16c69125111f8e4ea9d546b
+          persist-credentials: false
+      - name: Bind immutable candidate
+        run: |
+          test "$(git rev-parse HEAD)" = "$C13_CANDIDATE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$C13_APPLICATION_TREE"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test dependencies
+        working-directory: application
+        run: |
+          python -m pip install -e '.[dev]'
+      - name: Execute frozen scope
+        working-directory: application
+        env:
+          PYTHONPATH: src:.
+        run: |
+          mkdir -p "$RUNNER_TEMP/c13"
+          set -o pipefail
+          pytest -q --junitxml="$RUNNER_TEMP/c13/JUNIT.xml" tests/test_account_holder_http_integration.py tests/test_consumer_ota_acceptance_contract.py tests/test_consumer_ota_security_boundaries.py tests/test_external_orders_in_go_trips.py tests/test_supplier_import_migration.py tests/test_supplier_onboarding_and_member_comparison.py tests/test_c07_connection_transaction_boundaries.py 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
+      - name: Bind raw evidence
+        if: always()
+        env:
+          C13_PR: '217'
+          C13_SCOPE: "pytest -q --junitxml=\"$RUNNER_TEMP/c13/JUNIT.xml\" tests/test_account_holder_http_integration.py tests/test_consumer_ota_acceptance_contract.py tests/test_consumer_ota_security_boundaries.py tests/test_external_orders_in_go_trips.py tests/test_supplier_import_migration.py tests/test_supplier_onboarding_and_member_comparison.py tests/test_c07_connection_transaction_boundaries.py"
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'c13'
+          out.mkdir(exist_ok=True)
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          tree=subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
+          scope=os.environ['C13_SCOPE']
+          report={'candidate_sha':sha,'application_tree':tree,'pr':int(os.environ['C13_PR']),
+                  'test_scope':scope,'test_scope_sha256':hashlib.sha256(scope.encode()).hexdigest(),
+                  'workflow_head':os.environ['GITHUB_SHA'],'C13':'PENDING_INDEPENDENT_REVIEW',
+                  'C14':'NOT_EXECUTED','environment':'developer-side isolated CI',
+                  'files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest()
+                           for p in out.iterdir() if p.is_file()}}
+          (out/'C13_SOURCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c13-pr217-0c3da07bc320
+          path: ${{ runner.temp }}/c13
+          if-no-files-found: error
+          retention-days: 90
+  c13-pr216:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_c13_isolated
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_c13_isolated"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      C13_CANDIDATE_SHA: ff0005dacc6e3aa6d6ea27003a3ccd5deb4f1de3
+      C13_APPLICATION_TREE: 69f8ba35d8f483b27142e6a86cb35fa9993ec70a
+      PYTHONDONTWRITEBYTECODE: '1'
+      DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c13_isolated
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ff0005dacc6e3aa6d6ea27003a3ccd5deb4f1de3
+          persist-credentials: false
+      - name: Bind immutable candidate
+        run: |
+          test "$(git rev-parse HEAD)" = "$C13_CANDIDATE_SHA"
+          test "$(git rev-parse HEAD:application)" = "$C13_APPLICATION_TREE"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test dependencies
+        working-directory: application
+        run: |
+          python -m pip install -e '.[dev]'
+      - name: Execute frozen scope
+        working-directory: application
+        env:
+          PYTHONPATH: src:.
+        run: |
+          mkdir -p "$RUNNER_TEMP/c13"
+          set -o pipefail
+          pytest -q --junitxml="$RUNNER_TEMP/c13/JUNIT.xml" tests/flight/test_c02_airport_resolver.py 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
+          node --test tests_frontend/date_range.test.mjs 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
+          node --check frontend/consumer/app.js 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
+          node --check frontend/consumer/flight-journeys.js 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
+          node mobile/go-app/scripts/contract-check.mjs 2>&1 | tee -a "$RUNNER_TEMP/c13/stdout.log"
+      - name: Bind raw evidence
+        if: always()
+        env:
+          C13_PR: '216'
+          C13_SCOPE: "pytest -q --junitxml=\"$RUNNER_TEMP/c13/JUNIT.xml\" tests/flight/test_c02_airport_resolver.py\nnode --test tests_frontend/date_range.test.mjs\nnode --check frontend/consumer/app.js\nnode --check frontend/consumer/flight-journeys.js\nnode mobile/go-app/scripts/contract-check.mjs"
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'c13'
+          out.mkdir(exist_ok=True)
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          tree=subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
+          scope=os.environ['C13_SCOPE']
+          report={'candidate_sha':sha,'application_tree':tree,'pr':int(os.environ['C13_PR']),
+                  'test_scope':scope,'test_scope_sha256':hashlib.sha256(scope.encode()).hexdigest(),
+                  'workflow_head':os.environ['GITHUB_SHA'],'C13':'PENDING_INDEPENDENT_REVIEW',
+                  'C14':'NOT_EXECUTED','environment':'developer-side isolated CI',
+                  'files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest()
+                           for p in out.iterdir() if p.is_file()}}
+          (out/'C13_SOURCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c13-pr216-ff0005dacc6e
+          path: ${{ runner.temp }}/c13
+          if-no-files-found: error
+          retention-days: 90
