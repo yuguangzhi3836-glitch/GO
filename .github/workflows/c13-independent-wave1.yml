@@ -101,14 +101,14 @@ jobs:
           --health-cmd "pg_isready -U go_ci -d go_c13_isolated"
           --health-interval 5s --health-timeout 5s --health-retries 20
     env:
-      C13_CANDIDATE_SHA: e6df6aca0779cdd6e17c021c7e257119d7b9a395
-      C13_APPLICATION_TREE: c17fa6902e0ffaabe9f69bd2d65c120c8a2da5ed
+      C13_CANDIDATE_SHA: 9f9fcf81570ae98a952ce48d34eb14c6cbb73209
+      C13_APPLICATION_TREE: 3898b17f894e243576f7519087d68073795310ab
       PYTHONDONTWRITEBYTECODE: '1'
       DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c13_isolated
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: e6df6aca0779cdd6e17c021c7e257119d7b9a395
+          ref: 9f9fcf81570ae98a952ce48d34eb14c6cbb73209
           persist-credentials: false
       - name: Bind immutable candidate
         run: |
@@ -158,7 +158,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: c13-pr227-e6df6aca0779
+          name: c13-pr227-9f9fcf81570a
           path: ${{ runner.temp }}/c13
           if-no-files-found: error
           retention-days: 90
