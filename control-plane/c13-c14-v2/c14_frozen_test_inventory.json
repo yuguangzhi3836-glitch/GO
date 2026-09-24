@@ -1,0 +1,290 @@
+{
+  "isolated_postgres": [
+    {
+      "classname": "",
+      "name": "change-different_key"
+    },
+    {
+      "classname": "",
+      "name": "change-kill_after_money"
+    },
+    {
+      "classname": "",
+      "name": "change-kill_before_bridge"
+    },
+    {
+      "classname": "",
+      "name": "change-recover"
+    },
+    {
+      "classname": "",
+      "name": "change-same_key"
+    },
+    {
+      "classname": "",
+      "name": "checkout-different_key"
+    },
+    {
+      "classname": "",
+      "name": "checkout-kill_after_money"
+    },
+    {
+      "classname": "",
+      "name": "checkout-kill_before_bridge"
+    },
+    {
+      "classname": "",
+      "name": "checkout-recover"
+    },
+    {
+      "classname": "",
+      "name": "checkout-same_key"
+    }
+  ],
+  "pytest": [
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_active_resource_blocks_concurrent_callback_then_replays[False]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_active_resource_blocks_concurrent_callback_then_replays[True]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_after_committed_money_failure_retains_resource_and_recovers_same_root[FLIGHT_CHECKOUT]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_after_committed_money_failure_retains_resource_and_recovers_same_root[FLIGHT_EXECUTE_CHANGE]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_binding_failure_never_invokes_business[False]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_binding_failure_never_invokes_business[True]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_change_expiry_validation_is_safely_retryable"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_checkout_resumes_each_committed_boundary[AUTHORIZATION]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_checkout_resumes_each_committed_boundary[CAPTURE]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_checkout_resumes_each_committed_boundary[before_bridge]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_checkout_resumes_each_committed_boundary[create_intent]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_checkout_resumes_each_committed_boundary[execute]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_checkout_resumes_each_committed_boundary[simulate_result]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_completion_failure_replays_without_repeating_money[False]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_completion_failure_replays_without_repeating_money[True]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_different_key_can_only_acquire_quiescent_recovery_and_fences_old_request"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_explicit_absent_or_foreign_validation_releases_claim[c11-flight-owner]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_explicit_absent_or_foreign_validation_releases_claim[missing-owner]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_failure_recording_unavailable_keeps_running_fence"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_legacy_completed_unbound_claim_replays_without_execution[FLIGHT_CHECKOUT]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_legacy_completed_unbound_claim_replays_without_execution[FLIGHT_EXECUTE_CHANGE]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_legacy_unprovable_response_is_held"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[amount]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[attempt_external]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[binding]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[currency]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[intent_unknown]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[movement_key]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[movement_unknown]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[parent]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[payer]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_released_change_cannot_revive_under_same_or_new_key"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_resource_guard_refuses_changed_payload_on_different_key[order_id]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_resource_guard_refuses_changed_payload_on_different_key[payment_method_id]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_resource_guard_refuses_changed_payload_on_different_key[user_id]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_stale_execution_token_cannot_write_request_or_resource[COMPLETE]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_stale_execution_token_cannot_write_request_or_resource[RECOVERY_REQUIRED]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_stale_execution_token_cannot_write_request_or_resource[RELEASE]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_unknown_durable_response_code_is_never_replayed[request]"
+    },
+    {
+      "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+      "name": "test_unknown_durable_response_code_is_never_replayed[resource]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_changed_order_or_plan_cannot_borrow_prior_consent"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_concurrent_opposite_resolution_cannot_change_money_decision"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_crash_after_money_recovers_once_and_rejects_opposite_decision[FAILED]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_crash_after_money_recovers_once_and_rejects_opposite_decision[TICKETED]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_http_requires_selection_and_binds_exact_confirmed_quote"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_invalid_selection_or_date_order_cannot_create_plan[changes0]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_invalid_selection_or_date_order_cannot_create_plan[changes1]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_invalid_selection_or_date_order_cannot_create_plan[changes2]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_invalid_selection_or_date_order_cannot_create_plan[changes3]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_invalid_selection_or_date_order_cannot_create_plan[changes4]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_old_resolution_replay_cannot_overwrite_next_change"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_selected_legs_replace_only_their_passenger_tickets_then_refund[MULTI_CITY-changes2]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_selected_legs_replace_only_their_passenger_tickets_then_refund[MULTI_CITY-changes3]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_selected_legs_replace_only_their_passenger_tickets_then_refund[ROUND_TRIP-changes0]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_selected_legs_replace_only_their_passenger_tickets_then_refund[ROUND_TRIP-changes1]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_unaccepted_multi_leg_quote_never_authorizes_money[currency]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_unaccepted_multi_leg_quote_never_authorizes_money[false_consent]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_unaccepted_multi_leg_quote_never_authorizes_money[missing]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_unaccepted_multi_leg_quote_never_authorizes_money[wrong_amount]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_unaccepted_multi_leg_quote_never_authorizes_money[wrong_hash]"
+    },
+    {
+      "classname": "tests.test_depth48_flight_changes",
+      "name": "test_wrong_coupon_count_and_foreign_receipt_never_complete_order"
+    }
+  ]
+}
