@@ -64,3 +64,24 @@ environment contract through normal review, and provide a separate restricted
 acceptance executor before writing any real bus object. Passing a proposal
 directly to `go-control-tasks` is invalid. The in-memory `publish_task` test
 does not perform or prove that integration.
+
+## House envelope adapter proposal
+
+`house_bridge.py` now derives the installed house Task V1 field layout
+(`schema_version`, `task_id`, `nonce`, UTC issue/expiry, Command Center
+`authority`, `environment`, `action_id`, closed `parameters`, Ed25519-format
+hex `signature`). It calls the C13/C14 admission rules, asks the host to
+reverify the C13 prerequisite before issuing C14, verifies the signature
+before writing, and requires byte-identical readback. Its evidence reader
+checks the signed house Evidence V1 fields, task ID and nonce, acceptance
+Runner identity, source and scope, raw artifact hashes, manifest and JUnit.
+The host methods are interfaces; the unit-test host is memory only and uses
+test signatures, not production keys.
+
+`task_v1.acceptance.proposed.json` and
+`evidence_v1.acceptance.proposed.json` preserve the existing six actions in
+`HK-STAGING-01` and propose two distinct acceptance actions and isolated
+environments. These contracts remain uninstalled. The existing HK agent
+still rejects these actions; no acceptance executor or bus writer is wired.
+The earlier `task_evidence.py` internal envelope remains a test-only prototype
+and must never be published to the real bus.
