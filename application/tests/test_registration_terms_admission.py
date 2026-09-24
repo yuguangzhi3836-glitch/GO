@@ -43,9 +43,12 @@ from test_registration_terms_registry import registry_copy, approve_fixture
 from go_hotel.db.models import AuditEventRow
 
 @pytest.mark.parametrize('audience',['consumer','supplier'])
-def test_real_registry_synthetic_approved_text_binds_persisted_consent(full_application,registry_copy,audience):
+def test_real_registry_synthetic_approved_text_binds_persisted_consent(full_application,registry_copy,monkeypatch,audience):
     # Fictional test texts; shipped drafts are never approved by this test.
     approve_fixture(registry_copy)
+    from go_hotel.core.config import settings
+    # This test models a verified synthetic delivery runtime; the shipped gate stays disabled.
+    monkeypatch.setattr(settings, 'registration_verification_enabled', True)
     client,data=full_application;factory=data[4]
     route='/v1/consumer/auth/registration' if audience=='consumer' else '/bff/auth/supplier/registration-terms'
     policy=client.get(route).json()['data']
