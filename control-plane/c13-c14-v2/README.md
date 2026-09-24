@@ -45,3 +45,13 @@ can begin through development-side CI independently of them. C14 cannot be
 claimed until the separate Hong Kong Runner, task/evidence bus, signing,
 Command Center receipt route/readback and scope matching are shown by actual
 execution. All PRs remain Draft, with merge and deployment on HOLD.
+
+## 2026-09-24 source candidate added (still HOLD)
+
+`c13_attestation.py` freezes #240 commit/tree/scope and GitHub Actions artifact 10805227694 (ZIP SHA-256 `44b1dca3444296ff4f9ad52c323c3bb325ca3d143efb022b6785ac07047ad777`). It checks all 71 payload digests, JUnit 61/61, isolated PostgreSQL 18.4 recovery 10/10, then requires a **registered independent reviewer** P-256 signature over an exact verdict record and an independently supplied public key. No project reviewer private key, signed C13 verdict or Command Center registration is present in this Draft. A synthetic test signature must never be published as a real verdict.
+
+`c14_isolated_runner.py` is a source-bound runner core. Its host must provide a persistent single-use Task claim, verify the Command Center signature and Task readback, perform an offline checkout of the fixed source, run only the frozen suite inside a disposable PostgreSQL 18.4 sandbox with suppliers, payments, deployment, production and outbound network disabled, sign Evidence with the separately registered Hong Kong Runner key, and atomically publish raw artifacts then Evidence. The core alone is not an installed host adapter or sandbox. The installed Agent/Bridge allowlists and evidence storage must be extended through controlled installation and readback against the live versions including the #245 repair.
+
+The C14 Command Center receipt contract now uses **HSM P-256 ECDSA SHA-256, base64 DER**. Its trusted public key and fingerprint are host configuration, never repository data. This does not change the existing Ed25519 Command Center Task / Hong Kong Evidence wire signatures.
+
+Installation gates: independent C13 signer registration and signed verdict; Command Center C13 verifier registration; HK isolated Runner and disposable PostgreSQL sandbox; action/environment allowlists; Command Center-only receipt destination with HSM signing and readback; exact live artifact hash check and independent operator review. Do not submit an `HK_ISOLATED_C14_RETEST` Request or claim C14 PASS until each gate has live evidence. Existing `HK_STAGING_TEST_PR` is a separate source preflight.
