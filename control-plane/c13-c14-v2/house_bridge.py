@@ -120,6 +120,8 @@ def read_evidence(task, epoch, host):
         raise Refusal("evidence_json") from exc
     if type(evidence) is not dict or set(evidence) != EVIDENCE_FIELDS:
         raise Refusal("evidence_schema")
+    if raw != canonical(evidence) + b"\n":
+        raise Refusal("evidence_canonical")
     if (evidence["schema_version"] != "1" or any(evidence[k] != task[k] for k in
             ("task_id", "nonce", "action_id", "environment")) or
             evidence["status"] not in ("SUCCESS", "FAILED", "REJECTED") or
