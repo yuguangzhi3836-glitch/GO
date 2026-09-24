@@ -8,7 +8,7 @@
 2. **C13 负责开发侧首次正式测试和准入判定。**C13 在固定 Candidate SHA 与 `application/` 子树上执行约定测试，检查范围、缺口及原始证据，给出 `PASS_SCOPED` 或 `FAIL/BLOCKED`。绿色 CI 可作为 C13 的执行工具及证据，但不能由开发 Cell 的自测自动冒充 C13。C13 与该 Candidate 的实现者身份分离。
 3. **指挥中心下达香港 C14 复测指令。**只有 C13 对固定 Candidate 首验通过后，Command Center 才能通过现有香港任务通道向指定隔离 Runner 派发独立的 C14 复测动作。指令固定 Candidate commit SHA、`application/` tree、C13 准入记录、冻结测试范围、任务身份及证据回传目标；任务不得被解释为香港部署指令。
 4. **香港隔离 C14 负责独立复测并上传结果。**Runner 核对指令及候选身份，在与运行中的香港 Staging 业务服务及数据隔离的环境中重新检出并执行冻结测试。C14 执行者与开发 Cell、C13 首验执行者分离；通过受限回传通道上传结构化 PASS/FAIL/BLOCKED 结论、测试命令、原始输出、JUnit、环境信息、证据文件和逐项摘要，并关联任务 ID、Candidate SHA、`application/` tree 与 C13 准入记录。回传失败、材料不全或身份不符一律记为未完成，不得以口头结果代替。
-5. **Command Center 负责接收结果与发布控制。**它从回传存储读回结果和证据，核对任务身份、同一候选、测试范围、证据摘要及来源后记录 C14 结论；随后依据现行审批和发布门禁分别决定 TEST_PR、CANARY、VERIFY、DEPLOY 等动作。C13/C14 的 PASS、receipt 或签名均不能直接成为合并或部署许可。
+5. **Command Center 负责直接接收结果与发布控制。**它从受限回传存储读回香港 Evidence 和三份原始工件，核对任务身份、同一 Candidate SHA/tree、冻结测试范围、C13 摘要、Runner 来源、Evidence 原文 SHA-256 与工件摘要；全部通过后，只有 Command Center 才能原子写入并读回签名的 `GO_C14_EVIDENCE_RECEIPT_V1`。回执以 task ID/nonce 为唯一键，记录 `EVIDENCE_VERIFIED`、`COMPLETE` 与实际 `PASS_SCOPED/FAIL/BLOCKED` verdict；其中 `COMPLETE` 只表示指挥中心已记录核验结论，不表示 C14 通过。香港 Runner 只能回传 Evidence/工件，不能写回执；回传缺失、篡改、读回不一致或绑定不符时没有回执、维持 HOLD，不得用人工转述替代。随后才依据现行审批和发布门禁分别决定 TEST_PR、CANARY、VERIFY、DEPLOY 等动作。C13/C14 的 PASS、receipt 或签名均不能直接成为合并或部署许可。
 
 简式流程：固定 Candidate → C13 首次正式验收 → Command Center 指令香港隔离 C14 → C14 独立复测并上传结果 → Command Center 读回核验并控制发布。
 
@@ -32,4 +32,4 @@
 
 ## 当前状态
 
-本稿**不是**任务总线安装记录、香港 C14 执行证据或发布授权。R5 仍属离线目录替身测试；正式 C13/C14 以及 HK/Final Release/Production 门禁维持原状态。没有触发 KMS 签名、真实任务派发、合并或部署。
+本稿**不是**任务总线安装记录、香港 C14 执行证据、指挥中心回执路由安装记录或发布授权。R5 仍属离线目录替身测试；正式 C13/C14 以及 HK/Final Release/Production 门禁维持原状态。没有触发 KMS 签名、真实任务派发、合并或部署。
