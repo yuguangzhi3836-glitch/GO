@@ -228,3 +228,57 @@ jobs:
           path: ${{ runner.temp }}/c13
           if-no-files-found: error
           retention-days: 90
+
+  c13-pr228:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      C13_CANDIDATE_SHA: 08b7392faac37c024b2c40df2a2f2e018c5223c7
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 08b7392faac37c024b2c40df2a2f2e018c5223c7
+          persist-credentials: false
+      - name: Bind exact candidate
+        run: test "$(git rev-parse HEAD)" = "$C13_CANDIDATE_SHA"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install isolated test dependencies
+        run: python -m pip install pytest cryptography
+      - name: Run restricted action and bridge regression
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/c13"
+          pytest -q --junitxml="$RUNNER_TEMP/c13/JUNIT.xml" tests/test_c13_registration_email.py 2>&1 | tee "$RUNNER_TEMP/c13/stdout.log"
+          python control-plane/boss-deploy-request-v1/go-boss-request-bridge --self-test 2>&1 | tee "$RUNNER_TEMP/c13/bridge.log"
+          python hk-staging/source/agent/hk_agent/deployment_actions.py 2>&1 | tee "$RUNNER_TEMP/c13/agent-actions.log"
+      - name: Bind source and raw evidence
+        if: always()
+        env:
+          C13_SCOPE: 'pytest tests/test_c13_registration_email.py; bridge --self-test; deployment_actions.py'
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'c13'
+          out.mkdir(exist_ok=True)
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          tree=subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
+          scope=os.environ['C13_SCOPE']
+          report={'pr':228,'candidate_sha':sha,'application_tree':tree,
+                  'scope':scope,'scope_sha256':hashlib.sha256(scope.encode()).hexdigest(),
+                  'C13':'PENDING_INDEPENDENT_REVIEW','C14':'NOT_EXECUTED',
+                  'files':{p.name:hashlib.sha256(p.read_bytes()).hexdigest()
+                           for p in out.iterdir() if p.is_file()}}
+          (out/'C13_SOURCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c13-pr228-08b7392f
+          path: ${{ runner.temp }}/c13
+          if-no-files-found: error
+          retention-days: 90
