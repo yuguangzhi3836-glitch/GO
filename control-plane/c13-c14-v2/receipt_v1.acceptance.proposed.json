@@ -127,8 +127,8 @@
     },
     "signature": {
       "type": "string",
-      "pattern": "^[0-9a-f]{128}$",
-      "description": "Command Center trust-root signature over canonical receipt bytes."
+      "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+      "description": "Base64 ASN.1 DER ECDSA P-256 SHA-256 over canonical unsigned receipt bytes; verify with independently registered Command Center HSM public key and fingerprint."
     }
   },
   "x-go-receipt-route": {
@@ -143,4 +143,3 @@
     "Absent, unreadable, malformed, tampered, task-mismatched, or artifact-mismatched Evidence produces no receipt and remains HOLD until separately investigated."
   ]
 }
-
