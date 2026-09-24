@@ -152,7 +152,12 @@ def main():
                         recovered=run(op,oid,qid,key,label+'-recovered')
                         assert recovered['http']==200
                         after=observe(op,oid,qid,label+'-after')
-                        assert after['money']==before['money'] and after['root_ids']==before['root_ids']
+                        if scenario == 'kill_before_bridge':
+                            assert not before['money'] and not before['root_ids']
+                            assert len(after['root_ids']) == 1
+                            assert len(after['money']) == (2 if op == 'checkout' else 1)
+                        else:
+                            assert after['money']==before['money'] and after['root_ids']==before['root_ids']
                         assert any(c['operation'].startswith('RESOURCE:') and c['code']==200 for c in after['claims'])
                     else:
                         second=key if scenario=='same_key' else key+'-other'
