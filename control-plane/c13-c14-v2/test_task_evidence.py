@@ -156,6 +156,16 @@ class ProtocolTests(unittest.TestCase):
                 return item
         self.assert_refused("task_readback", lambda: issue_task(C13, 100, TamperedHost()))
 
+    def test_invalid_host_signature_never_reaches_bus(self):
+        class BadSigner(MemoryHost):
+            def sign_task(self, raw):
+                return "incorrect-signature"
+            def verify_task_signature(self, raw, signature):
+                return False
+        host = BadSigner()
+        self.assert_refused("task_signature", lambda: issue_task(C13, 100, host))
+        self.assertFalse(host.tasks)
+
 
 if __name__ == "__main__":
     unittest.main()
