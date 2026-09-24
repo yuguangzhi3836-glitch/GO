@@ -129,6 +129,8 @@ def issue_task(admission: dict, now: int, host: Host) -> dict:
     signature = host.sign_task(canonical(task))
     if not isinstance(signature, str) or not signature:
         raise Refusal("task_signer_unconfigured")
+    if not host.verify_task_signature(canonical(task), signature):
+        raise Refusal("task_signature")
     envelope = {"payload": task, "signature": signature}
     host.publish_task(task["task_id"], envelope)
     task_fields = TASK_FIELDS | ({"c13_evidence_sha256"} if task["action_id"] == C14_ACTION else set())
