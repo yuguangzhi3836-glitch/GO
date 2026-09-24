@@ -103,6 +103,14 @@ def _safe_stream(value):
     return {"length":len(raw),"sha256":hashlib.sha256(raw.encode()).hexdigest(),"preview":raw}
 
 def failure_diagnostic(task, exc):
+    # This action may receive arbitrary text from the application probe or a
+    # failed privileged process. Pattern-based redaction cannot safely scrub
+    # one-time codes, recipients, or provider responses. Discard both streams
+    # before writing any diagnostic to the ledger or evidence repository.
+    if task["action_id"] == "HK_STAGING_REGISTRATION_EMAIL_CONFIG_VERIFY":
+        return {"task_id":task["task_id"],"nonce":task["nonce"],"action_id":task["action_id"],
+                "attempt_number":1,"return_code":getattr(exc,"returncode",None),
+                "stdout":None,"stderr":None,"failure_stage":getattr(exc,"stage",None) or "agent_reject"}
     audit={"task_id":task["task_id"],"nonce":task["nonce"],"action_id":task["action_id"],"attempt_number":1,
             "return_code":getattr(exc,"returncode",None),"stdout":_safe_stream(getattr(exc,"stdout",None)),
             "stderr":_safe_stream(getattr(exc,"stderr",None)),"failure_stage":getattr(exc,"stage",None) or "agent_reject"}
