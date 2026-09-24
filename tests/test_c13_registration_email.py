@@ -9,7 +9,7 @@ import sys
 import unittest
 from unittest.mock import patch
 
-ROOT = pathlib.Path(__file__).resolve().parent
+ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def load(name, relative):
