@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "go://control-plane/command-center-state-v1/contracts/task_v1.schema.json",
+  "title": "GO Command Center Signed Task V1 — C13/C14 acceptance proposal",
+  "description": "The only Execution Authority in the Control Plane. Command Center derives every parameter, signs the canonical form with the existing task-manifest signing key, and publishes it byte-identically to chenzhenxi1-sudo/go-control-tasks under tasks/<task_id>.json. DRAFT: acceptance actions are not installed on the live bus.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "nonce",
+    "issued_at",
+    "expires_at",
+    "authority",
+    "environment",
+    "action_id",
+    "parameters",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1"
+    },
+    "task_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "nonce": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authority": {
+      "const": "GO-COMMAND-CENTER"
+    },
+    "environment": {
+      "enum": [
+        "HK-STAGING-01",
+        "GO-ISOLATED-ACCEPTANCE-01",
+        "HK-ISOLATED-ACCEPTANCE-01"
+      ]
+    },
+    "action_id": {
+      "enum": [
+        "CONTROL_PLANE_HEALTH",
+        "HK_STAGING_CANARY",
+        "HK_STAGING_DEPLOY",
+        "HK_STAGING_VERIFY",
+        "HK_STAGING_ROLLBACK",
+        "HK_STAGING_TEST_PR",
+        "GO_C13_FIRST_ACCEPTANCE",
+        "HK_ISOLATED_C14_RETEST"
+      ]
+    },
+    "parameters": {
+      "type": "object"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{128}$",
+      "description": "Ed25519 over canonical(parameters+envelope) with the signature field removed."
+    }
+  },
+  "x-go-parameter-contracts": {
+    "CONTROL_PLANE_HEALTH": [],
+    "HK_STAGING_VERIFY": [
+      "release_id",
+      "candidate_image_id",
+      "expected_current_image_id"
+    ],
+    "HK_STAGING_CANARY": [
+      "release_id",
+      "candidate_image_id",
+      "candidate_package_sha256",
+      "expected_current_image_id"
+    ],
+    "HK_STAGING_DEPLOY": [
+      "release_id",
+      "candidate_image_id",
+      "candidate_package_sha256",
+      "expected_current_image_id",
+      "canary_evidence_id",
+      "approval_id",
+      "candidate_contract_sha256"
+    ],
+    "HK_STAGING_ROLLBACK": [
+      "release_id",
+      "source_deploy_task_id",
+      "approval_id"
+    ],
+    "HK_STAGING_TEST_PR": [
+      "builder_profile",
+      "source"
+    ],
+    "GO_C13_FIRST_ACCEPTANCE": [
+      "candidate_sha",
+      "application_tree",
+      "test_scope_sha256",
+      "runner_id"
+    ],
+    "HK_ISOLATED_C14_RETEST": [
+      "candidate_sha",
+      "application_tree",
+      "test_scope_sha256",
+      "runner_id",
+      "c13_evidence_sha256"
+    ]
+  },
+  "x-go-verification-identity": {
+    "identity": "GO Command Center task-manifest signer",
+    "encoding": "hex",
+    "note": "A Task must verify ONLY against the Command Center task verifier key. It must never validate against the Hong Kong evidence verifier key. A projection that supplies the same public key for both roles must refuse every PROVEN claim.",
+    "related_but_distinct": "Evidence is signed by the Hong Kong agent evidence signer and verified with base64. The two identities must be different keys."
+  },
+  "x-go-notes": [
+    "The agent rejects an already-seen task_id OR nonce, an already-claimed nonce, an unknown action, a mismatched authority or environment, an expired task, and any parameter set that is not exactly the frozen contract.",
+    "The agent allows exactly one executor attempt per task. A task that fails is never retried; a new task is required.",
+    "History contains Tasks whose parameter sets predate the current contract. They are preserved for lineage and must be read as LEGACY_OR_UNKNOWN, never as current proof.",
+    "The existence of a Task for an action does not mean that action is requestable. See request_v1.schema.json for the difference between known capability and enabled request action.",
+    "DRAFT: the new acceptance actions require separate registered runners and never reuse HK-STAGING-01 deployment execution."
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "action_id": {
+            "const": "GO_C13_FIRST_ACCEPTANCE"
+          }
+        },
+        "required": [
+          "action_id"
+        ]
+      },
+      "then": {
+        "properties": {
+          "environment": {
+            "const": "GO-ISOLATED-ACCEPTANCE-01"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "candidate_sha",
+              "application_tree",
+              "test_scope_sha256",
+              "runner_id"
+            ],
+            "properties": {
+              "candidate_sha": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "application_tree": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "test_scope_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "runner_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_id": {
+            "const": "HK_ISOLATED_C14_RETEST"
+          }
+        },
+        "required": [
+          "action_id"
+        ]
+      },
+      "then": {
+        "properties": {
+          "environment": {
+            "const": "HK-ISOLATED-ACCEPTANCE-01"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "candidate_sha",
+              "application_tree",
+              "test_scope_sha256",
+              "runner_id",
+              "c13_evidence_sha256"
+            ],
+            "properties": {
+              "candidate_sha": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "application_tree": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "test_scope_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "runner_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "c13_evidence_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "action_id": {
+            "enum": [
+              "CONTROL_PLANE_HEALTH",
+              "HK_STAGING_CANARY",
+              "HK_STAGING_DEPLOY",
+              "HK_STAGING_VERIFY",
+              "HK_STAGING_ROLLBACK",
+              "HK_STAGING_TEST_PR"
+            ]
+          }
+        },
+        "required": [
+          "action_id"
+        ]
+      },
+      "then": {
+        "properties": {
+          "environment": {
+            "const": "HK-STAGING-01"
+          }
+        }
+      }
+    }
+  ]
+}
