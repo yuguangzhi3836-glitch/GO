@@ -3,6 +3,9 @@ import copy
 import hashlib
 import json
 import unittest
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import ec
 from pathlib import Path
 
 from acceptance_gate import C13_ACTION, C14_ACTION, C13_ENVIRONMENT, C14_ENVIRONMENT, Refusal
@@ -16,6 +19,7 @@ REQUEST = {"candidate_sha": SHA, "application_tree": TREE, "test_scope_sha256": 
 class Host:
     """Memory only. No Task bus, HK Runner or real signing key."""
     def __init__(self):
+        self.test_receipt_key = ec.generate_private_key(ec.SECP256R1())
         self.tasks = {}
         self.results = {}
         self.artifacts = {}
@@ -69,10 +73,16 @@ class Host:
         return self.artifacts[(task_id, nonce, name)]
 
     def sign_control_receipt(self, raw):
-        return hashlib.sha512(b"control-receipt-key:" + raw).hexdigest()
+        signature = self.test_receipt_key.sign(raw, ec.ECDSA(hashes.SHA256()))
+        return base64.b64encode(signature).decode("ascii")
 
     def verify_control_receipt(self, raw, signature):
-        return self.sign_control_receipt(raw) == signature
+        try:
+            self.test_receipt_key.public_key().verify(base64.b64decode(signature, validate=True),
+                                                      raw, ec.ECDSA(hashes.SHA256()))
+            return True
+        except (InvalidSignature, ValueError):
+            return False
 
     def publish_control_receipt(self, task_id, nonce, raw):
         key = (task_id, nonce)
