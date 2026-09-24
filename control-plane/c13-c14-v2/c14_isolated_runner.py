@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 
 from acceptance_gate import C14_ACTION, C14_ENVIRONMENT, Refusal
 from c13_attestation import CANDIDATE, TREE, SCOPE
-from house_bridge import canonical, digest, iso
+from house_bridge import canonical, digest, iso, frozen_junit_counts
 
 SCOPE_COMMANDS = (
     "pytest -q tests/payments/test_c11_flight_idempotency_recovery.py tests/test_depth48_flight_changes.py",
@@ -59,15 +59,7 @@ def execute(task: dict, epoch: int, host) -> dict:
     junit, stdout = run["junit"], run["stdout"]
     if type(junit) is not bytes or not 0 < len(junit) <= 8_000_000 or type(stdout) is not bytes or len(stdout) > 2_000_000:
         raise Refusal("runner_raw_artifacts")
-    try:
-        root = ET.fromstring(junit)
-        suites = [root] if root.tag == "testsuite" else list(root) if root.tag == "testsuites" else []
-        counts = [sum(int(s.get(name, "0")) for s in suites)
-                  for name in ("tests", "failures", "errors", "skipped")]
-    except (ET.ParseError, TypeError, ValueError) as exc:
-        raise Refusal("runner_junit") from exc
-    if not suites or any(s.tag != "testsuite" for s in suites) or counts[0] != 71:
-        raise Refusal("runner_test_scope")
+    counts = frozen_junit_counts(junit)
     verdict = "PASS_SCOPED" if counts[1:] == [0, 0, 0] else "FAIL"
     manifest = {"task_id": task["task_id"], "nonce": task["nonce"],
                 "candidate_sha": CANDIDATE, "application_tree": TREE,
