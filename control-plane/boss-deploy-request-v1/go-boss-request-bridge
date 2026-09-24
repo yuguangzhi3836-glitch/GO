@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 19380)
+Total output lines: 993
+
 #!/usr/bin/env python3
 """Candidate Bridge 1.7: VERIFY / TEST_PR / derived DEPLOY plans / CANARY, plus a
 read-only CONTROL_PLANE_HEALTH probe.
@@ -462,204 +465,7 @@ def armed_process(number, head, ledger_root, key_path, arm_path):
             return {"status":"already_seen","record":existing}
         proposal=read_pr(number,head)
         if proposal.get("ignored"):
-            data["requests"][key]={"status":"ignored","reason":proposal["reason"]}; return {"status":"ignored"}
-        request=validate_request(proposal["raw"])
-        if request['action_id']!=POLICY['action_id']: raise Reject('legacy_mode_verify_only')
-        if request["request_id"] != arm["expected_request_id"] or arm["state"] != "ARMED" or not arm["publish_enabled"]: raise Reject("request_not_currently_armed")
-        if any(x.get("request_id")==request["request_id"] for x in data["requests"].values()): raise Reject("duplicate_request_id")
-        task=sign(derive(request,load_baseline()),key_path)
-        data["requests"][key]={"status":"prepared","request_id":request["request_id"],"task":task,"task_sha256":hashlib.sha256(canonical(task)).hexdigest()}
-    finally:
-        try: next(tx)
-        except StopIteration: pass
-    tx=ledger.transaction(); data=next(tx)
-    try: data["requests"][key]["status"]="publishing"
-    finally:
-        try: next(tx)
-        except StopIteration: pass
-    task=data["requests"][key]["task"]
-    try: commit=publish_task(task)
-    except Exception:
-        actual=remote_task(task["task_id"])
-        if actual != canonical(task)+b"\n": raise Reject("ambiguous_publish_requires_operator_review")
-        commit="reconciled"
-    actual=remote_task(task["task_id"])
-    if actual != canonical(task)+b"\n": raise Reject("published_task_readback_mismatch")
-    tx=ledger.transaction(); data=next(tx)
-    try: data["requests"][key]["status"]="published"; data["requests"][key]["task_commit"]=commit; arm["state"]="DISARMED_CONSUMED"; arm["publish_enabled"]=False; save_arm(arm_path,arm)
-    finally:
-        try: next(tx)
-        except StopIteration: pass
-    return {"status":"published","task_id":task["task_id"],"task_commit":commit}
-
-def derive_and_register_deployment(request,pr,approval_identity,records):
-    """Derive this candidate's plan, validate it in memory, register it, read it back.
-
-    Nothing here comes from an operator.  The plan is a join of the candidate admission
-    record, the root-owned live baseline, the signed TEST_PR of that exact candidate, and
-    the canary and preflight Tasks this Bridge published and signed -- plus the DEPLOY
-    Request the authorised identity wrote, which is the approval itself.
-
-    The bundle is validated in memory *before* it is written, so an invalid plan is never
-    registered and a bad file never has to be cleaned up; and the context returned comes
-    from reading the registered file back, so the Task cites the bytes that are actually
-    on disk rather than the ones that happened to be in memory.
-    """
-    at=now(); approved_at=parse_time(pr["created_at"])
-    request_sha256=deploy_gate.request_digest(request)
-    plan_id,bundle=plan_derivation.derive(at=at,approval_identity=approval_identity,
-        approved_at=approved_at,request_sha256=request_sha256,admission=read_admission(),
-        verify_baseline=load_baseline(),ledger_records=records,read_evidence=read_evidence)
-    authority,hk=deploy_gate.load_keys()
-    deploy_gate.validate_bundle(bundle,plan_id,authority,hk,at,approval_identity,request_sha256)
-    plan_derivation.register(deploy_gate.STORE,plan_id,bundle)
-    return deploy_gate.load_context(plan_id,now(),approval_identity,request_sha256)
-
-def channel_v4(value):
-    """The persistent channel contract, as a pure function.
-
-    Split out of load_channel so the contract can be verified without a root-owned
-    file: "the file must be root-owned and not writable by others" is a property of
-    reading it, not of the contract. The action list is still compared for exact
-    equality -- one fixed contract rather than a membership test -- so the health
-    action cannot be enabled or disabled by hand-editing a field to something the
-    Bridge would accept loosely.
-    """
-    deploy_gate.exact(value,{'version','mode','publish_enabled','allowed_actions','allowed_environment','deployment_authorization'},'channel_fields')
-    if value['version']!=4 or value['mode']!='PERSISTENT' or value['publish_enabled'] is not True or value['allowed_environment']!=POLICY['environment']:
-        raise Reject('invalid_channel_configuration')
-    # The mode is read as a declaration, never as an authorisation, so a value this
-    # revision does not implement is accepted here and refused by the DEPLOY path. The
-    # split is deliberate: an emergency stop -- setting anything other than `request` --
-    # must silence deployments without also silencing the read-only probes.
-    if value['allowed_actions']!=CHANNEL_ACTIONS or not isinstance(value['deployment_authorization'],str) or not value['deployment_authorization']:
-        raise Reject('invalid_channel_configuration')
-    return value
-
-def load_channel(path):
-    try: value=deploy_gate.parse_json(pathlib.Path(path).read_bytes())
-    except OSError as exc: raise Reject('channel_unavailable') from exc
-    if not isinstance(value,dict): raise Reject('invalid_channel_configuration')
-    if value.get('version')==4:
-        return channel_v4(deploy_gate.parse_json(deploy_gate.read_secure(path)))
-    if set(value)=={"version","mode","publish_enabled","allowed_actions","allowed_environment"}:
-        if value["version"]!=3 or value["mode"]!="PERSISTENT" or value["publish_enabled"] is not True: raise Reject("invalid_channel_configuration")
-        if value["allowed_environment"]!=POLICY["environment"] or value["allowed_actions"] != [POLICY["action_id"],TEST_ACTION]: raise Reject("invalid_channel_configuration")
-        return value
-    required={"version","mode","publish_enabled","allowed_action_id","allowed_environment"}
-    if set(value) != required or value["version"] != 2 or value["mode"] != "PERSISTENT": raise Reject("invalid_channel_configuration")
-    if value["publish_enabled"] is not True: raise Reject("persistent_publish_not_enabled")
-    if value["allowed_action_id"] != POLICY["action_id"] or value["allowed_environment"] != POLICY["environment"]: raise Reject("invalid_channel_configuration")
-    return value
-
-def persistent_process(number, head, ledger_root, key_path, channel_path):
-    # The immutable root-owned channel config is intentionally checked on every
-    # poll.  PR content never controls action, environment, image, or signing.
-    channel=load_channel(channel_path); ledger=Ledger(ledger_root); key="%s:%s"%(number,head)
-    tx=ledger.transaction(); data=next(tx)
-    try:
-        existing=data["requests"].get(key)
-        if existing:
-            if existing.get("status") in {"prepared","publishing"}:
-                actual=remote_task(existing["task"]["task_id"])
-                if actual == canonical(existing["task"])+b"\n":
-                    existing["status"]="published"; existing["task_commit"]="reconciled"
-                    return {"status":"published_reconciled","task_id":existing["task"]["task_id"]}
-                raise Reject("ambiguous_publish_requires_operator_review")
-            return {"status":"already_seen","record":existing}
-        proposal=read_pr(number,head)
-        if proposal.get("ignored"):
-            data["requests"][key]={"status":"ignored","reason":proposal["reason"]}; return {"status":"ignored"}
-        request=validate_request(proposal["raw"])
-        allowed=channel.get('allowed_actions',[channel.get('allowed_action_id')])
-        if request['action_id'] not in allowed: raise Reject('action_not_enabled_in_channel')
-        if any(x.get("request_id")==request["request_id"] for x in data["requests"].values()): raise Reject("duplicate_request_id")
-        extra={}
-        if request['action_id']==deploy_gate.ACTION:
-            # The authorisation is this Request. There is no switch to consult: the
-            # configuration only declares the mode.
-            if channel.get('deployment_authorization')!=AUTHORIZATION_MODE: raise Reject('deployment_authorization_mode_unsupported')
-            if proposal['path']!='requests/'+request['request_id']+'.json': raise Reject('request_filename_binding')
-            pr,approval_identity=check_deploy_pr(number,head)
-            context=derive_and_register_deployment(request,pr,approval_identity,data['requests'])
-            deploy_gate.ensure_unused(context,data['requests'])
-            unsigned=derive_deployment(request,context)
-            extra={k:v for k,v in context.items() if k not in {'deadline','parameters'}}
-        else: unsigned=derive_formal_task(request)
-        task=sign(unsigned,key_path)
-        data["requests"][key]={"status":"prepared","request_id":request["request_id"],"task":task,"task_sha256":hashlib.sha256(canonical(task)).hexdigest(),**extra}
-    finally:
-        try: next(tx)
-        except StopIteration: pass
-    tx=ledger.transaction(); data=next(tx)
-    try: data["requests"][key]["status"]="publishing"
-    finally:
-        try: next(tx)
-        except StopIteration: pass
-    task=data["requests"][key]["task"]
-    if task['action_id']==deploy_gate.ACTION:
-        # Recheck the request, the authorisation mode and the exact approval bundle
-        # after the durable claim, immediately before publication. Never re-sign on
-        # failure. The mode is re-read from disk rather than taken from the claim, so
-        # suspending deployments stops one that is already in flight.
-        record=data['requests'][key]
-        if load_channel(channel_path).get('deployment_authorization')!=AUTHORIZATION_MODE: raise Reject('deployment_authorization_mode_unsupported')
-        check_deploy_pr(number,head)
-        current=deploy_gate.load_context(record['plan_id'],now(),record.get('approval_identity'),record.get('request_sha256'))
-        if current['bundle_sha256']!=record['bundle_sha256']: raise Reject('approved_plan_changed')
-        if parse_time(task['expires_at'])<=now()+dt.timedelta(seconds=30): raise Reject('deployment_task_near_expiry')
-    try: commit=publish_task(task)
-    except Exception:
-        actual=remote_task(task["task_id"])
-        if actual != canonical(task)+b"\n": raise Reject("ambiguous_publish_requires_operator_review")
-        commit="reconciled"
-    if remote_task(task["task_id"]) != canonical(task)+b"\n": raise Reject("published_task_readback_mismatch")
-    tx=ledger.transaction(); data=next(tx)
-    try: data["requests"][key]["status"]="published"; data["requests"][key]["task_commit"]=commit
-    finally:
-        try: next(tx)
-        except StopIteration: pass
-    return {"status":"published","task_id":task["task_id"],"task_commit":commit}
-
-def main():
-    parser=argparse.ArgumentParser(); parser.add_argument("--once",action="store_true"); parser.add_argument("--ledger-root",default="/var/lib/go-command-center/boss-request-bridge-v1"); parser.add_argument("--key",default="/etc/go-command-center/keys/task-manifest-signing.pem"); parser.add_argument("--channel-config"); parser.add_argument("--self-test",action="store_true"); args=parser.parse_args()
-    if args.self_test: return run_tests()
-    if not args.channel_config: raise Reject("persistent_channel_configuration_required")
-    result=[]
-    for number,head in sorted(discover_heads().items(), key=lambda v:int(v[0])):
-        try: result.append({"pr":number,"head":head,**persistent_process(number,head,args.ledger_root,args.key,args.channel_config)})
-        except Reject as exc: result.append({"pr":number,"head":head,"status":"rejected","reason":str(exc)})
-    channel = load_channel(args.channel_config)
-    print(json.dumps({"bridge_version":"1.8.0-request-authorized-deploy", "channel_mode":channel["mode"],
-                      "publish_enabled":channel["publish_enabled"], "results":result},sort_keys=True)); return 0
-
-def run_tests():
-    import unittest
-    class Tests(unittest.TestCase):
-      def request(self, **x):
-        value={"schema_version":"1","request_id":"request-abc","action_id":"HK_STAGING_VERIFY","environment":"HK-STAGING-01","requested_at":iso(now())}; value.update(x); return canonical(value)
-      def test_valid(self): self.assertEqual(validate_request(self.request())["action_id"],"HK_STAGING_VERIFY")
-      def test_bad_json(self):
-        with self.assertRaises(Reject): validate_request(b"{")
-      def test_unknown_fields(self):
-        with self.assertRaises(Reject): validate_request(self.request(extra=True))
-      def test_action_and_env(self):
-        # DEPLOY is an action of this channel, so its Request is schema-valid; what
-        # refuses it is the deploy switch and the plan, not the request shape.
-        self.assertEqual(validate_request(self.request(action_id="HK_STAGING_DEPLOY"))["action_id"],"HK_STAGING_DEPLOY")
-        for value in (self.request(action_id="HK_STAGING_ROLLBACK"),self.request(environment="PRODUCTION")):
-          with self.assertRaises(Reject): validate_request(value)
-      def test_a_deploy_request_carries_no_plan_and_no_deployment_fact(self):
-        # The plan is derived from what the Bridge already holds, so a Request has nothing
-        # to name and nothing to steer -- not even the plan's name.
-        self.assertNotIn("plan_id",ALLOWED)
-        body=validate_request(self.request(action_id="HK_STAGING_DEPLOY"))
-        self.assertEqual(sorted(body),["action_id","environment","request_id","requested_at","schema_version"])
-      def test_a_deploy_request_that_names_a_plan_is_refused(self):
-        for plan_id in ("synthetic-plan-001","../plan",True,"a/b",""):
-          with self.assertRaises(Reject): validate_request(self.request(action_id="HK_STAGING_DEPLOY",plan_id=plan_id))
-      def test_stale_and_size(self):
-        with self.assertRaises(Reject): validate_request(self.request(requested_at="2020-01-01T00:00:00Z"))
+            data["re…3380 tokens truncated…ssertRaises(Reject): validate_request(self.request(requested_at="2020-01-01T00:00:00Z"))
         with self.assertRaises(Reject): validate_request(b"x"*(POLICY["max_bytes"]+1))
       def test_derivation(self):
         task=derive(validate_request(self.request()),{"image_id":"sha256:"+"0"*64}); self.assertEqual(set(task["parameters"]),{"release_id","candidate_image_id","expected_current_image_id"}); self.assertEqual(task["action_id"],"HK_STAGING_VERIFY")
@@ -797,10 +603,23 @@ def run_tests():
             self.assertEqual(str(caught.exception),"legacy_mode_verify_only")
             self.assertEqual(load_arm(str(arm))["state"],"ARMED")
           finally: globals()["read_pr"]=original
-      def test_channel_contract_expresses_exactly_five_actions(self):
+      def test_channel_contract_expresses_exactly_six_actions(self):
         value=channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS,"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"})
-        self.assertEqual(value["allowed_actions"],["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH"])
+        self.assertEqual(value["allowed_actions"],["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY","CONTROL_PLANE_HEALTH",REGISTRATION_EMAIL_CONFIG_VERIFY_ACTION])
         self.assertEqual(value["deployment_authorization"],"request")
+      def test_registration_email_task_has_fixed_empty_parameters(self):
+        request=validate_request(self.request(action_id=REGISTRATION_EMAIL_CONFIG_VERIFY_ACTION))
+        task=derive_formal_task(request,now())
+        self.assertEqual(task["action_id"],REGISTRATION_EMAIL_CONFIG_VERIFY_ACTION)
+        self.assertEqual(task["environment"],"HK-STAGING-01")
+        self.assertEqual(task["parameters"],{})
+      def test_registration_email_request_rejects_injected_inputs(self):
+        for key in ("recipient","provider","otp","secret","command","url","path"):
+          with self.subTest(key=key), self.assertRaises(Reject):
+            validate_request(self.request(action_id=REGISTRATION_EMAIL_CONFIG_VERIFY_ACTION,**{key:"x"}))
+      def test_channel_without_registration_email_action_is_refused(self):
+        with self.assertRaises(Reject):
+          channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":CHANNEL_ACTIONS[:-1],"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"})
       def test_channel_without_the_health_action_is_refused(self):
         with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":["HK_STAGING_VERIFY","HK_STAGING_TEST_PR","HK_STAGING_DEPLOY","HK_STAGING_CANARY"],"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"})
       def test_channel_without_the_canary_action_is_refused(self):
