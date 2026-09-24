@@ -6,12 +6,15 @@ The acceptance actions require separately installed contract and runners.
 from __future__ import annotations
 
 import datetime as dt
+import base64
+import binascii
 import hashlib
 import json
 import re
 import xml.etree.ElementTree as ET
 
 from acceptance_gate import (C14_ACTION, C14_ENVIRONMENT, Refusal, c14_admission)
+from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 
 HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 TASK_FIELDS = {"schema_version", "task_id", "nonce", "issued_at", "expires_at",
@@ -40,6 +43,18 @@ def canonical(value):
 
 def digest(raw):
     return hashlib.sha256(raw).hexdigest()
+
+
+def _p256_der_signature(value):
+    """Receipt wire format: base64 of ASN.1 DER ECDSA P-256 signature."""
+    if not isinstance(value, str) or len(value) > 128:
+        return False
+    try:
+        raw = base64.b64decode(value, validate=True)
+        r, s = decode_dss_signature(raw)
+        return r > 0 and s > 0
+    except (binascii.Error, ValueError):
+        return False
 
 
 def iso(epoch):
@@ -237,8 +252,7 @@ def _checked_receipt(raw, task, result, evidence_raw, host):
             canonical(unsigned), receipt["signature"])
     except AttributeError as exc:
         raise Refusal("receipt_route") from exc
-    if (not isinstance(receipt["signature"], str) or
-            not re.fullmatch(r"[0-9a-f]{128}", receipt["signature"]) or
+    if (not _p256_der_signature(receipt["signature"]) or
             receipt_signature_valid is not True):
         raise Refusal("receipt_signature")
     return receipt
@@ -261,7 +275,7 @@ def _record_receipt(task, result, evidence_raw, epoch, host):
         receipt_signature_valid = host.verify_control_receipt(canonical(unsigned), signature)
     except AttributeError as exc:
         raise Refusal("receipt_route") from exc
-    if (not isinstance(signature, str) or not re.fullmatch(r"[0-9a-f]{128}", signature) or
+    if (not _p256_der_signature(signature) or
             receipt_signature_valid is not True):
         raise Refusal("receipt_signature")
     signed = {**unsigned, "signature": signature}
@@ -283,4 +297,3 @@ def receive_evidence(task, epoch, host):
 def read_evidence(task, epoch, host):
     """Compatibility result reader that also requires the Command Center receipt."""
     return receive_evidence(task, epoch, host)["result"]
-
