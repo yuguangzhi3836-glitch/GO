@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "go://control-plane/command-center-state-v1/contracts/evidence_v1.schema.json",
   "title": "GO Command Center Signed Evidence V1 — isolated acceptance proposal",
-  "description": "DRAFT extension of GO signed Evidence V1. Existing HK actions retain their current signer. C13 and C14 use separately qualified acceptance Runner identities and their own restricted environments; this proposal is not installed.",
+  "description": "DRAFT extension of GO signed Evidence V1 for Hong Kong isolated C14 only. C13 is development-side CI and has no house Task or acceptance Runner in the live control plane. Existing HK actions retain their current signer.",
   "type": "object",
   "required": [
     "schema_version",
@@ -127,7 +127,7 @@
     "A Task rejected BEFORE its attempt was claimed still publishes nothing, because a Task whose own signature never verified must never be able to cause a write. Absence of Evidence therefore means 'never picked up or never authenticated', which is a different statement from 'nothing happened'.",
     "A failure record authorizes nothing: retry_permitted, replay_authorized and authorizes_any_action are always false, and the one-attempt rule is enforced by the agent ledger rather than by this document.",
     "TEST_PR Evidence must carry application_health_proven=false and deployment_performed=false. It proves an isolated offline build, not a deployment.",
-    "DRAFT: C13 and C14 evidence must verify against separate qualified Runner keys and cannot authorize any release action."
+    "DRAFT: C14 evidence must verify against its qualified isolated Hong Kong Runner key; C13 developer-side evidence is reviewed separately and cannot authorize any release action."
   ],
   "allOf": [
     {
