@@ -235,12 +235,12 @@ jobs:
     permissions:
       contents: read
     env:
-      C13_CANDIDATE_SHA: 545e078db4a7fe24b56758baa365c335cabf7106
+      C13_CANDIDATE_SHA: 1b9352d45708c23fabc75b604b17a315b25f688a
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 545e078db4a7fe24b56758baa365c335cabf7106
+          ref: 1b9352d45708c23fabc75b604b17a315b25f688a
           persist-credentials: false
       - name: Bind exact candidate
         run: test "$(git rev-parse HEAD)" = "$C13_CANDIDATE_SHA"
@@ -278,7 +278,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: c13-pr228-545e078d
+          name: c13-pr228-1b9352d4
           path: ${{ runner.temp }}/c13
           if-no-files-found: error
           retention-days: 90
