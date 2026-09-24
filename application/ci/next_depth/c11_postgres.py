@@ -186,8 +186,10 @@ def main():
     failures=sum(c['status']=='FAIL' for c in cases)
     suite.set('tests',str(len(cases)));suite.set('failures',str(failures));ElementTree(suite).write(output/'junit.xml',encoding='utf-8',xml_declaration=True)
     (output/'results.json').write_text(json.dumps(cases,indent=2)+'\n')
+    hard_death_cases=[case for case in cases if '-kill_' in case['case']]
+    hard_death_result='PASS' if len(hard_death_cases)==4 and all(case['status']=='PASS' for case in hard_death_cases) else 'NOT_PROVEN'
     execution.update(finished_at=datetime.now(timezone.utc).isoformat(),status='TEST_FAILED' if failures else 'EVIDENCE_READY',tests=len(cases),failures=failures,
-        hard_death_auto_recovery='PASS: SIGKILL + expired fenced lease is reclaimed by a separate recovery-worker process; roots and money stay singular')
+        hard_death_auto_recovery=hard_death_result)
     save();print(json.dumps({'status':execution['status'],'tests':len(cases),'failures':failures,'backend':execution['database_backend']}))
     return 1 if failures else 0
 
