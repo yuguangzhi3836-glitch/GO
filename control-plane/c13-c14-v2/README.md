@@ -22,3 +22,34 @@ python -m unittest discover -s control-plane/c13-c14-v2 -p 'test_*.py' -v
 
 This Draft has no runner installation, KMS call, C13/C14 execution, request
 dispatch, Hong Kong change, provider/payment access, merge or deployment.
+
+## Signed task / evidence protocol (Draft)
+
+`task_evidence.py` accepts **only an admission already derived by the gate**.
+It creates a deterministic task ID from the action, environment, independent
+runner, candidate SHA, application tree and frozen test-scope digest. A C14
+task also binds the verified C13 evidence SHA-256. It requires an injected
+host signer, stores the signed envelope, reads it back and verifies its
+signature and exact bytes. No caller may supply a command, path, URL,
+provider, deployment or production action. Task lifetime is 30 minutes.
+
+After execution, the host must read the runner-signed evidence and three raw
+artifacts (`junit`, `stdout`, `manifest`) from authoritative storage. The
+protocol checks the runner identity, task/source/scope identity, C13 digest on
+C14, every artifact SHA-256, manifest fields and JUnit counts. A PASS needs at
+least one executed test and zero failures, errors and skips. The host remains
+responsible for checking the actual candidate tree and frozen test command,
+executing in a restricted environment, qualifying independent actors, signing
+with keys held outside the repository, making storage immutable, and reading
+the result back from the actual task bus. The unit-test host is memory only.
+
+The local contract suite is:
+
+```sh
+python -m unittest discover -s control-plane/c13-c14-v2 -p 'test_*.py' -v
+```
+
+The real `go-control-tasks` contract, Command Center host adapter, isolated
+C13 Runner, Hong Kong isolated C14 Runner and signed evidence readback are not
+installed by this Draft. **No formal C13 or C14 can be claimed from these
+tests.** Do not route these action IDs through TEST_PR, CANARY or DEPLOY.
