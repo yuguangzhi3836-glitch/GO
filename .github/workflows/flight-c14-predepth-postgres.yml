@@ -33,11 +33,12 @@ jobs:
     env:
       PYTHONDONTWRITEBYTECODE: '1'
       GO_C11_RUNTIME_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
-      GO_C11_SOURCE_COMMIT: ${{ github.sha }}
+      GO_C11_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
@@ -92,7 +93,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: flight-c14-predepth-${{ github.sha }}
+          name: flight-c14-predepth-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/flight-c14-predepth
           if-no-files-found: error
           retention-days: 90
