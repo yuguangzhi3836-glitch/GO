@@ -1,6 +1,9 @@
 import base64
 import hashlib
 import unittest
+import json
+import xml.etree.ElementTree as ET
+from pathlib import Path
 
 from acceptance_gate import Refusal
 from c14_isolated_runner import execute
@@ -38,12 +41,19 @@ class RunnerHost(Host):
 
     def run_fixed_isolated_suite(self, sha, tree, commands):
         self.seen_commands = commands
+        inventory = json.loads((Path(__file__).parent / "c14_frozen_test_inventory.json").read_text())
+        root = ET.Element("testsuites")
+        for name in ("pytest", "isolated_postgres"):
+            cases = inventory[name]
+            suite = ET.SubElement(root, "testsuite", name=name, tests=str(len(cases)),
+                                  failures="0", errors="0", skipped="0")
+            for case in cases:
+                ET.SubElement(suite, "testcase", **case)
         return {"candidate_sha": sha, "application_tree": tree,
                 "test_scope_sha256": SCOPE,
                 "postgres_version": "18.4", "network": False, "providers": False,
                 "payments": False, "deployment": False, "production": False,
-                "junit": b"<testsuites><testsuite tests='61' failures='0' errors='0' skipped='0'/>"
-                         b"<testsuite tests='10' failures='0' errors='0' skipped='0'/></testsuites>",
+                "junit": ET.tostring(root),
                 "stdout": b"frozen suite 71 passed; PostgreSQL 18.4\n"}
 
     def agent_version(self):
@@ -88,6 +98,18 @@ class RunnerTests(unittest.TestCase):
         host = BadHost()
         task = issue(PINNED_REQUEST, "C14", 100, host)
         with self.assertRaisesRegex(Refusal, "runner_isolation"):
+            execute(task, 101, host)
+        self.assertFalse(host.results)
+
+    def test_claimed_counts_without_real_testcases_are_refused(self):
+        class InflatedHost(RunnerHost):
+            def run_fixed_isolated_suite(self, sha, tree, commands):
+                return {**super().run_fixed_isolated_suite(sha, tree, commands),
+                        "junit": b"<testsuites><testsuite name='pytest' tests='61'/>"
+                                 b"<testsuite name='isolated_postgres' tests='10'/></testsuites>"}
+        host = InflatedHost()
+        task = issue(PINNED_REQUEST, "C14", 100, host)
+        with self.assertRaisesRegex(Refusal, "c14_frozen_junit_scope"):
             execute(task, 101, host)
         self.assertFalse(host.results)
 
