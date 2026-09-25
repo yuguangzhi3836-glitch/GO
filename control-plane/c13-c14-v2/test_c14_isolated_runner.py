@@ -30,6 +30,9 @@ class RunnerHost(Host):
     def task_is_fresh(self, task, epoch):
         return epoch == 101
 
+    def now_epoch(self):
+        return 101
+
     def claim_task_once(self, task_id, nonce):
         if not hasattr(self, "claims"):
             self.claims = set()

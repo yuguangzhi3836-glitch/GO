@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 from acceptance_gate import C14_ACTION, C14_ENVIRONMENT, Refusal
 from c13_attestation import CANDIDATE, TREE, SCOPE
 from house_bridge import canonical, digest, iso, frozen_junit_counts
+from evidence_time import utc_epoch
 
 SCOPE_COMMANDS = (
     "pytest -q tests/payments/test_c11_flight_idempotency_recovery.py tests/test_depth48_flight_changes.py",
@@ -46,10 +47,20 @@ def execute(task: dict, epoch: int, host) -> dict:
             host.read_house_task(task["task_id"]) != canonical(task) + b"\n" or
             not host.task_is_fresh(task, epoch)):
         raise Refusal("runner_task_authority")
+    issued = utc_epoch(task["issued_at"], "runner_task_time")
+    expires = utc_epoch(task["expires_at"], "runner_task_time")
+    if issued < 0 or expires - issued != 900 or not issued <= epoch <= expires:
+        raise Refusal("runner_task_time")
+    # Require an installed host clock before consuming the one-use claim.
+    if not callable(getattr(host, "now_epoch", None)):
+        raise Refusal("runner_clock_unavailable")
     # Persistent, single-use claim before any sandbox work; a retry is refused.
     if host.claim_task_once(task["task_id"], task["nonce"]) is not True:
         raise Refusal("runner_replay")
     run = host.run_fixed_isolated_suite(CANDIDATE, TREE, SCOPE_COMMANDS)
+    completed_epoch = host.now_epoch()
+    if type(completed_epoch) is not int or not epoch <= completed_epoch <= epoch + 3600:
+        raise Refusal("runner_completion_time")
     if type(run) is not dict or set(run) != SANDBOX_FIELDS:
         raise Refusal("runner_sandbox_report")
     if ((run["candidate_sha"], run["application_tree"], run["test_scope_sha256"]) !=
@@ -73,7 +84,7 @@ def execute(task: dict, epoch: int, host) -> dict:
     unsigned = {"schema_version": "1", "task_id": task["task_id"], "nonce": task["nonce"],
                 "action_id": C14_ACTION, "environment": C14_ENVIRONMENT,
                 "status": "SUCCESS" if verdict == "PASS_SCOPED" else "FAILED",
-                "started_at": iso(epoch), "completed_at": iso(epoch),
+                "started_at": iso(epoch), "completed_at": iso(completed_epoch),
                 "agent_version": host.agent_version(), "executor_version": host.runner_version(),
                 "executor_result": result, "gate_results": {"isolated_acceptance": verdict},
                 "retry_permitted": False, "replay_authorized": False,

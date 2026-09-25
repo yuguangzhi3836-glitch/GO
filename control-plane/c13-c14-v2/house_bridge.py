@@ -16,6 +16,7 @@ from pathlib import Path
 
 from acceptance_gate import (C14_ACTION, C14_ENVIRONMENT, Refusal, c14_admission)
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+from evidence_time import utc_epoch
 
 HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 TASK_FIELDS = {"schema_version", "task_id", "nonce", "issued_at", "expires_at",
@@ -156,12 +157,9 @@ def _read_evidence(task, epoch, host):
         raise Refusal("task_signature")
     if host.read_house_task(task["task_id"]) != canonical(task) + b"\n":
         raise Refusal("task_readback")
-    try:
-        issued = dt.datetime.fromisoformat(task["issued_at"].replace("Z", "+00:00")).timestamp()
-        expires = dt.datetime.fromisoformat(task["expires_at"].replace("Z", "+00:00")).timestamp()
-    except (ValueError, TypeError, OverflowError) as exc:
-        raise Refusal("task_time") from exc
-    if type(epoch) is not int or expires - issued != 900:
+    issued = utc_epoch(task["issued_at"], "task_time")
+    expires = utc_epoch(task["expires_at"], "task_time")
+    if type(epoch) is not int or epoch < 0 or issued < 0 or expires - issued != 900:
         raise Refusal("task_time")
     raw = host.read_house_evidence(task["task_id"], task["nonce"])
     if type(raw) is not bytes or len(raw) > 256_000:
@@ -184,12 +182,10 @@ def _read_evidence(task, epoch, host):
             canonical({k: v for k, v in evidence.items() if k != "signature"}),
             evidence["signature"]) is not True:
         raise Refusal("evidence_signature")
-    try:
-        started = dt.datetime.fromisoformat(evidence["started_at"].replace("Z", "+00:00")).timestamp()
-        completed = dt.datetime.fromisoformat(evidence["completed_at"].replace("Z", "+00:00")).timestamp()
-    except (ValueError, TypeError, OverflowError) as exc:
-        raise Refusal("evidence_time") from exc
-    if not issued <= started <= expires or not started <= completed <= started + 3600:
+    started = utc_epoch(evidence["started_at"], "evidence_time")
+    completed = utc_epoch(evidence["completed_at"], "evidence_time")
+    if (not issued <= started <= expires or
+            not started <= completed <= min(started + 3600, epoch)):
         raise Refusal("evidence_time")
     result = evidence["executor_result"]
     fields = RESULT | {"c13_evidence_sha256"}
@@ -251,7 +247,7 @@ def _receipt_binding(task, result, evidence_raw):
             "authorizes_any_action": False}
 
 
-def _checked_receipt(raw, task, result, evidence_raw, host):
+def _checked_receipt(raw, task, result, evidence_raw, epoch, host):
     if type(raw) is not bytes or len(raw) > 32_000:
         raise Refusal("receipt_readback")
     try:
@@ -265,12 +261,10 @@ def _checked_receipt(raw, task, result, evidence_raw, host):
     expected = _receipt_binding(task, result, evidence_raw)
     if any(receipt[key] != value for key, value in expected.items()):
         raise Refusal("receipt_binding")
-    if not isinstance(receipt["verified_at"], str):
+    verified = utc_epoch(receipt["verified_at"], "receipt_time")
+    completed = utc_epoch(json.loads(evidence_raw)["completed_at"], "evidence_time")
+    if not completed <= verified <= epoch:
         raise Refusal("receipt_time")
-    try:
-        dt.datetime.fromisoformat(receipt["verified_at"].replace("Z", "+00:00"))
-    except (ValueError, TypeError, OverflowError) as exc:
-        raise Refusal("receipt_time") from exc
     unsigned = {key: value for key, value in receipt.items() if key != "signature"}
     try:
         receipt_signature_valid = host.verify_control_receipt(
@@ -289,7 +283,7 @@ def _record_receipt(task, result, evidence_raw, epoch, host):
     except AttributeError as exc:
         raise Refusal("receipt_route") from exc
     if existing is not None:
-        return _checked_receipt(existing, task, result, evidence_raw, host)
+        return _checked_receipt(existing, task, result, evidence_raw, epoch, host)
     try:
         verified_at = iso(epoch)
     except (ValueError, OverflowError, OSError) as exc:
@@ -310,7 +304,7 @@ def _record_receipt(task, result, evidence_raw, epoch, host):
         stored = host.read_control_receipt(task["task_id"], task["nonce"])
     except AttributeError as exc:
         raise Refusal("receipt_route") from exc
-    return _checked_receipt(stored, task, result, evidence_raw, host)
+    return _checked_receipt(stored, task, result, evidence_raw, epoch, host)
 
 
 def receive_evidence(task, epoch, host):
