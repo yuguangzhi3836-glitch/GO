@@ -157,6 +157,8 @@ class DockerSandbox:
     def run_fixed_isolated_suite(self, candidate, tree, commands):
         if (candidate, tree, commands) != (CANDIDATE, TREE, SCOPE_COMMANDS):
             raise Refusal("sandbox_scope")
+        self.last_output = b""
+        self.last_stderr = b""
         name = "go-c14-sandbox-" + uuid.uuid4().hex
         created = False
         try:
@@ -186,13 +188,15 @@ class DockerSandbox:
                     proc.communicate()
                     raise Refusal("sandbox_timeout")
                 state = json.loads(self._command(self.docker + ["inspect", name]))[0]["State"]
-                if proc.returncode or state["Running"] or state["OOMKilled"] or state["ExitCode"] != 0:
-                    errors.seek(0)
-                    failure = Refusal("sandbox_process")
-                    failure.add_note(errors.read(4000).decode("utf-8", errors="replace"))
-                    raise failure
                 output.seek(0)
-                return parse_output(output.read(MAX_OUTPUT + 1), self.image_id, digest(archive))
+                self.last_output = output.read(MAX_OUTPUT + 1)
+                errors.seek(0)
+                self.last_stderr = errors.read(64000)
+                if proc.returncode or state["Running"] or state["OOMKilled"] or state["ExitCode"] != 0:
+                    failure = Refusal("sandbox_process")
+                    failure.add_note(self.last_stderr[:4000].decode("utf-8", errors="replace"))
+                    raise failure
+                return parse_output(self.last_output, self.image_id, digest(archive))
         except Refusal:
             raise
         except (OSError, subprocess.SubprocessError, ValueError, KeyError, IndexError, TypeError) as exc:

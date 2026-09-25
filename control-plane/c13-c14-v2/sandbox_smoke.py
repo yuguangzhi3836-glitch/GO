@@ -1,5 +1,7 @@
 """Development-only real container integration. Does not issue a Task or AI review."""
 import argparse
+import base64
+import json
 from pathlib import Path
 
 from c13_attestation import CANDIDATE, TREE
@@ -17,9 +19,24 @@ def main():
     args = parser.parse_args()
     image_id = Path(args.image_id_file).read_text().strip()
     sandbox = DockerSandbox(args.source_repository, image_id, args.docker_socket)
-    result = sandbox.run_fixed_isolated_suite(CANDIDATE, TREE, SCOPE_COMMANDS)
     out = Path(args.output)
     out.mkdir(parents=True, exist_ok=True)
+    try:
+        result = sandbox.run_fixed_isolated_suite(CANDIDATE, TREE, SCOPE_COMMANDS)
+    except Exception:
+        raw = getattr(sandbox, "last_output", b"")
+        (out / "rejected-output.json").write_bytes(raw)
+        (out / "sandbox-stderr.log").write_bytes(getattr(sandbox, "last_stderr", b""))
+        # Diagnostics remain rejected, never converted to passing evidence.
+        try:
+            rejected = json.loads(raw)
+            print("Rejected sandbox result metadata:", {k: v for k, v in rejected.items() if k != "files"})
+            for name in ("pytest.log", "suite.log", "execution.json"):
+                blob = base64.b64decode(rejected.get("files", {}).get(name, ""), validate=True)
+                print("Rejected raw diagnostic:", name, blob[-8000:].decode("utf-8", errors="replace"))
+        except (ValueError, TypeError, AttributeError):
+            pass
+        raise
     for name in ("junit", "stdout"):
         (out / name).write_bytes(result[name])
     counts = frozen_junit_counts(result["junit"])
