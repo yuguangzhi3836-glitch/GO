@@ -47,7 +47,9 @@ def test_partial_capture_psp_receipt_replay_survives_later_capture_but_not_mutat
             pay.ingest_psp_line(iid,{**receipt,'amount_minor':invalid})
     first=pay.ingest_psp_line(iid,receipt)
     capture(2000,'partial-second')
-    assert pay.ingest_psp_line(iid,receipt)==first
+    replay=pay.ingest_psp_line(iid,receipt)
+    assert {k:v for k,v in replay.items() if k!='occurred_at'}=={k:v for k,v in first.items() if k!='occurred_at'}
+    assert datetime.fromisoformat(replay['occurred_at']).replace(tzinfo=timezone.utc)==datetime.fromisoformat(first['occurred_at']).replace(tzinfo=timezone.utc)
     with pytest.raises(ValueError,match='PSP_SETTLEMENT_TRANSACTION_FACT_CONFLICT'):
         pay.ingest_psp_line(iid,{**receipt,'amount_minor':10000})
     assert pay.reconcile(iid,{'external_transaction_id':'partial-psp'})['state']!='MATCHED'
