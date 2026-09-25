@@ -61,6 +61,47 @@ TAMPER_DETECTION                              = YES
 AUTHORIZE_ANY_ACTION                          = NO
 ```
 
-Remote-execution facts (quota, real run id, CI status) are reported in the round
-report rather than asserted here, because this file is committed before any remote
-run happens.
+## Remote evidence (POC_ONLY workflow, this branch)
+
+The quota probe and the same-run readback were obtained by a real run, not asserted
+here in advance. Final run `36110672586` @ `cec9646d` concluded **success** with:
+
+```text
+AI_CREDENTIAL_USABLE = YES      a real provider response came back (execution id present)
+AI_FAILURE_CLASS     = NONE     no provider / quota failure was reported
+AI_REVIEW_VERDICT    = BLOCKED  the model's own verdict on the synthetic POC scope
+READBACK             = run identity + artifact name + GitHub-computed digest verified
+                       artifact *bytes* NOT re-hashed
+```
+
+⇒ the historical `You have no credits remaining` does **not** reproduce: the AI
+credential is usable, so D-1 is no longer the blocker it was.
+
+### Finding: the artifact ZIP (and the job log) cannot be fetched with this credential
+
+Downloading the artifact zip fails with
+`Server failed to authenticate the request` from the storage endpoint that both
+`GET /actions/artifacts/{id}/zip` and `GET /actions/jobs/{id}/logs` redirect to —
+from inside the run (with the default `GITHUB_TOKEN`) and from this workstation
+(with the account token) alike.
+
+Consequences for the design, recorded deliberately:
+
+1. The V1 binding that **is** achievable and is enforced here is the one in the
+   task's own section 6 step 2: `run.status/conclusion/head_sha/path` plus
+   `artifact.workflow_run.id`, `artifact.name` and **`artifact.digest`, which
+   GitHub computes and the submitter cannot self-report**.
+2. The additional step 3 check (download the zip and re-hash it) is **not
+   achievable with the default credential**. `lite_readback.py` therefore keeps
+   `--bytes-mode strict` as its default and records
+   `bytes_verified=false` + the reason only when explicitly asked to degrade; a
+   caller that needs the byte proof must use a credential that can read the
+   storage endpoint, and the next round's CC/HK witness is the right place for it.
+3. `head_sha` is the workflow ref commit, never the reviewed candidate. The
+   candidate is bound by the in-run `git rev-parse HEAD` check, the artifact name
+   and the sealed bundle. Passing the wrong expectation here was a real failure,
+   now guarded by an offline workflow check.
+
+The synthetic stub remains the only thing that produces a PASS in this repository:
+the real provider answered `BLOCKED` for the POC scope, which is exactly why the
+POC scope is not a product candidate.
