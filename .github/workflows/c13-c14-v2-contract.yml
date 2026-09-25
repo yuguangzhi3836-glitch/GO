@@ -26,3 +26,41 @@ jobs:
       - name: Check scoped admission refusals
         run: python -m unittest discover -s control-plane/c13-c14-v2 -p 'test_*.py' -v
 
+  sandbox-development-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: d4376d6ae9a58eca3c7c32968ec96dffc5574122
+          path: frozen
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install cryptography
+      - name: Build disposable test image from frozen dependency declaration
+        run: |
+          mkdir -p "$RUNNER_TEMP/c14-build"
+          git -C frozen show d4376d6ae9a58eca3c7c32968ec96dffc5574122:application/pyproject.toml > "$RUNNER_TEMP/c14-build/pyproject.toml"
+          cp control-plane/c13-c14-v2/sandbox/Dockerfile "$RUNNER_TEMP/c14-build/"
+          cp control-plane/c13-c14-v2/sandbox_payload.py "$RUNNER_TEMP/c14-build/"
+          docker build --iidfile "$RUNNER_TEMP/c14-image-id" "$RUNNER_TEMP/c14-build"
+      - name: Execute actual offline sandbox (development validation only)
+        run: |
+          python control-plane/c13-c14-v2/sandbox_smoke.py \
+            --source-repository "$GITHUB_WORKSPACE/frozen" \
+            --image-id-file "$RUNNER_TEMP/c14-image-id" \
+            --docker-socket /var/run/docker.sock \
+            --output "$RUNNER_TEMP/c14-sandbox-development"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c14-sandbox-development-only
+          path: ${{ runner.temp }}/c14-sandbox-development
+          if-no-files-found: warn
+          retention-days: 30
+

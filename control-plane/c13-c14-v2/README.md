@@ -1,5 +1,68 @@
 # C13 developer-side first test, then isolated Hong Kong C14
 
+## Offline sandbox implementation — development increment, 2026-09-25
+
+`docker_sandbox.DockerSandbox.run_fixed_isolated_suite` now implements the
+Runner host's previously abstract sandbox method. Installed host configuration
+must supply an absolute local source repository, an immutable preloaded image
+ID (`sha256:...`) and a local dedicated Docker socket. Request/Task callers
+cannot choose these, commands, mounts or environment. Runtime never builds,
+pulls images, fetches source, mounts host paths, publishes ports or copies
+credentials. Use a dedicated acceptance daemon/host, not the business daemon.
+Docker daemon access is host authority and must never enter the container.
+
+The host archives the frozen Git object, then the container independently
+reconstructs and checks the complete `application/` Git tree before extraction.
+Traversal, links, changed content, unsupported objects and oversized archives
+are refused. No working-tree files or Git credentials are copied. The container
+runs as UID/GID 65532, drops all capabilities, disables external networking,
+uses a read-only root and bounded tmpfs/process/CPU/memory resources. Actual
+container configuration is inspected before start. PostgreSQL 18.4 starts
+inside that same isolated container on loopback with a new disposable database;
+no RDS or business database address is accepted.
+
+Both frozen suites execute, even if the first suite fails. The adapter reads
+their actual JUnit, exit status, process recovery results and PostgreSQL version.
+It checks all 61+10 test identities, does not generate cases from the inventory,
+and preserves test failures. The returned `stdout` artifact is a lossless raw
+bundle: one JSON metadata line, then repeated JSON file headers (`file`, `bytes`,
+`sha256`), exactly that many original bytes, and one separator LF. It includes
+both untouched original JUnits, test/subprocess/PG logs, SQL observations,
+execution metadata and scenario results. The combined JUnit only normalizes
+suite names and missing zero counters; original XML remains in the raw bundle.
+
+The attached Docker client has a 3300-second deadline. Timeout or failure removes
+the entire uniquely named container with its processes and anonymous volumes;
+cleanup failure is a refusal. The Runner's existing durable Task claim remains
+consumed. This cannot recover automatically from host power loss: controlled
+installation must reconcile leftover `go-c14-sandbox-*` containers and Task
+claims before enabling consumption. Never restart a leftover container or
+silently reset claims. Host-level watchdog/recovery and daemon isolation remain
+installation requirements.
+
+`sandbox/Dockerfile` is a development image recipe. It resolves dependencies
+from the frozen candidate's `pyproject.toml` at build time and records `pip freeze`
+inside the image. Build inputs are not a reproducible installation lockfile;
+freeze, review and transport the complete built image and dependency inventory
+by digest for controlled installation. The host accepts only a pinned image ID
+and checks PostgreSQL's actual version. No image digest is invented in source.
+
+CI's `sandbox-development-integration` job builds that image, uses the adapter
+to execute the real frozen tests without network, and uploads JUnit/raw logs and
+a readback record. `sandbox_smoke.py` explicitly records `C14=NOT_EXECUTED`.
+This development execution does not issue a house Task, access Hong Kong,
+produce an AI opinion, sign runtime Evidence or prove a live installation.
+Bind this adapter into the installed Runner only after the dedicated action,
+bus, claims, machine signer and CC receipt route have controlled readback.
+AI reviewer signing/registration is not required.
+
+Docker behavior references:
+- https://docs.docker.com/engine/containers/run/
+- https://docs.docker.com/engine/security/
+
+Change classes: CONTROL_PLANE, TEST_ONLY, DOCUMENTATION. Source parent:
+`1f9661aaca5c3fd62c521a072569ce692f2edc0e`. Remains Draft and uninstalled.
+
 The Owner's sequence is: freeze candidate SHA / `application/` tree / scope;
 independent C13 runs the first formal tests **on the development side**;
 Command Center checks the independent C13 opinion and source-bound evidence; only then may it
