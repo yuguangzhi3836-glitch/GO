@@ -18,11 +18,14 @@ from __future__ import annotations
 import argparse
 import base64
 import contextlib
+import copy
 import datetime
+import hashlib
 import io
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -33,7 +36,10 @@ ROOT = pathlib.Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+import lite_bundle  # noqa: E402
 import lite_cli  # noqa: E402
+import lite_errors  # noqa: E402
+import lite_fixtures as fx  # noqa: E402
 import lite_workflow_check  # noqa: E402
 
 
@@ -359,3 +365,293 @@ class WorkflowIdentityCommandTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------------------------------------------------------------------------
+# D-4 part one: what a non-pass verdict must carry
+# ---------------------------------------------------------------------------
+
+class BlockedVerdictSemanticsTests(unittest.TestCase):
+    """D-4: a non-pass verdict must carry evidence, and must never impersonate a provider failure.
+
+    Before the fix, `validate_c14` demanded a `failure_class` for both FAIL and BLOCKED, while
+    the opinion schema let the model return those verdicts itself. A model-authored BLOCKED was
+    therefore unsealable, and because the opinion had not been published yet, run 36148838395
+    died at the seal and took the only copy of the reviewer's reasoning with it.
+    """
+
+    def _record(self, **changes):
+        record = copy.deepcopy(fx.make_round()["c14_bundle"])
+        record.update(changes)
+        return record
+
+    def test_the_unmodified_fixture_record_is_valid(self):
+        """Guard the whole class against a base record that never validated in the first place."""
+        lite_bundle.validate_c14(copy.deepcopy(fx.make_round()["c14_bundle"]))
+
+    # A - provider / quota / transport failure: BLOCKED, and it must name its class.
+    def test_a_provider_failure_names_its_failure_class(self):
+        lite_bundle.validate_c14(self._record(
+            verdict="BLOCKED", failure_class="AI_QUOTA_EXHAUSTED", blocking_issues=[]))
+
+    # B - the AI reviewed normally and blocked: no provider class, but it must give reasons.
+    def test_a_model_authored_blocked_is_sealable_with_its_reasons(self):
+        lite_bundle.validate_c14(self._record(
+            verdict="BLOCKED", failure_class=None,
+            blocking_issues=["the change surface is entirely outside application/"]))
+
+    # C - the same, with nothing to show for it.
+    def test_a_model_authored_blocked_without_reasons_is_refused(self):
+        with self.assertRaises(lite_errors.Reject) as ctx:
+            lite_bundle.validate_c14(self._record(
+                verdict="BLOCKED", failure_class=None, blocking_issues=[]))
+        self.assertEqual(ctx.exception.reason, "c14_model_blocked_without_blocking_issues")
+
+    # D - a pass may not carry blocking issues.
+    def test_a_pass_scoped_with_blocking_issues_is_refused(self):
+        with self.assertRaises(lite_errors.Reject) as ctx:
+            lite_bundle.validate_c14(self._record(
+                verdict="PASS_SCOPED", failure_class=None, blocking_issues=["something"]))
+        self.assertEqual(ctx.exception.reason, "c14_pass_with_blocking_issues")
+
+    def test_a_pass_scoped_without_remediation_closure_is_refused(self):
+        with self.assertRaises(lite_errors.Reject) as ctx:
+            lite_bundle.validate_c14(self._record(
+                verdict="PASS_SCOPED", failure_class=None, blocking_issues=[],
+                remediation_status="OPEN"))
+        self.assertEqual(ctx.exception.reason, "c14_pass_without_remediation_closure")
+
+    # A FAIL needs evidence, and must NOT be forced to fabricate a provider class.
+    def test_a_fail_with_a_blocking_finding_needs_no_failure_class(self):
+        lite_bundle.validate_c14(self._record(
+            verdict="FAIL", failure_class=None, blocking_issues=[],
+            findings=[{"id": "F-1", "severity": "BLOCKER", "statement": "breaks the rule"}]))
+
+    def test_a_fail_with_a_blocking_issue_needs_no_failure_class(self):
+        lite_bundle.validate_c14(self._record(
+            verdict="FAIL", failure_class=None, blocking_issues=["unpermitted permission"],
+            findings=[]))
+
+    def test_a_fail_without_any_evidence_is_refused(self):
+        with self.assertRaises(lite_errors.Reject) as ctx:
+            lite_bundle.validate_c14(self._record(
+                verdict="FAIL", failure_class=None, blocking_issues=[],
+                findings=[{"id": "F-1", "severity": "INFO", "statement": "just a note"}]))
+        self.assertEqual(ctx.exception.reason, "c14_fail_without_findings_or_blocking_issues")
+
+    def test_the_rule_that_killed_run_36148838395_is_gone(self):
+        """Explicit marker: the old refusal code must not come back."""
+        source = (ROOT / "lite_bundle.py").read_text(encoding="utf-8")
+        self.assertNotIn("c14_non_pass_requires_failure_class", source)
+
+
+# ---------------------------------------------------------------------------
+# D-4 part two: the raw record must survive a refused seal
+# ---------------------------------------------------------------------------
+
+class RawEvidencePreservationTests(unittest.TestCase):
+    """A refused seal used to leave nothing behind but a red job."""
+
+    def setUp(self):
+        self.root = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: shutil.rmtree(self.root, ignore_errors=True))
+
+    def _args(self, out, **paths):
+        base = {"spec": None, "facts": None, "contract": None, "outcome": None, "scope": None,
+                "seal_result": None, "seal_stdout": None, "seal_stderr": None}
+        base.update(paths)
+        return argparse.Namespace(out=out, **base)
+
+    def _write(self, name, text):
+        path = self.root / name
+        path.write_text(text, encoding="utf-8")
+        return str(path)
+
+    def test_the_raw_record_is_kept_when_the_seal_refused(self):
+        out = self.root / "raw"
+        args = self._args(
+            str(out),
+            contract=self._write("c14.contract.json", '{"candidate_commit_sha": "abc"}'),
+            outcome=self._write("c14.outcome.json", '{"verdict": "BLOCKED", "summary": "why"}'),
+            seal_result=self._write(
+                "seal_result.json", '{"step": "seal", "status": "REFUSED", "exit_code": 2}'))
+        self.assertEqual(lite_cli.cmd_raw_evidence(args), 0)
+
+        manifest = json.loads((out / "raw_evidence_manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(sorted(entry["name"] for entry in manifest["files"]),
+                         ["contract", "outcome", "seal_result"])
+        self.assertEqual(manifest["seal_status"]["status"], "REFUSED")
+        self.assertIs(manifest["sealed_bundle_published_by_this_step"], False)
+        self.assertIs(manifest["authorizes_any_action"], False)
+        for entry in manifest["files"]:
+            raw = (out / entry["file"]).read_bytes()
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), entry["sha256"], entry["file"])
+
+    def test_a_step_that_never_ran_leaves_a_gap_not_an_exception(self):
+        """If the producing step failed, the record must still ship, with the gap named.
+
+        The paths are passed exactly as the workflow passes them - the difference is that the
+        files were never written, which is what a failed upstream step looks like.
+        """
+        out = self.root / "raw"
+
+        def never_written(name):
+            return str(self.root / name)
+
+        args = self._args(str(out),
+                          spec=never_written("c14.spec.json"),
+                          facts=never_written("c14.facts.json"),
+                          contract=never_written("c14.contract.json"),
+                          outcome=never_written("c14.outcome.json"),
+                          scope=never_written("scope.json"),
+                          seal_result=self._write("seal_result.json", '{"status": "REFUSED"}'))
+        self.assertEqual(lite_cli.cmd_raw_evidence(args), 0)
+        manifest = json.loads((out / "raw_evidence_manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual([entry["name"] for entry in manifest["files"]], ["seal_result"])
+        self.assertEqual(sorted(manifest["missing"]),
+                         ["contract", "facts", "outcome", "scope", "spec"])
+
+    def test_a_path_that_was_not_asked_for_is_not_reported_as_missing(self):
+        """'not requested' must not be dressed up as 'lost' - the manifest has to stay honest."""
+        out = self.root / "raw"
+        args = self._args(str(out),
+                          seal_result=self._write("seal_result.json", '{"status": "SEALED"}'))
+        self.assertEqual(lite_cli.cmd_raw_evidence(args), 0)
+        manifest = json.loads((out / "raw_evidence_manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["missing"], [])
+
+    def test_a_credential_shape_is_refused_before_anything_is_written(self):
+        out = self.root / "raw"
+        # Split on purpose: writing the literal in one piece would make this file itself match
+        # the repository's own secret scan.
+        fake_key = "sk-" + "A1b2C3d4E5f6G7h8I9j0"
+        args = self._args(
+            str(out),
+            contract=self._write("c14.contract.json", '{"clean": true}'),
+            outcome=self._write("c14.outcome.json", '{"summary": "%s"}' % fake_key))
+        with self.assertRaises(SystemExit) as ctx:
+            lite_cli.cmd_raw_evidence(args)
+        self.assertIn("openai_key", str(ctx.exception))
+        # scan-before-write: the clean contract must not be on disk either, and the output
+        # directory must not have been created at all.
+        self.assertFalse(out.exists())
+
+    def test_a_private_key_block_is_refused(self):
+        out = self.root / "raw"
+        args = self._args(str(out), outcome=self._write(
+            "c14.outcome.json", '{"x": "-----BEGIN ' + 'PRIVATE KEY-----"}'))
+        with self.assertRaises(SystemExit) as ctx:
+            lite_cli.cmd_raw_evidence(args)
+        self.assertIn("private_key_block", str(ctx.exception))
+
+    def test_a_clean_run_reports_no_missing_files(self):
+        out = self.root / "raw"
+        args = self._args(str(out),
+                          spec=self._write("c14.spec.json", '{"role": "c14"}'),
+                          facts=self._write("c14.facts.json", '{"cell_id": "C14"}'),
+                          contract=self._write("c14.contract.json", '{"cell_id": "C14"}'),
+                          outcome=self._write("c14.outcome.json", '{"verdict": "PASS_SCOPED"}'),
+                          scope=self._write("scope.json", '{"scope_sha256": "x"}'),
+                          seal_result=self._write("seal_result.json", '{"status": "SEALED"}'))
+        self.assertEqual(lite_cli.cmd_raw_evidence(args), 0)
+        manifest = json.loads((out / "raw_evidence_manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["missing"], [])
+        self.assertEqual(len(manifest["files"]), 6)
+
+
+_SEALED_ARTIFACT = "          name: c13c14-lite-c14-" + "${{ inputs.candidate_sha }}"
+_RAW_ARTIFACT = "          name: c13c14-lite-c14-raw-" + "${{ inputs.candidate_sha }}"
+
+WORKFLOW_WITHOUT_RAW_STEPS = """name: synthetic
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha: {required: true}
+permissions:
+  contents: read
+  actions: read
+jobs:
+  j:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Seal
+        run: python lite_cli.py seal --out "$RUNNER_TEMP/artifacts/c14_bundle.json"
+      - name: Publish the sealed C14 bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+""" + _SEALED_ARTIFACT + """
+          path: ${{ runner.temp }}/artifacts
+          retention-days: 90
+"""
+
+WORKFLOW_WITH_RAW_STEPS = """name: synthetic
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha: {required: true}
+permissions:
+  contents: read
+  actions: read
+jobs:
+  j:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Seal
+        run: python lite_cli.py seal --out "$RUNNER_TEMP/artifacts/c14_bundle.json"
+      - name: Preserve the raw review evidence whatever the seal decided
+        if: always()
+        run: |
+          python lite_cli.py raw-evidence --out "$RUNNER_TEMP/raw" --outcome "$RUNNER_TEMP/c14.outcome.json" --contract "$RUNNER_TEMP/c14.contract.json" --seal-result "$RUNNER_TEMP/seal_result.json"
+      - name: Publish the raw review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+""" + _RAW_ARTIFACT + """
+          path: ${{ runner.temp }}/raw
+          retention-days: 90
+      - name: Publish the sealed C14 bundle
+        uses: actions/upload-artifact@v4
+        with:
+""" + _SEALED_ARTIFACT + """
+          path: ${{ runner.temp }}/artifacts
+          retention-days: 90
+"""
+
+
+class RawEvidenceWorkflowTests(unittest.TestCase):
+    """The requirement has to hold in the shipped YAML, not only in the helper."""
+
+    def _check(self, text):
+        failures: list = []
+        lite_workflow_check.check_raw_evidence_survives_a_refused_seal(
+            lite_workflow_check.C14_WORKFLOW, text, failures)
+        return failures
+
+    def test_the_shipped_c14_workflow_satisfies_it(self):
+        text = (pathlib.Path(lite_workflow_check.WORKFLOW_DIR)
+                / lite_workflow_check.C14_WORKFLOW).read_text(encoding="utf-8")
+        self.assertEqual(self._check(text), [])
+
+    def test_the_check_bites_without_the_raw_steps(self):
+        joined = " | ".join(self._check(WORKFLOW_WITHOUT_RAW_STEPS))
+        self.assertIn("raw-evidence", joined)
+        self.assertIn("must not be published unconditionally", joined)
+
+    def test_the_fixed_shape_passes(self):
+        self.assertEqual(self._check(WORKFLOW_WITH_RAW_STEPS), [])
+
+    def test_a_raw_step_that_is_not_always_is_refused(self):
+        text = WORKFLOW_WITH_RAW_STEPS.replace(
+            "      - name: Preserve the raw review evidence whatever the seal decided\n"
+            "        if: always()\n",
+            "      - name: Preserve the raw review evidence whatever the seal decided\n")
+        self.assertNotEqual(text, WORKFLOW_WITH_RAW_STEPS)
+        self.assertIn("if: always()", " | ".join(self._check(text)))
+
+    def test_c13_is_not_asked_for_a_step_it_does_not_need(self):
+        """C13's always-run verify step already preserves its opinion; do not invent a rule."""
+        failures: list = []
+        lite_workflow_check.check_raw_evidence_survives_a_refused_seal(
+            lite_workflow_check.C13_WORKFLOW, WORKFLOW_WITHOUT_RAW_STEPS, failures)
+        self.assertEqual(failures, [])

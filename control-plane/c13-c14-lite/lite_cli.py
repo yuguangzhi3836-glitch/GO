@@ -15,6 +15,9 @@ Subcommands
                   resolve the blob SHA of the workflow definition that is executing
                   (one read-only GitHub contents call, and the only subcommand here
                   that touches the network)
+``raw-evidence``  assemble the non-secret raw review record, so that a refused seal cannot
+                  destroy the only copy of the reviewer's reasoning (it never writes a
+                  sealed bundle: raw review evidence is not sealed evidence)
 
 No subcommand contacts a database, a credential store or a deployment path.
 """
@@ -480,6 +483,94 @@ def cmd_workflow_identity(args) -> int:
     return 0
 
 
+RAW_EVIDENCE_SCHEMA_VERSION = "go.c13c14.lite.raw_review_evidence.v1"
+
+#: Shapes that must never leave the runner.
+#:
+#: The recorded artefacts are produced by the backend from dispatch inputs and the reviewer's
+#: opinion, and none of them has a credential field - so this is a backstop against a future
+#: edit rather than a filter over live secrets. It is deliberately **shape-based**: the AI
+#: credential is NOT passed to this step, so the guard cannot widen the secret's blast radius.
+FORBIDDEN_SECRET_PATTERNS = (
+    ("openai_key", rb"sk-[A-Za-z0-9_\-]{16,}"),
+    ("private_key_block", rb"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
+    ("github_fine_grained_pat", rb"github_pat_[A-Za-z0-9_]{20,}"),
+    ("github_token", rb"\bgh[pousr]_[A-Za-z0-9]{20,}"),
+    ("aws_access_key", rb"\bAKIA[0-9A-Z]{16}\b"),
+    ("aliyun_access_key", rb"\bLTAI[A-Za-z0-9]{12,}\b"),
+    ("bearer_header", rb"Bearer\s+[A-Za-z0-9._\-]{20,}"),
+)
+
+
+def cmd_raw_evidence(args) -> int:
+    """Preserve the raw review record so a refused seal cannot destroy the only copy.
+
+    CCV1-145B D-4: when the seal refuses, the reviewer's findings and summary - and with them
+    the ability to say *why* the verdict was what it was - live only in the runner's temp
+    directory and are discarded with the job. This gathers the non-secret review artefacts into
+    one directory, proves no credential shape is among them, and writes a manifest with digests.
+
+    It deliberately does not produce a sealed bundle: raw review evidence is not sealed
+    evidence, and only the seal step may publish that. ``authorizes_any_action`` stays false.
+    """
+    import re
+
+    stage = {
+        "spec": args.spec,
+        "facts": args.facts,
+        "contract": args.contract,
+        "outcome": args.outcome,
+        "scope": args.scope,
+        "seal_result": args.seal_result,
+        "seal_stdout": args.seal_stdout,
+        "seal_stderr": args.seal_stderr,
+    }
+
+    # Scan everything BEFORE writing anything. A partial directory would be worse than none:
+    # it would look like a complete raw record while quietly missing the file that leaked.
+    staged, missing = [], []
+    for name, source in sorted(stage.items()):
+        if not source:
+            continue
+        path = pathlib.Path(source)
+        if not path.is_file():
+            missing.append(name)
+            continue
+        raw = path.read_bytes()
+        for label, pattern in FORBIDDEN_SECRET_PATTERNS:
+            if re.search(pattern, raw):
+                raise SystemExit(f"raw-evidence: refusing to publish {name}: matches {label}")
+        staged.append((name, path.suffix or ".txt", raw))
+
+    out = pathlib.Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    collected = []
+    for name, suffix, raw in staged:
+        (out / f"{name}{suffix}").write_bytes(raw)
+        collected.append({"name": name, "file": f"{name}{suffix}",
+                          "bytes": len(raw),
+                          "sha256": hashlib.sha256(raw).hexdigest()})
+
+    seal_status = None
+    seal_result_file = out / f"seal_result{pathlib.Path(args.seal_result).suffix or '.txt'}" \
+        if args.seal_result else None
+    if seal_result_file and seal_result_file.is_file():
+        seal_status = json.loads(seal_result_file.read_text("utf-8"))
+
+    manifest = {
+        "schema_version": RAW_EVIDENCE_SCHEMA_VERSION,
+        "files": collected,
+        "missing": missing,
+        "seal_status": seal_status,
+        "sealed_bundle_published_by_this_step": False,
+        "authorizes_any_action": False,
+    }
+    _write(out / "raw_evidence_manifest.json", manifest)
+    print(json.dumps({"raw_evidence": str(out), "files": len(collected),
+                      "missing": missing, "seal_status": seal_status}))
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -541,6 +632,18 @@ def main(argv=None) -> int:
     wfid.add_argument("--ref", required=True, help="the ref this run used (GITHUB_SHA)")
     wfid.add_argument("--repository", help="defaults to GITHUB_REPOSITORY")
     wfid.set_defaults(func=cmd_workflow_identity)
+
+    rawev = sub.add_parser("raw-evidence")
+    rawev.add_argument("--out", required=True, help="directory to assemble the raw record in")
+    rawev.add_argument("--spec")
+    rawev.add_argument("--facts")
+    rawev.add_argument("--contract")
+    rawev.add_argument("--outcome")
+    rawev.add_argument("--scope")
+    rawev.add_argument("--seal-result")
+    rawev.add_argument("--seal-stdout")
+    rawev.add_argument("--seal-stderr")
+    rawev.set_defaults(func=cmd_raw_evidence)
 
     bind = sub.add_parser("bind-ledger")
     bind.add_argument("--spec", required=True)

@@ -33,6 +33,11 @@ FORBIDDEN_CREDENTIAL_HINTS = ("SSH", "DEPLOY", "PRODUCTION", "AWS_", "ALIYUN", "
 #: file could be legitimately *empty* without anything noticing.
 CHANGED_PATHS_REDIRECT = "changed_paths.txt"
 
+#: The artifact that keeps the raw review record, so a refused seal cannot destroy the only
+#: copy of the reviewer's reasoning (CCV1-145B D-4). Only C14 needs it: C13's always-run
+#: verify step already copies its opinion into the uploaded artefact directory.
+C14_RAW_ARTIFACT = "c13c14-lite-c14-raw-${{ inputs.candidate_sha }}"
+
 try:  # pragma: no cover - trivial import guard
     import yaml
 except ImportError:  # pragma: no cover
@@ -260,6 +265,23 @@ def _boundary_fixture(root: pathlib.Path) -> pathlib.Path:
     return repo
 
 
+def _document_from(raw: str):
+    """Parse the workflow text the caller handed us.
+
+    Deliberately NOT ``load(name)``: re-reading the file by name made a check un-testable - a
+    synthetic fixture silently validated whatever was on disk instead of the text under test,
+    which is exactly the kind of false pass this module exists to prevent. Returns ``None``
+    when there is no parser or the text does not parse, so the caller falls back to a scan.
+    """
+    if yaml is None:
+        return None
+    try:
+        document = yaml.safe_load(raw)
+    except Exception:  # noqa: BLE001 - unparseable text falls back to the text scan
+        return None
+    return document if isinstance(document, dict) else None
+
+
 def _candidate_checkout_can_see_its_parent(name: str, raw: str) -> bool:
     """Whether some candidate checkout fetches deep enough to hold the first parent.
 
@@ -268,13 +290,8 @@ def _candidate_checkout_can_see_its_parent(name: str, raw: str) -> bool:
     is the same silent degradation as the diff-tree bug - the empty-boundary gate is the
     backstop, this is the early warning.
     """
-    try:
-        document = load(name)
-    except OSError:
-        # A caller may hand us workflow text that is not (yet) a file in the tree - the
-        # regression tests do exactly that. Fall back to the text scan.
-        document = {"__raw__": raw}
-    if "__raw__" not in document:
+    document = _document_from(raw)
+    if document is not None:
         for job in (document.get("jobs") or {}).values():
             for step in (job or {}).get("steps", []) or []:
                 if "checkout" not in str(step.get("uses", "")):
@@ -365,6 +382,71 @@ def check_changed_path_boundary(name: str, raw: str, failures: list) -> None:
             f"expected {ordinary_expected}")
 
 
+def check_raw_evidence_survives_a_refused_seal(name: str, raw: str, failures: list) -> None:
+    """A refused seal must not destroy the only copy of the reviewer's reasoning.
+
+    CCV1-145B D-4: the seal can legitimately refuse (a model-authored `BLOCKED` used to be
+    unsealable), and the review artefacts lived only in the runner's temp directory - so the run
+    failed and the reason for the verdict was lost with it. The workflow must publish the raw
+    review record **unconditionally**, while still publishing the **sealed** bundle only when a
+    seal actually succeeded: raw review evidence is not sealed evidence.
+
+    Only the C14 workflow needs this. C13's always-run "verify" step already copies its opinion
+    into the uploaded artefact directory before the seal can refuse, so it does not share the
+    defect - and this guard deliberately does not invent a requirement for it.
+    """
+    if name != C14_WORKFLOW:
+        return
+    document = _document_from(raw)
+    if document is None:
+        # No parser, or the text does not parse: fall back to the two load-bearing facts.
+        if "lite_cli.py raw-evidence" not in raw:
+            failures.append(f"{name}: must assemble the raw review record (lite_cli.py raw-evidence)")
+        if f"name: {C14_RAW_ARTIFACT}" not in raw:
+            failures.append(f"{name}: must publish the raw review record as its own artifact")
+        return
+
+    raw_steps, raw_uploads, sealed_uploads = [], [], []
+    # The sealed bundle is the artifact whose name carries the cell and the candidate and no
+    # other role suffix. Matching on a prefix instead would also catch the -raw- and -readback-
+    # artifacts, both of which are *supposed* to be published unconditionally.
+    sealed_name = "c13c14-lite-c14-${{ inputs.candidate_sha }}"
+    for job in (document.get("jobs") or {}).values():
+        for step in (job or {}).get("steps", []) or []:
+            run = step.get("run") or ""
+            if isinstance(run, str) and "lite_cli.py raw-evidence" in run:
+                raw_steps.append((step, run))
+            if "upload-artifact" in str(step.get("uses", "")):
+                artifact = str((step.get("with") or {}).get("name") or "").strip()
+                if "-raw-" in artifact:
+                    raw_uploads.append((step.get("if"), artifact))
+                elif artifact == sealed_name:
+                    sealed_uploads.append((step.get("if"), artifact))
+
+    if not raw_steps:
+        failures.append(f"{name}: must assemble the raw review record (lite_cli.py raw-evidence)")
+    for step, run in raw_steps:
+        if str(step.get("if")) != "always()":
+            failures.append(f"{name}: the raw-evidence step must run under 'if: always()'")
+        for required in ("--outcome", "--contract", "--seal-result"):
+            if required not in run:
+                failures.append(f"{name}: the raw-evidence step must carry {required}")
+
+    if not raw_uploads:
+        failures.append(f"{name}: must publish the raw review record as its own artifact")
+    for condition, _ in raw_uploads:
+        if str(condition) != "always()":
+            failures.append(f"{name}: the raw review artifact must be uploaded under 'if: always()'")
+
+    if not sealed_uploads:
+        failures.append(f"{name}: the sealed bundle artifact is missing")
+    for condition, _ in sealed_uploads:
+        if str(condition) == "always()":
+            failures.append(
+                f"{name}: the SEALED bundle artifact must not be published unconditionally - "
+                "raw review evidence is not sealed evidence")
+
+
 def run() -> dict:
     failures = []
     checked = []
@@ -384,6 +466,7 @@ def run() -> dict:
         check_readback_declares_the_run_head(name, raw, failures)
         check_changed_path_boundary(name, raw, failures)
         check_workflow_identity_source(name, raw, failures)
+        check_raw_evidence_survives_a_refused_seal(name, raw, failures)
     return {
         "gate": "PASS" if not failures else "FAIL",
         "yaml_parser": "PyYAML" if yaml is not None else "text-scan-fallback",

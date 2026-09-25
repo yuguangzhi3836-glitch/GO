@@ -263,8 +263,29 @@ def validate_c14(record) -> None:
             raise Reject("c14_pass_with_blocking_issues")
         if record["remediation_status"] not in ("CLOSED", "NOT_REQUIRED"):
             raise Reject("c14_pass_without_remediation_closure")
-    if record["verdict"] in ("FAIL", "BLOCKED") and record["failure_class"] is None:
-        raise Reject("c14_non_pass_requires_failure_class")
+
+    # A non-pass verdict must carry EVIDENCE, and it must never be made to impersonate a
+    # provider failure. Two different things reach this point:
+    #
+    #   * a provider / quota / transport failure genuinely has a failure_class, and no AI
+    #     opinion was ever produced;
+    #   * the AI reviewed normally and returned FAIL or BLOCKED, in which case there is no
+    #     provider failure to name - what it must supply is its own reasons.
+    #
+    # The previous rule demanded a failure_class for both, which made a model-authored
+    # BLOCKED unsealable: the run died at the seal and, because the opinion had not been
+    # published yet, the only copy of the reviewer's reasoning was destroyed with it
+    # (CCV1-145B D-4).
+    if record["verdict"] == "BLOCKED" and record["failure_class"] is None:
+        # The AI itself blocked: it has to say what blocked it.
+        if not record["blocking_issues"]:
+            raise Reject("c14_model_blocked_without_blocking_issues")
+    if record["verdict"] == "FAIL":
+        # A FAIL with no evidence is an assertion, not a verdict. Blocking evidence is either
+        # an explicit blocking issue or a finding serious enough to justify a failure.
+        blocking_findings = [f for f in record["findings"] if f["severity"] in ("BLOCKER", "MAJOR")]
+        if not record["blocking_issues"] and not blocking_findings:
+            raise Reject("c14_fail_without_findings_or_blocking_issues")
 
 
 def validate_c13(record) -> None:
