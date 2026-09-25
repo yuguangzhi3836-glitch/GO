@@ -1,5 +1,30 @@
 # CCV1-144 — CC / HK witness layer for C13/C14 Lite V2
 
+> **Correction, added by CCV1-144A (2026-09-25, later the same day). Not a rewrite of
+> this round's record — an annotation on it.**
+>
+> Two claims in this document about artifact bytes are **wrong**, and were disproved by
+> a controlled experiment:
+>
+> 1. "the storage endpoint rejects the credential in every configuration" — it rejects
+>    the *`Authorization` header*, not the credential. Python's `urlopen` follows the
+>    302 and forwards `Authorization` to Azure Blob Storage, which then tries to read
+>    it as an Azure credential and answers `401 InvalidAuthenticationInfo`.
+> 2. "`ARTIFACT_BYTES_VERIFIED` is unavailable to CC and HK" — the correct
+>    two-step download (ask for the redirect without following it, then fetch the
+>    pre-signed URL with no `Authorization` header) **succeeds**, and the recomputed
+>    sha256 equals GitHub's `artifact.digest` byte for byte.
+>
+> So the byte level is *achievable*; the table below records what was true of the code
+> as it stood in this round, not a platform limit. `lite_artifact_fetch` (CCV1-144A)
+> implements the correct fetch and `test_lw_artifact_fetch` contains a counter-test
+> that reproduces this round's 401 if the naive single-step fetch ever returns.
+>
+> What *is* still true, and is the real blocker: neither host holds a credential whose
+> repository selection includes `yuguangzhi3836-glitch/GO`, so neither can read even
+> the run metadata. That is a **grant** problem, not a transport or code problem, and
+> it is tracked in `IMPLEMENTATION-PLAN-CCV1-144A-20260925.md`.
+
 - Task: `CCV1-144-C13-C14-LITE-V2-CONTROL-WITNESS-INTEGRATION`
 - Branch: `cc/ccv1-144-cc-hk-witness-20260925`, **stacked on** `cc/c13-c14-lite-v2-github-backend-20260925`
   (PR #248). The stack is deliberate: this layer consumes PR #248's contracts, and #248's own scope is

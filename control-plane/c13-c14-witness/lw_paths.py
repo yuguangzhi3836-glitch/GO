@@ -21,6 +21,7 @@ REQUIRED_LITE_MODULES = (
     "lite_prerequisite",
     "lite_execution_record",
     "lite_github_run",
+    "lite_artifact_fetch",
     "lite_ledger_binding",
     "lite_aggregate",
     "lite_chain",

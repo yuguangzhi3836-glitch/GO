@@ -16,7 +16,20 @@ import lite_bundle
 import lite_candidate
 import lite_canonical
 
+#: A fixed instant, for tests that need one. It is **not** the default for the
+#: builders below: a frozen default silently turns every fixture into a time bomb —
+#: contracts carry ``expires_at``, so once wall-clock passes ``NOW + 55min`` every
+#: test that builds a fixture starts failing with ``candidate_request_expired``.
+#: That is exactly what happened to this suite on 2026-09-25, which is why the
+#: builders now resolve their ``now`` at call time.
 NOW = datetime(2026, 9, 25, 8, 0, 0, tzinfo=timezone.utc)
+
+
+def fresh_now() -> datetime:
+    """Call-time UTC, second precision. Fixtures never rot while the suite runs."""
+    return datetime.now(timezone.utc).replace(microsecond=0)
+
+
 ROUND_ID = "SYNTHETIC-LITE-V2-ROUND"
 ISSUE_NUMBER = 4242
 REPOSITORY = "yuguangzhi3836-glitch/GO"
@@ -46,9 +59,21 @@ def _iso(moment: datetime) -> str:
     return moment.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def parse_instant(text: str) -> datetime:
+    """Read back an ``...Z`` timestamp. Used by the expiry tests so they assert
+    "one second past whatever this contract says" instead of past a constant."""
+    return datetime.fromisoformat(text.replace("Z", "+00:00"))
+
+
+def just_after_expiry(contract: dict) -> datetime:
+    """One second past the contract's own ``expires_at``."""
+    return parse_instant(contract["expires_at"]) + timedelta(seconds=1)
+
+
 def contract(role: str, *, candidate_sha=CANDIDATE_SHA, application_tree=APPLICATION_TREE,
              cell_id=None, task_id=None, nonce=None, issue_number=ISSUE_NUMBER,
-             ledger_reference="auto", issued_at=None, expires_at=None, now=NOW) -> dict:
+             ledger_reference="auto", issued_at=None, expires_at=None, now=None) -> dict:
+    now = now or fresh_now()
     cell_id = cell_id or ("C14" if role == "c14" else "C13")
     task_id = task_id or (C14_TASK if role == "c14" else C13_TASK)
     nonce = nonce or ("c14-nonce-000000000001" if role == "c14" else "c13-nonce-000000000001")
@@ -135,8 +160,9 @@ def opinion(role: str, *, verdict="PASS_SCOPED", candidate_sha=CANDIDATE_SHA,
 def build_bundle(role: str, *, candidate_sha=CANDIDATE_SHA, application_tree=APPLICATION_TREE,
                  dispatch_contract=None, opinion_obj=None, run_id=None, run_attempt=1,
                  execution_id=None, nonce=None, failure_class=None, verdict=None,
-                 prereq=None, issued_at=None, now=NOW) -> tuple:
+                 prereq=None, issued_at=None, now=None) -> tuple:
     """Return ``(bundle, artifacts)`` for one role."""
+    now = now or fresh_now()
     contract_obj = dispatch_contract if dispatch_contract is not None else contract(
         role, candidate_sha=candidate_sha, application_tree=application_tree, now=now)
     opinion_obj = opinion_obj if opinion_obj is not None else opinion(role, candidate_sha=candidate_sha)
@@ -256,8 +282,9 @@ def make_round(*, candidate_sha=CANDIDATE_SHA, application_tree=APPLICATION_TREE
                c13_execution_id="stub-c13-ai-execution-0001",
                c14_run_id=900001, c13_run_id=900002,
                c14_nonce="c14-nonce-000000000001", c13_nonce="c13-nonce-000000000001",
-               with_c14=True, now=NOW) -> dict:
+               with_c14=True, now=None) -> dict:
     """Assemble a complete, internally consistent synthetic round."""
+    now = now or fresh_now()
     c14_contract = contract("c14", candidate_sha=candidate_sha, application_tree=application_tree, nonce=c14_nonce, now=now)
     c14_opinion = opinion(
         "c14", verdict=c14_verdict, candidate_sha=candidate_sha, findings=c14_findings,

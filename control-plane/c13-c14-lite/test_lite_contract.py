@@ -64,10 +64,18 @@ class CandidateContractTests(unittest.TestCase):
 
     def test_expired_request_is_rejected(self):
         contract = fx.contract("c14")
-        late = fx.NOW + timedelta(hours=2)
+        # Derived from the contract's own expiry, so the test cannot rot when the
+        # default validity window or the wall clock changes.
+        late = fx.just_after_expiry(contract)
         with self.assertRaises(lite_errors.Reject) as ctx:
             lite_candidate.validate(contract, now=late)
         self.assertEqual(ctx.exception.reason, "candidate_request_expired")
+
+    def test_a_freshly_built_contract_is_not_expired(self):
+        """The bug this guards: a frozen fixture default makes every contract expire
+        once wall-clock passes it, and the whole suite fails for the wrong reason."""
+        contract = fx.contract("c14")
+        lite_candidate.validate(contract)  # no explicit ``now``: uses the real clock
 
     def test_binding_against_dispatch_input(self):
         contract = fx.contract("c13")

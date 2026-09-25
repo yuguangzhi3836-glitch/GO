@@ -234,11 +234,10 @@ class NegativeSuiteTests(unittest.TestCase):
         )
 
     def test_22_expired_request(self):
-        import datetime
-
         round_ = fx.make_round()
+        # One second past the round's own expiry: no dependency on a hardcoded instant.
         decision = self.case("22_expired_request", "REJECT", round_=round_,
-                             now=fx.NOW + datetime.timedelta(hours=2))
+                             now=fx.just_after_expiry(round_["c13_contract"]))
         self.assert_reason(decision, "candidate_request_expired")
 
     def test_23_issue_task_binding_mismatch(self):

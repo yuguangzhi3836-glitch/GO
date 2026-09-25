@@ -1,0 +1,31 @@
+# Template for the CC / HK GitHub witness credential.
+#
+# DO NOT put a real credential in this file, or in any file in this repository.
+# This is a shape reference only: the real value is installed by
+# `install-github-witness-credential.sh` on the target host, read from stdin.
+#
+# What the credential must be:
+#   type            fine-grained personal access token (read-only)
+#   repository      yuguangzhi3836-glitch/GO     <- ONLY this repository
+#   permissions     Actions     Read
+#                   Contents    Read
+#                   Metadata    Read   (mandatory for fine-grained PATs)
+#
+# What it must NOT have:
+#   any write permission, administration, secrets, workflows, members,
+#   deployments, packages, issues, pull requests.
+#
+# Where it goes (mode 0600):
+#   cc  /etc/go-command-center/keys/github-witness-reader.token   owner root:root
+#   hk  /etc/go-hk-agent/keys/github-witness-reader.token         owner go-hk-agent:go-hk-agent
+#
+# Purpose: GO C13/C14 Lite acceptance witness: GitHub Actions readback only.
+#
+# Note on the file this credential must NOT be confused with:
+#   /etc/go-command-center/keys/github-requests-reader.token
+# is an existing fine-grained PAT that authenticates as chenzhenxi1-sudo but has
+# `/repos/yuguangzhi3836-glitch/GO` outside its repository selection, so every
+# Actions read answers 404. It is left untouched; it belongs to another surface.
+# The angle brackets are deliberate: a real value cannot contain them, so the secret
+# scanner stays strict and still fires on an actual token pasted in here by mistake.
+github_pat_<REPLACE_WITH_THE_REAL_VALUE>

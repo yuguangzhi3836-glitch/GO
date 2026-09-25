@@ -27,6 +27,7 @@ ROOT = pathlib.Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+import lite_artifact_fetch  # noqa: E402
 import lite_github_run  # noqa: E402
 
 API_ROOT = "https://api.github.com"
@@ -80,25 +81,33 @@ def readback(*, repository: str, role: str, candidate_sha: str, workflow_path: s
     digest = artifact.get("digest")
     lite_github_run.assert_artifact(artifact, run_id=run_id, name=name, digest=digest)
 
-    raw = None
-    bytes_verified = False
-    bytes_error = None
-    try:
-        raw = _get(f"/repos/{repository}/actions/artifacts/{artifact['id']}/zip", token, raw=True)
-        lite_github_run.assert_downloaded_bytes(raw, digest=digest)
-        bytes_verified = True
-    except (lite_github_run.Reject, urllib.error.HTTPError, urllib.error.URLError, OSError, ValueError) as error:
-        reason = getattr(error, "reason", None) or type(error).__name__
-        if bytes_mode == "strict":
-            raise
-        bytes_error = str(reason)[:200]
+    # Bytes: two-step, and the Authorization header must NOT travel to the signed
+    # storage URL (that misdiagnosis is why PR #248 / CCV1-144 wrongly recorded
+    # "the storage endpoint refuses this credential"). See lite_artifact_fetch.
+    fetched = lite_artifact_fetch.fetch_artifact_bytes(
+        repository=repository, artifact_id=artifact["id"], token=token,
+        expected_digest=digest,
+    )
+    raw = fetched["bytes"]
+    if bytes_mode == "strict" and not fetched["verified"]:
+        raise lite_github_run.Reject("artifact_bytes_not_verified",
+                                     fetched["failure_class"] or "unknown")
 
     return {
         "schema_version": "go.c13c14.lite.readback.v1",
         "mode": mode,
         "bytes_mode": bytes_mode,
-        "bytes_verified": bytes_verified,
-        "bytes_error": bytes_error,
+        "bytes_verified": fetched["verified"],
+        "bytes_error": None if fetched["verified"] else fetched["failure_class"],
+        "artifact_bytes": {
+            "available": fetched["available"],
+            "hashed": fetched["hashed"],
+            "verified": fetched["verified"],
+            "sha256": fetched["sha256"],
+            "zip_bytes": fetched["zip_bytes"],
+            "failure_class": fetched["failure_class"],
+            "redirect_host_category": fetched["redirect_host_category"],
+        },
         "repository": repository,
         "role": role,
         "run_id": run_id,

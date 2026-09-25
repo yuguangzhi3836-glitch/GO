@@ -133,6 +133,19 @@ class DispatchEnvRobustnessTests(unittest.TestCase):
             capture_output=True, text=True, env=base, timeout=120,
         )
 
+    def _instant(self, offset_minutes):
+        """A dispatch timestamp relative to now.
+
+        Hardcoded instants made this suite expire: once wall-clock passed the frozen
+        ``expires_at`` the CLI correctly refused with ``candidate_request_expired``
+        and the test failed for a reason unrelated to what it checks.
+        """
+        import datetime as _datetime
+
+        moment = (_datetime.datetime.now(_datetime.timezone.utc)
+                  + _datetime.timedelta(minutes=offset_minutes))
+        return moment.isoformat().replace("+00:00", "Z").split(".")[0] + "Z"
+
     def spec_env(self, directory, scope_sha):
         return {
             "LITE_WORKFLOW_IDENTITY": ".github/workflows/c13-c14-lite-poc.yml",
@@ -146,8 +159,8 @@ class DispatchEnvRobustnessTests(unittest.TestCase):
             "LITE_NONCE": "poc-nonce-000000001",
             "LITE_RUN_ID": "36109708133",
             "LITE_RUN_ATTEMPT": "1",
-            "LITE_ISSUED_AT": "2026-09-25T08:00:00Z",
-            "LITE_EXPIRES_AT": "2026-09-25T09:00:00Z",
+            "LITE_ISSUED_AT": self._instant(-5),
+            "LITE_EXPIRES_AT": self._instant(+55),
             "LITE_WORKFLOW_SHA": "b" * 40,
             "LITE_SCOPE_SHA256": scope_sha,
             "GITHUB_REPOSITORY": "yuguangzhi3836-glitch/GO",
