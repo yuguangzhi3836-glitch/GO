@@ -502,10 +502,12 @@ def _git_blob_sha(raw: bytes) -> str:
 def cmd_workflow_identity(args) -> int:
     """Resolve the blob SHA of the workflow definition that is actually executing.
 
-    CCV1-145B D-2: the workspace root is the *pinned backend* checkout, so
-    ``git rev-parse HEAD:<workflow path>`` resolves that commit's copy of the file
-    rather than the definition GitHub is running. The definition that ran lives at the ref
-    this run used (``GITHUB_SHA``), so it is read from the API here - and the bytes the API
+    CCV1-145B D-2: inferring the identity from the workspace points the record at whatever
+    copy of the file happens to be checked out there, not at the definition GitHub
+    registered for this run - and a later edit to the registered workflow then does not
+    move the digest at all. The definition that ran lives at the ref this run used
+    (``GITHUB_SHA``); since the backend is no longer pinned to a branch-local commit that
+    ref is also the execution backend. It is read from the API here, and the bytes the API
     returns are re-hashed into git's own blob SHA before anything is reported, so the
     printed value is computed from the content rather than taken on the API's word.
 
