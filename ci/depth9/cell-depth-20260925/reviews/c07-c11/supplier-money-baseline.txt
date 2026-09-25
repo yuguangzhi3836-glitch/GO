@@ -1,0 +1,432 @@
+FFFFFF.FF                                                                [100%]
+=================================== FAILURES ===================================
+_ test_supplier_outcome_without_bound_capture_cannot_assert_paid[missing_capture-UNKNOWN_EXTERNAL_STATE] _
+
+client = <starlette.testclient.TestClient object at 0x7f06b5ea53a0>
+state = 'UNKNOWN_EXTERNAL_STATE', corruption = 'missing_capture'
+
+    @pytest.mark.parametrize('state', ['UNKNOWN_EXTERNAL_STATE', 'SUPPLIER_FAILED'])
+    @pytest.mark.parametrize('corruption', ['missing_capture', 'wrong_currency', 'wrong_binding'])
+    def test_supplier_outcome_without_bound_capture_cannot_assert_paid(client, state, corruption):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == fulfillment.payment_intent_id,
+                Movement.movement_type == 'CAPTURE'))
+            if corruption == 'missing_capture': session.delete(cap)
+            elif corruption == 'wrong_currency': cap.currency = 'USD'
+            else:
+                binding = session.scalar(select(Binding).where(Binding.payment_intent_id == fulfillment.payment_intent_id))
+                binding.payee_id = 'another-supplier'
+            session.commit()
+        result = svc.record_supplier_fact(fid, {'state': state, 'evidence_reference': 'supplier://unknown'})
+>       assert result['unified_lifecycle']['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:27: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T07:40:45.025135+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_04070445ba8d4b56aa9c603e3465fd8a","trace_id":"tr_59a95436779c4aa39547ff62795f7cda","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":90.74}
+{"ts":"2026-09-25T07:40:45.026358+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.070734+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_3d2764af0e304daba8c35045606f3d12","trace_id":"tr_48b9292eeb6c453188c23383120fea4c","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":43.11}
+{"ts":"2026-09-25T07:40:45.071432+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.084374+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_8879409dbe2d4ec59d574f71cb920dcc","trace_id":"tr_954fb10279f84961b18c7422afb7320c","path":"/v1/rail/search","method":"POST","status_code":200,"duration_ms":12.12}
+{"ts":"2026-09-25T07:40:45.084860+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.097837+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_da9fcb5b2fbb4689b5e149354c843c66","trace_id":"tr_c55e527c90394585b9866702a25e2713","path":"/v1/rail/offers/rail_off_1bc3c794a83f4961/prebook","method":"POST","status_code":200,"duration_ms":12.37}
+{"ts":"2026-09-25T07:40:45.098359+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/offers/rail_off_1bc3c794a83f4961/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.122671+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_b8e3a7bfc51b4ed3bea11113c2d6f899","trace_id":"tr_0a2298387e0347ff9de4e78a77aab8d7","path":"/v1/rail/orders","method":"POST","status_code":200,"duration_ms":23.42}
+{"ts":"2026-09-25T07:40:45.123187+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.173374+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_0e68be85345b4b469d0935b13a728e5e","trace_id":"tr_cea501de837d4daa8f64d75125e88123","path":"/v1/rail/orders/rail_ord_25d43270d1334c33/checkout","method":"POST","status_code":200,"duration_ms":49.33}
+{"ts":"2026-09-25T07:40:45.174067+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_25d43270d1334c33/checkout \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/offers/rail_off_1bc3c794a83f4961/prebook "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_25d43270d1334c33/checkout "HTTP/1.1 200 OK"
+_ test_supplier_outcome_without_bound_capture_cannot_assert_paid[missing_capture-SUPPLIER_FAILED] _
+
+client = <starlette.testclient.TestClient object at 0x7f06b4116d20>
+state = 'SUPPLIER_FAILED', corruption = 'missing_capture'
+
+    @pytest.mark.parametrize('state', ['UNKNOWN_EXTERNAL_STATE', 'SUPPLIER_FAILED'])
+    @pytest.mark.parametrize('corruption', ['missing_capture', 'wrong_currency', 'wrong_binding'])
+    def test_supplier_outcome_without_bound_capture_cannot_assert_paid(client, state, corruption):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == fulfillment.payment_intent_id,
+                Movement.movement_type == 'CAPTURE'))
+            if corruption == 'missing_capture': session.delete(cap)
+            elif corruption == 'wrong_currency': cap.currency = 'USD'
+            else:
+                binding = session.scalar(select(Binding).where(Binding.payment_intent_id == fulfillment.payment_intent_id))
+                binding.payee_id = 'another-supplier'
+            session.commit()
+        result = svc.record_supplier_fact(fid, {'state': state, 'evidence_reference': 'supplier://unknown'})
+>       assert result['unified_lifecycle']['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:27: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T07:40:45.455744+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_2d0f3fc896fa476e9cd48259ee9cb6db","trace_id":"tr_6443f0f0fbef4358a12ca3db62fe4d48","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":83.98}
+{"ts":"2026-09-25T07:40:45.456777+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.505674+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_5600f21d1a244854bc0b501afd0a27fd","trace_id":"tr_ab7f84ab7de443f1b4489b37556f99c2","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":47.93}
+{"ts":"2026-09-25T07:40:45.506293+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.516820+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_7874d9b11bae4c849b83ffe7fc9bedf4","trace_id":"tr_c8f507f6eb49446eb1cc7573747f6e83","path":"/v1/rail/search","method":"POST","status_code":200,"duration_ms":9.7}
+{"ts":"2026-09-25T07:40:45.517261+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.528005+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_83d9142345714519b491be3f013af8aa","trace_id":"tr_345fbe4b55d742519b5b4d64e71020c5","path":"/v1/rail/offers/rail_off_99f6358ec40e4c17/prebook","method":"POST","status_code":200,"duration_ms":9.98}
+{"ts":"2026-09-25T07:40:45.528395+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/offers/rail_off_99f6358ec40e4c17/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.542280+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_2e2d951dff31407b958385b76c9e9599","trace_id":"tr_41f8538e567444818d918bb224ccbadf","path":"/v1/rail/orders","method":"POST","status_code":200,"duration_ms":13.35}
+{"ts":"2026-09-25T07:40:45.542793+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.573462+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_143df313f51f486eb7e1c132efd60fd8","trace_id":"tr_f0eedd3a06ac46cab62dfd00c1b3e872","path":"/v1/rail/orders/rail_ord_5a354eb5786c47ad/checkout","method":"POST","status_code":200,"duration_ms":29.96}
+{"ts":"2026-09-25T07:40:45.573952+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_5a354eb5786c47ad/checkout \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/offers/rail_off_99f6358ec40e4c17/prebook "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_5a354eb5786c47ad/checkout "HTTP/1.1 200 OK"
+_ test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_currency-UNKNOWN_EXTERNAL_STATE] _
+
+client = <starlette.testclient.TestClient object at 0x7f06b912c3b0>
+state = 'UNKNOWN_EXTERNAL_STATE', corruption = 'wrong_currency'
+
+    @pytest.mark.parametrize('state', ['UNKNOWN_EXTERNAL_STATE', 'SUPPLIER_FAILED'])
+    @pytest.mark.parametrize('corruption', ['missing_capture', 'wrong_currency', 'wrong_binding'])
+    def test_supplier_outcome_without_bound_capture_cannot_assert_paid(client, state, corruption):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == fulfillment.payment_intent_id,
+                Movement.movement_type == 'CAPTURE'))
+            if corruption == 'missing_capture': session.delete(cap)
+            elif corruption == 'wrong_currency': cap.currency = 'USD'
+            else:
+                binding = session.scalar(select(Binding).where(Binding.payment_intent_id == fulfillment.payment_intent_id))
+                binding.payee_id = 'another-supplier'
+            session.commit()
+        result = svc.record_supplier_fact(fid, {'state': state, 'evidence_reference': 'supplier://unknown'})
+>       assert result['unified_lifecycle']['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:27: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T07:40:45.788525+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_1bdda9fce4d94756a32729a55d521991","trace_id":"tr_ec14534a7ea2415dabef476f92f38331","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":79.64}
+{"ts":"2026-09-25T07:40:45.789284+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.829693+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_185b211c0cec465f8548f368efe1d9de","trace_id":"tr_bd3a10c734be48f79d30b78cc5c43068","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":39.54}
+{"ts":"2026-09-25T07:40:45.830243+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.837738+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_3fd04389541249fe8b649ff682f3c71b","trace_id":"tr_cceae1f8e808436fa6e6108bcbfca85f","path":"/v1/rail/search","method":"POST","status_code":200,"duration_ms":6.85}
+{"ts":"2026-09-25T07:40:45.838137+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.847142+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_9de314d18b3c44c09a67d366ad286e6e","trace_id":"tr_c3ab3e63d7e349b2919a74437da24e45","path":"/v1/rail/offers/rail_off_a330ccdbd3ac4503/prebook","method":"POST","status_code":200,"duration_ms":8.36}
+{"ts":"2026-09-25T07:40:45.847696+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/offers/rail_off_a330ccdbd3ac4503/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.864811+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_c5d3daeb3124477f80e31d0550048f4a","trace_id":"tr_5c539c9ba1b440458cb32406289d7c7e","path":"/v1/rail/orders","method":"POST","status_code":200,"duration_ms":16.46}
+{"ts":"2026-09-25T07:40:45.865343+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:45.885612+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_49c20f88b565495185096ffbf8d06be3","trace_id":"tr_ef292084760b43ba85c6b4021c8368f3","path":"/v1/rail/orders/rail_ord_e95443d97f1c479f/checkout","method":"POST","status_code":200,"duration_ms":19.57}
+{"ts":"2026-09-25T07:40:45.886323+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_e95443d97f1c479f/checkout \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/offers/rail_off_a330ccdbd3ac4503/prebook "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_e95443d97f1c479f/checkout "HTTP/1.1 200 OK"
+_ test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_currency-SUPPLIER_FAILED] _
+
+client = <starlette.testclient.TestClient object at 0x7f06b41a7a70>
+state = 'SUPPLIER_FAILED', corruption = 'wrong_currency'
+
+    @pytest.mark.parametrize('state', ['UNKNOWN_EXTERNAL_STATE', 'SUPPLIER_FAILED'])
+    @pytest.mark.parametrize('corruption', ['missing_capture', 'wrong_currency', 'wrong_binding'])
+    def test_supplier_outcome_without_bound_capture_cannot_assert_paid(client, state, corruption):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == fulfillment.payment_intent_id,
+                Movement.movement_type == 'CAPTURE'))
+            if corruption == 'missing_capture': session.delete(cap)
+            elif corruption == 'wrong_currency': cap.currency = 'USD'
+            else:
+                binding = session.scalar(select(Binding).where(Binding.payment_intent_id == fulfillment.payment_intent_id))
+                binding.payee_id = 'another-supplier'
+            session.commit()
+        result = svc.record_supplier_fact(fid, {'state': state, 'evidence_reference': 'supplier://unknown'})
+>       assert result['unified_lifecycle']['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:27: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T07:40:46.092883+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_7cc675ed34984de59ec0f532d8f5fb7b","trace_id":"tr_77b7c693760a43f688a3960118d82cc0","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":94.54}
+{"ts":"2026-09-25T07:40:46.093584+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.147682+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_48c318b7229b47e29084747602007189","trace_id":"tr_3c74bcd1097d4bdeb772ae5277e4bc1b","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":53.15}
+{"ts":"2026-09-25T07:40:46.148218+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.158329+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_1b63650402734f6a8b9a5ef66c3a77c2","trace_id":"tr_4abd90f843fe4cecb3e036928d5260d0","path":"/v1/rail/search","method":"POST","status_code":200,"duration_ms":9.45}
+{"ts":"2026-09-25T07:40:46.158783+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.167801+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_a11c34fc5577485fa161a8af9a7e1cba","trace_id":"tr_4d729c638e224d02b96a52b5f799a26a","path":"/v1/rail/offers/rail_off_17979d3dd3b246bf/prebook","method":"POST","status_code":200,"duration_ms":8.23}
+{"ts":"2026-09-25T07:40:46.168230+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/offers/rail_off_17979d3dd3b246bf/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.179943+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_050ce0af19424b26a83a18ff540c1832","trace_id":"tr_4f2e3422971045ea8f45aa047faa493c","path":"/v1/rail/orders","method":"POST","status_code":200,"duration_ms":11.04}
+{"ts":"2026-09-25T07:40:46.180543+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.200609+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_ce407f8da3af4ef8bd2b54718b8c001d","trace_id":"tr_a68b967e1ed1442ebd7ba356fcab0d82","path":"/v1/rail/orders/rail_ord_e28af4057b124a92/checkout","method":"POST","status_code":200,"duration_ms":19.41}
+{"ts":"2026-09-25T07:40:46.201091+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_e28af4057b124a92/checkout \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/offers/rail_off_17979d3dd3b246bf/prebook "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_e28af4057b124a92/checkout "HTTP/1.1 200 OK"
+_ test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_binding-UNKNOWN_EXTERNAL_STATE] _
+
+client = <starlette.testclient.TestClient object at 0x7f06b626c980>
+state = 'UNKNOWN_EXTERNAL_STATE', corruption = 'wrong_binding'
+
+    @pytest.mark.parametrize('state', ['UNKNOWN_EXTERNAL_STATE', 'SUPPLIER_FAILED'])
+    @pytest.mark.parametrize('corruption', ['missing_capture', 'wrong_currency', 'wrong_binding'])
+    def test_supplier_outcome_without_bound_capture_cannot_assert_paid(client, state, corruption):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == fulfillment.payment_intent_id,
+                Movement.movement_type == 'CAPTURE'))
+            if corruption == 'missing_capture': session.delete(cap)
+            elif corruption == 'wrong_currency': cap.currency = 'USD'
+            else:
+                binding = session.scalar(select(Binding).where(Binding.payment_intent_id == fulfillment.payment_intent_id))
+                binding.payee_id = 'another-supplier'
+            session.commit()
+        result = svc.record_supplier_fact(fid, {'state': state, 'evidence_reference': 'supplier://unknown'})
+>       assert result['unified_lifecycle']['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:27: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T07:40:46.397300+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_a400e0df28f841389518d8bed739f8ea","trace_id":"tr_5dcbbea659df4ced800ec61ad4972001","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":79.51}
+{"ts":"2026-09-25T07:40:46.398117+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.438204+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_5257b59b4d064a85a39129aa54b6fd4f","trace_id":"tr_fbe899a1c814431a82e82503b6dec044","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":39.06}
+{"ts":"2026-09-25T07:40:46.438852+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.446362+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_8a1da7ed07994980b1822890739aaf09","trace_id":"tr_f320bbc3176744d888ad7267d55b6642","path":"/v1/rail/search","method":"POST","status_code":200,"duration_ms":6.64}
+{"ts":"2026-09-25T07:40:46.446878+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.454182+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_76edf5225ca6470e8ea52c12eacf5629","trace_id":"tr_90a79eaa55fe4abebd47adcb38f0cd3c","path":"/v1/rail/offers/rail_off_de3b5c789a324fc8/prebook","method":"POST","status_code":200,"duration_ms":6.64}
+{"ts":"2026-09-25T07:40:46.454623+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/offers/rail_off_de3b5c789a324fc8/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.465775+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_7fca90b6084444e09ddba35c4b2f43c8","trace_id":"tr_f14ddc8862df4ee98c5c6bb10b655949","path":"/v1/rail/orders","method":"POST","status_code":200,"duration_ms":10.57}
+{"ts":"2026-09-25T07:40:46.466197+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.486441+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_6e9fe97afd4a4f6fa7a7323b206db40b","trace_id":"tr_719f5f07534a49e4af211249974390c8","path":"/v1/rail/orders/rail_ord_63068c5d3b20431d/checkout","method":"POST","status_code":200,"duration_ms":19.46}
+{"ts":"2026-09-25T07:40:46.487011+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_63068c5d3b20431d/checkout \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/offers/rail_off_de3b5c789a324fc8/prebook "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_63068c5d3b20431d/checkout "HTTP/1.1 200 OK"
+_ test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_binding-SUPPLIER_FAILED] _
+
+client = <starlette.testclient.TestClient object at 0x7f06b5accfe0>
+state = 'SUPPLIER_FAILED', corruption = 'wrong_binding'
+
+    @pytest.mark.parametrize('state', ['UNKNOWN_EXTERNAL_STATE', 'SUPPLIER_FAILED'])
+    @pytest.mark.parametrize('corruption', ['missing_capture', 'wrong_currency', 'wrong_binding'])
+    def test_supplier_outcome_without_bound_capture_cannot_assert_paid(client, state, corruption):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == fulfillment.payment_intent_id,
+                Movement.movement_type == 'CAPTURE'))
+            if corruption == 'missing_capture': session.delete(cap)
+            elif corruption == 'wrong_currency': cap.currency = 'USD'
+            else:
+                binding = session.scalar(select(Binding).where(Binding.payment_intent_id == fulfillment.payment_intent_id))
+                binding.payee_id = 'another-supplier'
+            session.commit()
+        result = svc.record_supplier_fact(fid, {'state': state, 'evidence_reference': 'supplier://unknown'})
+>       assert result['unified_lifecycle']['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:27: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T07:40:46.683713+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_e9273d55cb284e66836030dae8c2cc06","trace_id":"tr_c2d1d9e285ac450e8c087f2d0f7b9c9f","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":90.9}
+{"ts":"2026-09-25T07:40:46.684603+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.738291+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_62c2d534211f42ed821aefeccc68881f","trace_id":"tr_a77cf346e1e34f0493ca21972ff5b286","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":52.79}
+{"ts":"2026-09-25T07:40:46.738928+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.748107+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_3f0db3ff01b44bf5982fb17c943f7895","trace_id":"tr_c34c2cb00efa403ea041ab44d77507df","path":"/v1/rail/search","method":"POST","status_code":200,"duration_ms":8.29}
+{"ts":"2026-09-25T07:40:46.748600+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.755650+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_21a776a4a4e54495be19d9005fcdb96a","trace_id":"tr_da64ea5e80f54da6afe324298c1d4222","path":"/v1/rail/offers/rail_off_1a9075204f254fd4/prebook","method":"POST","status_code":200,"duration_ms":6.38}
+{"ts":"2026-09-25T07:40:46.756083+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/offers/rail_off_1a9075204f254fd4/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.768853+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_7a10b1b9db564a018ec2e00af2934925","trace_id":"tr_355b0bed1ca048cfbc9904e2274d6f5a","path":"/v1/rail/orders","method":"POST","status_code":200,"duration_ms":12.15}
+{"ts":"2026-09-25T07:40:46.769358+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:46.797499+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_7c2983f1487448bbbc5aee341d9f7ee0","trace_id":"tr_ed075993bae043c58acc7f23d5842fa2","path":"/v1/rail/orders/rail_ord_ba583011bce34bb5/checkout","method":"POST","status_code":200,"duration_ms":27.4}
+{"ts":"2026-09-25T07:40:46.798171+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_ba583011bce34bb5/checkout \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/offers/rail_off_1a9075204f254fd4/prebook "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_ba583011bce34bb5/checkout "HTTP/1.1 200 OK"
+_ test_supplier_unknown_preserves_independent_bound_money_fact[2-PARTIALLY_REFUNDED] _
+
+client = <starlette.testclient.TestClient object at 0x7f06bdfc0f80>
+refund_fraction = 2, expected = 'PARTIALLY_REFUNDED'
+
+    @pytest.mark.parametrize('refund_fraction,expected', [(0, 'PAID'), (2, 'PARTIALLY_REFUNDED'), (1, 'REFUNDED')])
+    def test_supplier_unknown_preserves_independent_bound_money_fact(client, refund_fraction, expected):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            iid = fulfillment.payment_intent_id
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == iid, Movement.movement_type == 'CAPTURE'))
+            cap_id, amount = cap.money_movement_id, cap.amount_minor
+        if refund_fraction:
+            money.create(iid, {'movement_type': 'REFUND', 'parent_movement_id': cap_id,
+                'amount_minor': amount // refund_fraction, 'mode': 'CONTRACT_SIMULATOR',
+                'evidence': ['isolated://refund']}, 'bound-refund', 'test')
+        result = svc.record_supplier_fact(fid, {'state': 'UNKNOWN_EXTERNAL_STATE', 'evidence_reference': 'supplier://unknown'})
+>       assert result['unified_lifecycle']['payment_state'] == expected
+E       AssertionError: assert 'PAID' == 'PARTIALLY_REFUNDED'
+E         
+E         - PARTIALLY_REFUNDED
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:43: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T07:40:47.274664+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_3f40aa1bb46d416e912fcd93a633f81e","trace_id":"tr_356adb0f7dd04b31ae8e369f85fa8643","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":86.51}
+{"ts":"2026-09-25T07:40:47.275961+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:47.318970+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_5174b3e02f8d4219b175b34203ffd3c7","trace_id":"tr_edc541ce99be413198bb5ecf7fbc9b46","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":42.24}
+{"ts":"2026-09-25T07:40:47.319476+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:47.327446+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_2fe300cd16b141289d7ba59a2afcfbb4","trace_id":"tr_095c0dd8bce54909918cceb7b80a4e03","path":"/v1/rail/search","method":"POST","status_code":200,"duration_ms":7.27}
+{"ts":"2026-09-25T07:40:47.327821+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:47.335070+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_a46487d200924f07a29ea398c1e8724f","trace_id":"tr_10936ad9558a42969249db5f3a08f522","path":"/v1/rail/offers/rail_off_500d2dda6f794377/prebook","method":"POST","status_code":200,"duration_ms":6.74}
+{"ts":"2026-09-25T07:40:47.335436+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/offers/rail_off_500d2dda6f794377/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:47.345308+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_e8424065c17a46ffbd3d3ee7aa8a1b82","trace_id":"tr_e979e9d1ec6440a7aa44a0eebf19a3ce","path":"/v1/rail/orders","method":"POST","status_code":200,"duration_ms":9.34}
+{"ts":"2026-09-25T07:40:47.345709+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:47.367713+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_939777aa024a436c9d26eea87161cb89","trace_id":"tr_320f6eccd21948a683e17170c8a030ac","path":"/v1/rail/orders/rail_ord_90d5d6796b2d4767/checkout","method":"POST","status_code":200,"duration_ms":21.36}
+{"ts":"2026-09-25T07:40:47.368120+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_90d5d6796b2d4767/checkout \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/offers/rail_off_500d2dda6f794377/prebook "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_90d5d6796b2d4767/checkout "HTTP/1.1 200 OK"
+___ test_supplier_unknown_preserves_independent_bound_money_fact[1-REFUNDED] ___
+
+client = <starlette.testclient.TestClient object at 0x7f06b5945280>
+refund_fraction = 1, expected = 'REFUNDED'
+
+    @pytest.mark.parametrize('refund_fraction,expected', [(0, 'PAID'), (2, 'PARTIALLY_REFUNDED'), (1, 'REFUNDED')])
+    def test_supplier_unknown_preserves_independent_bound_money_fact(client, refund_fraction, expected):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            iid = fulfillment.payment_intent_id
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == iid, Movement.movement_type == 'CAPTURE'))
+            cap_id, amount = cap.money_movement_id, cap.amount_minor
+        if refund_fraction:
+            money.create(iid, {'movement_type': 'REFUND', 'parent_movement_id': cap_id,
+                'amount_minor': amount // refund_fraction, 'mode': 'CONTRACT_SIMULATOR',
+                'evidence': ['isolated://refund']}, 'bound-refund', 'test')
+        result = svc.record_supplier_fact(fid, {'state': 'UNKNOWN_EXTERNAL_STATE', 'evidence_reference': 'supplier://unknown'})
+>       assert result['unified_lifecycle']['payment_state'] == expected
+E       AssertionError: assert 'PAID' == 'REFUNDED'
+E         
+E         - REFUNDED
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:43: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T07:40:47.532866+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_f6c246e17ce84fcc88d5c935e39f6b17","trace_id":"tr_21416aa4f54f40faa3cd56c9ba1fc37b","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":79.39}
+{"ts":"2026-09-25T07:40:47.533479+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:47.575519+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_c7cb3ec453ae4a378e30fb2324c822f6","trace_id":"tr_25667f2843064edab7b72f4e002ebc47","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":41.23}
+{"ts":"2026-09-25T07:40:47.576122+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:47.583607+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_06ef9181a1284b2b96d6b52296b546d2","trace_id":"tr_3b247e24e2404e5ab1a878cf82715eee","path":"/v1/rail/search","method":"POST","status_code":200,"duration_ms":6.81}
+{"ts":"2026-09-25T07:40:47.583982+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:47.590981+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_23fa27d027fc4107a48af494f364a350","trace_id":"tr_4b08678c958541059a0e98323c12981b","path":"/v1/rail/offers/rail_off_189220fda3a5468c/prebook","method":"POST","status_code":200,"duration_ms":6.47}
+{"ts":"2026-09-25T07:40:47.591380+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/offers/rail_off_189220fda3a5468c/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:47.601815+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_5e7f539a3c9b48ccbe225c492b8ae080","trace_id":"tr_9dbd58709b04410a860fa12858b4d18a","path":"/v1/rail/orders","method":"POST","status_code":200,"duration_ms":9.87}
+{"ts":"2026-09-25T07:40:47.602315+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:40:47.621916+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_61bf2fc074d74817a6f4a78666e00f5b","trace_id":"tr_aae434bbabda47299ad2cbd0ec37c71b","path":"/v1/rail/orders/rail_ord_e0a4805134de4132/checkout","method":"POST","status_code":200,"duration_ms":18.9}
+{"ts":"2026-09-25T07:40:47.622321+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_e0a4805134de4132/checkout \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/offers/rail_off_189220fda3a5468c/prebook "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_e0a4805134de4132/checkout "HTTP/1.1 200 OK"
+=========================== short test summary info ============================
+FAILED tests/test_c10_supplier_money_projection.py::test_supplier_outcome_without_bound_capture_cannot_assert_paid[missing_capture-UNKNOWN_EXTERNAL_STATE]
+FAILED tests/test_c10_supplier_money_projection.py::test_supplier_outcome_without_bound_capture_cannot_assert_paid[missing_capture-SUPPLIER_FAILED]
+FAILED tests/test_c10_supplier_money_projection.py::test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_currency-UNKNOWN_EXTERNAL_STATE]
+FAILED tests/test_c10_supplier_money_projection.py::test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_currency-SUPPLIER_FAILED]
+FAILED tests/test_c10_supplier_money_projection.py::test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_binding-UNKNOWN_EXTERNAL_STATE]
+FAILED tests/test_c10_supplier_money_projection.py::test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_binding-SUPPLIER_FAILED]
+FAILED tests/test_c10_supplier_money_projection.py::test_supplier_unknown_preserves_independent_bound_money_fact[2-PARTIALLY_REFUNDED]
+FAILED tests/test_c10_supplier_money_projection.py::test_supplier_unknown_preserves_independent_bound_money_fact[1-REFUNDED]
+8 failed, 1 passed in 8.79s

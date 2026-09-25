@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="11" time="3.586" timestamp="2026-09-25T00:30:29.562879-07:00" hostname="48cdd5f3df1f"><testcase classname="tests.test_c10_lifecycle_supplier_identity" name="test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T09:00:00Z-supplier-b]" time="1.475"><failure message="AssertionError: assert {'account_id'...2be09bf', ...} == {'account_id'...2be09bf', ...}&#10;  &#10;  Omitting 13 identical items, use -vv to show&#10;  Differing items:&#10;  {'updated_at': '2026-09-25T07:30:32.473658'} != {'updated_at': '2026-09-25T07:30:32.473658+00:00'}&#10;  {'source_updated_at': '2026-09-25T10:00:00'} != {'source_updated_at': '2026-09-25T10:00:00+00:00'}&#10;  Use -v to get more diff">supplier = 'supplier-b', at = '2026-09-25T09:00:00Z'
+
+    @pytest.mark.parametrize('supplier', ['supplier-b', None, ''])
+    @pytest.mark.parametrize('at', ['2026-09-25T09:00:00Z', '2026-09-25T11:00:00Z'])
+    def test_supplier_replacement_or_erasure_rejected_without_mutation(supplier, at):
+        original = svc.project(fact())
+        changed = fact(supplier, at)
+        changed.update(lifecycle_state='CANCELLED', refund_state='REFUND_COMPLETED',
+                       evidence_reference='hotel://wrong-supplier', facts={'confirmation': 'wrong'})
+        with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+            svc.project(changed)
+        detail = svc.detail('owner', original['consumer_unified_lifecycle_id'])
+&gt;       assert detail['item'] == {k: v for k, v in original.items() if k != 'stale_ignored'}
+E       AssertionError: assert {'account_id'...2be09bf', ...} == {'account_id'...2be09bf', ...}
+E         
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-25T07:30:32.473658'} != {'updated_at': '2026-09-25T07:30:32.473658+00:00'}
+E         {'source_updated_at': '2026-09-25T10:00:00'} != {'source_updated_at': '2026-09-25T10:00:00+00:00'}
+E         Use -v to get more diff
+
+tests/test_c10_lifecycle_supplier_identity.py:25: AssertionError</failure></testcase><testcase classname="tests.test_c10_lifecycle_supplier_identity" name="test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T09:00:00Z-None]" time="0.091"><failure message="AssertionError: assert {'account_id'...8001aa2', ...} == {'account_id'...8001aa2', ...}&#10;  &#10;  Omitting 13 identical items, use -vv to show&#10;  Differing items:&#10;  {'updated_at': '2026-09-25T07:30:32.586942'} != {'updated_at': '2026-09-25T07:30:32.586942+00:00'}&#10;  {'source_updated_at': '2026-09-25T10:00:00'} != {'source_updated_at': '2026-09-25T10:00:00+00:00'}&#10;  Use -v to get more diff">supplier = None, at = '2026-09-25T09:00:00Z'
+
+    @pytest.mark.parametrize('supplier', ['supplier-b', None, ''])
+    @pytest.mark.parametrize('at', ['2026-09-25T09:00:00Z', '2026-09-25T11:00:00Z'])
+    def test_supplier_replacement_or_erasure_rejected_without_mutation(supplier, at):
+        original = svc.project(fact())
+        changed = fact(supplier, at)
+        changed.update(lifecycle_state='CANCELLED', refund_state='REFUND_COMPLETED',
+                       evidence_reference='hotel://wrong-supplier', facts={'confirmation': 'wrong'})
+        with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+            svc.project(changed)
+        detail = svc.detail('owner', original['consumer_unified_lifecycle_id'])
+&gt;       assert detail['item'] == {k: v for k, v in original.items() if k != 'stale_ignored'}
+E       AssertionError: assert {'account_id'...8001aa2', ...} == {'account_id'...8001aa2', ...}
+E         
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-25T07:30:32.586942'} != {'updated_at': '2026-09-25T07:30:32.586942+00:00'}
+E         {'source_updated_at': '2026-09-25T10:00:00'} != {'source_updated_at': '2026-09-25T10:00:00+00:00'}
+E         Use -v to get more diff
+
+tests/test_c10_lifecycle_supplier_identity.py:25: AssertionError</failure></testcase><testcase classname="tests.test_c10_lifecycle_supplier_identity" name="test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T09:00:00Z-]" time="0.091"><failure message="AssertionError: assert {'account_id'...10d6f5c', ...} == {'account_id'...10d6f5c', ...}&#10;  &#10;  Omitting 13 identical items, use -vv to show&#10;  Differing items:&#10;  {'updated_at': '2026-09-25T07:30:32.683185'} != {'updated_at': '2026-09-25T07:30:32.683185+00:00'}&#10;  {'source_updated_at': '2026-09-25T10:00:00'} != {'source_updated_at': '2026-09-25T10:00:00+00:00'}&#10;  Use -v to get more diff">supplier = '', at = '2026-09-25T09:00:00Z'
+
+    @pytest.mark.parametrize('supplier', ['supplier-b', None, ''])
+    @pytest.mark.parametrize('at', ['2026-09-25T09:00:00Z', '2026-09-25T11:00:00Z'])
+    def test_supplier_replacement_or_erasure_rejected_without_mutation(supplier, at):
+        original = svc.project(fact())
+        changed = fact(supplier, at)
+        changed.update(lifecycle_state='CANCELLED', refund_state='REFUND_COMPLETED',
+                       evidence_reference='hotel://wrong-supplier', facts={'confirmation': 'wrong'})
+        with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+            svc.project(changed)
+        detail = svc.detail('owner', original['consumer_unified_lifecycle_id'])
+&gt;       assert detail['item'] == {k: v for k, v in original.items() if k != 'stale_ignored'}
+E       AssertionError: assert {'account_id'...10d6f5c', ...} == {'account_id'...10d6f5c', ...}
+E         
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-25T07:30:32.683185'} != {'updated_at': '2026-09-25T07:30:32.683185+00:00'}
+E         {'source_updated_at': '2026-09-25T10:00:00'} != {'source_updated_at': '2026-09-25T10:00:00+00:00'}
+E         Use -v to get more diff
+
+tests/test_c10_lifecycle_supplier_identity.py:25: AssertionError</failure></testcase><testcase classname="tests.test_c10_lifecycle_supplier_identity" name="test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T11:00:00Z-supplier-b]" time="0.057"><failure message="AssertionError: assert {'account_id'...5cd3dcc', ...} == {'account_id'...5cd3dcc', ...}&#10;  &#10;  Omitting 13 identical items, use -vv to show&#10;  Differing items:&#10;  {'updated_at': '2026-09-25T07:30:32.742378'} != {'updated_at': '2026-09-25T07:30:32.742378+00:00'}&#10;  {'source_updated_at': '2026-09-25T10:00:00'} != {'source_updated_at': '2026-09-25T10:00:00+00:00'}&#10;  Use -v to get more diff">supplier = 'supplier-b', at = '2026-09-25T11:00:00Z'
+
+    @pytest.mark.parametrize('supplier', ['supplier-b', None, ''])
+    @pytest.mark.parametrize('at', ['2026-09-25T09:00:00Z', '2026-09-25T11:00:00Z'])
+    def test_supplier_replacement_or_erasure_rejected_without_mutation(supplier, at):
+        original = svc.project(fact())
+        changed = fact(supplier, at)
+        changed.update(lifecycle_state='CANCELLED', refund_state='REFUND_COMPLETED',
+                       evidence_reference='hotel://wrong-supplier', facts={'confirmation': 'wrong'})
+        with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+            svc.project(changed)
+        detail = svc.detail('owner', original['consumer_unified_lifecycle_id'])
+&gt;       assert detail['item'] == {k: v for k, v in original.items() if k != 'stale_ignored'}
+E       AssertionError: assert {'account_id'...5cd3dcc', ...} == {'account_id'...5cd3dcc', ...}
+E         
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-25T07:30:32.742378'} != {'updated_at': '2026-09-25T07:30:32.742378+00:00'}
+E         {'source_updated_at': '2026-09-25T10:00:00'} != {'source_updated_at': '2026-09-25T10:00:00+00:00'}
+E         Use -v to get more diff
+
+tests/test_c10_lifecycle_supplier_identity.py:25: AssertionError</failure></testcase><testcase classname="tests.test_c10_lifecycle_supplier_identity" name="test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T11:00:00Z-None]" time="0.054"><failure message="AssertionError: assert {'account_id'...86aa39a', ...} == {'account_id'...86aa39a', ...}&#10;  &#10;  Omitting 13 identical items, use -vv to show&#10;  Differing items:&#10;  {'updated_at': '2026-09-25T07:30:32.799227'} != {'updated_at': '2026-09-25T07:30:32.799227+00:00'}&#10;  {'source_updated_at': '2026-09-25T10:00:00'} != {'source_updated_at': '2026-09-25T10:00:00+00:00'}&#10;  Use -v to get more diff">supplier = None, at = '2026-09-25T11:00:00Z'
+
+    @pytest.mark.parametrize('supplier', ['supplier-b', None, ''])
+    @pytest.mark.parametrize('at', ['2026-09-25T09:00:00Z', '2026-09-25T11:00:00Z'])
+    def test_supplier_replacement_or_erasure_rejected_without_mutation(supplier, at):
+        original = svc.project(fact())
+        changed = fact(supplier, at)
+        changed.update(lifecycle_state='CANCELLED', refund_state='REFUND_COMPLETED',
+                       evidence_reference='hotel://wrong-supplier', facts={'confirmation': 'wrong'})
+        with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+            svc.project(changed)
+        detail = svc.detail('owner', original['consumer_unified_lifecycle_id'])
+&gt;       assert detail['item'] == {k: v for k, v in original.items() if k != 'stale_ignored'}
+E       AssertionError: assert {'account_id'...86aa39a', ...} == {'account_id'...86aa39a', ...}
+E         
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-25T07:30:32.799227'} != {'updated_at': '2026-09-25T07:30:32.799227+00:00'}
+E         {'source_updated_at': '2026-09-25T10:00:00'} != {'source_updated_at': '2026-09-25T10:00:00+00:00'}
+E         Use -v to get more diff
+
+tests/test_c10_lifecycle_supplier_identity.py:25: AssertionError</failure></testcase><testcase classname="tests.test_c10_lifecycle_supplier_identity" name="test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T11:00:00Z-]" time="0.057"><failure message="AssertionError: assert {'account_id'...469b76e', ...} == {'account_id'...469b76e', ...}&#10;  &#10;  Omitting 13 identical items, use -vv to show&#10;  Differing items:&#10;  {'updated_at': '2026-09-25T07:30:32.858770'} != {'updated_at': '2026-09-25T07:30:32.858770+00:00'}&#10;  {'source_updated_at': '2026-09-25T10:00:00'} != {'source_updated_at': '2026-09-25T10:00:00+00:00'}&#10;  Use -v to get more diff">supplier = '', at = '2026-09-25T11:00:00Z'
+
+    @pytest.mark.parametrize('supplier', ['supplier-b', None, ''])
+    @pytest.mark.parametrize('at', ['2026-09-25T09:00:00Z', '2026-09-25T11:00:00Z'])
+    def test_supplier_replacement_or_erasure_rejected_without_mutation(supplier, at):
+        original = svc.project(fact())
+        changed = fact(supplier, at)
+        changed.update(lifecycle_state='CANCELLED', refund_state='REFUND_COMPLETED',
+                       evidence_reference='hotel://wrong-supplier', facts={'confirmation': 'wrong'})
+        with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+            svc.project(changed)
+        detail = svc.detail('owner', original['consumer_unified_lifecycle_id'])
+&gt;       assert detail['item'] == {k: v for k, v in original.items() if k != 'stale_ignored'}
+E       AssertionError: assert {'account_id'...469b76e', ...} == {'account_id'...469b76e', ...}
+E         
+E         Omitting 13 identical items, use -vv to show
+E         Differing items:
+E         {'updated_at': '2026-09-25T07:30:32.858770'} != {'updated_at': '2026-09-25T07:30:32.858770+00:00'}
+E         {'source_updated_at': '2026-09-25T10:00:00'} != {'source_updated_at': '2026-09-25T10:00:00+00:00'}
+E         Use -v to get more diff
+
+tests/test_c10_lifecycle_supplier_identity.py:25: AssertionError</failure></testcase><testcase classname="tests.test_c10_lifecycle_supplier_identity" name="test_unknown_supplier_cannot_be_bound_by_ordinary_projection" time="0.053" /><testcase classname="tests.test_c10_lifecycle_supplier_identity" name="test_same_supplier_updates_and_stale_replays_remain_supported[supplier-a]" time="0.055" /><testcase classname="tests.test_c10_lifecycle_supplier_identity" name="test_same_supplier_updates_and_stale_replays_remain_supported[None]" time="0.058" /><testcase classname="tests.test_c10_lifecycle_supplier_identity" name="test_cross_account_cannot_reassign_supplier_or_obtain_detail" time="0.057" /><testcase classname="tests.test_c10_lifecycle_supplier_identity" name="test_idempotent_shortcut_cannot_hide_supplier_mismatch" time="0.057" /></testsuite></testsuites>

@@ -1,10 +1,10 @@
 {
   "schema": "go.unified.depth9.candidate.v1",
-  "source_commit": "5c8bb7cc5922a2c1c36babaef446c76a583e81fd",
+  "source_commit": "d0be4c409ffa0a8de2148b258b191c8058527421",
   "main_base": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
-  "application_git_tree": "9cc68fa3a805f9f0df09b937a7c2df618cf6795f",
-  "source_files": 1490,
-  "source_tree_sha256": "80d19a5791c3a824421638df36b92616fb16e02ac6504b234bbce2571a76fadd",
+  "application_git_tree": "b2641edf2d5cbf65a2447c804111a0bb50ae83cb",
+  "source_files": 1500,
+  "source_tree_sha256": "b55d7eb3d8ac5aedbd2282147c2ac875842b57bdbe758e95bf406e40577ebbab",
   "inputs": {
     "202": "cd6345e32dd258c7f11f0766a36a168bad99a7f5",
     "204": "e9667461dcdc848f1fcfdf024bba905202235b49",
@@ -20,7 +20,7 @@
   "migration_head": "0138_supplier_library_import",
   "historical_pass_transferred": false,
   "C13": "PENDING_INDEPENDENT",
-  "C14": "PENDING_SAME_CANDIDATE_HK",
+  "C14": "PENDING_RULE_SCOPE_REVIEW",
   "deployment": "NOT_RUN",
   "production": "HOLD",
   "depth_above_9": "NOT_ESTABLISHED",
@@ -50,5 +50,44 @@
     "artifact_id": 10481911704,
     "zip_sha256": "c38ec8117d1a3a1bfb71190a2fa36265c994a62fc40dcb8e3ca3c6469e82e503",
     "full_byte_verification": "REQUIRED_IN_CI"
+  },
+  "engineering_continuation": {
+    "parent_commit": "6acf9fdcde4b208b12a8c9d57ef74497e745faae",
+    "prior_binding": {
+      "source_commit": "5c8bb7cc5922a2c1c36babaef446c76a583e81fd",
+      "application_git_tree": "9cc68fa3a805f9f0df09b937a7c2df618cf6795f",
+      "source_files": 1490,
+      "source_tree_sha256": "80d19a5791c3a824421638df36b92616fb16e02ac6504b234bbce2571a76fadd"
+    },
+    "changed_application_paths": [
+      "application/src/go_hotel/api/routes/attractions.py",
+      "application/src/go_hotel/api/routes/omnichannel_payment.py",
+      "application/src/go_hotel/api/routes/rental_damage.py",
+      "application/src/go_hotel/attractions/service.py",
+      "application/src/go_hotel/autonomy/action_control.py",
+      "application/src/go_hotel/autonomy/condition_evidence.py",
+      "application/src/go_hotel/autonomy/types.py",
+      "application/src/go_hotel/main.py",
+      "application/src/go_hotel/mobility/rental/damage.py",
+      "application/src/go_hotel/mobility/ride/service.py",
+      "application/src/go_hotel/rail/service.py",
+      "application/src/go_hotel/services/consumer_unified_lifecycle.py",
+      "application/src/go_hotel/services/omnichannel_payment.py",
+      "application/src/go_hotel/services/order_supplier_fulfillment.py",
+      "application/src/go_hotel/services/vertical_lifecycle_projection.py",
+      "application/tests/autonomy/test_policy_lifecycle_binding.py",
+      "application/tests/test_c03_c06_change_quote_fencing.py",
+      "application/tests/test_c05_engineering_currency.py",
+      "application/tests/test_c10_lifecycle_supplier_identity.py",
+      "application/tests/test_c10_supplier_money_projection.py",
+      "application/tests/test_c10_unknown_payment_projection.py",
+      "application/tests/test_c11_consumer_payment_source_boundary.py",
+      "application/tests/test_depth23_capacity.py",
+      "application/tests/test_next_depth_c06_supplier_validity.py",
+      "application/tests/test_rental_damage_disputes.py",
+      "application/tests/test_sprint3d_attractions.py"
+    ],
+    "acceptance": "PENDING_INDEPENDENT",
+    "historical_pass_transferred": false
   }
 }

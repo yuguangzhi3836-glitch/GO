@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="107" time="17.978" timestamp="2026-09-25T00:40:19.528271-07:00" hostname="48cdd5f3df1f"><testcase classname="" name="test_prechange_reconciliation_cannot_resolve_first_change" time="0.003"><failure message="sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: vertical_capacity_bucket&#10;[SQL: INSERT INTO vertical_capacity_bucket (bucket_id, vertical, resource_json, capacity, allocated) VALUES (?, ?, ?, ?, ?) ON CONFLICT (bucket_id) DO NOTHING]&#10;[parameters: ('5a65d9579d5149279e9297c5500a235212f2f267d41111cff4f1431003a43184', 'ATTRACTION', '{&quot;product_id&quot;: &quot;tokyo_skytree&quot;, &quot;visit_date&quot;: &quot;2026-09-15&quot;, &quot;session_time&quot;: &quot;16:00&quot;}', 24, 0)]&#10;(Background on this error at: https://sqlalche.me/e/20/e3q8)">self = &lt;sqlalchemy.engine.base.Connection object at 0x7fc212f770b0&gt;
+dialect = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7fc20f7d73e0&gt;
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7fc20e15bce0&gt;
+statement = &lt;sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7fc20e15ba70&gt;
+parameters = [('5a65d9579d5149279e9297c5500a235212f2f267d41111cff4f1431003a43184', 'ATTRACTION', '{"product_id": "tokyo_skytree", "visit_date": "2026-09-15", "session_time": "16:00"}', 24, 0)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -&gt; CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+                    )
+            elif not effective_parameters and context.no_parameters:
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute_no_params:
+                        if fn(cursor, str_statement, context):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+                    self.dialect.do_execute_no_params(
+                        cursor, str_statement, context
+                    )
+            else:
+                effective_parameters = cast(
+                    "_CoreSingleExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_execute:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+&gt;                   self.dialect.do_execute(
+                        cursor, str_statement, effective_parameters, context
+                    )
+
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7fc20f7d73e0&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7fc20e080940&gt;
+statement = 'INSERT INTO vertical_capacity_bucket (bucket_id, vertical, resource_json, capacity, allocated) VALUES (?, ?, ?, ?, ?) ON CONFLICT (bucket_id) DO NOTHING'
+parameters = ('5a65d9579d5149279e9297c5500a235212f2f267d41111cff4f1431003a43184', 'ATTRACTION', '{"product_id": "tokyo_skytree", "visit_date": "2026-09-15", "session_time": "16:00"}', 24, 0)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7fc20e15bce0&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlite3.OperationalError: no such table: vertical_capacity_bucket
+
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: OperationalError
+
+The above exception was the direct cause of the following exception:
+
+    def test_prechange_reconciliation_cannot_resolve_first_change():
+&gt;       svc, owner, oid = booked('ATTRACTION')
+                          ^^^^^^^^^^^^^^^^^^^^
+
+../../reviews/c13/probe_c06_first_change.py:5: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_depth21_refund_recovery.py:28: in booked
+    q=attraction_service.prebook('tokyo_skytree','2026-09-15',2)
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/attractions/service.py:80: in prebook
+    left=capacity.available_in(s,'ATTRACTION',capacity.attraction_resource(offer_id,visit_date,session),x['inventory'])
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/vertical_capacity.py:62: in available_in
+    row=_bucket(s,vertical,resource,limit)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/vertical_capacity.py:28: in _bucket
+    insert_once(s,Bucket,{'bucket_id':key,'vertical':vertical,'resource_json':resource,
+src/go_hotel/autonomy/durable.py:91: in insert_once
+    s.execute(factory(model).values(**values).on_conflict_do_nothing(index_elements=keys))
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2372: in execute
+    return self._execute_internal(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2270: in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/orm/bulk_persistence.py:1306: in orm_execute_statement
+    result = conn.execute(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1969: in _exec_single_context
+    self.dialect.do_execute(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7fc20f7d73e0&gt;
+cursor = &lt;sqlite3.Cursor object at 0x7fc20e080940&gt;
+statement = 'INSERT INTO vertical_capacity_bucket (bucket_id, vertical, resource_json, capacity, allocated) VALUES (?, ?, ?, ?, ?) ON CONFLICT (bucket_id) DO NOTHING'
+parameters = ('5a65d9579d5149279e9297c5500a235212f2f267d41111cff4f1431003a43184', 'ATTRACTION', '{"product_id": "tokyo_skytree", "visit_date": "2026-09-15", "session_time": "16:00"}', 24, 0)
+context = &lt;sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7fc20e15bce0&gt;
+
+    def do_execute(self, cursor, statement, parameters, context=None):
+&gt;       cursor.execute(statement, parameters)
+E       sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: vertical_capacity_bucket
+E       [SQL: INSERT INTO vertical_capacity_bucket (bucket_id, vertical, resource_json, capacity, allocated) VALUES (?, ?, ?, ?, ?) ON CONFLICT (bucket_id) DO NOTHING]
+E       [parameters: ('5a65d9579d5149279e9297c5500a235212f2f267d41111cff4f1431003a43184', 'ATTRACTION', '{"product_id": "tokyo_skytree", "visit_date": "2026-09-15", "session_time": "16:00"}', 24, 0)]
+E       (Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+../../go-venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py:952: OperationalError</failure></testcase><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_rail_old_fare_quote_cannot_execute_after_another_change" time="1.603" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_delayed_unbound_confirmation_cannot_confirm_next_change" time="0.201" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_current_change_submission_is_replay_safe" time="0.140" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_old_quote_cannot_resolve_current_episode[CONFIRMED]" time="0.143" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_old_quote_cannot_resolve_current_episode[CLOSED_BY_SUPPLIER]" time="0.129" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_api_carries_quote_identity_and_replays_bound_request" time="2.658" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_prechange_reconciliation_cannot_resolve_first_change" time="0.111" /><testcase classname="tests.test_depth23_capacity" name="test_concurrent_distinct_quotes_share_one_capacity[RAIL-9-2]" time="0.140" /><testcase classname="tests.test_depth23_capacity" name="test_concurrent_distinct_quotes_share_one_capacity[ATTRACTION-12-2]" time="0.117" /><testcase classname="tests.test_depth23_capacity" name="test_cancel_unpaid_releases_once_and_blocks_later_payment[RAIL]" time="0.080" /><testcase classname="tests.test_depth23_capacity" name="test_cancel_unpaid_releases_once_and_blocks_later_payment[ATTRACTION]" time="0.071" /><testcase classname="tests.test_depth23_capacity" name="test_payment_started_cannot_release_capacity[RAIL]" time="0.080" /><testcase classname="tests.test_depth23_capacity" name="test_payment_started_cannot_release_capacity[ATTRACTION]" time="0.075" /><testcase classname="tests.test_depth23_capacity" name="test_refund_only_releases_after_confirmed_money[RAIL]" time="0.103" /><testcase classname="tests.test_depth23_capacity" name="test_refund_only_releases_after_confirmed_money[ATTRACTION]" time="0.092" /><testcase classname="tests.test_depth23_capacity" name="test_rail_change_holds_both_dates_until_result_then_releases_correct_pool[TICKETED]" time="0.126" /><testcase classname="tests.test_depth23_capacity" name="test_rail_change_holds_both_dates_until_result_then_releases_correct_pool[FAILED]" time="0.125" /><testcase classname="tests.test_depth23_capacity" name="test_attraction_change_and_redemption_retain_current_session_capacity" time="0.106" /><testcase classname="tests.test_depth23_capacity" name="test_attraction_same_session_change_does_not_double_reserve" time="0.100" /><testcase classname="tests.test_depth23_capacity" name="test_date_and_session_pools_are_isolated" time="0.075" /><testcase classname="tests.test_depth23_capacity" name="test_same_prebook_replay_does_not_allocate_twice" time="0.069" /><testcase classname="tests.test_depth23_capacity" name="test_train_capacity_is_shared_across_overlapping_station_queries" time="0.070" /><testcase classname="tests.test_depth23_capacity" name="test_migration_blocks_allocated_history_loss" time="0.150" /><testcase classname="tests.test_depth23_capacity" name="test_legacy_orders_are_not_silently_ignored[RAIL]" time="0.073" /><testcase classname="tests.test_depth23_capacity" name="test_legacy_orders_are_not_silently_ignored[ATTRACTION]" time="0.069" /><testcase classname="tests.test_depth23_capacity" name="test_order_commit_failure_rolls_back_capacity" time="0.072" /><testcase classname="tests.test_depth23_capacity" name="test_capacity_survives_process_exit" time="1.832" /><testcase classname="tests.test_depth23_capacity" name="test_started_payment_wins_race_against_unpaid_cancellation" time="0.081" /><testcase classname="tests.test_depth23_capacity" name="test_attraction_change_cannot_reserve_full_target" time="0.093" /><testcase classname="tests.test_depth23_capacity" name="test_rail_change_target_full_rejects_before_supplemental_authorization" time="0.126" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_prebook_freezes_server_policy_and_utc_boundary" time="0.058" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T06:29:59.999+00:00-False]" time="0.082" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T06:30:00+00:00-True]" time="0.081" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T08:59:59.999+00:00-True]" time="0.085" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T09:00:00+00:00-False]" time="0.083" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_later_catalog_policy_cannot_rewrite_consumed_contract" time="0.087" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_nonexistent_or_ambiguous_supplier_local_session_requires_review[2026-03-08-02:30]" time="0.056" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_nonexistent_or_ambiguous_supplier_local_session_requires_review[2026-11-01-01:30]" time="0.053" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_cross_midnight_window_uses_supplier_timezone_not_server_date" time="0.054" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad0]" time="0.047" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad1]" time="0.044" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad2]" time="0.042" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad3]" time="0.047" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_supplier_policy_is_explicitly_legacy_unverified" time="0.055" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_client_cannot_supply_a_validity_policy" time="0.055" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_deleting_frozen_window_without_resealing_cannot_downgrade_to_legacy" time="0.084" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_contract_cannot_downgrade_a_confirmed_order_to_legacy" time="0.082" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_supplier_confirmed_date_change_uses_frozen_policy_on_new_session" time="0.095" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_valid_window_does_not_bypass_inflight_refund_exclusion" time="0.102" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[supplier_id]" time="0.043" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[product_id]" time="0.042" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[go_offer_id]" time="0.046" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[version]" time="0.045" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[state]" time="0.043" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[destination_timezone]" time="0.047" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[effective_from]" time="0.042" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[opens_minutes_before_session]" time="0.043" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[closes_minutes_after_session]" time="0.043" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[allow_open_ended]" time="0.045" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[amendment_allowed]" time="0.043" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[cancellation_allowed]" time="0.045" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[raw_payload_ref]" time="0.047" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[raw_payload_sha256]" time="0.045" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[source_uri]" time="0.044" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[observed_at]" time="0.044" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad0]" time="0.047" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad1]" time="0.048" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad2]" time="0.049" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad3]" time="0.045" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad4]" time="0.049" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad5]" time="0.043" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad6]" time="0.044" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad7]" time="0.043" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad8]" time="0.046" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_open_ended_requires_flag" time="0.044" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_import_replay_and_conflict" time="0.058" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_version_order_and_supersedes_chain" time="0.044" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_batch_is_atomic_on_partial_failure" time="0.044" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_boundaries[2026-06-01T08:59:59+08:00-TOO_EARLY]" time="0.047" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_boundaries[2026-06-01T09:00:00+08:00-ELIGIBLE]" time="0.043" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_boundaries[2026-06-01T10:30:00+08:00-ELIGIBLE]" time="0.044" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_boundaries[2026-06-01T10:30:01+08:00-TOO_LATE]" time="0.045" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_state_precedence[EXPIRED-EXPIRED]" time="0.044" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_state_precedence[WITHDRAWN-WITHDRAWN]" time="0.045" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_unknown_fails_safe" time="0.041" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_expiry_and_not_yet_effective" time="0.042" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_dst_destination_timezone_is_absolute_and_deterministic" time="0.042" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_change_refund_flags_and_audit_reason" time="0.044" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_exact_raw_payload_digest_is_admitted_and_replay_is_idempotent" time="0.046" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_raw_payload_hash_mismatch_rejects_without_policy_or_audit_mutation" time="0.047" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_raw_import_requires_policy_and_immutable_bytes[None]" time="0.046" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_raw_import_requires_policy_and_immutable_bytes[entry1]" time="0.052" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_raw_import_requires_policy_and_immutable_bytes[entry2]" time="0.052" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_raw_import_requires_policy_and_immutable_bytes[entry3]" time="0.055" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_raw_import_requires_policy_and_immutable_bytes[entry4]" time="0.050" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_bound_batch_is_atomic_when_later_payload_mismatches" time="0.052" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_non_batch_container_fails_closed" time="0.047" /><testcase classname="tests.test_sprint3d_attractions" name="test_attraction_golden_path" time="0.480" /><testcase classname="tests.test_sprint3d_attractions" name="test_non_refundable_experience" time="0.363" /><testcase classname="tests.test_rc20_2_all_b_to_a" name="test_consumer_surface_exposes_all_six_vertical_actions_through_frozen_five_entry_home" time="0.043" /><testcase classname="tests.test_rc20_2_all_b_to_a" name="test_ride_state_machine_recovery_illegal_transition_and_evidence" time="0.392" /><testcase classname="tests.test_rc20_2_all_b_to_a" name="test_rental_pickup_return_cancel_rules_and_reconciliation" time="0.400" /><testcase classname="tests.test_rc20_2_all_b_to_a" name="test_attraction_redemption_unknown_recovery_closed_and_illegal_states" time="0.395" /><testcase classname="tests.test_rc20_2_all_b_to_a" name="test_attraction_supplier_closure_blocks_consumer_mutations" time="0.387" /><testcase classname="tests.test_rc20_2_all_b_to_a" name="test_flight_unknown_state_reconciliation_and_evidence" time="0.325" /><testcase classname="tests.test_rc20_2_all_b_to_a" name="test_rail_unknown_state_reconciliation_and_evidence" time="0.331" /></testsuite></testsuites>

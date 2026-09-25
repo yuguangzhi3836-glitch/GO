@@ -1,0 +1,128 @@
+FFFFFFF...F                                                              [100%]
+=================================== FAILURES ===================================
+_ test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T09:00:00Z-supplier-b] _
+
+supplier = 'supplier-b', at = '2026-09-25T09:00:00Z'
+
+    @pytest.mark.parametrize('supplier', ['supplier-b', None, ''])
+    @pytest.mark.parametrize('at', ['2026-09-25T09:00:00Z', '2026-09-25T11:00:00Z'])
+    def test_supplier_replacement_or_erasure_rejected_without_mutation(supplier, at):
+        original = svc.project(fact())
+        changed = fact(supplier, at)
+        changed.update(lifecycle_state='CANCELLED', refund_state='REFUND_COMPLETED',
+                       evidence_reference='hotel://wrong-supplier', facts={'confirmation': 'wrong'})
+>       with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/test_c10_lifecycle_supplier_identity.py:22: Failed
+_ test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T09:00:00Z-None] _
+
+supplier = None, at = '2026-09-25T09:00:00Z'
+
+    @pytest.mark.parametrize('supplier', ['supplier-b', None, ''])
+    @pytest.mark.parametrize('at', ['2026-09-25T09:00:00Z', '2026-09-25T11:00:00Z'])
+    def test_supplier_replacement_or_erasure_rejected_without_mutation(supplier, at):
+        original = svc.project(fact())
+        changed = fact(supplier, at)
+        changed.update(lifecycle_state='CANCELLED', refund_state='REFUND_COMPLETED',
+                       evidence_reference='hotel://wrong-supplier', facts={'confirmation': 'wrong'})
+>       with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/test_c10_lifecycle_supplier_identity.py:22: Failed
+_ test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T09:00:00Z-] _
+
+supplier = '', at = '2026-09-25T09:00:00Z'
+
+    @pytest.mark.parametrize('supplier', ['supplier-b', None, ''])
+    @pytest.mark.parametrize('at', ['2026-09-25T09:00:00Z', '2026-09-25T11:00:00Z'])
+    def test_supplier_replacement_or_erasure_rejected_without_mutation(supplier, at):
+        original = svc.project(fact())
+        changed = fact(supplier, at)
+        changed.update(lifecycle_state='CANCELLED', refund_state='REFUND_COMPLETED',
+                       evidence_reference='hotel://wrong-supplier', facts={'confirmation': 'wrong'})
+>       with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/test_c10_lifecycle_supplier_identity.py:22: Failed
+_ test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T11:00:00Z-supplier-b] _
+
+supplier = 'supplier-b', at = '2026-09-25T11:00:00Z'
+
+    @pytest.mark.parametrize('supplier', ['supplier-b', None, ''])
+    @pytest.mark.parametrize('at', ['2026-09-25T09:00:00Z', '2026-09-25T11:00:00Z'])
+    def test_supplier_replacement_or_erasure_rejected_without_mutation(supplier, at):
+        original = svc.project(fact())
+        changed = fact(supplier, at)
+        changed.update(lifecycle_state='CANCELLED', refund_state='REFUND_COMPLETED',
+                       evidence_reference='hotel://wrong-supplier', facts={'confirmation': 'wrong'})
+>       with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/test_c10_lifecycle_supplier_identity.py:22: Failed
+_ test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T11:00:00Z-None] _
+
+supplier = None, at = '2026-09-25T11:00:00Z'
+
+    @pytest.mark.parametrize('supplier', ['supplier-b', None, ''])
+    @pytest.mark.parametrize('at', ['2026-09-25T09:00:00Z', '2026-09-25T11:00:00Z'])
+    def test_supplier_replacement_or_erasure_rejected_without_mutation(supplier, at):
+        original = svc.project(fact())
+        changed = fact(supplier, at)
+        changed.update(lifecycle_state='CANCELLED', refund_state='REFUND_COMPLETED',
+                       evidence_reference='hotel://wrong-supplier', facts={'confirmation': 'wrong'})
+>       with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/test_c10_lifecycle_supplier_identity.py:22: Failed
+_ test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T11:00:00Z-] _
+
+supplier = '', at = '2026-09-25T11:00:00Z'
+
+    @pytest.mark.parametrize('supplier', ['supplier-b', None, ''])
+    @pytest.mark.parametrize('at', ['2026-09-25T09:00:00Z', '2026-09-25T11:00:00Z'])
+    def test_supplier_replacement_or_erasure_rejected_without_mutation(supplier, at):
+        original = svc.project(fact())
+        changed = fact(supplier, at)
+        changed.update(lifecycle_state='CANCELLED', refund_state='REFUND_COMPLETED',
+                       evidence_reference='hotel://wrong-supplier', facts={'confirmation': 'wrong'})
+>       with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/test_c10_lifecycle_supplier_identity.py:22: Failed
+_________ test_unknown_supplier_cannot_be_bound_by_ordinary_projection _________
+
+    def test_unknown_supplier_cannot_be_bound_by_ordinary_projection():
+        original = svc.project(fact(None))
+>       with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/test_c10_lifecycle_supplier_identity.py:31: Failed
+____________ test_idempotent_shortcut_cannot_hide_supplier_mismatch ____________
+
+    def test_idempotent_shortcut_cannot_hide_supplier_mismatch():
+        from go_hotel.db.session import SessionLocal
+        svc.project(fact())
+        with SessionLocal() as session:
+>           with pytest.raises(ValueError, match='UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE'):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE <class 'ValueError'>
+
+tests/test_c10_lifecycle_supplier_identity.py:60: Failed
+=========================== short test summary info ============================
+FAILED tests/test_c10_lifecycle_supplier_identity.py::test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T09:00:00Z-supplier-b]
+FAILED tests/test_c10_lifecycle_supplier_identity.py::test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T09:00:00Z-None]
+FAILED tests/test_c10_lifecycle_supplier_identity.py::test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T09:00:00Z-]
+FAILED tests/test_c10_lifecycle_supplier_identity.py::test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T11:00:00Z-supplier-b]
+FAILED tests/test_c10_lifecycle_supplier_identity.py::test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T11:00:00Z-None]
+FAILED tests/test_c10_lifecycle_supplier_identity.py::test_supplier_replacement_or_erasure_rejected_without_mutation[2026-09-25T11:00:00Z-]
+FAILED tests/test_c10_lifecycle_supplier_identity.py::test_unknown_supplier_cannot_be_bound_by_ordinary_projection
+FAILED tests/test_c10_lifecycle_supplier_identity.py::test_idempotent_shortcut_cannot_hide_supplier_mismatch
+8 failed, 3 passed in 3.52s

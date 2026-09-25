@@ -1,12 +1,12 @@
 {
   "schema": "go.v70.next-depth.candidate.rebind.v3",
   "source_anchor": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
-  "product_candidate_commit": "5c8bb7cc5922a2c1c36babaef446c76a583e81fd",
-  "application_git_tree": "9cc68fa3a805f9f0df09b937a7c2df618cf6795f",
+  "product_candidate_commit": "d0be4c409ffa0a8de2148b258b191c8058527421",
+  "application_git_tree": "b2641edf2d5cbf65a2447c804111a0bb50ae83cb",
   "preintegration_candidate_commit": "9950bde1def11b27ed137d7db02a3047befda4fa",
   "preintegration_application_git_tree": "9c83d92434301356228c1b79294fcd829d675ebf",
   "parent_candidate_commit": "0c3da07bc32009dee16c69125111f8e4ea9d546b",
-  "source_files": 1490,
+  "source_files": 1500,
   "inherited_candidate_manifest": {
     "path": "ci/next-depth/CANDIDATE_INHERITED_85FB.json",
     "git_blob": "d616e629a1d05f5955a04b60cb60d34bdf571917"
@@ -459,8 +459,8 @@
     },
     "application/src/go_hotel/main.py": {
       "mode": "100644",
-      "git_blob": "3f419888ea4d6f48271afa85c4f201922c95abab",
-      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+      "git_blob": "75bf3c627faf78f8c6d794be592316045390b0a7",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
     },
     "application/src/go_hotel/mobility/rental/reconciliation.py": {
       "mode": "100644",
@@ -474,8 +474,8 @@
     },
     "application/src/go_hotel/mobility/ride/service.py": {
       "mode": "100644",
-      "git_blob": "a5eede19bf1814ec43495dcb81485efcc8306f74",
-      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+      "git_blob": "aa7b3b8caa17b633708fc03409e15fdf4b7f1a04",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
     },
     "application/src/go_hotel/mobility/service.py": {
       "mode": "100644",
@@ -544,8 +544,8 @@
     },
     "application/src/go_hotel/services/consumer_unified_lifecycle.py": {
       "mode": "100644",
-      "git_blob": "e163e8c02d3c565c72545728b88c8ff74febf7e1",
-      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+      "git_blob": "4235f3b0bcf7669a4bd34054cee643f5c77dcfc4",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
     },
     "application/src/go_hotel/services/flight_change_resolution.py": {
       "mode": "100644",
@@ -629,8 +629,8 @@
     },
     "application/src/go_hotel/services/omnichannel_payment.py": {
       "mode": "100644",
-      "git_blob": "46f5c58b2f64f3f1c87e1cb96d7098acc74b30dd",
-      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+      "git_blob": "49b7cd7d2b9de86d7af2d32fa2fbcddddf9d3e4d",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
     },
     "application/src/go_hotel/services/outbox.py": {
       "mode": "100644",
@@ -994,8 +994,8 @@
     },
     "application/tests/test_next_depth_c06_supplier_validity.py": {
       "mode": "100644",
-      "git_blob": "b804755e3a98a156f52acf444164ddda52da4f6a",
-      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+      "git_blob": "289cbee62d45ea3c8dd32644d08be5b0a42f70e8",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
     },
     "application/tests/test_omnichannel_payment_finance_os.py": {
       "mode": "100644",
@@ -1099,8 +1099,8 @@
     },
     "application/tests/test_sprint3d_attractions.py": {
       "mode": "100644",
-      "git_blob": "20bb8d3b8a61149bdf9cd33112cf7124c734c5fd",
-      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+      "git_blob": "880adaff73b5e9ec20cb5566abc993f1c011bd82",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
     },
     "application/tests/test_sprint3e_unified_trips.py": {
       "mode": "100644",
@@ -1281,6 +1281,106 @@
       "mode": "100644",
       "git_blob": "5ff42341129a0c7bcb2834088d01366649a1a39f",
       "reason": "PostgreSQL isolated refund race fixture: retain trusted-ingress rejection and prove exact budget rejection, one persisted refund, balanced ledger"
+    },
+    "application/src/go_hotel/api/routes/attractions.py": {
+      "mode": "100644",
+      "git_blob": "3224ced05be4683a85d9b113ead6e1b37bd57458",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/src/go_hotel/api/routes/omnichannel_payment.py": {
+      "mode": "100644",
+      "git_blob": "afd5f9f8c598d0e021473e11d1c3dc5b716f84c5",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/src/go_hotel/api/routes/rental_damage.py": {
+      "mode": "100644",
+      "git_blob": "c1f14e1fc7937ebdf72737e4906d3d3ad6bb6151",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/src/go_hotel/attractions/service.py": {
+      "mode": "100644",
+      "git_blob": "94281181ddfdbdec437f307337953176f77c7bea",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/src/go_hotel/autonomy/action_control.py": {
+      "mode": "100644",
+      "git_blob": "ea5b9c08630c16a6fc33d45517952ac0b35ecb33",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/src/go_hotel/autonomy/condition_evidence.py": {
+      "mode": "100644",
+      "git_blob": "fccb00b171d0b903b7c9c777d2b08dcf5dbbfcad",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/src/go_hotel/autonomy/types.py": {
+      "mode": "100644",
+      "git_blob": "f946088563c2e644906eea05ab3a92b55306d811",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/src/go_hotel/mobility/rental/damage.py": {
+      "mode": "100644",
+      "git_blob": "ddc158f4716dfa4c3cf60cd7bb5c24b3725ede5d",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/src/go_hotel/rail/service.py": {
+      "mode": "100644",
+      "git_blob": "45178e3b8f25190f2d3cd1dbc61d1083821e228a",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/src/go_hotel/services/order_supplier_fulfillment.py": {
+      "mode": "100644",
+      "git_blob": "bcd968dd1d00c7c461a6ffea36b69302e6c7b53d",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/src/go_hotel/services/vertical_lifecycle_projection.py": {
+      "mode": "100644",
+      "git_blob": "6d35d5a61144551c77ae8c8e1c51fe160632f0d4",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/tests/autonomy/test_policy_lifecycle_binding.py": {
+      "mode": "100644",
+      "git_blob": "5e14ef48a9b1a1becb95f9d474a2046fc9b66098",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/tests/test_c03_c06_change_quote_fencing.py": {
+      "mode": "100644",
+      "git_blob": "96bc318adc07111997438520a76a9dfd68dee168",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/tests/test_c05_engineering_currency.py": {
+      "mode": "100644",
+      "git_blob": "7804cef73545e418e38af31f87975f82a8b1749c",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/tests/test_c10_lifecycle_supplier_identity.py": {
+      "mode": "100644",
+      "git_blob": "028e1d1b810548ec8cc086bc5bca396905229203",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/tests/test_c10_supplier_money_projection.py": {
+      "mode": "100644",
+      "git_blob": "73520f30c8aeea3b4cda9c5c9f7e4ed363cf6596",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/tests/test_c10_unknown_payment_projection.py": {
+      "mode": "100644",
+      "git_blob": "e40c53b0dc89745ce559cb5182f60dc0507c7aac",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/tests/test_c11_consumer_payment_source_boundary.py": {
+      "mode": "100644",
+      "git_blob": "64ad53eeefaa75dcdd61bb8a13eb4902391793d3",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/tests/test_depth23_capacity.py": {
+      "mode": "100644",
+      "git_blob": "b3267b446458426d9dc06fd4a032626d1b3d7540",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
+    },
+    "application/tests/test_rental_damage_disputes.py": {
+      "mode": "100644",
+      "git_blob": "06111bc1d3ad7b3ca679877d5a01ed668cdb45ab",
+      "reason": "C01-C14 engineering depth continuation from 6acf9fdcde4b208b12a8c9d57ef74497e745faae; independent acceptance pending; historical PASS not transferred"
     }
   },
   "source_tree_sha256_status": "BOUND",
@@ -1293,17 +1393,57 @@
   "gate_order": [
     "SOURCE_BINDING",
     "DEVELOPER_INTEGRATION",
-    "C13_INDEPENDENT",
-    "C14_HK_SAME_CANDIDATE"
+    "C14_RULE_SCOPE_REVIEW",
+    "C13_INDEPENDENT_QUALITY",
+    "HUMAN_COMMAND_CENTER_DEPLOYMENT"
   ],
   "hong_kong": "NOT_ACCESSED",
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "febb925eeb781223f17002b91479f2eac9b71acc",
-  "source_tree_sha256": "80d19a5791c3a824421638df36b92616fb16e02ac6504b234bbce2571a76fadd",
+  "source_tree_sha256": "b55d7eb3d8ac5aedbd2282147c2ac875842b57bdbe758e95bf406e40577ebbab",
   "historical_pass_transferred": false,
   "migration_head": "0138_supplier_library_import",
   "migration_file": "application/alembic/versions/0138_supplier_library_import.py",
   "c06_external_supplier_provenance": "BLOCKED_EXTERNAL",
-  "integration_evidence": "ci/depth9/CANDIDATE.json"
+  "integration_evidence": "ci/depth9/CANDIDATE.json",
+  "engineering_continuation": {
+    "parent_commit": "6acf9fdcde4b208b12a8c9d57ef74497e745faae",
+    "prior_binding": {
+      "product_candidate_commit": "5c8bb7cc5922a2c1c36babaef446c76a583e81fd",
+      "application_git_tree": "9cc68fa3a805f9f0df09b937a7c2df618cf6795f",
+      "source_files": 1490,
+      "source_tree_sha256": "80d19a5791c3a824421638df36b92616fb16e02ac6504b234bbce2571a76fadd"
+    },
+    "changed_application_paths": [
+      "application/src/go_hotel/api/routes/attractions.py",
+      "application/src/go_hotel/api/routes/omnichannel_payment.py",
+      "application/src/go_hotel/api/routes/rental_damage.py",
+      "application/src/go_hotel/attractions/service.py",
+      "application/src/go_hotel/autonomy/action_control.py",
+      "application/src/go_hotel/autonomy/condition_evidence.py",
+      "application/src/go_hotel/autonomy/types.py",
+      "application/src/go_hotel/main.py",
+      "application/src/go_hotel/mobility/rental/damage.py",
+      "application/src/go_hotel/mobility/ride/service.py",
+      "application/src/go_hotel/rail/service.py",
+      "application/src/go_hotel/services/consumer_unified_lifecycle.py",
+      "application/src/go_hotel/services/omnichannel_payment.py",
+      "application/src/go_hotel/services/order_supplier_fulfillment.py",
+      "application/src/go_hotel/services/vertical_lifecycle_projection.py",
+      "application/tests/autonomy/test_policy_lifecycle_binding.py",
+      "application/tests/test_c03_c06_change_quote_fencing.py",
+      "application/tests/test_c05_engineering_currency.py",
+      "application/tests/test_c10_lifecycle_supplier_identity.py",
+      "application/tests/test_c10_supplier_money_projection.py",
+      "application/tests/test_c10_unknown_payment_projection.py",
+      "application/tests/test_c11_consumer_payment_source_boundary.py",
+      "application/tests/test_depth23_capacity.py",
+      "application/tests/test_next_depth_c06_supplier_validity.py",
+      "application/tests/test_rental_damage_disputes.py",
+      "application/tests/test_sprint3d_attractions.py"
+    ],
+    "acceptance": "PENDING_INDEPENDENT",
+    "historical_pass_transferred": false
+  }
 }
