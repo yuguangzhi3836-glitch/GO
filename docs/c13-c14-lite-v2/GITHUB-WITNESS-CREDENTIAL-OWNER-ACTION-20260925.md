@@ -1,5 +1,9 @@
 # Required action — GitHub witness credential for CC and HK
 
+> **Status 2026-09-25 19:5x: the installer is hardened, tested and already deployed to both
+> hosts; the readback tool is staged at `/tmp/ccv1-144a-tools`. Only the two pastes remain,
+> and they must be done by the credential owner in their own terminal.**
+
 - Task: `CCV1-144A-GITHUB-WITNESS-CREDENTIAL-ENABLEMENT`
 - Status: `OWNER_ACTION_REQUIRED = YES`
 - Date: 2026-09-25
@@ -49,51 +53,89 @@ no `administration`.
 
 ## 2. Install it on each host
 
-The credential must be pasted **on the host**, not sent through chat, not committed,
-and not written to a file on the workstation. The installer reads it from stdin, so the
-value never appears in `argv`, in shell history or in a log:
+The credential must be pasted **on the host**, in **your own terminal**. It must not be
+sent through chat, not written to a file on the workstation, and not placed in any
+command line (a command line is visible in `ps` and lands in shell history).
 
-```sh
-# On GO Command Center (as root)
-sudo sh /path/to/control-plane/c13-c14-witness/install-github-witness-credential.sh \
-    --host cc --apply
-# paste the token, then press Ctrl-D
-```
-
-```sh
-# On HK-STAGING-01 (as root)
-sudo sh /path/to/control-plane/c13-c14-witness/install-github-witness-credential.sh \
-    --host hk --apply
-# paste the token, then press Ctrl-D
-```
-
-Without `--apply` it prints the plan and changes nothing. The script installs exactly
-one file, at exactly this custody, and refuses to finish if the result is not exactly
-that:
+The installer has already been placed on both hosts and verified by hash:
 
 ```text
-cc  /etc/go-command-center/keys/github-witness-reader.token   root:root        0600
+/root/go-witness-credential-install.sh   0700 root:root   sha256 1425195f3e62f15a…
+```
+
+It reads the credential from stdin only, so the value never appears in `argv`, in shell
+history or in a log. Run it as your own SSH user (both aliases already log in as `root`,
+so `sudo` is not needed):
+
+```sh
+ssh go-cc
+bash /root/go-witness-credential-install.sh --host cc --apply
+# paste the token, then press Enter. Input is NOT echoed.
+```
+
+```sh
+ssh hk-staging
+bash /root/go-witness-credential-install.sh --host hk --apply
+# paste the token, then press Enter. Input is NOT echoed.
+```
+
+Interactive echo is disabled with `stty -echo` **before** the prompt is printed, and
+restored afterwards including on Ctrl-C. `read -s` alone was not enough: it disables
+echo only for the duration of the read, so bytes that reach the terminal before the read
+begins are already echoed. This was found by driving a real pty and only writing the
+value after the prompt had been read back, which is what a human does.
+
+Expected output (the token must not appear anywhere in it):
+
+```text
+credential purpose : GO C13/C14 Lite acceptance witness: GitHub Actions readback only
+credential scope   : repository yuguangzhi3836-glitch/GO; actions:read contents:read metadata:read
+target path        : /etc/go-command-center/keys/github-witness-reader.token
+target owner       : root:root
+target mode        : 0600
+directory perms    : unchanged
+services restarted : none
+paste the token, then press Enter. Input is NOT echoed:
+installed          : /etc/go-command-center/keys/github-witness-reader.token
+previous mode      : absent
+new mode           : 600
+new owner          : root:root
+value length       : <n>
+token  echoed      : NO
+token  committed   : NO
+TOKEN_CONTENT_REDACTED=YES
+```
+
+Without `--apply` it prints the plan and changes nothing, and it refuses an empty value,
+a value containing whitespace, or a multi-line value. The script installs exactly one
+file, at exactly this custody, and refuses to finish if the result is not exactly that:
+
+```text
+cc  /etc/go-command-center/keys/github-witness-reader.token   root:root                0600
 hk  /etc/go-hk-agent/keys/github-witness-reader.token         go-hk-agent:go-hk-agent  0600
 ```
 
-It does not touch the key directory's permissions, does not restart any service and
-does not modify any other credential. The pre-existing
-`github-requests-reader.token` on CC is left completely alone: it belongs to another
-surface.
+It does not touch the key directory's permissions, does not restart any service and does
+not modify any other credential. The pre-existing `github-requests-reader.token` on CC is
+left completely alone: it belongs to another surface.
 
-Use the **same** token value on both hosts. It is read-only and scoped to one
-repository, and using one token keeps the two witnesses' *read* capability identical —
-their witness *signing* keys stay separate, which is what independence actually rests
-on here.
+Use one token value per host. Both are read-only and scoped to one repository, so the two
+witnesses' *read* capability is identical; their witness *signing* keys stay separate,
+which is what independence actually rests on here.
+
+`/root/go-witness-credential-install.sh` may be removed once both installs are done; it
+contains no secret.
 
 ## 3. Prove it works
 
-Run the witness readback on each host. This is the pass condition for the four
-booleans:
+The readback tool is staged on both hosts at `/tmp/ccv1-144a-tools` (six files, no
+dependencies outside the standard library) so that the check can run **on the host**,
+from the host's own credential, rather than from this workstation. Run it on each host:
 
 ```sh
-cd <repo>/control-plane/c13-c14-witness
-python3 lw_readback.py --host cc --role c14 \
+cd /tmp && PYTHONDONTWRITEBYTECODE=1 python3 -B \
+  /tmp/ccv1-144a-tools/control-plane/c13-c14-witness/lw_readback.py \
+  --host cc --role c14 \
   --candidate-sha ffffffffffffffffffffffffffffffffffffffff \
   --expected-head-sha cec9646d28d0d11175c739cd88ef9a817961da4f \
   --workflow-path .github/workflows/c13-c14-lite-poc.yml \
@@ -101,8 +143,9 @@ python3 lw_readback.py --host cc --role c14 \
 ```
 
 ```sh
-cd <repo>/control-plane/c13-c14-witness
-python3 lw_readback.py --host hk --role c14 \
+cd /tmp && PYTHONDONTWRITEBYTECODE=1 python3 -B \
+  /tmp/ccv1-144a-tools/control-plane/c13-c14-witness/lw_readback.py \
+  --host hk --role c14 \
   --candidate-sha ffffffffffffffffffffffffffffffffffffffff \
   --expected-head-sha cec9646d28d0d11175c739cd88ef9a817961da4f \
   --workflow-path .github/workflows/c13-c14-lite-poc.yml \
@@ -124,6 +167,10 @@ Those parameters target an existing, harmless POC run of the `POC_ONLY` workflow
 `sha256:6202a6647d36083bde6d407b54e69fc19a91e0376370d15374f6ce3694b256fc`), so the
 result can be compared against a known-good value. If the artifact has expired by the
 time you run it, use any later run of the same workflow and record which one.
+
+⚠ The tool writes its record to `/tmp`, and that record contains only public facts (run
+id, artifact id, digest, recomputed sha256) plus a redacted credential summary. It never
+prints the credential and never writes the signed download URL.
 
 ## 4. What this does and does not unlock
 
