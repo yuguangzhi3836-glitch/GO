@@ -85,7 +85,7 @@ jobs:
           # 4. This commit must stay REACHABLE: it lives on an unmerged branch, so deleting
           #    that branch breaks the first checkout of the next dispatch, and nothing on the
           #    default branch shows it. Keep the branch, or move the pin deliberately.
-          ref: "37b31e0a5a8910400e138292d01badc67270b167"
+          ref: "48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4"
           persist-credentials: false
 
       - name: Check out the frozen candidate into candidate/ (never executed)
@@ -187,14 +187,57 @@ jobs:
 
       - name: Seal the C14 bundle
         run: |
+          set -uo pipefail
+          mkdir -p "$RUNNER_TEMP/artifacts"
+          # The seal is allowed to refuse. What it is NOT allowed to do is refuse and take the
+          # only copy of the reviewer's reasoning with it: a refusal has to stay explainable
+          # after the run (CCV1-145B D-4). So the output is captured either way and the refusal
+          # is recorded in seal_result.json, which the raw-evidence step below publishes. A
+          # refusal still fails this step, and therefore the job.
+          if python control-plane/c13-c14-lite/lite_cli.py seal \
+               --spec "$RUNNER_TEMP/c14.spec.json" \
+               --contract "$RUNNER_TEMP/c14.contract.json" \
+               --outcome "$RUNNER_TEMP/c14.outcome.json" \
+               --out "$RUNNER_TEMP/artifacts/c14_bundle.json" \
+               > "$RUNNER_TEMP/seal_stdout.txt" 2> "$RUNNER_TEMP/seal_stderr.txt"; then
+            printf '{"step":"seal","status":"SEALED","exit_code":0}\n' > "$RUNNER_TEMP/seal_result.json"
+            cp "$RUNNER_TEMP/c14.outcome.json" "$RUNNER_TEMP/artifacts/c14_opinion.json"
+            cp "$RUNNER_TEMP/c14.contract.json" "$RUNNER_TEMP/artifacts/c14_contract.json"
+            cat "$RUNNER_TEMP/seal_stdout.txt"
+          else
+            code=$?
+            printf '{"step":"seal","status":"REFUSED","exit_code":%s}\n' "$code" > "$RUNNER_TEMP/seal_result.json"
+            cat "$RUNNER_TEMP/seal_stdout.txt" "$RUNNER_TEMP/seal_stderr.txt"
+            exit "$code"
+          fi
+
+      - name: Preserve the raw review evidence whatever the seal decided
+        if: always()
+        run: |
           set -euo pipefail
-          python control-plane/c13-c14-lite/lite_cli.py seal \
+          # Independent of the seal, and it deliberately does NOT publish the sealed bundle:
+          # raw review evidence is not sealed evidence. No credential is passed to this step,
+          # because the leak guard is shape-based and passing the key would widen its blast
+          # radius for nothing (the artefacts have no credential field to begin with).
+          python control-plane/c13-c14-lite/lite_cli.py raw-evidence \
+            --out "$RUNNER_TEMP/raw" \
             --spec "$RUNNER_TEMP/c14.spec.json" \
+            --facts "$RUNNER_TEMP/c14.facts.json" \
             --contract "$RUNNER_TEMP/c14.contract.json" \
             --outcome "$RUNNER_TEMP/c14.outcome.json" \
-            --out "$RUNNER_TEMP/artifacts/c14_bundle.json"
-          cp "$RUNNER_TEMP/c14.outcome.json" "$RUNNER_TEMP/artifacts/c14_opinion.json"
-          cp "$RUNNER_TEMP/c14.contract.json" "$RUNNER_TEMP/artifacts/c14_contract.json"
+            --scope "$RUNNER_TEMP/scope.json" \
+            --seal-result "$RUNNER_TEMP/seal_result.json" \
+            --seal-stdout "$RUNNER_TEMP/seal_stdout.txt" \
+            --seal-stderr "$RUNNER_TEMP/seal_stderr.txt"
+
+      - name: Publish the raw review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c14-raw-${{ inputs.candidate_sha }}
+          path: ${{ runner.temp }}/raw
+          if-no-files-found: warn
+          retention-days: 90
 
       - name: Publish the sealed C14 bundle
         uses: actions/upload-artifact@v4
