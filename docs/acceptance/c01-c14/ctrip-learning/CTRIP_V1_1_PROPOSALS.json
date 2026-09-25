@@ -1,0 +1,593 @@
+{
+  "schema_version": 1,
+  "checklist_version": "ctrip-learning-v1.1-proposal",
+  "freeze_status": "PROPOSED_PENDING_C13_COMPLETENESS_REVIEW",
+  "scope_complete": false,
+  "supersedes_frozen_v1": false,
+  "historical_pass_transferred": false,
+  "items": [
+    {
+      "id": "C01-CTRIP-PROPOSAL-01",
+      "cell": "C01",
+      "contract_id": "CTRIP-C01-01",
+      "requirement_ref": "PR218@d66c860707793822757f099a329c7cec458d23eb + 用户要求携程学习必须落实；非GO费率授权",
+      "title": "房型与售卖方案分层，早餐不是方案身份",
+      "category": "NORMAL",
+      "actor": "所属酒店管理员/消费者及所列协作团队权限角色",
+      "preconditions": "隔离来源样本和已接受订单基线固定；仅按酒店明确提交并核验的GO规则执行",
+      "trigger": "在当前实现的对应导入、报价、预订、内容或运营入口执行列出的必要case",
+      "expected_result": "同房同双早的不同付款/客群/取消方案仍保持独立identity；19来源方案映射17主档不能按同名或早餐覆盖",
+      "source_paths": [
+        "application/src/go_hotel/services/aoluguya_supply_truth.py:116",
+        "application/tests/test_ctrip_rate_plan_identity.py:45"
+      ],
+      "related_frozen_v1_ids": [
+        "C01-01",
+        "C01-02",
+        "C01-06"
+      ],
+      "collaborating_cells": [
+        "C01",
+        "C07",
+        "C08"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-PROPOSAL-01.1",
+          "description": "同房同双早的不同付款/客群/取消方案仍保持独立identity",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-01.2",
+          "description": "19来源方案映射17主档不能按同名或早餐覆盖",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选源码/规则版本/清单版本",
+        "消费者与所属供应商正常操作读回",
+        "条款/金额/所属权/状态前后不变量",
+        "独立review与原artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED_IF_V1_1_ACCEPTED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "status": "PROPOSED_ADDITION_NOT_IN_V1_DENOMINATOR",
+      "gap": "早餐数不再作主键已落地；官方快照标准化仍仅保留价/币种/早餐/取消文本/税费/售卖态，未证明付款模式和会员客群从来源贯穿同一快照。"
+    },
+    {
+      "id": "C01-CTRIP-PROPOSAL-02",
+      "cell": "C01",
+      "contract_id": "CTRIP-C01-02",
+      "requirement_ref": "PR218@d66c860707793822757f099a329c7cec458d23eb + 用户要求携程学习必须落实；非GO费率授权",
+      "title": "基础取消规则与确认后宽限择优，精确时间锚点",
+      "category": "ERROR_UNKNOWN",
+      "actor": "所属酒店管理员/消费者及所列协作团队权限角色",
+      "preconditions": "隔离来源样本和已接受订单基线固定；仅按酒店明确提交并核验的GO规则执行",
+      "trigger": "在当前实现的对应导入、报价、预订、内容或运营入口执行列出的必要case",
+      "expected_result": "确认29/30/31、晚确认一小时、基础更宽松和旧快照不变逐case映射；明确日期范围/特殊日期优先级，未知来源180天文案原样保留待核验",
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_cancellation_clock.py:6",
+        "application/src/go_hotel/services/hosted_fare_rules.py:124",
+        "application/tests/test_hotel_cancellation_clock.py:69"
+      ],
+      "related_frozen_v1_ids": [
+        "C01-01",
+        "C01-05",
+        "C01-14"
+      ],
+      "collaborating_cells": [
+        "C01",
+        "C14"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-PROPOSAL-02.1",
+          "description": "确认29/30/31、晚确认一小时、基础更宽松和旧快照不变逐case映射",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-02.2",
+          "description": "明确日期范围/特殊日期优先级，未知来源180天文案原样保留待核验",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选源码/规则版本/清单版本",
+        "消费者与所属供应商正常操作读回",
+        "条款/金额/所属权/状态前后不变量",
+        "独立review与原artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED_IF_V1_1_ACCEPTED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "status": "PROPOSED_ADDITION_NOT_IN_V1_DENOMINATOR",
+      "gap": "29/30/31分钟、确认晚一小时、基础更宽松、23:59、DST已有测试；日期范围和特殊日期覆盖未在此clock模型发现。30只是显式规则输入，不应升级为GO通用默认。"
+    },
+    {
+      "id": "C01-CTRIP-PROPOSAL-03",
+      "cell": "C01",
+      "contract_id": "CTRIP-C01-03",
+      "requirement_ref": "PR218@d66c860707793822757f099a329c7cec458d23eb + 用户要求携程学习必须落实；非GO费率授权",
+      "title": "酒店自主选择导入，Property与Room事实分开",
+      "category": "AUTH_TENANT",
+      "actor": "所属酒店管理员/消费者及所列协作团队权限角色",
+      "preconditions": "隔离来源样本和已接受订单基线固定；仅按酒店明确提交并核验的GO规则执行",
+      "trigger": "在当前实现的对应导入、报价、预订、内容或运营入口执行列出的必要case",
+      "expected_result": "仅地址/邮箱导入其他事实不动；同source_room_id连续导入及19→17组合映射保持稳定；取消预览零写入；静态导入不生成可售库存或价格",
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:33",
+        "application/tests/test_hotel_partner_selected_import.py:34",
+        "application/tests/test_hotel_source_room_mapping.py",
+        "application/frontend/shared/app.js:529"
+      ],
+      "related_frozen_v1_ids": [
+        "C01-06",
+        "C01-07",
+        "C01-08",
+        "C01-12"
+      ],
+      "collaborating_cells": [
+        "C01",
+        "C09",
+        "C12"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-PROPOSAL-03.1",
+          "description": "仅地址/邮箱导入其他事实不动",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-03.2",
+          "description": "同source_room_id连续导入及19→17组合映射保持稳定",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-03.3",
+          "description": "取消预览零写入；静态导入不生成可售库存或价格",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选源码/规则版本/清单版本",
+        "消费者与所属供应商正常操作读回",
+        "条款/金额/所属权/状态前后不变量",
+        "独立review与原artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED_IF_V1_1_ACCEPTED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "status": "PROPOSED_ADDITION_NOT_IN_V1_DENOMINATOR",
+      "gap": "已有选择导入和room mapping；须将取消预览无写入、未选字段不动、未知不变NO、静态导入不变供给权限正式登记，八域原始历史定义尚未检回，不据回忆补造八个域。"
+    },
+    {
+      "id": "C01-CTRIP-PROPOSAL-04",
+      "cell": "C01",
+      "contract_id": "CTRIP-C01-04",
+      "requirement_ref": "PR218@d66c860707793822757f099a329c7cec458d23eb + 用户要求携程学习必须落实；非GO费率授权",
+      "title": "275图片编号不是已上传资产；酒店直接提供高清原图",
+      "category": "AUTH_TENANT",
+      "actor": "所属酒店管理员/消费者及所列协作团队权限角色",
+      "preconditions": "隔离来源样本和已接受订单基线固定；仅按酒店明确提交并核验的GO规则执行",
+      "trigger": "在当前实现的对应导入、报价、预订、内容或运营入口执行列出的必要case",
+      "expected_result": "275 URL/编号计数不能增加verified_asset_count；损坏/缺失/权利撤销资产不能继续通过发布；高清上传→私有回读→绑定→审核→发布逐角色正常点击",
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_media_upload.py:55",
+        "application/tests/test_hotel_partner_media_upload.py:37",
+        "application/tests/test_hotel_partner_media_publication.py:19"
+      ],
+      "related_frozen_v1_ids": [
+        "C01-06",
+        "C01-08",
+        "C01-12"
+      ],
+      "collaborating_cells": [
+        "C01",
+        "C09",
+        "C12"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-PROPOSAL-04.1",
+          "description": "275 URL/编号计数不能增加verified_asset_count",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-04.2",
+          "description": "损坏/缺失/权利撤销资产不能继续通过发布",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-04.3",
+          "description": "高清上传→私有回读→绑定→审核→发布逐角色正常点击",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选源码/规则版本/清单版本",
+        "消费者与所属供应商正常操作读回",
+        "条款/金额/所属权/状态前后不变量",
+        "独立review与原artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED_IF_V1_1_ACCEPTED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "status": "PROPOSED_ADDITION_NOT_IN_V1_DENOMINATOR",
+      "gap": "真实文件链已有实现和专用测试；既有v1媒体条款过粗，需登记原图完整性/跨酒店拒绝/撤销权利/损坏缺失发布阻断与UI回读。"
+    },
+    {
+      "id": "C01-CTRIP-PROPOSAL-05",
+      "cell": "C01",
+      "contract_id": "CTRIP-HISTORY-OCCUPANCY",
+      "requirement_ref": "PR218@d66c860707793822757f099a329c7cec458d23eb + 用户要求携程学习必须落实；非GO费率授权",
+      "title": "成人/儿童/总人数独立约束",
+      "category": "NORMAL",
+      "actor": "所属酒店管理员/消费者及所列协作团队权限角色",
+      "preconditions": "隔离来源样本和已接受订单基线固定；仅按酒店明确提交并核验的GO规则执行",
+      "trigger": "在当前实现的对应导入、报价、预订、内容或运营入口执行列出的必要case",
+      "expected_result": "成人上限、儿童上限、总人数边界组合按完整表拒绝；组合售卖房型与物理房型入住容量不混同",
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:274",
+        "application/tests/test_hotel_partner_self_operating_core.py:19"
+      ],
+      "related_frozen_v1_ids": [
+        "C01-02",
+        "C01-12"
+      ],
+      "collaborating_cells": [
+        "C01",
+        "C07"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-PROPOSAL-05.1",
+          "description": "成人上限、儿童上限、总人数边界组合按完整表拒绝",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-05.2",
+          "description": "组合售卖房型与物理房型入住容量不混同",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选源码/规则版本/清单版本",
+        "消费者与所属供应商正常操作读回",
+        "条款/金额/所属权/状态前后不变量",
+        "独立review与原artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED_IF_V1_1_ACCEPTED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "status": "PROPOSED_ADDITION_NOT_IN_V1_DENOMINATOR",
+      "gap": "当前测试仅一种无效组合；并未证明混合成人儿童实际预订容量与来源字段语义全部一致。"
+    },
+    {
+      "id": "C01-CTRIP-PROPOSAL-06",
+      "cell": "C01",
+      "contract_id": "CTRIP-HISTORY-POLICIES",
+      "requirement_ref": "PR218@d66c860707793822757f099a329c7cec458d23eb + 用户要求携程学习必须落实；非GO费率授权",
+      "title": "早餐身高价格时段、押金频次与原路退回、加床宠物等独立政策",
+      "category": "NORMAL",
+      "actor": "所属酒店管理员/消费者及所列协作团队权限角色",
+      "preconditions": "隔离来源样本和已接受订单基线固定；仅按酒店明确提交并核验的GO规则执行",
+      "trigger": "在当前实现的对应导入、报价、预订、内容或运营入口执行列出的必要case",
+      "expected_result": "早餐身高区间端点与营业时段有明确单位/币种/时区；酒店押金按晚/按次区别且接受快照与返还事实分开；加床/儿童/宠物未知不得自动否定或自动准入",
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:306",
+        "application/src/go_hotel/services/aoluguya_inventory.py:10",
+        "application/tests/test_hotel_partner_self_operating_core.py:22"
+      ],
+      "related_frozen_v1_ids": [
+        "C01-01",
+        "C01-06",
+        "C01-12"
+      ],
+      "collaborating_cells": [
+        "C01",
+        "C11",
+        "C14"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-PROPOSAL-06.1",
+          "description": "早餐身高区间端点与营业时段有明确单位/币种/时区",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-06.2",
+          "description": "酒店押金按晚/按次区别且接受快照与返还事实分开",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-06.3",
+          "description": "加床/儿童/宠物未知不得自动否定或自动准入",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选源码/规则版本/清单版本",
+        "消费者与所属供应商正常操作读回",
+        "条款/金额/所属权/状态前后不变量",
+        "独立review与原artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED_IF_V1_1_ACCEPTED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "status": "PROPOSED_ADDITION_NOT_IN_V1_DENOMINATOR",
+      "gap": "generic JSON可存不等于字段验证/报价消费/用户展示闭环；示例168/84/1000和30min不能视作所有酒店GO合约。"
+    },
+    {
+      "id": "C01-CTRIP-PROPOSAL-07",
+      "cell": "C01",
+      "contract_id": "CTRIP-HISTORY-FACILITIES",
+      "requirement_ref": "PR218@d66c860707793822757f099a329c7cec458d23eb + 用户要求携程学习必须落实；非GO费率授权",
+      "title": "酒店级与房型级设施，全有/部分/无/未知",
+      "category": "NORMAL",
+      "actor": "所属酒店管理员/消费者及所列协作团队权限角色",
+      "preconditions": "隔离来源样本和已接受订单基线固定；仅按酒店明确提交并核验的GO规则执行",
+      "trigger": "在当前实现的对应导入、报价、预订、内容或运营入口执行列出的必要case",
+      "expected_result": "酒店泳池有不自动断言每房型有浴缸；部分房型设施标注范围和继承例外；UNKNOWN和NOT_APPLICABLE分别展示且不参加已验证计数",
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:25",
+        "application/src/go_hotel/services/hotel_partner_core.py:296",
+        "application/tests/test_hotel_partner_self_operating_core.py:22"
+      ],
+      "related_frozen_v1_ids": [
+        "C01-01",
+        "C01-06"
+      ],
+      "collaborating_cells": [
+        "C01",
+        "C09"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-PROPOSAL-07.1",
+          "description": "酒店泳池有不自动断言每房型有浴缸",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-07.2",
+          "description": "部分房型设施标注范围和继承例外",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-07.3",
+          "description": "UNKNOWN和NOT_APPLICABLE分别展示且不参加已验证计数",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选源码/规则版本/清单版本",
+        "消费者与所属供应商正常操作读回",
+        "条款/金额/所属权/状态前后不变量",
+        "独立review与原artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED_IF_V1_1_ACCEPTED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "status": "PROPOSED_ADDITION_NOT_IN_V1_DENOMINATOR",
+      "gap": "UNKNOWN != NO已有测试；ALL/PARTIAL/NONE作用范围不是现枚举显式维度；酒店有设施不能推断所有房型都有。"
+    },
+    {
+      "id": "C01-CTRIP-PROPOSAL-08",
+      "cell": "C01",
+      "contract_id": "CTRIP-HISTORY-COMPLETENESS",
+      "requirement_ref": "PR218@d66c860707793822757f099a329c7cec458d23eb + 用户要求携程学习必须落实；非GO费率授权",
+      "title": "后台100%仍英文简介缺项",
+      "category": "TRUTH_CROSS_DOMAIN",
+      "actor": "所属酒店管理员/消费者及所列协作团队权限角色",
+      "preconditions": "隔离来源样本和已接受订单基线固定；仅按酒店明确提交并核验的GO规则执行",
+      "trigger": "在当前实现的对应导入、报价、预订、内容或运营入口执行列出的必要case",
+      "expected_result": "源站100%不写入GO completeness或跳过字段核验；分别显示发布必要字段与可选多语言缺口；readiness100与资料完整性报告不混用",
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_catalog_quality.py:148",
+        "application/src/go_hotel/services/hotel_partner_core.py:382",
+        "application/frontend/shared/app.js:635"
+      ],
+      "related_frozen_v1_ids": [
+        "C01-01",
+        "C01-06",
+        "C01-13"
+      ],
+      "collaborating_cells": [
+        "C01",
+        "C09"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-PROPOSAL-08.1",
+          "description": "源站100%不写入GO completeness或跳过字段核验",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-08.2",
+          "description": "分别显示发布必要字段与可选多语言缺口",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-08.3",
+          "description": "readiness100与资料完整性报告不混用",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选源码/规则版本/清单版本",
+        "消费者与所属供应商正常操作读回",
+        "条款/金额/所属权/状态前后不变量",
+        "独立review与原artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED_IF_V1_1_ACCEPTED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "status": "PROPOSED_ADDITION_NOT_IN_V1_DENOMINATOR",
+      "gap": "当前quality检查name/address/rooms/policies/facilities，但未发现英文简介必填；readiness_score按计数可100，不能解释为所有字段齐全。"
+    },
+    {
+      "id": "C01-CTRIP-PROPOSAL-09",
+      "cell": "C07",
+      "contract_id": "CTRIP-HISTORY-MEMBER",
+      "requirement_ref": "PR218@d66c860707793822757f099a329c7cec458d23eb + 用户要求携程学习必须落实；非GO费率授权",
+      "title": "会员档位15%及部分不适用仅观察样本，不套GO费率",
+      "category": "TRUTH_CROSS_DOMAIN",
+      "actor": "所属酒店管理员/消费者及所列协作团队权限角色",
+      "preconditions": "隔离来源样本和已接受订单基线固定；仅按酒店明确提交并核验的GO规则执行",
+      "trigger": "在当前实现的对应导入、报价、预订、内容或运营入口执行列出的必要case",
+      "expected_result": "不适用会员优惠的offer不强行降价；缺授权/失效资格只能显示待核验价而非已验证会员价；同早餐不同取消/付款方案不可直接比最低价",
+      "source_paths": [
+        "application/src/go_hotel/services/consumer_ota_comparison.py",
+        "application/tests/test_member_product_comparability.py:38",
+        "application/tests/test_member_comparison_quote_validity.py"
+      ],
+      "related_frozen_v1_ids": [
+        "C01-01"
+      ],
+      "collaborating_cells": [
+        "C07",
+        "C08",
+        "C01"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-PROPOSAL-09.1",
+          "description": "不适用会员优惠的offer不强行降价",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-09.2",
+          "description": "缺授权/失效资格只能显示待核验价而非已验证会员价",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-09.3",
+          "description": "同早餐不同取消/付款方案不可直接比最低价",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选源码/规则版本/清单版本",
+        "消费者与所属供应商正常操作读回",
+        "条款/金额/所属权/状态前后不变量",
+        "独立review与原artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED_IF_V1_1_ACCEPTED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "status": "PROPOSED_ADDITION_NOT_IN_V1_DENOMINATOR",
+      "gap": "此处是独立比价上下文；需C07/C08把账号撤销/资格过期/优惠不适用明确映射；没有采用15%为GO政策。"
+    },
+    {
+      "id": "C01-CTRIP-PROPOSAL-10",
+      "cell": "C01",
+      "contract_id": "CTRIP-HISTORY-MARKETING",
+      "requirement_ref": "PR218@d66c860707793822757f099a329c7cec458d23eb + 用户要求携程学习必须落实；非GO费率授权",
+      "title": "促销生命周期、数据中心、知识库",
+      "category": "OPERATIONS",
+      "actor": "所属酒店管理员/消费者及所列协作团队权限角色",
+      "preconditions": "隔离来源样本和已接受订单基线固定；仅按酒店明确提交并核验的GO规则执行",
+      "trigger": "在当前实现的对应导入、报价、预订、内容或运营入口执行列出的必要case",
+      "expected_result": "促销草稿→生效→到期/撤销只影响约定新订单；经营指标区分订单/取消/退款/到账并可追溯；知识内容版本发布与过期处理保留运营待验项",
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:306",
+        "application/frontend/shared/app.js:670",
+        "application/frontend/shared/app.js:694"
+      ],
+      "related_frozen_v1_ids": [
+        "C01-06",
+        "C01-13"
+      ],
+      "collaborating_cells": [
+        "C01",
+        "C08",
+        "C09",
+        "C12"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-PROPOSAL-10.1",
+          "description": "促销草稿→生效→到期/撤销只影响约定新订单",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-10.2",
+          "description": "经营指标区分订单/取消/退款/到账并可追溯",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROPOSAL-10.3",
+          "description": "知识内容版本发布与过期处理保留运营待验项",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选源码/规则版本/清单版本",
+        "消费者与所属供应商正常操作读回",
+        "条款/金额/所属权/状态前后不变量",
+        "独立review与原artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED_IF_V1_1_ACCEPTED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "status": "PROPOSED_ADDITION_NOT_IN_V1_DENOMINATOR",
+      "gap": "有配置与展示，不足证明日期生效/过期/互斥叠加/撤销后新quote链；本次未定位知识库内容版本/发布审批闭环，不说已做完。"
+    }
+  ],
+  "scope_change": "十条具体历史机制义务建议补入下一版；与v1相关项有交叉，C13/root需按contract去重合并，不能直接累计分母。",
+  "excluded_business_literals": [
+    "携程15%不作为GO折扣",
+    "确认后30分钟只作为可配置测试样本，不作为GO统一取消权利",
+    "180天来源异常保留待核验"
+  ]
+}
