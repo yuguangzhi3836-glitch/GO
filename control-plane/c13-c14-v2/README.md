@@ -55,3 +55,51 @@ execution. All PRs remain Draft, with merge and deployment on HOLD.
 The C14 Command Center receipt contract now uses **HSM P-256 ECDSA SHA-256, base64 DER**. Its trusted public key and fingerprint are host configuration, never repository data. This does not change the existing Ed25519 Command Center Task / Hong Kong Evidence wire signatures.
 
 Installation gates: independent C13 signer registration and signed verdict; Command Center C13 verifier registration; HK isolated Runner and disposable PostgreSQL sandbox; action/environment allowlists; Command Center-only receipt destination with HSM signing and readback; exact live artifact hash check and independent operator review. Do not submit an `HK_ISOLATED_C14_RETEST` Request or claim C14 PASS until each gate has live evidence. Existing `HK_STAGING_TEST_PR` is a separate source preflight.
+
+## AI reviewer identity and persistent claims (development increment)
+
+C13 is the **development-side independent AI review group**. C14 is the
+**runtime-side independent AI review group**. Neither is a human review group.
+GitHub account names do not establish independence. Controlled installation
+is a separate operation, not an additional human C13/C14 reviewer role.
+
+`ai_acceptance_host.AIAdmissionHost` implements the admission Host interface.
+The installer supplies trusted `AIRegistration` snapshots, the implementation
+principal, the exact artifact ZIP and an absolute host-owned verdict directory.
+No Request/verdict/candidate file may supply these trust inputs. The host must
+establish actual execution/credential separation and revocation; different
+strings alone are not proof of independent AI groups. C13 binds a development
+AI principal and P-256 SPKI fingerprint; C14 binds a different runtime AI
+principal and Ed25519 evidence key. C13 qualification works without C14 being
+registered. Nothing here creates a key, registers a real group or runs an AI.
+
+C13 references have the exact form `sha256:<digest>`. The reader opens
+`<digest>.json` from the host directory, rejects links/non-regular files and
+digest changes, then invokes the existing artifact and P-256 verifier. The
+digest covers canonical signed verdict bytes including the trailing LF, not
+an unsigned body or a GitHub comment. Keep the directory and its parent chain
+outside candidate workspaces and writable only by the trusted evidence writer.
+
+`durable_claims.DurableClaims` implements `claim_task_once(task_id, nonce)`
+using a local SQLite transaction with unique Task and nonce constraints and
+FULL synchronization. A controlled installer explicitly provisions a new
+store in a private (0700) persistent directory owned by the service UID. The
+store is 0600 and bound to one Runner ID. Runtime opens existing state only;
+missing/corrupt state fails closed. Bind this method into the installed Runner
+host so the existing `execute()` checks authority/readback before claiming and
+claims before sandbox work. A sandbox crash does not release a claim. Recovery
+must never restore an older claims database or silently provision an empty one;
+storage rollback requires reconciliation against the authoritative task ledger.
+Use a local filesystem with SQLite/fsync guarantees, not ephemeral or network
+storage. This does not yet implement Request-level deduplication at the CC.
+
+Validation includes real local multiprocess contention, abrupt process exit,
+reopened-state replay rejection, and synthetic-signature adapter tests. Those
+tests are source checks, never formal C13/C14 acceptance. No live registration,
+sandbox, HSM connector, bus wiring or installation is supplied by this increment.
+
+Change classes: CONTROL_PLANE, TEST_ONLY, DOCUMENTATION. Development parent is
+`8322a5c81200d2181998f472c89a5cc472cfaeba`; that immutable review baseline remains
+valid historically. This increment is a new Draft candidate, not permission
+to install a moving PR head. Freeze a complete installation commit and manifest
+separately before any fetch/install/readback operation.
