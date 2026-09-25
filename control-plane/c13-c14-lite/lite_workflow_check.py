@@ -179,6 +179,66 @@ def check_rule_input_is_governance_data(name: str, document: dict, raw: str, fai
             failures.append(f"{name}: {forbidden} must not be a dispatch input; the rule set is governance data")
 
 
+def check_machine_step_installs_candidate_dependencies(name: str, document: dict, raw: str, failures: list) -> None:
+    """C13's machine job must install what the CANDIDATE declares, not a fixed list.
+
+    The first real C13 could not collect its inventory at all (CCV1-147A, measured): the
+    machine job installed pytest and nothing else, while the candidate's own
+    ``application/pyproject.toml`` declares the dependencies its tests import - the inventory
+    ``control-plane/boss-deploy-request-v1/tests/test_deploy_entry.py`` imports
+    ``cryptography``, and only that declaration provides it. Installing a package list written
+    inside this workflow would be the same defect one level down, so the check asks for an
+    install OF THE CANDIDATE'S PROJECT rather than for any particular package name - and it
+    asks for it before pytest runs, because after is the same as never.
+    """
+    if name != C13_WORKFLOW:
+        return
+
+    run = None
+    document_parsed = _document_from(raw)
+    if document_parsed is not None:
+        for job in (document_parsed.get("jobs") or {}).values():
+            for step in (job or {}).get("steps", []) or []:
+                text = step.get("run") or ""
+                if isinstance(text, str) and "python -m pytest" in text:
+                    run = text
+                    break
+            if run is not None:
+                break
+    if run is None:
+        run = raw
+    if "python -m pytest" not in run:
+        failures.append(f"{name}: no machine-test command found")
+        return
+
+    # Comments are stripped first, and deliberately so: the step explains the very defect this
+    # check exists for, and quoting `pip install "/srv/application[dev]"` in that explanation
+    # made the guard pass on a file whose real install had been deleted - measured, by mutation,
+    # the first time this guard was written.
+    code = "\n".join(_code_lines(run))
+    # ``&&`` chains and plain lines are both legitimate shapes for the container command.
+    commands = [part.strip() for part in code.split("&&")] if "&&" in code else [
+        line.strip() for line in code.splitlines()]
+    install_at = [index for index, part in enumerate(commands)
+                  if re.search(r"pip install", part)]
+    candidate_at = [index for index, part in enumerate(commands)
+                    if re.search(r"pip install[^\n]*application", part)]
+    pytest_at = [index for index, part in enumerate(commands)
+                 if "python -m pytest" in part]
+    if not install_at:
+        failures.append(f"{name}: the machine step installs nothing before pytest")
+        return
+    if not candidate_at:
+        failures.append(
+            f"{name}: the machine step must install the candidate's own declared dependencies "
+            "(a pip install of the candidate's application/ project). Installing only pytest, "
+            "or a package list written in this file, cannot satisfy the inventory")
+        return
+    if pytest_at and min(candidate_at) > min(pytest_at):
+        failures.append(
+            f"{name}: the candidate's dependencies are installed after pytest runs")
+
+
 def check_artifact_discipline(name: str, raw: str, failures: list) -> None:
     if "upload-artifact@v4" not in raw:
         failures.append(f"{name}: must publish a sealed artifact")
@@ -525,6 +585,7 @@ def run() -> dict:
         check_env_export_is_not_same_step(name, document, failures)
         check_readback_declares_the_run_head(name, raw, failures)
         check_changed_path_boundary(name, raw, failures)
+        check_machine_step_installs_candidate_dependencies(name, document, raw, failures)
         check_workflow_identity_source(name, raw, failures)
         check_raw_evidence_survives_a_refused_seal(name, raw, failures)
         check_rule_input_is_governance_data(name, document, raw, failures)

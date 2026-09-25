@@ -116,6 +116,19 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/machine"
+          # The inventory imports what the CANDIDATE declares, so the candidate's own
+          # project is installed first - from application/pyproject.toml, never from a
+          # package list written up here. Without it the machine test cannot even collect:
+          # test_deploy_entry.py needs cryptography, which only the candidate's pyproject
+          # declares (measured, CCV1-147A). A list written in this file would be the same
+          # defect one level down, so the candidate's declaration is the only source.
+          #
+          # It is built from a writable COPY of that directory, not from /srv: the candidate
+          # has no [build-system], so setuptools takes the legacy path and writes
+          # <name>.egg-info INSIDE the project directory - `pip install "/srv/application[dev]"`
+          # fails with "could not create 'src/go_hotel_platform.egg-info': Read-only file
+          # system" on the read-only mount (measured). The copy is the only writable thing;
+          # the candidate itself stays read-only and the tests still run against /srv.
           docker run --rm \
             -v "$PWD/candidate:/srv:ro" \
             -v "$RUNNER_TEMP/machine:/out" \
@@ -128,7 +141,7 @@ jobs:
             -w /srv \
             --add-host=host.docker.internal:host-gateway \
             python:3.12-slim \
-            bash -lc 'pip install -q pytest && python -m pytest "${{ inputs.machine_inventory }}" -q --junitxml=/out/junit.xml' \
+            bash -lc 'pip install -q pytest && cp -r /srv/application /tmp/candidate-application && pip install -q "/tmp/candidate-application[dev]" && python -m pytest "${{ inputs.machine_inventory }}" -q --junitxml=/out/junit.xml' \
             2>&1 | tee "$RUNNER_TEMP/machine/stdout.txt"
           test -s "$RUNNER_TEMP/machine/junit.xml"
 
