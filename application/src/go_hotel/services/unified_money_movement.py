@@ -46,6 +46,8 @@ class UnifiedMoneyMovementService:
   if not i:raise ValueError('ROOT_PAYMENT_INTENT_REQUIRED')
   amount=b.get('amount_minor',i.amount_minor)
   if type(amount) is not int:raise ValueError('INTEGER_MOVEMENT_AMOUNT_REQUIRED')
+  from go_hotel.services.rental_deposit_money import assert_money_action as assert_rental_deposit_money_action
+  assert_rental_deposit_money_action(s,i,typ,amount,b.get('parent_movement_id'),key)
   old=s.scalar(select(Movement).where(Movement.idempotency_key==key).with_for_update())
   if old:
    if (old.root_payment_intent_id,old.movement_type,old.amount_minor,old.parent_movement_id)!=(intent_id,typ,amount,b.get('parent_movement_id')):

@@ -1,3 +1,4 @@
+from ride_cancellation_fixture import create_ride
 """Fixed CNY engineering fares must never be relabelled as another currency."""
 import pytest
 from sqlalchemy import func, select
@@ -35,7 +36,7 @@ def test_supported_or_default_currency_keeps_same_fare_from_search_to_order(offe
         body["currency"] = "CNY"
     offers = ride_service.search(body["pickup"], body["dropoff"], body["pickup_at"])
     selected = next(item for item in offers if item["offer_id"] == offer)
-    order = ride_service.create("currency-owner", body)
+    order = create_ride(ride_service, "currency-owner", body)
     assert (selected["total_amount_minor"], selected["currency"]) == (amount, "CNY")
     assert (order["total_amount_minor"], order["currency"]) == (amount, "CNY")
     assert order["status"] == "PAYMENT_PENDING"

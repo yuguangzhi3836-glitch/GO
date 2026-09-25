@@ -74,6 +74,10 @@ def isolated_environment(state, credentials, inherited):
         # acceptance runtime deliberately runs with the source tree as cwd, so
         # bind every runtime cache to the isolated state directory instead.
         'GO_MEDIA_CACHE_DIR': str(state / 'media_cache'),
+        # Explicit isolated test tariff source, never a real fleet policy. The
+        # browser must still display it and collect a fresh checked acceptance.
+        'GO_RIDE_ISOLATED_CANCELLATION_POLICY_FILE': str(
+            Path(__file__).parent / 'fixtures' / 'ride-cancellation.synthetic.json'),
     })
     return env
 

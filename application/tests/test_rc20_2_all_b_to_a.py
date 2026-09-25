@@ -1,3 +1,4 @@
+from ride_cancellation_fixture import post_ride_order
 from registration_terms_test_support import register_synthetic_consumer
 from tests.attraction_fixtures import quoted_attraction
 from pathlib import Path
@@ -34,7 +35,7 @@ def test_ride_state_machine_recovery_illegal_transition_and_evidence(client):
     h=auth(client,'rc20-ride@example.com')
     s=client.post('/v1/mobility/rides/search',json={'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-01T10:00:00','currency':'CNY'})
     off=s.json()['data']['items'][0]
-    o=client.post('/v1/mobility/rides/orders',headers=h,json={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-01T10:00:00','currency':'CNY'}).json()['data']
+    o=post_ride_order(client,headers=h,body={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-01T10:00:00','currency':'CNY'}).json()['data']
     oid=o['order_id']
     pay_and_confirm(client,h,'RIDE_ORDER',oid,'RIDE-'+oid[-6:])
     bad=client.post(f'/v1/mobility/orders/{oid}/fulfillment',headers=h,json={'action':'COMPLETE','evidence_reference':'bad-order'})
@@ -51,7 +52,7 @@ def test_ride_state_machine_recovery_illegal_transition_and_evidence(client):
     assert done.status_code==200 and done.json()['data']['status']=='COMPLETED'
     detail=client.get(f'/v1/mobility/orders/{oid}',headers=h).json()['data']
     kinds=[x['kind'] for x in detail['evidence']]
-    assert kinds==['ORDER_CREATED','SUPPLIER_CONFIRMED','EXTERNAL_STATE_UNKNOWN','RECONCILED_TO_CONFIRMED','FULFILLMENT_START','FULFILLMENT_COMPLETE']
+    assert kinds==['ORDER_CREATED','RIDE_CANCELLATION_ACCEPTED','SUPPLIER_CONFIRMED','EXTERNAL_STATE_UNKNOWN','RECONCILED_TO_CONFIRMED','FULFILLMENT_START','FULFILLMENT_COMPLETE']
     assert all(detail['evidence'][i]['previous_hash']==('GENESIS' if i==0 else detail['evidence'][i-1]['entry_hash']) for i in range(len(detail['evidence'])))
 
 

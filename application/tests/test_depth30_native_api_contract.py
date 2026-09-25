@@ -1,3 +1,5 @@
+from contextlib import nullcontext
+from ride_cancellation_fixture import synthetic_policy
 """Actual native domain helpers against isolated FastAPI/SQLite, over stdio.
 
 This verifies API compatibility; it is not React Native/device/browser E2E.
@@ -57,15 +59,19 @@ def test_native_six_vertical_creation_payment_and_refund_contracts(client):
         offer=post(base+'/search',body)['items'][0];pb=post(f"{base}/offers/{offer['offer_id']}/prebook")
         tasks[v]={'prebook':pb,'offer':offer}
     for v,base,body in [('RIDE','/v1/mobility/rides',{'pickup':'PVG','dropoff':'Bund','pickup_at':day+'T10:00:00','currency':'CNY'}),('RENTAL','/v1/mobility/rentals',{'pickup_location':'NRT','return_location':'NRT','pickup_at':day+'T10:00:00','return_at':end+'T10:00:00','currency':'CNY'})]:
-        tasks[v]={'search':body,'offer':post(base+'/search',body)['items'][0]}
+        if v=='RIDE':body['pickup_at']+='+08:00'
+        with synthetic_policy() if v=='RIDE' else nullcontext():
+            tasks[v]={'search':body,'offer':post(base+'/search',body)['items'][0]}
     offer=post('/v1/attractions/search',{'destination':'东京','visit_date':day})['items'][0]
     pb=post('/v1/attractions/prebook',{'offer_id':offer['offer_id'],'visit_date':day,'session_time':offer.get('session_time'),'quantity':1,'currency':'CNY'})
     tasks['ATTRACTION']={'offer':{**offer,'visit_date':day},'prebook':pb,'quantity':1}
     for v,params in tasks.items():
         create={'action':'create','vertical':v,'params':params,'userId':uid,'travelerId':tid}
-        order=bridge(client,headers,create)['data']
-        assert order['status']=='PAYMENT_PENDING',(v,order)
-        assert bridge(client,headers,create)['data']['order_id']==order['order_id']
+        if v=='RIDE':create['cancellationAcceptedHash']=params['offer']['cancellation']['policy_hash']
+        with synthetic_policy() if v=='RIDE' else nullcontext():
+            order=bridge(client,headers,create)['data']
+            assert order['status']=='PAYMENT_PENDING',(v,order)
+            assert bridge(client,headers,create)['data']['order_id']==order['order_id']
         task={'vertical':v,'orderId':order['order_id']}
         paid=bridge(client,headers,{**task,'action':'pay'})
         assert paid['order']['status'] in {'CONFIRMED','TICKETED'},(v,paid)

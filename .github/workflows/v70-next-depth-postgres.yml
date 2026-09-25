@@ -132,6 +132,10 @@ jobs:
             tests/test_c10_unknown_payment_projection.py \
             tests/test_c10_supplier_money_projection.py \
             tests/test_c11_consumer_payment_source_boundary.py \
+            tests/test_rental_deposit_authority.py \
+            tests/payments/test_c11_rental_deposit_money.py \
+            tests/payments/test_c11_ride_acceptance_guard.py \
+            tests/test_c05_cancellation_policy.py \
             --junitxml="$RUNNER_TEMP/next-depth-pg/cell-depth-increment-junit.xml" \
             2>&1 | tee "$RUNNER_TEMP/next-depth-pg/cell-depth-increment.log"
           python - <<'PY'
@@ -142,6 +146,17 @@ jobs:
           assert counts['tests']>0 and counts['failures']==counts['errors']==counts['skipped']==0, counts
           print(json.dumps({'isolated_postgres_increment':counts}))
           PY
+      - name: Bounded transaction write capacity and invariants
+        if: matrix.cell == 'C11'
+        timeout-minutes: 6
+        working-directory: application
+        shell: bash
+        env:
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          python -B ci/next_depth/c12_transaction_capacity.py \
+            --evidence-dir "$RUNNER_TEMP/next-depth-pg/C12-capacity"
       - name: Bind original logs and process observations
         if: always()
         shell: bash

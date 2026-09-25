@@ -1,3 +1,4 @@
+from ride_cancellation_fixture import post_ride_order
 from registration_terms_test_support import register_synthetic_consumer
 from tests.attraction_fixtures import quoted_attraction
 from sqlalchemy import select
@@ -47,7 +48,7 @@ def test_six_vertical_booking_entries_use_vault_minimum_release(client):
     assert ro.json()['data']['passengers']==[{'full_name':'VAULT TESTER','type':'ADT'}]
     # Ride
     rides=client.post('/v1/mobility/rides/search',json={'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']['items'][0]
-    ride=client.post('/v1/mobility/rides/orders',headers=h,json={'offer_id':rides['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY','traveler_ids':[tid]}); assert ride.status_code==200,ride.text
+    ride=post_ride_order(client,headers=h,body={'offer_id':rides['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY','traveler_ids':[tid]}); assert ride.status_code==200,ride.text
     assert ride.json()['data']['passengers']==[{'full_name':'VAULT TESTER','mobile':'13800000000'}]
     # Rental
     rentals=client.post('/v1/mobility/rentals/search',json={'pickup_location':'NRT','return_location':'NRT','pickup_at':'2026-09-02T09:00:00','return_at':'2026-09-05T09:00:00','currency':'CNY'}).json()['data']['items'][0]

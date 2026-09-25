@@ -45,6 +45,9 @@ class OmnichannelPaymentService:
   order=s.scalar(select(model).where(model.order_id==business_id).with_for_update())
   if not order:raise ValueError('AUTHORITATIVE_ORDER_FACT_REQUIRED')
   if order.account_id!=payer:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
+  if vertical=='RIDE':
+   from go_hotel.mobility.ride.cancellation_policy import accepted_in
+   accepted_in(s,order)
   if vertical in {'RAIL','ATTRACTION'}:
    if order.status=='CANCELLED':raise ValueError('CANCELLED_ORDER_NOT_PAYABLE')
    reservation_expiry.guard_payment_in(s,vertical,order)

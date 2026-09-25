@@ -13,11 +13,13 @@ router=APIRouter(tags=["sprint3c-mobility"])
 def w(fn,*a):
  try:return {"data":fn(*a)}
  except ValueError as e:
+  if str(e).startswith('RIDE_CANCELLATION_'):raise HTTPException(409,detail=str(e))
   if str(e) in {'REFUND_QUOTE_CHANGED_RECONFIRM_REQUIRED','REFUND_HISTORICAL_CONSENT_UNAVAILABLE','REFUND_OPERATION_INTEGRITY_INVALID'}:raise HTTPException(409,detail=str(e))
   msg=str(e); code=503 if "PROVIDER_TRUTH_REQUIRED" in msg else (422 if any(x in msg for x in ("ILLEGAL_STATE","CHANGEABLE","CANCELLABLE","INVALID","RECONCILIATION","QUOTE_","RECONFIRM","NOT_CONFIRMED","FORBIDDEN")) else 404)
   raise HTTPException(code,detail=str(e))
 class RideSearch(BaseModel):pickup:str;dropoff:str;pickup_at:str;currency:str="CNY"
 class RideBook(RideSearch):
+ cancellation_policy_hash:str|None=None
  flight_identity:dict|None=None;flight_authority_id:str|None=None
  offer_id:str;flight_no:str|None=None;passengers:list[dict]=Field(default_factory=list);traveler_ids:list[str]=Field(default_factory=list);flight_tracking_enabled:bool=False;delay_protection_enabled:bool=False;delay_protection_free_wait_minutes:int=0;max_free_wait_minutes:int|None=None;supplier_rule_snapshot:dict=Field(default_factory=dict)
 class RentalSearch(BaseModel):pickup_location:str;return_location:str;pickup_at:str;return_at:str;currency:str="CNY"

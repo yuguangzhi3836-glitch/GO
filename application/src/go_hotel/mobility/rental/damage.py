@@ -116,7 +116,11 @@ def open_case(p, order_id, key, amount_minor, currency, pickup_evidence, return_
         cap = min(o.deposit_minor, excess)
         if currency != o.currency or amount_minor > cap:
             raise ValueError('DAMAGE_CONTRACT_AMOUNT_INVALID')
+        from go_hotel.mobility.rental.deposit_authority import binding_for_case, assert_case_open_allowed
+        assert_case_open_allowed(s, o)
+        deposit_obligation = binding_for_case(s, o)
         case = {'case_id': new_id('rent_damage'), 'order_id': order_id,
+            'deposit_obligation': deposit_obligation,
             'owner_id': o.account_id, 'opened_by': p.user_id, 'status': 'AWAITING_CUSTOMER',
             'version': 1, 'claimed_minor': amount_minor, 'currency': currency,
             'contract_snapshot': {'deposit_minor': o.deposit_minor, 'insurance': o.insurance,

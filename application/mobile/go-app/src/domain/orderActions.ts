@@ -17,7 +17,7 @@ export async function readOrder(ref: OrderRef, request: Request) {
   if(order?.order_id!==ref.orderId||(order.vertical&&order.vertical!==ref.vertical))throw Error('ORDER_IDENTITY_MISMATCH');
   return {data,order};
 }
-export function payable(order: any) { return ['PAYMENT_PENDING','PAYMENT_AUTHORIZED'].includes(order?.status); }
+export function payable(order: any) { return ['PAYMENT_PENDING','PAYMENT_AUTHORIZED'].includes(order?.status)&&(order?.vertical!=='RIDE'||order?.cancellation?.state==='BOOKING_ACCEPTED'); }
 export function refundable(order: any) { return ['CONFIRMED','TICKETED'].includes(order?.status); }
 function amount(order: any) {
   if(!Number.isSafeInteger(order?.total_amount_minor)||order.total_amount_minor<=0||order.currency!=='CNY')throw Error('ORDER_AMOUNT_UNAVAILABLE');
@@ -38,6 +38,7 @@ export function createOrderActions(request: Request, current: ()=>boolean = ()=>
   async function pay(ref:OrderRef, accepted:any) {
     return exclusive(async()=>{
       const old=amount(accepted),view=await checkoutView(ref,request);check();
+      if(ref.vertical==='RIDE'&&view.order.cancellation?.state!=='BOOKING_ACCEPTED')throw Error('RIDE_CANCELLATION_BOOKING_POLICY_REQUIRED');
       if(accepted.order_id!==ref.orderId)throw Error('ORDER_IDENTITY_MISMATCH');
       if(!payable(view.order))return {...view,notice:'ORDER_STATE_UPDATED'};
       if(!view.simulation)throw Error('PAYMENT_CHANNEL_NOT_READY');

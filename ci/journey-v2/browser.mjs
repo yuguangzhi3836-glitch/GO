@@ -90,7 +90,7 @@ async function dialog(p,{party}={}){
   if(await d.locator('#goPartyCount').count())await d.locator('#goPartyCount').selectOption(String(party||2));
   if(await d.locator('#goTraveler').count())await d.locator('#goTraveler').selectOption({index:1});
   const travelers=d.locator('[data-traveler]');for(let i=0;i<Math.min(2,await travelers.count());i++)await travelers.nth(i).check();
-  for(const el of await d.locator('[data-consent],[data-quote-consent],[name=cashConfirmed]').all())await el.check();
+  for(const el of await d.locator('[data-consent],[data-quote-consent],[data-policy-consent],[name=cashConfirmed]').all())await el.check();
   const title=await d.locator('h2').first().innerText();await d.locator('[type=submit]').click();
   await p.waitForFunction(old=>!document.querySelector('dialog[open]')||document.querySelector('dialog[open] h2')?.textContent!==old,title);
 }
@@ -167,7 +167,27 @@ try{
     const before=orders.length;await home(consumer,vertical);await consumer.locator('#m1').fill(vertical==='RIDE'?'PVG':'NRT');await consumer.locator('#m2').fill(vertical==='RIDE'?'上海外滩':'NRT');
     if(vertical==='RENTAL')await selectDateRange(consumer,'#mt1','#mt2',day(30)+'T10:00',day(32)+'T10:00');
     else await consumer.locator('#mt1').fill(day(30)+'T10:00');
-    await consumer.locator('#mgo').click();await consumer.locator('[data-mob]').first().click();await dialog(consumer);await dialog(consumer);await booked(consumer,vertical,before);
+    await consumer.locator('#mgo').click();await consumer.locator('[data-mob]').first().click();if(vertical==='RIDE')await dialog(consumer);await dialog(consumer);await dialog(consumer);await booked(consumer,vertical,before);
+  },'journeys');
+  await scenario(consumer,'RENTAL-deposit-explicit-consent-without-charge',async()=>{
+    const oid=expectedOrders.get('RENTAL');assert.ok(oid,'rental booking required');
+    await consumer.locator('[data-deposit-propose]').click();
+    await consumer.locator('[data-deposit-accept]').click();
+    const consent=consumer.locator('dialog[open]');await consent.waitFor();
+    const before=report.network.filter(x=>x.method==='POST'&&x.path.endsWith('/accept')&&x.path.includes('/deposit-obligation/')).length;
+    await consent.locator('[type=submit]').click();
+    assert.equal(await consent.isVisible(),true,'unchecked consent must remain open');
+    assert.equal(report.network.filter(x=>x.method==='POST'&&x.path.endsWith('/accept')&&x.path.includes('/deposit-obligation/')).length,before,'no implicit acceptance request');
+    await consent.locator('[data-consent]').check();await consent.locator('[type=submit]').click();await consent.waitFor({state:'detached'});
+    await consumer.locator('[data-deposit-money-state]').getByText('尚未授权',{exact:true}).waitFor();
+    const obligation=await read(consumer,`/v1/mobility/rentals/orders/${oid}/deposit-obligation`);
+    assert.equal(obligation.state,'ACTIVATED');assert.equal(obligation.financial_state,'NO_FINANCIAL_FACT_ASSERTED');
+    assert.equal(obligation.source.external_live,false);
+    const financial=await read(consumer,`/v1/mobility/rentals/orders/${oid}/deposit-money/${obligation.obligation_id}?expected_revision=${obligation.revision}&expected_source_hash=${obligation.source_hash}`);
+    assert.equal(financial.state,'NOT_AUTHORIZED');assert.equal(financial.payment_intent_id,null);
+    await consumer.setViewportSize({width:375,height:940});await noOverflow(consumer);
+    await consumer.locator('[data-deposit-refresh]').click();await consumer.locator('[data-deposit-money-state]').getByText('尚未授权',{exact:true}).waitFor();
+    assert.equal(await consumer.locator('[data-deposit-accept]').count(),0,'same terms not offered for repeat consent');
   },'journeys');
   await scenario(consumer,'ATTRACTION-two-visitors-slot-confirmed',async()=>{
     const before=orders.length;await home(consumer,'ATTRACTION');await consumer.locator('#adest').fill('东京');await consumer.locator('#adate').fill(day(30));await consumer.locator('#ago').click();await consumer.locator('[data-attr]').first().click();

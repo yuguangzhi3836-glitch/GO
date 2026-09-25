@@ -1,3 +1,4 @@
+from ride_cancellation_fixture import post_ride_order
 from tests.attraction_fixtures import quoted_attraction
 import pytest
 from datetime import date, timedelta
@@ -37,7 +38,7 @@ def test_attraction_expired_quote_fails_closed(client):
 def test_ride_unknown_from_in_progress_restores_in_progress(client):
     h=mobility_auth(client)
     off=client.post('/v1/mobility/rides/search',json={'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']['items'][0]
-    o=client.post('/v1/mobility/rides/orders',headers=h,json={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
+    o=post_ride_order(client,headers=h,body={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
     pay_and_confirm(client,h,'RIDE_ORDER',o['order_id'],'RIDE-'+o['order_id'][-6:])
     assert client.post(f"/v1/mobility/orders/{o['order_id']}/fulfillment",headers=h,json={'action':'START','evidence_reference':'ride-start'}).json()['data']['status']=='IN_PROGRESS'
     x=mobility_service.admin_external_state(o['order_id'],'UNKNOWN_EXTERNAL_STATE','unknown-proof','ops')
@@ -54,7 +55,7 @@ def test_ride_unknown_from_in_progress_restores_in_progress(client):
 def test_late_supplier_fact_cannot_resurrect_completed_ride(client):
     h=mobility_auth(client)
     off=client.post('/v1/mobility/rides/search',json={'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']['items'][0]
-    o=client.post('/v1/mobility/rides/orders',headers=h,json={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
+    o=post_ride_order(client,headers=h,body={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
     pay_and_confirm(client,h,'RIDE_ORDER',o['order_id'],'RIDE-'+o['order_id'][-6:])
     client.post(f"/v1/mobility/orders/{o['order_id']}/fulfillment",headers=h,json={'action':'START','evidence_reference':'start'})
     client.post(f"/v1/mobility/orders/{o['order_id']}/fulfillment",headers=h,json={'action':'COMPLETE','evidence_reference':'complete'})
@@ -69,7 +70,7 @@ def test_late_supplier_fact_cannot_resurrect_completed_ride(client):
 def test_ride_unknown_can_converge_to_failed(client):
     h=mobility_auth(client)
     off=client.post('/v1/mobility/rides/search',json={'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']['items'][0]
-    o=client.post('/v1/mobility/rides/orders',headers=h,json={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
+    o=post_ride_order(client,headers=h,body={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
     pay_and_confirm(client,h,'RIDE_ORDER',o['order_id'],'RIDE-'+o['order_id'][-6:])
     assert mobility_service.admin_external_state(o['order_id'],'UNKNOWN_EXTERNAL_STATE','unknown-proof','ops')['status']=='UNKNOWN_EXTERNAL_STATE'
     from go_hotel.mobility.ride.recovery_evidence import current_unknown_episode
@@ -96,7 +97,7 @@ def test_same_supplier_fact_replay_does_not_append_events(client):
     from go_hotel.db.models import OrderSupplierFulfillmentEventRow, ConsumerUnifiedLifecycleEventRow, ConsumerUnifiedLifecycleRow
     h=mobility_auth(client)
     off=client.post('/v1/mobility/rides/search',json={'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']['items'][0]
-    o=client.post('/v1/mobility/rides/orders',headers=h,json={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
+    o=post_ride_order(client,headers=h,body={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
     pay_and_confirm(client,h,'RIDE_ORDER',o['order_id'],'RIDE-'+o['order_id'][-6:])
     with SessionLocal() as s:
         f=s.scalar(select(OrderSupplierFulfillmentRow).where(OrderSupplierFulfillmentRow.business_id==o['order_id']))

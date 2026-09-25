@@ -1,2 +1,10 @@
-import React,{useState}from'react';import{Alert,ScrollView,Text,View}from'react-native';import{screen}from'../design';import{Brand,Btn,Chip}from'../components/GO';import{api}from'../api/client';
-export default function S({navigation}:any){const[busy,setBusy]=useState(false);const search={pickup:'上海浦东机场 T2',dropoff:'上海外滩',pickup_at:'2026-08-28T19:30:00+08:00',currency:'CNY'};const go=async()=>{try{setBusy(true);const r=await api('/v1/mobility/rides/search',{method:'POST',body:JSON.stringify(search)});navigation.navigate('RideResults',{items:r.data?.items||[],search})}catch(e:any){Alert.alert('搜索失败',e.message)}finally{setBusy(false)}};return <ScrollView style={screen.root} contentContainerStyle={screen.content}><Brand/><Text style={[screen.h1,{marginTop:24}]}>机场接送 / 点到点</Text><Text style={[screen.sub,{marginTop:8}]}>{search.pickup} → {search.dropoff}</Text><View style={[screen.card,{marginTop:18}]}><Text style={screen.h2}>GO Mobility</Text><View style={{flexDirection:'row',flexWrap:'wrap',marginTop:12}}><Chip>真实总成本</Chip><Chip>规则透明</Chip><Chip>航班联动</Chip></View><Btn title={busy?'搜索中…':'搜索接送车辆'} onPress={go} disabled={busy}/></View></ScrollView>}
+import React from 'react';
+import MobilitySearchForm from '../components/MobilitySearchForm';
+import {api} from '../api/client';
+
+export default function RideSearchScreen({navigation}:any) {
+  return <MobilitySearchForm kind="ride" onSearch={async search=>{
+    const response=await api('/v1/mobility/rides/search',{method:'POST',body:JSON.stringify(search)});
+    navigation.navigate('RideResults',{items:response.data?.items||[],search});
+  }}/>;
+}
