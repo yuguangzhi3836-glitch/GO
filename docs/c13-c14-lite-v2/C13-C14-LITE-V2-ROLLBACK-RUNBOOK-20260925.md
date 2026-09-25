@@ -15,8 +15,16 @@
   root tree `85ab281cfc10375081fe36c96482cf108c56280b`；GitHub 已 gpgsig 签名；
   `merged_by = chenzhenxi1-sudo`）
   ⇒ **注册后 main = `7db7b2aa5…`**，撤销时"回到注册前"要回到的是 `aa2ec62b…`。
-- Backend 固定引用: `a67ea8ac0cbf7990ce7fa1570eef7a0de29bab40`（写死在两条 workflow 内；
-  远端可达性实测 HTTP 200，且是 #251 当前 head `3085ba157` 的祖先）
+- Backend 固定引用: `37b31e0a5a8910400e138292d01badc67270b167`（写死在两条 workflow 内；
+  **取代** `a67ea8ac0cbf7990ce7fa1570eef7a0de29bab40`，因为前者含 D-2/D-3 的修复）。
+  ⚠⚠ **软依赖**：该 commit 活在**未合并**的分支 `cc/c13-c14-lite-v2-defect-fixes-20260925` 上，
+  远端可达性实测 `GET /commits/…` = **HTTP 200**。⇒ **不得删除该分支**，否则下一次 dispatch 的
+  第一段 checkout 就会失败，而**从 `main` 上看不出任何异常**。这是"钉死 ref"必然带来的代价。
+- 🆕 **替换注册 = PR #253**（Draft，base=`main`@`7db7b2aa5`，**2 文件 / +81-7**，单 commit
+  `55e437edcf673856bd875b37dab28be86cd22386`，`mergeable=true` / `mergeable_state=clean`）：
+  修 D-1（changed-path 边界）与 D-2（workflow identity）。合并后 `main` 上这两条 workflow 的
+  注册内容即为该版本。⚠ **推 #253 时发现 `github.com:443` 直连不通**（`api.github.com` 正常），
+  本次 push 显式走本机 Clash `127.0.0.1:7897`；**未改任何 Clash 配置 / 规则 / DNS / TUN**。
 
 ---
 
@@ -166,13 +174,15 @@ last_valid_round = <最后一个有效 round 的 id>
 **这是最干净的一步，也是设计成这样的原因。**
 
 ```bash
+# 顺序不能颠倒：先撤替换注册，再撤原始注册；颠倒会与后来改动过的文件冲突。
 # 在 main 上
-git revert --no-edit 85533dd5790b8cfbbf48e3ae387cb47aab82a8d3
+git revert --no-edit <PR #253 的 merge commit>     # 文件回到注册时的内容
+git revert --no-edit 85533dd5790b8cfbbf48e3ae387cb47aab82a8d3   # 删除两个文件
 git push origin main          # 走正常 PR 流程亦可
 ```
 
-已用 `git apply --check --reverse` 验证：该 patch 反向应用**完整移除两个文件、528 行全删、
-不留残件**。
+已用 `git apply --check --reverse` 验证：`85533dd5` 的 patch 反向应用**完整移除两个文件、528 行全删、
+不留残件**；`55e437edc` 的 patch 亦**完整反向应用**（REVERSE-APPLY OK）。
 
 **验收**：`git ls-tree origin/main .github/workflows/ --name-only | grep -c 'c1[34]'` = **0**；
 main 上 workflow 总数回到 **26**。

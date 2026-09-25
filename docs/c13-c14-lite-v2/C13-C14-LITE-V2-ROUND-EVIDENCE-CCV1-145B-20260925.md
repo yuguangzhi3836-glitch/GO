@@ -402,3 +402,102 @@ AUTHORISES merge / deploy / release                                NO  (authoriz
 2. Dispatch C13 (`V70-R3-C13-01`, same candidate) only if the above is decided.
 3. Decide whether the #68 activation record's identity (written by the implementation account)
    should be re-declared by the Owner.
+
+---
+
+## 9. Defect fixes — D-1 / D-2 / D-3 (added after Eason's STOP-C13 instruction)
+
+`C13_STOPPED = YES` · `D1_FIXED = YES` · `D2_FIXED = YES` · `D3_FIXED = YES` ·
+`RETESTED = YES` · `PR_OPENED = 253` · `MERGED = NO` · `C14_RERUN = NO`
+
+Order followed exactly: **STOP C13 → fix D-1/D-2/D-3 → retest → new minimal PR**.
+
+### 9.1 D-1 — the fix is three things, not one
+
+```text
+(1) --diff-merges=first-parent      the actual first-parent diff
+    ⚠ -m --first-parent is NOT a fix: --first-parent does not narrow -m, so the boundary
+      silently becomes the union of BOTH parents' diffs (measured, and pinned by a test)
+(2) fetch-depth: 2                  the first parent must be present
+    at depth 1 the boundary is EMPTY again, with exit code 0 (measured against the real repo)
+(3) test -s "$RUNNER_TEMP/changed_paths.txt" and no `|| true`
+    an empty boundary is now a hard failure instead of a silent pass
+```
+
+Measured on the real candidate `7db7b2aa5` (a merge commit):
+
+```text
+git diff-tree --no-commit-id --name-only -r HEAD                          -> 0 lines   (the shipped form)
+git diff-tree --no-commit-id --name-only -r -m --first-parent HEAD        -> 2 lines   (but: BOTH parents' union)
+git diff-tree --no-commit-id --name-only -r --diff-merges=first-parent HEAD -> 2 lines ✅ the two real files
+non-merge commits (85533dd57, cc596b0b9): old form and new form agree (2 / 2 and 4 / 4)
+```
+
+### 9.2 D-2 — the recorded identity must be the executed definition
+
+New `lite_cli.py workflow-identity` reads the workflow file from the ref the run used
+(`GITHUB_SHA`), re-hashes the returned bytes into git's own blob SHA, and exits non-zero on any
+mismatch. There is no fallback value. `git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY` is gone.
+
+### 9.3 D-3 — one derivation, two consumers
+
+`DEFAULT_APPLICABLE_RULES` / `DEFAULT_RULE_VERSION` are now declared once; `_env_spec` derives the
+rule set from the dispatch input (newly exported as `LITE_APPLICABLE_RULES` / `LITE_RULE_VERSION`),
+and both the prompt facts and the sealed record read that same value. The reviewer cannot widen or
+narrow it in its own record.
+
+### 9.4 A fourth finding, reported separately
+
+Running the witness suite on `ubuntu-24.04` failed one test on **both** the fixed tree and the
+pre-fix baseline (`af74ad29b`): `test_a_correct_key_passes_every_check`. Cause: the fixture
+(`write_key_pair`) never `chmod`ed the private key, so `private_mode_is_0600` could never be true
+on POSIX — invisible on Windows, where the mode checks are skipped. It is **pre-existing and
+unrelated to D-1/D-2/D-3**; it is fixed in the pinned commit and stated as its own finding.
+Side effect worth noting: the 0600 assertion is now actually exercised on the platform that matters.
+
+### 9.5 Verification
+
+```text
+                                 Windows            Ubuntu-24.04 (authoritative)
+backend suite                    109 OK             109 OK
+witness suite                    192 OK (skipped=1) 192 OK
+workflow contract checker        PASS               PASS
+schema check                     6 schemas, 0 stale
+secret scan                      0 hits
+new regression tests             16 in the backend; against the pre-fix backend the same
+                                 suite reports 5 failures + 4 errors (guards bite)
+checker vs the registered text   FAIL, naming D-1 and D-2 explicitly
+```
+
+### 9.6 What changed where
+
+```text
+branch cc/c13-c14-lite-v2-defect-fixes-20260925
+  37b31e0a5  fix(c13-c14-lite): the changed-path boundary, the workflow identity and the rule set
+             D-2 + D-3 + the new tests + the witness fixture fix   <- the pinned execution ref
+  2dd4aa4b2  ci(c13-c14): mirror the fixed workflows on the backend branch and pin 37b31e0a5
+
+PR #253  cc/c13-c14-workflow-defect-fixes-20260925   (Draft, base main@7db7b2aa5)
+  55e437edc  2 files · +81 / -7 · D-1 + D-2 + the pin move · reverse-apply verified
+```
+
+A commit cannot pin itself, which is why the backend fix and the workflow edit are two commits and
+the pin always names the earlier one.
+
+### 9.7 ⚠ Push-path incident (no configuration was changed)
+
+`github.com:443` was unreachable from this workstation during the push (`curl` timeout, three
+attempts) while `api.github.com` answered normally (HTTP 200). The same push through the already
+running local Clash proxy (`https_proxy=http://127.0.0.1:7897`) succeeded. Only a per-command
+environment variable was used: **no Clash rule, profile, DNS or TUN setting was read-modify-written**,
+so Codex's dependency on the TUN path is untouched. Worth a look separately, since `github.com`
+direct routing worked earlier in the same session.
+
+### 9.8 Next gate
+
+1. Human review and merge of **#253** (Draft, `mergeable_state=clean`). Merging is the human gate;
+   the branch `cc/c13-c14-lite-v2-defect-fixes-20260925` must **not** be deleted, or the pin stops
+   resolving.
+2. Freeze the new `main` candidate (its SHA will be `REGISTRATION_MERGE_SHA` #2).
+3. Append the new round's C14/C13 task identity to the ledger, **then** dispatch C14 — not before.
+4. Only if that C14 returns `PASS_SCOPED` / a lawful `NOT_APPLICABLE` does C13 run.
