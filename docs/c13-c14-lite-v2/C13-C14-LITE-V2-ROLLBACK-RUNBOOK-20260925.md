@@ -83,7 +83,15 @@ backend 与 witness runtime 只活在**未合并**的分支上：
   artifact 10866808048（readback，678 B，digest sha256:508f9e6a…）
   ⚠ 两个 artifact 均由 **GitHub retention 90 天**约束 ⇒ 作为长期审计证据须在到期前归档
     （不可变副本 + SHA256 + artifact_id / run_id / 归档时间）。撤销**不会**保住它们。
-C13 production run                     : 0（本轮按指令只派发 C14）
+C13 production run                     : 0（两轮都只派发 C14）
+🆕 **第二次真实 C14 production run（2026-09-25 14:38:30Z，注册 #2 之后）**:
+  C14 run id 36148838395 · **conclusion=failure**（第 10 步 seal 被拒）· head_sha 3cd7be75…
+  verdict = **BLOCKED**（模型自己给的），seal 报 `c14_non_pass_requires_failure_class`
+  **artifact = 无**（第 11–12 步 skipped）⇒ 本次没有可审计的封存记录（新缺陷 D-4）
+  ✅ 但 D-1/D-2 在本 run 中被**实测证实已修**（见 round-2 evidence）：
+     `LITE_SCOPE_SHA256 = 1356d60f…`（= 真实 2 文件摘要，旧值 `843bed61…` = 空列表摘要）
+     `LITE_WORKFLOW_SHA = 0ffea233…`（= main 上注册的定义，旧值 `8889221c…` = pin 里那份副本）
+  ⚠ 第一轮的 `PASS_SCOPED`（run 36141430817）**不被复用**：它的变更边界是空的。
 历史 POC run                          : 若干次（POC_ONLY），是历史事实，**不主动删除**
                                         ⚠ 其 artifact 同样受 GitHub retention 期限约束；若要作为
                                           长期审计证据，须在到期前归档（见 §2.I）
