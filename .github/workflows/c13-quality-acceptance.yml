@@ -1,0 +1,338 @@
+name: C13 quality acceptance (Lite V2)
+
+# C13 = independent quality acceptance. It is deliberately split into two jobs
+# with different credential boundaries:
+#
+#   c13-machine-test  executes candidate code in a disposable container
+#                     (Docker + PostgreSQL 18.4). It never sees OPENAI_API_KEY and
+#                     holds no deployment credential.
+#   c13-ai-review     runs the fresh AI review. It executes no candidate code, runs
+#                     no Docker and touches no database. It has the AI credential
+#                     and nothing else.
+#
+# The C14 prerequisite gate runs before any formal C13 acceptance is formed, and
+# the whole round is re-verified from the received bytes before the bundles are
+# published. authorizes_any_action stays false everywhere.
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: "Frozen candidate commit SHA (40 hex) - never a branch head"
+        required: true
+      application_tree:
+        description: "Frozen application/ subtree SHA"
+        required: true
+      issue_number:
+        description: "Existing issue / ledger issue number"
+        required: true
+      request_id:
+        description: "Scheduler request id that dispatched this task"
+        required: true
+      ledger_round_id:
+        description: "round_id of the ledger record"
+        required: true
+      c14_task_id:
+        description: "C14 task id in that ledger"
+        required: true
+      c13_task_id:
+        description: "C13 task id in that ledger"
+        required: true
+      c14_run_id:
+        description: "GitHub run id of the C14 review for the SAME candidate"
+        required: true
+      machine_inventory:
+        description: "Frozen machine-test inventory path inside the candidate"
+        required: false
+        default: "application/tests"
+      ai_model:
+        description: "Model used for the fresh AI review execution"
+        required: false
+        default: "gpt-5.6-sol"
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  LITE_CELL_PAIR: "C13+C14"
+  LITE_WORKFLOW_IDENTITY: ".github/workflows/c13-quality-acceptance.yml"
+  LITE_AI_MODEL: ${{ inputs.ai_model }}
+
+jobs:
+  c13-machine-test:
+    name: C13 machine test (disposable Docker + PostgreSQL 18.4, no AI credential)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_PASSWORD: c13-lite-local-only
+          POSTGRES_DB: c13_lite
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Check out the execution backend (pinned commit, never a branch head)
+        uses: actions/checkout@v4
+        with:
+          # Pinned deliberately, and deliberately NOT a dispatch input.
+          #
+          # 1. Without a ref, actions/checkout takes the workflow's own ref. Registering
+          #    this workflow on the default branch would therefore execute the backend
+          #    from main, where control-plane/c13-c14-lite does not exist at all.
+          # 2. It is a commit, not a branch, so the backend cannot drift underneath a
+          #    frozen round.
+          # 3. workflow_dispatch allows at most 10 inputs and all ten are already used
+          #    by the ledger-bound identity fields. A constant is also the stronger
+          #    statement of intent: changing the backend is an explicit, reviewable
+          #    change to this file rather than a value passed at dispatch time.
+          ref: "a67ea8ac0cbf7990ce7fa1570eef7a0de29bab40"
+          persist-credentials: false
+
+      - name: Check out the frozen candidate into candidate/
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          path: candidate
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Bind the exact frozen candidate identity
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
+          test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
+
+      - name: Run the frozen machine inventory in a disposable container
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/machine"
+          docker run --rm \
+            -v "$PWD/candidate:/srv:ro" \
+            -v "$RUNNER_TEMP/machine:/out" \
+            -e PGHOST=host.docker.internal \
+            -e PGPORT=5432 \
+            -e PGUSER=postgres \
+            -e PGPASSWORD=c13-lite-local-only \
+            -e PGDATABASE=c13_lite \
+            -e DATABASE_URL="postgresql+psycopg://postgres:c13-lite-local-only@host.docker.internal:5432/c13_lite" \
+            -w /srv \
+            --add-host=host.docker.internal:host-gateway \
+            python:3.12-slim \
+            bash -lc 'pip install -q pytest && python -m pytest "${{ inputs.machine_inventory }}" -q --junitxml=/out/junit.xml' \
+            2>&1 | tee "$RUNNER_TEMP/machine/stdout.txt"
+          test -s "$RUNNER_TEMP/machine/junit.xml"
+
+      - name: Record the machine-test manifest
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, os, pathlib
+          root = pathlib.Path(os.environ["RUNNER_TEMP"]) / "machine"
+          def sha(name):
+              return hashlib.sha256((root / name).read_bytes()).hexdigest()
+          manifest = {
+              "inventory": "${{ inputs.machine_inventory }}",
+              "postgres_version": "18.4",
+              "docker_used": True,
+              "junit_sha256": sha("junit.xml"),
+              "stdout_sha256": sha("stdout.txt"),
+              "candidate_sha": "${{ inputs.candidate_sha }}",
+              "application_tree": "${{ inputs.application_tree }}",
+              "authorizes_any_action": False,
+          }
+          (root / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+          (root / "test_inventory.txt").write_text("${{ inputs.machine_inventory }}\n")
+          PY
+
+      - name: Publish the machine-test evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c13-machine-${{ inputs.candidate_sha }}
+          path: ${{ runner.temp }}/machine
+          if-no-files-found: error
+          retention-days: 90
+
+  c13-ai-review:
+    name: C13 fresh AI quality review (no candidate execution, no Docker)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    needs: c13-machine-test
+    steps:
+      - name: Check out the execution backend (pinned commit, never a branch head)
+        uses: actions/checkout@v4
+        with:
+          # Pinned deliberately, and deliberately NOT a dispatch input.
+          #
+          # 1. Without a ref, actions/checkout takes the workflow's own ref. Registering
+          #    this workflow on the default branch would therefore execute the backend
+          #    from main, where control-plane/c13-c14-lite does not exist at all.
+          # 2. It is a commit, not a branch, so the backend cannot drift underneath a
+          #    frozen round.
+          # 3. workflow_dispatch allows at most 10 inputs and all ten are already used
+          #    by the ledger-bound identity fields. A constant is also the stronger
+          #    statement of intent: changing the backend is an explicit, reviewable
+          #    change to this file rather than a value passed at dispatch time.
+          ref: "a67ea8ac0cbf7990ce7fa1570eef7a0de29bab40"
+          persist-credentials: false
+
+      - name: Check out the frozen candidate into candidate/ (never executed)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          path: candidate
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Fetch the C14 prerequisite bundle for the same candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: c13c14-lite-c14-${{ inputs.candidate_sha }}
+          path: c14-input
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.c14_run_id }}
+
+      - name: Fetch the C13 machine-test evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: c13c14-lite-c13-machine-${{ inputs.candidate_sha }}
+          path: machine-input
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+
+      - name: Bind the frozen candidate and its machine evidence
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
+          test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
+          mkdir -p "$RUNNER_TEMP/artifacts"
+          git -C candidate diff-tree --no-commit-id --name-only -r HEAD > "$RUNNER_TEMP/changed_paths.txt" || true
+          cp c14-input/c14_bundle.json "$RUNNER_TEMP/c14_bundle.json"
+          cp machine-input/junit.xml machine-input/stdout.txt machine-input/manifest.json machine-input/test_inventory.txt "$RUNNER_TEMP/"
+          cp c14-input/c14_contract.json "$RUNNER_TEMP/c14.contract.json"
+          wc -l "$RUNNER_TEMP/test_inventory.txt"
+
+      - name: Freeze the quality-test scope and the dispatch environment
+        run: |
+          set -euo pipefail
+          LITE_WORKFLOW_SHA="$(git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY)"
+          {
+            echo "LITE_CANDIDATE_SHA=${{ inputs.candidate_sha }}"
+            echo "LITE_APPLICATION_TREE=${{ inputs.application_tree }}"
+            echo "LITE_ISSUE_NUMBER=${{ inputs.issue_number }}"
+            echo "LITE_REQUEST_ID=${{ inputs.request_id }}"
+            echo "LITE_LEDGER_ROUND_ID=${{ inputs.ledger_round_id }}"
+            echo "LITE_C14_TASK_ID=${{ inputs.c14_task_id }}"
+            echo "LITE_C13_TASK_ID=${{ inputs.c13_task_id }}"
+            echo "LITE_WORKFLOW_SHA=$LITE_WORKFLOW_SHA"
+            echo "LITE_NONCE=c13-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$RANDOM"
+            echo "LITE_RUN_ID=${GITHUB_RUN_ID}"
+            echo "LITE_RUN_ATTEMPT=${GITHUB_RUN_ATTEMPT}"
+            echo "LITE_PRINCIPAL_ID=${GITHUB_ACTOR}"
+            echo "LITE_TEST_INVENTORY_SHA256=$(sha256sum "$RUNNER_TEMP/test_inventory.txt" | cut -d' ' -f1)"
+            echo "LITE_ISSUED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "LITE_EXPIRES_AT=$(date -u -d '+55 minutes' +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_ENV"
+          python control-plane/c13-c14-lite/lite_cli.py scope \
+            --role c13 \
+            --changed-paths "$RUNNER_TEMP/changed_paths.txt" \
+            --inventory "$RUNNER_TEMP/test_inventory.txt" \
+            --criterion "every required negative case refuses" \
+            --out "$RUNNER_TEMP/scope.json" > /dev/null
+          echo "LITE_SCOPE_SHA256=$(grep -o '[0-9a-f]\{64\}' "$RUNNER_TEMP/scope.json" | head -1)" >> "$GITHUB_ENV"
+
+      - name: Build the frozen candidate contract
+        run: |
+          set -euo pipefail
+          python control-plane/c13-c14-lite/lite_cli.py spec --role c13 \
+            --spec "$RUNNER_TEMP/c13.spec.json" \
+            --facts "$RUNNER_TEMP/c13.facts.json" \
+            --contract "$RUNNER_TEMP/c13.contract.json"
+
+      - name: Run one fresh AI quality review (does not execute the candidate)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          python control-plane/c13-c14-lite/lite_cli.py review \
+            --spec "$RUNNER_TEMP/c13.spec.json" \
+            --facts "$RUNNER_TEMP/c13.facts.json" \
+            --out "$RUNNER_TEMP/c13.outcome.json" \
+            --allow-blocked
+
+      - name: Seal the C13 bundle behind the C14 prerequisite gate
+        run: |
+          set -euo pipefail
+          python control-plane/c13-c14-lite/lite_cli.py seal \
+            --spec "$RUNNER_TEMP/c13.spec.json" \
+            --contract "$RUNNER_TEMP/c13.contract.json" \
+            --outcome "$RUNNER_TEMP/c13.outcome.json" \
+            --prereq "$RUNNER_TEMP/c14_bundle.json" \
+            --junit "$RUNNER_TEMP/junit.xml" \
+            --stdout "$RUNNER_TEMP/stdout.txt" \
+            --manifest "$RUNNER_TEMP/manifest.json" \
+            --out "$RUNNER_TEMP/artifacts/c13_bundle.json"
+
+      - name: Verify the whole round from the received bytes
+        if: always()
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/c13.outcome.json" "$RUNNER_TEMP/artifacts/c13_opinion.json"
+          python control-plane/c13-c14-lite/lite_cli.py verify \
+            --spec "$RUNNER_TEMP/c13.spec.json" \
+            --c14-bundle "$RUNNER_TEMP/c14_bundle.json" \
+            --c13-bundle "$RUNNER_TEMP/artifacts/c13_bundle.json" \
+            --c14-contract "$RUNNER_TEMP/c14.contract.json" \
+            --c13-contract "$RUNNER_TEMP/c13.contract.json" \
+            --c14-opinion "c14-input/c14_opinion.json" \
+            --c13-opinion "$RUNNER_TEMP/artifacts/c13_opinion.json" \
+            --junit "$RUNNER_TEMP/junit.xml" \
+            --stdout "$RUNNER_TEMP/stdout.txt" \
+            --manifest "$RUNNER_TEMP/manifest.json" \
+            --out "$RUNNER_TEMP/artifacts/round_decision.json" \
+            --allow-incomplete
+
+      - name: Publish the sealed C13 bundle and the round decision
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c13-${{ inputs.candidate_sha }}
+          path: ${{ runner.temp }}/artifacts
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Read back run and artifact identity through the GitHub API
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python control-plane/c13-c14-lite/lite_readback.py \
+            --role c13 \
+            --candidate-sha "${{ inputs.candidate_sha }}" \
+            --expected-head-sha "${GITHUB_SHA}" \
+            --workflow-path "$LITE_WORKFLOW_IDENTITY" \
+            --run-id "${GITHUB_RUN_ID}" \
+            --out "$RUNNER_TEMP/artifacts/readback.json"
+
+      - name: Publish the run/artifact readback record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c13-readback-${{ inputs.candidate_sha }}
+          path: ${{ runner.temp }}/artifacts/readback.json
+          if-no-files-found: warn
+          retention-days: 90
