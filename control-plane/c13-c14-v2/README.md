@@ -1,5 +1,31 @@
 # C13 developer-side first test, then isolated Hong Kong C14
 
+## Installed-host composition — development increment, 2026-09-25
+
+`runtime_hosts.py` now supplies the missing composition roots for the separately
+installed Command Center and Hong Kong acceptance services. The Command Center
+host binds the trusted C13/C14 opinion reader, C14-only Task writer, Evidence
+reader, existing Task/Runner machine verifiers and CC-only HSM receipt route.
+The Hong Kong host binds the read-only Task bus, write-only Evidence bus,
+durable claims store, fixed offline Docker sandbox, clock and existing Evidence
+machine signer/verifier. Request and Task payloads cannot select these objects.
+
+Construction fails closed if bus roles are reversed, the claims store is bound
+to another Runner, a required callback is absent, or runtime identity/version
+values are invalid. A C13 digest is eligible only after this process has read
+and verified the real C13 opinion record; merely presenting its digest is not
+sufficient. The HK evidence verifier is pinned to the installed Runner ID.
+
+These are source-level wiring objects, not a live installation. They do not
+clone repositories, provision credentials, create keys, invent AI opinions,
+start a daemon, modify the current `0.5.8-candidate-digest` Agent, dispatch a
+C14 Task, or authorize deployment. Controlled installation must still freeze
+this complete source, provision service-owned paths and credentials, reconcile
+claims/outbox/orphan containers, extend the installed allowlists, and return a
+machine-readable installation identity before the one permitted C14 request.
+
+Change classes: CONTROL_PLANE, TEST_ONLY, DOCUMENTATION. Remains Draft/uninstalled.
+
 ## Git Task/Evidence transport — development increment, 2026-09-25
 
 `git_acceptance_bus.GitAcceptanceBus` now provides concrete publication and
