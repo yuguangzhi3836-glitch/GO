@@ -1,8 +1,8 @@
 {
   "schema": "go.v70.retention.rebind.v3",
-  "product_candidate_commit": "de8436ded10b74ce54b93678251354e731110375",
-  "application_git_tree": "b7fccc50bb331a3ba6ef8384915d083d10e8f5ad",
-  "source_anchor_main": "febb925eeb781223f17002b91479f2eac9b71acc",
+  "product_candidate_commit": "911a08c78b1702bbbfb19a6b5383cb86356155bc",
+  "application_git_tree": "f0449feb9135505fca03f623c1d9142be48e0632",
+  "source_anchor_main": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
   "preintegration_candidate": "9950bde1def11b27ed137d7db02a3047befda4fa",
   "preintegration_application_tree": "9c83d92434301356228c1b79294fcd829d675ebf",
   "inherited_manifest": {
@@ -11,293 +11,1273 @@
     "policy": "byte-for-byte inherited PASS provenance; do not redevelop"
   },
   "approved_application_overrides": {
-    "src/go_hotel/db/models.py": {
+    ".pytest_cache/v/cache/nodeids": {
       "mode": "100644",
-      "git_blob": "7f4a4bda456d23a3d61dbb78ea910dbe6f5fdd07",
-      "reason": "exact independently C14/C13 accepted C01 product blob"
+      "git_blob": "8f9d019d53533315eee536685e3c791053cc1438",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "alembic/versions/0134_flight_status_width.py": {
       "mode": "100644",
       "git_blob": "cfcf69eefc3eee35b3e282d034b276764eadb0c3",
-      "reason": "0134 SQLite partial history compatibility and current-head assertions; original data guards retained"
-    },
-    "tests/test_depth25_migration_history.py": {
-      "mode": "100644",
-      "git_blob": "c22175490ea24a2bc24f382cbe840665b61c9c9b",
-      "reason": "TEST_ONLY shared hygiene #178; exact retained assertions/episode fixture reconciliation"
-    },
-    "tests/test_parent_implementation_code_review_debt_closure.py": {
-      "mode": "100644",
-      "git_blob": "729ae6ca8fffdc48e604eaae49e647dbed071786",
-      "reason": "TEST_ONLY shared hygiene #178; exact retained assertions/episode fixture reconciliation"
-    },
-    "src/go_hotel/go_ai/service.py": {
-      "mode": "100644",
-      "git_blob": "e3f66f7c4fca49a9e16fccc78329af1c7cd5a5be",
-      "reason": "exact independently C14/C13 accepted C08 product blob"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "alembic/versions/0135_go_ai_execution.py": {
       "mode": "100644",
       "git_blob": "e6a17650c3d404db48c3340d3a89c28c03510fb6",
-      "reason": "V70-R3-C08-01 GO AI-specific durable ownership/checkpoint boundary"
-    },
-    "tests/go_ai/test_c08_durable_execution.py": {
-      "mode": "100644",
-      "git_blob": "244db1c089cab2d41dc992691251cafbed162a9b",
-      "reason": "exact independently C14/C13 accepted C08 product blob"
-    },
-    "tests/go_ai/c08_hard_exit_worker.py": {
-      "mode": "100644",
-      "git_blob": "4991a791846ceb44a797367d587eb90a55ea13eb",
-      "reason": "TEST_ONLY: provision GO AI durable execution table in hard-exit recovery fixture"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "alembic/versions/0135_journey_search_trigram.py": {
       "mode": "100644",
       "git_blob": "3b27a85564fa0258f6f9fcf6222f605f86464dec",
-      "reason": "C10 exact passed migration blob; parallel head"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "alembic/versions/0136_merge_go_ai_journey.py": {
       "mode": "100644",
       "git_blob": "36b59347ff5892b74f0b21a90c3d1f622f9bfd7c",
-      "reason": "lineage-only merge of C08 and C10 heads"
-    },
-    "src/go_hotel/api/routes/journey.py": {
-      "mode": "100644",
-      "git_blob": "977e1ddce3aeee40bbe6a4a7dfedcb3f0a87cc70",
-      "reason": "exact independently C14/C13 accepted C10 product blob"
-    },
-    "src/go_hotel/journey/service.py": {
-      "mode": "100644",
-      "git_blob": "c401578c19c011381386be8dacb618b4811bb0ed",
-      "reason": "exact independently C14/C13 accepted C10 product blob"
-    },
-    "tests/journey/test_c10_pagination_search.py": {
-      "mode": "100644",
-      "git_blob": "2ca1cd1ce0953d8951f295aee82f319ed7929567",
-      "reason": "TEST_ONLY: exact accepted PR173 isolated cardinality correction"
-    },
-    "tests/test_depth48_flight_migration.py": {
-      "mode": "100644",
-      "git_blob": "a550091d9e8597826a59a429a66f78dfc7d0e671",
-      "reason": "TEST_ONLY shared hygiene #178; exact retained assertions/episode fixture reconciliation"
-    },
-    "src/go_hotel/services/alipay_safeguarded_settlement.py": {
-      "mode": "100644",
-      "git_blob": "0ceea1c49c1ea6eedcc431e92becd19e326c42c0",
-      "reason": "COMPOSED: inherit PR171 authorization replay only, preserving PR172/173 capture guards; requires unified gate"
-    },
-    "tests/test_v70_next_c01_unknown_funding.py": {
-      "mode": "100644",
-      "git_blob": "f2c0bb64c456d53bee89c05d98fb613941a371ea",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
-    },
-    "src/go_hotel/api/routes/operations_console.py": {
-      "mode": "100644",
-      "git_blob": "61b62b64943a25abb1a19fd693aae9167ca91d87",
-      "reason": "exact independently C14/C13 accepted C04 product blob"
-    },
-    "tests/test_v70_r3_c04_admin_reconciliation.py": {
-      "mode": "100644",
-      "git_blob": "4451f462fc9c3036f662c6151299aa4b0c9b9849",
-      "reason": "exact independently C14/C13 accepted C04 product blob"
-    },
-    "src/go_hotel/api/routes/mobility.py": {
-      "mode": "100644",
-      "git_blob": "c91ff19ef319f4bec5b686a4bb561cfda27c244c",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
-    },
-    "src/go_hotel/mobility/ride/recovery_evidence.py": {
-      "mode": "100644",
-      "git_blob": "fbf2dbfe19bd13ad9bf90b9a8c62f31c797a49d2",
-      "reason": "exact independently C14/C13 accepted C05 product blob"
-    },
-    "src/go_hotel/mobility/ride/service.py": {
-      "mode": "100644",
-      "git_blob": "a5eede19bf1814ec43495dcb81485efcc8306f74",
-      "reason": "exact independently C14/C13 accepted C05 product blob"
-    },
-    "src/go_hotel/mobility/service.py": {
-      "mode": "100644",
-      "git_blob": "093fe7884d08fc8d402de97877ab4cda92610186",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
-    },
-    "tests/test_rc20_2_all_b_to_a.py": {
-      "mode": "100644",
-      "git_blob": "6618ab07297284c5308739170338c7b78b825d0e",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
-    },
-    "tests/test_v70_r3_c05_current_unknown_episode.py": {
-      "mode": "100644",
-      "git_blob": "d2967e27be0661c56f969177a1006b3b27e5f832",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
-    },
-    "tests/test_v70_round2_c05_recovery_fulfillment.py": {
-      "mode": "100644",
-      "git_blob": "5c0d06f9e8abacdb70d0b9e49ef643c2a9faee80",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
-    },
-    "src/go_hotel/travel_intelligence/preferences.py": {
-      "mode": "100644",
-      "git_blob": "74182160de0ad6f1abfadd84f082d886b7800df1",
-      "reason": "exact independently C14/C13 accepted C07 product blob"
-    },
-    "tests/c07_preference_process_actor.py": {
-      "mode": "100644",
-      "git_blob": "f2941b467293affda87732be656c6b04725df5f9",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
-    },
-    "tests/test_round2_c07_explicit_preferences.py": {
-      "mode": "100644",
-      "git_blob": "55626ec9debbcc902d2115550b7b14c8f6632815",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
-    },
-    "src/go_hotel/judgment/service.py": {
-      "mode": "100644",
-      "git_blob": "74d6d17099ff850babc9e6d38355cd83375f3b80",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
-    },
-    "src/go_hotel/repositories/sql.py": {
-      "mode": "100644",
-      "git_blob": "601dd9fb443fb300b0b5da0ed4504f341b9aa2bb",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
-    },
-    "tests/judgment/test_next_depth_concurrent_judgment.py": {
-      "mode": "100644",
-      "git_blob": "946b0dfab11463c61691cb74d0e18be7413377eb",
-      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
-    },
-    "tests/payments/test_c11_flight_idempotency_recovery.py": {
-      "mode": "100644",
-      "git_blob": "1b9436ef718eb5e89b4ff621bff5db8c67375e90",
-      "reason": "exact independently C14/C13 accepted C11 product blob"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "alembic/versions/0137_hosted_money_unknown_episode.py": {
       "mode": "100644",
       "git_blob": "ad8ad8ed8e7a32c3a089229708b6b4509097159a",
-      "reason": "exact independently C14/C13 accepted C01 product blob"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "alembic/versions/0138_supplier_library_import.py": {
+      "mode": "100644",
+      "git_blob": "24a9350bd937f07d636ef16dfd590b05c5f65591",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "ci/next_depth/c11_postgres.py": {
+      "mode": "100644",
+      "git_blob": "aa0306aca51bb8fd8b5e95efffcfd869075763c7",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "docs/evidence/aoluguya-expanded-gallery-20260918/C13_REVIEW.json": {
+      "mode": "100644",
+      "git_blob": "80770c0209e8c30d8380f8e675f95dac78ce0923",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "docs/evidence/aoluguya-expanded-gallery-20260918/FINAL_TEST.log": {
+      "mode": "100644",
+      "git_blob": "90c21b286f84ebdc1bb9b291e2ff0f4b033f69bc",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "docs/evidence/aoluguya-expanded-gallery-20260918/PR198_HISTORICAL_GALLERY_TEST.mjs.txt": {
+      "mode": "100644",
+      "git_blob": "606bc62292cc1a80159f6725763a0f791cfca866",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "docs/evidence/aoluguya-expanded-gallery-20260918/PR198_HISTORICAL_TEST.log": {
+      "mode": "100644",
+      "git_blob": "1726a573b39ab1879353e23a97a62a38edb6a930",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "docs/evidence/aoluguya-expanded-gallery-20260918/REVIEW.md": {
+      "mode": "100644",
+      "git_blob": "79a819871fa231e64e41ade5438be96b25a014b8",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "docs/evidence/aoluguya-expanded-gallery-20260918/SOURCE_PROVENANCE.json": {
+      "mode": "100644",
+      "git_blob": "54bdbbd4e74de1b90a95e2aa1d77aca814fa283d",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/admin/hotel-direct-review.js": {
+      "mode": "100644",
+      "git_blob": "dac8d3e01c784e5992d3ce982a191d6c0a77add2",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/admin/hotel-page-factory.js": {
+      "mode": "100644",
+      "git_blob": "41000b7b9335b0037d1a0fd1320813643f644428",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/admin/index.html": {
+      "mode": "100644",
+      "git_blob": "1843f8791b0602eaa0e982f8d0a0f122370195f2",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/consumer/app.js": {
+      "mode": "100644",
+      "git_blob": "d96a22d36bccdd43ea90318eab5f52be6653a2af",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/consumer/date-range.js": {
+      "mode": "100644",
+      "git_blob": "87f5aa6eb4ea4a14cf0028057b5e5c3865c1205c",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/consumer/flight-journeys.js": {
+      "mode": "100644",
+      "git_blob": "6fdf5a2923ea868054a6229f3b2b2cef07ecf3df",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/consumer/index.html": {
+      "mode": "100644",
+      "git_blob": "68e025f4610a61ee859faa1d086532dc9e2f28ad",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/consumer/styles.css": {
+      "mode": "100644",
+      "git_blob": "84e192d09b151c6b6254bd0c1e632a062daad8bd",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/consumer/travel-status.js": {
+      "mode": "100644",
+      "git_blob": "c4dceaf4d5f51f75a68f6be2d257a49b068344f5",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/consumer/vi-reference-10.css": {
+      "mode": "100644",
+      "git_blob": "0766fd5e583ffc0b855db1e9c20b77be00cb1976",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/shared/api.js": {
+      "mode": "100644",
+      "git_blob": "8af86516556aa0ac94f5b70ebeaddd9eb67b5f10",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/shared/app.js": {
+      "mode": "100644",
+      "git_blob": "fd7870a4c5431a990e98711d08e173bebf6c483d",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/shared/registration-terms.js": {
+      "mode": "100644",
+      "git_blob": "14498dc8999e3b842aeae618e868e5aa92c43bbb",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/supplier/config.js": {
+      "mode": "100644",
+      "git_blob": "378cac5e623cf5b026f47e397475afe3a17055e9",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "frontend/supplier/index.html": {
+      "mode": "100644",
+      "git_blob": "e3fb21af31ef9ab8f5339304644f78c531b9ace0",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "mobile/go-app/scripts/contract-check.mjs": {
+      "mode": "100644",
+      "git_blob": "efa5bc182b40a474aa0220a51484c81c24a7f2e3",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "mobile/go-app/src/screens/ChangeBookingScreen.tsx": {
+      "mode": "100644",
+      "git_blob": "e3ca40441c74250a6d24223c7aba643a51e3bb05",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "mobile/go-app/src/screens/CheckoutScreen.tsx": {
+      "mode": "100644",
+      "git_blob": "355bb217348f270d3a48511626dbdd58a33b2691",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "mobile/go-app/src/screens/FlightTripDetailScreen.tsx": {
+      "mode": "100644",
+      "git_blob": "d72be372981108e46234ef47dc6c03fba0d6e4ee",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "mobile/go-app/src/screens/HomeScreen.tsx": {
+      "mode": "100644",
+      "git_blob": "8aa4ab3195b5dd26d9320bc5e0e63962b57db39e",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "mobile/go-app/src/screens/HotelListScreen.tsx": {
+      "mode": "100644",
+      "git_blob": "6bd79fc436000dc29826eedba4d98a96c6156ac7",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "mobile/go-app/src/screens/MobilityTripDetailScreen.tsx": {
+      "mode": "100644",
+      "git_blob": "5220936397dfd49bec947a7f9cb14e53420dd7a3",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "mobile/go-app/src/screens/TravelProfileImportScreen.tsx": {
+      "mode": "100644",
+      "git_blob": "cfdfaedc47c23aca62306cce818f34092980a637",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "mobile/go-app/src/screens/TripsScreen.tsx": {
+      "mode": "100644",
+      "git_blob": "898f1c9edf8b352fc4be6f62de1ebbb41c63f6c1",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "mobile/go-app/src/screens/WalletScreen.tsx": {
+      "mode": "100644",
+      "git_blob": "63bf2cce2a95a8fa9970053b9a39ad966f774dfa",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "pyproject.toml": {
+      "mode": "100644",
+      "git_blob": "d02845ad9d1a074c4557dc17e5a84238c92be5f7",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "scripts/r82_rc142_external_sandbox_executor_gate.py": {
+      "mode": "100644",
+      "git_blob": "4ffd77c6e0fc4a66353ac2f49e22e4a2b58ee253",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "scripts/test_catalog_graph_visibility.py": {
+      "mode": "100644",
+      "git_blob": "4d03be4714f1b4405e05a517c0be0171fed95c4b",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "scripts/test_catalog_scope.py": {
+      "mode": "100644",
+      "git_blob": "797c7509dcd1499e6f6ab4614d4519f6ce81a5f6",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "scripts/test_catalog_scope_postgres.py": {
+      "mode": "100644",
+      "git_blob": "056ff75c199b969990c9c8877d8756b8852de5d9",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "scripts/test_hotel_search_event_loop.py": {
+      "mode": "100644",
+      "git_blob": "3ab036faab9c3dbe4c6f648124b91d699a0387ce",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/idempotency.py": {
+      "mode": "100644",
+      "git_blob": "02040009d8cd7ef4b9676028ba67b6f9d5f78ab8",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/routes/bff.py": {
+      "mode": "100644",
+      "git_blob": "2018fcf68b09feb9830370fd28335d6bf9287d90",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/routes/consumer_identity.py": {
+      "mode": "100644",
+      "git_blob": "49c7f0db2aab7646012eb353cac36bde1b9cc04b",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/routes/consumer_unified_lifecycle.py": {
+      "mode": "100644",
+      "git_blob": "9d3955ed1a6855c78cde6536491bfe9ff252617b",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/routes/flight.py": {
+      "mode": "100644",
+      "git_blob": "35ed629f0f865f72850726b8c72f202b0dc5a5dd",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "src/go_hotel/api/routes/hosted_direct_booking.py": {
       "mode": "100644",
       "git_blob": "ecd9794010616be3f8c776db91e6b41b1c503b4f",
-      "reason": "exact independently C14/C13 accepted C01 product blob"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/routes/hotel.py": {
+      "mode": "100644",
+      "git_blob": "6fae40b587f9f7c632feccfbae10bd33c634d4bd",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/routes/hotel_autopage_factory.py": {
+      "mode": "100644",
+      "git_blob": "47fd9f51775bb1a2f5e7a7e8b0723296b698899d",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/routes/hotel_direct_submission.py": {
+      "mode": "100644",
+      "git_blob": "c7d57836892e5b1ecd4c3c6a44acad1c9c77639d",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/routes/hotel_partner_core.py": {
+      "mode": "100644",
+      "git_blob": "186813aa6e09e366730efd30af55e6854137a5cc",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/routes/journey.py": {
+      "mode": "100644",
+      "git_blob": "977e1ddce3aeee40bbe6a4a7dfedcb3f0a87cc70",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/routes/mobility.py": {
+      "mode": "100644",
+      "git_blob": "c91ff19ef319f4bec5b686a4bb561cfda27c244c",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/routes/operations_console.py": {
+      "mode": "100644",
+      "git_blob": "61b62b64943a25abb1a19fd693aae9167ca91d87",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/routes/personal_travel_vault.py": {
+      "mode": "100644",
+      "git_blob": "74919d1090a83234a01cbc177dffd857f7c14e70",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/api/routes/registration_terms.py": {
+      "mode": "100644",
+      "git_blob": "9907df621698eeb79c50e756462fa37f4d5a3f79",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "src/go_hotel/attractions/policy_registry.py": {
       "mode": "100644",
       "git_blob": "9f34cccbc614a879428d194f02779b4dc241a0be",
-      "reason": "exact independently C14/C13 accepted C06 product blob"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/connectors/external_sandbox_runtime.py": {
+      "mode": "100644",
+      "git_blob": "2b553a8aa62548a1da437cb379eae89e09841418",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/connectors/supplier_runtime_controls.py": {
+      "mode": "100644",
+      "git_blob": "5e2598949d04a01d2ba63228dcda456a7e48a4cf",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/consumer/service.py": {
+      "mode": "100644",
+      "git_blob": "590fd0b645250960ab35cc52603a4e4926e6151f",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/core/config.py": {
+      "mode": "100644",
+      "git_blob": "0bdf6aca555e8c9eb580159256681f6041f3b72c",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/db/models.py": {
+      "mode": "100644",
+      "git_blob": "42d758fd578790c5ec31d1eb19e5816d3f10136a",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/flight/airports.py": {
+      "mode": "100644",
+      "git_blob": "7e7d6dad6f1426a49b41bd72d976ed56388714df",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "src/go_hotel/flight/coupon_authority.py": {
       "mode": "100644",
       "git_blob": "65c19d6f1e2f41d4ba3194bf24730c1acb009f6d",
-      "reason": "exact independently C14/C13 accepted C02 product blob"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/flight/journeys.py": {
+      "mode": "100644",
+      "git_blob": "f23465bd125496f6bffaa9c25568fa5a96571416",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/go_ai/planner.py": {
+      "mode": "100644",
+      "git_blob": "f71d3a322fe81f214fcebfdce6bb7521b82848f9",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/go_ai/service.py": {
+      "mode": "100644",
+      "git_blob": "e3f66f7c4fca49a9e16fccc78329af1c7cd5a5be",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/journey/service.py": {
+      "mode": "100644",
+      "git_blob": "c401578c19c011381386be8dacb618b4811bb0ed",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/judgment/service.py": {
+      "mode": "100644",
+      "git_blob": "74d6d17099ff850babc9e6d38355cd83375f3b80",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v1/consumer_service_terms.md": {
+      "mode": "100644",
+      "git_blob": "ed5085a4a432333dd9f34087928bd586adf869a0",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v1/data_processing_terms.md": {
+      "mode": "100644",
+      "git_blob": "44997b360753b259fe5f614e70ba7c9fcfff027a",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v1/electronic_signature_authorization.md": {
+      "mode": "100644",
+      "git_blob": "7d0fca4ce88db9adb6a2bfb2d0c5dfffb67902d8",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v1/personal_vault_terms.md": {
+      "mode": "100644",
+      "git_blob": "9a3743a34d3353105422be1fcc8fcf258ac9e0e2",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v1/platform_operating_rules.md": {
+      "mode": "100644",
+      "git_blob": "40110351d466ab7ecca03901fe7f1ccedee1d904",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v1/privacy_policy.md": {
+      "mode": "100644",
+      "git_blob": "6c7b2d5407ad3df11b573d99619b48a513b5b7cb",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v1/registry.json": {
+      "mode": "100644",
+      "git_blob": "5c903ac6021c9ed53a8cfd19af23a4270779865c",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v1/supplier_service_terms.md": {
+      "mode": "100644",
+      "git_blob": "41682920059886b9c891c819010b43c302a7410a",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v2/consumer_service_terms.md": {
+      "mode": "100644",
+      "git_blob": "0a8702257ccd1cbae519051475741d0d3c49a6c5",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v2/data_processing_terms.md": {
+      "mode": "100644",
+      "git_blob": "e4647057eee99a5c0023dc25386d46ad7d1e6a40",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v2/electronic_signature_authorization.md": {
+      "mode": "100644",
+      "git_blob": "bf3a5b99e03398e5aa3eb520c03e332506767968",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v2/personal_vault_terms.md": {
+      "mode": "100644",
+      "git_blob": "f23bb9f9901931878c5193fbbd957b6685467079",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v2/platform_operating_rules.md": {
+      "mode": "100644",
+      "git_blob": "c1feff8f1698276b74682b678b1af56f95e28b8a",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v2/privacy_policy.md": {
+      "mode": "100644",
+      "git_blob": "9aa1202f96b9e68444b5e6d147b7882e563bfdb1",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v2/registry.json": {
+      "mode": "100644",
+      "git_blob": "b1a1869371c85b131ad2fe7a3722dbf447956221",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/legal/registration/2026-09-19-draft-v2/supplier_service_terms.md": {
+      "mode": "100644",
+      "git_blob": "44602daff70ad8db74c7e86e9c5277c18919bda9",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/main.py": {
+      "mode": "100644",
+      "git_blob": "3f419888ea4d6f48271afa85c4f201922c95abab",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "src/go_hotel/mobility/rental/reconciliation.py": {
       "mode": "100644",
       "git_blob": "3fdee475112a8124c9f71fc58ebd2953ca826d88",
-      "reason": "exact independently C14/C13 accepted C04 product blob"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/mobility/ride/recovery_evidence.py": {
+      "mode": "100644",
+      "git_blob": "3438857d17cb982b7ea36e2ca81ce8805a718e68",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/mobility/ride/service.py": {
+      "mode": "100644",
+      "git_blob": "a5eede19bf1814ec43495dcb81485efcc8306f74",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/mobility/service.py": {
+      "mode": "100644",
+      "git_blob": "093fe7884d08fc8d402de97877ab4cda92610186",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/queue/durable_regional.py": {
+      "mode": "100644",
+      "git_blob": "59fc1edd182b6bd21c7076df2c67f32e000bf0ec",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/repositories/sql.py": {
+      "mode": "100644",
+      "git_blob": "8957039c0d274f43aaf7784c4f9492dbb9771144",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/routing/router.py": {
+      "mode": "100644",
+      "git_blob": "67533f719445e978aa4784d76aeee1bb3f80a175",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "src/go_hotel/security/deps.py": {
       "mode": "100644",
-      "git_blob": "b3988aa5788f551551f72f41088c2a5b8feb690b",
-      "reason": "exact independently C14/C13 accepted C04 product blob"
+      "git_blob": "a17bb2da7f9f767c12c837172bdcd2974040e029",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/security/external_navigation.py": {
+      "mode": "100644",
+      "git_blob": "0e4356c8e8236e59220d1fbbc2020858ce0e8430",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "src/go_hotel/security/service.py": {
       "mode": "100644",
       "git_blob": "63c0043d7e620a853f30cccaaa95475e764e119a",
-      "reason": "exact independently C14/C13 accepted C04 product blob"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/alipay_safeguarded_settlement.py": {
+      "mode": "100644",
+      "git_blob": "0ceea1c49c1ea6eedcc431e92becd19e326c42c0",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/aoluguya_supply_truth.py": {
+      "mode": "100644",
+      "git_blob": "74abc77962dd19f0f2da61884c556f3dff92a43c",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/booking.py": {
+      "mode": "100644",
+      "git_blob": "bd34fddc147cd3752ddeaa07e0af8d6982ec1231",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/catalog_fare_snapshot.py": {
+      "mode": "100644",
+      "git_blob": "5d8640e4432fdf9d8ae7cc7c6144f368f3f586b8",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/catalog_scope.py": {
+      "mode": "100644",
+      "git_blob": "434b553d1aa7324b6cb7494828fe6b5a96fea4f0",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/consumer_ota_comparison.py": {
+      "mode": "100644",
+      "git_blob": "fc916454bc503211b8d64a397099ff838194b2dd",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/consumer_unified_lifecycle.py": {
+      "mode": "100644",
+      "git_blob": "e163e8c02d3c565c72545728b88c8ff74febf7e1",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "src/go_hotel/services/flight_change_resolution.py": {
       "mode": "100644",
       "git_blob": "1c672457d6de2d8222960f05bca26bc72130909d",
-      "reason": "exact independently C14/C13 accepted C11 product blob"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/flight_command_lease.py": {
+      "mode": "100644",
+      "git_blob": "93d015f960c1613db6cc083d033a797bb36660e5",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/hosted_fare_rules.py": {
+      "mode": "100644",
+      "git_blob": "a4d39a0186ebd561a957585fe9a092425fd7b391",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "src/go_hotel/services/hosted_money.py": {
       "mode": "100644",
       "git_blob": "9732169be62be24941852b10017ed34da631493b",
-      "reason": "exact independently C14/C13 accepted C01 product blob"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/hotel_autopage_factory.py": {
+      "mode": "100644",
+      "git_blob": "8a541423054794d2441a199b46a85c30489e3836",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/hotel_cancellation_clock.py": {
+      "mode": "100644",
+      "git_blob": "19e78c817d17c795ee6c6574a8c00d8aee4895e8",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/hotel_catalog_quality.py": {
+      "mode": "100644",
+      "git_blob": "51ef1a1ce51fd3b69d2b3dc6967119f6e391a363",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/hotel_direct_submission_manifest.py": {
+      "mode": "100644",
+      "git_blob": "8fce1e7be72cb12c67dadaf0fc6bad315bc131e5",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/hotel_direct_submission_publication.py": {
+      "mode": "100644",
+      "git_blob": "ea1bf7c980cf94161e08ee17cc23aba233f45b92",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/hotel_direct_submission_review.py": {
+      "mode": "100644",
+      "git_blob": "b12139ca0b46128c8dee0f87f8d6167c5b3df9b5",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/hotel_direct_submission_verification.py": {
+      "mode": "100644",
+      "git_blob": "448d7728984830a8fcb896ec619a43bd9bc193cf",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/hotel_discovery_orchestrator.py": {
+      "mode": "100644",
+      "git_blob": "244eb32a79989fbd643e4cf63f6a0fc67e570718",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/hotel_infrastructure_p0.py": {
+      "mode": "100644",
+      "git_blob": "4de9998201f61d7619696708a7ec9ca96d19c3c6",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/hotel_original_verification_scope.py": {
+      "mode": "100644",
+      "git_blob": "960f5ed55567ddaa40421ec4e3efcfaee0ac5da6",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/hotel_partner_core.py": {
+      "mode": "100644",
+      "git_blob": "80c4ede3c7e3c9a4e9049b886f0798e0dc488c53",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/hotel_partner_media_upload.py": {
+      "mode": "100644",
+      "git_blob": "f2ed2dce8aee4231658c060d8cb703e717484630",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/omnichannel_payment.py": {
+      "mode": "100644",
+      "git_blob": "46f5c58b2f64f3f1c87e1cb96d7098acc74b30dd",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "src/go_hotel/services/outbox.py": {
       "mode": "100644",
       "git_blob": "277c40dcba9e5bfe352a1e4e8af69429d843b37b",
-      "reason": "exact independently C14/C13 accepted C09 product blob"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/payment_sandbox_runtime.py": {
+      "mode": "100644",
+      "git_blob": "5bed44772677160416d522307b1df26bd0046953",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/personal_travel_vault.py": {
+      "mode": "100644",
+      "git_blob": "36f8564cc8b0ab6258676a78ba3bcdd28c347ef6",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/production_connector_runtime.py": {
+      "mode": "100644",
+      "git_blob": "cf776713c2df387f0d5664651280e38a018c91b0",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/real_external_execution.py": {
+      "mode": "100644",
+      "git_blob": "b04988cc033916b075cea3e996685f2ebcb7c249",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/recovery.py": {
+      "mode": "100644",
+      "git_blob": "d35169a64c7bdaa58995c84f5c8e9d7ebaad5c2a",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/regional_hotel_build.py": {
+      "mode": "100644",
+      "git_blob": "0e96f7e87c7c61c57467008f2b648b3467e5e433",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/registration_terms.py": {
+      "mode": "100644",
+      "git_blob": "8107f926da4177d6731a9e2ce565f152806a21d1",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/supplier_onboarding.py": {
+      "mode": "100644",
+      "git_blob": "30dea79fcadf61515da70fadfbca7428923385e4",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/services/unified_money_movement.py": {
+      "mode": "100644",
+      "git_blob": "a0bbf3968f33456682023d3ebcb96701d26f9976",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/travel_intelligence/preferences.py": {
+      "mode": "100644",
+      "git_blob": "74182160de0ad6f1abfadd84f082d886b7800df1",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "src/go_hotel/travel_intelligence/service.py": {
+      "mode": "100644",
+      "git_blob": "96456115aa5260190432190ee2481f28662fe5c4",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/c07_preference_process_actor.py": {
+      "mode": "100644",
+      "git_blob": "f2941b467293affda87732be656c6b04725df5f9",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/conftest.py": {
+      "mode": "100644",
+      "git_blob": "d37dcfadb56909d002e23ae70e16afb2dbc88704",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/flight/test_c02_airport_resolver.py": {
+      "mode": "100644",
+      "git_blob": "b8519b2828cbe2f766016990f7cb900bf2c0f797",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/flight/test_c02_three_end_change_quote.py": {
+      "mode": "100644",
+      "git_blob": "e115ab76e974df379f2997329e504be4507c5718",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/go_ai/c08_hard_exit_worker.py": {
+      "mode": "100644",
+      "git_blob": "4991a791846ceb44a797367d587eb90a55ea13eb",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/go_ai/test_c08_complete_task_plan.py": {
+      "mode": "100644",
+      "git_blob": "28efdaed0d727edb7898b1764583fee961159b35",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/go_ai/test_c08_durable_execution.py": {
+      "mode": "100644",
+      "git_blob": "244db1c089cab2d41dc992691251cafbed162a9b",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/journey/test_c10_pagination_search.py": {
+      "mode": "100644",
+      "git_blob": "2ca1cd1ce0953d8951f295aee82f319ed7929567",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/judgment/test_next_depth_concurrent_judgment.py": {
+      "mode": "100644",
+      "git_blob": "946b0dfab11463c61691cb74d0e18be7413377eb",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/manual/HOTEL_LIBRARY_BROWSER_ACCEPTANCE.md": {
+      "mode": "100644",
+      "git_blob": "c3fab9faac278b5281a5f07a5ed7e50a9557b7bf",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/manual/hotel_library_browser_harness.py": {
+      "mode": "100644",
+      "git_blob": "cf0334cd070401f07466d3d36cc94ef95721ba84",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/manual/hotel_library_http_acceptance.py": {
+      "mode": "100644",
+      "git_blob": "2a1298f2bb691dfc04a8937af4d046f0638ed7c3",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/payments/test_c11_flight_idempotency_recovery.py": {
+      "mode": "100644",
+      "git_blob": "1b9436ef718eb5e89b4ff621bff5db8c67375e90",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/registration_terms_fixture.cjs": {
+      "mode": "100644",
+      "git_blob": "e885c853375758cb311bee5d3e596d492e28376a",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/registration_terms_test_support.py": {
+      "mode": "100644",
+      "git_blob": "fafaecd8c71f816dfeab4f64d3207d405258e94b",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_account_holder_http_integration.py": {
+      "mode": "100644",
+      "git_blob": "248a2292d347fde3f68b6b696b68c01be10ef842",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "tests/test_c06_internal_policy_registry.py": {
       "mode": "100644",
       "git_blob": "3caedb35ba29b934edd25fb894f47e2a13aab245",
-      "reason": "exact independently C14/C13 accepted C06 product blob"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
-    "tests/test_next_depth_c06_supplier_validity.py": {
+    "tests/test_catalog_scope_nationwide.py": {
       "mode": "100644",
-      "git_blob": "b804755e3a98a156f52acf444164ddda52da4f6a",
-      "reason": "exact independently C14/C13 accepted C06 product blob"
+      "git_blob": "79dc2b8bf88921e18612ad5c4eecc29aac1cc883",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
-    "tests/test_outbox_resilience.py": {
+    "tests/test_catalog_scope_nationwide_ui.cjs": {
       "mode": "100644",
-      "git_blob": "276973c2261b86105a6c5c402f6b2b45c0cd928c",
-      "reason": "exact independently C14/C13 accepted C09 product blob"
+      "git_blob": "7625e0dd4b2e864c0fb6d7fb6f848ccbe284871a",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
-    "tests/test_v70_r3_c02_coupon_authority.py": {
+    "tests/test_consumer_ota_acceptance_contract.py": {
       "mode": "100644",
-      "git_blob": "b14af3952705ed76572036e2ee404fe545c442de",
-      "reason": "exact independently C14/C13 accepted C02 product blob"
+      "git_blob": "1b10c7391e865cd725227d7220b5f0180d235d9e",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
-    "tests/test_v70_r3_c04_http_get_zero_write.py": {
+    "tests/test_consumer_ota_security_boundaries.py": {
       "mode": "100644",
-      "git_blob": "1520ec9ac4557d458218cbb1430632f3e0d456f4",
-      "reason": "exact independently C14/C13 accepted C04 product blob"
+      "git_blob": "e78a9132843604b3f1f86d778d2aee687949ee9f",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
-    "tests/test_v70_r4_c01_unknown_episode.py": {
+    "tests/test_consumer_registration_open.py": {
       "mode": "100644",
-      "git_blob": "62c3928804bb6e6b72d76622b5077da551c0b604",
-      "reason": "exact independently C14/C13 accepted C01 product blob"
+      "git_blob": "8d8fd279dcda1bf73e096bf3c06d31e891ab6643",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
-    "tests/test_v70_r4_c05_episode_reference_reuse.py": {
+    "tests/test_consumer_registration_ui.cjs": {
       "mode": "100644",
-      "git_blob": "d1fe9b5421ea8abb3eecdfa96e19a23db971f197",
-      "reason": "exact independently C14/C13 accepted C05 product blob"
+      "git_blob": "350300d3440bf052aff52ea0f8968c3bc670e5c6",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
-    "tests/test_v70_r4_c05_failed_episode.py": {
+    "tests/test_ctrip_rate_plan_identity.py": {
       "mode": "100644",
-      "git_blob": "5511896339d738ee1cc3321798cfe2341d64e16f",
-      "reason": "exact independently C14/C13 accepted C05 product blob"
+      "git_blob": "09405235190f96748b374b7908f3b6dd5b31c9ad",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
-    "tests/test_v70_r4_c07_consent_provenance.py": {
+    "tests/test_depth04_vault_management.py": {
       "mode": "100644",
-      "git_blob": "63b128a6e8bc8d65c8d55dbff5d81629ac128e75",
-      "reason": "exact independently C14/C13 accepted C07 product blob"
+      "git_blob": "e784f492c4a3e8f1dc63fb748fbb9bb4f118fd67",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
-    "tests/test_v70_r5_c05_concurrent_unknown.py": {
+    "tests/test_depth05_flight_parties.py": {
       "mode": "100644",
-      "git_blob": "8914debaedf2d440d320e67cfdedc97d70563e3a",
-      "reason": "exact independently C14/C13 accepted C05 product blob"
-    },
-    "tests/test_v70_r5_c06_raw_payload_binding.py": {
-      "mode": "100644",
-      "git_blob": "0b3b3e8954150ad3346e6f28937df742976a1747",
-      "reason": "exact independently C14/C13 accepted C06 product blob"
-    },
-    "tests/test_v70_r6_c02_partial_party_authority.py": {
-      "mode": "100644",
-      "git_blob": "9474731379677f277b473328b4085550905fc1a3",
-      "reason": "exact independently C14/C13 accepted C02 product blob"
+      "git_blob": "74a2f7650056042f8502a8798ba47856c1b2fc9c",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "tests/test_depth18_regional_queue.py": {
       "mode": "100644",
-      "git_blob": "a500133d755abfe018d9850c504ed0448d2a701d",
-      "reason": "TEST_ONLY: exact PR177 independently C14/C13 accepted stable replacement lease"
+      "git_blob": "8f8ed268354636f44ed33d354648fada9079764f",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
-    "tests/test_v70_next_c01_authorization_replay.py": {
+    "tests/test_depth25_migration_history.py": {
       "mode": "100644",
-      "git_blob": "8445bed95c232f5904a8f55d0dbd4d0e35f8147b",
-      "reason": "exact independently accepted PR171 authorization replay test"
+      "git_blob": "d6b3ec05abcfac155496882d925ae80ac7876679",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_depth27_session_isolation.py": {
+      "mode": "100644",
+      "git_blob": "0e278acdc4123c2a91017204c8aa2f0ade0090d8",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_depth30_native_api_contract.py": {
+      "mode": "100644",
+      "git_blob": "ce3cdbd3260c129fb55f32e0f732bc5577c85b33",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_depth35_refresh_scope.py": {
+      "mode": "100644",
+      "git_blob": "610580345e23039e2cca829a47627e3ff54568d5",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_depth47_credit_original_deadline.py": {
+      "mode": "100644",
+      "git_blob": "284ed8e01ca945db5d85ea965ede71c4052ca018",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_depth48_flight_migration.py": {
+      "mode": "100644",
+      "git_blob": "c6fd78ceeed07d128c5e171b1b38c79e0b7faab6",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_external_order_money_projection.py": {
+      "mode": "100644",
+      "git_blob": "cb66472646cfcd9c0c67e208fae2710db2a5a8d3",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_external_order_verification_clock.py": {
+      "mode": "100644",
+      "git_blob": "b9bc6856a7679f4a41a766cd2db2a9dcccf2d0b0",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_external_orders_in_go_trips.py": {
+      "mode": "100644",
+      "git_blob": "5984d30bd14cb44a445aef8e7b1b7ba484c90946",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
     "tests/test_final_depth_terminal_hardening.py": {
       "mode": "100644",
       "git_blob": "1e7731c42bb6620dc266a7b7cc5e0322dcbebac0",
-      "reason": "TEST_ONLY shared hygiene #178; exact retained assertions/episode fixture reconciliation"
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_final_depth_vault_booking_entry.py": {
+      "mode": "100644",
+      "git_blob": "a5ec8c3943a57529578ed7735620f0ab8cd7e83d",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_cancellation_clock.py": {
+      "mode": "100644",
+      "git_blob": "d9b6ae89b6500720b0ede490de9c1918a004e0a6",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_direct_review_ui.cjs": {
+      "mode": "100644",
+      "git_blob": "d69093f954af88d100905f46da928f46fba721ac",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_direct_submission_api.py": {
+      "mode": "100644",
+      "git_blob": "58bb667666fb8ac75eda42663314f2ea8d3e2cfb",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_direct_submission_full_app.py": {
+      "mode": "100644",
+      "git_blob": "6f75b05537f8858b7c29560d02a8351ac80d95a7",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_direct_submission_gallery_probe.py": {
+      "mode": "100644",
+      "git_blob": "25fbed6b72c322be23a4081d6972e8e0474a3c75",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_direct_submission_inspection.py": {
+      "mode": "100644",
+      "git_blob": "27b316710772b41590afbf72ad65e276241877e0",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_direct_submission_manifest.py": {
+      "mode": "100644",
+      "git_blob": "bf6803087035e6736ecea778bb760608d3406e24",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_direct_submission_publication.py": {
+      "mode": "100644",
+      "git_blob": "45be7832fe13eaa8fb955440964366f688bf4be1",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_direct_submission_real_identity.py": {
+      "mode": "100644",
+      "git_blob": "b71e914567134609590b6189a2faff7333e4f49b",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_direct_submission_review.py": {
+      "mode": "100644",
+      "git_blob": "2aaeeb3fe2db23b07a40e2bb4a4701acbc05e358",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_direct_submission_verification.py": {
+      "mode": "100644",
+      "git_blob": "052864211a71bc1ded7333cc7d16976404584123",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_original_verification_scope.py": {
+      "mode": "100644",
+      "git_blob": "b18f6df116e9ed0e76398d940bd2c91b4f2efb40",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_partner_media_publication.py": {
+      "mode": "100644",
+      "git_blob": "74a68663e0d88f5cc9684315911f3c105b27a603",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_partner_media_upload.py": {
+      "mode": "100644",
+      "git_blob": "9d1513caa6a6ac5bb15d00099234dc3fc3f256eb",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_partner_selected_import.py": {
+      "mode": "100644",
+      "git_blob": "9dc4d779d09d359adadecef63b2bf93a7af8d023",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_partner_self_operating_core.py": {
+      "mode": "100644",
+      "git_blob": "ac7001daa6bea6c191bb761b31b3998f15b3343d",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_property_workspace.py": {
+      "mode": "100644",
+      "git_blob": "49a16f07940ed629e1a5350b88a79eb1be47ef12",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_hotel_source_room_mapping.py": {
+      "mode": "100644",
+      "git_blob": "60001dc88ab5354a9211da34e552a08312deb08a",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_master03_closure.py": {
+      "mode": "100644",
+      "git_blob": "13b211d5f3dc4c07dce039e7643215dde0430aca",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_member_comparison_quote_validity.py": {
+      "mode": "100644",
+      "git_blob": "fbc5ea020c13c3fe6a301ff697ea76ebf62c41f9",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_member_product_comparability.py": {
+      "mode": "100644",
+      "git_blob": "92daf7657e301ffe36d642208fe0edec5a2c01b7",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_nationwide_registration_full_app.py": {
+      "mode": "100644",
+      "git_blob": "774c3b179725eec5fbce569f3d26f7d552cf21a9",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_next_depth_c06_supplier_validity.py": {
+      "mode": "100644",
+      "git_blob": "b804755e3a98a156f52acf444164ddda52da4f6a",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_omnichannel_payment_finance_os.py": {
+      "mode": "100644",
+      "git_blob": "1d1d66fab6d25d4dd1e3ae541d96fb09719ee2a3",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_outbox_resilience.py": {
+      "mode": "100644",
+      "git_blob": "276973c2261b86105a6c5c402f6b2b45c0cd928c",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_p0_0097_0098_rebuild.py": {
+      "mode": "100644",
+      "git_blob": "4525d95b68177e6e511d6644e6d3e0018aac8eb0",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_p0_0100_real_external_execution.py": {
+      "mode": "100644",
+      "git_blob": "610346ee6a4736556cf603efe7bdd2fa777e1f61",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_p0_final_virtual_closure_stress.py": {
+      "mode": "100644",
+      "git_blob": "f9d144ef8f77fe9886ef93302cae9b1f3e747408",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_parent_implementation_code_review_debt_closure.py": {
+      "mode": "100644",
+      "git_blob": "6f8a098368620ba3e69bb7a7a23be012ea7d2573",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_personal_travel_vault.py": {
+      "mode": "100644",
+      "git_blob": "85590bb8c3ce21756d0a0beca6d7c7ebd6f2f322",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_rc191_registration_vault_tiered_build.py": {
+      "mode": "100644",
+      "git_blob": "f9fdc70360f3dccbb124e3e399bb3536b43847a0",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_rc20_2_all_b_to_a.py": {
+      "mode": "100644",
+      "git_blob": "4c9e9e00dae848b0ba8d4d3de7f86d0154a2fd12",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_registration_terms_admission.py": {
+      "mode": "100644",
+      "git_blob": "a0bd11218718b4041f0b53223a4288938a47637e",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_registration_terms_reader.cjs": {
+      "mode": "100644",
+      "git_blob": "b072787f029e2144361208be37f946bf4b2f0a39",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_registration_terms_registry.py": {
+      "mode": "100644",
+      "git_blob": "4d7ad1a9e0c188cb9697be05b15b0559a1cb1a78",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_round2_c07_explicit_preferences.py": {
+      "mode": "100644",
+      "git_blob": "4ff3a5ac87aada0a4d963939c0d1bdba81235acd",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_sprint1y_consumer_identity.py": {
+      "mode": "100644",
+      "git_blob": "280b5d511b49e0a767920cb137c85dbc77accfc4",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_sprint1z_mobile.py": {
+      "mode": "100644",
+      "git_blob": "92c65e95771a922216d0ee235923f0e2e1a8860f",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_sprint2a_mobile_e2e.py": {
+      "mode": "100644",
+      "git_blob": "b8acad4cf63b9e801c165510503bb03e68e4e73c",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_sprint2b_mobile_release.py": {
+      "mode": "100644",
+      "git_blob": "9fdd2a8e28504af732bdea6e3ec8bb455ad36b05",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_sprint3a_flight.py": {
+      "mode": "100644",
+      "git_blob": "461d530c67210cace3ad80cb36cab872783e336d",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_sprint3b_rail.py": {
+      "mode": "100644",
+      "git_blob": "63dfbb3f0c78884ed56069343d94fa698e5f6e18",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_sprint3c_mobility.py": {
+      "mode": "100644",
+      "git_blob": "b08392a922a7a8b9c3a9f52d76b01339e00a193b",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_sprint3d_attractions.py": {
+      "mode": "100644",
+      "git_blob": "20bb8d3b8a61149bdf9cd33112cf7124c734c5fd",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_sprint3e_unified_trips.py": {
+      "mode": "100644",
+      "git_blob": "3485c0d576395198de76addf530a4f94729eb288",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_sprint3f_journey_intelligence.py": {
+      "mode": "100644",
+      "git_blob": "7179e13f4a3c602493f26b93930e09984bd7eb0a",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_sprint3g_journey_recovery.py": {
+      "mode": "100644",
+      "git_blob": "00ba71cd9b4be57ff09eb982a955afaecf848e4e",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_supplier_hotel_import_ui.cjs": {
+      "mode": "100644",
+      "git_blob": "ee27bbcd56143205e4793c488e2fa989cb73c518",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_supplier_import_migration.py": {
+      "mode": "100644",
+      "git_blob": "fdf98386b770c69739d628862a6a494a9d8bd2d6",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_supplier_onboarding_and_member_comparison.py": {
+      "mode": "100644",
+      "git_blob": "5de781390fa69d3117c3c0c7e8468898c2645baa",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_supplier_preflight_runtime.py": {
+      "mode": "100644",
+      "git_blob": "1e4491753f85a9925ead0a6701c1707827413fb3",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_supplier_registration_nationwide.py": {
+      "mode": "100644",
+      "git_blob": "b31ab196428db6e222ad6d3e926e980015fca110",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_supplier_registration_ui.cjs": {
+      "mode": "100644",
+      "git_blob": "d4276c7f1d48b921b9b40984dd943f09879ae985",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_supplier_runtime_controls.py": {
+      "mode": "100644",
+      "git_blob": "748a5e65cda96aca1d9a4e4ecc5e46900b466f52",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_unified_money_movement_finance_close.py": {
+      "mode": "100644",
+      "git_blob": "0c810e256a1d003ea70566a08c24f023f218bdbf",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_next_c01_authorization_replay.py": {
+      "mode": "100644",
+      "git_blob": "8445bed95c232f5904a8f55d0dbd4d0e35f8147b",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_next_c01_unknown_funding.py": {
+      "mode": "100644",
+      "git_blob": "f2c0bb64c456d53bee89c05d98fb613941a371ea",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_next_c05_recovery_evidence.py": {
+      "mode": "100644",
+      "git_blob": "b2e0e6467a37bccf5a38ccdfbcfad34dcbb15d14",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_r3_c02_coupon_authority.py": {
+      "mode": "100644",
+      "git_blob": "b14af3952705ed76572036e2ee404fe545c442de",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_r3_c04_admin_reconciliation.py": {
+      "mode": "100644",
+      "git_blob": "4451f462fc9c3036f662c6151299aa4b0c9b9849",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_r3_c04_http_get_zero_write.py": {
+      "mode": "100644",
+      "git_blob": "d4139cf1b2e2cdadb63b20ca337109f9f5b0ac32",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_r3_c05_current_unknown_episode.py": {
+      "mode": "100644",
+      "git_blob": "d2967e27be0661c56f969177a1006b3b27e5f832",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_r4_c01_unknown_episode.py": {
+      "mode": "100644",
+      "git_blob": "62c3928804bb6e6b72d76622b5077da551c0b604",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_r4_c05_episode_reference_reuse.py": {
+      "mode": "100644",
+      "git_blob": "d1fe9b5421ea8abb3eecdfa96e19a23db971f197",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_r4_c05_failed_episode.py": {
+      "mode": "100644",
+      "git_blob": "5511896339d738ee1cc3321798cfe2341d64e16f",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_r4_c07_consent_provenance.py": {
+      "mode": "100644",
+      "git_blob": "63b128a6e8bc8d65c8d55dbff5d81629ac128e75",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_r5_c05_concurrent_unknown.py": {
+      "mode": "100644",
+      "git_blob": "8914debaedf2d440d320e67cfdedc97d70563e3a",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_r5_c06_raw_payload_binding.py": {
+      "mode": "100644",
+      "git_blob": "0b3b3e8954150ad3346e6f28937df742976a1747",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_r6_c02_partial_party_authority.py": {
+      "mode": "100644",
+      "git_blob": "9474731379677f277b473328b4085550905fc1a3",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests/test_v70_round2_c05_recovery_fulfillment.py": {
+      "mode": "100644",
+      "git_blob": "5c0d06f9e8abacdb70d0b9e49ef643c2a9faee80",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests_frontend/brand_v14.test.mjs": {
+      "mode": "100644",
+      "git_blob": "99ce93b94843fa6b3de672c8a67d4c5d8fe3dce2",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests_frontend/date_range.test.mjs": {
+      "mode": "100644",
+      "git_blob": "8881316a779c4bb5c57adf38205b51f8e934c555",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests_frontend/fixtures/aoluguya_hyatt_expanded_40_plan.json": {
+      "mode": "100644",
+      "git_blob": "8f397b0e10b65caa5ec69cfb4ca8e2fb3b6f85d7",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan.json": {
+      "mode": "100644",
+      "git_blob": "2c3325ba26c35ad8b891298f21e6e4156e37a5b9",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan_legacy_jpeg.json": {
+      "mode": "100644",
+      "git_blob": "d5e4c22e93658806c0dedad32fa62eaaf85088e5",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests_frontend/fixtures/aoluguya_normalized_ingest_plan.json": {
+      "mode": "100644",
+      "git_blob": "e0b5961cd8bffcdbae5023ca9bae9078330fc813",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests_frontend/hotel_catalog_contacts.test.mjs": {
+      "mode": "100644",
+      "git_blob": "75ed5c10312a8d2a58fb8678575e0f61202fe7d3",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests_frontend/hotel_catalog_hyatt_gallery.test.mjs": {
+      "mode": "100644",
+      "git_blob": "118d7d88cf65e6263c80f7bc18258b846c4482ba",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+    },
+    "tests_frontend/hotel_catalog_reviewed_import.test.mjs": {
+      "mode": "100644",
+      "git_blob": "fd4956a0519888d0d40425c42d6479175969167a",
+      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     }
   },
-  "migration_head": "0137_hosted_unknown_episode",
+  "migration_head": "0138_supplier_library_import",
   "verified_inherited_evidence": {
     "pr74_workflow_run": 34807203728,
     "c11_original_postgresql_cases": "10/10 PASS",
@@ -306,18 +1286,19 @@
   },
   "gate_order": [
     "SOURCE_BINDING",
-    "ISOLATED_PG_INTEGRATION",
-    "PARENT_REGRESSION",
-    "C14",
-    "C13"
+    "DEVELOPER_INTEGRATION",
+    "C13_INDEPENDENT",
+    "C14_HK_SAME_CANDIDATE"
   ],
   "hk_deploy": "HOLD",
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "febb925eeb781223f17002b91479f2eac9b71acc",
-  "source_tree_sha256": "a0a4fe24987f4bd46fef34ce0b97e4c3dab93d54dabe0111da1d26a43e652430",
+  "source_tree_sha256": "961fb094e75bb380a264aa8f0c00a6d03db747bc15ac74c750e182fa50e3e095",
   "historical_pass_transferred": false,
-  "migration_file": "alembic/versions/0137_hosted_money_unknown_episode.py",
-  "verified_current_generation_ledger": "ci/integration/ACCEPTED_CELL_LEDGER.json",
-  "c06_external_supplier_provenance": "BLOCKED_EXTERNAL"
+  "migration_file": "alembic/versions/0138_supplier_library_import.py",
+  "verified_current_generation_ledger": "ci/depth9/CANDIDATE.json",
+  "c06_external_supplier_provenance": "BLOCKED_EXTERNAL",
+  "source_files": 1490,
+  "integration_evidence": "ci/depth9/CANDIDATE.json"
 }
