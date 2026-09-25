@@ -1,0 +1,11 @@
+{
+  "kind": "anonymous",
+  "expected_status": 401,
+  "actual_status": 401,
+  "body": {
+    "detail": "AUTHENTICATION_REQUIRED"
+  },
+  "approval_rows_unchanged": true,
+  "authentication": "real password + JWT + DB session; admin MFA; no dependency overrides",
+  "scope": "isolated actual router; not full main middleware"
+}

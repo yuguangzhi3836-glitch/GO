@@ -15,6 +15,7 @@ router=APIRouter(tags=['go-hosted-direct-booking-pilot'])
 class Payload(BaseModel):model_config={'extra':'allow'}
 def call(fn,*a):
  try:return {'data':fn(*a)}
+ except PermissionError as e:raise HTTPException(403,detail=str(e))
  except ValueError as e:raise HTTPException(409,detail=str(e))
 @router.get('/v1/direct/{slug}')
 def page(slug:str):return call(svc.page,slug)
@@ -67,9 +68,9 @@ def decision(reservation_id:str,b:Payload,p:Principal=Depends(admin_principal)):
 @router.post('/internal/v1/hosted-direct/reservations/{reservation_id}/cancel')
 def cancel(reservation_id:str,p:Principal=Depends(admin_principal)):return call(svc.cancel,reservation_id,p.user_id)
 @router.post('/internal/v1/hosted-direct/hotels/{hotel_id}/content-snapshots')
-def content_snapshot(hotel_id:str,p:Principal=Depends(admin_principal)):return call(content_svc.snapshot,hotel_id,p.user_id)
+def content_snapshot(hotel_id:str,p:Principal=Depends(require_permission('admin:rules'))):return call(content_svc.snapshot,hotel_id,p)
 @router.post('/internal/v1/hosted-direct/content-snapshots/{snapshot_id}/approve')
-def content_approve(snapshot_id:str,b:Payload,p:Principal=Depends(admin_principal)):return call(content_svc.approve,snapshot_id,b.model_dump(exclude_none=True),p.user_id)
+def content_approve(snapshot_id:str,b:Payload,p:Principal=Depends(require_permission('admin:approve'))):return call(content_svc.approve,snapshot_id,b.model_dump(exclude_none=True),p)
 @router.post('/internal/v1/hosted-direct/hotels/{hotel_id}/media-assets')
 def media_asset(hotel_id:str,b:Payload,p:Principal=Depends(admin_principal)):return call(content_svc.media,hotel_id,b.model_dump(exclude_none=True),p.user_id)
 @router.get('/internal/v1/hosted-direct/hotels/{hotel_id}/operations-gate')
