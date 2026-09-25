@@ -5,6 +5,7 @@ import io
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -16,7 +17,7 @@ from c13_attestation import CANDIDATE, TREE, SCOPE
 from c14_isolated_runner import SCOPE_COMMANDS
 from docker_sandbox import DockerSandbox, parse_output, TMPFS, ENTRYPOINT, ENTRY_ARGS
 from house_bridge import canonical, frozen_junit_counts
-from sandbox_payload import unpack_source, git_object
+from sandbox_payload import unpack_source, git_object, suite_environment
 
 IMAGE = "sha256:" + "a" * 64
 
@@ -93,6 +94,18 @@ class ParserTests(unittest.TestCase):
 
 
 class SourceTests(unittest.TestCase):
+    def test_external_test_entrypoint_can_import_both_source_and_test_helpers(self):
+        with tempfile.TemporaryDirectory() as root:
+            source = Path(root) / "application"
+            (source / "src").mkdir(parents=True)
+            (source / "tests").mkdir()
+            (source / "src" / "sample_app.py").write_text("value = 7\n")
+            (source / "tests" / "__init__.py").write_text("")
+            (source / "tests" / "helper.py").write_text("from sample_app import value\n")
+            result = subprocess.run([sys.executable, "-c", "from tests.helper import value; assert value == 7"],
+                                    cwd=root, env=suite_environment(source), capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+
     def archive(self, name="x.py", content=b"print('test')\n", link=False):
         raw = io.BytesIO()
         with tarfile.open(fileobj=raw, mode="w") as archive:

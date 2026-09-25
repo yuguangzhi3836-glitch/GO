@@ -77,6 +77,16 @@ def unpack_source(raw, destination, expected_tree=TREE):
     return expected_tree
 
 
+def suite_environment(source):
+    # Match the frozen developer CI's PYTHONPATH=src:. for cross-test imports.
+    return {"PATH": "/opt/venv/bin:/usr/lib/postgresql/18/bin:/usr/bin:/bin",
+           "HOME": "/work", "TMPDIR": "/tmp", "LANG": "C.UTF-8",
+           "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": str(source / "src") + ":" + str(source),
+           "APP_ENV": "test", "GO_C11_SOURCE_COMMIT": CANDIDATE,
+           "GO_TEST_DB_PATH": "/work/pytest.db",
+           "GO_C11_RUNTIME_DATABASE_URL": "postgresql+psycopg://c14@127.0.0.1:5432/go_c11_isolated"}
+
+
 def main():
     # Bound each child-written file too; total tmpfs size is enforced by Docker.
     # PostgreSQL's default WAL segment is 16 MiB; allow it within bounded tmpfs.
@@ -86,12 +96,7 @@ def main():
     unpack_source(sys.stdin.buffer.read(MAX_SOURCE + 1), source)
     out = work / "evidence"
     out.mkdir()
-    env = {"PATH": "/opt/venv/bin:/usr/lib/postgresql/18/bin:/usr/bin:/bin",
-           "HOME": "/work", "TMPDIR": "/tmp", "LANG": "C.UTF-8",
-           "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": str(source / "src"),
-           "APP_ENV": "test", "GO_C11_SOURCE_COMMIT": CANDIDATE,
-           "GO_TEST_DB_PATH": "/work/pytest.db",
-           "GO_C11_RUNTIME_DATABASE_URL": "postgresql+psycopg://c14@127.0.0.1:5432/go_c11_isolated"}
+    env = suite_environment(source)
 
     def run(argv, logfile, cwd=work, check=True):
         with (out / logfile).open("ab") as stream:
