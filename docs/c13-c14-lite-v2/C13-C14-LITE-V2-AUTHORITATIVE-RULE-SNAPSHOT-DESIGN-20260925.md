@@ -10,7 +10,7 @@
 
 - Date: 2026-09-25
 - Basis commit (everything below was read at this commit, read-only): `64715d308954049eb6675d81196d7f4cd853199b` (current `main`)
-- Trigger: Round 3 C14 run `361523947948` returned `BLOCKED` (see `C13-C14-LITE-V2-ROUND3-EVIDENCE-CCV1-145B-20260925.md` §4)
+- Trigger: Round 3 C14 run `36152394748` returned `BLOCKED` (see `C13-C14-LITE-V2-ROUND3-EVIDENCE-CCV1-145B-20260925.md` §4)
 - Scope: **design only.** No source change, no workflow change, no dispatch, no deployment.
 
 ---
@@ -167,9 +167,13 @@ no new service, no new registry).
 A candidate that could author its own rule text could trivially produce its own pass. So the
 snapshot is **not trusted on its own**: for each entry, C14 re-reads `authoritative_source.path`
 from the **default branch** through the same read-only contents call the workflow already makes for
-D-2 (`lite_cli.py workflow-identity`, one API call, proven working in step 6 of runs
-`36141430817` / `36148838395` / `36152394748`), and compares that blob against
+D-2 (`lite_cli.py workflow-identity`, one API call), and compares that blob against
 `authoritative_source.blob_sha` and the text against `sha256`.
+
+Measured: that step exists and passes in runs `36148838395` (step 6) and `36152394748` (step 6).
+⚠ It does **not** exist in run `36141430817` — the D-2 fix introduced it, so the earliest run has
+no such step (its step 6 is "Freeze the rule-review scope digest"). Verified against the stored
+job listings, not from memory.
 
 ⇒ Reuse of an already-proven capability. No new service, no new credential, no new permission
 scope (the workflow already has `contents: read`).
