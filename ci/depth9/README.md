@@ -5,9 +5,9 @@
 ## 冻结身份
 
 - Canonical main：`aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0`。
-- 产品提交：`911a08c78b1702bbbfb19a6b5383cb86356155bc`。
-- application tree：`f0449feb9135505fca03f623c1d9142be48e0632`，1490 个文件。
-- 完整预期指纹：`2c454fe55d0684ab6515f619421f0debf12c2899387e4c9c0ce1dec8905aa8c9`。
+- 产品提交：`5c8bb7cc5922a2c1c36babaef446c76a583e81fd`。
+- application tree：`9cc68fa3a805f9f0df09b937a7c2df618cf6795f`，1490 个文件。
+- 完整预期指纹：`80d19a5791c3a824421638df36b92616fb16e02ac6504b234bbce2571a76fadd`。
 - 迁移头：`0138_supplier_library_import`。没有执行部署或线上迁移。
 - 已部署业务基线为 PR #202；纳入 #204、#205、#208、#216、#217、#226、#227、#235、#240。完整 SHA 见 CANDIDATE.json。
 
@@ -49,3 +49,5 @@
 这些退出条件完成前，不能据此宣称系统深度已达到 9 分以上。当前 Draft 不具备部署或生产放行结论。
 
 首次 CI 被源指纹门槛正确拦截：历史 tracked 测试缓存的工作副本在冻结之后被测试更新。预期 SHA-256 现从冻结 Git blob 字节重算，产品 application tree 保持不变；没有修改或绕过源码校验。
+
+PostgreSQL 首轮发现旧退款竞争测试直接声明 EXTERNAL_CERTIFIED_FACT，未提供可信回调凭据，因此两线程均被 #235 新门槛拒绝。测试现显式使用 CONTRACT_SIMULATOR，继续断言伪造外部事实被拒绝，并新增确切超额退款错误、一笔 700 退款及借贷各 700 的持久化核对。此更改仅限该测试文件；生产代码与上一次 2802 + 44 全量通过记录相同。最终同一候选 CI 重新运行。

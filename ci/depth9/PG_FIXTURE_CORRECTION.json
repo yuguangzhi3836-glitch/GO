@@ -1,0 +1,16 @@
+{
+  "previous_gate": "54a1cb16428575b677787b853a0c34d1304456d3",
+  "failed_job": 107928287561,
+  "reason": "Untrusted EXTERNAL_CERTIFIED_FACT correctly rejected by new ingress guard",
+  "file": "application/tests/test_p0_0101_postgres_race_matrix.py",
+  "new_git_blob": "5ff42341129a0c7bcb2834088d01366649a1a39f",
+  "runtime_delta": false,
+  "weakened_assertions": false,
+  "new_assertions": [
+    "exact budget rejection",
+    "one persisted refund",
+    "refund ledger debit and credit equal 700"
+  ],
+  "source_commit": "5c8bb7cc5922a2c1c36babaef446c76a583e81fd",
+  "application_git_tree": "9cc68fa3a805f9f0df09b937a7c2df618cf6795f"
+}
