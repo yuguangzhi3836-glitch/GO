@@ -1,0 +1,177 @@
+name: C14 rule and compliance review (Lite V2)
+
+# C14 = GO constitution, permission boundary, IAM, legal / regulatory, contract,
+# AI-behaviour rules. It is explicitly NOT a second quality tester: this workflow
+# runs no Docker, no PostgreSQL and no regression / recovery / journey suite.
+#
+# The workflow is the *execution backend* for the C14 cell. It does not decide
+# anything about scheduling: cell and task identity come from the dispatch inputs
+# which the caller takes from the existing 14-Cell issue / ledger.
+#
+# authorizes_any_action is false in every record this workflow produces.
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: "Frozen candidate commit SHA (40 hex) - never a branch head"
+        required: true
+      application_tree:
+        description: "Frozen application/ subtree SHA (git rev-parse <candidate>:application)"
+        required: true
+      issue_number:
+        description: "Existing issue / ledger issue number this task belongs to"
+        required: true
+      request_id:
+        description: "Scheduler request id that dispatched this task"
+        required: true
+      ledger_round_id:
+        description: "round_id of the ledger record this execution belongs to"
+        required: true
+      c14_task_id:
+        description: "Task id of the C14 cell in that ledger"
+        required: true
+      c13_task_id:
+        description: "Task id of the C13 cell in that ledger (the paired acceptance)"
+        required: true
+      applicable_rules:
+        description: "Comma separated rule set names in scope"
+        required: false
+        default: "GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES"
+      rule_version:
+        description: "Declared version of the applicable rule set"
+        required: false
+        default: "unversioned"
+      ai_model:
+        description: "Model used for the fresh AI review execution"
+        required: false
+        default: "gpt-5.6-sol"
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  LITE_CELL_PAIR: "C13+C14"
+  LITE_WORKFLOW_IDENTITY: ".github/workflows/c14-rule-compliance.yml"
+  LITE_AI_MODEL: ${{ inputs.ai_model }}
+
+jobs:
+  c14-rule-review:
+    name: C14 fresh rule review (read-only, no quality sandbox)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out the execution backend (this branch)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check out the frozen candidate into candidate/ (never executed)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Bind the exact frozen candidate identity
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
+          test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
+          git -C candidate diff-tree --no-commit-id --name-only -r HEAD > "$RUNNER_TEMP/changed_paths.txt" || true
+          wc -l < "$RUNNER_TEMP/changed_paths.txt"
+
+      - name: Freeze the rule-review scope digest
+        run: |
+          set -euo pipefail
+          LITE_WORKFLOW_SHA="$(git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY)"
+          {
+            echo "LITE_CANDIDATE_SHA=${{ inputs.candidate_sha }}"
+            echo "LITE_APPLICATION_TREE=${{ inputs.application_tree }}"
+            echo "LITE_ISSUE_NUMBER=${{ inputs.issue_number }}"
+            echo "LITE_REQUEST_ID=${{ inputs.request_id }}"
+            echo "LITE_LEDGER_ROUND_ID=${{ inputs.ledger_round_id }}"
+            echo "LITE_C14_TASK_ID=${{ inputs.c14_task_id }}"
+            echo "LITE_C13_TASK_ID=${{ inputs.c13_task_id }}"
+            echo "LITE_WORKFLOW_SHA=$LITE_WORKFLOW_SHA"
+            echo "LITE_NONCE=c14-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$RANDOM"
+            echo "LITE_RUN_ID=${GITHUB_RUN_ID}"
+            echo "LITE_RUN_ATTEMPT=${GITHUB_RUN_ATTEMPT}"
+            echo "LITE_PRINCIPAL_ID=${GITHUB_ACTOR}"
+            echo "LITE_ISSUED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "LITE_EXPIRES_AT=$(date -u -d '+55 minutes' +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_ENV"
+          SCOPE_OUT="$RUNNER_TEMP/LITE_SCOPE_SHA256"
+          python control-plane/c13-c14-lite/lite_cli.py scope \
+            --role c14 \
+            --rule "${{ inputs.applicable_rules }}" \
+            --rule-version "${{ inputs.rule_version }}" \
+            --changed-paths "$RUNNER_TEMP/changed_paths.txt" \
+            --out "$RUNNER_TEMP/scope.json" > "$SCOPE_OUT"
+          echo "LITE_SCOPE_SHA256=$(grep -o '[0-9a-f]\{64\}' "$RUNNER_TEMP/scope.json" | head -1)" >> "$GITHUB_ENV"
+
+      - name: Build the frozen candidate contract
+        run: |
+          set -euo pipefail
+          python control-plane/c13-c14-lite/lite_cli.py spec --role c14 \
+            --spec "$RUNNER_TEMP/c14.spec.json" \
+            --facts "$RUNNER_TEMP/c14.facts.json" \
+            --contract "$RUNNER_TEMP/c14.contract.json"
+
+      - name: Run one fresh AI rule review (read-only reviewer)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/artifacts"
+          python control-plane/c13-c14-lite/lite_cli.py review \
+            --spec "$RUNNER_TEMP/c14.spec.json" \
+            --facts "$RUNNER_TEMP/c14.facts.json" \
+            --out "$RUNNER_TEMP/c14.outcome.json" \
+            --allow-blocked
+
+      - name: Seal the C14 bundle
+        run: |
+          set -euo pipefail
+          python control-plane/c13-c14-lite/lite_cli.py seal \
+            --spec "$RUNNER_TEMP/c14.spec.json" \
+            --contract "$RUNNER_TEMP/c14.contract.json" \
+            --outcome "$RUNNER_TEMP/c14.outcome.json" \
+            --out "$RUNNER_TEMP/artifacts/c14_bundle.json"
+          cp "$RUNNER_TEMP/c14.outcome.json" "$RUNNER_TEMP/artifacts/c14_opinion.json"
+          cp "$RUNNER_TEMP/c14.contract.json" "$RUNNER_TEMP/artifacts/c14_contract.json"
+
+      - name: Publish the sealed C14 bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c14-${{ inputs.candidate_sha }}
+          path: ${{ runner.temp }}/artifacts
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Read back run and artifact identity through the GitHub API
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python control-plane/c13-c14-lite/lite_readback.py \
+            --role c14 \
+            --candidate-sha "${{ inputs.candidate_sha }}" \
+            --workflow-path "$LITE_WORKFLOW_IDENTITY" \
+            --run-id "${GITHUB_RUN_ID}" \
+            --out "$RUNNER_TEMP/artifacts/readback.json"
+
+      - name: Publish the run/artifact readback record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c14-readback-${{ inputs.candidate_sha }}
+          path: ${{ runner.temp }}/artifacts/readback.json
+          if-no-files-found: warn
+          retention-days: 90

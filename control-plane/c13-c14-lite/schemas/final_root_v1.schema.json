@@ -1,0 +1,74 @@
+{
+  "$id": "https://go.local/c13c14-lite/go.c13c14.lite.final_root.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Aggregate root over both sealed bundles and the ledger binding; witness slots reserved.",
+  "properties": {
+    "FINAL_ROOT": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "body": {
+      "additionalProperties": false,
+      "properties": {
+        "C13": {
+          "type": "object"
+        },
+        "C14": {
+          "type": "object"
+        },
+        "CC_WITNESS": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "HK_WITNESS": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "application_tree": {
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string"
+        },
+        "authorizes_any_action": {
+          "const": false
+        },
+        "candidate_sha": {
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string"
+        },
+        "ledger_binding": {
+          "type": "object"
+        },
+        "schema_version": {
+          "const": "go.c13c14.lite.final_root.v1"
+        }
+      },
+      "required": [
+        "schema_version",
+        "candidate_sha",
+        "application_tree",
+        "C14",
+        "C13",
+        "ledger_binding",
+        "CC_WITNESS",
+        "HK_WITNESS",
+        "authorizes_any_action"
+      ],
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "go.c13c14.lite.final_root.v1"
+    }
+  },
+  "required": [
+    "FINAL_ROOT",
+    "body",
+    "schema_version"
+  ],
+  "title": "go.c13c14.lite.final_root.v1",
+  "type": "object"
+}

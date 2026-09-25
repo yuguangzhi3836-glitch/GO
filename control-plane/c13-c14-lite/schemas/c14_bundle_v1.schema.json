@@ -1,0 +1,285 @@
+{
+  "$id": "https://go.local/c13c14-lite/go.c13c14.lite.c14_bundle.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Sealed C14 rule / compliance record. NOT_APPLICABLE is a recorded terminal state, never a skip.",
+  "properties": {
+    "C14_ROOT": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "ai_execution_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "ai_model": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "ai_provider": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "applicable_rule_versions": {
+      "patternProperties": {
+        "^.+$": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "applicable_rules": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "application_tree": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "authorizes_any_action": {
+      "const": false
+    },
+    "blocking_issues": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "candidate_sha": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "cell_id": {
+      "const": "C14"
+    },
+    "failure_class": {
+      "enum": [
+        "QUALITY_FAIL",
+        "RULE_FAIL",
+        "INFRA_FAILURE",
+        "AI_PROVIDER_FAILURE",
+        "AI_QUOTA_EXHAUSTED",
+        "BLOCKED",
+        null
+      ],
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "findings": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "BLOCKER",
+              "MAJOR",
+              "MINOR",
+              "INFO"
+            ]
+          },
+          "statement": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "severity",
+          "statement"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "github_run_attempt": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "github_run_id": {
+      "minimum": 1,
+      "type": "integer"
+    },
+    "input_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "issue_number": {
+      "minimum": 1,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "issued_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "ledger_reference": {
+      "additionalProperties": false,
+      "properties": {
+        "cell_id": {
+          "enum": [
+            "C13",
+            "C14"
+          ]
+        },
+        "round_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "task_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "round_id",
+        "cell_id",
+        "task_id"
+      ],
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "nonce": {
+      "minLength": 16,
+      "type": "string"
+    },
+    "not_applicable": {
+      "additionalProperties": false,
+      "properties": {
+        "applicable_rule_set": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "applicable_rule_version": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "basis": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "review_scope": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "why_not_applicable": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "review_scope",
+        "basis",
+        "applicable_rule_set",
+        "applicable_rule_version",
+        "why_not_applicable"
+      ],
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "opinion_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "principal_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "prompt_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "remediation_status": {
+      "enum": [
+        "OPEN",
+        "PARTIAL",
+        "CLOSED",
+        "NOT_REQUIRED"
+      ]
+    },
+    "review_execution_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "rule_review_scope_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "go.c13c14.lite.c14_bundle.v1"
+    },
+    "task_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "verdict": {
+      "enum": [
+        "PASS_SCOPED",
+        "FAIL",
+        "BLOCKED",
+        "NOT_APPLICABLE"
+      ]
+    },
+    "workflow_ref": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "workflow_sha": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "C14_ROOT",
+    "ai_execution_id",
+    "ai_model",
+    "ai_provider",
+    "applicable_rule_versions",
+    "applicable_rules",
+    "application_tree",
+    "authorizes_any_action",
+    "blocking_issues",
+    "candidate_sha",
+    "cell_id",
+    "failure_class",
+    "findings",
+    "github_run_attempt",
+    "github_run_id",
+    "input_sha256",
+    "issue_number",
+    "issued_at",
+    "ledger_reference",
+    "nonce",
+    "not_applicable",
+    "opinion_sha256",
+    "principal_id",
+    "prompt_sha256",
+    "remediation_status",
+    "review_execution_id",
+    "rule_review_scope_sha256",
+    "schema_version",
+    "task_id",
+    "verdict",
+    "workflow_ref",
+    "workflow_sha"
+  ],
+  "title": "go.c13c14.lite.c14_bundle.v1",
+  "type": "object"
+}

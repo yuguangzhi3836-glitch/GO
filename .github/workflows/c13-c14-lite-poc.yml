@@ -1,0 +1,137 @@
+name: C13/C14 Lite V2 minimal PoC (quota + run/artifact readback)
+
+# POC_ONLY. This workflow produces no C13/C14 opinion and no acceptance record.
+# It answers exactly two questions with real infrastructure:
+#
+#   1. is the configured AI credential actually usable (not quota-exhausted)?
+#   2. can a run upload an artifact and re-read its own run/artifact identity,
+#      including the GitHub-computed digest, through the read-only API?
+#
+# It is deliberately tiny so it can be dispatched on a branch without touching any
+# production path, and it never deploys, merges or writes to an issue.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ai_model:
+        description: "Model used for the one real API call"
+        required: false
+        default: "gpt-5.6-sol"
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  LITE_WORKFLOW_IDENTITY: ".github/workflows/c13-c14-lite-poc.yml"
+  # Synthetic candidate: the PoC is not a review of any product candidate.
+  LITE_CANDIDATE_SHA: "ffffffffffffffffffffffffffffffffffffffff"
+  LITE_APPLICATION_TREE: "ffffffffffffffffffffffffffffffffffffffff"
+  LITE_CELL_PAIR: "C13+C14"
+  LITE_ISSUE_NUMBER: "0"
+  LITE_REQUEST_ID: "poc-only-request"
+  LITE_LEDGER_ROUND_ID: "POC_ONLY"
+  LITE_C14_TASK_ID: "POC-C14-TASK"
+  LITE_C13_TASK_ID: "POC-C13-TASK"
+  LITE_AI_MODEL: ${{ inputs.ai_model }}
+
+jobs:
+  poc:
+    name: POC_ONLY quota probe and same-run artifact readback
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the execution backend
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Freeze the synthetic PoC facts
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/artifacts"
+          LITE_WORKFLOW_SHA="$(git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY)"
+          {
+            echo "LITE_WORKFLOW_SHA=$LITE_WORKFLOW_SHA"
+            echo "LITE_NONCE=poc-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$RANDOM"
+            echo "LITE_RUN_ID=${GITHUB_RUN_ID}"
+            echo "LITE_RUN_ATTEMPT=${GITHUB_RUN_ATTEMPT}"
+            echo "LITE_PRINCIPAL_ID=${GITHUB_ACTOR}"
+            echo "LITE_ISSUED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "LITE_EXPIRES_AT=$(date -u -d '+55 minutes' +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_ENV"
+          python control-plane/c13-c14-lite/lite_cli.py scope \
+            --role c14 \
+            --rule POC_ONLY \
+            --rule-version poc \
+            --out "$RUNNER_TEMP/scope.json" > /dev/null
+          echo "LITE_SCOPE_SHA256=$(grep -o '[0-9a-f]\{64\}' "$RUNNER_TEMP/scope.json" | head -1)" >> "$GITHUB_ENV"
+          python control-plane/c13-c14-lite/lite_cli.py spec --role c14 \
+            --spec "$RUNNER_TEMP/poc.spec.json" \
+            --facts "$RUNNER_TEMP/poc.facts.json" \
+            --contract "$RUNNER_TEMP/poc.contract.json"
+
+      - name: One real AI call (quota probe only)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          python control-plane/c13-c14-lite/lite_cli.py review \
+            --spec "$RUNNER_TEMP/poc.spec.json" \
+            --facts "$RUNNER_TEMP/poc.facts.json" \
+            --out "$RUNNER_TEMP/poc.outcome.json" \
+            --allow-blocked
+          python - "$RUNNER_TEMP" >> "$GITHUB_ENV" <<'PY'
+          import json, pathlib, sys
+          root = pathlib.Path(sys.argv[1])
+          outcome = json.loads((root / "poc.outcome.json").read_text())
+          ok = outcome.get("failure_class") is None and outcome.get("verdict") != "BLOCKED"
+          print(f"AI_API_QUOTA_OK={'YES' if ok else 'NO'}")
+          print(f"AI_FAILURE_CLASS={outcome.get('failure_class') or 'NONE'}")
+          PY
+
+      - name: Publish the PoC record as an artifact
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/poc.outcome.json" "$RUNNER_TEMP/artifacts/poc.json"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c14-${{ env.LITE_CANDIDATE_SHA }}
+          path: ${{ runner.temp }}/artifacts
+          if-no-files-found: error
+          retention-days: 5
+
+      - name: Read back run and artifact identity through the GitHub API
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python control-plane/c13-c14-lite/lite_readback.py \
+            --role c14 \
+            --candidate-sha "$LITE_CANDIDATE_SHA" \
+            --workflow-path "$LITE_WORKFLOW_IDENTITY" \
+            --run-id "${GITHUB_RUN_ID}" \
+            --out "$RUNNER_TEMP/artifacts/readback.json"
+          echo "RUN_ARTIFACT_READBACK=PASS" >> "$GITHUB_ENV"
+
+      - name: Publish the readback record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c14-readback-${{ env.LITE_CANDIDATE_SHA }}
+          path: ${{ runner.temp }}/artifacts/readback.json
+          if-no-files-found: warn
+          retention-days: 5
+
+      - name: POC summary
+        if: always()
+        run: |
+          echo "AI_API_QUOTA_OK=${AI_API_QUOTA_OK:-UNKNOWN}"
+          echo "AI_FAILURE_CLASS=${AI_FAILURE_CLASS:-UNKNOWN}"
+          echo "RUN_ARTIFACT_READBACK=${RUN_ARTIFACT_READBACK:-UNKNOWN}"
+          echo "POC_ONLY_NO_C13_C14_OPINION=true"
