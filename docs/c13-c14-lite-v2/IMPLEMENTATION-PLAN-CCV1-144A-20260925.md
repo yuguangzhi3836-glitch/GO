@@ -12,12 +12,54 @@
 ## Result
 
 ```text
-RESULT = BLOCKED_CREDENTIAL_PERMISSION
+RESULT = WITNESS_GITHUB_READBACK_READY
 ```
 
-Everything that does not require a new GitHub credential is done and proven. The one
-remaining item is a **repository grant that only a human can make**, because GitHub
-exposes no API to create or re-scope a credential (evidence below).
+The round opened as `BLOCKED_CREDENTIAL_PERMISSION`, because neither host held a
+credential whose repository selection included the repository, and GitHub exposes no API
+to create or re-scope one. The two credentials were then created by the account owner and
+installed, and the block is gone:
+
+```text
+CC_GITHUB_API_CREDENTIAL_READY = YES      HK_GITHUB_API_CREDENTIAL_READY = YES
+CC_RUN_METADATA_READ           = YES      HK_RUN_METADATA_READ           = YES
+CC_ARTIFACT_METADATA_VERIFIED  = YES      HK_ARTIFACT_METADATA_VERIFIED  = YES
+METADATA_WITNESS_READY         = YES      BYTE_LEVEL_WITNESS_READY       = YES
+OWNER_ACTION_REQUIRED          = NO       blocked                        = []
+CCV1_145_FULL_CHAIN_SIMULATION = READY
+```
+
+Both hosts read the same run and the same artifact **independently**, agreed on the
+digest, and re-hashed the downloaded bytes to that same digest. What follows documents
+how each part was established, including two real defects this round found and fixed.
+
+### The two credentials are distinct
+
+```text
+cc  /etc/go-command-center/keys/github-witness-reader.token   root:root                0600  93 B  sha256:bcead04ba2b607cbecdf475881b2eddb
+hk  /etc/go-hk-agent/keys/github-witness-reader.token         go-hk-agent:go-hk-agent  0600  93 B  sha256:7f11873b443120d1f7a843590002bd3a
+```
+
+Different tokens, so one can be rotated or revoked without touching the other, and
+GitHub's per-token `Last used` identifies which host is reading. The fingerprints are
+irreversible digests, not the values. Both hosts produced the same artifact digest
+(`sha256:6202a664…b256fc`) from their own credential.
+
+### Both hosts, measured in place
+
+| | CC (`iZj6c7k6k01biwlbnwutu5Z`) | HK (`iZj6ccs8t04f1p4d8pe69zZ`) |
+|---|---|---|
+| `GET /user` | 200 | 200 |
+| `GET /repos/yuguangzhi3836-glitch/GO` | 200 | 200 |
+| `GET /actions/runs/36110672586` | 200 | 200 |
+| `GET /actions/runs/…/artifacts` | 200 | 200 |
+| artifact metadata verified | YES | YES |
+| bytes available / hashed / verified | YES / YES / YES | YES / YES / YES |
+| `refusals` | `[]` | `[]` |
+| recomputed sha256 | `sha256:6202a664…b256fc` (4285 B) | identical |
+
+Neither host's result substitutes for the other's: each ran its own readback with its own
+credential on its own machine.
 
 ## 1. CC's existing credential: why it 404s
 
@@ -112,10 +154,11 @@ That run used the **workstation's** credential, and the record says so
 verification path. It is **not** evidence that CC or HK can do it, and this round
 does not claim otherwise.
 
-## 4. On-host readiness, measured
+## 4. On-host readiness, before installation (the opening diagnosis)
 
-Both hosts were probed in place with a script piped over stdin to `python3 -B -`, so
-nothing was written to either host and no service was touched.
+This section records what the hosts looked like **before** the credentials existed. Both
+were probed in place with a script piped over stdin to `python3 -B -`, so nothing was
+written to either host and no service was touched.
 
 | Host | Credential | `user` | `repository` | `run` | Blocked by |
 |---|---|---|---|---|---|
@@ -153,8 +196,19 @@ below is taken by the **token's owner**, not by a third party.
 
 ## 6. What was installed this round
 
-**Nothing.** No credential exists yet to install, and installing the workstation's
-OAuth token instead was considered and rejected:
+Two credentials, one per host, created by the credential owner in the GitHub web UI
+(no API exists for it) and pasted **in the owner's own terminal**, never through chat,
+never in `argv`, never in shell history, never in a log:
+
+```text
+cc  /etc/go-command-center/keys/github-witness-reader.token   root:root                0600
+hk  /etc/go-hk-agent/keys/github-witness-reader.token         go-hk-agent:go-hk-agent  0600
+```
+
+The pre-existing `github-requests-reader.token` on CC was **not touched** — it belongs to
+another surface and still has GO outside its repository selection.
+
+Installing the workstation's `gho_…` OAuth token instead was considered and rejected:
 
 - it authenticates as `gho_…`, an OAuth token with **write** access to the repository;
 - the task requires a read-only credential with isolated purpose
@@ -163,7 +217,30 @@ OAuth token instead was considered and rejected:
 - copying a personal OAuth token onto two servers is credential sprawl, and it would
   make the witness layer's independence depend on Eason's personal session.
 
-So the four pass booleans stay false, honestly, and `OWNER_ACTION_REQUIRED = YES`.
+### Two defects found and fixed while doing it
+
+**1. The interactive prompt could echo the pasted token.** `read -s` disables echo only
+for the duration of the read, so bytes reaching the terminal before the read begins are
+already echoed by the line discipline and can persist in scrollback. Fixed by disabling
+echo with `stty -echo` **before** the prompt is printed, with a trap to restore it on
+`EXIT/INT/TERM`. Testing this properly also required replacing a `script(1)`-based test,
+which wrote the input before echo was disabled and therefore measured the harness rather
+than the script, with a Python pty driver that waits for the prompt before typing.
+
+**2. The installer accepted a corrupted value.** The first real install on CC stored a
+value with a stray `ESC` (0x1b) in front of it — `PREFIX_CLASS = other: b'\x1bgit'` — and
+GitHub answered **`401 Bad credentials`**, a message that blames the credential and gives
+no hint that the paste was at fault, with nothing visible in the terminal. The installer
+had rejected whitespace but not control characters. Now it unwraps bracketed-paste markers,
+keeps only the credential alphabet `[A-Za-z0-9_]`, **reports how many characters it
+removed**, refuses a value without a known prefix or shorter than 20 characters, reads the
+file back to confirm it round-trips, and (with `--verify`, on by default) checks the value
+against real GitHub at install time, mapping the result to
+`PASS` / `FAIL_CREDENTIAL_REJECTED` / `FAIL_REPOSITORY_OUT_OF_SCOPE` / `SKIPPED_NETWORK`
+with a non-zero exit on failure. That check would have caught the ESC byte immediately.
+
+Worth stating plainly: on a `401 Bad credentials`, suspect a paste artefact before
+suspecting the credential.
 
 ## 7. What is ready, and verified
 
@@ -246,19 +323,21 @@ The round verdict, computed from the measured on-host probes rather than written
 hand:
 
 ```text
-RESULT                        = BLOCKED_CREDENTIAL_PERMISSION
-METADATA_WITNESS_READY        = false
-BYTE_LEVEL_WITNESS_READY      = true   (proven from the workstation, not from the hosts)
-CCV1_145_FULL_CHAIN_SIMULATION = BLOCKED_CREDENTIAL_PERMISSION
-blocked: cc -> credential_repository_scope
-         hk -> no_github_api_credential_on_host
+BEFORE INSTALL   RESULT = BLOCKED_CREDENTIAL_PERMISSION
+                 blocked: cc -> credential_repository_scope
+                          hk -> no_github_api_credential_on_host
+AFTER INSTALL    RESULT = WITNESS_GITHUB_READBACK_READY
+                 METADATA_WITNESS_READY = true
+                 BYTE_LEVEL_WITNESS_READY = true  (from both hosts, not the workstation)
+                 CCV1_145_FULL_CHAIN_SIMULATION = READY
+                 blocked = []
 ```
 
 `BYTE_LEVEL_WITNESS_READY = true` here means the *mechanism* works end to end; it does
 not mean the two hosts can do it yet. The verdict's per-host booleans are the ones that
 matter for the next round, and they are false.
 
-## 9. Required action (see the companion document)
+## 9. Required action — completed (see the companion document)
 
 `GITHUB-WITNESS-CREDENTIAL-OWNER-ACTION-20260925.md` states exactly what to create, for
 whom, and with which permissions — including the list of permissions that must **not**
@@ -274,7 +353,28 @@ NO HK executor modification, no owner PR touched, no historical fact rewritten
 NO secret in Git, logs, issues, artifacts or any handoff text
 ```
 
-Touches this round: CC read-only probe; HK read-only probe; one WSL sandbox for the
-install-script test (cleaned up). No file was created on CC or HK. No key was
-generated, installed or copied. Subject to the one grant above, nothing is left that
-this round is permitted to automate.
+What this round actually touched on the two hosts:
+
+| Action | CC | HK |
+|---|---|---|
+| read-only probe (before install) | yes | yes |
+| `/root/go-witness-credential-install.sh` placed, 0700 root:root | yes | yes |
+| one credential installed at 0600 | yes | yes |
+| readback run in `/tmp` from a staged, stdlib-only toolset | yes | yes |
+| service restarted / unit touched | **no** | **no** |
+| any other credential touched | **no** | **no** |
+| key directory permissions changed | **no** | **no** |
+
+The credential values were handled only by the installer (reading stdin) and by the
+readback tool (reading the file in-process on the host). Neither value appears in any
+document, commit, artifact, log or message; the only thing recorded about them is an
+irreversible fingerprint and a length. `/root/go-witness-credential-install.sh` contains
+no secret and may be removed once rotation is no longer expected.
+
+Also cleaned up: the staged `/tmp/ccv1-144a-tools` directory and the `/tmp` readback
+records on both hosts, and the WSL sandbox used for install-script testing. What is left
+behind on purpose: the two credentials, and (optionally) the installer.
+
+`CC_WITNESS_KEY_INSTALLED = NO` and `HK_WITNESS_KEY_INSTALLED = NO` are unchanged — the
+witness **signing** keys are a separate, still-unauthorised step, and this round only
+granted the *read* capability.

@@ -1,11 +1,17 @@
 # Required action — GitHub witness credential for CC and HK
 
-> **Status: the installer is deployed to both hosts and now self-verifies against GitHub;
-> the readback tool is staged at `/tmp/ccv1-144a-tools`. CC is installed and fully green.
-> Only the HK paste remains, and it must be done by the credential owner in their own terminal.**
+> **Status: DONE on both hosts.** Both credentials are installed at `0600` with the correct
+> owner, both hosts read the run and the artifact independently, and both re-hashed the
+> downloaded bytes to GitHub's own digest. `RESULT = WITNESS_GITHUB_READBACK_READY`,
+> `OWNER_ACTION_REQUIRED = NO`. This document is retained as the rotation procedure: if a
+> credential is ever revoked, re-run step 2 and step 3 on that host only.
+>
+> The installer is left at `/root/go-witness-credential-install.sh` on both hosts (0700,
+> no secret inside). The staged `/tmp/ccv1-144a-tools` was removed after verification;
+> re-stage it from the repository when a readback is next needed.
 
 - Task: `CCV1-144A-GITHUB-WITNESS-CREDENTIAL-ENABLEMENT`
-- Status: `OWNER_ACTION_REQUIRED = YES`
+- Status: `OWNER_ACTION_REQUIRED = NO` (completed 2026-09-25)
 - Date: 2026-09-25
 
 This document is the exact action list. It is deliberately specific: the credential
