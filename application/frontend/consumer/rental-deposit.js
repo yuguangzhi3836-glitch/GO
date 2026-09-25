@@ -84,6 +84,6 @@
   const previous=renderMobilityOrder;
   renderMobilityOrder=kind=>{
     const token=++generation;previous(kind);if(kind!=='RENTAL')return;
-    const order=state.rentalOrder,section=document.createElement('section');section.className='card';section.dataset.rentalDeposit='';section.innerHTML='<p role="status">正在核对押金与车损记录…</p>';document.querySelector('#app').append(section);void load(section,order,token);
+    const order=state.rentalOrder,section=document.createElement('section');section.className='card';section.dataset.rentalDeposit='';section.innerHTML='<p role="status">正在核对押金与车损记录…</p>';document.querySelector('#app .shared-consumer-content').append(section);void load(section,order,token);
   };
 })();
