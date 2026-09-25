@@ -1,5 +1,78 @@
 # C13 developer-side first test, then isolated Hong Kong C14
 
+## Git Task/Evidence transport — development increment, 2026-09-25
+
+`git_acceptance_bus.GitAcceptanceBus` now provides concrete publication and
+readback methods for the two existing private Git repositories. It adds no
+transport server, signing key, AI reviewer or deployment action. It is C14-only:
+fixed action/environment/candidate/tree/scope, deterministic Task ID shape,
+strict nonce and byte limits. Existing TEST_PR/health/deployment paths are not
+accepted by this adapter. Existing signatures remain byte-for-byte unchanged;
+cryptographic authority checks still run in `house_bridge` and the Runner.
+
+The controlled host provisions separate persistent clones, service-owned mode
+0700 under trusted ancestors, with Git >= 2.38 and reviewed SSH credentials /
+known-hosts. No credential prompt, key-file read, clone, config rewrite, working
+tree reset or staged-file change is performed by the adapter. Remote names are
+pinned to `chenzhenxi1-sudo/go-control-tasks` and `go-control-evidence`; branch is
+`main`. Explicit destination/refspec prevents a configured pushurl or mirror
+from redirecting publication. Only host-side installed configuration selects
+the local clone and role; Request callers cannot supply either.
+
+Bind the corresponding methods into the trusted host:
+
+| Host | Tasks instance | Evidence instance |
+| --- | --- | --- |
+| Command Center | `kind="tasks", write_enabled=True` | `kind="evidence", write_enabled=False` |
+| HK isolated Runner | `kind="tasks", write_enabled=False` | `kind="evidence", write_enabled=True` |
+
+GitHub credentials must independently enforce that permission split. Use a
+reader instance per evidence-verification operation. `read_house_evidence`
+pins one fetched commit, and all subsequent `read_house_artifact` calls use
+that commit, avoiding a mixture of artifacts from different repository states.
+CC receipt storage remains on the CC-only receipt route, never in HK's writer.
+
+Task layout stays `tasks/<task_id>.json`. Evidence stays
+`evidence/<task_id>-<nonce>.json`; the C14-only raw artifact namespace is
+`artifacts/c14/<task_id>-<nonce>/{junit,stdout,manifest}`. The three artifact
+publication calls stage bytes locally in memory. The final Evidence call checks
+all three digests and constructs **one Git commit** with all four files before
+any remote publication. Readers cannot observe a partially published bundle.
+
+Before push, objects and the atomic local outbox ref are hardened with
+`core.fsync=committed,reference` / `core.fsyncMethod=fsync`. A private clone lock
+serializes local processes; an atomic outbox create and non-force fast-forward
+push reject duplicates/races. Existing remote content is never overwritten.
+The repository's working tree and normal index are not used for publication.
+
+If delivery fails or its response is lost, keep the private clone and outbox.
+`recover_publication(task_id, nonce)` (omit nonce for a Task) reads only the
+already-persisted exact bytes. It does not call the sandbox, sign again, replace
+nonce, extend expiry, release claims or create a new AI opinion. A matching
+remote record is an idempotent readback. If unrelated health traffic advanced
+main, explicit recovery may create one new transport commit containing the same
+record bytes on that newer parent. Conflicts and partial/mutated remote content
+remain refusals; there is no automatic retry loop or force push. Expired Tasks
+remain expired and are refused by normal Runner admission.
+
+Keep outbox refs after success; never reset/restore the persistent clone behind
+the authoritative ledger. On loss/corruption of local outbox or claims state,
+stop consumption and reconcile through controlled operations. A crash before
+the bundle is persisted cannot be recovered from this transport: claim stays
+consumed and requires reconciliation, never re-execution. Clones need local
+filesystem/fsync guarantees; readback refs retain snapshots for active readers.
+
+Tests use real local bare remotes, separate Git objects/commits and abrupt
+process exit, but synthetic machine envelopes/signatures and in-memory receipt
+signers. They do not connect to the private task bus or execute real C14. The
+new namespace, complete host wiring, credentials/role readback, dedicated action
+allowlists and restart reconciliation still require controlled installation.
+No source-only test is a runtime installation or independent AI opinion.
+
+Git durability reference: https://git-scm.com/docs/git-config#Documentation/git-config.txt-corefsync
+Source parent: `50cd8d17cfb4d1ab31b56e540cf19b81027ef817`.
+Change classes: CONTROL_PLANE, TEST_ONLY, DOCUMENTATION. Remains Draft/uninstalled.
+
 ## Offline sandbox implementation — development increment, 2026-09-25
 
 `docker_sandbox.DockerSandbox.run_fixed_isolated_suite` now implements the
@@ -239,4 +312,3 @@ import their actual opinions and source provenance without fabricating reviews.
 
 Change classes: CONTROL_PLANE, TEST_ONLY, DOCUMENTATION. Development parent:
 `858e0118b69f8ffddf778abc0028c23f747038e2`.
-
