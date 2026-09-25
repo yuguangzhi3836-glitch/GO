@@ -1,26 +1,18 @@
-"""Verify an independent C13 decision before admitting a C14 retest.
+"""Read an independent C13 AI opinion before admitting a C14 retest.
 
-Source-only adapter: the trusted public key, reviewer registration and artifact
-bytes must come from the Command Center host. This module cannot sign a result.
+The trusted recorder supplies actual review provenance and original artifacts.
+AI opinions need no signature or reviewer key. Machine bus signing is separate.
 """
 from __future__ import annotations
 
-import base64
-import binascii
 import hashlib
 import json
-import re
 import io
 import zipfile
 from xml.etree import ElementTree
 
-from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import ec
-
-
-class Refusal(ValueError):
-    pass
+from evidence_time import utc_epoch
+from acceptance_gate import Refusal
 
 
 CANDIDATE = "d4376d6ae9a58eca3c7c32968ec96dffc5574122"
@@ -32,8 +24,7 @@ ARTIFACT_ID = 10805227694
 FIELDS = {"contract", "candidate_sha", "application_tree", "test_scope_sha256",
           "artifact_sha256", "run_id", "artifact_id", "junit_tests", "junit_failures",
           "pg_cases", "pg_failures", "reviewer_id", "reviewer_independent",
-          "verdict", "issued_at", "signature"}
-SIGNED = FIELDS - {"signature"}
+          "verdict", "issued_at", "review_execution_id", "review_reference", "opinion"}
 
 
 def canonical(value: dict) -> bytes:
@@ -87,14 +78,13 @@ def inspect_artifact(artifact_zip: bytes) -> dict:
     return {"junit_tests": 61, "pg_cases": 10, "artifact_sha256": ARTIFACT_SHA256}
 
 
-def verify(raw: bytes, artifact_zip: bytes, trusted_spki_pem: bytes,
-           registered_reviewer: str) -> dict:
+def verify(raw: bytes, artifact_zip: bytes, reviewer_id: str,
+           review_execution_id: str) -> dict:
     """Return facts accepted by ``acceptance_gate.c14_admission`` or fail closed.
 
-    The host must register a reviewer independent from implementation/C14 and
-    must supply the exact downloaded artifact ZIP, not its own claimed digest.
-    Counts are the reviewer's signed assertion; the host should also inspect
-    the raw artifact before it registers and trusts that reviewer.
+    The host supplies the independent AI group/execution from actual review
+    records, not a caller's self-declaration, and the exact original artifact.
+    This is a source/evidence/opinion check, not a digital signature check.
     """
     if type(raw) is not bytes or len(raw) > 16384 or not raw.endswith(b"\n"):
         raise Refusal("c13_record_bytes")
@@ -104,7 +94,7 @@ def verify(raw: bytes, artifact_zip: bytes, trusted_spki_pem: bytes,
         raise Refusal("c13_record_json") from exc
     if type(record) is not dict or set(record) != FIELDS or raw != canonical(record) + b"\n":
         raise Refusal("c13_record_schema")
-    expected = {"contract": "GO_C13_INDEPENDENT_VERDICT_V1",
+    expected = {"contract": "GO_C13_INDEPENDENT_OPINION_V2",
                 "candidate_sha": CANDIDATE, "application_tree": TREE,
                 "test_scope_sha256": SCOPE, "artifact_sha256": ARTIFACT_SHA256,
                 "run_id": RUN_ID, "artifact_id": ARTIFACT_ID,
@@ -113,30 +103,16 @@ def verify(raw: bytes, artifact_zip: bytes, trusted_spki_pem: bytes,
                 "verdict": "PASS_SCOPED", "reviewer_independent": True}
     if any(type(record.get(k)) is not type(v) or record.get(k) != v for k, v in expected.items()):
         raise Refusal("c13_fixed_binding")
-    if not isinstance(registered_reviewer, str) or not registered_reviewer or record["reviewer_id"] != registered_reviewer:
+    if (type(reviewer_id) is not str or not reviewer_id or record["reviewer_id"] != reviewer_id or
+            type(review_execution_id) is not str or not review_execution_id or
+            record["review_execution_id"] != review_execution_id):
         raise Refusal("c13_reviewer")
-    if not isinstance(record["issued_at"], str) or not re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ", record["issued_at"]):
-        raise Refusal("c13_time")
+    for key in ("opinion", "review_reference"):
+        if type(record[key]) is not str or not record[key].strip():
+            raise Refusal("c13_review_opinion")
+    utc_epoch(record["issued_at"], "c13_time")
     inspect_artifact(artifact_zip)
-    signature = record["signature"]
-    if type(signature) is not dict or set(signature) != {"algorithm", "key_fingerprint_sha256", "der_base64"} or signature["algorithm"] != "ECDSA_P256_SHA256":
-        raise Refusal("c13_signature_schema")
-    try:
-        public = serialization.load_pem_public_key(trusted_spki_pem)
-        der = public.public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
-        signature_bytes = base64.b64decode(signature["der_base64"], validate=True)
-    except (TypeError, ValueError, binascii.Error) as exc:
-        raise Refusal("c13_public_key_or_signature") from exc
-    if not isinstance(public, ec.EllipticCurvePublicKey) or not isinstance(public.curve, ec.SECP256R1):
-        raise Refusal("c13_public_key_curve")
-    if hashlib.sha256(der).hexdigest() != signature["key_fingerprint_sha256"]:
-        raise Refusal("c13_key_fingerprint")
-    unsigned = {k: record[k] for k in SIGNED}
-    try:
-        public.verify(signature_bytes, canonical(unsigned), ec.ECDSA(hashes.SHA256()))
-    except (InvalidSignature, ValueError) as exc:
-        raise Refusal("c13_signature") from exc
     return {"candidate_sha": CANDIDATE, "application_tree": TREE,
             "test_scope_sha256": SCOPE, "verdict": "PASS_SCOPED",
-            "actor_id": registered_reviewer, "verified": True,
+            "actor_id": reviewer_id, "verified": True,
             "evidence_sha256": hashlib.sha256(raw).hexdigest()}

@@ -36,5 +36,6 @@ Tests use synthetic hosts/signatures only. They cover future evidence, invalid
 wire times, receipts before completion or after readback, genuine completion
 clock sampling, missing/bad clocks, expiry checks and late immutable readback.
 No real key, signing registration, HSM call, Request, Task or runtime installation
-is supplied. C13 formal signing and C14 execution remain HOLD pending real
-independent identities, installed isolated Runner and signed evidence readback.
+is supplied. Owner correction (2026-09-25): AI review groups need no signatures.
+Actual independent opinions, installed isolated Runner and machine evidence
+readback remain required; no HOLD may be based on a missing AI signature.

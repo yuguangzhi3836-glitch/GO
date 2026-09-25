@@ -308,7 +308,7 @@ def _record_receipt(task, result, evidence_raw, epoch, host):
 
 
 def receive_evidence(task, epoch, host):
-    """Verify the HK return and have Command Center atomically record its receipt."""
+    """Record technical results; C14's AI opinion is separate (c14_review.conclude)."""
     result, evidence_raw = _read_evidence(task, epoch, host)
     return {"result": result, "receipt": _record_receipt(task, result, evidence_raw, epoch, host)}
 

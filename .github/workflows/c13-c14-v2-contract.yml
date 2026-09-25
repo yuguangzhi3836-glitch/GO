@@ -21,7 +21,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - name: Install C13 signature verifier dependency
+      - name: Install machine Evidence/receipt verifier dependency
         run: python -m pip install cryptography
       - name: Check scoped admission refusals
         run: python -m unittest discover -s control-plane/c13-c14-v2 -p 'test_*.py' -v
+

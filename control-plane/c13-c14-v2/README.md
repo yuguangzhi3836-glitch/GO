@@ -2,7 +2,7 @@
 
 The Owner's sequence is: freeze candidate SHA / `application/` tree / scope;
 independent C13 runs the first formal tests **on the development side**;
-Command Center verifies the C13 source-bound evidence; only then may it
+Command Center checks the independent C13 opinion and source-bound evidence; only then may it
 issue a restricted Hong Kong isolated C14 retest for the exact same identity.
 Neither test result authorizes release.
 
@@ -24,7 +24,9 @@ three raw artifact digests, candidate SHA/tree, C13 digest, Runner and verdict.
 An exact repeat is idempotent; a missing, altered or mismatched receipt is
 refused and remains HOLD. COMPLETE on that receipt means only that the Command
 Center recorded the verified outcome; it is not a PASS or release permission.
-The source-only tests use a memory host and synthetic signatures.
+The source-only tests use memory hosts and synthetic machine signatures.
+A technical PASS in a receipt is not an AI opinion; use `c14_review.conclude()`
+with the independent C14 opinion for the final review result.
 
 `task_v1.acceptance.proposed.json` and
 `evidence_v1.acceptance.proposed.json` add only the isolated C14 action and
@@ -48,13 +50,13 @@ execution. All PRs remain Draft, with merge and deployment on HOLD.
 
 ## 2026-09-24 source candidate added (still HOLD)
 
-`c13_attestation.py` freezes #240 commit/tree/scope and GitHub Actions artifact 10805227694 (ZIP SHA-256 `44b1dca3444296ff4f9ad52c323c3bb325ca3d143efb022b6785ac07047ad777`). It checks all 71 payload digests, JUnit 61/61, isolated PostgreSQL 18.4 recovery 10/10, then requires a **registered independent reviewer** P-256 signature over an exact verdict record and an independently supplied public key. No project reviewer private key, signed C13 verdict or Command Center registration is present in this Draft. A synthetic test signature must never be published as a real verdict.
+`c13_attestation.py` freezes #240 commit/tree/scope and GitHub Actions artifact 10805227694 (ZIP SHA-256 `44b1dca3444296ff4f9ad52c323c3bb325ca3d143efb022b6785ac07047ad777`). It checks all 71 payload digests, JUnit 61/61 and isolated PostgreSQL 18.4 recovery 10/10, together with the actual independent C13 AI opinion. **Owner correction of 2026-09-25 supersedes the previous reviewer P-256 signature requirement.** C13 requires no reviewer key, signature or signing registration. A green CI cannot replace the opinion.
 
 `c14_isolated_runner.py` is a source-bound runner core. Its host must provide a persistent single-use Task claim, verify the Command Center signature and Task readback, perform an offline checkout of the fixed source, run only the frozen suite inside a disposable PostgreSQL 18.4 sandbox with suppliers, payments, deployment, production and outbound network disabled, sign Evidence with the separately registered Hong Kong Runner key, and atomically publish raw artifacts then Evidence. The core alone is not an installed host adapter or sandbox. The installed Agent/Bridge allowlists and evidence storage must be extended through controlled installation and readback against the live versions including the #245 repair.
 
 The C14 Command Center receipt contract now uses **HSM P-256 ECDSA SHA-256, base64 DER**. Its trusted public key and fingerprint are host configuration, never repository data. This does not change the existing Ed25519 Command Center Task / Hong Kong Evidence wire signatures.
 
-Installation gates: independent C13 signer registration and signed verdict; Command Center C13 verifier registration; HK isolated Runner and disposable PostgreSQL sandbox; action/environment allowlists; Command Center-only receipt destination with HSM signing and readback; exact live artifact hash check and independent operator review. Do not submit an `HK_ISOLATED_C14_RETEST` Request or claim C14 PASS until each gate has live evidence. Existing `HK_STAGING_TEST_PR` is a separate source preflight.
+Installation prerequisites: actual independent C13 opinion with checked provenance and original artifacts; Command Center opinion reader wiring; HK isolated Runner and disposable PostgreSQL sandbox; action/environment allowlists; Command Center-only receipt destination with HSM signing and readback; exact live artifact hash check and independent operator review. Do not submit an `HK_ISOLATED_C14_RETEST` Request or claim C14 PASS until each gate has live evidence. Existing `HK_STAGING_TEST_PR` is a separate source preflight.
 
 ## AI reviewer identity and persistent claims (development increment)
 
@@ -63,22 +65,31 @@ C13 is the **development-side independent AI review group**. C14 is the
 GitHub account names do not establish independence. Controlled installation
 is a separate operation, not an additional human C13/C14 reviewer role.
 
-`ai_acceptance_host.AIAdmissionHost` implements the admission Host interface.
-The installer supplies trusted `AIRegistration` snapshots, the implementation
-principal, the exact artifact ZIP and an absolute host-owned verdict directory.
-No Request/verdict/candidate file may supply these trust inputs. The host must
-establish actual execution/credential separation and revocation; different
-strings alone are not proof of independent AI groups. C13 binds a development
-AI principal and P-256 SPKI fingerprint; C14 binds a different runtime AI
-principal and Ed25519 evidence key. C13 qualification works without C14 being
-registered. Nothing here creates a key, registers a real group or runs an AI.
+`ai_acceptance_host.AIAdmissionHost` uses keyless `AIReviewGroup` provenance.
+The trusted recorder supplies group ID, actual independent AI execution ID
+(legacy field name `principal_id`), role and side from real execution records.
+This is not IAM or signing registration. Names alone do not prove separation
+from implementation/the other group; a shared GitHub account is permitted.
+`AIRegistration` is a compatibility alias with no key/fingerprint fields.
 
-C13 references have the exact form `sha256:<digest>`. The reader opens
-`<digest>.json` from the host directory, rejects links/non-regular files and
-digest changes, then invokes the existing artifact and P-256 verifier. The
-digest covers canonical signed verdict bytes including the trailing LF, not
-an unsigned body or a GitHub comment. Keep the directory and its parent chain
-outside candidate workspaces and writable only by the trusted evidence writer.
+C13 `GO_C13_INDEPENDENT_OPINION_V2` includes candidate/artifact/run/count bindings,
+reviewer and execution IDs, original review reference, actual opinion text,
+scoped verdict and timestamp. It wraps a real opinion for machine readback;
+it is not a signature or a new review. Existing genuine independent opinions
+may be imported without re-signing after checking their source/execution.
+The implementer must never synthesize an independent opinion.
+
+Opinion references are `sha256:<digest>` of canonical JSON plus LF. The trusted
+recorder writes `<digest>.json` in private persistent storage (service-owned
+directory 0700, files 0600, trusted ancestor chain). Reads reject tampering,
+links, wrong permissions and caller paths. The caller cannot supply provenance
+facts or the opinion-store location. A checksum alone does not prove authorship.
+
+`c14_review.conclude()` combines machine Evidence/receipt verification with
+the unsigned independent C14 opinion. It binds task/nonce, candidate/tree/scope,
+Evidence and exact receipt digests. Missing/substituted opinions, a different
+AI execution and PASS over failed tests are refused. AI FAIL/BLOCKED prevents
+PASS even when tests are green. No opinion or receipt authorizes deployment.
 
 `durable_claims.DurableClaims` implements `claim_task_once(task_id, nonce)`
 using a local SQLite transaction with unique Task and nonce constraints and
@@ -141,10 +152,28 @@ promoted automatically. Reconcile it against verified evidence before cleanup.
 These modules now provide actual adapter/storage implementations, but do not
 wire or install the CC service. The installer still has to bind real workload
 identity, key-version/fingerprint trust, CC-only storage and the house bus.
-The AI groups, HK sandbox and controlled installation readback remain separate
-prerequisites. Source tests use ephemeral test keys and fake KMS transport;
+Actual independent AI opinions, the HK sandbox and controlled installation
+readback remain separate prerequisites. Source tests use ephemeral test keys and fake KMS transport;
 they cannot produce formal C13 or C14 PASS.
 
 API references checked 2026-09-25:
 - https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys.cryptoKeyVersions/getPublicKey
 - https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys.cryptoKeyVersions/asymmetricSign
+
+## Owner responsibility boundary — 2026-09-25
+
+C13/C14 are independent AI review groups, not human approval bodies. They
+provide independent opinions without reviewer keys, signatures or extra human
+sign-off. Under the Owner's project rule, the human who gives Command Center
+the deployment instruction decides deployment and bears responsibility. AI
+opinions cannot issue that human instruction; this change authorizes no deployment.
+
+Machine Task/Evidence/CC HSM receipt signatures remain provenance/integrity
+controls, not AI responsibility signatures or a separate release authority.
+Do not block on missing AI signatures. Do not reuse TEST_PR as C14 evidence.
+All work remains Draft and uninstalled. Keep historical signed records unchanged;
+import their actual opinions and source provenance without fabricating reviews.
+
+Change classes: CONTROL_PLANE, TEST_ONLY, DOCUMENTATION. Development parent:
+`858e0118b69f8ffddf778abc0028c23f747038e2`.
+
