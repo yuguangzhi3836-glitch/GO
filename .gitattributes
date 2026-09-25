@@ -1,0 +1,10 @@
+# Line-ending discipline, scoped to what this round added.
+#
+# A shell script with CRLF endings fails on Linux with "bad interpreter:
+# /bin/sh^M", and this repository is developed on Windows and run on Linux. The
+# pattern is deliberately narrow: a bare `* text=auto` here would schedule a
+# renormalisation of every file in the repository, which is not this round's
+# business and would bury the real diff.
+
+control-plane/c13-c14-witness/*.sh text eol=lf
+control-plane/c13-c14-witness/templates/* text eol=lf
