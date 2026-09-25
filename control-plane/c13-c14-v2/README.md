@@ -103,3 +103,48 @@ Change classes: CONTROL_PLANE, TEST_ONLY, DOCUMENTATION. Development parent is
 valid historically. This increment is a new Draft candidate, not permission
 to install a moving PR head. Freeze a complete installation commit and manifest
 separately before any fetch/install/readback operation.
+
+## Command Center HSM receipt implementation (not installed)
+
+`kms_receipts.KmsReceiptSigner` implements the Google Cloud KMS signing and
+verification methods used by `house_bridge`. The installed CC supplies an
+authenticated official `google.cloud.kms_v1.KeyManagementServiceClient`, a
+numeric CryptoKeyVersion resource and an independently registered SHA-256 SPKI
+fingerprint. The library does not discover credentials, select a key, create
+keys, change IAM or use a software signing fallback. The runtime SDK dependency
+is `google-cloud-kms`; the offline contract tests do not require credentials or
+that dependency. The installer must pin its reviewed dependency versions.
+Local compatibility was also checked with official `google-cloud-kms==3.17.0`
+request/response protobuf types and fake transport (no cloud calls).
+
+Before signing, the adapter validates the exact canonical C14 receipt schema
+and frozen source, reads the configured public key, verifies its version,
+P-256 algorithm, HSM protection level, CRC32C and fingerprint. It sends SHA-256
+with its CRC32C, checks the returned version/HSM/verified-digest/checksum, then
+cryptographically verifies the DER signature before returning base64 DER.
+Timeouts, denied access, changed fingerprints, wrong keys and integrity failures
+remain HOLD. No real cloud signing call is performed by these source tests.
+
+`control_receipt_route.ControlReceiptRoute` composes that signer with
+`ReceiptStore`. Bind its four methods (`sign_control_receipt`,
+`verify_control_receipt`, `publish_control_receipt`, `read_control_receipt`) into
+the CC host used by `house_bridge.receive_evidence`. The receipt directory must
+already exist on persistent local storage, mode 0700, under the CC service UID,
+with a trusted ancestor chain; HK has no write access or KMS signing credential.
+Receipt files are mode 0600. Publication fsyncs a temporary file, atomically
+links without overwriting, fsyncs the directory, and reads back exact bytes.
+An identical record is idempotent; a conflicting record is refused. A verified
+existing receipt is reused without another signing request. A crash before
+publication may leave a `.pending-*` file: it is never a receipt and must not be
+promoted automatically. Reconcile it against verified evidence before cleanup.
+
+These modules now provide actual adapter/storage implementations, but do not
+wire or install the CC service. The installer still has to bind real workload
+identity, key-version/fingerprint trust, CC-only storage and the house bus.
+The AI groups, HK sandbox and controlled installation readback remain separate
+prerequisites. Source tests use ephemeral test keys and fake KMS transport;
+they cannot produce formal C13 or C14 PASS.
+
+API references checked 2026-09-25:
+- https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys.cryptoKeyVersions/getPublicKey
+- https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys.cryptoKeyVersions/asymmetricSign
