@@ -82,6 +82,14 @@ def compare_with_cc(cc_witness: dict, verification: dict) -> None:
     for role in ("c14", "c13"):
         cc_meta = cc_witness["artifact_metadata"][role]
         verification_meta = verification["artifact"][role]
+        if cc_meta.get("binding") != lw_witness.ARTIFACT_BINDING_GITHUB:
+            # This execution carrier has no GitHub run to bind an artifact to. HK
+            # must independently arrive at the same conclusion: a CC witness saying
+            # "not applicable" while this host's own verification DID verify an
+            # artifact is a disagreement, not a shortcut.
+            if verification_meta.get("metadata_verified"):
+                raise Reject("hk_cc_artifact_binding_disagreement", role)
+            continue
         if cc_meta.get("artifact_digest") != verification_meta["artifact"]["digest"]:
             raise Reject("hk_cc_artifact_digest_disagreement", role)
         if cc_meta.get("run_id") != verification_meta["run"]["id"]:

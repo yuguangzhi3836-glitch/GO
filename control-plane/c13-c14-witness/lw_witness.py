@@ -153,6 +153,66 @@ def _body(record) -> bytes:
     return lite_canonical.canonical({key: value for key, value in record.items() if key != "signature"})
 
 
+#: How the witness's artifact metadata is bound to the review.
+#:
+#: ``GITHUB_RUN_ARTIFACT``  the round was executed by a GitHub Actions run and the
+#:                          artifact was read back from that run.
+#: ``NOT_APPLICABLE``       the execution carrier is not a GitHub run (the round was
+#:                          produced by the local backend). There is no artifact to
+#:                          bind, so nothing is claimed. This is a *distinct* state
+#:                          from "an artifact exists but was not verified": the latter
+#:                          is a capability failure and must never look like this.
+ARTIFACT_BINDING_GITHUB = "GITHUB_RUN_ARTIFACT"
+ARTIFACT_BINDING_NOT_APPLICABLE = "NOT_APPLICABLE"
+
+ARTIFACT_BINDINGS = (ARTIFACT_BINDING_GITHUB, ARTIFACT_BINDING_NOT_APPLICABLE)
+
+ARTIFACT_METADATA_FIELDS = (
+    "binding",
+    "reason",
+    "level_1",
+    "level_2",
+    "artifact_id",
+    "artifact_name",
+    "artifact_digest",
+    "run_id",
+)
+
+
+def artifact_metadata_for(verification: dict, role: str) -> dict:
+    """One role's artifact metadata, with the binding state stated explicitly.
+
+    A verification with no artifact (``lw_verifier`` records
+    ``artifact_payload_not_supplied``) is a legitimate shape when the execution
+    carrier is the local backend. It is reported as ``NOT_APPLICABLE`` with every
+    artifact field null — never as a fabricated identity, and never as verified.
+    """
+    entry = (verification.get("artifact") or {}).get(role) or {}
+    artifact = entry.get("artifact")
+    run = entry.get("run")
+    if not isinstance(artifact, dict) or not isinstance(run, dict):
+        return {
+            "binding": ARTIFACT_BINDING_NOT_APPLICABLE,
+            "reason": entry.get("bytes_reason") or "artifact_payload_not_supplied",
+            "level_1": entry.get("level_1"),
+            "level_2": entry.get("level_2"),
+            "artifact_id": None,
+            "artifact_name": None,
+            "artifact_digest": None,
+            "run_id": None,
+        }
+    return {
+        "binding": ARTIFACT_BINDING_GITHUB,
+        "reason": None,
+        "level_1": entry.get("level_1"),
+        "level_2": entry.get("level_2"),
+        "artifact_id": artifact.get("id"),
+        "artifact_name": artifact.get("name"),
+        "artifact_digest": artifact.get("digest"),
+        "run_id": run.get("id"),
+    }
+
+
 def build_witness(
     *,
     witness_role: str,
@@ -176,15 +236,7 @@ def build_witness(
         "C14_ROOT": verification["c14_root"],
         "C13_ROOT": verification["c13_root"],
         "artifact_metadata": {
-            role: {
-                "level_1": verification["artifact"][role]["level_1"],
-                "level_2": verification["artifact"][role]["level_2"],
-                "artifact_id": verification["artifact"][role]["artifact"]["id"],
-                "artifact_name": verification["artifact"][role]["artifact"]["name"],
-                "artifact_digest": verification["artifact"][role]["artifact"]["digest"],
-                "run_id": verification["artifact"][role]["run"]["id"],
-            }
-            for role in ("c14", "c13")
+            role: artifact_metadata_for(verification, role) for role in ("c14", "c13")
         },
         "verification": {
             "decision": verification["decision"],
@@ -209,6 +261,21 @@ def verify_witness(record: dict) -> None:
         raise Reject("witness_signature_invalid")
     if record["first_seen"].get("candidate_sha") != record["candidate_sha"]:
         raise Reject("witness_first_seen_candidate_mismatch")
+    for role in ("c14", "c13"):
+        meta = (record.get("artifact_metadata") or {}).get(role)
+        if not isinstance(meta, dict) or set(meta) != set(ARTIFACT_METADATA_FIELDS):
+            raise Reject("witness_artifact_metadata_field_set_mismatch", role)
+        if meta["binding"] not in ARTIFACT_BINDINGS:
+            raise Reject("witness_artifact_binding_unknown", str(meta["binding"]))
+        if meta["binding"] == ARTIFACT_BINDING_GITHUB:
+            if not meta["artifact_digest"] or meta["run_id"] is None:
+                raise Reject("witness_github_binding_incomplete", role)
+        else:
+            # NOT_APPLICABLE must be empty. A recorded identity here would be an
+            # artifact that was bound without a run to bind it to.
+            for field in ("artifact_id", "artifact_name", "artifact_digest", "run_id"):
+                if meta[field] is not None:
+                    raise Reject("witness_not_applicable_must_be_empty", f"{role}.{field}")
 
 
 class FirstSeenLedger:

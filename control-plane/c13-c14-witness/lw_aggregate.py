@@ -122,7 +122,13 @@ def aggregate(*, verification: dict, cc_witness: dict, hk_witness=None, verify_s
 
 
 def verify_final_root(record: dict) -> None:
-    """Recompute FINAL_ROOT over the received bytes; any change must be visible."""
+    """Recompute FINAL_ROOT over the received bytes; any change must be visible.
+
+    This is the **integrity** half only. ``FINAL_ROOT`` is a public algorithm with no
+    key in it, so an attacker who edits a witness can recompute it and this function
+    will pass. Use :func:`verify_record` — which also checks the signatures — as the
+    entry point for deciding whether a record is genuine.
+    """
     if not isinstance(record, dict) or set(record) != set(FIELDS):
         raise Reject("final_acceptance_field_set_mismatch")
     if record["authorizes_any_action"] is not False:
@@ -133,3 +139,37 @@ def verify_final_root(record: dict) -> None:
         raise Reject("accepted_must_stop_at_the_human_gate", str(record["gate"]))
     if record["status"] == ACCEPTED and record["FINAL_ROOT"] != _final_root(record):
         raise Reject("final_root_recompute_mismatch")
+
+
+def verify_record(record: dict, *, verification: dict | None = None) -> None:
+    """The complete check of a final-acceptance record: signatures, then integrity.
+
+    Two layers, and they are not interchangeable:
+
+    * the signatures prove the witnesses are the ones the two hosts actually issued —
+      this is the layer that cannot be forged, because it needs their private keys;
+    * ``FINAL_ROOT`` proves the record has not been edited *without* being recomputed.
+      It cannot prove authorship, because the algorithm is public.
+
+    Checking only the second is the mistake this function exists to prevent, so it
+    verifies the signatures **first** and the root after.
+    """
+    if not isinstance(record, dict) or set(record) != set(FIELDS):
+        raise Reject("final_acceptance_field_set_mismatch")
+    cc_witness = record["CC_WITNESS"]
+    if cc_witness is None:
+        raise Reject("cc_witness_missing")
+    lw_witness.verify_witness(cc_witness)
+    if record["HK_WITNESS"] is not None:
+        lw_witness.verify_witness(record["HK_WITNESS"])
+        for field in ("candidate_sha", "application_tree", "C14_ROOT", "C13_ROOT"):
+            if record["HK_WITNESS"].get(field) != cc_witness.get(field):
+                raise Reject("hk_witness_cc_witness_mismatch", field)
+    if verification is not None:
+        for field, source in (("candidate_sha", "candidate_sha"),
+                              ("application_tree", "application_tree"),
+                              ("C14_ROOT", "c14_root"),
+                              ("C13_ROOT", "c13_root")):
+            if cc_witness.get(field) != verification.get(source):
+                raise Reject("cc_witness_verification_mismatch", field)
+    verify_final_root(record)
