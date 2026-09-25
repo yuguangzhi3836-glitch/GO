@@ -1,0 +1,15 @@
+{
+  "base": "PR246 7a290b2 (parent supplied)",
+  "scope": "C04 isolated deposit authority, not money authority",
+  "files": {
+    "application/src/go_hotel/mobility/rental/deposit_authority.py": "7674672ff39f671d3c20e6f267a8c4d6a68b618e9a4291431f0c674906834a16",
+    "application/src/go_hotel/mobility/rental/damage.py": "93a250a750377c54e32e633a0a1fada65105567eefacdf877400cc7f00523537",
+    "application/src/go_hotel/api/routes/rental_deposit.py": "dab22c93c34cfd9a4155295698f53db629162963808d021c63aaeb1f01a6cf29",
+    "application/tests/test_rental_deposit_authority.py": "f3d7cf451f8768edea6150205a4971cfa162c79bca1e04dc8a8244e898a743ae"
+  },
+  "tests": {
+    "command": "PYTHONPATH=src python -m pytest -p no:cacheprovider tests/test_rental_deposit_authority.py tests/test_rental_damage_disputes.py",
+    "result": "54 passed (28 deposit source/release + 26 damage)",
+    "environment": "isolated SQLite"
+  }
+}

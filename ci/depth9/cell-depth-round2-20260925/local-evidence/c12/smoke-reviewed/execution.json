@@ -1,0 +1,51 @@
+{
+  "backend": "sqlite",
+  "cpu_count": 9,
+  "duration_seconds": 4.33056900000156,
+  "exit_code": 0,
+  "finished_at": "2026-09-25T08:31:41.801778+00:00",
+  "harness_sha256": "4e4538167410fee24697a7c0618f8a537369c4518ce7940046ee783edd2f5207",
+  "hong_kong": "NOT_ACCESSED",
+  "http_transport_auth": "NOT_TESTED",
+  "lock_timeout_ms": 3000,
+  "plan": [
+    [
+      1,
+      4
+    ],
+    [
+      4,
+      16
+    ],
+    [
+      8,
+      32
+    ]
+  ],
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+  "postgres_gate": "NOT_PROVEN_SQLITE_SMOKE",
+  "production_sla": "NOT_ESTABLISHED",
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "real_psp": "NOT_USED",
+  "real_suppliers": "NOT_USED",
+  "schema": "go.c12.bounded.transaction.capacity.v1",
+  "source_commit": "UNSPECIFIED",
+  "source_files": {
+    "src/go_hotel/api/idempotency.py": "0ca9e1e93909eb6f5970141c53cf5a0c97da7447126f7194d807ef9e80e9837f",
+    "src/go_hotel/api/routes/mobility.py": "a7d1e9fddd4927c987107c3c96856368b6f140030f3a181fedbfde4ed93301d5",
+    "src/go_hotel/mobility/ride/cancellation_policy.py": "15b29e665a24b1f365957b46c55cbf6998d10197a41d7e883182cc7b7c091f66",
+    "src/go_hotel/mobility/ride/service.py": "5fc8f8d94a1f1f0694c3a404456e33622b5db5b66e868f5c0c0d1197a13687bc",
+    "src/go_hotel/services/consumer_unified_lifecycle.py": "e009e4ea5e2959a661ec9706489a33378f3eba7307d5a88ee1aa38de701c5503",
+    "src/go_hotel/services/omnichannel_payment.py": "518d51d4ec558aef918859af707efc3a87f0d49d69fc23f3fd1b0a28eea97496",
+    "src/go_hotel/services/order_supplier_fulfillment.py": "a6fd71e62fa765724996be08ef2cbe96509127e8913b0c38974b029ee80d8a1a",
+    "src/go_hotel/services/unified_money_movement.py": "d3d4139c2df44e2466f3cb849b203f04bbbe5b31b112f62c131e16bcd4521419",
+    "src/go_hotel/services/vertical_lifecycle_projection.py": "84444ef901b9acdff939e7cd192882484cc065773309cfdd6b157c81236b1b65",
+    "src/go_hotel/services/vertical_transaction_bridge.py": "3467a9ec28235575bd06a78c4c057aefa9997c68fbaeef53bca61fcbc1f2762b"
+  },
+  "started_at": "2026-09-25T08:31:37.468851+00:00",
+  "statement_timeout_ms": 5000,
+  "status": "SMOKE_ONLY",
+  "synthetic_policy_sha256": "086ef80f9a3186e058fc3488246a5026575a0bfbbbb0f7957bd5a7195bea8d85",
+  "team_liveness": "NOT_TESTED",
+  "wall_limit_seconds": 240
+}

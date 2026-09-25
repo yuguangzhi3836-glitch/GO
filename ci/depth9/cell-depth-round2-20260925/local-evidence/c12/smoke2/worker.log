@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/workspace/scratch/cdb63add4518/go/application/ci/next_depth/c12_transaction_capacity.py", line 272, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/workspace/scratch/cdb63add4518/go/application/ci/next_depth/c12_transaction_capacity.py", line 216, in main
+    return worker(out,args.sqlite_smoke)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/cdb63add4518/go/application/ci/next_depth/c12_transaction_capacity.py", line 166, in worker
+    assert len(orders)==len(raw), 'CREATED_ORDER_COUNT_MISMATCH'
+           ^^^^^^^^^^^^^^^^^^^^^
+AssertionError: CREATED_ORDER_COUNT_MISMATCH

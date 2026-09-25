@@ -1,0 +1,63 @@
+# C13 local round2 review — in progress
+
+Base PR246 7a290b2; this file concerns uncommitted development increments, not fixed candidate acceptance. No product sources were edited by C13.
+
+## Verified first C04 source-authority snapshot
+
+Independent isolated SQLite run: `tests/test_rental_deposit_authority.py` + `tests/test_rental_damage_disputes.py`, 45 passed, zero errors/failures/skips. Original XML `c04-review-junit.xml`. Each test database is separate from other agents; pytest cache disabled. C04 manifest first authority SHA32d680... scope includes no actual money execution.
+
+Read source: `mobility/rental/deposit_authority.py`, `damage.py`, `api/routes/rental_deposit.py`, root `main.py` registration, consumer `rental-deposit.js` and browser deposit-consent scenario. Explicit owner consent returns NO_FINANCIAL_FACT_ASSERTED. C04 source snapshots include owner/order/vehicle/payee/amount/currency/terms/version/expiry and evidence binding. Money remains separate C11 authority. Ordinary callers cannot substitute amount/payee in strict route bodies. Existing chain validation and latest decision version fence preserved. These are local static/test observations, not full pass.
+
+## Findings pending correction
+
+R2-001 (functional recovery): an unaccepted PROPOSED obligation expires after24h, accept rejects EXPIRED, same-key propose replays the expired source, new-key propose rejects ALREADY_EXISTS, and fixed two-revision chain has no renewal path. The consumer cannot recover by refreshing as prompted. C04 confirmed the finding and is implementing explicit renewal only for expired unaccepted proposals; accepted authority must remain immutable. Pending frozen revision and independent retest.
+
+R2-002 (consumer status projection): UI indexes caseLabels by item.status, but labels AWAITING_C11_REVIEW and DISPUTE_HOLD are money_instruction_state values. Actual status values ADJUDICATED and APPEAL_REVIEW_REQUIRED fall back to unknown. Root notified to map both states explicitly; not a money-authorization bypass. Pending frozen JS retest.
+
+R2-003 (scope/main flow): initial C11 settle requires an adjudicated damage case, while damage opening requires a positive claim. No ordinary no-damage return release path is present in the inspected source. Asked root/C11 to define and implement a source-bound no-damage release if the round claims complete deposit lifecycle. Creating a fake positive damage claim is not an acceptable substitute. Pending scope/implementation response.
+
+## Next verification
+
+C04 renewal + C11 fixed source, amount/parent invariants, duplicate/concurrent and crash rollback, appeal hold and stale decision refusal; C05 policy after developer freeze. Root UI generation/load token prevents a stale order/load result from overwriting a new view; request body source version/hash is captured and current() tested at dialog submission. Browser scenario currently covers explicit checkbox and no implicit charge, not all stale-modal interleavings.
+
+R2-004 (confirmed C05 blocking recovery): `validate_policy`/`offer_terms` permit a fee equal to total amount. Independent `probe_c05_full_fee.py` creates/accepts a synthetic16800 fee on a16800 order, confirms checkout, quotes zero refund and calls cancel. It fails with `POSITIVE_MOVEMENT_AMOUNT_REQUIRED` after REFUND_PENDING persistence because `refunds.cancel` calls money.refund(0). Raw `c05-probe-fullfee.xml` is 1 failed (actual business failure, no fixture setup error). Sent implementation team/root. Either unsupported full-fee policy must fail before booking/quote, or zero-refund cancellation must gain explicit accurate business terminal behavior without fabricating a zero money movement. Do not weaken positive-money invariant.
+
+Root has acknowledged R2-002 and changed the status label mapping; independent final review pending latest frozen JS/browser execution. Root confirms R2-003 normal no-damage release is in this round's implementation scope.
+
+## C04 renewed final-source review
+
+C04 second manifest source SHA `7674672ff39f671d3c20e6f267a8c4d6a68b618e9a4291431f0c674906834a16`, damage `93a250a750377c54e32e633a0a1fada65105567eefacdf877400cc7f00523537`, route `dab22c93c34cfd9a4155295698f53db629162963808d021c63aaeb1f01a6cf29`, tests `f3d7cf451f8768edea6150205a4971cfa162c79bca1e04dc8a8244e898a743ae`: all four independently rehashed equal manifest. Independent new source/release+damage run54PASS, zero failure/error/skip (`c04-final-junit.xml`). R2-001 service-level renewal is CLOSED: only expired PROPOSED can renew, current hash/version required, fresh source hash and explicit new acceptance, ACTIVATED immutable. R2-003 C04 source side now supplies independently reviewed normal-return/cancelled-and-reconciled release fact and blocks later case opening; C11 money integration still pending review. R2-002 label mapping corrected in latest root JS, statically verified; full browser still pending.
+
+R2-005 (consumer expiry timezone): source uses naive UTC ISO expiry. Root JS `Date.parse(source.expires_at)` treats it as local browser time. Independent Node examples for input `2026-09-26T09:00:00`: Asia/Shanghai parses01:00Z rather than09:00Z; America/Los_Angeles parses16:00Z rather than09:00Z. Thus renew action appears too early or too late. Root notified to normalize UTC or consistently emit timezone-aware source. No backend authority bypass, but delayed recovery UI is incorrect.
+
+## C11 and JS follow-up
+
+C11 independent new suite27PASS, zero failures/errors/skips (`c11-final-junit.xml`). All five source hashes in `reviews/round2/c07-c11/SOURCE_SHA256SUMS.txt` independently match. Service SHA089ffa6fd9797e154aa8c32024fcc9a06ac6a246954f9bdfb10d41e882c29457. Tests include no-damage release, expired existing-authorization release, concurrent retries, no-authorization/no-fabrication, dispute hold, binding/receipt/ledger corruption, source version and role boundaries. Together with C04 separately run54, current source+damage+money scope totals81 independent SQLite tests. R2-003 CLOSED in inspected local scope: explicit no-damage/proven-cancel source resolves to release of existing authorization on original graph; neither fake damage case nor new authorization is created. Full manager UI remains a product gap, not falsely represented by these admin API tests.
+
+R2-005 CLOSED locally: extracted actual `utcDate` function from root `rental-deposit.js` SHA22b76599d27d28a81fbe89eae604ac0df788ca2ec34bdb7e40ae0589de978704 and executed in Asia/Shanghai and America/Los_Angeles. Each runs4 assertions: naive UTC, explicitZ, +08 offset all produce09:00Z, invalid input refuses. Reusable read-only probe `probe_deposit_timezone.cjs`. Browser/runtime integration remains a later gate.
+
+R2-004 follow-up: initial zero-refund repair retained native REFUNDED; inspected `vertical_lifecycle_projection.py` unconditionally mapped that to refund_state REFUND_COMPLETED, so merely changing the consumer detail label was insufficient. Instructed developer to preserve accurate no-refund business/payment/refund projection across later reprojection as part of the same blocking fix; pending freeze.
+
+R2-004 status semantics follow-up: `refunds.cancel.result` still exposed status REFUND_COMPLETED with outcome NO_REFUND_DUE, while `transaction_order_view.supplier_counts`, `supplier_refunds` and `snapshot` group/expose the underlying RefundRow.status directly. This is a concrete cross-role false-refund projection, not just a preferred name. Requested distinct NO_REFUND_DUE business terminal row and accurate replay. Independent `probe_c05_no_refund_truth.py` checks API, stored refund, lifecycle, subsequent reprojection, absence of REFUND movements and cross-role snapshot. Pending final freeze/run.
+
+## Local final disposition (pending candidate/CI binding)
+
+C05 developer froze four core sources; C13 captured `C05_REVIEW_SOURCE_SHA256SUMS.txt` and rechecked all four after execution. Independent policy19 + unchanged full-fee reproduction1 + new no-refund truth probe1 =21PASS, zero errors/failures/skips (`c05-final-junit.xml`). The unchanged original full-fee reproduction now passes. Truth probe verifies API outcome/status/refund_performed, DB NO_REFUND_DUE and native CANCELLED, absence of any REFUND movement, lifecycle CANCELLED+PAID with no refund-completed/processing state, subsequent generic reprojection, cross-role transaction snapshot and identical retry output. R2-004 CLOSED in this local scope. Refund source SHA9bb8227fd3a4730ec733969bec9c09a2a04b569d23ae52409c10bca79d71808c.
+
+Additional C11 RIDE accepted-policy ingress/supplier-terminal guard independent3PASS (`ride-hook-junit.xml`). All six current C11 source hashes independently match `SOURCE_SHA256SUMS.txt`, including newly added supplier RIDE CANCELLED terminal protection; original five money sources remain unchanged.
+
+Final local targeted suite counts: C04 source/release+damage54; C11 deposit27; C05 policy+two independent probes21; C11 ride guard3 =105 independently executed test invocations, all zero failure/error/skip. Separate timezone probe4 assertions ×2 timezones PASS. Do not count earlier45/54reruns as additional unique coverage or these isolated SQLite invocations as PostgreSQL evidence.
+
+All five findings R2-001..005 are closed within their inspected/retested local scopes. No open blocking finding remains from this local review. Remaining gate is one immutable successor candidate with exact-source CI, browser consent/renew journeys and required PostgreSQL execution. No formal Lite fresh-execution organizational opinion, whole-module100%, external provider/PSP, deployment or live-runtime acceptance is asserted. C04 normal release still uses admin API engineering flow; full administrator UI remains unimplemented and cannot be represented as browser acceptance.
+
+## Additional assigned role-end gap R2-006 (pending)
+
+Root independently found native `RideSearchScreen.tsx` and `RentalSearchScreen.tsx` hard-code dates2026-08-28 and locations, so actual user-selected searches are impossible. C13 read confirms these constants feed real API calls and there are no editable controls in the old screens. C12 is implementing the narrowly scoped editable forms and pure time/request validation. This new assigned gap reopens local pending status for that mobile scope only; it does not invalidate the verified C04/C05/C11 core hashes. Await frozen source to verify input-to-API flow, explicit timezone, pickup/return ordering, past/invalid rejection and unchanged dependencies. Native typecheck/pure function tests remain different from a physical device journey.
+
+C05 final development manifest `reviews/round2/c01-c06/FROZEN_FILES.json`: all31 listed paths independently rehashed with zero mismatches. Subsequently root added only shared supplier label `NO_REFUND_DUE: 已取消，无需退款` in `frontend/shared/app.js`; C13 statically verified label and file SHA5fe0266e2509f75c86f23b819babb327f3c9a2b538f3ba70e916c6caa5ef6597. This separate root delta must be included in final candidate source binding; no financial behavior change is inferred from the label.
+
+## R2-006 local disposition
+
+C12 froze five mobile files in `MOBILE_SEARCH_SOURCE_SHA256.json`; C13 independently rehashed all five, zero mismatches. Pure input source SHA542c5e3b88c0c8fa31b2a9a6e6c4a8ee785287f6d8921128be7633ca987db919. Independent23 tests PASS in both Asia/Shanghai and America/Los_Angeles (`mobile-input-shanghai.log`, `mobile-input-pacific.log`; same tests, not46 unique cases). Extra independent `probe_mobile_inputs.mjs`4PASS: +14/-12 conversion; same wall clock but26-hour absolute return interval and reversed rejection; unavailable clock refusal; year overflow refusal. Local runtime Node24.19.0; exact candidate CI/runtime compatibility remains pending.
+
+Read full screens/form/helper: every location/date/time/UTC-offset control updates draft; submit reconstructs validated payload at current clock; inFlight ref stops concurrent submit; callbacks POST that exact payload to existing rides/search or rentals/search and pass the same search to Results. Default locations are blank, defaults advance with now, +08 is visibly labelled an editable default rather than inferred device/destination timezone. Invalid calendar/past pickup/equal or reversed absolute return times fail before onSearch. No backend or C04/C05/C11 files were touched by this five-file increment. R2-006 CLOSED for the source/static/pure-function scope; no native rendered-control interaction or physical device execution is asserted. Native typecheck/prebuild/contract and final fixed-source CI are still required gates.
