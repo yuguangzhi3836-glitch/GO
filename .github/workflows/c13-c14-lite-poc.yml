@@ -138,18 +138,20 @@ jobs:
             --expected-head-sha "${GITHUB_SHA}" \
             --workflow-path "$LITE_WORKFLOW_IDENTITY" \
             --run-id "${GITHUB_RUN_ID}" \
+            --bytes-mode degrade \
             --out "$RUNNER_TEMP/artifacts/readback.json" \
             2>&1 | tee "$RUNNER_TEMP/artifacts/logs/readback.log"
           rc=${PIPESTATUS[0]}
           reason=$(grep -o '"refused": *"[A-Za-z0-9_]*"' "$RUNNER_TEMP/artifacts/logs/readback.log" 2>/dev/null | head -1 | cut -d'"' -f4)
+          if [ "$rc" -eq 0 ]; then
+            # Record whether the artifact bytes themselves were re-hashed.
+            reason=$(python -c "import json,sys;d=json.load(open(sys.argv[1]));print('BYTES_VERIFIED' if d.get('bytes_verified') else 'BYTES_'+str(d.get('bytes_error') or 'NOT_VERIFIED')[:40])" "$RUNNER_TEMP/artifacts/readback.json" 2>/dev/null | tr -c 'A-Za-z0-9_.-' '_')
+            echo "RUN_ARTIFACT_READBACK=PASS"
+          fi
           {
             echo "READBACK_RC=${rc}"
             echo "READBACK_REASON=${reason:-UNKNOWN}"
           } >> "$GITHUB_ENV"
-          if [ "$rc" -eq 0 ]; then
-            echo "RUN_ARTIFACT_READBACK=PASS" >> "$GITHUB_ENV"
-            echo "RUN_ARTIFACT_READBACK=PASS"
-          fi
           exit "$rc"
 
       - name: Publish the readback record
@@ -161,13 +163,11 @@ jobs:
           if-no-files-found: warn
           retention-days: 5
 
-      # The only externally readable signal available to this token is a step
-      # conclusion: the Actions job logs and the artifact zip both redirect to a
-      # storage endpoint this token cannot authenticate against. So the quota
-      # verdict is expressed as this step's status:
-      #   success -> AI_API_QUOTA_OK=YES   failure -> quota/provider exhausted
-      # A red step here is NOT a broken workflow; read its name, not the job state.
-      - name: Report the AI quota status
+      # This step distinguishes the two questions that were previously conflated:
+      #   AI_CREDENTIAL_USABLE - did a real provider response come back at all?
+      #   AI_REVIEW_VERDICT    - what did that response say (informational)?
+      # It fails only when no usable provider response was obtained.
+      - name: Report the AI credential status
         if: always()
         run: |
           set -euo pipefail
@@ -178,19 +178,21 @@ jobs:
               outcome = json.loads((root / "poc.outcome.json").read_text())
           except OSError:
               with envfile.open("a") as handle:
-                  handle.write("AI_API_QUOTA_OK=UNKNOWN\n")
+                  handle.write("AI_CREDENTIAL_USABLE=UNKNOWN\n")
                   handle.write("AI_FAILURE_CLASS=REVIEW_NOT_EXECUTED\n")
-              print("AI_API_QUOTA_OK=UNKNOWN")
+              print("AI_CREDENTIAL_USABLE=UNKNOWN")
               print("AI_FAILURE_CLASS=REVIEW_NOT_EXECUTED")
               raise SystemExit(1)
           failure = outcome.get("failure_class")
-          ok = failure is None and outcome.get("verdict") != "BLOCKED"
+          execution = outcome.get("ai_execution_id")
+          ok = failure is None and bool(execution)
           with envfile.open("a") as handle:
-              handle.write(f"AI_API_QUOTA_OK={'YES' if ok else 'NO'}\n")
+              handle.write(f"AI_CREDENTIAL_USABLE={'YES' if ok else 'NO'}\n")
               handle.write(f"AI_FAILURE_CLASS={failure or 'NONE'}\n")
-          print(f"AI_API_QUOTA_OK={'YES' if ok else 'NO'}")
+              handle.write(f"AI_REVIEW_VERDICT={outcome.get('verdict') or 'NONE'}\n")
+          print(f"AI_CREDENTIAL_USABLE={'YES' if ok else 'NO'}")
           print(f"AI_FAILURE_CLASS={failure or 'NONE'}")
-          print(f"AI_VERDICT={outcome.get('verdict')}")
+          print(f"AI_REVIEW_VERDICT={outcome.get('verdict')}")
           print(f"AI_PROVIDER={outcome.get('ai_provider')}")
           raise SystemExit(0 if ok else 1)
           PY
@@ -204,8 +206,9 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/verdict"
           {
-            echo "AI_API_QUOTA_OK=${AI_API_QUOTA_OK:-UNKNOWN}"
+            echo "AI_CREDENTIAL_USABLE=${AI_CREDENTIAL_USABLE:-UNKNOWN}"
             echo "AI_FAILURE_CLASS=${AI_FAILURE_CLASS:-UNKNOWN}"
+            echo "AI_REVIEW_VERDICT=${AI_REVIEW_VERDICT:-UNKNOWN}"
             echo "READBACK_RC=${READBACK_RC:-UNKNOWN}"
             echo "READBACK_REASON=${READBACK_REASON:-UNKNOWN}"
             echo "POC_ONLY_NO_C13_C14_OPINION=true"
@@ -215,7 +218,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: c13c14-lite-poc-verdict-quota_${{ env.AI_API_QUOTA_OK || 'UNKNOWN' }}-class_${{ env.AI_FAILURE_CLASS || 'UNKNOWN' }}-readback_${{ env.READBACK_REASON || 'UNKNOWN' }}
+          name: c13c14-lite-poc-verdict-credential_${{ env.AI_CREDENTIAL_USABLE || 'UNKNOWN' }}-class_${{ env.AI_FAILURE_CLASS || 'UNKNOWN' }}-verdict_${{ env.AI_REVIEW_VERDICT || 'UNKNOWN' }}-readback_${{ env.READBACK_REASON || 'UNKNOWN' }}
           path: ${{ runner.temp }}/verdict
           if-no-files-found: warn
           retention-days: 5

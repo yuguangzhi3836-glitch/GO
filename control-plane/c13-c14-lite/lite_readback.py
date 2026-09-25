@@ -158,7 +158,15 @@ def main(argv=None) -> int:
         )
     except lite_github_run.Reject as error:
         print(json.dumps({"refused": error.reason, "detail": error.detail}))
-        return 1
+        return 2
+    except urllib.error.HTTPError as error:
+        # A transport refusal is reported with a stable code so the caller can put
+        # it in an artifact name instead of needing the job log.
+        print(json.dumps({"refused": f"readback_http_{error.code}", "detail": str(error)[:200]}))
+        return 2
+    except (urllib.error.URLError, OSError) as error:
+        print(json.dumps({"refused": "readback_transport_error", "detail": str(error)[:200]}))
+        return 2
     path = pathlib.Path(args.out)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(record, ensure_ascii=False, sort_keys=True, indent=2) + "\n", encoding="utf-8")
