@@ -56,7 +56,8 @@ def _find_artifact(repository: str, run_id: int, name: str, token: str) -> dict:
 
 
 def readback(*, repository: str, role: str, candidate_sha: str, workflow_path: str,
-             run_id: int, token: str, mode: str = "in-run", expected_head_sha=None) -> dict:
+             run_id: int, token: str, mode: str = "in-run", expected_head_sha=None,
+             bytes_mode: str = "strict") -> dict:
     """Read back the run and artifact identity of one execution.
 
     ``expected_head_sha`` is the commit the **workflow ref** was at when the run was
@@ -79,12 +80,25 @@ def readback(*, repository: str, role: str, candidate_sha: str, workflow_path: s
     digest = artifact.get("digest")
     lite_github_run.assert_artifact(artifact, run_id=run_id, name=name, digest=digest)
 
-    raw = _get(f"/repos/{repository}/actions/artifacts/{artifact['id']}/zip", token, raw=True)
-    lite_github_run.assert_downloaded_bytes(raw, digest=digest)
+    raw = None
+    bytes_verified = False
+    bytes_error = None
+    try:
+        raw = _get(f"/repos/{repository}/actions/artifacts/{artifact['id']}/zip", token, raw=True)
+        lite_github_run.assert_downloaded_bytes(raw, digest=digest)
+        bytes_verified = True
+    except (lite_github_run.Reject, urllib.error.HTTPError, urllib.error.URLError, OSError, ValueError) as error:
+        reason = getattr(error, "reason", None) or type(error).__name__
+        if bytes_mode == "strict":
+            raise
+        bytes_error = str(reason)[:200]
 
     return {
         "schema_version": "go.c13c14.lite.readback.v1",
         "mode": mode,
+        "bytes_mode": bytes_mode,
+        "bytes_verified": bytes_verified,
+        "bytes_error": bytes_error,
         "repository": repository,
         "role": role,
         "run_id": run_id,
@@ -101,8 +115,8 @@ def readback(*, repository: str, role: str, candidate_sha: str, workflow_path: s
             "digest": digest,
             "expired": bool(artifact.get("expired")),
         },
-        "recomputed_digest": lite_github_run.local_digest(raw),
-        "zip_bytes": len(raw),
+        "recomputed_digest": lite_github_run.local_digest(raw) if raw else None,
+        "zip_bytes": len(raw) if raw else None,
         "verified_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "authorizes_any_action": False,
     }
@@ -118,6 +132,10 @@ def main(argv=None) -> int:
     parser.add_argument("--workflow-path", required=True)
     parser.add_argument("--run-id", type=int, required=True)
     parser.add_argument("--mode", choices=("in-run", "terminal"), default="in-run")
+    parser.add_argument("--bytes-mode", choices=("strict", "degrade"), default="strict",
+                        help="strict: the downloaded zip must re-hash to the reported digest; "
+                             "degrade: a download that the token cannot authenticate is recorded "
+                             "as bytes_verified=false instead of failing")
     parser.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY", "yuguangzhi3836-glitch/GO"))
     parser.add_argument("--out", required=True)
     args = parser.parse_args(argv)
@@ -136,6 +154,7 @@ def main(argv=None) -> int:
             token=token,
             mode=args.mode,
             expected_head_sha=args.expected_head_sha,
+            bytes_mode=args.bytes_mode,
         )
     except lite_github_run.Reject as error:
         print(json.dumps({"refused": error.reason, "detail": error.detail}))

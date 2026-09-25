@@ -131,15 +131,26 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           python control-plane/c13-c14-lite/lite_readback.py \
             --role c14 \
             --candidate-sha "$LITE_CANDIDATE_SHA" \
             --expected-head-sha "${GITHUB_SHA}" \
             --workflow-path "$LITE_WORKFLOW_IDENTITY" \
             --run-id "${GITHUB_RUN_ID}" \
-            --out "$RUNNER_TEMP/artifacts/readback.json"
-          echo "RUN_ARTIFACT_READBACK=PASS" >> "$GITHUB_ENV"
+            --out "$RUNNER_TEMP/artifacts/readback.json" \
+            2>&1 | tee "$RUNNER_TEMP/artifacts/logs/readback.log"
+          rc=${PIPESTATUS[0]}
+          reason=$(grep -o '"refused": *"[A-Za-z0-9_]*"' "$RUNNER_TEMP/artifacts/logs/readback.log" 2>/dev/null | head -1 | cut -d'"' -f4)
+          {
+            echo "READBACK_RC=${rc}"
+            echo "READBACK_REASON=${reason:-UNKNOWN}"
+          } >> "$GITHUB_ENV"
+          if [ "$rc" -eq 0 ]; then
+            echo "RUN_ARTIFACT_READBACK=PASS" >> "$GITHUB_ENV"
+            echo "RUN_ARTIFACT_READBACK=PASS"
+          fi
+          exit "$rc"
 
       - name: Publish the readback record
         if: always()
@@ -160,17 +171,23 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          python - "$RUNNER_TEMP" <<'PY'
+          python - "$RUNNER_TEMP" "$GITHUB_ENV" <<'PY'
           import json, pathlib, sys
-          root = pathlib.Path(sys.argv[1])
+          root, envfile = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
           try:
               outcome = json.loads((root / "poc.outcome.json").read_text())
           except OSError:
+              with envfile.open("a") as handle:
+                  handle.write("AI_API_QUOTA_OK=UNKNOWN\n")
+                  handle.write("AI_FAILURE_CLASS=REVIEW_NOT_EXECUTED\n")
               print("AI_API_QUOTA_OK=UNKNOWN")
               print("AI_FAILURE_CLASS=REVIEW_NOT_EXECUTED")
               raise SystemExit(1)
           failure = outcome.get("failure_class")
           ok = failure is None and outcome.get("verdict") != "BLOCKED"
+          with envfile.open("a") as handle:
+              handle.write(f"AI_API_QUOTA_OK={'YES' if ok else 'NO'}\n")
+              handle.write(f"AI_FAILURE_CLASS={failure or 'NONE'}\n")
           print(f"AI_API_QUOTA_OK={'YES' if ok else 'NO'}")
           print(f"AI_FAILURE_CLASS={failure or 'NONE'}")
           print(f"AI_VERDICT={outcome.get('verdict')}")
@@ -178,9 +195,33 @@ jobs:
           raise SystemExit(0 if ok else 1)
           PY
 
+      # The artifact NAME is the only machine-readable channel available to this
+      # token (job logs and artifact zips both redirect to a storage endpoint it
+      # cannot authenticate against), so the verdict is encoded in the name.
+      - name: Publish the verdict as an artifact name
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/verdict"
+          {
+            echo "AI_API_QUOTA_OK=${AI_API_QUOTA_OK:-UNKNOWN}"
+            echo "AI_FAILURE_CLASS=${AI_FAILURE_CLASS:-UNKNOWN}"
+            echo "READBACK_RC=${READBACK_RC:-UNKNOWN}"
+            echo "READBACK_REASON=${READBACK_REASON:-UNKNOWN}"
+            echo "POC_ONLY_NO_C13_C14_OPINION=true"
+          } > "$RUNNER_TEMP/verdict/verdict.txt"
+          cat "$RUNNER_TEMP/verdict/verdict.txt"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c13c14-lite-poc-verdict-quota_${{ env.AI_API_QUOTA_OK || 'UNKNOWN' }}-class_${{ env.AI_FAILURE_CLASS || 'UNKNOWN' }}-readback_${{ env.READBACK_REASON || 'UNKNOWN' }}
+          path: ${{ runner.temp }}/verdict
+          if-no-files-found: warn
+          retention-days: 5
+
       - name: POC summary
         if: always()
         run: |
           echo "POC_ONLY_NO_C13_C14_OPINION=true"
-          echo "AI_API_QUOTA_OK=<read the 'Report the AI quota status' step conclusion: success=YES>"
-          echo "RUN_ARTIFACT_READBACK=<read the 'Read back run and artifact identity' step conclusion>"
+          echo "VERDICT_IS_IN_THE_ARTIFACT_NAME=c13c14-lite-poc-verdict-*"
