@@ -242,7 +242,32 @@ readback recomputed_digest == artifact digest: true
 `FINAL_ROOT` verification is the public, recomputable check (integrity). It is **not** a signature:
 nothing here proves authenticity, and this record does not claim a witness signature for this run.
 
-## 7. Writes performed this round
+## 7. Rollback chain — measured, not asserted
+
+The runbook now records an ordered three-revert chain instead of "one git revert". Both of the
+claims it makes were measured:
+
+```text
+what each merge-revert would undo (the -m 1 target), from the local object store:
+  64715d30 (#254)   M .github/workflows/c13-quality-acceptance.yml
+                    M .github/workflows/c14-rule-compliance.yml
+  3cd7be75 (#253)   M .github/workflows/c13-quality-acceptance.yml
+                    M .github/workflows/c14-rule-compliance.yml
+  7db7b2aa5 (#252)  A .github/workflows/c13-quality-acceptance.yml
+                    A .github/workflows/c14-rule-compliance.yml
+the three merges touch only those two files, so the chain cannot spill elsewhere;
+the last step deletes them, returning main to 26 workflows
+
+-m 1 is required (synthetic fork fixture, real git, not a claim):
+  git revert --no-edit <merge>        error: commit ... is a merge but no -m option was given.
+                                      fatal: revert failed
+  git revert -m 1 --no-edit <merge>   rc=0, first parent's content restored
+```
+
+No rollback was executed. Nothing was deleted or rewritten; each step of the chain is an **added**
+commit.
+
+## 8. Writes performed this round
 
 ```text
 1  Issue comment on #68     5834704650   (third activation: C14/C13 task identity -03)
@@ -258,7 +283,7 @@ no CC access, no credential or key touched, no change to `main`, no comment on a
 edit to the #68 body or to any historical comment, no deletion of any historical issue, workflow
 run or artifact.
 
-## 8. Open decisions (human)
+## 9. Open decisions (human)
 
 ```text
 A  C14 has now returned BLOCKED twice on the same substantive ground: it is given rule NAMES and

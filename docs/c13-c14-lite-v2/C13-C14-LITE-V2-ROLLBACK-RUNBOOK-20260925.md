@@ -257,13 +257,25 @@ git push origin main          # 走正常 PR 流程亦可
 ⚠ 每一步动手前先 `git -c core.autocrlf=false apply --check --reverse` 验证对应 patch。
 ⚠ 若某一环已被提前撤销过（例如 #254 尚未合并时），**跳过那一环**，不要重复 revert。
 
-已实测（reverse-apply 检查）：
+已实测（2026-09-25 23:1x +0800）：
 
 ```text
-#254 head 2958b4943 的 patch   → 完整反向应用 OK（整份可撤）
-#253 head 55e437edc 的 patch   → 完整反向应用 OK
-#252 head 85533dd57 的 patch   → 完整移除两个文件、528 行全删、不留残件
+revert 链的每一步要撤销的变更面（--diff-merges=first-parent，即 -m 1 的目标）:
+  64715d30 (#254)   M .github/workflows/c13-quality-acceptance.yml
+                    M .github/workflows/c14-rule-compliance.yml
+  3cd7be75 (#253)   M .github/workflows/c13-quality-acceptance.yml
+                    M .github/workflows/c14-rule-compliance.yml
+  7db7b2aa5 (#252)  A .github/workflows/c13-quality-acceptance.yml
+                    A .github/workflows/c14-rule-compliance.yml
+三个 merge 合计只碰这 2 个文件 ⇒ 链是干净的，不会波及别处；最后一步是删除 ⇒ 回到 26 个 workflow
+
+`-m 1` 的必要性（合成分叉夹具实测，不是断言）:
+  git revert --no-edit <merge>   -> error: commit ... is a merge but no -m option was given. fatal: revert failed
+  git revert -m 1 --no-edit <merge> -> rc=0，且第一父的内容被恢复
 ```
+
+#254 head 2958b4943 / #253 head 55e437edc / #252 head 85533dd57 三份 patch 的 reverse-apply 检查均 OK
+（`85533dd57` 的 patch 完整移除两个文件、528 行全删、不留残件）。
 
 **验收**：`git ls-tree origin/main .github/workflows/ --name-only | grep -c 'c1[34]'` = **0**；
 main 上 workflow 总数回到 **26**。
