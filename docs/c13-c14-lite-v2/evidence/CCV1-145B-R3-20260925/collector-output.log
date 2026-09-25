@@ -1,0 +1,189 @@
+[0] status=in_progress conclusion=None
+[1] status=in_progress conclusion=None
+[2] status=in_progress conclusion=None
+[3] status=completed conclusion=success
+
+=== RUN (terminal) ===
+id           = 36152394748
+name         = C14 rule and compliance review (Lite V2)
+path         = .github/workflows/c14-rule-compliance.yml
+event        = workflow_dispatch
+status       = completed
+conclusion   = success
+run_attempt  = 1
+head_sha     = 64715d308954049eb6675d81196d7f4cd853199b
+head_branch  = main
+created_at   = 2026-09-25T15:10:29Z
+updated_at   = 2026-09-25T15:11:37Z
+html_url     = https://github.com/yuguangzhi3836-glitch/GO/actions/runs/36152394748
+
+=== JOBS ===
+job 108128627898 name='C14 fresh rule review (read-only, no quality sandbox)' conclusion=success
+    -  1 Set up job                                                                 success
+    -  2 Check out the execution backend (pinned commit, never a branch head)       success
+    -  3 Check out the frozen candidate into candidate/ (never executed)            success
+    -  4 Run actions/setup-python@v5                                                success
+    -  5 Bind the exact frozen candidate identity                                   success
+    -  6 Bind the workflow definition that is actually executing                    success
+    -  7 Freeze the rule-review scope digest                                        success
+    -  8 Build the frozen candidate contract                                        success
+    -  9 Run one fresh AI rule review (read-only reviewer)                          success
+    - 10 Seal the C14 bundle                                                        success
+    - 11 Preserve the raw review evidence whatever the seal decided                 success
+    - 12 Publish the raw review evidence                                            success
+    - 13 Publish the sealed C14 bundle                                              success
+    - 14 Read back run and artifact identity through the GitHub API                 success
+    - 15 Publish the run/artifact readback record                                   success
+    - 28 Post Run actions/setup-python@v5                                           success
+    - 29 Post Check out the frozen candidate into candidate/ (never executed)       success
+    - 30 Post Check out the execution backend (pinned commit, never a branch head   success
+    - 31 Complete job                                                               success
+
+=== ARTIFACTS ===
+id=10871833984 name='c13c14-lite-c14-64715d308954049eb6675d81196d7f4cd853199b' digest=sha256:9d1273453697b64ae55393817650ca1631d46d31b8a310360518a1b0ee74b695 size=2973
+    downloaded HTTP=200 bytes=2973 sha256=sha256:9d1273453697b64ae55393817650ca1631d46d31b8a310360518a1b0ee74b695
+    BYTES_MATCH_GITHUB_DIGEST = True
+id=10871828874 name='c13c14-lite-c14-raw-64715d308954049eb6675d81196d7f4cd853199b' digest=sha256:4bbc0619e623b129254b9b3c9e8de41c9fbfdb2dd9a406e31bc7a777a1e359e2 size=4737
+    downloaded HTTP=200 bytes=4737 sha256=sha256:4bbc0619e623b129254b9b3c9e8de41c9fbfdb2dd9a406e31bc7a777a1e359e2
+    BYTES_MATCH_GITHUB_DIGEST = True
+id=10871399271 name='c13c14-lite-c14-readback-64715d308954049eb6675d81196d7f4cd853199b' digest=sha256:01da04905ae659dd54691064f4f464c28876bb830263e961d511f39eb65d35ba size=679
+    downloaded HTTP=200 bytes=679 sha256=sha256:01da04905ae659dd54691064f4f464c28876bb830263e961d511f39eb65d35ba
+    BYTES_MATCH_GITHUB_DIGEST = True
+
+=== C14 RECORD ===
+--- 10871399271-readback.json
+{
+  "bytes_mode": "strict",
+  "bytes_verified": true,
+  "candidate_sha": "64715d308954049eb6675d81196d7f4cd853199b",
+  "recomputed_digest": "sha256:9d1273453697b64ae55393817650ca1631d46d31b8a310360518a1b0ee74b695"
+}
+--- 10871828874-contract.json
+{
+  "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "candidate_commit_sha": "64715d308954049eb6675d81196d7f4cd853199b",
+  "cell_id": "C14",
+  "issue_number": 68,
+  "ledger_reference": {
+    "cell_id": "C14",
+    "round_id": "V70-R3",
+    "task_id": "V70-R3-C14-03"
+  },
+  "request_id": "V70-R3-C13C14-03",
+  "task_id": "V70-R3-C14-03",
+  "workflow_sha": "cc43492e19b96b6128e030be8d62af91f7871703"
+}
+--- 10871828874-facts.json
+{
+  "applicable_rule_versions": {
+    "AI_BEHAVIOUR_RULES": "unversioned",
+    "GO_CONSTITUTION": "unversioned",
+    "PERMISSION_BOUNDARY": "unversioned"
+  },
+  "applicable_rules": [
+    "AI_BEHAVIOUR_RULES",
+    "GO_CONSTITUTION",
+    "PERMISSION_BOUNDARY"
+  ],
+  "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "candidate_sha": "64715d308954049eb6675d81196d7f4cd853199b",
+  "cell_id": "C14",
+  "issue_number": 68,
+  "ledger_reference": {
+    "cell_id": "C14",
+    "round_id": "V70-R3",
+    "task_id": "V70-R3-C14-03"
+  },
+  "rule_review_scope_sha256": "1356d60fa9451d85f0d57456d957795c6ca73b1589da38efe8d6be4f4a4f9443",
+  "task_id": "V70-R3-C14-03"
+}
+--- 10871828874-outcome.json
+{
+  "failure_class": null,
+  "verdict": "BLOCKED"
+}
+--- 10871828874-spec.json
+{
+  "applicable_rule_versions": {
+    "AI_BEHAVIOUR_RULES": "unversioned",
+    "GO_CONSTITUTION": "unversioned",
+    "PERMISSION_BOUNDARY": "unversioned"
+  },
+  "applicable_rules": [
+    "AI_BEHAVIOUR_RULES",
+    "GO_CONSTITUTION",
+    "PERMISSION_BOUNDARY"
+  ],
+  "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "candidate_sha": "64715d308954049eb6675d81196d7f4cd853199b",
+  "cell_id": "C14",
+  "issue_number": 68,
+  "principal_id": "chenzhenxi1-sudo",
+  "request_id": "V70-R3-C13C14-03",
+  "workflow_sha": "cc43492e19b96b6128e030be8d62af91f7871703"
+}
+--- 10871833984-c14_bundle.json
+{
+  "C14_ROOT": "d2b839cbba494708c18b5937197781bd8da2beba73a080645b16c468aadd7b6c",
+  "applicable_rule_versions": {
+    "AI_BEHAVIOUR_RULES": "unversioned",
+    "GO_CONSTITUTION": "unversioned",
+    "PERMISSION_BOUNDARY": "unversioned"
+  },
+  "applicable_rules": [
+    "AI_BEHAVIOUR_RULES",
+    "GO_CONSTITUTION",
+    "PERMISSION_BOUNDARY"
+  ],
+  "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "blocking_issues": [
+    "Compliance cannot be determined from rule names and a scope hash alone; the applicable rule texts or an authoritative review artifact resolving rule requirements against this candidate are required."
+  ],
+  "candidate_sha": "64715d308954049eb6675d81196d7f4cd853199b",
+  "cell_id": "C14",
+  "failure_class": null,
+  "github_run_id": 36152394748,
+  "issue_number": 68,
+  "ledger_reference": {
+    "cell_id": "C14",
+    "round_id": "V70-R3",
+    "task_id": "V70-R3-C14-03"
+  },
+  "principal_id": "chenzhenxi1-sudo",
+  "remediation_status": "OPEN",
+  "review_execution_id": "resp_026e82e2ff0f1c6d006ab68f12660487d0a21183ff31a07024",
+  "rule_review_scope_sha256": "1356d60fa9451d85f0d57456d957795c6ca73b1589da38efe8d6be4f4a4f9443",
+  "task_id": "V70-R3-C14-03",
+  "verdict": "BLOCKED",
+  "workflow_ref": "yuguangzhi3836-glitch/GO/cc43492e19b96b6128e030be8d62af91f7871703",
+  "workflow_sha": "cc43492e19b96b6128e030be8d62af91f7871703"
+}
+findings: [
+  {
+    "id": "C14-001",
+    "severity": "BLOCKER",
+    "statement": "The frozen candidate declares GO_CONSTITUTION, PERMISSION_BOUNDARY, and AI_BEHAVIOUR_RULES applicable, but supplies neither their normative contents nor evidence sufficient to assess compliance. The rule versions are identified only as \"unversioned\"."
+  }
+]
+--- 10871833984-c14_contract.json
+{
+  "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "candidate_commit_sha": "64715d308954049eb6675d81196d7f4cd853199b",
+  "cell_id": "C14",
+  "issue_number": 68,
+  "ledger_reference": {
+    "cell_id": "C14",
+    "round_id": "V70-R3",
+    "task_id": "V70-R3-C14-03"
+  },
+  "request_id": "V70-R3-C13C14-03",
+  "task_id": "V70-R3-C14-03",
+  "workflow_sha": "cc43492e19b96b6128e030be8d62af91f7871703"
+}
+--- 10871833984-c14_opinion.json
+{
+  "failure_class": null,
+  "verdict": "BLOCKED"
+}
+
+wrote D:\Code\Workbuddy\.workbuddy\tmp\ccv145b-r3-c14-run

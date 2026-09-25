@@ -1,0 +1,145 @@
+==============================================================================
+RUN
+==============================================================================
+  id           = 36152394748
+  status       = completed
+  conclusion   = success
+  head_sha     = 64715d308954049eb6675d81196d7f4cd853199b
+  path         = .github/workflows/c14-rule-compliance.yml
+  event        = workflow_dispatch
+  run_attempt  = 1
+  created_at   = 2026-09-25T15:10:29Z
+  updated_at   = 2026-09-25T15:11:37Z
+  head_sha == candidate = True
+  job 108128627898 'C14 fresh rule review (read-only, no quality sandbox)' conclusion=success
+       1 Set up job                                                           success
+       2 Check out the execution backend (pinned commit, never a branch hea   success
+       3 Check out the frozen candidate into candidate/ (never executed)      success
+       4 Run actions/setup-python@v5                                          success
+       5 Bind the exact frozen candidate identity                             success
+       6 Bind the workflow definition that is actually executing              success
+       7 Freeze the rule-review scope digest                                  success
+       8 Build the frozen candidate contract                                  success
+       9 Run one fresh AI rule review (read-only reviewer)                    success
+      10 Seal the C14 bundle                                                  success
+      11 Preserve the raw review evidence whatever the seal decided           success
+      12 Publish the raw review evidence                                      success
+      13 Publish the sealed C14 bundle                                        success
+      14 Read back run and artifact identity through the GitHub API           success
+      15 Publish the run/artifact readback record                             success
+      28 Post Run actions/setup-python@v5                                     success
+      29 Post Check out the frozen candidate into candidate/ (never execute   success
+      30 Post Check out the execution backend (pinned commit, never a branc   success
+      31 Complete job                                                         success
+
+==============================================================================
+ARTIFACTS PRESENT
+==============================================================================
+  c13c14-lite-c14-64715d308954049eb6675d81196d7f4cd853199b  digest=sha256:9d1273453697b64ae55393817650ca1631d46d31b8a310360518a1b0ee74b695  bytes=2973
+  c13c14-lite-c14-raw-64715d308954049eb6675d81196d7f4cd853199b  digest=sha256:4bbc0619e623b129254b9b3c9e8de41c9fbfdb2dd9a406e31bc7a777a1e359e2  bytes=4737
+  c13c14-lite-c14-readback-64715d308954049eb6675d81196d7f4cd853199b  digest=sha256:01da04905ae659dd54691064f4f464c28876bb830263e961d511f39eb65d35ba  bytes=679
+  sealed bundle present = True
+  RAW evidence present  = True
+  raw manifest present  = True
+    seal_status = {"exit_code": 0, "status": "SEALED", "step": "seal"}
+    files       = ['contract', 'facts', 'outcome', 'scope', 'seal_result', 'seal_stderr', 'seal_stdout', 'spec']
+    missing     = []
+    published sealed bundle by this step = False
+
+==============================================================================
+VERDICT (accepted as given, whatever it is)
+==============================================================================
+  source = sealed bundle
+  verdict                = "BLOCKED"
+  failure_class          = null
+  blocking_issues        = ["Compliance cannot be determined from rule names and a scope hash alone; the applicable rule texts or an authoritative review artifact resolving rule requirements against this candidate are required."]
+  remediation_status     = "OPEN"
+  authorizes_any_action  = false
+  C14_ROOT               = "d2b839cbba494708c18b5937197781bd8da2beba73a080645b16c468aadd7b6c"
+  review_execution_id    = "resp_026e82e2ff0f1c6d006ab68f12660487d0a21183ff31a07024"
+  ai_provider            = "OPENAI_RESPONSES_API"
+  finding C14-001 [BLOCKER] The frozen candidate declares GO_CONSTITUTION, PERMISSION_BOUNDARY, and AI_BEHAVIOUR_RULES applicable, but supplies neither their normative contents nor evidence sufficient to assess compliance. The rule versions are identified only as "unversioned".
+
+==============================================================================
+D-1 · changed-path boundary
+==============================================================================
+  first-parent changed paths (git) = ['.github/workflows/c13-quality-acceptance.yml', '.github/workflows/c14-rule-compliance.yml']
+  rules in the record              = ['AI_BEHAVIOUR_RULES', 'GO_CONSTITUTION', 'PERMISSION_BOUNDARY']
+  declared scope sha256     = 1356d60fa9451d85f0d57456d957795c6ca73b1589da38efe8d6be4f4a4f9443
+  digest over REAL paths    = 1356d60fa9451d85f0d57456d957795c6ca73b1589da38efe8d6be4f4a4f9443   MATCH=True
+  digest over EMPTY list    = 843bed6169d0c834c0d08daf3952ea122af545c4f46b68461da252dfd80aadd8   MATCH=False
+  D1_CORRECT = True
+
+==============================================================================
+D-2 · workflow identity binding
+==============================================================================
+  record workflow_sha               = cc43492e19b96b6128e030be8d62af91f7871703
+  registered C14 blob on main       = cc43492e19b96b6128e030be8d62af91f7871703
+  pinned-backend copy (old answer)  = 0ffea233d6fe5da4fdc171ade1906b0212eef140
+  equals the EXECUTED definition    = True
+  equals the OLD wrong answer       = False
+  D2_CORRECT = True
+
+==============================================================================
+D-3 · the sealed record's rule set
+==============================================================================
+  bundle.applicable_rules         = ['AI_BEHAVIOUR_RULES', 'GO_CONSTITUTION', 'PERMISSION_BOUNDARY']
+  bundle.applicable_rule_versions = {'AI_BEHAVIOUR_RULES': 'unversioned', 'GO_CONSTITUTION': 'unversioned', 'PERMISSION_BOUNDARY': 'unversioned'}
+  expected (all three)            = ['AI_BEHAVIOUR_RULES', 'GO_CONSTITUTION', 'PERMISSION_BOUNDARY']
+  declares all three rules        = True
+  versions cover the same three   = True
+  D3_OBSERVABLE_AND_CONSISTENT = True
+
+==============================================================================
+D-4 · can a model-authored non-pass be sealed legally?
+==============================================================================
+  verdict = BLOCKED
+  sealed bundle exists    = True
+  failure_class           = null
+  blocking_issues         = ["Compliance cannot be determined from rule names and a scope hash alone; the applicable rule texts or an authoritative review artifact resolving rule requirements against this candidate are required."]
+  provider-failure shape  = False
+  model-authored shape    = True  (failure_class null + reasons present)
+  D4_MODEL_BLOCKED_SEALED = True
+
+==============================================================================
+RAW EVIDENCE (must exist regardless of the seal)
+==============================================================================
+  raw artifact in the run    = True
+  upstream files captured    = ['contract', 'facts', 'outcome', 'scope', 'seal_result', 'seal_stderr', 'seal_stdout', 'spec']
+  named-but-absent           = []
+    contract     contract.json                 883 B  digest_ok=True
+    facts        facts.json                    738 B  digest_ok=True
+    outcome      outcome.json                 1481 B  digest_ok=True
+    scope        scope.json                    454 B  digest_ok=True
+    seal_result  seal_result.json               48 B  digest_ok=True
+    seal_stderr  seal_stderr.txt                 0 B  digest_ok=True
+    seal_stdout  seal_stdout.txt               166 B  digest_ok=True
+    spec         spec.json                    1306 B  digest_ok=True
+  ⇒ RAW_EVIDENCE_SURVIVES_REFUSAL = True
+
+==============================================================================
+IDENTITY (ledger-minted, carried verbatim)
+==============================================================================
+  cell_id            = "C14"                                          ok=True
+  candidate_sha      = "64715d308954049eb6675d81196d7f4cd853199b"     ok=True
+  application_tree   = "dd815baf0105cce603e9a28b002cfb9d8b95d186"     ok=True
+  issue_number       = 68                                             ok=True
+  github_run_id      = 36152394748                                    ok=True
+  task_id            = V70-R3-C14-03   (expect V70-R3-C14-03)
+  ledger_reference   = {"cell_id": "C14", "round_id": "V70-R3", "task_id": "V70-R3-C14-03"}
+  contract request   = V70-R3-C13C14-03
+  readback present     = True
+  readback bytes_verified = True / strict
+  readback head matches   = True
+
+==============================================================================
+INTEGRITY (recomputed here)
+==============================================================================
+  C14_ROOT claimed    = d2b839cbba494708c18b5937197781bd8da2beba73a080645b16c468aadd7b6c
+  C14_ROOT recomputed = d2b839cbba494708c18b5937197781bd8da2beba73a080645b16c468aadd7b6c   MATCH=True
+
+==============================================================================
+GATE
+==============================================================================
+  C14 verdict            = BLOCKED
+  C13_ALLOWED = False

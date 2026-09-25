@@ -5,44 +5,55 @@
 >
 > 本 Runbook 只被**生成和验证**，本轮**没有执行**任何 rollback。
 
-- Date: 2026-09-25
+- Date: 2026-09-25（最近更新 2026-09-25 23:1x +0800，事实收口：PR #254 已合并）
 - 适用对象: C13/C14 Lite V2（C14 规则审查 + C13 质量验收 + 双见证 + 聚合）
 - Rollback baseline（main，注册前）: `aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0`
-- 注册 PR: **#252**，单 commit `85533dd5790b8cfbbf48e3ae387cb47aab82a8d3`（+528 / -0，仅 2 文件）
-- 🆕 **注册合并（真人合并，2026-09-25 21:22:26 +0800 / 13:22:27Z）**:
-  `REGISTRATION_MERGE_SHA = 7db7b2aa52ecabc1ff1c92d9d1673f44f5ce68c5`
-  （merge commit：`parent1 = aa2ec62b…`（旧 main）、`parent2 = 85533dd57…`（#252 head）；
-  root tree `85ab281cfc10375081fe36c96482cf108c56280b`；GitHub 已 gpgsig 签名；
-  `merged_by = chenzhenxi1-sudo`）
-  ⇒ **注册后 main = `7db7b2aa5…`**，撤销时"回到注册前"要回到的是 `aa2ec62b…`。
-- Backend 固定引用: `48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4`（写死在两条 workflow 内；
-  **取代** `37b31e0a5a8910400e138292d01badc67270b167`（含 D-2/D-3 修复），
-  再往前是 `a67ea8ac0cbf7990ce7fa1570eef7a0de29bab40`。当前这个含 **D-4 修复**
-  （BLOCKED 语义 + `raw-evidence`）。**两条 workflow 用同一个 pin**，避免一轮里跑两个后端版本。
+- 🔵 **当前 `main` = `64715d308954049eb6675d81196d7f4cd853199b`**（= PR #254 的 merge commit，见下）
+
+**main 演进链（全部为 merge commit 实测）**：
+
+```text
+aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0   注册前 baseline
+      ↓  合并 #252（注册两条 production workflow）
+7db7b2aa52ecabc1ff1c92d9d1673f44f5ce68c5   REGISTRATION_MERGE_SHA     （2026-09-25 21:22:26 +0800）
+      ↓  合并 #253（修 D-1 changed-path 边界 · D-2 workflow identity）
+3cd7be752330f377e3446942da4f881df13d183d   REGISTRATION_MERGE_SHA_2   （2026-09-25 22:34:18 +0800）
+      ↓  合并 #254（修 D-4 BLOCKED 语义 + always-publish raw evidence）
+64715d308954049eb6675d81196d7f4cd853199b   PR254_MERGE_SHA = 当前 main（2026-09-25 23:07:13 +0800）
+```
+
+- **注册 PR = #252**（已 MERGED）：单 commit `85533dd5790b8cfbbf48e3ae387cb47aab82a8d3`（+528 / -0，仅 2 文件）。
+- **替换注册 = PR #253**（**已 MERGED**，base=`main`@`7db7b2aa5`，**2 文件 / +81-7**，head
+  `55e437edcf673856bd875b37dab28be86cd22386`）：修 D-1 与 D-2。
+- ✅ **D-4 修复 = PR #254**（**已 MERGED**，base=`main`@`3cd7be75`，**2 文件 / +50-7**，head
+  `2958b494317d6c959c9e988f86bfe895feb4767f`）：
+  **`PR254_MERGE_SHA = 64715d308954049eb6675d81196d7f4cd853199b`**
+  （merge commit；`parent1 = 3cd7be75…`、`parent2 = 2958b4943…`；2026-09-25 23:07:13 +0800）
+  修 BLOCKED 语义（非通过结论必须带证据、不得伪装成 provider failure）＋ C14 增加
+  **always-publish raw review evidence**。**当前 main 上两条 workflow 即为该版本。**
+- **Backend 固定引用（当前 pin）: `48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4`**
+  （写死在**两条** workflow 内，两条用**同一个 pin**，避免一轮里跑两个后端版本）。
+  上一个 pin 是 `37b31e0a5…`（含 D-2/D-3 修复）；当前这个在其之上追加 **D-4 修复**
+  （BLOCKED 语义 + `raw-evidence`）。
   ⚠⚠ **软依赖**：该 commit 活在**未合并**的分支 `cc/c13-c14-lite-v2-defect-fixes-20260925` 上，
   远端可达性实测 `GET /commits/…` = **HTTP 200**。⇒ **不得删除该分支**，否则下一次 dispatch 的
   第一段 checkout 就会失败，而**从 `main` 上看不出任何异常**。这是"钉死 ref"必然带来的代价。
-- ✅ **替换注册 = PR #253**（**已 MERGED**，base=`main`@`7db7b2aa5`，**2 文件 / +81-7**，单 commit
-  `55e437edcf673856bd875b37dab28be86cd22386`）：
-  修 D-1（changed-path 边界）与 D-2（workflow identity）。
-  **`REGISTRATION_MERGE_SHA_2 = 3cd7be752330f377e3446942da4f881df13d183d`**
-  （merge commit；`parent1 = 7db7b2aa5…`、`parent2 = 55e437edc…`；2026-09-25 22:34:18 +0800）
-  ⇒ **当前 `main` = `3cd7be75…`**。⚠ 推 #253 时发现 `github.com:443` 直连不通（`api.github.com` 正常），
-  当时显式走本机 Clash `127.0.0.1:7897`；**未改任何 Clash 配置 / 规则 / DNS / TUN**。
-  （后续已按 Eason 指示把 github 走代理设为持久规则，见 `~/.workbuddy/MEMORY.md`。）
-- 🆕 **D-4 修复 = PR #254**（Draft，base=`main`@`3cd7be75`，**2 文件 / +50-7**，单 commit
-  `2958b494317d6c959c9e988f86bfe895feb4767f`）：修 BLOCKED 语义（非通过结论必须带证据、
-  不得伪装成 provider failure）＋ C14 增加 **always-publish raw review evidence**。
-  合并后 `main` 上两条 workflow 即为该版本。
+- ⚠ 推 #253 时曾观察到 `github.com:443` 直连不通（`api.github.com` 正常）。现已按 Eason 指示把
+  github 走本机代理设为**持久规则**（`git config --global http.https://github.com/.proxy`，
+  只作用 git↔github.com；**未改任何 Clash 配置 / 规则 / DNS / TUN**），见 `~/.workbuddy/MEMORY.md`。
 
 ---
 
 ## 0. 一句话结论
 
-C13/C14 Lite V2 是**可插拔验收层**：撤销 = **一次 Git revert + 每台删 3 个文件 + 撤销 1 个
-GitHub 凭据 + 在 Ledger 上追加一条 RETIRED 记录**。全程**不需要**删除任何历史 Issue、Actions
-run、artifact 或 Evidence，**不需要**改写 `main` 历史，**不需要**动 C01–C12 / CC / HK 的
-原有运行链。
+C13/C14 Lite V2 是**可插拔验收层**：撤销 = **按逆序执行标准 Git revert 链**（三个 merge 各 revert
+一次，**从最新往最旧**；merge commit 必须用 `git revert -m 1 --no-edit <MERGE_SHA>`）
++ 每台删 3 个文件 + 撤销 1 个 GitHub 凭据 + 在 Ledger 上追加一条 RETIRED 记录。
+全程**不需要**删除任何历史 Issue、Actions run、artifact 或 Evidence，**不需要**改写 `main`
+历史（revert 是**新增**提交，不是改写），**不需要**动 C01–C12 / CC / HK 的原有运行链。
+
+⛔ **不是"一次 revert"**：三条注册/修复各自以 merge commit 落 main，三个都要按逆序撤销。
+详见 §2.B。
 
 ---
 
@@ -55,21 +66,29 @@ run、artifact 或 Evidence，**不需要**改写 `main` 历史，**不需要**�
 ```text
 main（注册前 baseline）                = aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0
 main（注册 #1 合并后）                 = 7db7b2aa52ecabc1ff1c92d9d1673f44f5ce68c5
-main（注册 #2 合并后 = **当前**）       = 3cd7be752330f377e3446942da4f881df13d183d
-main 上 workflow 总数                  = 26（注册前）→ 28（注册后，实测 28）
-main 上 c13/c14 workflow              = 0（注册前）；注册后 = 2（PR #252）
-main 上 control-plane/c13-c14-lite   = 不存在（backend 从未合并进 main）
+main（注册 #2 合并后）                 = 3cd7be752330f377e3446942da4f881df13d183d
+main（D-4 合并后 = **当前**）          = 64715d308954049eb6675d81196d7f4cd853199b
+main 上 workflow 总数                  = 26（注册前）→ 28（注册后至今，实测 28）
+main 上 c13/c14 workflow              = 0（注册前）；注册后 = 2（#252 引入，#253 / #254 各修一次）
+main 上 control-plane/c13-c14-lite   = 不存在（backend 从未合并进 main，实测仍为空）
 main 上 control-plane/c13-c14-witness= 不存在
 ```
 
-已注册的两条 production workflow（实测，2026-09-25 21:2x +0800）：
+已注册的两条 production workflow（**2026-09-25 23:1x +0800 在 `64715d30` 上重测**）：
 
 ```text
 id 366980580  C14 rule and compliance review (Lite V2)  .github/workflows/c14-rule-compliance.yml  state=active
 id 366980579  C13 quality acceptance (Lite V2)          .github/workflows/c13-quality-acceptance.yml  state=active
-注册内容与 PR head 逐字节一致: c14 blob a9400e2fde4be173ce6d910f88d8ceb6dbdc42f4
-                              c13 blob 5d5ccdafe73d19ddec5ec2a34ca4803f21cd8dee
-                              （两者在 main 与 #252 head 上相同）
+
+blob SHA（当前 main = 64715d30）:
+  c14  cc43492e19b96b6128e030be8d62af91f7871703   （== PR #254 head 2958b4943）
+  c13  d9b75b8ca7fb9e3197f97cb8f12ce4f1c269d055   （== PR #254 head 2958b4943）
+
+历史 blob（仅供比对，勿再引用为"当前"）:
+  c14  0ffea233d6fe5da4fdc171ade1906b0212eef140   （#253 合并时）
+  c14  a9400e2fde4be173ce6d910f88d8ceb6dbdc42f4   （#252 注册时）
+  c13  899a17cf012dbf5bd36d026ba1d37cc63ea3e358   （#253 合并时）
+  c13  5d5ccdafe73d19ddec5ec2a34ca4803f21cd8dee   （#252 注册时）
 ```
 
 backend 与 witness runtime 只活在**未合并**的分支上：
@@ -78,30 +97,45 @@ backend 与 witness runtime 只活在**未合并**的分支上：
 #248  cc/c13-c14-lite-v2-github-backend-20260925
 #249  cc/ccv1-144-cc-hk-witness-20260925
 #250  cc/ccv1-144a-github-witness-credential-20260925
-#251  cc/ccv1-145-full-chain-simulation-20260925         ← backend 固定引用指向这个 head
-#252  cc/c13-c14-production-workflow-registration-20260925（registration）
+#251  cc/ccv1-145-full-chain-simulation-20260925
+#252  cc/c13-c14-production-workflow-registration-20260925（registration，已合并）
+#253  cc/c13-c14-workflow-defect-fixes-20260925             （D-1/D-2 修复，**已合并**）
+#254 ↑ 同一条分支                                          （D-4 修复，**已合并**）
+      ⚠ **后端载体** cc/c13-c14-lite-v2-defect-fixes-20260925  ← 当前 pin 48c2386d2 活在这里，不得删除
+      （注意这与 PR #253/#254 的 head 分支**不是同一条**：PR 分支只带 workflow 文件）
 ```
 
 ### 1.2 GitHub Actions 状态
 
 ```text
 已注册的 production workflow（注册后）: c14-rule-compliance.yml, c13-quality-acceptance.yml
-🆕 第一次真实 C13/C14 production run（2026-09-25 13:30:51Z）:
+🆕 第一次真实 C13/C14 production run（2026-09-25 13:30:51Z，候选 7db7b2aa5）:
   C14 run id 36141430817 · conclusion=success · head_sha 7db7b2aa5…
   C14 verdict = PASS_SCOPED · C14_ROOT = 411382da06dd4f4d5a0a9b470f61c758bf51d7b3aada5fb3711ae6ddd96e9cef
   artifact 10866698116（bundle/contract/opinion，2884 B，digest sha256:b09e75cf…）
   artifact 10866808048（readback，678 B，digest sha256:508f9e6a…）
-  ⚠ 两个 artifact 均由 **GitHub retention 90 天**约束 ⇒ 作为长期审计证据须在到期前归档
-    （不可变副本 + SHA256 + artifact_id / run_id / 归档时间）。撤销**不会**保住它们。
-C13 production run                     : 0（两轮都只派发 C14）
-🆕 **第二次真实 C14 production run（2026-09-25 14:38:30Z，注册 #2 之后）**:
+  ⛔ 该 PASS_SCOPED **不被复用**：其 changed-path 边界为空（D-1），是对"空变更"作的审查。
+C13 production run                     : 0（三轮都只派发 C14；C13 至今从未真跑）
+🆕 第二次真实 C14 production run（2026-09-25 14:38:30Z，候选 3cd7be75）:
   C14 run id 36148838395 · **conclusion=failure**（第 10 步 seal 被拒）· head_sha 3cd7be75…
   verdict = **BLOCKED**（模型自己给的），seal 报 `c14_non_pass_requires_failure_class`
   **artifact = 无**（第 11–12 步 skipped）⇒ 本次没有可审计的封存记录（新缺陷 D-4）
-  ✅ 但 D-1/D-2 在本 run 中被**实测证实已修**（见 round-2 evidence）：
+  ✅ 但 D-1/D-2 在本 run 中被**实测证实已修**：
      `LITE_SCOPE_SHA256 = 1356d60f…`（= 真实 2 文件摘要，旧值 `843bed61…` = 空列表摘要）
      `LITE_WORKFLOW_SHA = 0ffea233…`（= main 上注册的定义，旧值 `8889221c…` = pin 里那份副本）
-  ⚠ 第一轮的 `PASS_SCOPED`（run 36141430817）**不被复用**：它的变更边界是空的。
+🆕 **第三次真实 C14 production run（2026-09-25 15:10:29Z，候选 64715d30 = 当前 main）**:
+  C14 run id 36152394748 · **conclusion=success** · head_sha 64715d30… · attempt 1
+  **verdict = BLOCKED**（模型自述；failure_class = null，blocking_issues 非空 ⇒ 合法非通过）
+  C14_ROOT = d2b839cbba494708c18b5937197781bd8da2beba73a080645b16c468aadd7b6c
+  15 步全绿，其中**第 10 步 seal 成功**（`seal_result.status = SEALED`, exit 0）
+  ⇒ 同一个 INPUT 形态（模型自述 BLOCKED、无 provider failure_class）
+    在 r2 里杀死 run、在 r3 里被合法封存 ⇒ **D-4 修复在真实 run 中成立**
+  三个 artifact（digest 均与 GitHub 自算值一致，本机重哈希 = MATCH）:
+    10871833984  c13c14-lite-c14-64715d30…       2973 B  sha256:9d127345…   （封存件）
+    10871828874  c13c14-lite-c14-raw-64715d30…   4737 B  sha256:4bbc0619…   （raw，8 文件 missing=[]）
+    10871399271  c13c14-lite-c14-readback-…       679 B  sha256:01da0490…
+  ⚠ 本轮 seal **没有**拒绝 ⇒ "seal 拒绝时 raw 仍存在"这一条**未在真 run 中复现**（见 §1.2 末）
+C13 production run                     : 0（三轮都只派发 C14；C13 至今从未真跑）
 历史 POC run                          : 若干次（POC_ONLY），是历史事实，**不主动删除**
                                         ⚠ 其 artifact 同样受 GitHub retention 期限约束；若要作为
                                           长期审计证据，须在到期前归档（见 §2.I）
@@ -109,6 +143,9 @@ C13 production run                     : 0（两轮都只派发 C14）
   artifact `c13c14-lite-c14-raw-<candidate_sha>`（spec/facts/contract/outcome/scope +
   seal 结果与拒绝记录 + `raw_evidence_manifest.json`，90 天）。它**不是** sealed bundle：
   封存件仍只在 seal 成功时发布。⚠ 同样受 retention 约束 ⇒ 若作为长期审计证据须提前归档。
+  ⚠ **诚实边界**：r3 的 seal 是**成功**的，所以 raw artifact 是在**成功路径**上产出的；
+    "seal 拒绝时 raw evidence 仍存在"这条目前**只有离线回归测试**覆盖（PR #254 的 37 条），
+    **尚未**在真实 run 中复现。
 ```
 
 ### 1.3 Host secret 状态（两台，各 3 个文件）
@@ -144,22 +181,20 @@ C13 行: independent acceptance · TRIGGER_ARMED · "Activate only on a new froz
 C14 行: source/authority gate · TRIGGER_ARMED · "Activate only on a new frozen candidate, before C13"
 Dispatch 记录 = Issue #92（14-CELL R2 Dispatch）
 
-🆕 本轮 activation 记录（2026-09-25 13:30:16Z，append-only，评论 id 5833230504）:
-  round id            = V70-R3
-  C14 task id         = V70-R3-C14-01
-  C13 task id         = V70-R3-C13-01
-  scheduler request   = V70-R3-C13C14-01
-  candidate           = 7db7b2aa52ecabc1ff1c92d9d1673f44f5ce68c5
-  application tree    = dd815baf0105cce603e9a28b002cfb9d8b95d186
-  ⇒ #68 body 与全部历史评论**未改动**；评论数 38 → 39。
-  ⚠ 该评论作者 = `chenzhenxi1-sudo`（实现/调度身份），不是 Owner。
-     #68 此前 38/38 条评论均为 Owner 撰写；这是第一条非 Owner 评论，
+三次 activation 记录（全部 append-only，均未改 body / 未改历史评论）:
+  #1  5833230504  13:30:16Z  V70-R3-C14-01 / V70-R3-C13-01  候选 7db7b2aa5  评论 38 → 39
+  #2  5834220848  14:38:xxZ  V70-R3-C14-02 / V70-R3-C13-02  候选 3cd7be75  评论 39 → 40
+  #3  5834704650  15:09:58Z  V70-R3-C14-03 / V70-R3-C13-03  候选 64715d30  评论 40 → 41
+                                 (4443 B, sha256 963dfff6…, 回读逐字节一致)
+  round id 始终 = V70-R3；序号沿用 ledger 自带文法（同 round 内重复激活进位，如 C01-01 → C01-03）
+  ⚠ 该三条评论作者 = `chenzhenxi1-sudo`（实现/调度身份），不是 Owner。
+     #68 此前 38/38 条评论均为 Owner 撰写；这三条是最早的非 Owner 评论，
      撤销/善后时按"可被 Owner 删除或由后一条记录取代"处理（见 §A / §I）。
 ```
 
-**撤销时这条 activation 记录怎么处理**：不在 rollback 中删除（append-only 原则，见 §I）。
-它只是"闸门被激活过"的历史事实；若 Owner 要收回该激活，正确做法是**再追加一条**
-`C13_C14_MODE = DISABLED | RETIRED`（§A 的格式），而不是编辑或删除本条。
+**撤销时这些 activation 记录怎么处理**：不在 rollback 中删除（append-only 原则，见 §I）。
+它们只是"闸门被激活过"的历史事实；若 Owner 要收回该激活，正确做法是**再追加一条**
+`C13_C14_MODE = DISABLED | RETIRED`（§A 的格式），而不是编辑或删除任何一条。
 
 ---
 
@@ -195,20 +230,40 @@ last_valid_round = <最后一个有效 round 的 id>
 
 **这是最干净的一步，也是设计成这样的原因。**
 
+三条改动各自以 **merge commit** 落在 `main` 上，所以撤销必须是**按逆序执行的标准 Git revert 链**
+（从最新往最旧），**不是一次 revert**：
+
 ```bash
-# 顺序不能颠倒：先撤最后一次改动，再依次往回；颠倒会与后来改动过的文件冲突。
-# 在 main 上
-git revert --no-edit 2958b494317d6c959c9e988f86bfe895feb4767f   # PR #254（D-4 修复）→ 回到 3cd7be75 的内容
-git revert --no-edit 3cd7be752330f377e3446942da4f881df13d183d   # PR #253 的 merge → 回到注册 #1 的内容
-git revert --no-edit 85533dd5790b8cfbbf48e3ae387cb47aab82a8d3   # 删除两个文件
+# 在 main 上。顺序不能颠倒：先撤最后一次改动，再依次往回；
+# 颠倒会与后来改动过、或已被前一步 revert 掉的文件冲突。
+# merge commit 必须用 -m 1（保留第一父 = main 那条线），否则 git 会拒绝并提示需要指定 parent。
+
+# 1) PR #254（D-4 修复）—— 把两条 workflow 还原到 #253 合并时的内容
+git revert -m 1 --no-edit 64715d308954049eb6675d81196d7f4cd853199b
+
+# 2) PR #253（D-1 / D-2 修复）—— 还原到 #252 注册时的内容
+git revert -m 1 --no-edit 3cd7be752330f377e3446942da4f881df13d183d
+
+# 3) PR #252（注册本身）—— 删除两个 workflow 文件，main 回到 aa2ec62b…
+git revert -m 1 --no-edit 7db7b2aa52ecabc1ff1c92d9d1673f44f5ce68c5
+
 git push origin main          # 走正常 PR 流程亦可
 ```
 
-⚠ `2958b4943` 尚未合并：**若 #254 未合并，则跳过第一条**，从 `3cd7be75`（#253 的 merge）开始。
-⚠ 每一步都要 `git apply --check --reverse` 先验证再动手；不要跳序。
+⛔ **不要**用 `git revert <merge>` 不带 `-m`：git 会直接拒绝（`is a merge but no -m option was given`）。
+⛔ **不要**用 `--no-commit` 后手工改内容，也不要用 reset / force-push —— 那会改写历史。
+✅ 每一步都是**新增**一个 revert 提交 ⇒ 历史只增不改，符合 §4 / §I 的"可回退 ≠ 可改写历史"。
 
-已用 `git apply --check --reverse` 验证：`85533dd5` 的 patch 反向应用**完整移除两个文件、528 行全删、
-不留残件**；`55e437edc` 的 patch 亦**完整反向应用**（REVERSE-APPLY OK）。
+⚠ 每一步动手前先 `git -c core.autocrlf=false apply --check --reverse` 验证对应 patch。
+⚠ 若某一环已被提前撤销过（例如 #254 尚未合并时），**跳过那一环**，不要重复 revert。
+
+已实测（reverse-apply 检查）：
+
+```text
+#254 head 2958b4943 的 patch   → 完整反向应用 OK（整份可撤）
+#253 head 55e437edc 的 patch   → 完整反向应用 OK
+#252 head 85533dd57 的 patch   → 完整移除两个文件、528 行全删、不留残件
+```
 
 **验收**：`git ls-tree origin/main .github/workflows/ --name-only | grep -c 'c1[34]'` = **0**；
 main 上 workflow 总数回到 **26**。
@@ -218,13 +273,15 @@ main 上 workflow 总数回到 **26**。
 backend（`control-plane/c13-c14-lite/`）**从未进入 main**，所以"移除"= **不合并 + revert 注册**：
 
 ```text
-1. 执行 B（revert 注册）⇒ workflow 消失 ⇒ 对 backend 的唯一引用消失
-2. #248 / #249 / #250 / #251 若仍未合并：直接关闭（close），不要 merge
-3. 若已合并进 main：对相应 merge 做 revert（同样是普通 revert PR）
+1. 执行 B（revert 那条 merge 链）⇒ workflow 消失 ⇒ 对 backend 的唯一引用消失
+2. #248 / #249 / #250 / #251 仍未合并：直接关闭（close），不要 merge
+3. #253 / #254 **已合并** ⇒ 对它们的 merge commit 做 revert（就是 B 的第 1、2 步）
+4. 后端载体分支 cc/c13-c14-lite-v2-defect-fixes-20260925 只有在 workflow 撤销之后才可以关闭
 ```
 
 ⛔ **不要**为了"清理"而 force-push 或改写 main 历史。
-⛔ 分支关闭后，`a67ea8ac0…` 这个 commit 对象仍在仓库中（历史事实），**这没有问题**。
+⛔ 分支关闭后，当前 pin `48c2386d2…` 这个 commit 对象仍在仓库中（历史事实），**这没有问题**；
+但**在 B 执行完之前**它必须保持可解析（见头部软依赖说明）。
 
 **验收**：`git ls-tree -r origin/main --name-only | grep -c 'c13-c14-lite'` = **0**。
 
@@ -370,7 +427,8 @@ GAP → TASK → TEST → source-bound EVIDENCE → (C14) → (C13) → DONE-SCO
 
 因为：
 
-- C01–C12 的派发与状态表达完全不引用 C13/C14（实测：main 上 26 个 workflow **无一**引用）；
+- C01–C12 的派发与状态表达完全不引用 C13/C14（实测：注册前 main 上 26 个 workflow
+  **无一**引用；注册后新增的 2 条自身不构成依赖）；
 - CC / HK 没有任何 unit 引用 C13/C14（实测：两台 systemd 目录 **零命中**）；
 - 部署链路（Command Center / HK executor / bridge）与 C13/C14 无代码耦合。
 
@@ -384,7 +442,8 @@ GAP → TASK → TEST → source-bound EVIDENCE → (C14) → (C13) → DONE-SCO
 
 ```text
 [ ] git ls-tree origin/main .github/workflows/ 中 c13/c14 计数 = 0，workflow 总数 = 26
-    （撤销基线：main 从 7db7b2aa5… 退回 aa2ec62b…，即 revert 85533dd57…）
+    （撤销基线：main 从 64715d30… 依次 revert 三个 merge 后退回 aa2ec62b…，
+      即 revert 64715d30 → 3cd7be75 → 7db7b2aa5，全程 `-m 1`）
 [ ] git ls-tree -r origin/main | grep c13-c14-lite 计数 = 0
 [ ] GitHub Actions workflow 列表中 c14-rule-compliance.yml / c13-quality-acceptance.yml
     不再以 active 出现在默认分支（撤销前 id 366980580 / 366980579）
@@ -425,20 +484,24 @@ main 上引用 c13/c14 的文件（除注册的 2 个）: 仅 1 个历史证据�
 main 上 26 个 workflow 引用 c13/c14: 0（注册前实测；注册后新增的 2 条自身不构成依赖）
 CC systemd 引用 c13/c14/witness: 0        HK systemd 引用 c13/c14/witness: 0
 CC/HK C13/C14 unit: 无                    CC/HK C13/C14 常驻 runtime: 无
-注册 patch 反向应用检查: OK（完整移除，528 行，无残件）
 profile check（注册后补测）: 两条已注册 workflow 通过 backend 自带离线结构检查
-  （lite_workflow_check.py 的 7 项：权限最小化 / 无部署权威 / 凭据边界 / 可派发身份 /
-    artifact 纪律 / 同步骤 env 陷阱 / readback 声明 run head）⇒ gate=PASS
+  （lite_workflow_check.py：权限最小化 / 无部署权威 / 凭据边界 / 可派发身份 /
+    artifact 纪律 / 同步骤 env 陷阱 / readback 声明 run head / changed-path 边界 /
+    workflow identity 来源 / raw evidence 保全）⇒ gate=PASS
 ```
 
-**注册合并后重新测得的"可撤销性"（2026-09-25，只读）**：
+**在 `64715d30`（当前 main）上重新测得的"可撤销性"（2026-09-25 23:1x +0800，只读）**：
 
 ```text
-撤销 = revert 一个 merge 的**单个提交** 85533dd57…  ⇒ main 回到 aa2ec62b…，workflow 28→26
-注册只加 2 个文件（+528/-0），main 上仍**没有** backend/witness 路径
-backend 的固定引用 a67ea8ac0… 活在**未合并**的 #251 分支上 ⇒ 撤销注册后引用自然消失
+撤销 = 按逆序执行标准 Git revert 链，三个 merge 各一次、全部 `-m 1`：
+  64715d30（#254 merge）→ 3cd7be75（#253 merge）→ 7db7b2aa5（#252 merge）
+  ⇒ main 回到 aa2ec62b…，workflow 28 → 26
+三次改动累计只加 2 个文件（#252 +528/-0；#253 -7/+8；#254 -7/+8），main 上仍**没有** backend/witness 路径
+当前 pin 48c2386d2… 活在**未合并**的后端载体分支
+  cc/c13-c14-lite-v2-defect-fixes-20260925 上 ⇒ 撤销注册后引用自然消失
+  ⚠ 该分支既不在 #253/#254 的 head 上，也不在 main 上 ⇒ 撤销时**不要**先删它（删了会先破坏 workflow 的 checkout）
 未见新增硬依赖：C01–C12 / CC / HK / 部署链均未因注册而引用 C13/C14
 ```
 
 ⇒ `C01_C12_HARD_DEPENDENCY_CREATED = NO`｜`CC_HARD_DEPENDENCY_CREATED = NO`｜
-`HK_HARD_DEPENDENCY_CREATED = NO`｜`ROLLBACK_READY = YES`
+`HK_HARD_DEPENDENCY_CREATED = NO`｜`ROLLBACK_READY = YES`（本轮**未执行**任何 rollback）

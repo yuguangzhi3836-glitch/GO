@@ -1,0 +1,908 @@
+﻿2026-09-25T15:10:35.3473530Z Current runner version: '2.337.0'
+2026-09-25T15:10:35.3499806Z ##[group]Runner Image Provisioner
+2026-09-25T15:10:35.3500973Z Hosted Compute Agent
+2026-09-25T15:10:35.3501741Z Version: 20260828.587
+2026-09-25T15:10:35.3502496Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-25T15:10:35.3503356Z Build Date: 2026-08-28T16:44:25Z
+2026-09-25T15:10:35.3504120Z Worker ID: {b1044b2c-504b-47cc-9999-5a2164e35c13}
+2026-09-25T15:10:35.3504882Z Azure Region: westus2
+2026-09-25T15:10:35.3505539Z ##[endgroup]
+2026-09-25T15:10:35.3507069Z ##[group]Operating System
+2026-09-25T15:10:35.3507917Z Ubuntu
+2026-09-25T15:10:35.3508519Z 24.04.5
+2026-09-25T15:10:35.3509082Z LTS
+2026-09-25T15:10:35.3509700Z ##[endgroup]
+2026-09-25T15:10:35.3510706Z ##[group]Runner Image
+2026-09-25T15:10:35.3511472Z Image: ubuntu-24.04
+2026-09-25T15:10:35.3512231Z Version: 20260920.314.1
+2026-09-25T15:10:35.3513575Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260920.314/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-25T15:10:35.3515245Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260920.314
+2026-09-25T15:10:35.3516366Z ##[endgroup]
+2026-09-25T15:10:35.3517610Z ##[group]GITHUB_TOKEN Permissions
+2026-09-25T15:10:35.3519713Z Actions: read
+2026-09-25T15:10:35.3520656Z Contents: read
+2026-09-25T15:10:35.3521332Z Metadata: read
+2026-09-25T15:10:35.3522006Z ##[endgroup]
+2026-09-25T15:10:35.3524137Z Secret source: Actions
+2026-09-25T15:10:35.3525258Z Cache mode: write
+2026-09-25T15:10:35.3526051Z Prepare workflow directory
+2026-09-25T15:10:35.4122621Z Prepare all required actions
+2026-09-25T15:10:35.4169844Z Getting action download info
+2026-09-25T15:10:35.7898739Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-25T15:10:35.9272101Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-25T15:10:36.0163249Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-25T15:10:36.2624831Z Complete job name: C14 fresh rule review (read-only, no quality sandbox)
+2026-09-25T15:10:36.3470830Z ##[group]Run actions/checkout@v4
+2026-09-25T15:10:36.3471933Z with:
+2026-09-25T15:10:36.3472585Z   ref: 48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4
+2026-09-25T15:10:36.3473377Z   persist-credentials: false
+2026-09-25T15:10:36.3474084Z   repository: yuguangzhi3836-glitch/GO
+2026-09-25T15:10:36.3478264Z   token: ***
+2026-09-25T15:10:36.3478925Z   ssh-strict: true
+2026-09-25T15:10:36.3479523Z   ssh-user: git
+2026-09-25T15:10:36.3480101Z   clean: true
+2026-09-25T15:10:36.3480907Z   sparse-checkout-cone-mode: true
+2026-09-25T15:10:36.3481602Z   fetch-depth: 1
+2026-09-25T15:10:36.3482207Z   fetch-tags: false
+2026-09-25T15:10:36.3482809Z   show-progress: true
+2026-09-25T15:10:36.3483414Z   lfs: false
+2026-09-25T15:10:36.3483982Z   submodules: false
+2026-09-25T15:10:36.3484587Z   set-safe-directory: true
+2026-09-25T15:10:36.3485269Z   allow-unsafe-pr-checkout: false
+2026-09-25T15:10:36.3486254Z env:
+2026-09-25T15:10:36.3486842Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:10:36.3487689Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:10:36.3488575Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:10:36.3489443Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:10:36.3490545Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:10:36.3491220Z ##[endgroup]
+2026-09-25T15:10:36.6000428Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-25T15:10:36.6192250Z ##[group]Getting Git version info
+2026-09-25T15:10:36.6193712Z Working directory is '/home/runner/work/GO/GO'
+2026-09-25T15:10:36.6195648Z [command]/usr/bin/git version
+2026-09-25T15:10:36.6196633Z git version 2.55.0
+2026-09-25T15:10:36.6199685Z ##[endgroup]
+2026-09-25T15:10:36.6228576Z Temporarily overriding HOME='/home/runner/work/_temp/c1aec79d-b0b8-46a7-a3e3-dc84dd3aa4ef' before making global git config changes
+2026-09-25T15:10:36.6251960Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-25T15:10:36.6254330Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-25T15:10:36.6256909Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-25T15:10:36.6258636Z ##[group]Initializing the repository
+2026-09-25T15:10:36.6259682Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-25T15:10:36.6271175Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-25T15:10:36.6272953Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-25T15:10:36.6274575Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-25T15:10:36.6275874Z hint: call:
+2026-09-25T15:10:36.6276573Z hint:
+2026-09-25T15:10:36.6277834Z hint: 	git config --global init.defaultBranch <name>
+2026-09-25T15:10:36.6278940Z hint:
+2026-09-25T15:10:36.6279937Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-25T15:10:36.6290889Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-25T15:10:36.6292246Z hint:
+2026-09-25T15:10:36.6292976Z hint: 	git branch -m <name>
+2026-09-25T15:10:36.6294716Z hint:
+2026-09-25T15:10:36.6295815Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-25T15:10:36.6297416Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-25T15:10:36.6301742Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-25T15:10:36.6304642Z ##[endgroup]
+2026-09-25T15:10:36.6305957Z ##[group]Disabling automatic garbage collection
+2026-09-25T15:10:36.6307100Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-25T15:10:36.6309556Z ##[endgroup]
+2026-09-25T15:10:36.6311780Z ##[group]Setting up auth
+2026-09-25T15:10:36.6313028Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-25T15:10:36.6319508Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-25T15:10:36.6593638Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-25T15:10:36.6598390Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-25T15:10:36.6942338Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-25T15:10:36.6988505Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-25T15:10:36.7254000Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-25T15:10:36.7294165Z ##[endgroup]
+2026-09-25T15:10:36.7296446Z ##[group]Fetching the repository
+2026-09-25T15:10:36.7306673Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4
+2026-09-25T15:10:47.5106717Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-25T15:10:47.5108189Z  * branch            48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4 -> FETCH_HEAD
+2026-09-25T15:10:47.5111286Z ##[endgroup]
+2026-09-25T15:10:47.5112170Z ##[group]Determining the checkout info
+2026-09-25T15:10:47.5112972Z ##[endgroup]
+2026-09-25T15:10:47.5115671Z [command]/usr/bin/git sparse-checkout disable
+2026-09-25T15:10:47.5175523Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-25T15:10:47.5212210Z ##[group]Checking out the ref
+2026-09-25T15:10:47.5217215Z [command]/usr/bin/git checkout --progress --force 48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4
+2026-09-25T15:10:49.1809807Z Updating files:  32% (1948/6079)
+2026-09-25T15:10:49.1849146Z Updating files:  33% (2007/6079)
+2026-09-25T15:10:49.1879358Z Updating files:  34% (2067/6079)
+2026-09-25T15:10:49.1973684Z Updating files:  35% (2128/6079)
+2026-09-25T15:10:49.2048056Z Updating files:  36% (2189/6079)
+2026-09-25T15:10:49.2124095Z Updating files:  37% (2250/6079)
+2026-09-25T15:10:49.2155005Z Updating files:  38% (2311/6079)
+2026-09-25T15:10:49.2184987Z Updating files:  39% (2371/6079)
+2026-09-25T15:10:49.2216038Z Updating files:  40% (2432/6079)
+2026-09-25T15:10:49.2251297Z Updating files:  41% (2493/6079)
+2026-09-25T15:10:49.2287009Z Updating files:  42% (2554/6079)
+2026-09-25T15:10:49.2318901Z Updating files:  43% (2614/6079)
+2026-09-25T15:10:49.2354042Z Updating files:  44% (2675/6079)
+2026-09-25T15:10:49.2401558Z Updating files:  45% (2736/6079)
+2026-09-25T15:10:49.2452227Z Updating files:  46% (2797/6079)
+2026-09-25T15:10:49.2491191Z Updating files:  47% (2858/6079)
+2026-09-25T15:10:49.2543183Z Updating files:  48% (2918/6079)
+2026-09-25T15:10:49.2583879Z Updating files:  49% (2979/6079)
+2026-09-25T15:10:49.2622249Z Updating files:  50% (3040/6079)
+2026-09-25T15:10:49.2664031Z Updating files:  51% (3101/6079)
+2026-09-25T15:10:49.2700171Z Updating files:  52% (3162/6079)
+2026-09-25T15:10:49.2739557Z Updating files:  53% (3222/6079)
+2026-09-25T15:10:49.3406987Z Updating files:  54% (3283/6079)
+2026-09-25T15:10:49.3674173Z Updating files:  55% (3344/6079)
+2026-09-25T15:10:49.3723094Z Updating files:  56% (3405/6079)
+2026-09-25T15:10:49.4008371Z Updating files:  57% (3466/6079)
+2026-09-25T15:10:49.4292039Z Updating files:  58% (3526/6079)
+2026-09-25T15:10:49.4859065Z Updating files:  59% (3587/6079)
+2026-09-25T15:10:49.4907560Z Updating files:  60% (3648/6079)
+2026-09-25T15:10:49.4949738Z Updating files:  61% (3709/6079)
+2026-09-25T15:10:49.4995307Z Updating files:  62% (3769/6079)
+2026-09-25T15:10:49.5029605Z Updating files:  63% (3830/6079)
+2026-09-25T15:10:49.5100418Z Updating files:  64% (3891/6079)
+2026-09-25T15:10:49.5129766Z Updating files:  65% (3952/6079)
+2026-09-25T15:10:49.5162249Z Updating files:  66% (4013/6079)
+2026-09-25T15:10:49.5205631Z Updating files:  67% (4073/6079)
+2026-09-25T15:10:49.5250622Z Updating files:  68% (4134/6079)
+2026-09-25T15:10:49.5296763Z Updating files:  69% (4195/6079)
+2026-09-25T15:10:49.5324051Z Updating files:  70% (4256/6079)
+2026-09-25T15:10:49.5335841Z Updating files:  70% (4301/6079)
+2026-09-25T15:10:49.5386242Z Updating files:  71% (4317/6079)
+2026-09-25T15:10:49.5448024Z Updating files:  72% (4377/6079)
+2026-09-25T15:10:49.5770373Z Updating files:  73% (4438/6079)
+2026-09-25T15:10:49.6438932Z Updating files:  74% (4499/6079)
+2026-09-25T15:10:49.7801549Z Updating files:  75% (4560/6079)
+2026-09-25T15:10:49.7871421Z Updating files:  76% (4621/6079)
+2026-09-25T15:10:49.8041682Z Updating files:  77% (4681/6079)
+2026-09-25T15:10:49.8070967Z Updating files:  78% (4742/6079)
+2026-09-25T15:10:49.8090878Z Updating files:  79% (4803/6079)
+2026-09-25T15:10:49.8110877Z Updating files:  80% (4864/6079)
+2026-09-25T15:10:49.8132569Z Updating files:  81% (4924/6079)
+2026-09-25T15:10:49.8155706Z Updating files:  82% (4985/6079)
+2026-09-25T15:10:49.8197515Z Updating files:  83% (5046/6079)
+2026-09-25T15:10:49.8221002Z Updating files:  84% (5107/6079)
+2026-09-25T15:10:49.8251268Z Updating files:  85% (5168/6079)
+2026-09-25T15:10:49.8294590Z Updating files:  86% (5228/6079)
+2026-09-25T15:10:49.8320965Z Updating files:  87% (5289/6079)
+2026-09-25T15:10:49.8357076Z Updating files:  88% (5350/6079)
+2026-09-25T15:10:49.8398839Z Updating files:  89% (5411/6079)
+2026-09-25T15:10:49.8427523Z Updating files:  90% (5472/6079)
+2026-09-25T15:10:49.8457234Z Updating files:  91% (5532/6079)
+2026-09-25T15:10:49.8501875Z Updating files:  92% (5593/6079)
+2026-09-25T15:10:49.8550969Z Updating files:  93% (5654/6079)
+2026-09-25T15:10:49.8582618Z Updating files:  94% (5715/6079)
+2026-09-25T15:10:49.8612389Z Updating files:  95% (5776/6079)
+2026-09-25T15:10:49.8659297Z Updating files:  96% (5836/6079)
+2026-09-25T15:10:49.8695478Z Updating files:  97% (5897/6079)
+2026-09-25T15:10:49.8734782Z Updating files:  98% (5958/6079)
+2026-09-25T15:10:49.8767517Z Updating files:  99% (6019/6079)
+2026-09-25T15:10:49.8772461Z Updating files: 100% (6079/6079)
+2026-09-25T15:10:49.8773449Z Updating files: 100% (6079/6079), done.
+2026-09-25T15:10:51.2997710Z Note: switching to '48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4'.
+2026-09-25T15:10:51.3010915Z 
+2026-09-25T15:10:51.3028541Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-25T15:10:51.3029567Z changes and commit them, and you can discard any commits you make in this
+2026-09-25T15:10:51.3030979Z state without impacting any branches by switching back to a branch.
+2026-09-25T15:10:51.3031632Z 
+2026-09-25T15:10:51.3032267Z If you want to create a new branch to retain commits you create, you may
+2026-09-25T15:10:51.3033434Z do so (now or later) by using -c with the switch command. Example:
+2026-09-25T15:10:51.3034206Z 
+2026-09-25T15:10:51.3034566Z   git switch -c <new-branch-name>
+2026-09-25T15:10:51.3035054Z 
+2026-09-25T15:10:51.3036077Z Or undo this operation with:
+2026-09-25T15:10:51.3036769Z 
+2026-09-25T15:10:51.3037146Z   git switch -
+2026-09-25T15:10:51.3037383Z 
+2026-09-25T15:10:51.3037771Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-25T15:10:51.3038308Z 
+2026-09-25T15:10:51.3038993Z HEAD is now at 48c2386 fix(c13-c14-lite): stop making a non-pass verdict impersonate a provider failure
+2026-09-25T15:10:51.4531623Z ##[endgroup]
+2026-09-25T15:10:51.5532380Z [command]/usr/bin/git log -1 --format=%H
+2026-09-25T15:10:51.5631628Z 48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4
+2026-09-25T15:10:51.5651150Z ##[group]Removing auth
+2026-09-25T15:10:51.5657913Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-25T15:10:51.5698709Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-25T15:10:51.5950122Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-25T15:10:51.6914235Z http.https://github.com/.extraheader
+2026-09-25T15:10:51.6935480Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-25T15:10:52.1602495Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-25T15:10:52.1853983Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-25T15:10:52.1978770Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-25T15:10:52.2192911Z ##[endgroup]
+2026-09-25T15:10:52.6475576Z ##[group]Run actions/checkout@v4
+2026-09-25T15:10:52.6475889Z with:
+2026-09-25T15:10:52.6476143Z   ref: 64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:10:52.6476474Z   path: candidate
+2026-09-25T15:10:52.6476714Z   persist-credentials: false
+2026-09-25T15:10:52.6476998Z   fetch-depth: 2
+2026-09-25T15:10:52.6477248Z   repository: yuguangzhi3836-glitch/GO
+2026-09-25T15:10:52.6479801Z   token: ***
+2026-09-25T15:10:52.6480021Z   ssh-strict: true
+2026-09-25T15:10:52.6480442Z   ssh-user: git
+2026-09-25T15:10:52.6480669Z   clean: true
+2026-09-25T15:10:52.6480900Z   sparse-checkout-cone-mode: true
+2026-09-25T15:10:52.6481178Z   fetch-tags: false
+2026-09-25T15:10:52.6481406Z   show-progress: true
+2026-09-25T15:10:52.6481636Z   lfs: false
+2026-09-25T15:10:52.6481852Z   submodules: false
+2026-09-25T15:10:52.6482091Z   set-safe-directory: true
+2026-09-25T15:10:52.6482371Z   allow-unsafe-pr-checkout: false
+2026-09-25T15:10:52.6482652Z env:
+2026-09-25T15:10:52.6482918Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:10:52.6483260Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:10:52.6483664Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:10:52.6484062Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:10:52.6484725Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:10:52.6484991Z ##[endgroup]
+2026-09-25T15:10:52.7563483Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-25T15:10:52.7581194Z ##[group]Getting Git version info
+2026-09-25T15:10:52.7598152Z Working directory is '/home/runner/work/GO/GO/candidate'
+2026-09-25T15:10:52.7599873Z [command]/usr/bin/git version
+2026-09-25T15:10:52.7652401Z git version 2.55.0
+2026-09-25T15:10:52.7698753Z ##[endgroup]
+2026-09-25T15:10:52.7702646Z Temporarily overriding HOME='/home/runner/work/_temp/15baacd6-89a5-4f84-b8ed-d15d73caf7f5' before making global git config changes
+2026-09-25T15:10:52.7704268Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-25T15:10:52.7715390Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/candidate
+2026-09-25T15:10:52.7795944Z ##[group]Initializing the repository
+2026-09-25T15:10:52.7796814Z [command]/usr/bin/git init /home/runner/work/GO/GO/candidate
+2026-09-25T15:10:53.0412411Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-25T15:10:53.0431449Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-25T15:10:53.0438375Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-25T15:10:53.0453136Z hint: call:
+2026-09-25T15:10:53.0453743Z hint:
+2026-09-25T15:10:53.0454450Z hint: 	git config --global init.defaultBranch <name>
+2026-09-25T15:10:53.0455221Z hint:
+2026-09-25T15:10:53.0455939Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-25T15:10:53.0457036Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-25T15:10:53.0457969Z hint:
+2026-09-25T15:10:53.0458551Z hint: 	git branch -m <name>
+2026-09-25T15:10:53.0459187Z hint:
+2026-09-25T15:10:53.0460001Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-25T15:10:53.0461632Z Initialized empty Git repository in /home/runner/work/GO/GO/candidate/.git/
+2026-09-25T15:10:53.0499099Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-25T15:10:53.0540927Z ##[endgroup]
+2026-09-25T15:10:53.0541886Z ##[group]Disabling automatic garbage collection
+2026-09-25T15:10:53.0542636Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-25T15:10:53.0592343Z ##[endgroup]
+2026-09-25T15:10:53.0593036Z ##[group]Setting up auth
+2026-09-25T15:10:53.0593749Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-25T15:10:53.0642589Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-25T15:10:53.0921008Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-25T15:10:53.0955346Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-25T15:10:53.1214862Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-25T15:10:53.1258313Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-25T15:10:53.1511945Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-25T15:10:53.1567214Z ##[endgroup]
+2026-09-25T15:10:53.1568306Z ##[group]Fetching the repository
+2026-09-25T15:10:53.1570739Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=2 origin 64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:08.8566189Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-25T15:11:08.8569013Z  * branch            64715d308954049eb6675d81196d7f4cd853199b -> FETCH_HEAD
+2026-09-25T15:11:08.8574751Z ##[endgroup]
+2026-09-25T15:11:08.8585095Z ##[group]Determining the checkout info
+2026-09-25T15:11:08.8586170Z ##[endgroup]
+2026-09-25T15:11:08.8586906Z [command]/usr/bin/git sparse-checkout disable
+2026-09-25T15:11:08.8648145Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-25T15:11:08.8684847Z ##[group]Checking out the ref
+2026-09-25T15:11:08.8690527Z [command]/usr/bin/git checkout --progress --force 64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:10.5023904Z Updating files:  31% (1876/5978)
+2026-09-25T15:11:10.5055350Z Updating files:  32% (1913/5978)
+2026-09-25T15:11:10.5085091Z Updating files:  33% (1973/5978)
+2026-09-25T15:11:10.5125712Z Updating files:  34% (2033/5978)
+2026-09-25T15:11:10.5234238Z Updating files:  35% (2093/5978)
+2026-09-25T15:11:10.5303947Z Updating files:  36% (2153/5978)
+2026-09-25T15:11:10.5356958Z Updating files:  37% (2212/5978)
+2026-09-25T15:11:10.5382596Z Updating files:  38% (2272/5978)
+2026-09-25T15:11:10.5424882Z Updating files:  39% (2332/5978)
+2026-09-25T15:11:10.5457095Z Updating files:  40% (2392/5978)
+2026-09-25T15:11:10.5491711Z Updating files:  41% (2451/5978)
+2026-09-25T15:11:10.5525496Z Updating files:  42% (2511/5978)
+2026-09-25T15:11:10.5554820Z Updating files:  43% (2571/5978)
+2026-09-25T15:11:10.5590996Z Updating files:  44% (2631/5978)
+2026-09-25T15:11:10.5643470Z Updating files:  45% (2691/5978)
+2026-09-25T15:11:10.5687551Z Updating files:  46% (2750/5978)
+2026-09-25T15:11:10.5728100Z Updating files:  47% (2810/5978)
+2026-09-25T15:11:10.5778201Z Updating files:  48% (2870/5978)
+2026-09-25T15:11:10.5811500Z Updating files:  49% (2930/5978)
+2026-09-25T15:11:10.5851142Z Updating files:  50% (2989/5978)
+2026-09-25T15:11:10.5888050Z Updating files:  51% (3049/5978)
+2026-09-25T15:11:10.5923741Z Updating files:  52% (3109/5978)
+2026-09-25T15:11:10.5963200Z Updating files:  53% (3169/5978)
+2026-09-25T15:11:10.6846179Z Updating files:  54% (3229/5978)
+2026-09-25T15:11:10.6879804Z Updating files:  55% (3288/5978)
+2026-09-25T15:11:10.6938679Z Updating files:  56% (3348/5978)
+2026-09-25T15:11:10.7196030Z Updating files:  57% (3408/5978)
+2026-09-25T15:11:10.7506763Z Updating files:  58% (3468/5978)
+2026-09-25T15:11:10.7869748Z Updating files:  59% (3528/5978)
+2026-09-25T15:11:10.7954255Z Updating files:  60% (3587/5978)
+2026-09-25T15:11:10.7971357Z Updating files:  61% (3647/5978)
+2026-09-25T15:11:10.8003909Z Updating files:  62% (3707/5978)
+2026-09-25T15:11:10.8047988Z Updating files:  63% (3767/5978)
+2026-09-25T15:11:10.8111145Z Updating files:  64% (3826/5978)
+2026-09-25T15:11:10.8140252Z Updating files:  65% (3886/5978)
+2026-09-25T15:11:10.8172959Z Updating files:  66% (3946/5978)
+2026-09-25T15:11:10.8216739Z Updating files:  67% (4006/5978)
+2026-09-25T15:11:10.8258767Z Updating files:  68% (4066/5978)
+2026-09-25T15:11:10.8305187Z Updating files:  69% (4125/5978)
+2026-09-25T15:11:10.8340473Z Updating files:  70% (4185/5978)
+2026-09-25T15:11:10.8402929Z Updating files:  71% (4245/5978)
+2026-09-25T15:11:10.8601450Z Updating files:  72% (4305/5978)
+2026-09-25T15:11:10.8787990Z Updating files:  73% (4364/5978)
+2026-09-25T15:11:10.8792071Z Updating files:  74% (4424/5978)
+2026-09-25T15:11:10.9263145Z Updating files:  74% (4429/5978)
+2026-09-25T15:11:10.9332054Z Updating files:  75% (4484/5978)
+2026-09-25T15:11:10.9398202Z Updating files:  76% (4544/5978)
+2026-09-25T15:11:10.9466530Z Updating files:  77% (4604/5978)
+2026-09-25T15:11:10.9493016Z Updating files:  78% (4663/5978)
+2026-09-25T15:11:10.9519053Z Updating files:  79% (4723/5978)
+2026-09-25T15:11:10.9542257Z Updating files:  80% (4783/5978)
+2026-09-25T15:11:10.9562950Z Updating files:  81% (4843/5978)
+2026-09-25T15:11:10.9587864Z Updating files:  82% (4902/5978)
+2026-09-25T15:11:10.9631579Z Updating files:  83% (4962/5978)
+2026-09-25T15:11:10.9652648Z Updating files:  84% (5022/5978)
+2026-09-25T15:11:10.9696275Z Updating files:  85% (5082/5978)
+2026-09-25T15:11:10.9726557Z Updating files:  86% (5142/5978)
+2026-09-25T15:11:10.9753041Z Updating files:  87% (5201/5978)
+2026-09-25T15:11:10.9792999Z Updating files:  88% (5261/5978)
+2026-09-25T15:11:10.9833878Z Updating files:  89% (5321/5978)
+2026-09-25T15:11:10.9862637Z Updating files:  90% (5381/5978)
+2026-09-25T15:11:10.9892707Z Updating files:  91% (5440/5978)
+2026-09-25T15:11:10.9956909Z Updating files:  92% (5500/5978)
+2026-09-25T15:11:10.9997812Z Updating files:  93% (5560/5978)
+2026-09-25T15:11:11.0024126Z Updating files:  94% (5620/5978)
+2026-09-25T15:11:11.0057543Z Updating files:  95% (5680/5978)
+2026-09-25T15:11:11.0103745Z Updating files:  96% (5739/5978)
+2026-09-25T15:11:11.0142657Z Updating files:  97% (5799/5978)
+2026-09-25T15:11:11.0183316Z Updating files:  98% (5859/5978)
+2026-09-25T15:11:11.0219110Z Updating files:  99% (5919/5978)
+2026-09-25T15:11:11.0221051Z Updating files: 100% (5978/5978)
+2026-09-25T15:11:11.0222037Z Updating files: 100% (5978/5978), done.
+2026-09-25T15:11:11.2515163Z Note: switching to '64715d308954049eb6675d81196d7f4cd853199b'.
+2026-09-25T15:11:11.2515986Z 
+2026-09-25T15:11:11.2516608Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-25T15:11:11.2518142Z changes and commit them, and you can discard any commits you make in this
+2026-09-25T15:11:11.2520659Z state without impacting any branches by switching back to a branch.
+2026-09-25T15:11:11.2521885Z 
+2026-09-25T15:11:11.2522732Z If you want to create a new branch to retain commits you create, you may
+2026-09-25T15:11:11.2524283Z do so (now or later) by using -c with the switch command. Example:
+2026-09-25T15:11:11.2525209Z 
+2026-09-25T15:11:11.2525627Z   git switch -c <new-branch-name>
+2026-09-25T15:11:11.2526218Z 
+2026-09-25T15:11:11.2526632Z Or undo this operation with:
+2026-09-25T15:11:11.2527215Z 
+2026-09-25T15:11:11.2527553Z   git switch -
+2026-09-25T15:11:11.2527992Z 
+2026-09-25T15:11:11.2528657Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-25T15:11:11.2529466Z 
+2026-09-25T15:11:11.2530710Z HEAD is now at 64715d3 Merge pull request #254 from yuguangzhi3836-glitch/cc/c13-c14-workflow-defect-fixes-20260925
+2026-09-25T15:11:11.2670749Z ##[endgroup]
+2026-09-25T15:11:11.2710789Z [command]/usr/bin/git log -1 --format=%H
+2026-09-25T15:11:11.2756144Z 64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:11.2785919Z ##[group]Removing auth
+2026-09-25T15:11:11.2792284Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-25T15:11:11.2836391Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-25T15:11:11.3106560Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-25T15:11:11.3138087Z http.https://github.com/.extraheader
+2026-09-25T15:11:11.3156140Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-25T15:11:11.5547976Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-25T15:11:11.5813122Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-25T15:11:11.5858328Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-25T15:11:11.6137302Z ##[endgroup]
+2026-09-25T15:11:12.1418940Z ##[group]Run actions/setup-python@v5
+2026-09-25T15:11:12.1419284Z with:
+2026-09-25T15:11:12.1419523Z   python-version: 3.13
+2026-09-25T15:11:12.1419789Z   check-latest: false
+2026-09-25T15:11:12.1422643Z   token: ***
+2026-09-25T15:11:12.1422897Z   update-environment: true
+2026-09-25T15:11:12.1423180Z   allow-prereleases: false
+2026-09-25T15:11:12.1423459Z   freethreaded: false
+2026-09-25T15:11:12.1423713Z env:
+2026-09-25T15:11:12.1423933Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:11:12.1424304Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:11:12.1424931Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:11:12.1425357Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:11:12.1425828Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:11:12.1426126Z ##[endgroup]
+2026-09-25T15:11:12.2827000Z ##[group]Installed versions
+2026-09-25T15:11:12.4061755Z (node:2310) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-25T15:11:12.4063118Z Successfully set up CPython (3.13.15)
+2026-09-25T15:11:12.4064108Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-25T15:11:12.4065456Z ##[endgroup]
+2026-09-25T15:11:12.4295756Z ##[group]Run set -euo pipefail
+2026-09-25T15:11:12.4296323Z [36;1mset -euo pipefail[0m
+2026-09-25T15:11:12.4297066Z [36;1mtest "$(git -C candidate rev-parse HEAD)" = "64715d308954049eb6675d81196d7f4cd853199b"[0m
+2026-09-25T15:11:12.4298194Z [36;1mtest "$(git -C candidate rev-parse HEAD:application)" = "dd815baf0105cce603e9a28b002cfb9d8b95d186"[0m
+2026-09-25T15:11:12.4299352Z [36;1m# A merge commit is NOT diffed by `git diff-tree` unless a merge diff mode is selected,[0m
+2026-09-25T15:11:12.4300606Z [36;1m# so the plain form printed NOTHING for a merge commit and the frozen changed-path[0m
+2026-09-25T15:11:12.4301638Z [36;1m# boundary was silently empty - the rule review became a review of nothing (CCV1-145B[0m
+2026-09-25T15:11:12.4302527Z [36;1m# D-1, proved by recomputing the frozen scope digest).[0m
+2026-09-25T15:11:12.4303394Z [36;1m#   * `-m` is NOT the fix, and neither is `-m --first-parent`: `--first-parent` does not[0m
+2026-09-25T15:11:12.4304419Z [36;1m#     narrow `-m`'s output, so the boundary silently becomes the union of BOTH parents'[0m
+2026-09-25T15:11:12.4305162Z [36;1m#     diffs (measured).[0m
+2026-09-25T15:11:12.4305863Z [36;1m#   * `--diff-merges=first-parent` is the boundary we want: what this candidate brings[0m
+2026-09-25T15:11:12.4306803Z [36;1m#     into its own line. It is a no-op for an ordinary single-parent commit.[0m
+2026-09-25T15:11:12.4307730Z [36;1m# The first parent must also be present locally - that is why this checkout uses[0m
+2026-09-25T15:11:12.4308660Z [36;1m# fetch-depth 2. At depth 1 the boundary is empty again, with exit code 0.[0m
+2026-09-25T15:11:12.4309929Z [36;1mgit -C candidate diff-tree --no-commit-id --name-only -r --diff-merges=first-parent HEAD | sort -u > "$RUNNER_TEMP/changed_paths.txt"[0m
+2026-09-25T15:11:12.4311548Z [36;1m# Fail closed, and never swallow a failure with `|| true`: an empty boundary must stop[0m
+2026-09-25T15:11:12.4312510Z [36;1m# the round rather than quietly degrade the review to "nothing changed".[0m
+2026-09-25T15:11:12.4313255Z [36;1mtest -s "$RUNNER_TEMP/changed_paths.txt"[0m
+2026-09-25T15:11:12.4313810Z [36;1mwc -l < "$RUNNER_TEMP/changed_paths.txt"[0m
+2026-09-25T15:11:12.4710007Z shell: /usr/bin/bash -e {0}
+2026-09-25T15:11:12.4710581Z env:
+2026-09-25T15:11:12.4710870Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:11:12.4711337Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:11:12.4711837Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:11:12.4712357Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:11:12.4712917Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:11:12.4713336Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:12.4713980Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-25T15:11:12.4714554Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:12.4715073Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:12.4715600Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:12.4716115Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-25T15:11:12.4716560Z ##[endgroup]
+2026-09-25T15:11:12.4934928Z 2
+2026-09-25T15:11:12.4977506Z ##[group]Run set -euo pipefail
+2026-09-25T15:11:12.4978113Z [36;1mset -euo pipefail[0m
+2026-09-25T15:11:12.4978616Z [36;1m# NOT `git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY`. The workspace root above is the[0m
+2026-09-25T15:11:12.4979255Z [36;1m# PINNED BACKEND checkout, so that resolves the backend commit's copy of this file[0m
+2026-09-25T15:11:12.4979891Z [36;1m# rather than the registered definition GitHub is running - and a later edit to the[0m
+2026-09-25T15:11:12.4981091Z [36;1m# registered workflow would not move the digest at all (CCV1-145B D-2). Resolve the[0m
+2026-09-25T15:11:12.4981740Z [36;1m# definition from the ref this run used (GITHUB_SHA) instead. The helper re-hashes the[0m
+2026-09-25T15:11:12.4982403Z [36;1m# returned bytes into git's own blob SHA and exits non-zero on any mismatch, because an[0m
+2026-09-25T15:11:12.4983069Z [36;1m# unbound workflow identity must stop the round, never fall back to something plausible.[0m
+2026-09-25T15:11:12.4983830Z [36;1mecho "LITE_WORKFLOW_SHA=$(python control-plane/c13-c14-lite/lite_cli.py workflow-identity \[0m
+2026-09-25T15:11:12.4984495Z [36;1m  --path "$LITE_WORKFLOW_IDENTITY" --ref "${GITHUB_SHA}")" >> "$GITHUB_ENV"[0m
+2026-09-25T15:11:12.5053224Z shell: /usr/bin/bash -e {0}
+2026-09-25T15:11:12.5053511Z env:
+2026-09-25T15:11:12.5053740Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:11:12.5054125Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:11:12.5054551Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:11:12.5054983Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:11:12.5055460Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:11:12.5055830Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:12.5056331Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-25T15:11:12.5056817Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:12.5057269Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:12.5057743Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:12.5058220Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-25T15:11:12.5061575Z   GH_TOKEN: ***
+2026-09-25T15:11:12.5061845Z ##[endgroup]
+2026-09-25T15:11:13.0247491Z ##[group]Run set -euo pipefail
+2026-09-25T15:11:13.0248109Z [36;1mset -euo pipefail[0m
+2026-09-25T15:11:13.0248560Z [36;1m{[0m
+2026-09-25T15:11:13.0249096Z [36;1m  echo "LITE_CANDIDATE_SHA=64715d308954049eb6675d81196d7f4cd853199b"[0m
+2026-09-25T15:11:13.0249846Z [36;1m  echo "LITE_APPLICATION_TREE=dd815baf0105cce603e9a28b002cfb9d8b95d186"[0m
+2026-09-25T15:11:13.0250638Z [36;1m  echo "LITE_ISSUE_NUMBER=68"[0m
+2026-09-25T15:11:13.0250982Z [36;1m  echo "LITE_REQUEST_ID=V70-R3-C13C14-03"[0m
+2026-09-25T15:11:13.0251331Z [36;1m  echo "LITE_LEDGER_ROUND_ID=V70-R3"[0m
+2026-09-25T15:11:13.0251661Z [36;1m  echo "LITE_C14_TASK_ID=V70-R3-C14-03"[0m
+2026-09-25T15:11:13.0251999Z [36;1m  echo "LITE_C13_TASK_ID=V70-R3-C13-03"[0m
+2026-09-25T15:11:13.0252365Z [36;1m  echo "LITE_WORKFLOW_SHA=$LITE_WORKFLOW_SHA"[0m
+2026-09-25T15:11:13.0252791Z [36;1m  echo "LITE_NONCE=c14-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$RANDOM"[0m
+2026-09-25T15:11:13.0253243Z [36;1m  echo "LITE_RUN_ID=${GITHUB_RUN_ID}"[0m
+2026-09-25T15:11:13.0253591Z [36;1m  echo "LITE_RUN_ATTEMPT=${GITHUB_RUN_ATTEMPT}"[0m
+2026-09-25T15:11:13.0253965Z [36;1m  echo "LITE_PRINCIPAL_ID=${GITHUB_ACTOR}"[0m
+2026-09-25T15:11:13.0254336Z [36;1m  echo "LITE_ISSUED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"[0m
+2026-09-25T15:11:13.0254793Z [36;1m  echo "LITE_EXPIRES_AT=$(date -u -d '+55 minutes' +%Y-%m-%dT%H:%M:%SZ)"[0m
+2026-09-25T15:11:13.0255188Z [36;1m} >> "$GITHUB_ENV"[0m
+2026-09-25T15:11:13.0255473Z [36;1mSCOPE_OUT="$RUNNER_TEMP/LITE_SCOPE_SHA256"[0m
+2026-09-25T15:11:13.0255857Z [36;1mpython control-plane/c13-c14-lite/lite_cli.py scope \[0m
+2026-09-25T15:11:13.0256210Z [36;1m  --role c14 \[0m
+2026-09-25T15:11:13.0256589Z [36;1m  --rule "GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES" \[0m
+2026-09-25T15:11:13.0257240Z [36;1m  --rule-version "unversioned" \[0m
+2026-09-25T15:11:13.0257610Z [36;1m  --changed-paths "$RUNNER_TEMP/changed_paths.txt" \[0m
+2026-09-25T15:11:13.0258013Z [36;1m  --out "$RUNNER_TEMP/scope.json" > "$SCOPE_OUT"[0m
+2026-09-25T15:11:13.0258556Z [36;1mecho "LITE_SCOPE_SHA256=$(grep -o '[0-9a-f]\{64\}' "$RUNNER_TEMP/scope.json" | head -1)" >> "$GITHUB_ENV"[0m
+2026-09-25T15:11:13.0329790Z shell: /usr/bin/bash -e {0}
+2026-09-25T15:11:13.0330067Z env:
+2026-09-25T15:11:13.0330462Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:11:13.0330832Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:11:13.0331237Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:11:13.0331683Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:11:13.0332138Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:11:13.0332480Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:13.0332941Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-25T15:11:13.0333445Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:13.0333869Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:13.0334299Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:13.0334717Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-25T15:11:13.0335143Z   LITE_WORKFLOW_SHA: cc43492e19b96b6128e030be8d62af91f7871703
+2026-09-25T15:11:13.0335507Z ##[endgroup]
+2026-09-25T15:11:13.1630001Z ##[group]Run set -euo pipefail
+2026-09-25T15:11:13.1630854Z [36;1mset -euo pipefail[0m
+2026-09-25T15:11:13.1631649Z [36;1mpython control-plane/c13-c14-lite/lite_cli.py spec --role c14 \[0m
+2026-09-25T15:11:13.1632431Z [36;1m  --spec "$RUNNER_TEMP/c14.spec.json" \[0m
+2026-09-25T15:11:13.1633053Z [36;1m  --facts "$RUNNER_TEMP/c14.facts.json" \[0m
+2026-09-25T15:11:13.1633701Z [36;1m  --contract "$RUNNER_TEMP/c14.contract.json"[0m
+2026-09-25T15:11:13.1726808Z shell: /usr/bin/bash -e {0}
+2026-09-25T15:11:13.1727260Z env:
+2026-09-25T15:11:13.1727622Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:11:13.1728229Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:11:13.1728891Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:11:13.1729550Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:11:13.1730636Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:11:13.1731297Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:13.1732072Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-25T15:11:13.1732871Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:13.1733592Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:13.1734350Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:13.1735075Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-25T15:11:13.1735824Z   LITE_WORKFLOW_SHA: cc43492e19b96b6128e030be8d62af91f7871703
+2026-09-25T15:11:13.1736553Z   LITE_CANDIDATE_SHA: 64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:13.1737304Z   LITE_APPLICATION_TREE: dd815baf0105cce603e9a28b002cfb9d8b95d186
+2026-09-25T15:11:13.1737972Z   LITE_ISSUE_NUMBER: 68
+2026-09-25T15:11:13.1738434Z   LITE_REQUEST_ID: V70-R3-C13C14-03
+2026-09-25T15:11:13.1738935Z   LITE_LEDGER_ROUND_ID: V70-R3
+2026-09-25T15:11:13.1739416Z   LITE_C14_TASK_ID: V70-R3-C14-03
+2026-09-25T15:11:13.1739922Z   LITE_C13_TASK_ID: V70-R3-C13-03
+2026-09-25T15:11:13.1740703Z   LITE_NONCE: c14-36152394748-1-4488
+2026-09-25T15:11:13.1741185Z   LITE_RUN_ID: 36152394748
+2026-09-25T15:11:13.1741612Z   LITE_RUN_ATTEMPT: 1
+2026-09-25T15:11:13.1742042Z   LITE_PRINCIPAL_ID: chenzhenxi1-sudo
+2026-09-25T15:11:13.1742549Z   LITE_ISSUED_AT: 2026-09-25T15:11:13Z
+2026-09-25T15:11:13.1743046Z   LITE_EXPIRES_AT: 2026-09-25T16:06:13Z
+2026-09-25T15:11:13.1743805Z   LITE_SCOPE_SHA256: 1356d60fa9451d85f0d57456d957795c6ca73b1589da38efe8d6be4f4a4f9443
+2026-09-25T15:11:13.1744922Z ##[endgroup]
+2026-09-25T15:11:13.3084086Z {"spec": "/home/runner/work/_temp/c14.spec.json", "facts": "/home/runner/work/_temp/c14.facts.json", "contract": "/home/runner/work/_temp/c14.contract.json", "cell_id": "C14"}
+2026-09-25T15:11:13.3246442Z ##[group]Run set -euo pipefail
+2026-09-25T15:11:13.3246876Z [36;1mset -euo pipefail[0m
+2026-09-25T15:11:13.3247239Z [36;1mmkdir -p "$RUNNER_TEMP/artifacts"[0m
+2026-09-25T15:11:13.3247744Z [36;1mpython control-plane/c13-c14-lite/lite_cli.py review \[0m
+2026-09-25T15:11:13.3248279Z [36;1m  --spec "$RUNNER_TEMP/c14.spec.json" \[0m
+2026-09-25T15:11:13.3248728Z [36;1m  --facts "$RUNNER_TEMP/c14.facts.json" \[0m
+2026-09-25T15:11:13.3249167Z [36;1m  --out "$RUNNER_TEMP/c14.outcome.json" \[0m
+2026-09-25T15:11:13.3249568Z [36;1m  --allow-blocked[0m
+2026-09-25T15:11:13.3314031Z shell: /usr/bin/bash -e {0}
+2026-09-25T15:11:13.3314360Z env:
+2026-09-25T15:11:13.3314624Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:11:13.3315102Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:11:13.3315603Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:11:13.3316100Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:11:13.3316702Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:11:13.3317121Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:13.3317689Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-25T15:11:13.3318254Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:13.3318769Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:13.3319314Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:13.3319831Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-25T15:11:13.3320684Z   LITE_WORKFLOW_SHA: cc43492e19b96b6128e030be8d62af91f7871703
+2026-09-25T15:11:13.3321212Z   LITE_CANDIDATE_SHA: 64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:13.3321777Z   LITE_APPLICATION_TREE: dd815baf0105cce603e9a28b002cfb9d8b95d186
+2026-09-25T15:11:13.3322260Z   LITE_ISSUE_NUMBER: 68
+2026-09-25T15:11:13.3322571Z   LITE_REQUEST_ID: V70-R3-C13C14-03
+2026-09-25T15:11:13.3322931Z   LITE_LEDGER_ROUND_ID: V70-R3
+2026-09-25T15:11:13.3323260Z   LITE_C14_TASK_ID: V70-R3-C14-03
+2026-09-25T15:11:13.3323579Z   LITE_C13_TASK_ID: V70-R3-C13-03
+2026-09-25T15:11:13.3323863Z   LITE_NONCE: c14-36152394748-1-4488
+2026-09-25T15:11:13.3324159Z   LITE_RUN_ID: 36152394748
+2026-09-25T15:11:13.3324422Z   LITE_RUN_ATTEMPT: 1
+2026-09-25T15:11:13.3324695Z   LITE_PRINCIPAL_ID: chenzhenxi1-sudo
+2026-09-25T15:11:13.3325007Z   LITE_ISSUED_AT: 2026-09-25T15:11:13Z
+2026-09-25T15:11:13.3325311Z   LITE_EXPIRES_AT: 2026-09-25T16:06:13Z
+2026-09-25T15:11:13.3325778Z   LITE_SCOPE_SHA256: 1356d60fa9451d85f0d57456d957795c6ca73b1589da38efe8d6be4f4a4f9443
+2026-09-25T15:11:13.3327061Z   OPENAI_API_KEY: ***
+2026-09-25T15:11:13.3327323Z ##[endgroup]
+2026-09-25T15:11:27.2924175Z {"verdict": "BLOCKED", "ai_provider": "OPENAI_RESPONSES_API"}
+2026-09-25T15:11:27.3126598Z ##[group]Run set -uo pipefail
+2026-09-25T15:11:27.3127218Z [36;1mset -uo pipefail[0m
+2026-09-25T15:11:27.3127736Z [36;1mmkdir -p "$RUNNER_TEMP/artifacts"[0m
+2026-09-25T15:11:27.3128537Z [36;1m# The seal is allowed to refuse. What it is NOT allowed to do is refuse and take the[0m
+2026-09-25T15:11:27.3129165Z [36;1m# only copy of the reviewer's reasoning with it: a refusal has to stay explainable[0m
+2026-09-25T15:11:27.3129774Z [36;1m# after the run (CCV1-145B D-4). So the output is captured either way and the refusal[0m
+2026-09-25T15:11:27.3130711Z [36;1m# is recorded in seal_result.json, which the raw-evidence step below publishes. A[0m
+2026-09-25T15:11:27.3131276Z [36;1m# refusal still fails this step, and therefore the job.[0m
+2026-09-25T15:11:27.3131712Z [36;1mif python control-plane/c13-c14-lite/lite_cli.py seal \[0m
+2026-09-25T15:11:27.3132110Z [36;1m     --spec "$RUNNER_TEMP/c14.spec.json" \[0m
+2026-09-25T15:11:27.3132741Z [36;1m     --contract "$RUNNER_TEMP/c14.contract.json" \[0m
+2026-09-25T15:11:27.3133123Z [36;1m     --outcome "$RUNNER_TEMP/c14.outcome.json" \[0m
+2026-09-25T15:11:27.3133504Z [36;1m     --out "$RUNNER_TEMP/artifacts/c14_bundle.json" \[0m
+2026-09-25T15:11:27.3133968Z [36;1m     > "$RUNNER_TEMP/seal_stdout.txt" 2> "$RUNNER_TEMP/seal_stderr.txt"; then[0m
+2026-09-25T15:11:27.3134550Z [36;1m  printf '{"step":"seal","status":"SEALED","exit_code":0}\n' > "$RUNNER_TEMP/seal_result.json"[0m
+2026-09-25T15:11:27.3135142Z [36;1m  cp "$RUNNER_TEMP/c14.outcome.json" "$RUNNER_TEMP/artifacts/c14_opinion.json"[0m
+2026-09-25T15:11:27.3135707Z [36;1m  cp "$RUNNER_TEMP/c14.contract.json" "$RUNNER_TEMP/artifacts/c14_contract.json"[0m
+2026-09-25T15:11:27.3136172Z [36;1m  cat "$RUNNER_TEMP/seal_stdout.txt"[0m
+2026-09-25T15:11:27.3136481Z [36;1melse[0m
+2026-09-25T15:11:27.3136704Z [36;1m  code=$?[0m
+2026-09-25T15:11:27.3137150Z [36;1m  printf '{"step":"seal","status":"REFUSED","exit_code":%s}\n' "$code" > "$RUNNER_TEMP/seal_result.json"[0m
+2026-09-25T15:11:27.3137760Z [36;1m  cat "$RUNNER_TEMP/seal_stdout.txt" "$RUNNER_TEMP/seal_stderr.txt"[0m
+2026-09-25T15:11:27.3138153Z [36;1m  exit "$code"[0m
+2026-09-25T15:11:27.3138385Z [36;1mfi[0m
+2026-09-25T15:11:27.3202333Z shell: /usr/bin/bash -e {0}
+2026-09-25T15:11:27.3202606Z env:
+2026-09-25T15:11:27.3202829Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:11:27.3203174Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:11:27.3203566Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:11:27.3203959Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:11:27.3204393Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:11:27.3204739Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:27.3205188Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-25T15:11:27.3205633Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:27.3206059Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:27.3206456Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:27.3206871Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-25T15:11:27.3207281Z   LITE_WORKFLOW_SHA: cc43492e19b96b6128e030be8d62af91f7871703
+2026-09-25T15:11:27.3207683Z   LITE_CANDIDATE_SHA: 64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:27.3208112Z   LITE_APPLICATION_TREE: dd815baf0105cce603e9a28b002cfb9d8b95d186
+2026-09-25T15:11:27.3208469Z   LITE_ISSUE_NUMBER: 68
+2026-09-25T15:11:27.3208712Z   LITE_REQUEST_ID: V70-R3-C13C14-03
+2026-09-25T15:11:27.3208987Z   LITE_LEDGER_ROUND_ID: V70-R3
+2026-09-25T15:11:27.3209239Z   LITE_C14_TASK_ID: V70-R3-C14-03
+2026-09-25T15:11:27.3209493Z   LITE_C13_TASK_ID: V70-R3-C13-03
+2026-09-25T15:11:27.3209744Z   LITE_NONCE: c14-36152394748-1-4488
+2026-09-25T15:11:27.3210004Z   LITE_RUN_ID: 36152394748
+2026-09-25T15:11:27.3210530Z   LITE_RUN_ATTEMPT: 1
+2026-09-25T15:11:27.3210856Z   LITE_PRINCIPAL_ID: chenzhenxi1-sudo
+2026-09-25T15:11:27.3211387Z   LITE_ISSUED_AT: 2026-09-25T15:11:13Z
+2026-09-25T15:11:27.3211673Z   LITE_EXPIRES_AT: 2026-09-25T16:06:13Z
+2026-09-25T15:11:27.3212092Z   LITE_SCOPE_SHA256: 1356d60fa9451d85f0d57456d957795c6ca73b1589da38efe8d6be4f4a4f9443
+2026-09-25T15:11:27.3212524Z ##[endgroup]
+2026-09-25T15:11:27.4248102Z {"bundle": "/home/runner/work/_temp/artifacts/c14_bundle.json", "C14_ROOT": "d2b839cbba494708c18b5937197781bd8da2beba73a080645b16c468aadd7b6c", "verdict": "BLOCKED"}
+2026-09-25T15:11:27.4284948Z ##[group]Run set -euo pipefail
+2026-09-25T15:11:27.4285344Z [36;1mset -euo pipefail[0m
+2026-09-25T15:11:27.4285777Z [36;1m# Independent of the seal, and it deliberately does NOT publish the sealed bundle:[0m
+2026-09-25T15:11:27.4286398Z [36;1m# raw review evidence is not sealed evidence. No credential is passed to this step,[0m
+2026-09-25T15:11:27.4286990Z [36;1m# because the leak guard is shape-based and passing the key would widen its blast[0m
+2026-09-25T15:11:27.4287739Z [36;1m# radius for nothing (the artefacts have no credential field to begin with).[0m
+2026-09-25T15:11:27.4288526Z [36;1mpython control-plane/c13-c14-lite/lite_cli.py raw-evidence \[0m
+2026-09-25T15:11:27.4289011Z [36;1m  --out "$RUNNER_TEMP/raw" \[0m
+2026-09-25T15:11:27.4289339Z [36;1m  --spec "$RUNNER_TEMP/c14.spec.json" \[0m
+2026-09-25T15:11:27.4289682Z [36;1m  --facts "$RUNNER_TEMP/c14.facts.json" \[0m
+2026-09-25T15:11:27.4290039Z [36;1m  --contract "$RUNNER_TEMP/c14.contract.json" \[0m
+2026-09-25T15:11:27.4290726Z [36;1m  --outcome "$RUNNER_TEMP/c14.outcome.json" \[0m
+2026-09-25T15:11:27.4291086Z [36;1m  --scope "$RUNNER_TEMP/scope.json" \[0m
+2026-09-25T15:11:27.4291457Z [36;1m  --seal-result "$RUNNER_TEMP/seal_result.json" \[0m
+2026-09-25T15:11:27.4291837Z [36;1m  --seal-stdout "$RUNNER_TEMP/seal_stdout.txt" \[0m
+2026-09-25T15:11:27.4292210Z [36;1m  --seal-stderr "$RUNNER_TEMP/seal_stderr.txt"[0m
+2026-09-25T15:11:27.4354615Z shell: /usr/bin/bash -e {0}
+2026-09-25T15:11:27.4354891Z env:
+2026-09-25T15:11:27.4355099Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:11:27.4355446Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:11:27.4355836Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:11:27.4356225Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:11:27.4356643Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:11:27.4356969Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:27.4357410Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-25T15:11:27.4357868Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:27.4358278Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:27.4358674Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:27.4359192Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-25T15:11:27.4359871Z   LITE_WORKFLOW_SHA: cc43492e19b96b6128e030be8d62af91f7871703
+2026-09-25T15:11:27.4360819Z   LITE_CANDIDATE_SHA: 64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:27.4361560Z   LITE_APPLICATION_TREE: dd815baf0105cce603e9a28b002cfb9d8b95d186
+2026-09-25T15:11:27.4362202Z   LITE_ISSUE_NUMBER: 68
+2026-09-25T15:11:27.4362604Z   LITE_REQUEST_ID: V70-R3-C13C14-03
+2026-09-25T15:11:27.4363019Z   LITE_LEDGER_ROUND_ID: V70-R3
+2026-09-25T15:11:27.4363402Z   LITE_C14_TASK_ID: V70-R3-C14-03
+2026-09-25T15:11:27.4363822Z   LITE_C13_TASK_ID: V70-R3-C13-03
+2026-09-25T15:11:27.4364285Z   LITE_NONCE: c14-36152394748-1-4488
+2026-09-25T15:11:27.4364750Z   LITE_RUN_ID: 36152394748
+2026-09-25T15:11:27.4365121Z   LITE_RUN_ATTEMPT: 1
+2026-09-25T15:11:27.4365511Z   LITE_PRINCIPAL_ID: chenzhenxi1-sudo
+2026-09-25T15:11:27.4365961Z   LITE_ISSUED_AT: 2026-09-25T15:11:13Z
+2026-09-25T15:11:27.4366386Z   LITE_EXPIRES_AT: 2026-09-25T16:06:13Z
+2026-09-25T15:11:27.4367035Z   LITE_SCOPE_SHA256: 1356d60fa9451d85f0d57456d957795c6ca73b1589da38efe8d6be4f4a4f9443
+2026-09-25T15:11:27.4367744Z ##[endgroup]
+2026-09-25T15:11:27.5255264Z {"raw_evidence": "/home/runner/work/_temp/raw", "files": 8, "missing": [], "seal_status": {"step": "seal", "status": "SEALED", "exit_code": 0}}
+2026-09-25T15:11:27.5415687Z ##[group]Run actions/upload-artifact@v4
+2026-09-25T15:11:27.5416008Z with:
+2026-09-25T15:11:27.5416312Z   name: c13c14-lite-c14-raw-64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:27.5416700Z   path: /home/runner/work/_temp/raw
+2026-09-25T15:11:27.5416982Z   if-no-files-found: warn
+2026-09-25T15:11:27.5417223Z   retention-days: 90
+2026-09-25T15:11:27.5417450Z   compression-level: 6
+2026-09-25T15:11:27.5417676Z   overwrite: false
+2026-09-25T15:11:27.5417902Z   include-hidden-files: false
+2026-09-25T15:11:27.5418142Z env:
+2026-09-25T15:11:27.5418344Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:11:27.5418670Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:11:27.5419053Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:11:27.5419604Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:11:27.5420030Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:11:27.5420769Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:27.5421225Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-25T15:11:27.5421684Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:27.5422079Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:27.5422478Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:27.5422869Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-25T15:11:27.5423275Z   LITE_WORKFLOW_SHA: cc43492e19b96b6128e030be8d62af91f7871703
+2026-09-25T15:11:27.5423671Z   LITE_CANDIDATE_SHA: 64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:27.5424080Z   LITE_APPLICATION_TREE: dd815baf0105cce603e9a28b002cfb9d8b95d186
+2026-09-25T15:11:27.5424436Z   LITE_ISSUE_NUMBER: 68
+2026-09-25T15:11:27.5424690Z   LITE_REQUEST_ID: V70-R3-C13C14-03
+2026-09-25T15:11:27.5424958Z   LITE_LEDGER_ROUND_ID: V70-R3
+2026-09-25T15:11:27.5425220Z   LITE_C14_TASK_ID: V70-R3-C14-03
+2026-09-25T15:11:27.5425490Z   LITE_C13_TASK_ID: V70-R3-C13-03
+2026-09-25T15:11:27.5425759Z   LITE_NONCE: c14-36152394748-1-4488
+2026-09-25T15:11:27.5426026Z   LITE_RUN_ID: 36152394748
+2026-09-25T15:11:27.5426274Z   LITE_RUN_ATTEMPT: 1
+2026-09-25T15:11:27.5426519Z   LITE_PRINCIPAL_ID: chenzhenxi1-sudo
+2026-09-25T15:11:27.5426803Z   LITE_ISSUED_AT: 2026-09-25T15:11:13Z
+2026-09-25T15:11:27.5427075Z   LITE_EXPIRES_AT: 2026-09-25T16:06:13Z
+2026-09-25T15:11:27.5427491Z   LITE_SCOPE_SHA256: 1356d60fa9451d85f0d57456d957795c6ca73b1589da38efe8d6be4f4a4f9443
+2026-09-25T15:11:27.5427920Z ##[endgroup]
+2026-09-25T15:11:27.7586276Z (node:2348) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-25T15:11:27.7587563Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-25T15:11:27.7831180Z With the provided path, there will be 9 files uploaded
+2026-09-25T15:11:27.7860822Z Artifact name is valid!
+2026-09-25T15:11:27.7880740Z Root directory input is valid!
+2026-09-25T15:11:28.1727651Z Beginning upload of artifact content to blob storage
+2026-09-25T15:11:28.2104932Z (node:2348) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-25T15:11:28.4804634Z Uploaded bytes 4737
+2026-09-25T15:11:28.5580431Z Finished uploading artifact content to blob storage!
+2026-09-25T15:11:28.5581981Z SHA256 digest of uploaded artifact zip is 4bbc0619e623b129254b9b3c9e8de41c9fbfdb2dd9a406e31bc7a777a1e359e2
+2026-09-25T15:11:28.5583349Z Finalizing artifact upload
+2026-09-25T15:11:28.8198173Z Artifact c13c14-lite-c14-raw-64715d308954049eb6675d81196d7f4cd853199b.zip successfully finalized. Artifact ID 10871828874
+2026-09-25T15:11:28.8201333Z Artifact c13c14-lite-c14-raw-64715d308954049eb6675d81196d7f4cd853199b has been successfully uploaded! Final size is 4737 bytes. Artifact ID is 10871828874
+2026-09-25T15:11:28.8207567Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/36152394748/artifacts/10871828874
+2026-09-25T15:11:28.8368075Z ##[group]Run actions/upload-artifact@v4
+2026-09-25T15:11:28.8368647Z with:
+2026-09-25T15:11:28.8369164Z   name: c13c14-lite-c14-64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:28.8369875Z   path: /home/runner/work/_temp/artifacts
+2026-09-25T15:11:28.8370722Z   if-no-files-found: error
+2026-09-25T15:11:28.8371181Z   retention-days: 90
+2026-09-25T15:11:28.8371613Z   compression-level: 6
+2026-09-25T15:11:28.8372042Z   overwrite: false
+2026-09-25T15:11:28.8372461Z   include-hidden-files: false
+2026-09-25T15:11:28.8372920Z env:
+2026-09-25T15:11:28.8373296Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:11:28.8373920Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:11:28.8374899Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:11:28.8375620Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:11:28.8376440Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:11:28.8377099Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:28.8377920Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-25T15:11:28.8378720Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:28.8379459Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:28.8380557Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:28.8381376Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-25T15:11:28.8382156Z   LITE_WORKFLOW_SHA: cc43492e19b96b6128e030be8d62af91f7871703
+2026-09-25T15:11:28.8382918Z   LITE_CANDIDATE_SHA: 64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:28.8383702Z   LITE_APPLICATION_TREE: dd815baf0105cce603e9a28b002cfb9d8b95d186
+2026-09-25T15:11:28.8384390Z   LITE_ISSUE_NUMBER: 68
+2026-09-25T15:11:28.8384844Z   LITE_REQUEST_ID: V70-R3-C13C14-03
+2026-09-25T15:11:28.8385350Z   LITE_LEDGER_ROUND_ID: V70-R3
+2026-09-25T15:11:28.8385831Z   LITE_C14_TASK_ID: V70-R3-C14-03
+2026-09-25T15:11:28.8386345Z   LITE_C13_TASK_ID: V70-R3-C13-03
+2026-09-25T15:11:28.8386839Z   LITE_NONCE: c14-36152394748-1-4488
+2026-09-25T15:11:28.8387340Z   LITE_RUN_ID: 36152394748
+2026-09-25T15:11:28.8387808Z   LITE_RUN_ATTEMPT: 1
+2026-09-25T15:11:28.8388277Z   LITE_PRINCIPAL_ID: chenzhenxi1-sudo
+2026-09-25T15:11:28.8388806Z   LITE_ISSUED_AT: 2026-09-25T15:11:13Z
+2026-09-25T15:11:28.8389341Z   LITE_EXPIRES_AT: 2026-09-25T16:06:13Z
+2026-09-25T15:11:28.8390116Z   LITE_SCOPE_SHA256: 1356d60fa9451d85f0d57456d957795c6ca73b1589da38efe8d6be4f4a4f9443
+2026-09-25T15:11:28.8391191Z ##[endgroup]
+2026-09-25T15:11:29.0249633Z (node:2360) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-25T15:11:29.0251508Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-25T15:11:29.0381263Z With the provided path, there will be 3 files uploaded
+2026-09-25T15:11:29.0411703Z Artifact name is valid!
+2026-09-25T15:11:29.0428659Z Root directory input is valid!
+2026-09-25T15:11:29.4410708Z Beginning upload of artifact content to blob storage
+2026-09-25T15:11:29.4657580Z (node:2360) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-25T15:11:29.7451504Z Uploaded bytes 2973
+2026-09-25T15:11:29.8238872Z Finished uploading artifact content to blob storage!
+2026-09-25T15:11:29.8240781Z SHA256 digest of uploaded artifact zip is 9d1273453697b64ae55393817650ca1631d46d31b8a310360518a1b0ee74b695
+2026-09-25T15:11:29.8244025Z Finalizing artifact upload
+2026-09-25T15:11:30.1424821Z Artifact c13c14-lite-c14-64715d308954049eb6675d81196d7f4cd853199b.zip successfully finalized. Artifact ID 10871833984
+2026-09-25T15:11:30.1427897Z Artifact c13c14-lite-c14-64715d308954049eb6675d81196d7f4cd853199b has been successfully uploaded! Final size is 2973 bytes. Artifact ID is 10871833984
+2026-09-25T15:11:30.1431250Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/36152394748/artifacts/10871833984
+2026-09-25T15:11:30.1576702Z ##[group]Run set -euo pipefail
+2026-09-25T15:11:30.1577059Z [36;1mset -euo pipefail[0m
+2026-09-25T15:11:30.1577432Z [36;1mpython control-plane/c13-c14-lite/lite_readback.py \[0m
+2026-09-25T15:11:30.1577840Z [36;1m  --role c14 \[0m
+2026-09-25T15:11:30.1578224Z [36;1m  --candidate-sha "64715d308954049eb6675d81196d7f4cd853199b" \[0m
+2026-09-25T15:11:30.1578674Z [36;1m  --expected-head-sha "${GITHUB_SHA}" \[0m
+2026-09-25T15:11:30.1579082Z [36;1m  --workflow-path "$LITE_WORKFLOW_IDENTITY" \[0m
+2026-09-25T15:11:30.1579640Z [36;1m  --run-id "${GITHUB_RUN_ID}" \[0m
+2026-09-25T15:11:30.1580555Z [36;1m  --out "$RUNNER_TEMP/artifacts/readback.json"[0m
+2026-09-25T15:11:30.1645522Z shell: /usr/bin/bash -e {0}
+2026-09-25T15:11:30.1645909Z env:
+2026-09-25T15:11:30.1646216Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:11:30.1646725Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:11:30.1647284Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:11:30.1647901Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:11:30.1648525Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:11:30.1649006Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:30.1649648Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-25T15:11:30.1650587Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:30.1651168Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:30.1651753Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:30.1652357Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-25T15:11:30.1652960Z   LITE_WORKFLOW_SHA: cc43492e19b96b6128e030be8d62af91f7871703
+2026-09-25T15:11:30.1653548Z   LITE_CANDIDATE_SHA: 64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:30.1654167Z   LITE_APPLICATION_TREE: dd815baf0105cce603e9a28b002cfb9d8b95d186
+2026-09-25T15:11:30.1654699Z   LITE_ISSUE_NUMBER: 68
+2026-09-25T15:11:30.1655059Z   LITE_REQUEST_ID: V70-R3-C13C14-03
+2026-09-25T15:11:30.1655470Z   LITE_LEDGER_ROUND_ID: V70-R3
+2026-09-25T15:11:30.1655843Z   LITE_C14_TASK_ID: V70-R3-C14-03
+2026-09-25T15:11:30.1656228Z   LITE_C13_TASK_ID: V70-R3-C13-03
+2026-09-25T15:11:30.1656605Z   LITE_NONCE: c14-36152394748-1-4488
+2026-09-25T15:11:30.1657000Z   LITE_RUN_ID: 36152394748
+2026-09-25T15:11:30.1657350Z   LITE_RUN_ATTEMPT: 1
+2026-09-25T15:11:30.1657710Z   LITE_PRINCIPAL_ID: chenzhenxi1-sudo
+2026-09-25T15:11:30.1658128Z   LITE_ISSUED_AT: 2026-09-25T15:11:13Z
+2026-09-25T15:11:30.1658523Z   LITE_EXPIRES_AT: 2026-09-25T16:06:13Z
+2026-09-25T15:11:30.1659145Z   LITE_SCOPE_SHA256: 1356d60fa9451d85f0d57456d957795c6ca73b1589da38efe8d6be4f4a4f9443
+2026-09-25T15:11:30.1662750Z   GH_TOKEN: ***
+2026-09-25T15:11:30.1663013Z ##[endgroup]
+2026-09-25T15:11:31.4982281Z {"artifact_id": 10871833984, "digest": "sha256:9d1273453697b64ae55393817650ca1631d46d31b8a310360518a1b0ee74b695", "match": true}
+2026-09-25T15:11:31.5195564Z ##[group]Run actions/upload-artifact@v4
+2026-09-25T15:11:31.5196140Z with:
+2026-09-25T15:11:31.5196745Z   name: c13c14-lite-c14-readback-64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:31.5197595Z   path: /home/runner/work/_temp/artifacts/readback.json
+2026-09-25T15:11:31.5198193Z   if-no-files-found: warn
+2026-09-25T15:11:31.5198632Z   retention-days: 90
+2026-09-25T15:11:31.5199044Z   compression-level: 6
+2026-09-25T15:11:31.5199472Z   overwrite: false
+2026-09-25T15:11:31.5199903Z   include-hidden-files: false
+2026-09-25T15:11:31.5200815Z env:
+2026-09-25T15:11:31.5201188Z   LITE_CELL_PAIR: C13+C14
+2026-09-25T15:11:31.5201826Z   LITE_WORKFLOW_IDENTITY: .github/workflows/c14-rule-compliance.yml
+2026-09-25T15:11:31.5202519Z   LITE_AI_MODEL: gpt-5.6-sol
+2026-09-25T15:11:31.5203208Z   LITE_APPLICABLE_RULES: GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES
+2026-09-25T15:11:31.5203996Z   LITE_RULE_VERSION: unversioned
+2026-09-25T15:11:31.5204647Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:31.5205455Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib/pkgconfig
+2026-09-25T15:11:31.5206247Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:31.5206970Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:31.5207735Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.15/x64
+2026-09-25T15:11:31.5208481Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.15/x64/lib
+2026-09-25T15:11:31.5209255Z   LITE_WORKFLOW_SHA: cc43492e19b96b6128e030be8d62af91f7871703
+2026-09-25T15:11:31.5209999Z   LITE_CANDIDATE_SHA: 64715d308954049eb6675d81196d7f4cd853199b
+2026-09-25T15:11:31.5211569Z   LITE_APPLICATION_TREE: dd815baf0105cce603e9a28b002cfb9d8b95d186
+2026-09-25T15:11:31.5212149Z   LITE_ISSUE_NUMBER: 68
+2026-09-25T15:11:31.5212594Z   LITE_REQUEST_ID: V70-R3-C13C14-03
+2026-09-25T15:11:31.5213194Z   LITE_LEDGER_ROUND_ID: V70-R3
+2026-09-25T15:11:31.5213681Z   LITE_C14_TASK_ID: V70-R3-C14-03
+2026-09-25T15:11:31.5214797Z   LITE_C13_TASK_ID: V70-R3-C13-03
+2026-09-25T15:11:31.5215305Z   LITE_NONCE: c14-36152394748-1-4488
+2026-09-25T15:11:31.5215806Z   LITE_RUN_ID: 36152394748
+2026-09-25T15:11:31.5216255Z   LITE_RUN_ATTEMPT: 1
+2026-09-25T15:11:31.5216720Z   LITE_PRINCIPAL_ID: chenzhenxi1-sudo
+2026-09-25T15:11:31.5217255Z   LITE_ISSUED_AT: 2026-09-25T15:11:13Z
+2026-09-25T15:11:31.5217761Z   LITE_EXPIRES_AT: 2026-09-25T16:06:13Z
+2026-09-25T15:11:31.5218528Z   LITE_SCOPE_SHA256: 1356d60fa9451d85f0d57456d957795c6ca73b1589da38efe8d6be4f4a4f9443
+2026-09-25T15:11:31.5219294Z ##[endgroup]
+2026-09-25T15:11:31.7307902Z (node:2374) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-25T15:11:31.7309514Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-25T15:11:31.7375934Z With the provided path, there will be 1 file uploaded
+2026-09-25T15:11:31.7400822Z Artifact name is valid!
+2026-09-25T15:11:31.7420954Z Root directory input is valid!
+2026-09-25T15:11:32.1240859Z Beginning upload of artifact content to blob storage
+2026-09-25T15:11:32.1446781Z (node:2374) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-25T15:11:32.3975288Z Uploaded bytes 679
+2026-09-25T15:11:32.4701149Z Finished uploading artifact content to blob storage!
+2026-09-25T15:11:32.4703712Z SHA256 digest of uploaded artifact zip is 01da04905ae659dd54691064f4f464c28876bb830263e961d511f39eb65d35ba
+2026-09-25T15:11:32.4706380Z Finalizing artifact upload
+2026-09-25T15:11:32.7146583Z Artifact c13c14-lite-c14-readback-64715d308954049eb6675d81196d7f4cd853199b.zip successfully finalized. Artifact ID 10871399271
+2026-09-25T15:11:32.7149678Z Artifact c13c14-lite-c14-readback-64715d308954049eb6675d81196d7f4cd853199b has been successfully uploaded! Final size is 679 bytes. Artifact ID is 10871399271
+2026-09-25T15:11:32.7153551Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/36152394748/artifacts/10871399271
+2026-09-25T15:11:32.7339615Z Post job cleanup.
+2026-09-25T15:11:32.8683394Z (node:2387) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-25T15:11:32.8685005Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-25T15:11:32.8960469Z Post job cleanup.
+2026-09-25T15:11:33.0394468Z [command]/usr/bin/git version
+2026-09-25T15:11:33.0469505Z git version 2.55.0
+2026-09-25T15:11:33.0534885Z Temporarily overriding HOME='/home/runner/work/_temp/886f508e-0dfc-44f7-80a1-aa85e1db0cd7' before making global git config changes
+2026-09-25T15:11:33.0544349Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-25T15:11:33.0546221Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO/candidate
+2026-09-25T15:11:33.0631548Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-25T15:11:33.0670612Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-25T15:11:33.1071342Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-25T15:11:33.1143851Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-25T15:11:33.1588030Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-25T15:11:33.1671556Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-25T15:11:33.2306402Z Post job cleanup.
+2026-09-25T15:11:33.3310944Z [command]/usr/bin/git version
+2026-09-25T15:11:33.3362760Z git version 2.55.0
+2026-09-25T15:11:33.3424466Z Temporarily overriding HOME='/home/runner/work/_temp/7c4f9ba8-6e10-4d95-a22e-4b9e8c54ef83' before making global git config changes
+2026-09-25T15:11:33.3434534Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-25T15:11:33.3435827Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-25T15:11:33.3494841Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-25T15:11:33.3562690Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-25T15:11:33.3982316Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-25T15:11:33.4036546Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-25T15:11:33.4484575Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-25T15:11:33.4564508Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-25T15:11:33.5133329Z Cleaning up orphan processes
+2026-09-25T15:11:33.5436758Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
