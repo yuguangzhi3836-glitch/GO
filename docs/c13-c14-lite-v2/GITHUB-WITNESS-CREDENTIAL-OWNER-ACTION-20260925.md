@@ -1,6 +1,8 @@
 # Required action — GitHub witness credential for CC and HK
 
-> **Status 2026-09-25 19:5x: the installer is hardened, tested and already deployed to both
+> **Status: the installer is deployed to both hosts and now self-verifies against GitHub;
+> the readback tool is staged at `/tmp/ccv1-144a-tools`. CC is installed and fully green.
+> Only the HK paste remains, and it must be done by the credential owner in their own terminal.**
 > hosts; the readback tool is staged at `/tmp/ccv1-144a-tools`. Only the two pastes remain,
 > and they must be done by the credential owner in their own terminal.**
 
@@ -60,7 +62,7 @@ command line (a command line is visible in `ps` and lands in shell history).
 The installer has already been placed on both hosts and verified by hash:
 
 ```text
-/root/go-witness-credential-install.sh   0700 root:root   sha256 1425195f3e62f15a…
+/root/go-witness-credential-install.sh   0700 root:root   sha256 390811443902156154c345c61bb532a997f4e6cb8998369061b6f3ad0b0c7719
 ```
 
 It reads the credential from stdin only, so the value never appears in `argv`, in shell
@@ -100,15 +102,47 @@ installed          : /etc/go-command-center/keys/github-witness-reader.token
 previous mode      : absent
 new mode           : 600
 new owner          : root:root
-value length       : <n>
+value length       : 93
+value round-trips  : YES
 token  echoed      : NO
 token  committed   : NO
 TOKEN_CONTENT_REDACTED=YES
+verify  GET /user               : 200
+verify  GET /repos/<GO>         : 200
+VERIFY             : PASS
 ```
 
-Without `--apply` it prints the plan and changes nothing, and it refuses an empty value,
-a value containing whitespace, or a multi-line value. The script installs exactly one
-file, at exactly this custody, and refuses to finish if the result is not exactly that:
+**`VERIFY : PASS` is the line that matters.** The installer checks the credential against
+real GitHub before reporting success, `GET /user` and `GET /repos/yuguangzhi3836-glitch/GO`
+must both answer 200, and anything else prints a classified failure and exits non-zero:
+
+```text
+FAIL_CREDENTIAL_REJECTED        GitHub answered 401 - the value is wrong or expired
+FAIL_REPOSITORY_OUT_OF_SCOPE    /user is 200 but the repository is 404 - the token's
+                                repository selection does not include GO
+SKIPPED_NETWORK                 the host could not reach api.github.com; re-run or
+                                verify separately
+```
+
+This check exists because the first real install produced a silent `401`. What happened:
+the terminal injected a stray `ESC` byte in front of the pasted value, so the file held
+`\x1bgithub_pat_…` and GitHub answered `Bad credentials`. Nothing in the terminal showed
+it. The installer now removes bracketed-paste markers and any byte outside the credential
+alphabet `[A-Za-z0-9_]`, **reports how many characters it removed**, refuses anything that
+is not a known credential shape, and reads the file back to confirm the value round-trips.
+
+If you ever see this line, the value was salvaged rather than stored raw — check it:
+
+```text
+note: removed N non-credential character(s) injected by the terminal
+```
+
+`--no-verify` skips the GitHub check (used only in offline sandboxes).
+
+Also refused, each without writing anything: an empty value, a value spanning multiple
+lines, a value that does not start with a known GitHub credential prefix, and a value
+shorter than 20 characters. The script installs exactly one file, at exactly this custody,
+and refuses to finish if the result is not exactly that:
 
 ```text
 cc  /etc/go-command-center/keys/github-witness-reader.token   root:root                0600
