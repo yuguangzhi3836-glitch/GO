@@ -6,7 +6,8 @@ reviewable Python instead of inside YAML.
 
 Subcommands
 -----------
-``spec``          build one frozen candidate spec + contract from the dispatch env
+``spec``          build one frozen candidate spec + contract from the dispatch env, the
+                  frozen scope and the candidate's own first-parent diff
 ``review``        run one fresh AI review execution (or the labelled local stub)
 ``seal``          seal a bundle from the contract, the review outcome and machine evidence
 ``verify``        verify a whole C13+C14 round and write the decision
@@ -149,7 +150,106 @@ def _env_spec(role: str) -> dict:
     }
 
 
-def _facts(role: str, spec: dict, *, task_id: str) -> dict:
+def _read_frozen_scope(path) -> dict:
+    """Load the frozen scope this round bound, and refuse anything that is not that scope.
+
+    The scope file is the ONE derivation of the change surface. Both facts builders read it
+    from here, so the reviewer and the sealed record cannot describe different candidates -
+    which is exactly what happened when `changed_paths` was filled from the spec instead:
+    the spec has no such key, the reviewer was handed an empty change surface, and the
+    record still sealed clean (CCV1-147B).
+    """
+    try:
+        document = _read(path)
+    except (OSError, ValueError) as error:
+        raise SystemExit(f"spec: cannot read the frozen scope {path}: {type(error).__name__}")
+    if not isinstance(document, dict) or not isinstance(document.get("scope"), dict):
+        raise SystemExit(f"spec: {path} is not a scope record (no 'scope' object)")
+    if document.get("scope_sha256") != lite_canonical.digest(document["scope"]):
+        raise SystemExit(f"spec: {path} does not match its own scope digest")
+    return document
+
+
+def _read_candidate_diff(path) -> str:
+    """The frozen candidate's own first-parent diff; empty is a hard stop.
+
+    An empty diff is not "a small change" - it is the reviewer being asked to review
+    nothing, which is how a wrong input used to become a clean NOT_APPLICABLE.
+    """
+    try:
+        raw = pathlib.Path(path).read_bytes()
+    except OSError as error:
+        raise SystemExit(f"spec: cannot read the candidate diff {path}: {type(error).__name__}")
+    if not raw.strip():
+        raise SystemExit(f"spec: the candidate diff {path} is empty (there is nothing to review)")
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise SystemExit(f"spec: the candidate diff {path} is not utf-8 text: {error.reason}")
+
+
+def _junit_counts(path) -> dict:
+    """The counts a quality reviewer can act on, read from the run's own junit XML."""
+    import xml.etree.ElementTree as element_tree
+
+    try:
+        root = element_tree.parse(str(path)).getroot()
+    except (OSError, element_tree.ParseError) as error:
+        raise SystemExit(f"spec: cannot read the machine junit {path}: {type(error).__name__}")
+    suites = [root] if root.tag == "testsuite" else list(root.iter("testsuite"))
+    if not suites:
+        raise SystemExit(f"spec: the machine junit {path} carries no testsuite element")
+    counts = {}
+    for name in ("tests", "failures", "errors", "skipped"):
+        values = [suite.get(name) for suite in suites]
+        present = [int(value) for value in values if value is not None and str(value).strip().isdigit()]
+        counts[name] = sum(present) if present else None
+    return counts
+
+
+def _machine_evidence(manifest_path, junit_path) -> dict:
+    """What the machine job actually produced, structured, for the quality reviewer.
+
+    Read from the run's own manifest and junit, and copied verbatim rather than overwritten
+    with anything from the dispatch: if the manifest ever names another candidate, that has
+    to be visible in the facts instead of being silently replaced by the frozen one. No
+    second evidence schema is invented here - these are the fields the manifest already has.
+    """
+    if not manifest_path:
+        raise SystemExit("spec: c13 requires --machine-manifest (the machine evidence is an input)")
+    if not junit_path:
+        raise SystemExit("spec: c13 requires --junit (the machine evidence is an input)")
+    try:
+        manifest = _read(manifest_path)
+    except (OSError, ValueError) as error:
+        raise SystemExit(f"spec: cannot read the machine manifest {manifest_path}: {type(error).__name__}")
+    if not isinstance(manifest, dict):
+        raise SystemExit(f"spec: the machine manifest {manifest_path} is not an object")
+    return {
+        "inventory": manifest.get("inventory"),
+        "candidate_sha": manifest.get("candidate_sha"),
+        "application_tree": manifest.get("application_tree"),
+        "docker_used": manifest.get("docker_used"),
+        "postgres_version": manifest.get("postgres_version"),
+        "junit": _junit_counts(junit_path),
+        "junit_sha256": manifest.get("junit_sha256"),
+        "stdout_sha256": manifest.get("stdout_sha256"),
+    }
+
+
+def _assert_facts_carry_the_frozen_content(facts: dict, scope: dict) -> None:
+    """The reviewer may not be told about a different change surface than the round froze.
+
+    A post-condition, checked on the facts that are about to be written: it is satisfied by
+    construction today, and its job is to stop the next edit that decides to derive the list
+    again instead of reading the frozen one.
+    """
+    if list(facts.get("changed_paths") or []) != list(scope.get("changed_paths") or []):
+        raise SystemExit("spec: the facts change surface is not the frozen scope's change surface")
+
+
+def _facts(role: str, spec: dict, *, task_id: str, scope: dict, candidate_diff: str,
+           machine_manifest=None, junit=None) -> dict:
     facts = {
         "repository": spec["repository"],
         "candidate_sha": spec["candidate_sha"],
@@ -162,6 +262,16 @@ def _facts(role: str, spec: dict, *, task_id: str) -> dict:
             "cell_id": spec["cell_id"],
             "task_id": task_id,
         },
+        # Read straight out of the scope this round froze: one derivation, and the reviewer is
+        # its consumer. These two keys used to be filled from `spec`, which has no
+        # `changed_paths` key at all - so the reviewer was handed an EMPTY change surface while
+        # the frozen scope held eight paths, and it faithfully answered NOT_APPLICABLE for "no
+        # changed paths". Every digest recomputed, so nothing failed (CCV1-147B).
+        "changed_paths": list(scope["changed_paths"]),
+        # And not only the names: the actual content this candidate brings in. These are git's
+        # own bytes (the candidate's first-parent diff) - there is no diff authority, no
+        # signature and no second registry behind them.
+        "candidate_diff": candidate_diff,
     }
     if role == "c14":
         rule_input = spec["rule_input"]
@@ -181,11 +291,10 @@ def _facts(role: str, spec: dict, *, task_id: str) -> dict:
         ]
         facts["rule_input_sha256"] = rule_input["rule_input_sha256"]
         facts["authority_commit"] = rule_input.get("authority_commit")
-        facts["changed_paths"] = spec.get("changed_paths", [])
     else:
         facts["quality_test_scope_sha256"] = spec["scope_sha256"]
-        facts["machine_evidence"] = spec.get("machine_evidence", {})
-        facts["acceptance_criteria"] = spec.get("acceptance_criteria", [])
+        facts["acceptance_criteria"] = list(scope.get("acceptance_criteria") or [])
+        facts["machine_evidence"] = _machine_evidence(machine_manifest, junit)
     return facts
 
 
@@ -195,7 +304,27 @@ def _task_id(role: str, spec: dict) -> str:
 
 def cmd_spec(args) -> int:
     spec = _env_spec(args.role)
-    facts = _facts(args.role, spec, task_id=_task_id(args.role, spec))
+    if args.role == "c13" and (not args.machine_manifest or not args.junit):
+        raise SystemExit("spec: c13 requires --machine-manifest and --junit (machine evidence is an input)")
+    if args.role != "c13" and (args.machine_manifest or args.junit):
+        raise SystemExit("spec: --machine-manifest and --junit are c13 only")
+    # The frozen scope, not a re-derivation of it: the digest has to be the one this round
+    # bound, and it has to be non-empty. Either check failing means the reviewer would be
+    # asked to review something other than what was frozen, so the round stops here - before
+    # any AI call - rather than producing a clean verdict over the wrong input (CCV1-147B).
+    scope_document = _read_frozen_scope(args.scope)
+    if scope_document["scope_sha256"] != spec["scope_sha256"]:
+        raise SystemExit(
+            "spec: the supplied scope is not the one this round bound "
+            f"({scope_document['scope_sha256']} != {spec['scope_sha256']})")
+    scope = scope_document["scope"]
+    if not scope.get("changed_paths"):
+        raise SystemExit("spec: the frozen scope carries no changed paths (there is nothing to review)")
+    candidate_diff = _read_candidate_diff(args.candidate_diff)
+    facts = _facts(args.role, spec, task_id=_task_id(args.role, spec), scope=scope,
+                   candidate_diff=candidate_diff, machine_manifest=args.machine_manifest,
+                   junit=args.junit)
+    _assert_facts_carry_the_frozen_content(facts, scope)
     prompt = lite_ai_reviewer.build_prompt(args.role, facts)
     contract = lite_candidate.build(
         repository=spec["repository"],
@@ -685,6 +814,16 @@ def main(argv=None) -> int:
     spec.add_argument("--spec", required=True)
     spec.add_argument("--facts", required=True)
     spec.add_argument("--contract", required=True)
+    # Required, not optional: without them the reviewer is handed an empty change surface and
+    # an empty diff, which is exactly the defect this round removes (CCV1-147B). There is no
+    # default to fall back to and no dispatch input was added for them - both are files the
+    # run already produced.
+    spec.add_argument("--scope", required=True,
+                      help="the scope.json this round froze; the change surface is read from it")
+    spec.add_argument("--candidate-diff", required=True,
+                      help="the frozen candidate's own first-parent diff")
+    spec.add_argument("--machine-manifest", help="c13 only: the machine-test manifest.json")
+    spec.add_argument("--junit", help="c13 only: the machine-test junit.xml")
     spec.set_defaults(func=cmd_spec)
 
     scope = sub.add_parser("scope")

@@ -243,15 +243,22 @@ class DispatchEnvRobustnessTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             rule_input = pathlib.Path(directory, "rule_input.json")
             rule_input.write_text(json.dumps(fx.rule_input_record()), encoding="utf-8")
+            changed = pathlib.Path(directory, "changed_paths.txt")
+            changed.write_text("application/a.py\n", encoding="utf-8")
+            candidate_diff = pathlib.Path(directory, "candidate.diff")
+            candidate_diff.write_text(
+                "diff --git a/application/a.py b/application/a.py\n", encoding="utf-8")
             scope = self.run_cli(
                 ["scope", "--role", "c14", "--rule-input", str(rule_input),
-                 "--out", f"{directory}/scope.json"],
+                 "--changed-paths", str(changed), "--out", f"{directory}/scope.json"],
                 self.spec_env(directory, "0" * 64, rule_input=rule_input),
             )
             self.assertEqual(scope.returncode, 0, scope.stderr)
             digest = json.loads(pathlib.Path(directory, "scope.json").read_text(encoding="utf-8"))["scope_sha256"]
             spec = self.run_cli(
-                ["spec", "--role", "c14", "--spec", f"{directory}/spec.json",
+                ["spec", "--role", "c14", "--scope", f"{directory}/scope.json",
+                 "--candidate-diff", str(candidate_diff),
+                 "--spec", f"{directory}/spec.json",
                  "--facts", f"{directory}/facts.json", "--contract", f"{directory}/contract.json"],
                 self.spec_env(directory, digest, rule_input=rule_input),
             )
@@ -262,15 +269,31 @@ class DispatchEnvRobustnessTests(unittest.TestCase):
             self.assertEqual(contract["ledger_reference"]["task_id"], "POC-C14-TASK")
 
     def test_empty_values_do_not_trip_the_missing_env_check(self):
+        import json
         import tempfile
 
         with tempfile.TemporaryDirectory() as directory:
             rule_input = pathlib.Path(directory, "rule_input.json")
             rule_input.write_text(json.dumps(fx.rule_input_record()), encoding="utf-8")
-            env = self.spec_env(directory, "0" * 64, rule_input=rule_input)
+            changed = pathlib.Path(directory, "changed_paths.txt")
+            changed.write_text("application/a.py\n", encoding="utf-8")
+            candidate_diff = pathlib.Path(directory, "candidate.diff")
+            candidate_diff.write_text(
+                "diff --git a/application/a.py b/application/a.py\n", encoding="utf-8")
+            frozen = self.run_cli(
+                ["scope", "--role", "c14", "--rule-input", str(rule_input),
+                 "--changed-paths", str(changed), "--out", f"{directory}/scope.json"],
+                self.spec_env(directory, "0" * 64, rule_input=rule_input),
+            )
+            self.assertEqual(frozen.returncode, 0, frozen.stderr)
+            digest = json.loads(
+                pathlib.Path(directory, "scope.json").read_text(encoding="utf-8"))["scope_sha256"]
+            env = self.spec_env(directory, digest, rule_input=rule_input)
             env.update({"LITE_AI_MODEL": "", "LITE_PRINCIPAL_ID": "", "LITE_ISSUE_NUMBER": ""})
             result = self.run_cli(
-                ["spec", "--role", "c14", "--spec", f"{directory}/s.json",
+                ["spec", "--role", "c14", "--scope", f"{directory}/scope.json",
+                 "--candidate-diff", str(candidate_diff),
+                 "--spec", f"{directory}/s.json",
                  "--facts", f"{directory}/f.json", "--contract", f"{directory}/c.json"],
                 env,
             )
@@ -284,12 +307,123 @@ class DispatchEnvRobustnessTests(unittest.TestCase):
             env = self.spec_env(directory, "0" * 64)
             del env["LITE_SCOPE_SHA256"]
             result = self.run_cli(
-                ["spec", "--role", "c14", "--spec", f"{directory}/s.json",
+                ["spec", "--role", "c14", "--scope", f"{directory}/scope.json",
+                 "--candidate-diff", f"{directory}/candidate.diff",
+                 "--spec", f"{directory}/s.json",
                  "--facts", f"{directory}/f.json", "--contract", f"{directory}/c.json"],
                 env,
             )
             self.assertEqual(result.returncode, 1)
             self.assertIn("missing dispatch env", result.stderr)
+
+
+
+class ReviewContentInputGuardTests(unittest.TestCase):
+    """CCV1-147B: the reviewer must be given the content, and the guard must see that it is.
+
+    The runtime already fails closed (a missing or empty diff stops the round before any AI
+    call), so this aims at the layer below: an edit that drops the arguments or the diff
+    generation should be caught when the workflow is reviewed, not by an unexplained red run.
+    """
+
+    DIFF_BLOCK = (
+        "          git -C candidate diff --no-ext-diff --no-color HEAD^1 HEAD"
+        " > \"$RUNNER_TEMP/candidate.diff\"\n"
+        "          test -s \"$RUNNER_TEMP/candidate.diff\"\n"
+    )
+
+    TEMPLATE = (
+        "name: x\n"
+        "jobs:\n"
+        "  review:\n"
+        "    steps:\n"
+        "      - name: Freeze the boundary and the diff\n"
+        "        run: |\n"
+        "          set -euo pipefail\n"
+        "          git -C candidate diff-tree --no-commit-id --name-only -r"
+        " --diff-merges=first-parent HEAD | sort -u > \"$RUNNER_TEMP/changed_paths.txt\"\n"
+        "          test -s \"$RUNNER_TEMP/changed_paths.txt\"\n"
+        "{diff}"
+        "      - name: Build the frozen candidate contract\n"
+        "        run: |\n"
+        "          set -euo pipefail\n"
+        "          python control-plane/c13-c14-lite/lite_cli.py spec --role {role} \\\n"
+        "{flags}"
+        "            --spec \"$RUNNER_TEMP/x.spec.json\"\n"
+    )
+
+    C14_FLAGS = ("            --scope \"$RUNNER_TEMP/scope.json\" \\\n"
+                 "            --candidate-diff \"$RUNNER_TEMP/candidate.diff\" \\\n")
+    C13_FLAGS = C14_FLAGS + ("            --machine-manifest \"$RUNNER_TEMP/manifest.json\" \\\n"
+                             "            --junit \"$RUNNER_TEMP/junit.xml\" \\\n")
+
+    def failures_for(self, role, flags=None, diff=None):
+        raw = self.TEMPLATE.format(
+            role=role,
+            flags=self.C13_FLAGS if flags is None else flags,
+            diff=self.DIFF_BLOCK if diff is None else diff)
+        failures = []
+        lite_workflow_check.check_spec_carries_the_frozen_review_content(
+            lite_workflow_check.C13_WORKFLOW if role == "c13" else lite_workflow_check.C14_WORKFLOW,
+            raw, failures)
+        return failures
+
+    def test_the_shipped_workflows_pass(self):
+        for role, name in (("c14", lite_workflow_check.C14_WORKFLOW),
+                           ("c13", lite_workflow_check.C13_WORKFLOW)):
+            failures = []
+            raw = (WORKFLOW_DIR / name).read_text(encoding="utf-8")
+            lite_workflow_check.check_spec_carries_the_frozen_review_content(name, raw, failures)
+            self.assertEqual(failures, [], name)
+
+    def test_dropping_the_candidate_diff_argument_is_caught(self):
+        flags = self.C14_FLAGS.replace(
+            "            --candidate-diff \"$RUNNER_TEMP/candidate.diff\" \\\n", "")
+        joined = " | ".join(self.failures_for("c14", flags=flags))
+        self.assertIn("--candidate-diff", joined)
+
+    def test_dropping_the_scope_argument_is_caught(self):
+        flags = self.C14_FLAGS.replace(
+            "            --scope \"$RUNNER_TEMP/scope.json\" \\\n", "")
+        joined = " | ".join(self.failures_for("c14", flags=flags))
+        self.assertIn("--scope", joined)
+
+    def test_dropping_the_machine_evidence_arguments_is_caught_for_c13(self):
+        self.assertIn("--machine-manifest",
+                      " | ".join(self.failures_for("c13", flags=self.C14_FLAGS)))
+        self.assertIn("--junit", " | ".join(self.failures_for("c13", flags=self.C14_FLAGS)))
+
+    def test_removing_the_diff_generation_is_caught(self):
+        self.assertTrue(self.failures_for("c14", diff=""), "no diff is ever frozen")
+
+    def test_an_empty_diff_is_not_left_unchecked(self):
+        partial = self.DIFF_BLOCK.replace("          test -s \"$RUNNER_TEMP/candidate.diff\"\n", "")
+        self.assertTrue(self.failures_for("c14", diff=partial), "an empty diff must be refused")
+
+    def test_the_explanation_alone_does_not_satisfy_the_guard(self):
+        """The guard must not be satisfied by the step's own commentary about the defect.
+
+        This is the lesson from the machine-dependency guard: quoting the fixed form inside a
+        comment made that guard pass on a file whose real fix had been deleted.
+        """
+        shipped = (WORKFLOW_DIR / lite_workflow_check.C14_WORKFLOW).read_text(encoding="utf-8")
+        rendered = ("\n".join(
+            f"          # {line.strip()}"
+            if line.strip().startswith("git -C candidate diff ") or
+            line.strip().startswith("test -s \"$RUNNER_TEMP/candidate.diff\"")
+            else line
+            for line in shipped.splitlines()) + "\n")
+        self.assertNotEqual(rendered, shipped)
+        failures = []
+        lite_workflow_check.check_spec_carries_the_frozen_review_content(
+            lite_workflow_check.C14_WORKFLOW, rendered, failures)
+        self.assertTrue(failures, "a commented-out fix must not satisfy the guard")
+
+    def test_the_poc_probe_is_exempt(self):
+        failures = []
+        lite_workflow_check.check_spec_carries_the_frozen_review_content(
+            lite_workflow_check.POC_WORKFLOW, "name: x\n", failures)
+        self.assertEqual(failures, [])
 
 
 if __name__ == "__main__":

@@ -251,6 +251,16 @@ jobs:
           git -C candidate diff-tree --no-commit-id --name-only -r --diff-merges=first-parent HEAD | sort -u > "$RUNNER_TEMP/changed_paths.txt"
           # Fail closed, and never swallow a failure with `|| true`.
           test -s "$RUNNER_TEMP/changed_paths.txt"
+          # WHAT changed, not only which paths: the reviewer is asked to judge content, and the
+          # first real Review E2E handed the model an empty change surface while the frozen scope
+          # carried eight paths - it faithfully answered NOT_APPLICABLE for "no changed paths"
+          # (CCV1-147B; proved by recomputing both digests, and nothing failed because every
+          # digest still recomputed). These are git's own bytes for the frozen candidate's
+          # first-parent diff. No diff authority, no signature and no second registry: GitHub
+          # already owns commit identity.
+          git -C candidate diff --no-ext-diff --no-color HEAD^1 HEAD > "$RUNNER_TEMP/candidate.diff"
+          test -s "$RUNNER_TEMP/candidate.diff"
+          wc -c < "$RUNNER_TEMP/candidate.diff"
           cp c14-input/c14_bundle.json "$RUNNER_TEMP/c14_bundle.json"
           cp machine-input/junit.xml machine-input/stdout.txt machine-input/manifest.json machine-input/test_inventory.txt "$RUNNER_TEMP/"
           cp c14-input/c14_contract.json "$RUNNER_TEMP/c14.contract.json"
@@ -302,7 +312,16 @@ jobs:
       - name: Build the frozen candidate contract
         run: |
           set -euo pipefail
+          # The reviewer gets the change surface, the content, the acceptance criteria and the
+          # machine evidence the machine job actually produced; all four are files this run
+          # already has, so none of them became a dispatch input. Without them the facts carried
+          # an empty change surface, an empty diff and empty machine evidence - the same defect
+          # as C14's, one cell over (CCV1-147B).
           python control-plane/c13-c14-lite/lite_cli.py spec --role c13 \
+            --scope "$RUNNER_TEMP/scope.json" \
+            --candidate-diff "$RUNNER_TEMP/candidate.diff" \
+            --machine-manifest "$RUNNER_TEMP/manifest.json" \
+            --junit "$RUNNER_TEMP/junit.xml" \
             --spec "$RUNNER_TEMP/c13.spec.json" \
             --facts "$RUNNER_TEMP/c13.facts.json" \
             --contract "$RUNNER_TEMP/c13.contract.json"
