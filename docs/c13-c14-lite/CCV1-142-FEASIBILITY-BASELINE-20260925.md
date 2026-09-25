@@ -9,7 +9,7 @@
 - 正式 C13/C14 Run：0
 - 部署/安装/重启/IAM/Secret 变更：0
 
-> 本文把 CCV1-142 摸底中与后续 C13/C14 Lite 改造直接相关的现场事实固化到 GitHub。它不是 C13/C14 PASS，也不是部署授权。
+> 本文把 CCV1-142 摸底中与后续 C13/C14 Lite 改造直接相关的现场事实固化到 GitHub。它不是 C13/C14 PASS，也不是部署授权。\n>\n> **Owner 后续职责更正（2026-09-25）：C13 = 独立质量验收；C14 = 宪法、权限、法律、监管、合同及 AI 行为规则审查。** 因此本报告中历史实现把 C14 当作“运行侧第二质量验收”的部分，仅保留为改造前事实，不再代表最终目标职责。
 
 ## 1. 工程结论
 
@@ -176,7 +176,7 @@ Machine Test != Independent AI Opinion
 
 ---
 
-## 4. GitHub-hosted C14 沙箱已经被证明可运行
+## 4. GitHub-hosted 质量沙箱已经被证明可运行（最终归 C13）
 
 #241 的 GitHub-hosted runner 已真实执行：
 
@@ -199,7 +199,7 @@ Machine Test != Independent AI Opinion
 
 因此：
 
-> “C14 需要真实 Docker/PostgreSQL 验收”并不能推出“必须新购独立 ECS”。
+> 历史 #241 已证明“真实 Docker/PostgreSQL 质量验收可以在 GitHub-hosted runner 完成”。按 Owner 最新职责，这项能力最终归 **C13 独立质量验收**；C14 不需要因此购买独立 ECS。
 
 ---
 
@@ -471,4 +471,4 @@ External new service  = NO
 
 更准确的工程描述是：
 
-> **复用旧版 C13/C14 的 AI reviewer 形态 + 复用 #241 已成熟的冻结候选/机器验收/完整性能力 + 复用现有 CC/HK 的签名和服务器，删除过度扩张的独立基础设施要求，收敛成按需、双 AI、双见证的 Lite 验收链。**
+> **复用旧版 C13/C14 的 AI reviewer 形态 + 复用 #241 已成熟的冻结候选/机器验收/完整性能力 + 复用现有 CC/HK 的签名和服务器；同时按 Owner 最新职责把质量沙箱归 C13、把 C14 收敛为宪法/权限/法务/规则审查，形成按需、双 AI、双见证的 Lite 审核链。**
