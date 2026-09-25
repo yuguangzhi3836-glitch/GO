@@ -136,6 +136,14 @@ C13 production run                     : 0（三轮都只派发 C14；C13 至今
     10871399271  c13c14-lite-c14-readback-…       679 B  sha256:01da0490…
   ⚠ 本轮 seal **没有**拒绝 ⇒ "seal 拒绝时 raw 仍存在"这一条**未在真 run 中复现**（见 §1.2 末）
 C13 production run                     : 0（三轮都只派发 C14；C13 至今从未真跑）
+🆕 **C14 规则输入缺口（2026-09-25，decision A）**：三次 run 都只给 C14 三个规则**名字** + scope 哈希，
+   **从未给规范正文**，且版本全 `unversioned`。实测（`git grep` at `64715d30`）：
+   `PERMISSION_BOUNDARY` / `AI_BEHAVIOUR_RULES` 在整个仓库里**只出现在我们自己写的 workflow** 中；
+   `GO_CONSTITUTION` 的另一处命中是 C14 单元的能力名 `GO_CONSTITUTION_REVIEW`，**不是规则正文**。
+   ⇒ 按现状输入 C14 结构上给不出 `PASS_SCOPED`；`BLOCKED` 是**正确**结论。
+   最小补充设计（冻结 `authoritative_rule_snapshot`，六字段 / 路径而非 input / fail-closed）
+   → `C13-C14-LITE-V2-AUTHORITATIVE-RULE-SNAPSHOT-DESIGN-20260925.md`。
+   ⛔ 在 Owner 指定三条规则的规范归属之前，**该 snapshot 无法在不伪造规则正文的前提下填出来**。
 历史 POC run                          : 若干次（POC_ONLY），是历史事实，**不主动删除**
                                         ⚠ 其 artifact 同样受 GitHub retention 期限约束；若要作为
                                           长期审计证据，须在到期前归档（见 §2.I）
@@ -146,6 +154,9 @@ C13 production run                     : 0（三轮都只派发 C14；C13 至今
   ⚠ **诚实边界**：r3 的 seal 是**成功**的，所以 raw artifact 是在**成功路径**上产出的；
     "seal 拒绝时 raw evidence 仍存在"这条目前**只有离线回归测试**覆盖（PR #254 的 37 条），
     **尚未**在真实 run 中复现。
+  ✅ **已由真人定案（2026-09-25，decision B）**：**不做**专门的 live drill —— 不添加测试开关、
+    不故意损坏输入、不为把它变绿而多跑一次 production run。该条**保留为自然故障时的验证项**，
+    并且**不是 C13 的独立阻断条件**。
 ```
 
 ### 1.3 Host secret 状态（两台，各 3 个文件）
