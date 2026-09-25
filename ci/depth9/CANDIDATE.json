@@ -1,10 +1,10 @@
 {
   "schema": "go.unified.depth9.candidate.v1",
-  "source_commit": "1ee6fd666ac32bf712b951080ae9d80714a51d47",
+  "source_commit": "0bee8d59841ac387b572f2a953e829774f9089b1",
   "main_base": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
-  "application_git_tree": "d487902d1bf40fdb1c50092265631575ab1e7c49",
-  "source_files": 1534,
-  "source_tree_sha256": "fe7dfed28cc3ce49d7666a9f18babccf4d5deb4917eff441074fdbb2eee87007",
+  "application_git_tree": "6ca210c5d459f0e5ff45929a31df0d1edf77d843",
+  "source_files": 1535,
+  "source_tree_sha256": "92f03f997986b7a45ba150478177a182f10c09c5319ac785a7badbcc8356237a",
   "inputs": {
     "202": "cd6345e32dd258c7f11f0766a36a168bad99a7f5",
     "204": "e9667461dcdc848f1fcfdf024bba905202235b49",
@@ -52,26 +52,20 @@
     "full_byte_verification": "REQUIRED_IN_CI"
   },
   "engineering_continuation": {
-    "parent_commit": "cb8928f2ce915825f7c95321a0fc26ed0b5530e6",
+    "parent_commit": "cba99d085ffe8ff576e44120ac796e59b4ff11bf",
     "prior_binding": {
-      "source_commit": "e24d1180fafedd7b01117c93c9614d3b0bda9752",
-      "application_git_tree": "95b29433d237e2c882b6696bae77227c3e40d7db",
-      "source_files": 1532,
-      "source_tree_sha256": "fce2cf532a5fe2c22a0763b8a8f83ef1bebc6bb6a47b65bdb85a4a6b6965baaf",
+      "source_commit": "1ee6fd666ac32bf712b951080ae9d80714a51d47",
+      "application_git_tree": "d487902d1bf40fdb1c50092265631575ab1e7c49",
+      "source_files": 1534,
+      "source_tree_sha256": "fe7dfed28cc3ce49d7666a9f18babccf4d5deb4917eff441074fdbb2eee87007",
       "C13": "PENDING_INDEPENDENT",
       "C14": "PENDING_RULES_REVIEW"
     },
     "changed_application_paths": [
-      "application/frontend/admin/rental-deposit-finance.js",
-      "application/frontend/consumer/rental-deposit.js",
-      "application/frontend/shared/rental-operations.js",
-      "application/src/go_hotel/api/routes/rental_deposit_money.py",
-      "application/src/go_hotel/mobility/rental/deposit_authority.py",
-      "application/src/go_hotel/services/rental_deposit_money.py",
-      "application/src/go_hotel/services/rental_deposit_review.py",
-      "application/tests/payments/test_c11_deposit_compensation.py",
-      "application/tests/test_rental_compensation_authority.py",
-      "application/tests_frontend/rental_deposit_operations.test.mjs"
+      "application/src/go_hotel/api/routes/hosted_direct_booking.py",
+      "application/src/go_hotel/services/hosted_content_acceptance.py",
+      "application/tests/test_c01_hosted_content_authority.py",
+      "application/tests/test_hosted_content_operations_acceptance.py"
     ],
     "acceptance": "PENDING_INDEPENDENT",
     "historical_pass_transferred": false
@@ -220,6 +214,31 @@
         "application/tests_frontend/rental_deposit_operations.test.mjs",
         "application/tests_frontend/rental_operations_adapter.test.mjs",
         "application/tests_frontend/ride_policy_operations.test.mjs"
+      ],
+      "acceptance": "PENDING_INDEPENDENT",
+      "historical_pass_transferred": false
+    },
+    {
+      "parent_commit": "cb8928f2ce915825f7c95321a0fc26ed0b5530e6",
+      "prior_binding": {
+        "source_commit": "e24d1180fafedd7b01117c93c9614d3b0bda9752",
+        "application_git_tree": "95b29433d237e2c882b6696bae77227c3e40d7db",
+        "source_files": 1532,
+        "source_tree_sha256": "fce2cf532a5fe2c22a0763b8a8f83ef1bebc6bb6a47b65bdb85a4a6b6965baaf",
+        "C13": "PENDING_INDEPENDENT",
+        "C14": "PENDING_RULES_REVIEW"
+      },
+      "changed_application_paths": [
+        "application/frontend/admin/rental-deposit-finance.js",
+        "application/frontend/consumer/rental-deposit.js",
+        "application/frontend/shared/rental-operations.js",
+        "application/src/go_hotel/api/routes/rental_deposit_money.py",
+        "application/src/go_hotel/mobility/rental/deposit_authority.py",
+        "application/src/go_hotel/services/rental_deposit_money.py",
+        "application/src/go_hotel/services/rental_deposit_review.py",
+        "application/tests/payments/test_c11_deposit_compensation.py",
+        "application/tests/test_rental_compensation_authority.py",
+        "application/tests_frontend/rental_deposit_operations.test.mjs"
       ],
       "acceptance": "PENDING_INDEPENDENT",
       "historical_pass_transferred": false

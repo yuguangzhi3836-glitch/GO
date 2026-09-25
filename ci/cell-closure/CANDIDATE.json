@@ -1,11 +1,11 @@
 {
   "schema": "go.v70.cell-closure.rebind.v3",
-  "product_candidate_commit": "1ee6fd666ac32bf712b951080ae9d80714a51d47",
-  "gate_parent_commit": "1ee6fd666ac32bf712b951080ae9d80714a51d47",
+  "product_candidate_commit": "0bee8d59841ac387b572f2a953e829774f9089b1",
+  "gate_parent_commit": "0bee8d59841ac387b572f2a953e829774f9089b1",
   "baseline_commit": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
-  "application_git_tree": "d487902d1bf40fdb1c50092265631575ab1e7c49",
-  "source_files": 1534,
-  "source_tree_sha256": "fe7dfed28cc3ce49d7666a9f18babccf4d5deb4917eff441074fdbb2eee87007",
+  "application_git_tree": "6ca210c5d459f0e5ff45929a31df0d1edf77d843",
+  "source_files": 1535,
+  "source_tree_sha256": "92f03f997986b7a45ba150478177a182f10c09c5319ac785a7badbcc8356237a",
   "inherited_candidate": {
     "path": "ci/cell-closure/CANDIDATE_INHERITED_85FB.json",
     "git_blob": "b0801c355a1d32c7c888caa41c5bf81208b46da3",
@@ -155,6 +155,7 @@
     "application/src/go_hotel/services/consumer_unified_lifecycle.py",
     "application/src/go_hotel/services/flight_change_resolution.py",
     "application/src/go_hotel/services/flight_command_lease.py",
+    "application/src/go_hotel/services/hosted_content_acceptance.py",
     "application/src/go_hotel/services/hosted_fare_rules.py",
     "application/src/go_hotel/services/hosted_money.py",
     "application/src/go_hotel/services/hotel_autopage_factory.py",
@@ -213,6 +214,7 @@
     "application/tests/test_agent_native_lifecycle_p03.py",
     "application/tests/test_agent_transaction_gateway_six_vertical.py",
     "application/tests/test_agent_transaction_lifecycle_p02.py",
+    "application/tests/test_c01_hosted_content_authority.py",
     "application/tests/test_c03_c06_change_quote_fencing.py",
     "application/tests/test_c05_cancellation_policy.py",
     "application/tests/test_c05_engineering_currency.py",
@@ -249,6 +251,7 @@
     "application/tests/test_external_orders_in_go_trips.py",
     "application/tests/test_final_depth_terminal_hardening.py",
     "application/tests/test_final_depth_vault_booking_entry.py",
+    "application/tests/test_hosted_content_operations_acceptance.py",
     "application/tests/test_hotel_cancellation_clock.py",
     "application/tests/test_hotel_direct_review_ui.cjs",
     "application/tests/test_hotel_direct_submission_api.py",
@@ -350,29 +353,23 @@
   "historical_pass_transferred": false,
   "task_id": "V70-CURRENT-CELLS-UNIFIED",
   "cell_id": "INTEGRATION",
-  "candidate_head": "1ee6fd666ac32bf712b951080ae9d80714a51d47",
+  "candidate_head": "0bee8d59841ac387b572f2a953e829774f9089b1",
   "migration_file": "application/alembic/versions/0138_supplier_library_import.py",
   "c06_external_supplier_provenance": "BLOCKED_EXTERNAL",
   "integration_evidence": "ci/depth9/CANDIDATE.json",
   "engineering_continuation": {
-    "parent_commit": "cb8928f2ce915825f7c95321a0fc26ed0b5530e6",
+    "parent_commit": "cba99d085ffe8ff576e44120ac796e59b4ff11bf",
     "prior_binding": {
-      "product_candidate_commit": "e24d1180fafedd7b01117c93c9614d3b0bda9752",
-      "application_git_tree": "95b29433d237e2c882b6696bae77227c3e40d7db",
-      "source_files": 1532,
-      "source_tree_sha256": "fce2cf532a5fe2c22a0763b8a8f83ef1bebc6bb6a47b65bdb85a4a6b6965baaf"
+      "product_candidate_commit": "1ee6fd666ac32bf712b951080ae9d80714a51d47",
+      "application_git_tree": "d487902d1bf40fdb1c50092265631575ab1e7c49",
+      "source_files": 1534,
+      "source_tree_sha256": "fe7dfed28cc3ce49d7666a9f18babccf4d5deb4917eff441074fdbb2eee87007"
     },
     "changed_application_paths": [
-      "application/frontend/admin/rental-deposit-finance.js",
-      "application/frontend/consumer/rental-deposit.js",
-      "application/frontend/shared/rental-operations.js",
-      "application/src/go_hotel/api/routes/rental_deposit_money.py",
-      "application/src/go_hotel/mobility/rental/deposit_authority.py",
-      "application/src/go_hotel/services/rental_deposit_money.py",
-      "application/src/go_hotel/services/rental_deposit_review.py",
-      "application/tests/payments/test_c11_deposit_compensation.py",
-      "application/tests/test_rental_compensation_authority.py",
-      "application/tests_frontend/rental_deposit_operations.test.mjs"
+      "application/src/go_hotel/api/routes/hosted_direct_booking.py",
+      "application/src/go_hotel/services/hosted_content_acceptance.py",
+      "application/tests/test_c01_hosted_content_authority.py",
+      "application/tests/test_hosted_content_operations_acceptance.py"
     ],
     "acceptance": "PENDING_INDEPENDENT",
     "historical_pass_transferred": false
@@ -517,6 +514,29 @@
         "application/tests_frontend/rental_deposit_operations.test.mjs",
         "application/tests_frontend/rental_operations_adapter.test.mjs",
         "application/tests_frontend/ride_policy_operations.test.mjs"
+      ],
+      "acceptance": "PENDING_INDEPENDENT",
+      "historical_pass_transferred": false
+    },
+    {
+      "parent_commit": "cb8928f2ce915825f7c95321a0fc26ed0b5530e6",
+      "prior_binding": {
+        "product_candidate_commit": "e24d1180fafedd7b01117c93c9614d3b0bda9752",
+        "application_git_tree": "95b29433d237e2c882b6696bae77227c3e40d7db",
+        "source_files": 1532,
+        "source_tree_sha256": "fce2cf532a5fe2c22a0763b8a8f83ef1bebc6bb6a47b65bdb85a4a6b6965baaf"
+      },
+      "changed_application_paths": [
+        "application/frontend/admin/rental-deposit-finance.js",
+        "application/frontend/consumer/rental-deposit.js",
+        "application/frontend/shared/rental-operations.js",
+        "application/src/go_hotel/api/routes/rental_deposit_money.py",
+        "application/src/go_hotel/mobility/rental/deposit_authority.py",
+        "application/src/go_hotel/services/rental_deposit_money.py",
+        "application/src/go_hotel/services/rental_deposit_review.py",
+        "application/tests/payments/test_c11_deposit_compensation.py",
+        "application/tests/test_rental_compensation_authority.py",
+        "application/tests_frontend/rental_deposit_operations.test.mjs"
       ],
       "acceptance": "PENDING_INDEPENDENT",
       "historical_pass_transferred": false
