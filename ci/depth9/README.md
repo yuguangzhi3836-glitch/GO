@@ -7,7 +7,7 @@
 - Canonical main：`aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0`。
 - 产品提交：`911a08c78b1702bbbfb19a6b5383cb86356155bc`。
 - application tree：`f0449feb9135505fca03f623c1d9142be48e0632`，1490 个文件。
-- 完整预期指纹：`961fb094e75bb380a264aa8f0c00a6d03db747bc15ac74c750e182fa50e3e095`。
+- 完整预期指纹：`2c454fe55d0684ab6515f619421f0debf12c2899387e4c9c0ce1dec8905aa8c9`。
 - 迁移头：`0138_supplier_library_import`。没有执行部署或线上迁移。
 - 已部署业务基线为 PR #202；纳入 #204、#205、#208、#216、#217、#226、#227、#235、#240。完整 SHA 见 CANDIDATE.json。
 
@@ -33,7 +33,7 @@
 
 上述浏览器证据的原始指纹在 local-browser/source-binding.json。它来自整合过程中的检查点，且本地缺少 4 个未修改的历史图片字节。预期图片哈希从已核验 ZIP 的历史清单取得；没有生成替代图片、跳过正式 CI 的字节核验或声称本地完整 checkout 已验证。最终 application tree 必须由全量 CI 重新验收。
 
-完整回归初跑暴露 105 项失败；其中 99 项在注册夹具及旧断言对齐后通过。剩余 6 项对应部分扣款结算兼容及旧回调夹具缺少 operation/amount/currency，已修复并启动最终全量复测。最终结果另写 RESULTS.json，保留初跑和失败复测证据。
+完整回归初跑暴露 105 项失败；其中 99 项在注册夹具及旧断言对齐后通过。剩余 6 项对应部分扣款结算兼容及旧回调夹具缺少 operation/amount/currency，已修复，最终四个分片全量复测通过：2802 个 pytest 测试 + 44 个子测试通过，7 个 PostgreSQL 专项因本地无数据库而跳过，0 失败。JUnit 按子测试计入共 2846 个通过。结果与原始输出见 RESULTS.json 和 local-python/。
 
 ## 未完成的退出条件
 
@@ -47,3 +47,5 @@
 | C13/C14 | C13 开发侧独立首测，再由 C14 对同一 frozen candidate/scope 复测 | PENDING；开发者自测不冒充独立签字 |
 
 这些退出条件完成前，不能据此宣称系统深度已达到 9 分以上。当前 Draft 不具备部署或生产放行结论。
+
+首次 CI 被源指纹门槛正确拦截：历史 tracked 测试缓存的工作副本在冻结之后被测试更新。预期 SHA-256 现从冻结 Git blob 字节重算，产品 application tree 保持不变；没有修改或绕过源码校验。
