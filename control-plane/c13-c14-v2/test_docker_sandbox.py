@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 from acceptance_gate import Refusal
 from c13_attestation import CANDIDATE, TREE, SCOPE
 from c14_isolated_runner import SCOPE_COMMANDS
-from docker_sandbox import DockerSandbox, parse_output, TMPFS, ENTRYPOINT, ENTRY_ARGS
+from docker_sandbox import DockerSandbox, parse_output, TMPFS, ENTRYPOINT, ENTRY_ARGS, MAX_OUTPUT
 from house_bridge import canonical, frozen_junit_counts
 from sandbox_payload import unpack_source, git_object, suite_environment
 
@@ -174,24 +174,59 @@ class HostTests(unittest.TestCase):
         self.assertIn("--force", calls[-1])
         self.assertFalse(any("start" in c for c in calls))
 
-    def test_timeout_kills_client_and_removes_container(self):
+    def capture_failure(self, *, timeout=True, oversized=False, cleanup_failure=False):
         host = self.host()
         host._source_archive = lambda: b"fixture"
         calls = []
+        inspections = 0
         def command(argv):
+            nonlocal inspections
             calls.append(argv)
             if "image" in argv:
                 return canonical([{"Id": IMAGE, "Config": {"Volumes": {"/var/lib/postgresql": {}}}}])
             if "inspect" in argv:
+                inspections += 1
+                if inspections == 2:
+                    raise subprocess.CalledProcessError(1, argv)
                 return canonical([info()])
+            if "rm" in argv and cleanup_failure:
+                raise subprocess.CalledProcessError(1, argv)
             return b"ok"
         host._command = command
         process = Mock()
-        process.communicate.side_effect = [subprocess.TimeoutExpired("docker", 3300), (b"", b"")]
-        with patch("docker_sandbox.subprocess.Popen", return_value=process), self.assertRaisesRegex(Refusal, "sandbox_timeout"):
+        process.communicate.side_effect = ([subprocess.TimeoutExpired("docker", 3300), (b"", b"")]
+                                           if timeout else [(b"", b"")])
+        stdout = b"x" * (MAX_OUTPUT + 100) if oversized else b"partial stdout\x00\xff\n"
+        stderr = b"e" * 65000 if oversized else b"partial stderr\x00\xfe\n"
+        def start(*args, **kwargs):
+            kwargs["stdout"].write(stdout)
+            kwargs["stderr"].write(stderr)
+            return process
+        reason = "sandbox_cleanup" if cleanup_failure else "sandbox_timeout" if timeout else "sandbox_host"
+        with patch("docker_sandbox.subprocess.Popen", side_effect=start), \
+                patch("docker_sandbox.parse_output") as parse, self.assertRaisesRegex(Refusal, reason):
             host.run_fixed_isolated_suite(CANDIDATE, TREE, SCOPE_COMMANDS)
-        process.kill.assert_called_once()
+        parse.assert_not_called()
+        if timeout:
+            process.kill.assert_called_once()
+        else:
+            process.kill.assert_not_called()
+        self.assertEqual(host.last_output, stdout[:MAX_OUTPUT + 1])
+        self.assertEqual(host.last_stderr, stderr[:64000])
         self.assertIn("rm", calls[-1])
+        self.assertEqual(sum("create" in c for c in calls), 1)
+
+    def test_timeout_kills_client_and_removes_container(self):
+        self.capture_failure()
+
+    def test_timeout_diagnostics_remain_bounded(self):
+        self.capture_failure(oversized=True)
+
+    def test_post_exit_inspect_failure_retains_diagnostics(self):
+        self.capture_failure(timeout=False)
+
+    def test_cleanup_failure_retains_diagnostics_and_refuses(self):
+        self.capture_failure(cleanup_failure=True)
 
 
 if __name__ == "__main__":
