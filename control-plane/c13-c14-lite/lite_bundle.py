@@ -19,6 +19,8 @@ from lite_errors import (
     BLOCKED,
     C13_VERDICTS,
     C14_VERDICTS,
+    DECISION_ORIGINS,
+    DETERMINISTIC_PRECHECK,
     FAILURE_CLASSES,
     Reject,
 )
@@ -34,6 +36,11 @@ SEVERITIES = ("BLOCKER", "MAJOR", "MINOR", "INFO")
 
 LEDGER_REFERENCE_FIELDS = ("round_id", "cell_id", "task_id")
 
+#: What identifies one authoritative rule source. There is no rule_id and no rule_name:
+#: a rule that does not name itself gets no name from us, so identity is the repository
+#: path, the git blob and the digest - three machine facts, none of them invented here.
+RULE_SOURCE_FIELDS = ("repository_path", "git_blob_sha", "sha256")
+
 C14_FIELDS = (
     "schema_version",
     "cell_id",
@@ -44,8 +51,9 @@ C14_FIELDS = (
     "application_tree",
     "nonce",
     "rule_review_scope_sha256",
-    "applicable_rules",
-    "applicable_rule_versions",
+    "authority_commit",
+    "rule_input_sha256",
+    "rule_sources",
     "not_applicable",
     "github_run_id",
     "github_run_attempt",
@@ -64,6 +72,8 @@ C14_FIELDS = (
     "remediation_status",
     "verdict",
     "failure_class",
+    "decision_origin",
+    "ai_called",
     "issued_at",
     "authorizes_any_action",
     C14_ROOT_FIELD,
@@ -167,7 +177,7 @@ def _check_common(record, *, fields, schema_version, expected_cell, root_field) 
             raise Reject("bundle_git_sha_invalid", field)
     if not _nonempty(record["nonce"]) or len(record["nonce"]) < 16:
         raise Reject("bundle_nonce_weak_or_missing")
-    for field in ("prompt_sha256", "input_sha256", "opinion_sha256"):
+    for field in ("prompt_sha256", "input_sha256"):
         if not is_sha256(record[field]):
             raise Reject("bundle_sha256_invalid", field)
 
@@ -177,9 +187,44 @@ def _check_common(record, *, fields, schema_version, expected_cell, root_field) 
     attempt = record["github_run_attempt"]
     if isinstance(attempt, bool) or not isinstance(attempt, int) or attempt < 1:
         raise Reject("bundle_github_run_attempt_invalid")
-    for field in ("workflow_ref", "ai_provider", "ai_model", "ai_execution_id", "principal_id", "review_execution_id"):
-        if not _nonempty(record[field]):
-            raise Reject("bundle_identity_field_missing", field)
+    # Two genuinely different records reach this point, and the difference is not cosmetic:
+    #
+    #   DETERMINISTIC_PRECHECK  the backend refused *before calling any AI* - no declared
+    #                           rule source, or a candidate that edited its own rule
+    #                           sources. There is no provider, no model, no execution id
+    #                           and no opinion, so demanding them would force a
+    #                           fabricated value.
+    #   AI_REVIEW               a call was attempted. ai_provider and principal_id are
+    #                           always known; the model / execution / opinion identities
+    #                           exist only if the call actually produced an opinion. On a
+    #                           provider failure they must be ABSENT rather than invented
+    #                           - the record used to carry a synthetic
+    #                           "blocked-<run>-<attempt>" id.
+    #
+    # A record without ``decision_origin`` (C13, and every historical C14 bundle) keeps
+    # the original unconditional rule, so nothing about C13 changes.
+    decision_origin = record.get("decision_origin")
+    provider_failure = record["verdict"] == BLOCKED and record["failure_class"] is not None
+    if decision_origin == DETERMINISTIC_PRECHECK:
+        for field in ("workflow_ref", "principal_id"):
+            if not _nonempty(record[field]):
+                raise Reject("bundle_identity_field_missing", field)
+        for field in ("ai_provider", "ai_model", "ai_execution_id", "review_execution_id", "opinion_sha256"):
+            if record[field] is not None:
+                raise Reject("bundle_identity_field_must_be_absent", field)
+    elif decision_origin is None or not provider_failure:
+        for field in ("workflow_ref", "ai_provider", "ai_model", "ai_execution_id", "principal_id", "review_execution_id"):
+            if not _nonempty(record[field]):
+                raise Reject("bundle_identity_field_missing", field)
+        if not is_sha256(record["opinion_sha256"]):
+            raise Reject("bundle_sha256_invalid", "opinion_sha256")
+    else:
+        for field in ("workflow_ref", "ai_provider", "principal_id"):
+            if not _nonempty(record[field]):
+                raise Reject("bundle_identity_field_missing", field)
+        for field in ("ai_model", "ai_execution_id", "review_execution_id", "opinion_sha256"):
+            if record[field] is not None:
+                raise Reject("bundle_identity_field_must_be_absent", field)
 
     if record["authorizes_any_action"] is not False:
         raise Reject("authorizes_any_action_must_be_false")
@@ -223,13 +268,51 @@ def validate_c14(record) -> None:
         raise Reject("c14_verdict_invalid")
     if not is_sha256(record["rule_review_scope_sha256"]):
         raise Reject("c14_rule_scope_sha256_invalid")
-    if not isinstance(record["applicable_rules"], list) or not all(_nonempty(x) for x in record["applicable_rules"]):
-        raise Reject("c14_applicable_rules_invalid")
-    if not isinstance(record["applicable_rule_versions"], dict) or set(record["applicable_rule_versions"]) != set(record["applicable_rules"]):
-        raise Reject("c14_applicable_rule_versions_mismatch")
-    for name, version in record["applicable_rule_versions"].items():
-        if not _nonempty(version):
-            raise Reject("c14_applicable_rule_version_missing", name)
+    decision_origin = record["decision_origin"]
+    if decision_origin not in DECISION_ORIGINS:
+        raise Reject("c14_decision_origin_invalid")
+    if not isinstance(record["ai_called"], bool) or record["ai_called"] != (decision_origin == "AI_REVIEW"):
+        raise Reject("c14_ai_called_inconsistent_with_origin")
+
+    # The rule sources are the point of this cell, so the record must carry their machine
+    # identity and the digest over exactly those bytes. A precheck refusal is the only
+    # record allowed to carry none, because not being able to resolve them is precisely
+    # what it is refusing about.
+    #
+    # This is also what stops "we have no rules to judge you by" from becoming
+    # NOT_APPLICABLE: an AI_REVIEW record must name at least one real source, and a round
+    # with no resolvable source never reaches the reviewer at all.
+    if not is_sha256(record["rule_input_sha256"]):
+        raise Reject("c14_rule_input_sha256_invalid")
+    rule_sources = record["rule_sources"]
+    if not isinstance(rule_sources, list):
+        raise Reject("c14_rule_sources_invalid")
+    for source in rule_sources:
+        if not isinstance(source, dict) or set(source) != set(RULE_SOURCE_FIELDS):
+            raise Reject("c14_rule_source_shape_invalid")
+        if not _nonempty(source["repository_path"]):
+            raise Reject("c14_rule_source_path_missing")
+        if not is_git_sha(source["git_blob_sha"]):
+            raise Reject("c14_rule_source_blob_invalid", source["repository_path"])
+        if not is_sha256(source["sha256"]):
+            raise Reject("c14_rule_source_digest_invalid", source["repository_path"])
+
+    if decision_origin == DETERMINISTIC_PRECHECK:
+        if rule_sources:
+            raise Reject("c14_precheck_may_not_declare_rule_sources")
+        if record["authority_commit"] is not None and not is_git_sha(record["authority_commit"]):
+            raise Reject("c14_authority_commit_invalid")
+        if record["verdict"] != BLOCKED:
+            raise Reject("c14_precheck_must_block")
+        if record["failure_class"] is not None:
+            raise Reject("c14_precheck_must_not_name_a_provider_failure")
+        if not record["blocking_issues"]:
+            raise Reject("c14_precheck_without_blocking_issues")
+    else:
+        if not rule_sources:
+            raise Reject("c14_rule_sources_empty")
+        if not is_git_sha(record["authority_commit"]):
+            raise Reject("c14_authority_commit_invalid")
     if record["remediation_status"] not in REMEDIATION_STATUSES:
         raise Reject("c14_remediation_status_invalid")
     if not isinstance(record["findings"], list):

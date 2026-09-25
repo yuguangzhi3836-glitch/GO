@@ -33,6 +33,11 @@ FORBIDDEN_CREDENTIAL_HINTS = ("SSH", "DEPLOY", "PRODUCTION", "AWS_", "ALIYUN", "
 #: file could be legitimately *empty* without anything noticing.
 CHANGED_PATHS_REDIRECT = "changed_paths.txt"
 
+#: The three rule-set names our own backend used to hard-code as the C14 default.
+#: Assembled rather than written out, so this module does not itself contain the strings
+#: it forbids - the same reason the test fixtures build their values from seeds.
+INVENTED_RULE_NAMES = ("GO_" + "CONSTITUTION", "PERMISSION_" + "BOUNDARY", "AI_BEHAVIOUR_" + "RULES")
+
 #: The artifact that keeps the raw review record, so a refused seal cannot destroy the only
 #: copy of the reviewer's reasoning (CCV1-145B D-4). Only C14 needs it: C13's always-run
 #: verify step already copies its opinion into the uploaded artefact directory.
@@ -127,6 +132,44 @@ def check_dispatch_surface(name: str, document: dict, failures: list) -> None:
             failures.append(f"{name}: missing dispatch input {required}")
     if len(inputs) > 10:
         failures.append(f"{name}: workflow_dispatch allows at most 10 inputs")
+
+
+def check_rule_input_is_governance_data(name: str, document: dict, raw: str, failures: list) -> None:
+    """The C14 rule set must be resolved governance data, never a name the dispatch supplies.
+
+    Both failures this pins were real (CCV1-145C): a round could be reviewed against three
+    rule-set names our own backend invented and record them as if they were rules, and the
+    manifest those names should have pointed at did not exist anywhere in the repository.
+    "Process" never becomes evidence, and a round with nothing to judge against must fail
+    closed rather than be judged against a constant we made up.
+    """
+    if name != C14_WORKFLOW:
+        return
+    for invented in INVENTED_RULE_NAMES:
+        if invented in raw:
+            failures.append(f"{name}: the invented rule-set name {invented} still appears")
+    if "lite_cli.py rule-input" not in raw:
+        failures.append(f"{name}: must resolve its rule sources with 'lite_cli.py rule-input'")
+    if 'echo "LITE_RULE_INPUT=' not in raw:
+        failures.append(f"{name}: must export LITE_RULE_INPUT into $GITHUB_ENV for later steps")
+    lines = raw.splitlines()
+    for index, line in enumerate(lines):
+        if "lite_cli.py rule-input" in line:
+            block = "\n".join(lines[index:index + 7])
+            if "--changed-paths" not in block:
+                failures.append(f"{name}: the rule-input step must be given the frozen change surface")
+            if "--ref " not in block:
+                failures.append(f"{name}: the rule-input step must name the default branch explicitly")
+            break
+    if "--rule " in raw and "lite_cli.py scope" in raw:
+        failures.append(f"{name}: scope must take --rule-input, never a list of rule names")
+    if "__raw__" in document:
+        return
+    triggers = document.get("on") or document.get(True) or {}
+    inputs = (triggers.get("workflow_dispatch") or {}).get("inputs") or {}
+    for forbidden in ("applicable_rules", "rule_version"):
+        if forbidden in inputs:
+            failures.append(f"{name}: {forbidden} must not be a dispatch input; the rule set is governance data")
 
 
 def check_artifact_discipline(name: str, raw: str, failures: list) -> None:
@@ -467,6 +510,7 @@ def run() -> dict:
         check_changed_path_boundary(name, raw, failures)
         check_workflow_identity_source(name, raw, failures)
         check_raw_evidence_survives_a_refused_seal(name, raw, failures)
+        check_rule_input_is_governance_data(name, document, raw, failures)
     return {
         "gate": "PASS" if not failures else "FAIL",
         "yaml_parser": "PyYAML" if yaml is not None else "text-scan-fallback",

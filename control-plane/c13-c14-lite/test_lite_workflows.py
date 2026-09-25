@@ -16,6 +16,7 @@ REPO_ROOT = ROOT.parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+import lite_fixtures as fx  # noqa: E402
 import lite_schemas  # noqa: E402
 import lite_workflow_check  # noqa: E402
 
@@ -146,8 +147,8 @@ class DispatchEnvRobustnessTests(unittest.TestCase):
                   + _datetime.timedelta(minutes=offset_minutes))
         return moment.isoformat().replace("+00:00", "Z").split(".")[0] + "Z"
 
-    def spec_env(self, directory, scope_sha):
-        return {
+    def spec_env(self, directory, scope_sha, rule_input=None):
+        env = {
             "LITE_WORKFLOW_IDENTITY": ".github/workflows/c13-c14-lite-poc.yml",
             "LITE_CANDIDATE_SHA": "f" * 40,
             "LITE_APPLICATION_TREE": "f" * 40,
@@ -165,23 +166,28 @@ class DispatchEnvRobustnessTests(unittest.TestCase):
             "LITE_SCOPE_SHA256": scope_sha,
             "GITHUB_REPOSITORY": "yuguangzhi3836-glitch/GO",
         }
+        if rule_input is not None:
+            env["LITE_RULE_INPUT"] = str(rule_input)
+        return env
 
     def test_spec_succeeds_when_optional_variables_are_absent(self):
         import json
         import tempfile
 
         with tempfile.TemporaryDirectory() as directory:
+            rule_input = pathlib.Path(directory, "rule_input.json")
+            rule_input.write_text(json.dumps(fx.rule_input_record()), encoding="utf-8")
             scope = self.run_cli(
-                ["scope", "--role", "c14", "--rule", "POC_ONLY", "--rule-version", "poc",
+                ["scope", "--role", "c14", "--rule-input", str(rule_input),
                  "--out", f"{directory}/scope.json"],
-                self.spec_env(directory, "0" * 64),
+                self.spec_env(directory, "0" * 64, rule_input=rule_input),
             )
             self.assertEqual(scope.returncode, 0, scope.stderr)
             digest = json.loads(pathlib.Path(directory, "scope.json").read_text(encoding="utf-8"))["scope_sha256"]
             spec = self.run_cli(
                 ["spec", "--role", "c14", "--spec", f"{directory}/spec.json",
                  "--facts", f"{directory}/facts.json", "--contract", f"{directory}/contract.json"],
-                self.spec_env(directory, digest),
+                self.spec_env(directory, digest, rule_input=rule_input),
             )
             self.assertEqual(spec.returncode, 0, spec.stderr + spec.stdout)
             contract = json.loads(pathlib.Path(directory, "contract.json").read_text(encoding="utf-8"))
@@ -193,7 +199,9 @@ class DispatchEnvRobustnessTests(unittest.TestCase):
         import tempfile
 
         with tempfile.TemporaryDirectory() as directory:
-            env = self.spec_env(directory, "0" * 64)
+            rule_input = pathlib.Path(directory, "rule_input.json")
+            rule_input.write_text(json.dumps(fx.rule_input_record()), encoding="utf-8")
+            env = self.spec_env(directory, "0" * 64, rule_input=rule_input)
             env.update({"LITE_AI_MODEL": "", "LITE_PRINCIPAL_ID": "", "LITE_ISSUE_NUMBER": ""})
             result = self.run_cli(
                 ["spec", "--role", "c14", "--spec", f"{directory}/s.json",

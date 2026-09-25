@@ -89,11 +89,17 @@ class NegativeSuiteTests(unittest.TestCase):
 
     def test_07_c14_verdict_tamper(self):
         round_ = fx.make_round()
-        # Flipped after sealing, without recomputing the root: the recorded verdict
-        # must not be believed.
+        # Flipped after sealing, without recomputing the root: the recorded verdict must
+        # not be believed. A flip to BLOCKED *with* a failure_class also contradicts the
+        # identities such a record is allowed to carry (an AI opinion exists here), so the
+        # validator may legitimately refuse it for that reason first - either way the
+        # record is rejected, and case 08 still proves the root rule on its own.
         round_["c14_bundle"] = dict(round_["c14_bundle"], verdict="BLOCKED", failure_class="RULE_FAIL")
         decision = self.case("07_c14_verdict_tamper", "REJECT", round_=round_)
-        self.assert_reason(decision, "root_recompute_mismatch")
+        self.assertTrue(
+            {"root_recompute_mismatch", "bundle_identity_field_must_be_absent"} & set(decision.reasons),
+            decision.reasons,
+        )
 
     def test_08_c14_findings_tamper(self):
         round_ = fx.make_round()

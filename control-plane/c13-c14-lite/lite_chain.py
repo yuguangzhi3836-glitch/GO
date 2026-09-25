@@ -119,6 +119,12 @@ def _hash_artifacts(decision, artifacts, bundles):
         bundle = bundles.get(role)
         if bundle is None or field not in bundle:
             continue
+        if bundle[field] is None:
+            # The record declares that this artefact does not exist: a provider failure, or a
+            # precheck refusal that never produced an opinion. Nothing can be bound, so neither
+            # requiring the artefact nor comparing its digest would mean anything. A record that
+            # *does* declare a digest is still checked and still rejected on mismatch.
+            continue
         if name not in artifacts:
             decision.reject("artifact_not_supplied", name)
             continue
@@ -224,10 +230,21 @@ def verify_round(
     identities = identity_module.from_bundles(
         c14_bundle, c13_bundle, implementation_execution_id=implementation_execution_id
     )
-    independence = identity_module.check(identities)
-    decision.independence = {"ok": independence.ok, "violations": independence.violations}
-    for violation in independence.violations:
-        decision.reject(violation["reason"], "independence")
+    absent = sorted(name for name in identity_module.FIELDS if not identities.get(name))
+    if absent:
+        # A record may legitimately declare that no AI execution happened: a provider failure,
+        # or a precheck refusal decided before any call. There is then no execution identity to
+        # compare, and demanding one would force exactly the fabricated id this round removes.
+        # Recorded as a note rather than a violation, because it is not one - and it cannot
+        # open anything: only a BLOCKED record may have an absent execution identity (validation
+        # requires it on every AI_REVIEW verdict that produced an opinion), and gate 8 blocks a
+        # round whose C14 verdict is not admissible.
+        decision.notes["independence_skipped"] = {"absent": absent}
+    else:
+        independence = identity_module.check(identities)
+        decision.independence = {"ok": independence.ok, "violations": independence.violations}
+        for violation in independence.violations:
+            decision.reject(violation["reason"], "independence")
 
     # --- 7. the C14 summary C13 consumed must be the real, sealed one ---
     if not prerequisite_module.summary_matches(c13_bundle["c14_prerequisite"], c14_bundle):

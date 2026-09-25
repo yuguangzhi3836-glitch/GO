@@ -11,15 +11,18 @@ Subcommands
 ``seal``          seal a bundle from the contract, the review outcome and machine evidence
 ``verify``        verify a whole C13+C14 round and write the decision
 ``bind-ledger``   DRY RUN binding of two execution records onto the existing ledger
+``rule-input``    resolve the authoritatively declared C14 rule sources from the default
+                  branch, or record deterministically why it cannot
 ``workflow-identity``
                   resolve the blob SHA of the workflow definition that is executing
-                  (one read-only GitHub contents call, and the only subcommand here
-                  that touches the network)
+                  (the other read-only GitHub call)
 ``raw-evidence``  assemble the non-secret raw review record, so that a refused seal cannot
                   destroy the only copy of the reviewer's reasoning (it never writes a
                   sealed bundle: raw review evidence is not sealed evidence)
 
-No subcommand contacts a database, a credential store or a deployment path.
+No subcommand contacts a database, a credential store or a deployment path. The only two
+that touch the network at all are ``rule-input`` and ``workflow-identity``, and both are
+read-only GETs made with the token the job already has.
 """
 from __future__ import annotations
 
@@ -42,27 +45,14 @@ import lite_chain  # noqa: E402
 import lite_errors  # noqa: E402
 import lite_execution_record  # noqa: E402
 import lite_ledger_binding  # noqa: E402
+import lite_rule_input  # noqa: E402
 
-#: The rule set a C14 rule review declares when the dispatch does not name one.
-#:
-#: This exists exactly once, on purpose. CCV1-145B D-3 was two different fallbacks for
-#: the same concept - the prompt was built from a three-rule fallback while the sealed
-#: record was built from a one-rule fallback - so the record understated the rules the
-#: review had actually been run against. One constant, one derivation, two consumers.
-DEFAULT_APPLICABLE_RULES = ("GO_CONSTITUTION", "PERMISSION_BOUNDARY", "AI_BEHAVIOUR_RULES")
-DEFAULT_RULE_VERSION = "unversioned"
-
-
-def _csv_names(value, default):
-    """Split a comma separated dispatch input into a stable, de-duplicated rule list.
-
-    The fallback is canonicalised the same way as a declared value, so "nothing was
-    declared" and "exactly the default was declared" produce byte-identical records
-    instead of two orderings of the same set.
-    """
-    names = [name.strip() for name in (value or "").split(",") if name.strip()]
-    return sorted(dict.fromkeys(names)) or sorted(dict.fromkeys(default))
-
+# There used to be DEFAULT_APPLICABLE_RULES / DEFAULT_RULE_VERSION here: three rule-set
+# names plus an "unversioned" filler that our own backend invented. They are gone on
+# purpose and are not replaced by a different default, because a rule set we made up is
+# not evidence about anything - and a record declaring it looks exactly like a record
+# declaring real rules (CCV1-145C). The rule set is data now, resolved read-only from the
+# default branch's docs/governance/C14_RULE_SOURCES.json by the ``rule-input`` subcommand.
 
 ENV_KEYS = {
     "candidate_sha": "LITE_CANDIDATE_SHA",
@@ -92,6 +82,24 @@ def _write(path, value):
     text = json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
     pathlib.Path(path).write_text(text, encoding="utf-8")
     return path
+
+
+def _rule_input(role: str) -> dict:
+    """Load the resolved rule input for C14. A missing one is a wiring error, not data.
+
+    The workflow resolves it in its own step and publishes the path as ``LITE_RULE_INPUT``.
+    If that is absent the round cannot be built honestly, so this stops rather than
+    inventing an empty rule set - and it stops here, before any AI call.
+    """
+    if role != "c14":
+        return {}
+    path = os.environ.get("LITE_RULE_INPUT")
+    if not path:
+        raise SystemExit("spec: LITE_RULE_INPUT is required for c14 (and is not a dispatch input)")
+    try:
+        return _read(path)
+    except (OSError, ValueError) as error:
+        raise SystemExit(f"spec: cannot read LITE_RULE_INPUT {path}: {type(error).__name__}")
 
 
 def _env_spec(role: str) -> dict:
@@ -130,16 +138,11 @@ def _env_spec(role: str) -> dict:
         "runner_os": os.environ.get("LITE_RUNNER_OS", "Linux"),
         "postgres_version": os.environ.get("LITE_POSTGRES_VERSION", "18.4"),
         "docker_used": os.environ.get("LITE_DOCKER_USED", "true").lower() == "true",
-        # The declared rule set for a C14 rule review. Optional, and deliberately not part
-        # of the "missing dispatch env" check: an empty value must fall back to the single
-        # declared default rather than fail the step. Derived once here and consumed by
-        # both the prompt facts and the sealed record, so the two can no longer disagree
-        # (CCV1-145B D-3).
-        "applicable_rules": _csv_names(os.environ.get("LITE_APPLICABLE_RULES"), DEFAULT_APPLICABLE_RULES),
-        "applicable_rule_versions": {
-            name: (os.environ.get("LITE_RULE_VERSION") or DEFAULT_RULE_VERSION)
-            for name in _csv_names(os.environ.get("LITE_APPLICABLE_RULES"), DEFAULT_APPLICABLE_RULES)
-        },
+        # The authoritatively declared rule sources, already resolved read-only from the
+        # default branch's own commit by the ``rule-input`` step. Derived once here and
+        # consumed by both the prompt facts and the sealed record, so the two cannot
+        # disagree (CCV1-145B D-3, kept under the new field names).
+        "rule_input": _rule_input(role),
         # Supplied by the scheduler adapter once it is wired; until then the
         # independence check is honest about not knowing the implementation run.
         "implementation_execution_id": os.environ.get("LITE_IMPLEMENTATION_EXECUTION_ID", "unknown-implementation-execution"),
@@ -161,10 +164,23 @@ def _facts(role: str, spec: dict, *, task_id: str) -> dict:
         },
     }
     if role == "c14":
+        rule_input = spec["rule_input"]
         facts["rule_review_scope_sha256"] = spec["scope_sha256"]
-        # Straight from the spec - the same derivation the sealed record uses.
-        facts["applicable_rules"] = list(spec["applicable_rules"])
-        facts["applicable_rule_versions"] = dict(spec["applicable_rule_versions"])
+        # Straight from the spec - the same derivation the sealed record projects from. The
+        # rule TEXT travels inside the facts, which is enough to reach the reviewer: the
+        # existing prompt builder serialises the whole facts object, so neither the reviewer
+        # nor the prompt template needs to know that rule sources exist.
+        facts["rule_sources"] = [
+            {
+                "repository_path": source["repository_path"],
+                "git_blob_sha": source["git_blob_sha"],
+                "sha256": source["sha256"],
+                "rule_text": source["rule_text"],
+            }
+            for source in rule_input.get("sources", [])
+        ]
+        facts["rule_input_sha256"] = rule_input["rule_input_sha256"]
+        facts["authority_commit"] = rule_input.get("authority_commit")
         facts["changed_paths"] = spec.get("changed_paths", [])
     else:
         facts["quality_test_scope_sha256"] = spec["scope_sha256"]
@@ -209,6 +225,19 @@ def cmd_review(args) -> int:
     spec = _read(args.spec)
     facts = _read(args.facts)
     role = spec["role"]
+    if role == "c14" and spec.get("rule_input", {}).get("status") != "OK":
+        # Fail-closed, and settled without touching the network: this round has no
+        # authoritative rule source, so there is nothing to review against. Recording a
+        # BLOCKED here - instead of calling the model and hoping - is what stops
+        # "we have no rules to judge you by" from becoming a clean verdict.
+        outcome = lite_rule_input.blocked_review_outcome(role, facts, spec["rule_input"])
+        _write(args.out, outcome)
+        print(json.dumps({"verdict": outcome["verdict"],
+                          "decision_origin": outcome["decision_origin"],
+                          "reason": spec["rule_input"].get("reason")}))
+        # Deliberately 0: the round continues so the seal can publish the refusal. A
+        # crashed step would leave no record of what was wrong (CCV1-145B D-4).
+        return 0
     try:
         outcome = lite_ai_reviewer.run(
             role,
@@ -276,17 +305,36 @@ def cmd_seal(args) -> int:
     }
     if role == "c14":
         opinion = outcome.get("opinion") or {}
+        rule_input = spec["rule_input"]
+        origin = outcome.get("decision_origin")
+        if origin not in lite_errors.DECISION_ORIGINS:
+            # An outcome that does not say where it came from cannot be sealed as if it
+            # did: that is how a backend refusal would end up looking like an AI verdict.
+            raise lite_errors.Reject("c14_outcome_decision_origin_missing", str(origin))
         fields.update({
             "rule_review_scope_sha256": contract["review_scope_sha256"],
-            # The dispatch declares the rule set; the sealed record repeats that declaration
-            # verbatim. The reviewer is NOT allowed to widen or narrow it here: the C14 output
-            # schema has no applicable_rules field, and a fallback that let the record differ
-            # from the prompt is exactly what CCV1-145B D-3 was.
-            "applicable_rules": list(spec["applicable_rules"]),
-            "applicable_rule_versions": dict(spec["applicable_rule_versions"]),
+            # The rule sources this review was actually run against, plus the digest over
+            # exactly those bytes. Both are projected from the same resolved rule input the
+            # prompt facts were built from, so the record cannot declare a different rule set
+            # than the reviewer saw (CCV1-145B D-3, kept under the new field names, and no
+            # longer expressible as a list of names).
+            "authority_commit": rule_input.get("authority_commit"),
+            "rule_input_sha256": rule_input["rule_input_sha256"],
+            "rule_sources": [lite_rule_input.identity(source) for source in rule_input.get("sources", [])],
+            # Where the verdict came from. A precheck refusal must be readable as such, so
+            # the AI identity fields are cleared rather than filled with something plausible:
+            # there was no provider, no model and no execution (CCV1-145C).
+            "decision_origin": origin,
+            "ai_called": bool(outcome["ai_called"]),
+            "ai_provider": outcome["ai_provider"],
+            "ai_model": outcome["ai_model"],
+            "ai_execution_id": outcome["ai_execution_id"],
+            "review_execution_id": outcome["ai_execution_id"],
+            "opinion_sha256": outcome["opinion_sha256"],
             "not_applicable": (opinion or {}).get("not_applicable"),
             "findings": (opinion or {}).get("findings", []),
-            "blocking_issues": (opinion or {}).get("blocking_issues", []),
+            "blocking_issues": list((opinion or {}).get("blocking_issues")
+                                    or outcome.get("blocking_issues") or []),
             "remediation_status": (opinion or {}).get("remediation_status", "OPEN"),
         })
     else:
@@ -321,22 +369,49 @@ def cmd_seal(args) -> int:
 
 
 def cmd_scope(args) -> int:
-    """Freeze the review scope: the digest C13/C14 must both bind to."""
+    """Freeze the review scope: the digest C13/C14 must both bind to.
+
+    The two cells freeze different things, and C13's payload is deliberately untouched: it
+    is already in production and its digest may not move (C13 is out of scope for this
+    round). C14 binds the resolved rule input instead of a list of rule NAMES, so the
+    frozen scope answers "which rule bytes" rather than "which names we declared".
+    """
     changed = []
     if args.changed_paths:
         changed = sorted(line.strip() for line in pathlib.Path(args.changed_paths).read_text(encoding="utf-8").splitlines() if line.strip())
-    rules = sorted(name for value in (args.rule or []) for name in value.split(",") if name.strip())
-    payload = {
-        "role": args.role,
-        "rules": rules,
-        "rule_version": args.rule_version,
-        "changed_paths": changed,
-        "test_inventory": sorted(line.strip() for line in pathlib.Path(args.inventory).read_text(encoding="utf-8").splitlines() if line.strip()) if args.inventory else [],
-        "acceptance_criteria": args.criterion or [],
-    }
+    inventory = sorted(line.strip() for line in pathlib.Path(args.inventory).read_text(encoding="utf-8").splitlines() if line.strip()) if args.inventory else []
+    if args.role == "c14":
+        # Rejected rather than ignored: silently dropping a rule set that used to matter is
+        # exactly the failure this round removes.
+        if args.rule or args.rule_version != "unversioned":
+            raise SystemExit("scope: c14 takes no --rule/--rule-version; the rule set comes from the resolved rule input")
+        rule_input = _read(args.rule_input) if args.rule_input else _rule_input("c14")
+        payload = {
+            "role": "c14",
+            "authority_commit": rule_input.get("authority_commit"),
+            "rule_input_sha256": rule_input["rule_input_sha256"],
+            "rule_source_paths": sorted(source["repository_path"] for source in rule_input.get("sources", [])),
+            "changed_paths": changed,
+            "test_inventory": inventory,
+            "acceptance_criteria": args.criterion or [],
+        }
+    else:
+        rules = sorted(name for value in (args.rule or []) for name in value.split(",") if name.strip())
+        payload = {
+            "role": args.role,
+            "rules": rules,
+            "rule_version": args.rule_version,
+            "changed_paths": changed,
+            "test_inventory": inventory,
+            "acceptance_criteria": args.criterion or [],
+        }
     digest = lite_canonical.digest(payload)
     _write(args.out, {"scope": payload, "scope_sha256": digest})
-    print(json.dumps({"scope_sha256": digest, "rules": rules, "changed_paths": len(changed)}))
+    # Printed as JSON on stdout with exactly one 64-hex value in it: that is what the
+    # workflow reads the digest from. scope.json carries the rule digest too, so grepping
+    # the file itself would be ambiguous.
+    print(json.dumps({"scope_sha256": digest, "changed_paths": len(changed),
+                      "rule_input_sha256": payload.get("rule_input_sha256")}))
     return 0
 
 
@@ -571,6 +646,34 @@ def cmd_raw_evidence(args) -> int:
     return 0
 
 
+def cmd_rule_input(args) -> int:
+    """Resolve the declared rule sources read-only, or record why we cannot.
+
+    Always exits 0. A refusal is a *recorded* BLOCKED (``decision_origin =
+    DETERMINISTIC_PRECHECK``) which the seal step publishes - not a crashed step. Failing
+    the job here would produce a red run with no record of what was wrong, which is the
+    mistake CCV1-145B D-4 already taught us not to repeat.
+    """
+    repository = args.repository or os.environ.get("GITHUB_REPOSITORY") or ""
+    if not repository:
+        raise SystemExit("rule-input: no repository (set GITHUB_REPOSITORY or --repository)")
+    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if not token:
+        raise SystemExit("rule-input: no token (set GH_TOKEN or GITHUB_TOKEN)")
+    changed = []
+    if args.changed_paths:
+        changed = [line.strip() for line in pathlib.Path(args.changed_paths).read_text(encoding="utf-8").splitlines() if line.strip()]
+    resolve_commit, read_file = lite_rule_input.github_reader(repository, token)
+    record = lite_rule_input.resolve(ref=args.ref, resolve_commit=resolve_commit,
+                                     read_file=read_file, changed_paths=changed)
+    _write(args.out, record)
+    print(json.dumps({"rule_input_status": record["status"], "reason": record["reason"],
+                      "authority_commit": record.get("authority_commit"),
+                      "rule_input_sha256": record["rule_input_sha256"],
+                      "sources": [source["repository_path"] for source in record["sources"]]}))
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -584,8 +687,9 @@ def main(argv=None) -> int:
 
     scope = sub.add_parser("scope")
     scope.add_argument("--role", required=True, choices=("c13", "c14"))
-    scope.add_argument("--rule", action="append", help="repeatable; comma separated rule names")
-    scope.add_argument("--rule-version", default="unversioned")
+    scope.add_argument("--rule", action="append", help="repeatable; c13 only")
+    scope.add_argument("--rule-version", default="unversioned", help="c13 only")
+    scope.add_argument("--rule-input", help="c14 only: the resolved rule input from rule-input")
     scope.add_argument("--changed-paths", help="file with one repository path per line")
     scope.add_argument("--inventory", help="file with one test-inventory entry per line")
     scope.add_argument("--criterion", action="append", help="repeatable acceptance criterion")
@@ -626,6 +730,14 @@ def main(argv=None) -> int:
     verify.add_argument("--allow-incomplete", action="store_true",
                         help="write the decision and exit 0 even when it is not ACCEPT (the decision file still carries the truth)")
     verify.set_defaults(func=cmd_verify)
+
+    rulein = sub.add_parser("rule-input")
+    rulein.add_argument("--out", required=True)
+    rulein.add_argument("--repository", help="defaults to GITHUB_REPOSITORY")
+    rulein.add_argument("--ref", default=lite_rule_input.DEFAULT_AUTHORITY_REF,
+                        help="the default branch; deliberately not a dispatch input")
+    rulein.add_argument("--changed-paths", help="file with one repository path per line")
+    rulein.set_defaults(func=cmd_rule_input)
 
     wfid = sub.add_parser("workflow-identity")
     wfid.add_argument("--path", required=True, help="repository-relative workflow path")

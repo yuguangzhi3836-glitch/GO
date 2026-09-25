@@ -8,38 +8,40 @@
       "pattern": "^[0-9a-f]{64}$",
       "type": "string"
     },
+    "ai_called": {
+      "type": "boolean"
+    },
     "ai_execution_id": {
       "minLength": 1,
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "ai_model": {
       "minLength": 1,
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "ai_provider": {
       "minLength": 1,
-      "type": "string"
-    },
-    "applicable_rule_versions": {
-      "patternProperties": {
-        "^.+$": {
-          "minLength": 1,
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "applicable_rules": {
-      "items": {
-        "minLength": 1,
-        "type": "string"
-      },
-      "minItems": 1,
-      "type": "array"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "application_tree": {
       "pattern": "^[0-9a-f]{40}$",
       "type": "string"
+    },
+    "authority_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "authorizes_any_action": {
       "const": false
@@ -57,6 +59,12 @@
     },
     "cell_id": {
       "const": "C14"
+    },
+    "decision_origin": {
+      "enum": [
+        "AI_REVIEW",
+        "DETERMINISTIC_PRECHECK"
+      ]
     },
     "failure_class": {
       "enum": [
@@ -193,7 +201,10 @@
     },
     "opinion_sha256": {
       "pattern": "^[0-9a-f]{64}$",
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "principal_id": {
       "minLength": 1,
@@ -213,11 +224,44 @@
     },
     "review_execution_id": {
       "minLength": 1,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "rule_input_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
       "type": "string"
     },
     "rule_review_scope_sha256": {
       "pattern": "^[0-9a-f]{64}$",
       "type": "string"
+    },
+    "rule_sources": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "git_blob_sha": {
+            "pattern": "^[0-9a-f]{40}$",
+            "type": "string"
+          },
+          "repository_path": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "repository_path",
+          "git_blob_sha",
+          "sha256"
+        ],
+        "type": "object"
+      },
+      "type": "array"
     },
     "schema_version": {
       "const": "go.c13c14.lite.c14_bundle.v1"
@@ -240,16 +284,17 @@
   },
   "required": [
     "C14_ROOT",
+    "ai_called",
     "ai_execution_id",
     "ai_model",
     "ai_provider",
-    "applicable_rule_versions",
-    "applicable_rules",
     "application_tree",
+    "authority_commit",
     "authorizes_any_action",
     "blocking_issues",
     "candidate_sha",
     "cell_id",
+    "decision_origin",
     "failure_class",
     "findings",
     "github_run_attempt",
@@ -265,7 +310,9 @@
     "prompt_sha256",
     "remediation_status",
     "review_execution_id",
+    "rule_input_sha256",
     "rule_review_scope_sha256",
+    "rule_sources",
     "schema_version",
     "task_id",
     "verdict",

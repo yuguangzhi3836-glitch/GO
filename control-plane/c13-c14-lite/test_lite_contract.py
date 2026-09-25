@@ -302,12 +302,22 @@ class FailureClassPolicyTests(unittest.TestCase):
 
     def test_bundle_rejects_quota_with_blocked_verdict_only_when_consistent(self):
         round_ = fx.make_round()
-        bundle = dict(round_["c14_bundle"])
-        bundle["failure_class"] = "AI_QUOTA_EXHAUSTED"
-        bundle["verdict"] = "BLOCKED"
+        # A provider failure has no model, no execution id and no opinion, so the record
+        # has to say so rather than carry the identities of a review that never finished.
+        bundle = dict(round_["c14_bundle"], failure_class="AI_QUOTA_EXHAUSTED",
+                      verdict="BLOCKED", ai_model=None, ai_execution_id=None,
+                      review_execution_id=None, opinion_sha256=None)
         # A well-formed BLOCKED record is allowed; it simply never unlocks C13.
         lite_bundle.seal(bundle)
         self.assertEqual(bundle["verdict"], "BLOCKED")
+
+    def test_a_provider_failure_may_not_keep_an_invented_execution_identity(self):
+        """The record used to invent "blocked-<run>-<attempt>" instead of saying nothing."""
+        round_ = fx.make_round()
+        bundle = dict(round_["c14_bundle"], failure_class="AI_QUOTA_EXHAUSTED", verdict="BLOCKED")
+        with self.assertRaises(lite_errors.Reject) as ctx:
+            lite_bundle.seal(bundle)
+        self.assertEqual(ctx.exception.reason, "bundle_identity_field_must_be_absent")
 
 
 if __name__ == "__main__":

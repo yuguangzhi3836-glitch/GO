@@ -15,6 +15,8 @@ import lite_ai_reviewer
 import lite_bundle
 import lite_candidate
 import lite_canonical
+import lite_errors
+import lite_rule_input
 
 #: A fixed instant, for tests that need one. It is **not** the default for the
 #: builders below: a frozen default silently turns every fixture into a time bomb —
@@ -53,6 +55,46 @@ C13_WORKFLOW_SHA = seed_sha("synthetic-c13-workflow")
 
 RULE_SCOPE = seed_sha("synthetic-rule-review-scope", 64)
 QUALITY_SCOPE = seed_sha("synthetic-quality-test-scope", 64)
+
+#: The synthetic authoritative rule source. The path is a real repository path so the
+#: shape matches production, but the bytes are synthetic and nothing here is presented as
+#: an authority: this is the *shape* of a resolved rule input and nothing more.
+RULE_SOURCE_PATH = "docs/governance/CHANGE_CONTROL_POLICY.md"
+RULE_SOURCE_TEXT = "Synthetic governance rule text for the fixture round.\n"
+AUTHORITY_COMMIT = seed_sha("synthetic-authority-commit")
+
+
+def rule_input_record(*, status="OK", reason=None, detail="") -> dict:
+    """One resolved rule input in the production shape, for fixtures and tests.
+
+    The digest is computed the same way the resolver computes it, so a fixture record is
+    internally consistent rather than a hand-written approximation of one.
+    """
+    reason = reason or lite_rule_input.SOURCE_PATH_MISSING
+    record = {
+        "status": status,
+        "reason": None if status == "OK" else reason,
+        "detail": detail,
+        "authority_ref": lite_rule_input.DEFAULT_AUTHORITY_REF,
+        "authority_commit": AUTHORITY_COMMIT,
+        "manifest_path": lite_rule_input.MANIFEST_PATH,
+        "sources": [],
+        "blocking_issues": [],
+    }
+    if status == "OK":
+        raw = RULE_SOURCE_TEXT.encode("utf-8")
+        record["manifest_blob_sha"] = seed_sha("synthetic-manifest")
+        record["manifest_sha256"] = seed_sha("synthetic-manifest", 64)
+        record["sources"] = [{
+            "repository_path": RULE_SOURCE_PATH,
+            "git_blob_sha": lite_rule_input.git_blob_sha(raw),
+            "sha256": lite_rule_input.sha256_of(raw),
+            "rule_text": RULE_SOURCE_TEXT,
+        }]
+    else:
+        record["blocking_issues"] = [f"{reason}: {detail}" if detail else reason]
+    record["rule_input_sha256"] = lite_rule_input.rule_input_digest(record)
+    return record
 
 
 def _iso(moment: datetime) -> str:
@@ -116,13 +158,14 @@ def role_facts(role: str, *, candidate_sha=CANDIDATE_SHA, application_tree=APPLI
         },
     }
     if role == "c14":
+        rule_input = rule_input_record()
         base["rule_review_scope_sha256"] = RULE_SCOPE
-        base["applicable_rules"] = ["GO_CONSTITUTION", "PERMISSION_BOUNDARY", "AI_BEHAVIOUR_RULES"]
-        base["applicable_rule_versions"] = {
-            "GO_CONSTITUTION": "synthetic-v1",
-            "PERMISSION_BOUNDARY": "synthetic-v1",
-            "AI_BEHAVIOUR_RULES": "synthetic-v1",
-        }
+        base["rule_sources"] = [
+            {**lite_rule_input.identity(source), "rule_text": source["rule_text"]}
+            for source in rule_input["sources"]
+        ]
+        base["rule_input_sha256"] = rule_input["rule_input_sha256"]
+        base["authority_commit"] = rule_input["authority_commit"]
         base["changed_paths"] = ["control-plane/c13-c14-lite/lite_chain.py"]
     else:
         base["quality_test_scope_sha256"] = QUALITY_SCOPE
@@ -171,6 +214,12 @@ def build_bundle(role: str, *, candidate_sha=CANDIDATE_SHA, application_tree=APP
     prompt = lite_ai_reviewer.build_prompt(role, facts)
 
     artifacts = {}
+    effective_verdict = verdict or opinion_obj["verdict"]
+    # A provider/quota failure means no opinion was ever produced, so the record must not
+    # carry identities belonging to a review that never completed. The fixture builds that
+    # shape rather than a plausible-looking one, because a plausible-looking one is exactly
+    # what validation refuses.
+    provider_failure = bool(failure_class) and effective_verdict == lite_errors.BLOCKED
     if role == "c14":
         fields = {
             "schema_version": lite_bundle.SCHEMA_VERSION_C14,
@@ -182,30 +231,37 @@ def build_bundle(role: str, *, candidate_sha=CANDIDATE_SHA, application_tree=APP
             "application_tree": application_tree,
             "nonce": nonce or contract_obj["nonce"],
             "rule_review_scope_sha256": contract_obj["review_scope_sha256"],
-            "applicable_rules": facts["applicable_rules"],
-            "applicable_rule_versions": facts["applicable_rule_versions"],
+            "authority_commit": facts["authority_commit"],
+            "rule_input_sha256": facts["rule_input_sha256"],
+            "rule_sources": [lite_rule_input.identity(source) for source in facts["rule_sources"]],
             "not_applicable": opinion_obj["not_applicable"],
             "github_run_id": run_id or 900001,
             "github_run_attempt": run_attempt,
             "workflow_ref": f"{REPOSITORY}/{contract_obj['workflow_sha']}",
             "workflow_sha": contract_obj["workflow_sha"],
             "ai_provider": lite_ai_reviewer.STUB_PROVIDER,
-            "ai_model": "deterministic-stub",
-            "ai_execution_id": execution_id or "stub-c14-ai-execution-0001",
+            "ai_model": None if provider_failure else "deterministic-stub",
+            "ai_execution_id": None if provider_failure else (execution_id or "stub-c14-ai-execution-0001"),
             "principal_id": "synthetic-principal",
-            "review_execution_id": execution_id or "stub-c14-ai-execution-0001",
+            "review_execution_id": None if provider_failure else (execution_id or "stub-c14-ai-execution-0001"),
             "prompt_sha256": contract_obj["prompt_sha256"],
             "input_sha256": lite_canonical.digest(facts),
-            "opinion_sha256": lite_canonical.digest(opinion_obj),
+            "opinion_sha256": None if provider_failure else lite_canonical.digest(opinion_obj),
             "findings": opinion_obj["findings"],
             "blocking_issues": opinion_obj["blocking_issues"],
             "remediation_status": opinion_obj["remediation_status"],
-            "verdict": verdict or opinion_obj["verdict"],
+            "verdict": effective_verdict,
             "failure_class": failure_class,
+            "decision_origin": lite_errors.AI_REVIEW,
+            "ai_called": True,
             "issued_at": _iso(issued_at or (now + timedelta(minutes=1))),
             "authorizes_any_action": False,
         }
-        artifacts["c14_opinion"] = lite_canonical.canonical(opinion_obj)
+        if not provider_failure:
+            # No opinion was produced, so there is no opinion artefact to bind. The verifier
+            # skips an artefact that was not supplied; it never demands one for a record whose
+            # whole point is that no opinion exists.
+            artifacts["c14_opinion"] = lite_canonical.canonical(opinion_obj)
     else:
         if prereq is None:
             raise ValueError("c13 bundle requires prereq")

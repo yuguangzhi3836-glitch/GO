@@ -27,7 +27,7 @@ import urllib.error
 import urllib.request
 
 from lite_canonical import digest, digest_bytes
-from lite_errors import BLOCKED, classify_ai_failure
+from lite_errors import AI_REVIEW, BLOCKED, classify_ai_failure
 
 API_URL = "https://api.openai.com/v1/responses"
 DEFAULT_MODEL = "gpt-5.6-sol"
@@ -116,8 +116,12 @@ ROLE_RULES = {
         "rule reviewer for the GO project. You are NOT a second quality tester. Do not ask for or "
         "assume Docker, PostgreSQL, regression, recovery or journey test results. Review rules, "
         "permissions, IAM changes, contracts, regulatory duties and AI behaviour rules only. "
-        "Return NOT_APPLICABLE (with scope, basis and rule version) when no declared rule set "
-        "applies to this candidate; NOT_APPLICABLE is a recorded decision, never a skip."
+        "Judge only against the rule text supplied in these facts: it is the authoritative "
+        "rule source for this round and the only basis you may use. If that text is absent or "
+        "insufficient to decide, return BLOCKED and say what is missing - never NOT_APPLICABLE. "
+        "Return NOT_APPLICABLE (with scope, basis and rule reference) only when the rule text "
+        "is present and you can show that these rules do not apply to this candidate's "
+        "change."
     ),
     "c13": (
         "You are C13: the independent quality acceptance reviewer for the GO project. You did not "
@@ -276,6 +280,8 @@ def run(
             "ai_model": "deterministic-stub",
             "ai_execution_id": f"stub-{opinion_sha256[:32]}",
             "failure_class": None,
+            "decision_origin": AI_REVIEW,
+            "ai_called": True,
         }
 
     if not api_key:
@@ -302,6 +308,8 @@ def run(
         "ai_model": model,
         "ai_execution_id": execution_id,
         "failure_class": None,
+        "decision_origin": AI_REVIEW,
+        "ai_called": True,
     }
 
 
@@ -319,6 +327,8 @@ def blocked_outcome(role: str, facts: dict, failure_class: str, detail: str) -> 
         "ai_model": None,
         "ai_execution_id": None,
         "failure_class": failure_class,
+        "decision_origin": AI_REVIEW,
+        "ai_called": True,
         "detail": detail,
     }
 

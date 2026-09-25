@@ -47,6 +47,22 @@ FINDING = {
         "statement": NONEMPTY,
     },
 }
+#: Nullable twins of the two above. A record is allowed to say "there is no model, no
+#: execution id, no opinion" - that is the honest shape for a precheck refusal and for a
+#: provider failure, and inventing a value instead is what this round removes.
+NONEMPTY_NULLABLE = {"type": ["string", "null"], "minLength": 1}
+SHA256_NULLABLE = {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+GIT_SHA_NULLABLE = {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"}
+RULE_SOURCE = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": list(lite_bundle.RULE_SOURCE_FIELDS),
+    "properties": {
+        "repository_path": NONEMPTY,
+        "git_blob_sha": GIT_SHA,
+        "sha256": SHA256,
+    },
+}
 AUTHORIZES_FALSE = {"const": False}
 ARTIFACT = {
     "type": "object",
@@ -134,8 +150,16 @@ def _common_props(cell, schema_version, scope_field, root_field):
 def c14_bundle_schema() -> dict:
     props = _common_props("C14", lite_bundle.SCHEMA_VERSION_C14, "rule_review_scope_sha256", lite_bundle.C14_ROOT_FIELD)
     props.update({
-        "applicable_rules": {"type": "array", "items": NONEMPTY, "minItems": 1},
-        "applicable_rule_versions": {"type": "object", "patternProperties": {"^.+$": NONEMPTY}},
+        "authority_commit": GIT_SHA_NULLABLE,
+        "rule_input_sha256": SHA256,
+        "rule_sources": {"type": "array", "items": RULE_SOURCE},
+        "decision_origin": {"enum": list(lite_errors.DECISION_ORIGINS)},
+        "ai_called": {"type": "boolean"},
+        "ai_provider": NONEMPTY_NULLABLE,
+        "ai_model": NONEMPTY_NULLABLE,
+        "ai_execution_id": NONEMPTY_NULLABLE,
+        "review_execution_id": NONEMPTY_NULLABLE,
+        "opinion_sha256": SHA256_NULLABLE,
         "not_applicable": {
             "type": ["object", "null"],
             "additionalProperties": False,

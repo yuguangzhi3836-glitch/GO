@@ -47,6 +47,21 @@ C13_VERDICTS = ("PASS_SCOPED", "FAIL", "BLOCKED")
 #: C14 terminal states that unlock a C13 acceptance run (task section 19).
 C14_PREREQUISITE_OK = ("PASS_SCOPED", "NOT_APPLICABLE")
 
+# --- how a verdict came about ------------------------------------------------
+#: Two very different things produce a BLOCKED record, and a reader must be able to tell
+#: them apart without trusting prose:
+#:
+#: ``AI_REVIEW``            an AI review execution was attempted. Whether it produced an
+#:                          opinion or died at the provider is told by ``failure_class``.
+#: ``DETERMINISTIC_PRECHECK``  the backend refused *before calling any AI* - a governance
+#:                          condition (nothing declared as an authoritative rule source, a
+#:                          candidate that edited its own rule sources, ...). ``ai_called``
+#:                          is false and every AI identity field is null by construction,
+#:                          never a plausible-looking fabricated value.
+AI_REVIEW = "AI_REVIEW"
+DETERMINISTIC_PRECHECK = "DETERMINISTIC_PRECHECK"
+DECISION_ORIGINS = (AI_REVIEW, DETERMINISTIC_PRECHECK)
+
 
 class Reject(ValueError):
     """Invalid evidence / binding conflict. ``reason`` is a stable machine code."""
