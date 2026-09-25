@@ -139,6 +139,9 @@ jobs:
             tests/payments/test_c11_deposit_ledger_width.py::test_oversized_deposit_identity_fails_before_either_ledger_entry \
             tests/payments/test_c11_ride_acceptance_guard.py \
             tests/test_c05_cancellation_policy.py \
+            tests/test_c05_policy_operations.py \
+            tests/test_rental_operations.py \
+            tests/payments/test_c11_deposit_operations_review.py \
             --junitxml="$RUNNER_TEMP/next-depth-pg/cell-depth-increment-junit.xml" \
             2>&1 | tee "$RUNNER_TEMP/next-depth-pg/cell-depth-increment.log"
           python - <<'PY'

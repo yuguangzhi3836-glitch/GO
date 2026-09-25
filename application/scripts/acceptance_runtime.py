@@ -106,6 +106,8 @@ def main():
                         help='Create separate identities for the built-in synthetic sources')
     parser.add_argument('--hotel-price-scenarios', action='store_true',
                         help='Use fixed synthetic hotel price changes for the isolated journey')
+    parser.add_argument('--operations-roles', action='store_true',
+                        help='Seed isolated operations identities; policy changes still require real UI actions')
     a = parser.parse_args()
     if not 1024 <= a.port <= 65535:
         raise ValueError('UNPRIVILEGED_PORT_REQUIRED')
@@ -121,6 +123,10 @@ def main():
                        'password': secrets.token_urlsafe(32)} for r in ('consumer', 'supplier', 'admin')}
     private_json(state / 'credentials.private.json', credentials)
     env = isolated_environment(state, credentials, os.environ)
+    if a.operations_roles:
+        if not a.journey_suppliers:
+            raise ValueError('ISOLATED_JOURNEY_FIXTURES_REQUIRED')
+        env['GO_RIDE_ISOLATED_POLICY_REGISTRY'] = '1'
     os.environ.clear(); os.environ.update(env)
     os.chdir(state)
     sys.dont_write_bytecode = True
@@ -147,6 +153,20 @@ def main():
                 'SUPPLIER_USER', supplier_id, ['SUPPLIER_OWNER'])
             fixtures[vertical] = account
         private_json(state / 'suppliers.private.json', fixtures)
+    if a.operations_roles:
+        operations = {}
+        for alias, roles in {
+            'policy_maker': ['GO_RULE_ADMIN'],
+            'maker': ['GO_GOVERNANCE'],
+            'checker': ['GO_GOVERNANCE'],
+            'appeal_checker': ['GO_GOVERNANCE'],
+            'readonly': ['GO_READ_ONLY'],
+        }.items():
+            account = {'username': 'acceptance-ops-' + alias + '@example.test',
+                       'password': secrets.token_urlsafe(32)}
+            identity_service.ensure_user(account['username'], account['password'], 'GO_ADMIN', None, roles)
+            operations[alias] = account
+        private_json(state / 'operations.private.json', operations)
     if a.hotel_price_scenarios:
         if not a.journey_suppliers:
             raise ValueError('ISOLATED_JOURNEY_FIXTURES_REQUIRED')

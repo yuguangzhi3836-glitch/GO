@@ -1,0 +1,39 @@
+{
+  "files": [
+    {
+      "path": "application/src/go_hotel/services/rental_deposit_review.py",
+      "sha256": "f887711c32bc218e3657bb8976ce1641cc6dbb25abbcb2def42139570b3b8b9f"
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/rental_deposit_money.py",
+      "sha256": "4fda08ea8b57bef5913b9e2739ce79148f302fc662224c6fb73e155c10d2be0c"
+    },
+    {
+      "path": "application/frontend/admin/rental-deposit-finance.js",
+      "sha256": "1675971165f637dc21d4aea01f0ed01d3a2eca92a27858a78b2295e007d6ded0"
+    },
+    {
+      "path": "application/tests/payments/test_c11_deposit_operations_review.py",
+      "sha256": "ef8f234a3d28dd9750f58d403f594870b4f71aaf87a16ed458c1a9333710c2b5"
+    },
+    {
+      "path": "application/tests_frontend/rental_deposit_operations.test.mjs",
+      "sha256": "0b5683a94e1143e85bebc0160b0fa96ff74728b60009b994b0da602181ce52e1"
+    }
+  ],
+  "test_results": {
+    "backend": {
+      "tests": 36,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit": "review-junit.xml"
+    },
+    "frontend": {
+      "tests": 9,
+      "failures": 0,
+      "log": "frontend.txt"
+    }
+  },
+  "scope": "isolated engineering admin deposit review UI; no PSP or deployment; no unknown repair or compensation"
+}

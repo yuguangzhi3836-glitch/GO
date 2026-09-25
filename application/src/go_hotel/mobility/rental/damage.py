@@ -32,12 +32,22 @@ def _evidence(items):
         raise ValueError('DAMAGE_EVIDENCE_INVALID')
     clean = []
     for item in items:
-        if not isinstance(item, dict) or set(item) != {'reference', 'sha256'}:
+        if not isinstance(item, dict) or set(item) not in ({'reference', 'sha256'}, {'reference', 'sha256', 'statement'}):
             raise ValueError('DAMAGE_EVIDENCE_INVALID')
         ref, sha = item['reference'], item['sha256']
         if not isinstance(ref, str) or not ref.strip() or len(ref) > 500 or not isinstance(sha, str) or not re.fullmatch('[0-9a-f]{64}', sha):
             raise ValueError('DAMAGE_EVIDENCE_INVALID')
-        clean.append({'reference': ref, 'sha256': sha})
+        if 'statement' in item:
+            # Only the authenticated operations adapter supplies this internal
+            # shape. Public raw-evidence schemas reject extra statement fields.
+            statement = item['statement']
+            if (not isinstance(statement, dict) or digest(statement) != sha
+                    or ref != 'rental-statement://' + sha
+                    or statement.get('kind') != 'ACTOR_STATEMENT_UNVERIFIED'):
+                raise ValueError('DAMAGE_STATEMENT_INTEGRITY_INVALID')
+            clean.append({'reference': ref, 'sha256': sha, 'statement': statement})
+        else:
+            clean.append({'reference': ref, 'sha256': sha})
     return clean
 
 

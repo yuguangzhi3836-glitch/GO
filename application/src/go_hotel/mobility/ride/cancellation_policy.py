@@ -73,8 +73,17 @@ def validate_policy(policy):
     return deepcopy(policy)
 
 
-def offer_terms(offer_id, total, currency, pickup, dropoff, pickup_at, current_ms):
-    envelope = resolve_policy(offer_id)
+def offer_terms(offer_id, total, currency, pickup, dropoff, pickup_at, current_ms, session=None):
+    from . import policy_operations
+    if policy_operations.enabled():
+        try:
+            envelope = policy_operations.resolve_in(session, offer_id) if session is not None else policy_operations.resolve(offer_id)
+        except ValueError as exc:
+            return dict(HOLD, reason=str(exc))
+    else:
+        envelope = resolve_policy(offer_id)
+    if session is not None:
+        current_ms = db_now_ms(session)
     if envelope is None:
         return dict(HOLD)
     if not isinstance(envelope, dict) or set(envelope) != {'raw_payload', 'raw_sha256'}:
@@ -86,6 +95,8 @@ def offer_terms(offer_id, total, currency, pickup, dropoff, pickup_at, current_m
         policy = validate_policy(json.loads(raw))
     except (UnicodeDecodeError, json.JSONDecodeError):
         raise ValueError('RIDE_CANCELLATION_SOURCE_INVALID') from None
+    if policy_operations.enabled() and not instant(policy['effective_from']) <= current_ms < instant(policy['effective_until']):
+        return dict(HOLD, reason='POLICY_NOT_EFFECTIVE')
     if (policy['offer_id'] != offer_id or policy['currency'] != currency
         or max(policy['before_fee_minor'], policy['after_fee_minor']) > total
         or not instant(policy['effective_from']) <= current_ms < instant(policy['effective_until'])):
@@ -100,7 +111,7 @@ def offer_terms(offer_id, total, currency, pickup, dropoff, pickup_at, current_m
 
 def freeze_in(s, order, offer_id, accepted_hash):
     quoted = offer_terms(offer_id, order.total_amount_minor, order.currency,
-                         order.pickup, order.dropoff, order.pickup_at, db_now_ms(s))
+                         order.pickup, order.dropoff, order.pickup_at, db_now_ms(s), session=s)
     if quoted['state'] != 'POLICY_AVAILABLE':
         raise ValueError('RIDE_CANCELLATION_POLICY_UNAVAILABLE')
     if not isinstance(accepted_hash, str) or accepted_hash != quoted['policy_hash']:

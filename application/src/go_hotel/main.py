@@ -35,6 +35,8 @@ from go_hotel.api.routes.mobility import router as mobility_router
 from go_hotel.api.routes.rental_damage import router as rental_damage_router
 from go_hotel.api.routes.rental_deposit import router as rental_deposit_router
 from go_hotel.api.routes.rental_deposit_money import router as rental_deposit_money_router
+from go_hotel.api.routes.rental_operations import router as rental_operations_router
+from go_hotel.api.routes.ride_policy_operations import router as ride_policy_operations_router
 from go_hotel.api.routes.attractions import router as attractions_router
 from go_hotel.api.routes.journey import router as journey_router
 from go_hotel.api.routes.journey_intelligence import router as journey_intelligence_router
@@ -171,6 +173,8 @@ app.include_router(autonomy_execution_router)
 app.include_router(rental_damage_router)
 app.include_router(rental_deposit_router)
 app.include_router(rental_deposit_money_router)
+app.include_router(rental_operations_router)
+app.include_router(ride_policy_operations_router)
 app.include_router(hotel_partner_core_router)
 app.include_router(commercial_constitution_router)
 app.include_router(supplier_commercial_router)

@@ -8,6 +8,12 @@ from go_hotel.services import rental_deposit_money as service
 router = APIRouter(tags=['rental-deposit-isolated-money'])
 
 
+@router.get('/internal/v1/admin/mobility/rentals/orders/{order_id}/deposit-money-review')
+def review(order_id: str, principal: Principal = Depends(admin_principal)):
+    from go_hotel.services.rental_deposit_review import review as inspect
+    return call(inspect, principal, order_id)
+
+
 class Source(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True)
     expected_revision: int = Field(ge=1)

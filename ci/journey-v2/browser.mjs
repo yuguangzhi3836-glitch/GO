@@ -4,6 +4,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import { hotelDepth } from './hotel-depth.mjs';
 import { selectDateRange } from './date-range.mjs';
+import { prepareOperations, finishOperations } from './operations-depth.mjs';
 
 const out=process.env.GO_JOURNEY_EVIDENCE, origin='http://127.0.0.1:4186';
 const credentials=JSON.parse(await fs.readFile(path.join(process.env.GO_JOURNEY_STATE,'credentials.private.json'),'utf8'));
@@ -36,7 +37,7 @@ async function pageFor(role,width=1440){
       }
     }
     // Preserve synthetic business output only; never auth/vault/profile payloads or headers.
-    if(/\/checkout\/(HOTEL|FLIGHT|RAIL|RIDE|RENTAL|ATTRACTION)\//.test(url.pathname)&&response.ok())pending.push(response.json().then(data=>{
+    if(!role.startsWith('operations-')&&/\/checkout\/(HOTEL|FLIGHT|RAIL|RIDE|RENTAL|ATTRACTION)\//.test(url.pathname)&&response.ok())pending.push(response.json().then(data=>{
       const vertical=url.pathname.split('/')[4],id=url.pathname.split('/')[5];
       orders.push({vertical,order_id:id,checkout:data,role,width});
     }));
@@ -168,6 +169,7 @@ async function booked(p,vertical,before){
 const consumer=await pageFor('consumer',390),supplier=await pageFor('supplier',1440),admin=await pageFor('admin',1440);
 try{
   for(const [role,p]of [['consumer',consumer],['supplier',supplier],['admin',admin]])await scenario(p,`${role}-login`,async()=>{await login(p,role);await noOverflow(p);});
+  const operations=await prepareOperations({report,origin,read,scenario,home,dialog,day,noOverflow,pageFor,login,capture});
   await scenario(consumer,'vault-two-confirmed-travelers',async()=>{await traveler(consumer,'GO TEST ADULT A','SELF');await traveler(consumer,'GO TEST ADULT B','FAMILY');});
   await scenario(consumer,'HOTEL-search-quote-traveler-payment',async()=>{
     const before=orders.length;await home(consumer,'HOTEL');await consumer.locator('#city').fill('TYO');await selectDateRange(consumer,'#cin','#cout',day(30),day(32));await consumer.locator('#searchBtn').click();
@@ -251,6 +253,7 @@ try{
     assert.equal(report.depth45.payment_viewports.length,4);
     assert.equal(report.cash_journeys.length,1);assert.equal(report.cash_journeys[0].complete,true);
   });
+  await finishOperations(operations);
   await scenario(consumer,'no-unhandled-browser-errors',async()=>assert.deepEqual(report.console_errors,[]));
   await save('business-responses.json',business);
 

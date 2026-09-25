@@ -8,7 +8,7 @@ state = pathlib.Path(os.environ['RUNNER_TEMP']) / ('go-journey-' + uuid.uuid4().
 env = dict(os.environ, PYTHONDONTWRITEBYTECODE='1')
 command = [sys.executable, str(root / 'application/scripts/acceptance_runtime.py'),
     '--source', str(root / 'application'), '--fingerprint', str(evidence / 'source-fingerprint.json'),
-    '--expected-tree', binding['source_tree_sha256'], '--state', str(state), '--port', '4186', '--journey-suppliers', '--hotel-price-scenarios']
+    '--expected-tree', binding['source_tree_sha256'], '--state', str(state), '--port', '4186', '--journey-suppliers', '--hotel-price-scenarios', '--operations-roles']
 with (evidence / 'runtime.log').open('w') as log:
     process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, env=env)
     try:
@@ -24,6 +24,12 @@ with (evidence / 'runtime.log').open('w') as log:
                 time.sleep(.5)
         else:
             raise TimeoutError('ISOLATED_RUNTIME_NOT_READY')
+        # Mocked-request widget tests are separate evidence, never HTTP journey proof.
+        with (evidence / 'rental-widget.log').open('w') as widget_log:
+            widget_log.write('Scope: isolated browser widget with mocked request; not real API journey evidence.\n')
+            widget_log.flush()
+            widget = subprocess.run(['node', '--test', str(root / 'ci/journey-v2/rental-operations-widget.mjs')],
+                stdout=widget_log, stderr=subprocess.STDOUT, env=env)
         result = subprocess.run(['node', str(root / 'ci/journey-v2/browser.mjs')], env=dict(env,
             GO_JOURNEY_STATE=str(state), GO_JOURNEY_EVIDENCE=str(evidence)))
         capacity = subprocess.run([sys.executable, str(root / 'ci/journey-v2/capacity.py'),
@@ -32,9 +38,11 @@ with (evidence / 'runtime.log').open('w') as log:
             str(state), str(evidence)], env=env)
         hotel_audit = subprocess.run([sys.executable, str(root / 'ci/journey-v2/hotel-ledger.py'),
             str(state), str(evidence)], env=env)
+        operations_audit = subprocess.run([sys.executable, str(root / 'ci/journey-v2/operations-ledger.py'),
+            str(state), str(evidence)], env=env)
         for name in ['runtime-binding.json', 'fixture-identities.json', 'hotel-price-fixtures.json']:
             shutil.copyfile(state / name, evidence / name)
-        sys.exit(result.returncode or capacity.returncode or audit.returncode or hotel_audit.returncode)
+        sys.exit(widget.returncode or result.returncode or capacity.returncode or audit.returncode or hotel_audit.returncode or operations_audit.returncode)
     finally:
         process.terminate()
         try: process.wait(timeout=15)
