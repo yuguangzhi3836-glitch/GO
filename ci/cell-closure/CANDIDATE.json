@@ -1,11 +1,11 @@
 {
   "schema": "go.v70.cell-closure.rebind.v3",
-  "product_candidate_commit": "e24d1180fafedd7b01117c93c9614d3b0bda9752",
-  "gate_parent_commit": "e24d1180fafedd7b01117c93c9614d3b0bda9752",
+  "product_candidate_commit": "1ee6fd666ac32bf712b951080ae9d80714a51d47",
+  "gate_parent_commit": "1ee6fd666ac32bf712b951080ae9d80714a51d47",
   "baseline_commit": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
-  "application_git_tree": "95b29433d237e2c882b6696bae77227c3e40d7db",
-  "source_files": 1532,
-  "source_tree_sha256": "fce2cf532a5fe2c22a0763b8a8f83ef1bebc6bb6a47b65bdb85a4a6b6965baaf",
+  "application_git_tree": "d487902d1bf40fdb1c50092265631575ab1e7c49",
+  "source_files": 1534,
+  "source_tree_sha256": "fe7dfed28cc3ce49d7666a9f18babccf4d5deb4917eff441074fdbb2eee87007",
   "inherited_candidate": {
     "path": "ci/cell-closure/CANDIDATE_INHERITED_85FB.json",
     "git_blob": "b0801c355a1d32c7c888caa41c5bf81208b46da3",
@@ -200,6 +200,7 @@
     "application/tests/manual/HOTEL_LIBRARY_BROWSER_ACCEPTANCE.md",
     "application/tests/manual/hotel_library_browser_harness.py",
     "application/tests/manual/hotel_library_http_acceptance.py",
+    "application/tests/payments/test_c11_deposit_compensation.py",
     "application/tests/payments/test_c11_deposit_ledger_width.py",
     "application/tests/payments/test_c11_deposit_operations_review.py",
     "application/tests/payments/test_c11_flight_idempotency_recovery.py",
@@ -284,6 +285,7 @@
     "application/tests/test_registration_terms_admission.py",
     "application/tests/test_registration_terms_reader.cjs",
     "application/tests/test_registration_terms_registry.py",
+    "application/tests/test_rental_compensation_authority.py",
     "application/tests/test_rental_damage_disputes.py",
     "application/tests/test_rental_deposit_authority.py",
     "application/tests/test_rental_operations.py",
@@ -348,42 +350,29 @@
   "historical_pass_transferred": false,
   "task_id": "V70-CURRENT-CELLS-UNIFIED",
   "cell_id": "INTEGRATION",
-  "candidate_head": "e24d1180fafedd7b01117c93c9614d3b0bda9752",
+  "candidate_head": "1ee6fd666ac32bf712b951080ae9d80714a51d47",
   "migration_file": "application/alembic/versions/0138_supplier_library_import.py",
   "c06_external_supplier_provenance": "BLOCKED_EXTERNAL",
   "integration_evidence": "ci/depth9/CANDIDATE.json",
   "engineering_continuation": {
-    "parent_commit": "ecab110746760ac46acec60f0c96545e02b90a66",
+    "parent_commit": "cb8928f2ce915825f7c95321a0fc26ed0b5530e6",
     "prior_binding": {
-      "product_candidate_commit": "8e029be3393eb17ecb744fa42a7abe32114bd516",
-      "application_git_tree": "8888038594e40ffeb498202d676d46855ce9dcec",
-      "source_files": 1518,
-      "source_tree_sha256": "e32e83985f06395a9de438f6ec02a332a4d816fe328cd140a07bebb8ce1c2426"
+      "product_candidate_commit": "e24d1180fafedd7b01117c93c9614d3b0bda9752",
+      "application_git_tree": "95b29433d237e2c882b6696bae77227c3e40d7db",
+      "source_files": 1532,
+      "source_tree_sha256": "fce2cf532a5fe2c22a0763b8a8f83ef1bebc6bb6a47b65bdb85a4a6b6965baaf"
     },
     "changed_application_paths": [
-      "application/frontend/admin/config.js",
-      "application/frontend/admin/index.html",
       "application/frontend/admin/rental-deposit-finance.js",
-      "application/frontend/admin/ride-policy-operations.js",
-      "application/frontend/consumer/index.html",
-      "application/frontend/consumer/rental-operations.js",
-      "application/frontend/shared/app.js",
+      "application/frontend/consumer/rental-deposit.js",
       "application/frontend/shared/rental-operations.js",
-      "application/scripts/acceptance_runtime.py",
       "application/src/go_hotel/api/routes/rental_deposit_money.py",
-      "application/src/go_hotel/api/routes/rental_operations.py",
-      "application/src/go_hotel/api/routes/ride_policy_operations.py",
-      "application/src/go_hotel/main.py",
-      "application/src/go_hotel/mobility/rental/damage.py",
-      "application/src/go_hotel/mobility/ride/cancellation_policy.py",
-      "application/src/go_hotel/mobility/ride/policy_operations.py",
+      "application/src/go_hotel/mobility/rental/deposit_authority.py",
+      "application/src/go_hotel/services/rental_deposit_money.py",
       "application/src/go_hotel/services/rental_deposit_review.py",
-      "application/tests/payments/test_c11_deposit_operations_review.py",
-      "application/tests/test_c05_policy_operations.py",
-      "application/tests/test_rental_operations.py",
-      "application/tests_frontend/rental_deposit_operations.test.mjs",
-      "application/tests_frontend/rental_operations_adapter.test.mjs",
-      "application/tests_frontend/ride_policy_operations.test.mjs"
+      "application/tests/payments/test_c11_deposit_compensation.py",
+      "application/tests/test_rental_compensation_authority.py",
+      "application/tests_frontend/rental_deposit_operations.test.mjs"
     ],
     "acceptance": "PENDING_INDEPENDENT",
     "historical_pass_transferred": false
@@ -495,6 +484,42 @@
       ],
       "acceptance": "PENDING_INDEPENDENT",
       "historical_pass_transferred": false
+    },
+    {
+      "parent_commit": "ecab110746760ac46acec60f0c96545e02b90a66",
+      "prior_binding": {
+        "product_candidate_commit": "8e029be3393eb17ecb744fa42a7abe32114bd516",
+        "application_git_tree": "8888038594e40ffeb498202d676d46855ce9dcec",
+        "source_files": 1518,
+        "source_tree_sha256": "e32e83985f06395a9de438f6ec02a332a4d816fe328cd140a07bebb8ce1c2426"
+      },
+      "changed_application_paths": [
+        "application/frontend/admin/config.js",
+        "application/frontend/admin/index.html",
+        "application/frontend/admin/rental-deposit-finance.js",
+        "application/frontend/admin/ride-policy-operations.js",
+        "application/frontend/consumer/index.html",
+        "application/frontend/consumer/rental-operations.js",
+        "application/frontend/shared/app.js",
+        "application/frontend/shared/rental-operations.js",
+        "application/scripts/acceptance_runtime.py",
+        "application/src/go_hotel/api/routes/rental_deposit_money.py",
+        "application/src/go_hotel/api/routes/rental_operations.py",
+        "application/src/go_hotel/api/routes/ride_policy_operations.py",
+        "application/src/go_hotel/main.py",
+        "application/src/go_hotel/mobility/rental/damage.py",
+        "application/src/go_hotel/mobility/ride/cancellation_policy.py",
+        "application/src/go_hotel/mobility/ride/policy_operations.py",
+        "application/src/go_hotel/services/rental_deposit_review.py",
+        "application/tests/payments/test_c11_deposit_operations_review.py",
+        "application/tests/test_c05_policy_operations.py",
+        "application/tests/test_rental_operations.py",
+        "application/tests_frontend/rental_deposit_operations.test.mjs",
+        "application/tests_frontend/rental_operations_adapter.test.mjs",
+        "application/tests_frontend/ride_policy_operations.test.mjs"
+      ],
+      "acceptance": "PENDING_INDEPENDENT",
+      "historical_pass_transferred": false
     }
   ],
   "browser_mount_repair": {
@@ -502,6 +527,16 @@
     "failed_run": 36129385650,
     "source_review": "PENDING_EXACT_HEAD_CI",
     "fix_product": "e24d1180fafedd7b01117c93c9614d3b0bda9752",
+    "historical_pass_transferred": false
+  },
+  "round4_compensation_scope": {
+    "parent_gate": "cb8928f2ce915825f7c95321a0fc26ed0b5530e6",
+    "product": "1ee6fd666ac32bf712b951080ae9d80714a51d47",
+    "scope": "Isolated same-root compensation on independently reviewed post-settlement appeal reduction",
+    "unknown_recovery": "HOLD_NO_INDEPENDENT_TRUSTED_RECEIPT",
+    "hotel_occupancy": "NEXT_BATCH_DESIGN_ONLY",
+    "checklist_version": "1.1.0",
+    "independent_acceptance": "PENDING_EXACT_HEAD_CI",
     "historical_pass_transferred": false
   }
 }
