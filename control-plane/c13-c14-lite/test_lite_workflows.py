@@ -113,5 +113,97 @@ class SchemaTests(unittest.TestCase):
         self.assertEqual(schema["properties"]["not_applicable"]["type"], "object")
 
 
+class DispatchEnvRobustnessTests(unittest.TestCase):
+    """Regression tests for the two bugs the first real run exposed.
+
+    Both only appear on a runner: $GITHUB_ENV is next-step only, and a push
+    triggered run has no ``inputs`` at all, so an "optional" variable arrives empty.
+    """
+
+    def run_cli(self, args, env):
+        import os
+        import subprocess
+        import tempfile
+
+        base = {key: value for key, value in os.environ.items()
+                if key in ("PATH", "SYSTEMROOT", "HOME", "TEMP", "TMP", "WINDIR", "COMSPEC", "PATHEXT")}
+        base.update(env)
+        return subprocess.run(
+            [sys.executable, str(ROOT / "lite_cli.py")] + args,
+            capture_output=True, text=True, env=base, timeout=120,
+        )
+
+    def spec_env(self, directory, scope_sha):
+        return {
+            "LITE_WORKFLOW_IDENTITY": ".github/workflows/c13-c14-lite-poc.yml",
+            "LITE_CANDIDATE_SHA": "f" * 40,
+            "LITE_APPLICATION_TREE": "f" * 40,
+            "LITE_CELL_PAIR": "C13+C14",
+            "LITE_REQUEST_ID": "poc-only-request",
+            "LITE_LEDGER_ROUND_ID": "POC_ONLY",
+            "LITE_C14_TASK_ID": "POC-C14-TASK",
+            "LITE_C13_TASK_ID": "POC-C13-TASK",
+            "LITE_NONCE": "poc-nonce-000000001",
+            "LITE_RUN_ID": "36109708133",
+            "LITE_RUN_ATTEMPT": "1",
+            "LITE_ISSUED_AT": "2026-09-25T08:00:00Z",
+            "LITE_EXPIRES_AT": "2026-09-25T09:00:00Z",
+            "LITE_WORKFLOW_SHA": "b" * 40,
+            "LITE_SCOPE_SHA256": scope_sha,
+            "GITHUB_REPOSITORY": "yuguangzhi3836-glitch/GO",
+        }
+
+    def test_spec_succeeds_when_optional_variables_are_absent(self):
+        import json
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as directory:
+            scope = self.run_cli(
+                ["scope", "--role", "c14", "--rule", "POC_ONLY", "--rule-version", "poc",
+                 "--out", f"{directory}/scope.json"],
+                self.spec_env(directory, "0" * 64),
+            )
+            self.assertEqual(scope.returncode, 0, scope.stderr)
+            digest = json.loads(pathlib.Path(directory, "scope.json").read_text(encoding="utf-8"))["scope_sha256"]
+            spec = self.run_cli(
+                ["spec", "--role", "c14", "--spec", f"{directory}/spec.json",
+                 "--facts", f"{directory}/facts.json", "--contract", f"{directory}/contract.json"],
+                self.spec_env(directory, digest),
+            )
+            self.assertEqual(spec.returncode, 0, spec.stderr + spec.stdout)
+            contract = json.loads(pathlib.Path(directory, "contract.json").read_text(encoding="utf-8"))
+            # issue_number was empty, so the ledger reference carries the binding.
+            self.assertIsNone(contract["issue_number"])
+            self.assertEqual(contract["ledger_reference"]["task_id"], "POC-C14-TASK")
+
+    def test_empty_values_do_not_trip_the_missing_env_check(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as directory:
+            env = self.spec_env(directory, "0" * 64)
+            env.update({"LITE_AI_MODEL": "", "LITE_PRINCIPAL_ID": "", "LITE_ISSUE_NUMBER": ""})
+            result = self.run_cli(
+                ["spec", "--role", "c14", "--spec", f"{directory}/s.json",
+                 "--facts", f"{directory}/f.json", "--contract", f"{directory}/c.json"],
+                env,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertNotIn("missing dispatch env", result.stderr + result.stdout)
+
+    def test_a_genuinely_missing_required_variable_still_fails(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as directory:
+            env = self.spec_env(directory, "0" * 64)
+            del env["LITE_SCOPE_SHA256"]
+            result = self.run_cli(
+                ["spec", "--role", "c14", "--spec", f"{directory}/s.json",
+                 "--facts", f"{directory}/f.json", "--contract", f"{directory}/c.json"],
+                env,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("missing dispatch env", result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

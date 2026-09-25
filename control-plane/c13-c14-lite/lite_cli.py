@@ -52,8 +52,6 @@ ENV_KEYS = {
     "run_id": "LITE_RUN_ID",
     "run_attempt": "LITE_RUN_ATTEMPT",
     "repository": "GITHUB_REPOSITORY",
-    "principal_id": "LITE_PRINCIPAL_ID",
-    "ai_model": "LITE_AI_MODEL",
 }
 
 
@@ -90,9 +88,12 @@ def _env_spec(role: str) -> dict:
         "expires_at": os.environ["LITE_EXPIRES_AT"],
         "run_id": int(os.environ["LITE_RUN_ID"]),
         "run_attempt": int(os.environ["LITE_RUN_ATTEMPT"]),
-        "repository": os.environ.get("GITHUB_REPOSITORY", "yuguangzhi3836-glitch/GO"),
-        "principal_id": os.environ.get("LITE_PRINCIPAL_ID", "github-actions"),
-        "ai_model": os.environ.get("LITE_AI_MODEL", lite_ai_reviewer.DEFAULT_MODEL),
+        "repository": os.environ.get("GITHUB_REPOSITORY") or "yuguangzhi3836-glitch/GO",
+        # Optional, and deliberately not part of the "missing dispatch env" check:
+        # an empty value must fall back to the default, not fail the step. A push
+        # triggered run has no inputs at all, which is exactly how this was found.
+        "principal_id": os.environ.get("LITE_PRINCIPAL_ID") or "github-actions",
+        "ai_model": os.environ.get("LITE_AI_MODEL") or lite_ai_reviewer.DEFAULT_MODEL,
         # Optional machine-test facts. Without a separate frozen inventory the
         # manifest itself is the inventory, which keeps the two digests linked.
         "test_inventory_sha256": os.environ.get("LITE_TEST_INVENTORY_SHA256", ""),
