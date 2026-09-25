@@ -92,7 +92,10 @@ jobs:
           #    by the ledger-bound identity fields. A constant is also the stronger
           #    statement of intent: changing the backend is an explicit, reviewable
           #    change to this file rather than a value passed at dispatch time.
-          ref: "a67ea8ac0cbf7990ce7fa1570eef7a0de29bab40"
+          # 4. This commit must stay REACHABLE: it lives on an unmerged branch, so deleting
+          #    that branch breaks the first checkout of the next dispatch, and nothing on the
+          #    default branch shows it. Keep the branch, or move the pin deliberately.
+          ref: "37b31e0a5a8910400e138292d01badc67270b167"
           persist-credentials: false
 
       - name: Check out the frozen candidate into candidate/
@@ -182,7 +185,10 @@ jobs:
           #    by the ledger-bound identity fields. A constant is also the stronger
           #    statement of intent: changing the backend is an explicit, reviewable
           #    change to this file rather than a value passed at dispatch time.
-          ref: "a67ea8ac0cbf7990ce7fa1570eef7a0de29bab40"
+          # 4. This commit must stay REACHABLE: it lives on an unmerged branch, so deleting
+          #    that branch breaks the first checkout of the next dispatch, and nothing on the
+          #    default branch shows it. Keep the branch, or move the pin deliberately.
+          ref: "37b31e0a5a8910400e138292d01badc67270b167"
           persist-credentials: false
 
       - name: Check out the frozen candidate into candidate/ (never executed)
@@ -190,6 +196,10 @@ jobs:
         with:
           ref: ${{ inputs.candidate_sha }}
           path: candidate
+          # Needed to freeze the changed-path boundary below: the first-parent diff cannot be
+          # computed without the first parent, and a depth-1 checkout yields an EMPTY boundary
+          # with exit code 0 - the same silent degradation as the diff-tree bug (CCV1-145B D-1).
+          fetch-depth: 2
           persist-credentials: false
 
       - uses: actions/setup-python@v5
@@ -220,16 +230,43 @@ jobs:
           test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
           test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
           mkdir -p "$RUNNER_TEMP/artifacts"
-          git -C candidate diff-tree --no-commit-id --name-only -r HEAD > "$RUNNER_TEMP/changed_paths.txt" || true
+          # A merge commit is NOT diffed by `git diff-tree` unless a merge diff mode is selected,
+          # so the plain form printed NOTHING for a merge commit and the frozen changed-path
+          # boundary was silently empty (CCV1-145B D-1).
+          #   * `-m` is NOT the fix, and neither is `-m --first-parent`: `--first-parent` does not
+          #     narrow `-m`'s output, so the boundary silently becomes the union of BOTH parents'
+          #     diffs (measured).
+          #   * `--diff-merges=first-parent` is the boundary we want: what this candidate brings
+          #     into its own line. It is a no-op for an ordinary single-parent commit.
+          # The first parent must also be present locally - that is why the candidate checkout in
+          # the c13-ai-review job uses fetch-depth 2. At depth 1 the boundary is empty again,
+          # with exit code 0.
+          git -C candidate diff-tree --no-commit-id --name-only -r --diff-merges=first-parent HEAD | sort -u > "$RUNNER_TEMP/changed_paths.txt"
+          # Fail closed, and never swallow a failure with `|| true`.
+          test -s "$RUNNER_TEMP/changed_paths.txt"
           cp c14-input/c14_bundle.json "$RUNNER_TEMP/c14_bundle.json"
           cp machine-input/junit.xml machine-input/stdout.txt machine-input/manifest.json machine-input/test_inventory.txt "$RUNNER_TEMP/"
           cp c14-input/c14_contract.json "$RUNNER_TEMP/c14.contract.json"
           wc -l "$RUNNER_TEMP/test_inventory.txt"
 
+      - name: Bind the workflow definition that is actually executing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # NOT `git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY`. The workspace root is the PINNED
+          # BACKEND checkout, so that resolves the backend commit's copy of this file rather than
+          # the registered definition GitHub is running - and a later edit to the registered
+          # workflow would not move the digest at all (CCV1-145B D-2). Resolve the definition from
+          # the ref this run used (GITHUB_SHA) instead. The helper re-hashes the returned bytes
+          # into git's own blob SHA and exits non-zero on any mismatch, because an unbound
+          # workflow identity must stop the round, never fall back to something plausible.
+          echo "LITE_WORKFLOW_SHA=$(python control-plane/c13-c14-lite/lite_cli.py workflow-identity \
+            --path "$LITE_WORKFLOW_IDENTITY" --ref "${GITHUB_SHA}")" >> "$GITHUB_ENV"
+
       - name: Freeze the quality-test scope and the dispatch environment
         run: |
           set -euo pipefail
-          LITE_WORKFLOW_SHA="$(git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY)"
           {
             echo "LITE_CANDIDATE_SHA=${{ inputs.candidate_sha }}"
             echo "LITE_APPLICATION_TREE=${{ inputs.application_tree }}"
