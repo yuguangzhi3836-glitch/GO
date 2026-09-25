@@ -1,0 +1,53 @@
+{
+  "C14_ROOT": "411382da06dd4f4d5a0a9b470f61c758bf51d7b3aada5fb3711ae6ddd96e9cef",
+  "ai_execution_id": "resp_0dcaf7bc10c7b2a6006ab677b837a887d1b92d181eb2b13ae7",
+  "ai_model": "gpt-5.6-sol",
+  "ai_provider": "OPENAI_RESPONSES_API",
+  "applicable_rule_versions": {
+    "GO_CONSTITUTION": "unversioned"
+  },
+  "applicable_rules": [
+    "GO_CONSTITUTION"
+  ],
+  "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "authorizes_any_action": false,
+  "blocking_issues": [],
+  "candidate_sha": "7db7b2aa52ecabc1ff1c92d9d1673f44f5ce68c5",
+  "cell_id": "C14",
+  "failure_class": null,
+  "findings": [
+    {
+      "id": "C14-SCOPE-001",
+      "severity": "INFO",
+      "statement": "The frozen candidate declares GO_CONSTITUTION, PERMISSION_BOUNDARY, and AI_BEHAVIOUR_RULES as applicable, each at version \"unversioned\"."
+    },
+    {
+      "id": "C14-SCOPE-002",
+      "severity": "INFO",
+      "statement": "The supplied changed_paths list is empty; therefore no candidate change affecting rules, permissions, IAM, contracts, regulatory duties, or AI behaviour is evidenced within the supplied review scope."
+    }
+  ],
+  "github_run_attempt": 1,
+  "github_run_id": 36141430817,
+  "input_sha256": "a7f63b45ca44cd2723e0ee030e0d1a0121ae33dcb908d31760bc555cc52987ef",
+  "issue_number": 68,
+  "issued_at": "2026-09-25T13:31:34Z",
+  "ledger_reference": {
+    "cell_id": "C14",
+    "round_id": "V70-R3",
+    "task_id": "V70-R3-C14-01"
+  },
+  "nonce": "c14-36141430817-1-27821",
+  "not_applicable": null,
+  "opinion_sha256": "321ce97b31b1754169407e5ecbda9298932f90466c40f987e4d655ec8ff83fb3",
+  "principal_id": "chenzhenxi1-sudo",
+  "prompt_sha256": "a85d5801a1434f149e2ff6e9a31c463694e111cab9f33cc754ac9dd8dd58acec",
+  "remediation_status": "NOT_REQUIRED",
+  "review_execution_id": "resp_0dcaf7bc10c7b2a6006ab677b837a887d1b92d181eb2b13ae7",
+  "rule_review_scope_sha256": "843bed6169d0c834c0d08daf3952ea122af545c4f46b68461da252dfd80aadd8",
+  "schema_version": "go.c13c14.lite.c14_bundle.v1",
+  "task_id": "V70-R3-C14-01",
+  "verdict": "PASS_SCOPED",
+  "workflow_ref": "yuguangzhi3836-glitch/GO/8889221c5907e13a59aea3021cbc22e0d225d401",
+  "workflow_sha": "8889221c5907e13a59aea3021cbc22e0d225d401"
+}

@@ -1,0 +1,31 @@
+{
+  "ai_execution_id": "resp_0dcaf7bc10c7b2a6006ab677b837a887d1b92d181eb2b13ae7",
+  "ai_model": "gpt-5.6-sol",
+  "ai_provider": "OPENAI_RESPONSES_API",
+  "failure_class": null,
+  "input_sha256": "a7f63b45ca44cd2723e0ee030e0d1a0121ae33dcb908d31760bc555cc52987ef",
+  "opinion": {
+    "blocking_issues": [],
+    "candidate_sha": "7db7b2aa52ecabc1ff1c92d9d1673f44f5ce68c5",
+    "findings": [
+      {
+        "id": "C14-SCOPE-001",
+        "severity": "INFO",
+        "statement": "The frozen candidate declares GO_CONSTITUTION, PERMISSION_BOUNDARY, and AI_BEHAVIOUR_RULES as applicable, each at version \"unversioned\"."
+      },
+      {
+        "id": "C14-SCOPE-002",
+        "severity": "INFO",
+        "statement": "The supplied changed_paths list is empty; therefore no candidate change affecting rules, permissions, IAM, contracts, regulatory duties, or AI behaviour is evidenced within the supplied review scope."
+      }
+    ],
+    "not_applicable": null,
+    "remediation_status": "NOT_REQUIRED",
+    "summary": "Scoped read-only C14 review passed on the supplied facts. No changed paths or evidenced rule-boundary changes were provided. This verdict does not authorize merge, deployment, or release.",
+    "verdict": "PASS_SCOPED"
+  },
+  "opinion_sha256": "321ce97b31b1754169407e5ecbda9298932f90466c40f987e4d655ec8ff83fb3",
+  "prompt_sha256": "a85d5801a1434f149e2ff6e9a31c463694e111cab9f33cc754ac9dd8dd58acec",
+  "role": "c14",
+  "verdict": "PASS_SCOPED"
+}

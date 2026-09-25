@@ -9,7 +9,14 @@
 - 适用对象: C13/C14 Lite V2（C14 规则审查 + C13 质量验收 + 双见证 + 聚合）
 - Rollback baseline（main，注册前）: `aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0`
 - 注册 PR: **#252**，单 commit `85533dd5790b8cfbbf48e3ae387cb47aab82a8d3`（+528 / -0，仅 2 文件）
-- Backend 固定引用: `a67ea8ac0cbf7990ce7fa1570eef7a0de29bab40`（写死在两条 workflow 内）
+- 🆕 **注册合并（真人合并，2026-09-25 21:22:26 +0800 / 13:22:27Z）**:
+  `REGISTRATION_MERGE_SHA = 7db7b2aa52ecabc1ff1c92d9d1673f44f5ce68c5`
+  （merge commit：`parent1 = aa2ec62b…`（旧 main）、`parent2 = 85533dd57…`（#252 head）；
+  root tree `85ab281cfc10375081fe36c96482cf108c56280b`；GitHub 已 gpgsig 签名；
+  `merged_by = chenzhenxi1-sudo`）
+  ⇒ **注册后 main = `7db7b2aa5…`**，撤销时"回到注册前"要回到的是 `aa2ec62b…`。
+- Backend 固定引用: `a67ea8ac0cbf7990ce7fa1570eef7a0de29bab40`（写死在两条 workflow 内；
+  远端可达性实测 HTTP 200，且是 #251 当前 head `3085ba157` 的祖先）
 
 ---
 
@@ -29,11 +36,22 @@ run、artifact 或 Evidence，**不需要**改写 `main` 历史，**不需要**�
 ### 1.1 Git 仓库状态（main）
 
 ```text
-main                                  = aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0（注册前）
-main 上 workflow 总数                  = 26
+main（注册前 baseline）                = aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0
+main（当前，注册已合并）               = 7db7b2aa52ecabc1ff1c92d9d1673f44f5ce68c5
+main 上 workflow 总数                  = 26（注册前）→ 28（注册后，实测 28）
 main 上 c13/c14 workflow              = 0（注册前）；注册后 = 2（PR #252）
 main 上 control-plane/c13-c14-lite   = 不存在（backend 从未合并进 main）
 main 上 control-plane/c13-c14-witness= 不存在
+```
+
+已注册的两条 production workflow（实测，2026-09-25 21:2x +0800）：
+
+```text
+id 366980580  C14 rule and compliance review (Lite V2)  .github/workflows/c14-rule-compliance.yml  state=active
+id 366980579  C13 quality acceptance (Lite V2)          .github/workflows/c13-quality-acceptance.yml  state=active
+注册内容与 PR head 逐字节一致: c14 blob a9400e2fde4be173ce6d910f88d8ceb6dbdc42f4
+                              c13 blob 5d5ccdafe73d19ddec5ec2a34ca4803f21cd8dee
+                              （两者在 main 与 #252 head 上相同）
 ```
 
 backend 与 witness runtime 只活在**未合并**的分支上：
@@ -50,9 +68,16 @@ backend 与 witness runtime 只活在**未合并**的分支上：
 
 ```text
 已注册的 production workflow（注册后）: c14-rule-compliance.yml, c13-quality-acceptance.yml
-已跑过的 C13/C14 production run       : 0（本轮未 dispatch，因为 merge gate 未过）
+🆕 第一次真实 C13/C14 production run（2026-09-25 13:30:51Z）:
+  C14 run id 36141430817 · conclusion=success · head_sha 7db7b2aa5…
+  C14 verdict = PASS_SCOPED · C14_ROOT = 411382da06dd4f4d5a0a9b470f61c758bf51d7b3aada5fb3711ae6ddd96e9cef
+  artifact 10866698116（bundle/contract/opinion，2884 B，digest sha256:b09e75cf…）
+  artifact 10866808048（readback，678 B，digest sha256:508f9e6a…）
+  ⚠ 两个 artifact 均由 **GitHub retention 90 天**约束 ⇒ 作为长期审计证据须在到期前归档
+    （不可变副本 + SHA256 + artifact_id / run_id / 归档时间）。撤销**不会**保住它们。
+C13 production run                     : 0（本轮按指令只派发 C14）
 历史 POC run                          : 若干次（POC_ONLY），是历史事实，**不主动删除**
-                                        ⚠ 其 artifact 受 GitHub retention 期限约束；若要作为
+                                        ⚠ 其 artifact 同样受 GitHub retention 期限约束；若要作为
                                           长期审计证据，须在到期前归档（见 §2.I）
 ```
 
@@ -88,7 +113,23 @@ CURRENT_CANONICAL_LEDGER = Issue #68（V7.0 14-CELL EXECUTION LEDGER, open）
 C13 行: independent acceptance · TRIGGER_ARMED · "Activate only on a new frozen candidate"
 C14 行: source/authority gate · TRIGGER_ARMED · "Activate only on a new frozen candidate, before C13"
 Dispatch 记录 = Issue #92（14-CELL R2 Dispatch）
+
+🆕 本轮 activation 记录（2026-09-25 13:30:16Z，append-only，评论 id 5833230504）:
+  round id            = V70-R3
+  C14 task id         = V70-R3-C14-01
+  C13 task id         = V70-R3-C13-01
+  scheduler request   = V70-R3-C13C14-01
+  candidate           = 7db7b2aa52ecabc1ff1c92d9d1673f44f5ce68c5
+  application tree    = dd815baf0105cce603e9a28b002cfb9d8b95d186
+  ⇒ #68 body 与全部历史评论**未改动**；评论数 38 → 39。
+  ⚠ 该评论作者 = `chenzhenxi1-sudo`（实现/调度身份），不是 Owner。
+     #68 此前 38/38 条评论均为 Owner 撰写；这是第一条非 Owner 评论，
+     撤销/善后时按"可被 Owner 删除或由后一条记录取代"处理（见 §A / §I）。
 ```
+
+**撤销时这条 activation 记录怎么处理**：不在 rollback 中删除（append-only 原则，见 §I）。
+它只是"闸门被激活过"的历史事实；若 Owner 要收回该激活，正确做法是**再追加一条**
+`C13_C14_MODE = DISABLED | RETIRED`（§A 的格式），而不是编辑或删除本条。
 
 ---
 
@@ -307,7 +348,10 @@ GAP → TASK → TEST → source-bound EVIDENCE → (C14) → (C13) → DONE-SCO
 
 ```text
 [ ] git ls-tree origin/main .github/workflows/ 中 c13/c14 计数 = 0，workflow 总数 = 26
+    （撤销基线：main 从 7db7b2aa5… 退回 aa2ec62b…，即 revert 85533dd57…）
 [ ] git ls-tree -r origin/main | grep c13-c14-lite 计数 = 0
+[ ] GitHub Actions workflow 列表中 c14-rule-compliance.yml / c13-quality-acceptance.yml
+    不再以 active 出现在默认分支（撤销前 id 366980580 / 366980579）
 [ ] CC: 3 个 C13/C14 文件均不存在；既有密钥（task-manifest-signing 等）**原样还在**
 [ ] HK: 3 个 C13/C14 文件均不存在；既有密钥（evidence-signing 等）**原样还在**
 [ ] CC: systemctl is-active go-boss-request-bridge.timer / go-ai-command-center = 正常
@@ -342,10 +386,22 @@ GAP → TASK → TEST → source-bound EVIDENCE → (C14) → (C13) → DONE-SCO
 ```text
 main 上引用 c13/c14 的文件（除注册的 2 个）: 仅 1 个历史证据清单
   evidence/v70-cell-closure-20260913/SHA256.json   ← 历史事实，保留，不影响运行
-main 上 26 个 workflow 引用 c13/c14: 0
+main 上 26 个 workflow 引用 c13/c14: 0（注册前实测；注册后新增的 2 条自身不构成依赖）
 CC systemd 引用 c13/c14/witness: 0        HK systemd 引用 c13/c14/witness: 0
 CC/HK C13/C14 unit: 无                    CC/HK C13/C14 常驻 runtime: 无
 注册 patch 反向应用检查: OK（完整移除，528 行，无残件）
+profile check（注册后补测）: 两条已注册 workflow 通过 backend 自带离线结构检查
+  （lite_workflow_check.py 的 7 项：权限最小化 / 无部署权威 / 凭据边界 / 可派发身份 /
+    artifact 纪律 / 同步骤 env 陷阱 / readback 声明 run head）⇒ gate=PASS
+```
+
+**注册合并后重新测得的"可撤销性"（2026-09-25，只读）**：
+
+```text
+撤销 = revert 一个 merge 的**单个提交** 85533dd57…  ⇒ main 回到 aa2ec62b…，workflow 28→26
+注册只加 2 个文件（+528/-0），main 上仍**没有** backend/witness 路径
+backend 的固定引用 a67ea8ac0… 活在**未合并**的 #251 分支上 ⇒ 撤销注册后引用自然消失
+未见新增硬依赖：C01–C12 / CC / HK / 部署链均未因注册而引用 C13/C14
 ```
 
 ⇒ `C01_C12_HARD_DEPENDENCY_CREATED = NO`｜`CC_HARD_DEPENDENCY_CREATED = NO`｜
