@@ -11,6 +11,17 @@ name: C13/C14 Lite V2 minimal PoC (quota + run/artifact readback)
 # production path, and it never deploys, merges or writes to an issue.
 
 on:
+  # Branch-and-path scoped push trigger, same pattern as the repository's existing
+  # c01-02-c13-independent.yml. It exists for one reason: GitHub cannot dispatch a
+  # workflow by name while that workflow exists only on a non-default branch, and
+  # the quota / readback proof can only be obtained remotely. It fires ONLY for
+  # this file on this implementation branch -- never on main, never for the two
+  # production workflows.
+  push:
+    branches:
+      - cc/c13-c14-lite-v2-github-backend-20260925
+    paths:
+      - .github/workflows/c13-c14-lite-poc.yml
   workflow_dispatch:
     inputs:
       ai_model:
