@@ -1,3 +1,45 @@
+/* RENTAL_OPERATIONS_HOST_BEGIN */
+function rentalOperationsMount({section,isCurrent,request,renderBusiness,renderFinance}){
+  let generation=0,busy=false,disposeFinance=null;
+  return async orderId=>{
+    if(!isCurrent()||busy)return;
+    const token=++generation;busy=true;
+    const current=()=>token===generation&&isCurrent();
+    const buttons=[...section.querySelectorAll('[data-rental-order-id]')];
+    buttons.forEach(button=>button.disabled=true);
+    disposeFinance?.();disposeFinance=null;
+    // Each mount gets new nodes. Old callbacks see disconnected containers,
+    // and cannot submit or overwrite the next order while it is loading.
+    const business=document.createElement('div'),finance=document.createElement('div');
+    business.dataset.rentalBusiness='';finance.dataset.rentalFinance='';
+    business.textContent='正在读取订单处理权限与记录…';finance.textContent='正在核对押金资金…';
+    section.querySelector('[data-rental-business]').replaceWith(business);
+    section.querySelector('[data-rental-finance]').replaceWith(finance);
+    section.dataset.rentalOrderId=orderId;section.dataset.rentalMountState='loading';
+    try{
+      const results=await Promise.all([
+        renderBusiness({container:business,orderId,request}),
+        renderFinance({container:finance,orderId,request})
+      ]);
+      const cleanup=typeof results[1]==='function'?results[1]:null;
+      if(!current()){cleanup?.();return;}
+      disposeFinance=cleanup;section.dataset.rentalMountState='ready';
+    }catch(error){
+      if(current()){
+        // A partially mounted business form must not remain interactive when
+        // the companion read fails. Detach both generations before retry.
+        for(const [node,key] of [[business,'rentalBusiness'],[finance,'rentalFinance']]){
+          const unavailable=document.createElement('div');unavailable.dataset[key]='';
+          unavailable.textContent='暂时无法核对订单与资金，请重新选择订单重试。';node.replaceWith(unavailable);
+        }
+        section.dataset.rentalMountState='error';throw error;
+      }
+    }finally{
+      if(token===generation){busy=false;if(isCurrent())buttons.forEach(button=>button.disabled=false);}
+    }
+  };
+}
+/* RENTAL_OPERATIONS_HOST_END */
 import {api,esc,statusClass,unwrap,money} from './api.js?v=20260919-registration-terms';
 const config=window.GO_CONSOLE, $=s=>document.querySelector(s), nav=config.nav, hiddenNav=config.hiddenNav||[], routeCatalog=[...nav,...hiddenNav]; let me=null;
 api.expectedActor=config.actorType;api.onSessionChanged=()=>{me=null;loginView();$('#loginErr').textContent='账号已在其他页面切换，请重新登录当前平台。'};
@@ -335,6 +377,9 @@ async function adminVertical(v,title){
     <button class="btn" data-page-kind="${kind}" data-direction="1" ${p.has_next?'':'disabled'}>下一页</button></nav>`;
   async function load(next){
     const id=++requestId;
+    // A new query invalidates the previous order immediately, including while
+    // the replacement query is still in flight or ultimately fails.
+    view.querySelector('#rentalOperationsWorkspace')?.remove();
     const disabledBefore=[...view.querySelectorAll('#adminOrderSearch button,[data-page-kind]')].map(b=>[b,b.disabled]);
     disabledBefore.forEach(([b])=>b.disabled=true);
     try{
@@ -361,14 +406,11 @@ async function adminVertical(v,title){
         const section=document.createElement('section');section.id='rentalOperationsWorkspace';
         section.innerHTML='<h2>租车争议与押金操作</h2><p>选择订单处理回应、独立裁决、归还检查与押金资金。</p><div class="actionbar" data-rental-order-links></div><div data-rental-business></div><div data-rental-finance></div>';
         view.appendChild(section);
-        const mount=async orderId=>{
-          if(id!==requestId||location.hash!==route||!section.isConnected)return;
-          const request=(p,o)=>api.request(p,o).then(unwrap);
-          await Promise.all([
-            window.GORentalOperations.render({container:section.querySelector('[data-rental-business]'),orderId,request}),
-            window.GORentalDepositOperations.render({container:section.querySelector('[data-rental-finance]'),orderId,request})
-          ]);
-        };
+        const mount=rentalOperationsMount({section,
+          isCurrent:()=>id===requestId&&location.hash===route&&section.isConnected,
+          request:(p,o)=>api.request(p,o).then(unwrap),
+          renderBusiness:options=>window.GORentalOperations.render(options),
+          renderFinance:options=>window.GORentalDepositOperations.render(options)});
         const links=section.querySelector('[data-rental-order-links]');
         for(const order of x.orders){
           const orderId=order.order_id;if(!orderId)continue;

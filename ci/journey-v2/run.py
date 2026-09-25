@@ -28,7 +28,8 @@ with (evidence / 'runtime.log').open('w') as log:
         with (evidence / 'rental-widget.log').open('w') as widget_log:
             widget_log.write('Scope: isolated browser widget with mocked request; not real API journey evidence.\n')
             widget_log.flush()
-            widget = subprocess.run(['node', '--test', str(root / 'ci/journey-v2/rental-operations-widget.mjs')],
+            widget = subprocess.run(['node', '--test', str(root / 'ci/journey-v2/rental-operations-widget.mjs'),
+                str(root / 'ci/journey-v2/rental-operations-host.mjs')],
                 stdout=widget_log, stderr=subprocess.STDOUT, env=env)
         result = subprocess.run(['node', str(root / 'ci/journey-v2/browser.mjs')], env=dict(env,
             GO_JOURNEY_STATE=str(state), GO_JOURNEY_EVIDENCE=str(evidence)))

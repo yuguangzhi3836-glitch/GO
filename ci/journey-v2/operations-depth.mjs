@@ -97,11 +97,21 @@ async function acceptedDeposit(c,p,oid){
 async function adminRental(c,p,oid){
   await p.goto(c.origin+'/go-admin/#/vertical-rental');
   await p.locator('#adminOrderId').fill(oid);
+  const responses=[
+    p.waitForResponse(r=>r.request().method()==='GET'&&new URL(r.url()).pathname==='/internal/v1/admin/operations/verticals/RENTAL'&&new URL(r.url()).searchParams.get('order_id')===oid),
+    p.waitForResponse(r=>r.request().method()==='GET'&&new URL(r.url()).pathname===operationsUrl(oid)),
+    p.waitForResponse(r=>r.request().method()==='GET'&&new URL(r.url()).pathname===moneyUrl(oid))
+  ];
+  // Exact search already mounts its result. A second click is a second mount,
+  // not a readiness barrier. Wait for this search and its two actual reads.
   await p.getByRole('button',{name:'查询订单',exact:true}).click();
-  await p.locator(`[data-rental-order-id="${oid}"]`).click();
-  await p.locator('#rentalOperationsWorkspace [data-rental-business] [data-refresh-operations]').waitFor();
-  await p.locator('#rentalOperationsWorkspace [data-rental-finance]').getByRole('heading',{name:'押金资金核对',exact:true}).waitFor();
-  await p.locator('#rentalOperationsWorkspace [data-rental-finance] [data-refresh]:not([disabled])').waitFor();
+  const returned=await Promise.all(responses);
+  for(const r of returned)assert.ok(r.ok(),await r.text());
+  for(const r of returned.slice(1))assert.equal((await r.json()).data.order_id,oid);
+  const workspace=p.locator(`#rentalOperationsWorkspace[data-rental-order-id="${oid}"][data-rental-mount-state="ready"]`);
+  await workspace.waitFor();
+  await workspace.locator('[data-rental-business] [data-refresh-operations]').waitFor();
+  await workspace.locator('[data-rental-finance] [data-refresh]:not([disabled])').waitFor();
 }
 async function finance(c,p,oid,title,state){
   const workspace=p.locator('[data-rental-finance]');
@@ -113,11 +123,26 @@ async function finance(c,p,oid,title,state){
 }
 async function command(c,p,oid,action,fields){
   const form=p.locator(`[data-rental-command="${action}"]`);await form.waitFor();
-  for(const [name,value] of Object.entries(fields)){const input=form.locator(`[name="${name}"]`);if(name==='response')await input.selectOption(value);else await input.fill(String(value));}
-  await form.locator('[name=confirmed]').check();
-  const response=p.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname.includes(`/rentals/orders/${oid}/operations/`));
-  await form.locator('button[type=submit]').click();const r=await response;assert.ok(r.ok(),await r.text());
-  return c.read(p,operationsUrl(oid));
+  try{
+    for(const [name,value] of Object.entries(fields)){const input=form.locator(`[name="${name}"]`);if(name==='response')await input.selectOption(value);else await input.fill(String(value));}
+    await form.locator('[name=confirmed]').check();
+    const snapshot=await form.evaluate(f=>({action:f.dataset.rentalCommand,case_id:f.dataset.caseId,
+      valid:f.checkValidity(),confirmed:f.elements.namedItem('confirmed').checked,
+      values:Object.fromEntries([...f.elements].filter(e=>e.name&&e.name!=='confirmed').map(e=>[e.name,e.value]))}));
+    c.report.operations.command_checks??=[];
+    c.report.operations.command_checks.push({order_id:oid,...snapshot});
+    assert.equal(snapshot.action,action);assert.equal(snapshot.valid,true,'current form must retain valid inputs before real submit');assert.equal(snapshot.confirmed,true);
+    for(const [name,value] of Object.entries(fields))assert.equal(snapshot.values[name],String(value),'input must survive mount: '+name);
+    const response=p.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname.includes(`/rentals/orders/${oid}/operations/`));
+    await form.locator('button[type=submit]').click();const r=await response;assert.ok(r.ok(),await r.text());
+    return c.read(p,operationsUrl(oid));
+  }catch(error){
+    c.report.operations.command_failures??=[];
+    c.report.operations.command_failures.push({order_id:oid,action,error:error.message,
+      screenshot:await c.capture(p,`operations-${action}-actual-actor-failure`),
+      visible_text:(await p.locator('body').innerText()).slice(-7000)});
+    throw error;
+  }
 }
 async function consumerRefresh(p){await p.locator('[data-refresh-operations]').click();}
 async function completeRental(c,p,oid){
