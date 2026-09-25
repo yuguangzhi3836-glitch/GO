@@ -123,6 +123,63 @@ class SchemaTests(unittest.TestCase):
         self.assertEqual(schema["properties"]["not_applicable"]["type"], "object")
 
 
+class MachineDependencyInstallTests(unittest.TestCase):
+    """CCV1-147A: the machine job must install what the candidate declares.
+
+    The defect was proven on a real candidate, not imagined: with pytest alone the inventory
+    stopped at ``ModuleNotFoundError: No module named 'cryptography'``, a dependency the
+    candidate's own application/pyproject.toml declares. This is the regression guard that
+    keeps the fix from being silently reverted.
+    """
+
+    TEMPLATE = (
+        "name: x\n"
+        "jobs:\n"
+        "  c13-machine-test:\n"
+        "    steps:\n"
+        "      - name: Run the frozen machine inventory in a disposable container\n"
+        "        run: |\n"
+        "          set -euo pipefail\n"
+        "          docker run --rm python:3.12-slim bash -lc '{command}'\n"
+    )
+
+    def failures_for(self, command):
+        failures = []
+        raw = self.TEMPLATE.format(command=command)
+        lite_workflow_check.check_machine_step_installs_candidate_dependencies(
+            lite_workflow_check.C13_WORKFLOW, {}, raw, failures)
+        return failures
+
+    def test_the_shipped_machine_step_installs_the_candidates_own_project(self):
+        failures = []
+        raw = (WORKFLOW_DIR / lite_workflow_check.C13_WORKFLOW).read_text(encoding="utf-8")
+        lite_workflow_check.check_machine_step_installs_candidate_dependencies(
+            lite_workflow_check.C13_WORKFLOW, {}, raw, failures)
+        self.assertEqual(failures, [])
+
+    def test_installing_only_pytest_is_rejected(self):
+        failures = self.failures_for(
+            "pip install -q pytest && python -m pytest application/tests -q")
+        self.assertTrue(failures, "pytest alone is what broke the first real C13")
+
+    def test_a_dependency_list_written_into_the_workflow_is_rejected(self):
+        failures = self.failures_for(
+            "pip install -q pytest cryptography && python -m pytest application/tests -q")
+        self.assertTrue(failures, "a package list in the workflow is the same defect")
+
+    def test_the_candidate_install_after_pytest_is_rejected(self):
+        failures = self.failures_for(
+            "pip install -q pytest && python -m pytest application/tests -q"
+            " && pip install -q \"/srv/application[dev]\"")
+        self.assertTrue(failures, "installing after the run is the same as never")
+
+    def test_another_cell_is_left_alone(self):
+        failures = []
+        lite_workflow_check.check_machine_step_installs_candidate_dependencies(
+            lite_workflow_check.C14_WORKFLOW, {}, "anything", failures)
+        self.assertEqual(failures, [])
+
+
 class DispatchEnvRobustnessTests(unittest.TestCase):
     """Regression tests for the two bugs the first real run exposed.
 
