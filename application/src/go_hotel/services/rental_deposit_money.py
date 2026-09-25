@@ -13,7 +13,7 @@ from go_hotel.db.models import (OmnichannelPaymentIntentRow as Intent,
     OmnichannelLedgerEntryRow as Ledger)
 from go_hotel.mobility.rental.changes import isolated, transaction
 from go_hotel.services.omnichannel_payment import digest, ident, now, legal_entity
-from go_hotel.services.unified_money_movement import unified_money_movement_service as money
+from go_hotel.services.unified_money_movement import unified_money_movement_service as money, business_ledger_account_code
 
 BUSINESS = 'RENTAL_DEPOSIT'
 _SCOPE = object()
@@ -142,8 +142,11 @@ def _graph(session, intent):
         raise ValueError('RENTAL_DEPOSIT_LEDGER_INVALID')
     for capture_id, capture in captures.items():
         entries = [entry for entry in ledger if entry.transaction_id == capture_id]
-        expected = {('PAYMENT_CLEARING:LOCAL_MARKET', 'DEBIT'), (f'BUSINESS:{BUSINESS}:{intent.business_id}', 'CREDIT')}
-        if len(entries) != 2 or {(entry.account_code, entry.direction) for entry in entries} != expected or any(
+        expected = {('PAYMENT_CLEARING:LOCAL_MARKET', 'DEBIT'), (business_ledger_account_code(BUSINESS,intent.business_id), 'CREDIT')}
+        # Existing isolated legacy rows are read-only compatible only as a full,
+        # exact two-entry capture. Never truncate IDs or rewrite booked facts.
+        legacy = {('PAYMENT_CLEARING:LOCAL_MARKET', 'DEBIT'), (f'BUSINESS:{BUSINESS}:{intent.business_id}', 'CREDIT')}
+        if len(entries) != 2 or {(entry.account_code, entry.direction) for entry in entries} not in (expected,legacy) or any(
                 entry.amount_minor != capture.amount_minor or entry.currency != intent.currency
                 or entry.entry_type != 'CAPTURE' or entry.evidence_hash != digest({'movement': capture_id}) for entry in entries):
             raise ValueError('RENTAL_DEPOSIT_LEDGER_INVALID')

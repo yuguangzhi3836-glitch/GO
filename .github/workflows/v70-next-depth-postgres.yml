@@ -134,6 +134,9 @@ jobs:
             tests/test_c11_consumer_payment_source_boundary.py \
             tests/test_rental_deposit_authority.py \
             tests/payments/test_c11_rental_deposit_money.py \
+            tests/payments/test_c11_deposit_ledger_width.py::test_deposit_capture_release_passes_database_column_constraint \
+            tests/payments/test_c11_deposit_ledger_width.py::test_complete_identity_preserved_for_equal_long_prefixes_and_limit \
+            tests/payments/test_c11_deposit_ledger_width.py::test_oversized_deposit_identity_fails_before_either_ledger_entry \
             tests/payments/test_c11_ride_acceptance_guard.py \
             tests/test_c05_cancellation_policy.py \
             --junitxml="$RUNNER_TEMP/next-depth-pg/cell-depth-increment-junit.xml" \

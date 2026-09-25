@@ -14,6 +14,12 @@ def now():return datetime.now(timezone.utc)
 def ident(p):return f'{p}_{uuid.uuid4().hex}'
 def digest(x):return hashlib.sha256(json.dumps(x,sort_keys=True,separators=(',',':'),default=str).encode()).hexdigest()
 def out(r):return {c.name:(getattr(r,c.name).isoformat() if isinstance(getattr(r,c.name),datetime) else getattr(r,c.name)) for c in r.__table__.columns}
+def business_ledger_account_code(business_type,business_id):
+ # Deposit obligation IDs remain complete. A reserved short namespace avoids
+ # overflowing the existing VARCHAR(64); other business account codes stay intact.
+ code=f'RD:{business_id}' if business_type=='RENTAL_DEPOSIT' else f'BUSINESS:{business_type}:{business_id}'
+ if business_type=='RENTAL_DEPOSIT' and len(code)>64:raise ValueError('RENTAL_DEPOSIT_LEDGER_ACCOUNT_TOO_LONG')
+ return code
 class UnifiedMoneyMovementService:
  def create(self,intent_id,b,key,actor):
   if b.get('mode')=='EXTERNAL_CERTIFIED_FACT':raise ValueError('EXTERNAL_CERTIFIED_FACT_TRUSTED_INGRESS_REQUIRED')
@@ -167,7 +173,7 @@ class UnifiedMoneyMovementService:
  def status(self):
   with SessionLocal() as s:return {'movements':[out(x) for x in s.scalars(select(Movement).order_by(Movement.created_at.desc())).all()],'scoped_closes':[out(x) for x in s.scalars(select(Close).order_by(Close.created_at.desc())).all()],'legacy_close_disabled':True,'principle':'SERVER_ORDER_FACT_TO_PAYMENT_TO_MONEY_MOVEMENT_TO_SCOPED_CLOSE'}
  def _post(self,s,i,m):
-  tx=m.money_movement_id;reverse=m.movement_type in {'REFUND','COMPENSATION','PAYOUT','RELEASE'};pairs=[(f'PAYMENT_CLEARING:{i.selected_channel}','DEBIT'),(f'BUSINESS:{i.business_type}:{i.business_id}','CREDIT')]
+  tx=m.money_movement_id;reverse=m.movement_type in {'REFUND','COMPENSATION','PAYOUT','RELEASE'};pairs=[(f'PAYMENT_CLEARING:{i.selected_channel}','DEBIT'),(business_ledger_account_code(i.business_type,i.business_id),'CREDIT')]
   if reverse:pairs=[(a,'CREDIT' if d=='DEBIT' else 'DEBIT') for a,d in pairs]
   for account,direction in pairs:s.add(Ledger(ledger_entry_id=ident('ole'),transaction_id=tx,payment_intent_id=i.payment_intent_id,account_code=account,direction=direction,amount_minor=m.amount_minor,currency=m.currency,entry_type=m.movement_type,evidence_hash=digest({'movement':m.money_movement_id}),created_at=now()))
 unified_money_movement_service=UnifiedMoneyMovementService()
