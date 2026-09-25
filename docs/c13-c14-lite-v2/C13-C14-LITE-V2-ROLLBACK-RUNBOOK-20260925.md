@@ -51,7 +51,9 @@ backend 与 witness runtime 只活在**未合并**的分支上：
 ```text
 已注册的 production workflow（注册后）: c14-rule-compliance.yml, c13-quality-acceptance.yml
 已跑过的 C13/C14 production run       : 0（本轮未 dispatch，因为 merge gate 未过）
-历史 POC run                          : 362 之前若干（POC_ONLY），是历史事实，**保留**
+历史 POC run                          : 若干次（POC_ONLY），是历史事实，**不主动删除**
+                                        ⚠ 其 artifact 受 GitHub retention 期限约束；若要作为
+                                          长期审计证据，须在到期前归档（见 §2.I）
 ```
 
 ### 1.3 Host secret 状态（两台，各 3 个文件）
@@ -215,9 +217,30 @@ rm -f /etc/go-command-center/keys/c13-c14-witness-ed25519.pub
 ```
 
 ⛔ 这**不是** `task-manifest-signing.pem`（那是 Task 签名密钥，**绝对不要动**）。
-⛔ 销毁后，历史上由它签的 witness **签名无法再被验证为"来自该 key"** —— 所以在销毁前，
-应先把已签 witness 连同 `public_key_pem`（witness 记录内自带）一并归档。那些记录**自带公钥**，
-所以即使私钥销毁，**历史记录的真实性仍可复核**（这正是 witness 记录内嵌公钥的原因）。
+
+**销毁私钥意味着什么、不意味着什么**——这里必须说准：
+
+- 销毁私钥**只**意味着一件事：**不能再产生新的、属于该 key 的签名**。
+- 它**不**意味着历史 witness 失去可验证性。每条 witness **内嵌自己的 `public_key_pem`**，
+  而验证只需要公钥 ⇒ **历史记录仍可用归档的公钥复核**（`lw_witness.verify_witness`
+  就是纯公钥验证，不碰私钥）。
+
+但"记录能自证"**不等于**"记录长期可信"，两者之间还差一层，必须补上：
+
+- 一条内嵌公钥的 witness 只能证明「**这条记录是由持有对应私钥的人签的**」，
+  **不能**证明「**那条记录当时确实是 CC / HK 签的**」。任何人拿自己的公钥 + 自己重签的记录，
+  都能造出一条"自证通过"的假记录。
+- ⇒ **长期真实性依赖一份独立受信的 key binding evidence**：启用 / 轮换当时就要把
+  **`key_id` + `fingerprint` + `public_key_pem`** 与 **role（CC / HK）+ purpose + 生效时间**
+  绑定并留痕（记进 Ledger，或落入一份随卷归档的登记记录）。这份登记必须**早于、且独立于**
+  被验证的 witness，否则它挡不住上面那种自签伪造。
+- 有了它才能回答："这条 2026-09-25 的 CC witness，确实出自当时那个
+  `key_id = 26ca5651b363c463`、fingerprint `sha256:26ca5651…`"，而不只是"它出自某个
+  持有私钥的人"。
+
+⇒ **正确顺序：① 归档 witness 记录本身 → ② 归档 / 确认 key binding evidence
+（key_id + fingerprint + public_key_pem + role/purpose + 生效时间）→ ③ 再销毁私钥。**
+销毁之后：**既有签名仍可验证，新签名不再产生。**
 
 ### H. HK witness key 销毁
 
@@ -233,7 +256,17 @@ rm -f /etc/go-command-center/keys/c13-c14-witness-ed25519.pub
 ### I. Issue / Ledger 历史保留
 
 ```text
-保留: #68 / #77 / #92 及全部历史评论、Actions run、artifact、Evidence 文件
+Rollback **不主动删除**历史 Issue / 评论 / Actions run / artifact / Evidence。
+但"不主动删除"**不等于**"永久留存"，按类型分开处理：
+
+- Issue / 评论 / Ledger 记录：在 GitHub 上长期存在，**不需要动作**。
+- Actions run 元数据：**不主动删除**。
+- 🔴 **GitHub Actions artifact 有 retention 期限，到期会被 GitHub 自动清理。**
+  ⇒ 若某次 artifact 被当作**长期审计证据**，必须**在 retention 到期前归档**：
+  至少归档**不可变证据副本 + SHA256**（例如把 artifact ZIP 与它对应的
+  `artifact.digest` 一并落到受控归档，并同时记录 `artifact_id` / `run_id` / 归档时间）。
+  ⚠ 未归档的 artifact 会**静默到期消失**；"rollback 不删它"并**不能**保住它。
+- 仓内 Evidence 文件：随 Git 历史长期存在，**不需要动作**。
 追加: 只追加 RETIRED/DISABLED 记录（见 A）
 ```
 
@@ -283,7 +316,9 @@ GAP → TASK → TEST → source-bound EVIDENCE → (C14) → (C13) → DONE-SCO
 [ ] GitHub 侧两枚 witness PAT 已 revoke（用旧值调用 /user 得 401）
 [ ] Ledger 上已追加 RETIRED 记录，且历史评论数量只增不减
 [ ] C01–C12 的下一次派发正常（不因撤销而报错）
-[ ] 历史 C13/C14 run / artifact / witness 记录仍可查询
+[ ] 历史 C13/C14 run / witness 记录仍可查询
+[ ] 作为长期审计证据的 artifact 已在 retention 到期前归档（不可变副本 + SHA256）
+[ ] key binding evidence（key_id / fingerprint / public_key_pem + role/purpose + 生效时间）已归档
 ```
 
 ---
