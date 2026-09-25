@@ -4,6 +4,13 @@ name: C14 rule and compliance review (Lite V2)
 # AI-behaviour rules. It is explicitly NOT a second quality tester: this workflow
 # runs no Docker, no PostgreSQL and no regression / recovery / journey suite.
 #
+# The rule set is NOT a dispatch input and NOT a constant in this file. It is resolved
+# read-only from docs/governance/C14_RULE_SOURCES.json at THIS RUN'S OWN COMMIT
+# (GITHUB_SHA), before any AI call - so a candidate cannot edit the rules that judge it,
+# the rule text and the backend are the same fixed commit, and a round with no
+# resolvable rule source is a deterministic BLOCKED. The three rule-set names that used
+# to be the input default were our own invention (CCV1-145C).
+#
 # The workflow is the *execution backend* for the C14 cell. It does not decide
 # anything about scheduling: cell and task identity come from the dispatch inputs
 # which the caller takes from the existing 14-Cell issue / ledger.
@@ -34,14 +41,6 @@ on:
       c13_task_id:
         description: "Task id of the C13 cell in that ledger (the paired acceptance)"
         required: true
-      applicable_rules:
-        description: "Comma separated rule set names in scope"
-        required: false
-        default: "GO_CONSTITUTION,PERMISSION_BOUNDARY,AI_BEHAVIOUR_RULES"
-      rule_version:
-        description: "Declared version of the applicable rule set"
-        required: false
-        default: "unversioned"
       ai_model:
         description: "Model used for the fresh AI review execution"
         required: false
@@ -55,12 +54,11 @@ env:
   LITE_CELL_PAIR: "C13+C14"
   LITE_WORKFLOW_IDENTITY: ".github/workflows/c14-rule-compliance.yml"
   LITE_AI_MODEL: ${{ inputs.ai_model }}
-  # The declared rule set travels with the dispatch. It used to be read from a fallback
-  # inside the backend, and the prompt and the sealed record each used a *different*
-  # fallback, so the record could declare fewer rules than the review was run against
-  # (CCV1-145B D-3).
-  LITE_APPLICABLE_RULES: ${{ inputs.applicable_rules }}
-  LITE_RULE_VERSION: ${{ inputs.rule_version }}
+  # The rule set deliberately does NOT travel with the dispatch. It used to be a
+  # comma-separated input whose default was three names our own backend invented, which
+  # made "the dispatch declared a rule set" indistinguishable from "the dispatch declared
+  # three strings" (CCV1-145C). It is resolved read-only at this run's own commit by the
+  # `Resolve the authoritative rule sources` step below, which publishes LITE_RULE_INPUT.
 
 jobs:
   c14-rule-review:
@@ -68,24 +66,25 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - name: Check out the execution backend (pinned commit, never a branch head)
+      - name: Check out the execution backend (this run's own commit)
         uses: actions/checkout@v4
         with:
-          # Pinned deliberately, and deliberately NOT a dispatch input.
+          # EXECUTION_BACKEND_SHA = github.sha: the backend that runs is the backend
+          # registered on the ref this run used, and GitHub records that commit as the
+          # run's head_sha. Nothing outside the default branch has to stay alive: this used
+          # to be a literal commit SHA that only lived on an unmerged working branch, so
+          # deleting that branch broke the first checkout of the next dispatch while
+          # nothing on the default branch showed it - and the code that ran was never the
+          # code that had been merged. There is no pin registry to keep in step either,
+          # because the commit is already recorded by the run itself.
           #
-          # 1. Without a ref, actions/checkout takes the workflow's own ref. Registering
-          #    this workflow on the default branch would therefore execute the backend
-          #    from main, where control-plane/c13-c14-lite does not exist at all.
-          # 2. It is a commit, not a branch, so the backend cannot drift underneath a
-          #    frozen round.
-          # 3. workflow_dispatch allows at most 10 inputs and all ten are already used
-          #    by the ledger-bound identity fields. A constant is also the stronger
-          #    statement of intent: changing the backend is an explicit, reviewable
-          #    change to this file rather than a value passed at dispatch time.
-          # 4. This commit must stay REACHABLE: it lives on an unmerged branch, so deleting
-          #    that branch breaks the first checkout of the next dispatch, and nothing on the
-          #    default branch shows it. Keep the branch, or move the pin deliberately.
-          ref: "48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4"
+          # This is NOT the reviewed candidate: the candidate is checked out separately
+          # below at candidate_sha, and the two are never assumed to be equal.
+          #
+          # Deliberately not a dispatch input: the backend identity is the run's own
+          # commit, which GitHub already records. See the rule-input step for where the
+          # rule set comes from instead.
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Check out the frozen candidate into candidate/ (never executed)
@@ -122,16 +121,43 @@ jobs:
           test -s "$RUNNER_TEMP/changed_paths.txt"
           wc -l < "$RUNNER_TEMP/changed_paths.txt"
 
+      - name: Resolve the authoritative rule sources (read-only, this run's commit)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # The rule set is governance data read at THIS RUN'S OWN COMMIT, not a dispatch
+          # input and not a constant in this file. Reading the manifest at GITHUB_SHA
+          # instead of at a moving ref is what keeps RULE_AUTHORITY_SHA equal to
+          # EXECUTION_BACKEND_SHA: with a branch name, a run that started at commit A
+          # could silently read the rule text of a commit B that landed while it started.
+          # Two things follow, and both are the point:
+          #   * a candidate cannot edit the rules that judge it: the resolver fails the round
+          #     if this candidate's own change surface touches the manifest or a declared
+          #     source (GOVERNANCE_SOURCE_CHANGED);
+          #   * a round with no resolvable rule source becomes a deterministic BLOCKED before
+          #     any AI call, instead of being reviewed against three names we invented.
+          # This step exits 0 even on a governance refusal, on purpose: the refusal is a
+          # *record* that the seal publishes, and a crashed step would leave no record of
+          # what was wrong (CCV1-145B D-4). LITE_RULE_INPUT is exported for later steps -
+          # $GITHUB_ENV is next-step only, which is how that same trap was found before.
+          python control-plane/c13-c14-lite/lite_cli.py rule-input \
+            --out "$RUNNER_TEMP/rule_input.json" \
+            --repository "$GITHUB_REPOSITORY" \
+            --ref "${GITHUB_SHA}" \
+            --changed-paths "$RUNNER_TEMP/changed_paths.txt"
+          echo "LITE_RULE_INPUT=$RUNNER_TEMP/rule_input.json" >> "$GITHUB_ENV"
+
       - name: Bind the workflow definition that is actually executing
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # NOT `git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY`. The workspace root above is the
-          # PINNED BACKEND checkout, so that resolves the backend commit's copy of this file
-          # rather than the registered definition GitHub is running - and a later edit to the
-          # registered workflow would not move the digest at all (CCV1-145B D-2). Resolve the
-          # definition from the ref this run used (GITHUB_SHA) instead. The helper re-hashes the
+          # NOT `git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY`. The workspace root is the backend
+          # checkout, which is this run's own commit - but the identity must still be resolved
+          # from the ref the run used and checked against the API's own bytes, because that is
+          # the definition GitHub registered for this run, and a later edit to it must move the
+          # digest (CCV1-145B D-2). Resolve it from GITHUB_SHA. The helper re-hashes the
           # returned bytes into git's own blob SHA and exits non-zero on any mismatch, because an
           # unbound workflow identity must stop the round, never fall back to something plausible.
           echo "LITE_WORKFLOW_SHA=$(python control-plane/c13-c14-lite/lite_cli.py workflow-identity \
@@ -156,14 +182,17 @@ jobs:
             echo "LITE_ISSUED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "LITE_EXPIRES_AT=$(date -u -d '+55 minutes' +%Y-%m-%dT%H:%M:%SZ)"
           } >> "$GITHUB_ENV"
-          SCOPE_OUT="$RUNNER_TEMP/LITE_SCOPE_SHA256"
+          # The frozen scope binds the RESOLVED RULE INPUT rather than a list of names, so
+          # scope.json now carries two 64-hex digests. Read the digest from the command's own
+          # stdout, which carries exactly one, instead of from the file - grepping the file
+          # would silently pick up the rule digest (they sort before the scope digest).
+          SCOPE_OUT="$RUNNER_TEMP/scope_stdout.json"
           python control-plane/c13-c14-lite/lite_cli.py scope \
             --role c14 \
-            --rule "${{ inputs.applicable_rules }}" \
-            --rule-version "${{ inputs.rule_version }}" \
+            --rule-input "$LITE_RULE_INPUT" \
             --changed-paths "$RUNNER_TEMP/changed_paths.txt" \
             --out "$RUNNER_TEMP/scope.json" > "$SCOPE_OUT"
-          echo "LITE_SCOPE_SHA256=$(grep -o '[0-9a-f]\{64\}' "$RUNNER_TEMP/scope.json" | head -1)" >> "$GITHUB_ENV"
+          echo "LITE_SCOPE_SHA256=$(grep -o '[0-9a-f]\{64\}' "$SCOPE_OUT" | head -1)" >> "$GITHUB_ENV"
 
       - name: Build the frozen candidate contract
         run: |

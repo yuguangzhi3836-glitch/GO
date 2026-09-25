@@ -78,24 +78,21 @@ jobs:
           --health-timeout 5s
           --health-retries 12
     steps:
-      - name: Check out the execution backend (pinned commit, never a branch head)
+      - name: Check out the execution backend (this run's own commit)
         uses: actions/checkout@v4
         with:
-          # Pinned deliberately, and deliberately NOT a dispatch input.
+          # EXECUTION_BACKEND_SHA = github.sha: the backend that runs is the backend
+          # registered on the ref this run used, and that commit is what GitHub records as
+          # the run's head_sha. The backend used to be a literal commit SHA that only lived
+          # on an unmerged working branch: nothing on the default branch showed that
+          # dependency, and deleting the branch broke the first checkout of the next
+          # dispatch. Nothing outside the default branch now has to stay alive.
           #
-          # 1. Without a ref, actions/checkout takes the workflow's own ref. Registering
-          #    this workflow on the default branch would therefore execute the backend
-          #    from main, where control-plane/c13-c14-lite does not exist at all.
-          # 2. It is a commit, not a branch, so the backend cannot drift underneath a
-          #    frozen round.
-          # 3. workflow_dispatch allows at most 10 inputs and all ten are already used
-          #    by the ledger-bound identity fields. A constant is also the stronger
-          #    statement of intent: changing the backend is an explicit, reviewable
-          #    change to this file rather than a value passed at dispatch time.
-          # 4. This commit must stay REACHABLE: it lives on an unmerged branch, so deleting
-          #    that branch breaks the first checkout of the next dispatch, and nothing on the
-          #    default branch shows it. Keep the branch, or move the pin deliberately.
-          ref: "48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4"
+          # This is NOT the reviewed candidate - the candidate is checked out separately at
+          # candidate_sha and the two are never assumed to be equal. It is also deliberately
+          # not a dispatch input: workflow_dispatch allows at most 10 inputs and the
+          # ledger-bound identity fields use all of them.
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Check out the frozen candidate into candidate/
@@ -171,24 +168,21 @@ jobs:
     timeout-minutes: 25
     needs: c13-machine-test
     steps:
-      - name: Check out the execution backend (pinned commit, never a branch head)
+      - name: Check out the execution backend (this run's own commit)
         uses: actions/checkout@v4
         with:
-          # Pinned deliberately, and deliberately NOT a dispatch input.
+          # EXECUTION_BACKEND_SHA = github.sha: the backend that runs is the backend
+          # registered on the ref this run used, and that commit is what GitHub records as
+          # the run's head_sha. The backend used to be a literal commit SHA that only lived
+          # on an unmerged working branch: nothing on the default branch showed that
+          # dependency, and deleting the branch broke the first checkout of the next
+          # dispatch. Nothing outside the default branch now has to stay alive.
           #
-          # 1. Without a ref, actions/checkout takes the workflow's own ref. Registering
-          #    this workflow on the default branch would therefore execute the backend
-          #    from main, where control-plane/c13-c14-lite does not exist at all.
-          # 2. It is a commit, not a branch, so the backend cannot drift underneath a
-          #    frozen round.
-          # 3. workflow_dispatch allows at most 10 inputs and all ten are already used
-          #    by the ledger-bound identity fields. A constant is also the stronger
-          #    statement of intent: changing the backend is an explicit, reviewable
-          #    change to this file rather than a value passed at dispatch time.
-          # 4. This commit must stay REACHABLE: it lives on an unmerged branch, so deleting
-          #    that branch breaks the first checkout of the next dispatch, and nothing on the
-          #    default branch shows it. Keep the branch, or move the pin deliberately.
-          ref: "48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4"
+          # This is NOT the reviewed candidate - the candidate is checked out separately at
+          # candidate_sha and the two are never assumed to be equal. It is also deliberately
+          # not a dispatch input: workflow_dispatch allows at most 10 inputs and the
+          # ledger-bound identity fields use all of them.
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Check out the frozen candidate into candidate/ (never executed)
@@ -254,11 +248,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # NOT `git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY`. The workspace root is the PINNED
-          # BACKEND checkout, so that resolves the backend commit's copy of this file rather than
-          # the registered definition GitHub is running - and a later edit to the registered
-          # workflow would not move the digest at all (CCV1-145B D-2). Resolve the definition from
-          # the ref this run used (GITHUB_SHA) instead. The helper re-hashes the returned bytes
+          # NOT `git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY`. The workspace root is the backend
+          # checkout, which is this run's own commit - but the identity must still be resolved
+          # from the ref the run used and checked against the API's own bytes, because that is the
+          # definition GitHub registered for this run, and a later edit to it must move the digest
+          # (CCV1-145B D-2). Resolve it from GITHUB_SHA. The helper re-hashes the returned bytes
           # into git's own blob SHA and exits non-zero on any mismatch, because an unbound
           # workflow identity must stop the round, never fall back to something plausible.
           echo "LITE_WORKFLOW_SHA=$(python control-plane/c13-c14-lite/lite_cli.py workflow-identity \
