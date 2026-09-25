@@ -11,12 +11,17 @@ Subcommands
 ``seal``          seal a bundle from the contract, the review outcome and machine evidence
 ``verify``        verify a whole C13+C14 round and write the decision
 ``bind-ledger``   DRY RUN binding of two execution records onto the existing ledger
+``workflow-identity``
+                  resolve the blob SHA of the workflow definition that is executing
+                  (one read-only GitHub contents call, and the only subcommand here
+                  that touches the network)
 
-No subcommand contacts a server, a database or a deployment path.
+No subcommand contacts a database, a credential store or a deployment path.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import pathlib
@@ -34,6 +39,27 @@ import lite_chain  # noqa: E402
 import lite_errors  # noqa: E402
 import lite_execution_record  # noqa: E402
 import lite_ledger_binding  # noqa: E402
+
+#: The rule set a C14 rule review declares when the dispatch does not name one.
+#:
+#: This exists exactly once, on purpose. CCV1-145B D-3 was two different fallbacks for
+#: the same concept - the prompt was built from a three-rule fallback while the sealed
+#: record was built from a one-rule fallback - so the record understated the rules the
+#: review had actually been run against. One constant, one derivation, two consumers.
+DEFAULT_APPLICABLE_RULES = ("GO_CONSTITUTION", "PERMISSION_BOUNDARY", "AI_BEHAVIOUR_RULES")
+DEFAULT_RULE_VERSION = "unversioned"
+
+
+def _csv_names(value, default):
+    """Split a comma separated dispatch input into a stable, de-duplicated rule list.
+
+    The fallback is canonicalised the same way as a declared value, so "nothing was
+    declared" and "exactly the default was declared" produce byte-identical records
+    instead of two orderings of the same set.
+    """
+    names = [name.strip() for name in (value or "").split(",") if name.strip()]
+    return sorted(dict.fromkeys(names)) or sorted(dict.fromkeys(default))
+
 
 ENV_KEYS = {
     "candidate_sha": "LITE_CANDIDATE_SHA",
@@ -101,6 +127,16 @@ def _env_spec(role: str) -> dict:
         "runner_os": os.environ.get("LITE_RUNNER_OS", "Linux"),
         "postgres_version": os.environ.get("LITE_POSTGRES_VERSION", "18.4"),
         "docker_used": os.environ.get("LITE_DOCKER_USED", "true").lower() == "true",
+        # The declared rule set for a C14 rule review. Optional, and deliberately not part
+        # of the "missing dispatch env" check: an empty value must fall back to the single
+        # declared default rather than fail the step. Derived once here and consumed by
+        # both the prompt facts and the sealed record, so the two can no longer disagree
+        # (CCV1-145B D-3).
+        "applicable_rules": _csv_names(os.environ.get("LITE_APPLICABLE_RULES"), DEFAULT_APPLICABLE_RULES),
+        "applicable_rule_versions": {
+            name: (os.environ.get("LITE_RULE_VERSION") or DEFAULT_RULE_VERSION)
+            for name in _csv_names(os.environ.get("LITE_APPLICABLE_RULES"), DEFAULT_APPLICABLE_RULES)
+        },
         # Supplied by the scheduler adapter once it is wired; until then the
         # independence check is honest about not knowing the implementation run.
         "implementation_execution_id": os.environ.get("LITE_IMPLEMENTATION_EXECUTION_ID", "unknown-implementation-execution"),
@@ -123,11 +159,9 @@ def _facts(role: str, spec: dict, *, task_id: str) -> dict:
     }
     if role == "c14":
         facts["rule_review_scope_sha256"] = spec["scope_sha256"]
-        facts["applicable_rules"] = spec.get("applicable_rules", ["GO_CONSTITUTION", "PERMISSION_BOUNDARY", "AI_BEHAVIOUR_RULES"])
-        facts["applicable_rule_versions"] = spec.get(
-            "applicable_rule_versions",
-            {name: spec.get("rule_version", "unversioned") for name in facts["applicable_rules"]},
-        )
+        # Straight from the spec - the same derivation the sealed record uses.
+        facts["applicable_rules"] = list(spec["applicable_rules"])
+        facts["applicable_rule_versions"] = dict(spec["applicable_rule_versions"])
         facts["changed_paths"] = spec.get("changed_paths", [])
     else:
         facts["quality_test_scope_sha256"] = spec["scope_sha256"]
@@ -241,15 +275,17 @@ def cmd_seal(args) -> int:
         opinion = outcome.get("opinion") or {}
         fields.update({
             "rule_review_scope_sha256": contract["review_scope_sha256"],
-            "applicable_rules": opinion.get("applicable_rules") or spec.get("applicable_rules", ["GO_CONSTITUTION"]),
-            "applicable_rule_versions": spec.get("applicable_rule_versions", {}),
+            # The dispatch declares the rule set; the sealed record repeats that declaration
+            # verbatim. The reviewer is NOT allowed to widen or narrow it here: the C14 output
+            # schema has no applicable_rules field, and a fallback that let the record differ
+            # from the prompt is exactly what CCV1-145B D-3 was.
+            "applicable_rules": list(spec["applicable_rules"]),
+            "applicable_rule_versions": dict(spec["applicable_rule_versions"]),
             "not_applicable": (opinion or {}).get("not_applicable"),
             "findings": (opinion or {}).get("findings", []),
             "blocking_issues": (opinion or {}).get("blocking_issues", []),
             "remediation_status": (opinion or {}).get("remediation_status", "OPEN"),
         })
-        if not fields["applicable_rule_versions"]:
-            fields["applicable_rule_versions"] = {name: spec.get("rule_version", "unversioned") for name in fields["applicable_rules"]}
     else:
         artifacts = {
             "junit": pathlib.Path(args.junit).read_bytes(),
@@ -380,6 +416,70 @@ def _relpath(path, root):
         raise lite_errors.Reject("evidence_outside_root", str(path)) from error
 
 
+def _git_blob_sha(raw: bytes) -> str:
+    """The SHA git itself would give these bytes (blob header, length, content)."""
+    return hashlib.sha1(b"blob %d\0" % len(raw) + raw).hexdigest()
+
+
+def cmd_workflow_identity(args) -> int:
+    """Resolve the blob SHA of the workflow definition that is actually executing.
+
+    CCV1-145B D-2: the workspace root is the *pinned backend* checkout, so
+    ``git rev-parse HEAD:<workflow path>`` resolves that commit's copy of the file
+    rather than the definition GitHub is running. The definition that ran lives at the ref
+    this run used (``GITHUB_SHA``), so it is read from the API here - and the bytes the API
+    returns are re-hashed into git's own blob SHA before anything is reported, so the
+    printed value is computed from the content rather than taken on the API's word.
+
+    Fail-closed on purpose: an unbound workflow identity must stop the round rather than be
+    silently recorded as some other commit's file. There is no fallback value.
+    """
+    import base64
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    repository = args.repository or os.environ.get("GITHUB_REPOSITORY") or ""
+    if not repository:
+        raise SystemExit("workflow-identity: no repository (set GITHUB_REPOSITORY or --repository)")
+    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if not token:
+        raise SystemExit("workflow-identity: no token (set GH_TOKEN or GITHUB_TOKEN)")
+    if not args.ref.strip():
+        raise SystemExit("workflow-identity: --ref is required")
+
+    quoted_path = "/".join(urllib.parse.quote(part) for part in args.path.split("/") if part)
+    url = (f"https://api.github.com/repos/{repository}/contents/{quoted_path}"
+           f"?ref={urllib.parse.quote(args.ref)}")
+    request = urllib.request.Request(url, headers={
+        "Authorization": "Bearer " + token,
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "go-c13-c14-lite-workflow-identity",
+    })
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        raise SystemExit(f"workflow-identity: HTTP {error.code} for {args.path}@{args.ref}")
+    except Exception as error:  # noqa: BLE001 - any transport failure is a hard stop
+        raise SystemExit(f"workflow-identity: {type(error).__name__} for {args.path}@{args.ref}")
+
+    if not isinstance(payload, dict) or payload.get("encoding") != "base64":
+        raise SystemExit(f"workflow-identity: {args.path}@{args.ref} is not a base64 file object")
+    content = payload.get("content")
+    if not isinstance(content, str):
+        raise SystemExit(f"workflow-identity: {args.path}@{args.ref} has no inline content")
+    raw = base64.b64decode(content)
+    recomputed = _git_blob_sha(raw)
+    if payload.get("sha") != recomputed:
+        raise SystemExit(
+            "workflow-identity: the reported blob sha does not match the returned bytes "
+            f"({payload.get('sha')} != {recomputed})")
+    print(recomputed)
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -435,6 +535,12 @@ def main(argv=None) -> int:
     verify.add_argument("--allow-incomplete", action="store_true",
                         help="write the decision and exit 0 even when it is not ACCEPT (the decision file still carries the truth)")
     verify.set_defaults(func=cmd_verify)
+
+    wfid = sub.add_parser("workflow-identity")
+    wfid.add_argument("--path", required=True, help="repository-relative workflow path")
+    wfid.add_argument("--ref", required=True, help="the ref this run used (GITHUB_SHA)")
+    wfid.add_argument("--repository", help="defaults to GITHUB_REPOSITORY")
+    wfid.set_defaults(func=cmd_workflow_identity)
 
     bind = sub.add_parser("bind-ledger")
     bind.add_argument("--spec", required=True)

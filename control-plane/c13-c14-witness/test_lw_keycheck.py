@@ -36,17 +36,30 @@ WITNESS_PUBLIC = "c13-c14-witness-ed25519.pub"
 
 
 def write_key_pair(directory: pathlib.Path, basename: str, *, seed: str):
-    """Write a deterministic Ed25519 key pair in the layout the hosts use."""
+    """Write a deterministic Ed25519 key pair in the layout the hosts use.
+
+    The hosts hold the witness private key at 0600, so the fixture must too. Without the
+    ``chmod`` the fixture produced a 0644 private key and ``test_a_correct_key_passes_every_check``
+    failed **on POSIX only** (the mode checks are skipped on Windows, so this was invisible
+    there) - measured 2026-09-25 on Ubuntu-24.04 as uid 0, identically before and after the
+    CCV1-145B defect fixes. Mode bits are meaningless on Windows, so they are set on POSIX
+    only rather than faked.
+    """
     private = Ed25519PrivateKey.from_private_bytes(
         hashlib.sha256(seed.encode("utf-8")).digest())
-    (directory / f"{basename}.pem").write_bytes(private.private_bytes(
+    private_path = directory / f"{basename}.pem"
+    public_path = directory / f"{basename}.pub"
+    private_path.write_bytes(private.private_bytes(
         serialization.Encoding.PEM,
         serialization.PrivateFormat.PKCS8,
         serialization.NoEncryption()))
-    (directory / f"{basename}.pub").write_bytes(
+    public_path.write_bytes(
         private.public_key().public_bytes(
             serialization.Encoding.OpenSSH,
             serialization.PublicFormat.OpenSSH) + b"\n")
+    if os.name == "posix":
+        os.chmod(private_path, 0o600)
+        os.chmod(public_path, 0o644)
     return private
 
 

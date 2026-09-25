@@ -14,7 +14,9 @@ import argparse
 import json
 import pathlib
 import re
+import subprocess
 import sys
+import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent
 REPO_ROOT = ROOT.parents[1]
@@ -26,6 +28,10 @@ POC_WORKFLOW = "c13-c14-lite-poc.yml"
 
 FORBIDDEN_PERMISSION_SUFFIXES = ("write", "admin")
 FORBIDDEN_CREDENTIAL_HINTS = ("SSH", "DEPLOY", "PRODUCTION", "AWS_", "ALIYUN", "HK_", "CC_")
+
+#: Where the frozen changed-path boundary is written. The whole D-1 defect is that this
+#: file could be legitimately *empty* without anything noticing.
+CHANGED_PATHS_REDIRECT = "changed_paths.txt"
 
 try:  # pragma: no cover - trivial import guard
     import yaml
@@ -168,6 +174,197 @@ def check_readback_declares_the_run_head(name: str, raw: str, failures: list) ->
             return
 
 
+def _code_lines(raw: str):
+    """YAML lines with comments removed.
+
+    A guard must never fire on its own explanation: the fixed workflows *quote* the broken
+    form in a comment so the next reader knows why it is written that way, and a naive
+    text scan would treat that comment as the defect it warns about.
+    """
+    for line in raw.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            continue
+        yield line.split(" #", 1)[0]
+
+
+def check_workflow_identity_source(name: str, raw: str, failures: list) -> None:
+    """The recorded ``workflow_sha`` must identify the definition that actually executed.
+
+    The workspace root is the *pinned backend* checkout, so
+    ``git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY`` resolves that commit's copy of the
+    workflow file rather than the registered definition GitHub is running - the record then
+    points at a file that never ran, and later edits to the registered workflow do not move
+    the digest (CCV1-145B D-2). The identity must come from the ref the run used, and it
+    must be fail-closed rather than falling back to something plausible.
+
+    The POC_ONLY probe is exempt: it is a throwaway quota/readback check, not a production
+    record, and it has no ledger-bound identity to bind.
+    """
+    if name == POC_WORKFLOW:
+        return
+    code = "\n".join(_code_lines(raw))
+    if re.search(r"rev-parse\s+HEAD:\$?\{?LITE_WORKFLOW_IDENTITY", code):
+        failures.append(
+            f"{name}: resolves the workflow identity from the pinned backend checkout "
+            "(git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY) instead of the executed definition")
+    if "lite_cli.py workflow-identity" not in code:
+        failures.append(
+            f"{name}: the workflow identity must be resolved by 'lite_cli.py workflow-identity'")
+    if 'echo "LITE_WORKFLOW_SHA=' not in code:
+        failures.append(f"{name}: LITE_WORKFLOW_SHA must be exported into $GITHUB_ENV")
+
+
+def _changed_paths_command(raw: str):
+    """The exact pipeline the workflow uses to freeze the changed-path boundary."""
+    for line in _code_lines(raw):
+        if "diff-tree" in line and CHANGED_PATHS_REDIRECT in line:
+            return line.strip()
+    return None
+
+
+def _git(repo: pathlib.Path, *args: str) -> str:
+    completed = subprocess.run(["git", "-C", str(repo), *args],
+                               capture_output=True, text=True)
+    if completed.returncode != 0:
+        raise RuntimeError(f"git {' '.join(args)} failed: {completed.stderr.strip()}")
+    return completed.stdout
+
+
+def _boundary_fixture(root: pathlib.Path) -> pathlib.Path:
+    """A throwaway repository holding one ordinary commit and one merge commit."""
+    repo = root / "repo"
+    repo.mkdir()
+    identity = ("-c", "user.email=fixture@example.invalid", "-c", "user.name=fixture")
+    _git(repo, "init", "-q")
+    # `symbolic-ref`, not `rev-parse --abbrev-ref HEAD`: a freshly initialised repository
+    # has no commit yet, so HEAD does not resolve (and the default branch name is not
+    # guaranteed to be `main`).
+    base_branch = _git(repo, "symbolic-ref", "--short", "HEAD").strip()
+
+    (repo / "f_base.txt").write_text("base\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, *identity, "commit", "-q", "-m", "base")
+
+    _git(repo, "checkout", "-q", "-b", "side")
+    (repo / "f_side.txt").write_text("side\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, *identity, "commit", "-q", "-m", "side")
+
+    _git(repo, "checkout", "-q", base_branch)
+    (repo / "f_mainline.txt").write_text("mainline\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, *identity, "commit", "-q", "-m", "mainline")
+
+    _git(repo, *identity, "merge", "-q", "--no-ff", "side", "-m", "merge side")
+    return repo
+
+
+def _candidate_checkout_can_see_its_parent(name: str, raw: str) -> bool:
+    """Whether some candidate checkout fetches deep enough to hold the first parent.
+
+    A first-parent diff cannot be computed without the parent. At ``fetch-depth: 1`` the
+    shallow graft makes the boundary come out EMPTY **with exit code 0** (measured), which
+    is the same silent degradation as the diff-tree bug - the empty-boundary gate is the
+    backstop, this is the early warning.
+    """
+    try:
+        document = load(name)
+    except OSError:
+        # A caller may hand us workflow text that is not (yet) a file in the tree - the
+        # regression tests do exactly that. Fall back to the text scan.
+        document = {"__raw__": raw}
+    if "__raw__" not in document:
+        for job in (document.get("jobs") or {}).values():
+            for step in (job or {}).get("steps", []) or []:
+                if "checkout" not in str(step.get("uses", "")):
+                    continue
+                with_block = step.get("with") or {}
+                if str(with_block.get("path") or "") != "candidate":
+                    continue
+                try:
+                    if int(str(with_block.get("fetch-depth", 1))) >= 2:
+                        return True
+                except (TypeError, ValueError):
+                    continue
+        return False
+    return bool(re.search(r"fetch-depth:\s*([2-9]|\d{2,})\b", raw))
+
+
+def check_changed_path_boundary(name: str, raw: str, failures: list) -> None:
+    """The frozen changed-path boundary must be correct on a MERGE commit.
+
+    ``git diff-tree <merge>`` prints nothing unless a parent is selected, so the plain form
+    silently froze an EMPTY boundary and the rule review became a review of nothing
+    (CCV1-145B D-1 - proved by recomputing the frozen scope digest). This runs the
+    workflow's *own* command against a throwaway repository holding both an ordinary commit
+    and a merge commit, and compares it with git's own first-parent diff.
+
+    The POC_ONLY probe is exempt: it freezes no changed-path boundary at all.
+    """
+    if name == POC_WORKFLOW:
+        return
+    command = _changed_paths_command(raw)
+    if command is None:
+        failures.append(f"{name}: no changed-path extraction command found")
+        return
+    if "|| true" in command:
+        failures.append(f"{name}: the changed-path extraction swallows its own failure (|| true)")
+    if f'test -s "$RUNNER_TEMP/{CHANGED_PATHS_REDIRECT}"' not in raw:
+        failures.append(
+            f"{name}: must refuse an empty changed-path boundary "
+            f"(no 'test -s \"$RUNNER_TEMP/{CHANGED_PATHS_REDIRECT}\"')")
+    if not _candidate_checkout_can_see_its_parent(name, raw):
+        failures.append(
+            f"{name}: the candidate checkout must fetch its first parent (fetch-depth >= 2); "
+            "at depth 1 the boundary is empty again, with exit code 0")
+
+    pipeline = command.split(">", 1)[0].strip()
+    head, _, tail = pipeline.partition("|")
+    if tail.strip() != "sort -u":
+        failures.append(
+            f"{name}: unexpected post-processing of the changed-path list: {tail.strip()!r}")
+
+    # Split on whitespace and swap the checkout target as its own argv element. Using
+    # shlex here would eat the backslashes of a Windows fixture path.
+    argv = head.split()
+    for index, token in enumerate(argv):
+        if token == "-C" and index + 1 < len(argv) and argv[index + 1] == "candidate":
+            argv[index + 1] = None
+
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = _boundary_fixture(pathlib.Path(tmp))
+            resolved = [str(repo) if token is None else token for token in argv]
+
+            def produced():
+                completed = subprocess.run(resolved, capture_output=True, text=True)
+                if completed.returncode != 0:
+                    raise RuntimeError(completed.stderr.strip())
+                return sorted(set(line for line in completed.stdout.splitlines() if line))
+
+            merge_seen = produced()
+            _git(repo, "checkout", "-q", "HEAD^1")
+            ordinary_seen = produced()
+            ordinary_expected = sorted(
+                set(_git(repo, "diff-tree", "--no-commit-id", "--name-only", "-r",
+                         "HEAD^1", "HEAD").split()))
+    except Exception as error:  # noqa: BLE001 - a boundary check that cannot run is a failure
+        failures.append(f"{name}: could not evaluate the changed-path command ({error})")
+        return
+
+    if not merge_seen:
+        failures.append(
+            f"{name}: the changed-path boundary is EMPTY for a merge commit "
+            "(the candidate's change surface would be reviewed as 'nothing changed')")
+    elif merge_seen != ["f_side.txt"]:
+        failures.append(f"{name}: merge boundary is {merge_seen}, expected ['f_side.txt']")
+    if ordinary_seen != ordinary_expected:
+        failures.append(
+            f"{name}: boundary for an ordinary commit is {ordinary_seen}, "
+            f"expected {ordinary_expected}")
+
+
 def run() -> dict:
     failures = []
     checked = []
@@ -185,6 +382,8 @@ def run() -> dict:
         check_artifact_discipline(name, raw, failures)
         check_env_export_is_not_same_step(name, document, failures)
         check_readback_declares_the_run_head(name, raw, failures)
+        check_changed_path_boundary(name, raw, failures)
+        check_workflow_identity_source(name, raw, failures)
     return {
         "gate": "PASS" if not failures else "FAIL",
         "yaml_parser": "PyYAML" if yaml is not None else "text-scan-fallback",
