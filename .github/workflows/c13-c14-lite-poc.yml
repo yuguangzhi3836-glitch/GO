@@ -105,14 +105,6 @@ jobs:
             --out "$RUNNER_TEMP/poc.outcome.json" \
             --allow-blocked \
             2>&1 | tee "$RUNNER_TEMP/artifacts/logs/review.log"
-          python - "$RUNNER_TEMP" >> "$GITHUB_ENV" <<'PY'
-          import json, pathlib, sys
-          root = pathlib.Path(sys.argv[1])
-          outcome = json.loads((root / "poc.outcome.json").read_text())
-          ok = outcome.get("failure_class") is None and outcome.get("verdict") != "BLOCKED"
-          print(f"AI_API_QUOTA_OK={'YES' if ok else 'NO'}")
-          print(f"AI_FAILURE_CLASS={outcome.get('failure_class') or 'NONE'}")
-          PY
 
       # Runs even when an earlier step failed, so the failure is readable from the
       # artifact instead of the Actions log (the log blob endpoint is not readable
@@ -143,6 +135,7 @@ jobs:
           python control-plane/c13-c14-lite/lite_readback.py \
             --role c14 \
             --candidate-sha "$LITE_CANDIDATE_SHA" \
+            --expected-head-sha "${GITHUB_SHA}" \
             --workflow-path "$LITE_WORKFLOW_IDENTITY" \
             --run-id "${GITHUB_RUN_ID}" \
             --out "$RUNNER_TEMP/artifacts/readback.json"
@@ -157,10 +150,37 @@ jobs:
           if-no-files-found: warn
           retention-days: 5
 
+      # The only externally readable signal available to this token is a step
+      # conclusion: the Actions job logs and the artifact zip both redirect to a
+      # storage endpoint this token cannot authenticate against. So the quota
+      # verdict is expressed as this step's status:
+      #   success -> AI_API_QUOTA_OK=YES   failure -> quota/provider exhausted
+      # A red step here is NOT a broken workflow; read its name, not the job state.
+      - name: Report the AI quota status
+        if: always()
+        run: |
+          set -euo pipefail
+          python - "$RUNNER_TEMP" <<'PY'
+          import json, pathlib, sys
+          root = pathlib.Path(sys.argv[1])
+          try:
+              outcome = json.loads((root / "poc.outcome.json").read_text())
+          except OSError:
+              print("AI_API_QUOTA_OK=UNKNOWN")
+              print("AI_FAILURE_CLASS=REVIEW_NOT_EXECUTED")
+              raise SystemExit(1)
+          failure = outcome.get("failure_class")
+          ok = failure is None and outcome.get("verdict") != "BLOCKED"
+          print(f"AI_API_QUOTA_OK={'YES' if ok else 'NO'}")
+          print(f"AI_FAILURE_CLASS={failure or 'NONE'}")
+          print(f"AI_VERDICT={outcome.get('verdict')}")
+          print(f"AI_PROVIDER={outcome.get('ai_provider')}")
+          raise SystemExit(0 if ok else 1)
+          PY
+
       - name: POC summary
         if: always()
         run: |
-          echo "AI_API_QUOTA_OK=${AI_API_QUOTA_OK:-UNKNOWN}"
-          echo "AI_FAILURE_CLASS=${AI_FAILURE_CLASS:-UNKNOWN}"
-          echo "RUN_ARTIFACT_READBACK=${RUN_ARTIFACT_READBACK:-UNKNOWN}"
           echo "POC_ONLY_NO_C13_C14_OPINION=true"
+          echo "AI_API_QUOTA_OK=<read the 'Report the AI quota status' step conclusion: success=YES>"
+          echo "RUN_ARTIFACT_READBACK=<read the 'Read back run and artifact identity' step conclusion>"

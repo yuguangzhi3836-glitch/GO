@@ -155,6 +155,19 @@ def check_env_export_is_not_same_step(name: str, document: dict, failures: list)
                     break
 
 
+def check_readback_declares_the_run_head(name: str, raw: str, failures: list) -> None:
+    """A readback must say which commit the workflow ref was at.
+
+    The run's ``head_sha`` is the workflow ref commit, not the reviewed candidate
+    (the candidate is checked out into a subdirectory). Omitting the flag would
+    silently assert the wrong commit — this was a real failure on the first run.
+    """
+    for line in raw.splitlines():
+        if "lite_readback.py" in line and "--expected-head-sha" not in raw:
+            failures.append(f"{name}: lite_readback.py must be called with --expected-head-sha")
+            return
+
+
 def run() -> dict:
     failures = []
     checked = []
@@ -171,6 +184,7 @@ def run() -> dict:
         check_dispatch_surface(name, document, failures)
         check_artifact_discipline(name, raw, failures)
         check_env_export_is_not_same_step(name, document, failures)
+        check_readback_declares_the_run_head(name, raw, failures)
     return {
         "gate": "PASS" if not failures else "FAIL",
         "yaml_parser": "PyYAML" if yaml is not None else "text-scan-fallback",

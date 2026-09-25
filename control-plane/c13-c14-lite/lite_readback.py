@@ -56,12 +56,23 @@ def _find_artifact(repository: str, run_id: int, name: str, token: str) -> dict:
 
 
 def readback(*, repository: str, role: str, candidate_sha: str, workflow_path: str,
-             run_id: int, token: str, mode: str = "in-run") -> dict:
+             run_id: int, token: str, mode: str = "in-run", expected_head_sha=None) -> dict:
+    """Read back the run and artifact identity of one execution.
+
+    ``expected_head_sha`` is the commit the **workflow ref** was at when the run was
+    created (``${{ github.sha }}``), which is what the API reports as
+    ``run.head_sha``. It is deliberately a separate parameter from
+    ``candidate_sha``: a review run checks the frozen candidate out into a
+    subdirectory, so the run head is the workflow ref commit, not the reviewed
+    candidate. The candidate is bound elsewhere, by the in-run
+    ``git rev-parse HEAD`` check, by the artifact name, and by the sealed bundle.
+    """
+    expected_head_sha = expected_head_sha or candidate_sha
     run = _get(f"/repos/{repository}/actions/runs/{run_id}", token)
     if mode == "terminal":
-        lite_github_run.assert_run(run, run_id=run_id, head_sha=candidate_sha, workflow_path=workflow_path)
+        lite_github_run.assert_run(run, run_id=run_id, head_sha=expected_head_sha, workflow_path=workflow_path)
     else:
-        lite_github_run.assert_run_identity(run, run_id=run_id, head_sha=candidate_sha, workflow_path=workflow_path)
+        lite_github_run.assert_run_identity(run, run_id=run_id, head_sha=expected_head_sha, workflow_path=workflow_path)
 
     name = lite_github_run.expected_artifact_name(role, candidate_sha)
     artifact = _find_artifact(repository, run_id, name, token)
@@ -81,6 +92,8 @@ def readback(*, repository: str, role: str, candidate_sha: str, workflow_path: s
         "run_status": run.get("status"),
         "run_conclusion": run.get("conclusion"),
         "head_sha": run.get("head_sha"),
+        "expected_head_sha": expected_head_sha,
+        "candidate_sha": candidate_sha,
         "workflow_path": run.get("path"),
         "artifact": {
             "id": artifact["id"],
@@ -99,6 +112,9 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--role", required=True, choices=("c13", "c14"))
     parser.add_argument("--candidate-sha", required=True)
+    parser.add_argument("--expected-head-sha",
+                        help="the workflow ref commit the run was created from (${{ github.sha }}); "
+                             "defaults to the candidate sha")
     parser.add_argument("--workflow-path", required=True)
     parser.add_argument("--run-id", type=int, required=True)
     parser.add_argument("--mode", choices=("in-run", "terminal"), default="in-run")
@@ -119,6 +135,7 @@ def main(argv=None) -> int:
             run_id=args.run_id,
             token=token,
             mode=args.mode,
+            expected_head_sha=args.expected_head_sha,
         )
     except lite_github_run.Reject as error:
         print(json.dumps({"refused": error.reason, "detail": error.detail}))

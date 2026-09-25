@@ -264,6 +264,7 @@ jobs:
             --out "$RUNNER_TEMP/artifacts/c13_bundle.json"
 
       - name: Verify the whole round from the received bytes
+        if: always()
         run: |
           set -euo pipefail
           cp "$RUNNER_TEMP/c13.outcome.json" "$RUNNER_TEMP/artifacts/c13_opinion.json"
@@ -282,6 +283,7 @@ jobs:
             --allow-incomplete
 
       - name: Publish the sealed C13 bundle and the round decision
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: c13c14-lite-c13-${{ inputs.candidate_sha }}
@@ -297,6 +299,7 @@ jobs:
           python control-plane/c13-c14-lite/lite_readback.py \
             --role c13 \
             --candidate-sha "${{ inputs.candidate_sha }}" \
+            --expected-head-sha "${GITHUB_SHA}" \
             --workflow-path "$LITE_WORKFLOW_IDENTITY" \
             --run-id "${GITHUB_RUN_ID}" \
             --out "$RUNNER_TEMP/artifacts/readback.json"

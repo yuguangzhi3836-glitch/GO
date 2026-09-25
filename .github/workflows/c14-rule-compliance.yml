@@ -163,6 +163,7 @@ jobs:
           python control-plane/c13-c14-lite/lite_readback.py \
             --role c14 \
             --candidate-sha "${{ inputs.candidate_sha }}" \
+            --expected-head-sha "${GITHUB_SHA}" \
             --workflow-path "$LITE_WORKFLOW_IDENTITY" \
             --run-id "${GITHUB_RUN_ID}" \
             --out "$RUNNER_TEMP/artifacts/readback.json"
