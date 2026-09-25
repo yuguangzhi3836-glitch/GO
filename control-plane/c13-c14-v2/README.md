@@ -1,5 +1,19 @@
 # C13 developer-side first test, then isolated Hong Kong C14
 
+## Failure diagnostics — development increment, 2026-09-25
+
+`DockerSandbox` captures stdout/stderr before raising on an execution timeout
+or attempting the post-exit Docker inspection. Cleanup still runs and failure
+still refuses acceptance. Regression tests cover timeout, bounded capture,
+post-exit inspection failure, and cleanup failure; none parses a passing result
+or retries the suite on these paths.
+
+`last_output` (at most 3,000,001 bytes) and `last_stderr` (at most 64,000 bytes)
+are in-memory diagnostic prefixes, not complete or durable raw evidence. The
+installed host must preserve failure diagnostics in its private incident store;
+this change does not supply that store, recover after host death, or turn a
+failed run into signed Evidence, an independent AI opinion, or C14 PASS.
+
 ## Installed-host composition — development increment, 2026-09-25
 
 `runtime_hosts.py` now supplies the missing composition roots for the separately
