@@ -140,17 +140,20 @@ jobs:
             --run-id "${GITHUB_RUN_ID}" \
             --bytes-mode degrade \
             --out "$RUNNER_TEMP/artifacts/readback.json" \
-            2>&1 | tee "$RUNNER_TEMP/artifacts/logs/readback.log"
-          rc=${PIPESTATUS[0]}
-          reason=$(grep -o '"refused": *"[A-Za-z0-9_]*"' "$RUNNER_TEMP/artifacts/logs/readback.log" 2>/dev/null | head -1 | cut -d'"' -f4)
+            > "$RUNNER_TEMP/artifacts/logs/readback.log" 2>&1
+          rc=$?
           if [ "$rc" -eq 0 ]; then
             # Record whether the artifact bytes themselves were re-hashed.
-            reason=$(python -c "import json,sys;d=json.load(open(sys.argv[1]));print('BYTES_VERIFIED' if d.get('bytes_verified') else 'BYTES_'+str(d.get('bytes_error') or 'NOT_VERIFIED')[:40])" "$RUNNER_TEMP/artifacts/readback.json" 2>/dev/null | tr -c 'A-Za-z0-9_.-' '_')
+            reason=$(python -c "import json,sys;d=json.load(open(sys.argv[1]));print('BYTES_VERIFIED' if d.get('bytes_verified') else 'BYTES_'+str(d.get('bytes_error') or 'NOT_VERIFIED')[:40])" "$RUNNER_TEMP/artifacts/readback.json" 2>/dev/null | tr -c 'A-Za-z0-9_-' '_')
             echo "RUN_ARTIFACT_READBACK=PASS"
+          else
+            # Whatever went wrong, the reason must reach the artifact name.
+            reason=$(tr -c 'A-Za-z0-9_-' '_' < "$RUNNER_TEMP/artifacts/logs/readback.log" | tail -c 60)
+            [ -n "$reason" ] || reason=NO_OUTPUT
           fi
           {
             echo "READBACK_RC=${rc}"
-            echo "READBACK_REASON=${reason:-UNKNOWN}"
+            echo "READBACK_REASON=${reason}"
           } >> "$GITHUB_ENV"
           exit "$rc"
 
