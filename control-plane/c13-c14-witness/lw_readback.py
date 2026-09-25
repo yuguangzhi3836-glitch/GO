@@ -180,15 +180,18 @@ def readback_role(*, repository: str, role: str, candidate_sha: str, workflow_pa
 
 def capability_probe(*, repository: str, token: str, run_id: int | None = None,
                      api_root: str = API_ROOT, timeout: int = 30) -> dict:
-    """The five reads a witness credential must be able to do, reported one by one.
+    """The reads a witness credential must be able to do, reported one by one.
 
     Deliberately reports per-endpoint status so "404 because the repo is not in the
     token's selection" is distinguishable from "the endpoint is missing".
+
+    ``/repos/{repo}/actions/permissions`` is deliberately NOT probed: it needs
+    administrative scope the witness must never have, and a 403 there would be noise
+    rather than a finding. It is absent from ``lw_credential.ALLOWED_ENDPOINTS`` too.
     """
     checks = [
         ("user", "/user"),
         ("repository", f"/repos/{repository}"),
-        ("actions_permissions", f"/repos/{repository}/actions/permissions"),
     ]
     if run_id:
         checks += [

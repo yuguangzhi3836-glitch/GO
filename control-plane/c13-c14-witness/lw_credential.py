@@ -71,6 +71,9 @@ LEGACY_PATHS = {
 
 #: Endpoints the witness is allowed to call. A readback tool that calls anything
 #: else is out of scope by construction.
+#:
+#: ``/repos/{repo}/actions/permissions`` is intentionally absent: it requires
+#: administrative scope, and the whole point of this credential is that it holds none.
 ALLOWED_ENDPOINTS = (
     "GET /repos/{repo}/actions/runs/{run_id}",
     "GET /repos/{repo}/actions/runs/{run_id}/artifacts",

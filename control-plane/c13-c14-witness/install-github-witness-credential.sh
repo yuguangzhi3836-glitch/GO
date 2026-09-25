@@ -24,11 +24,14 @@ set -eu
 
 HOST=""
 APPLY=0
+VERIFY=1
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --host) HOST="${2:-}"; shift 2 ;;
     --apply) APPLY=1; shift ;;
+    --no-verify) VERIFY=0; shift ;;
+    --verify) VERIFY=1; shift ;;
     -h|--help)
       sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'
       exit 0 ;;
@@ -128,9 +131,38 @@ if [ "$INTERACTIVE" -eq 0 ]; then
     exit 65
   fi
 fi
+
+# Strip anything a terminal or paste mode may have injected.
+#
+# A GitHub credential value is [A-Za-z0-9_] and nothing else, so any other byte is an
+# artefact. This is not hypothetical: the first real install of this script stored a
+# value with a stray ESC (0x1b) in front of it, which GitHub answered with
+# "401 Bad credentials" - a message that points at the credential rather than at the
+# paste, with nothing visible in the terminal to explain it. The count of removed
+# characters is reported, so the removal is never silent.
+#
+# Bracketed-paste markers are removed first and whole. Leaving them to the general
+# filter would keep their digits ("[200~" -> "200") and produce a value that fails the
+# prefix check - correct to refuse, but a worse outcome than simply unwrapping it.
+TOKEN="${TOKEN//$'\x1b'\[200~/}"
+TOKEN="${TOKEN//$'\x1b'\[201~/}"
+CLEANED="$(printf '%s' "$TOKEN" | tr -cd 'A-Za-z0-9_')"
+REMOVED=$(( ${#TOKEN} - ${#CLEANED} ))
+if [ "$REMOVED" -gt 0 ]; then
+  echo "note: removed $REMOVED non-credential character(s) injected by the terminal" >&2
+fi
+TOKEN="$CLEANED"
+unset CLEANED
+
 case "$TOKEN" in
-  *[[:space:]]*) echo "refusing: credential contains whitespace" >&2; exit 65 ;;
+  github_pat_*|ghp_*|gho_*|ghu_*|ghs_*|ghr_*) ;;
+  *) echo "refusing: value does not start with a known GitHub credential prefix" >&2
+     exit 65 ;;
 esac
+if [ "${#TOKEN}" -lt 20 ]; then
+  echo "refusing: value is too short to be a credential (${#TOKEN} characters)" >&2
+  exit 65
+fi
 
 umask 077
 OLD_MODE="absent"
@@ -139,9 +171,46 @@ if [ -f "$TARGET" ]; then
 fi
 
 printf '%s' "$TOKEN" > "$TARGET"
-unset TOKEN
 chown "$TARGET_OWNER" "$TARGET"
 chmod 0600 "$TARGET"
+
+# Read it back and compare before letting go of the expected value. The point is to
+# catch a write that did not round-trip - nothing here should be able to change the
+# value, so a mismatch means the filesystem or the shell did something unexpected.
+INSTALLED="$(cat "$TARGET")"
+if [ "$INSTALLED" != "$TOKEN" ]; then
+  echo "refusing: the installed value does not round-trip" >&2
+  exit 65
+fi
+unset INSTALLED
+
+# Optional end-to-end check: does GitHub accept this credential, and can it see the
+# repository? Reported as status codes only; the value is never printed or logged.
+VERIFY_RESULT="not requested"
+if [ "$VERIFY" -eq 1 ]; then
+  BEARER="$TOKEN"
+  if command -v curl >/dev/null 2>&1; then
+    USER_CODE="$(curl -s -o /dev/null -m 20 -w '%{http_code}' \
+      -H "Authorization: Bearer $BEARER" -H 'Accept: application/vnd.github+json' \
+      -H 'User-Agent: go-witness-install' https://api.github.com/user || echo 000)"
+    REPO_CODE="$(curl -s -o /dev/null -m 20 -w '%{http_code}' \
+      -H "Authorization: Bearer $BEARER" -H 'Accept: application/vnd.github+json' \
+      -H 'User-Agent: go-witness-install' \
+      https://api.github.com/repos/yuguangzhi3836-glitch/GO || echo 000)"
+    echo "verify  GET /user               : $USER_CODE"
+    echo "verify  GET /repos/<GO>         : $REPO_CODE"
+    case "$USER_CODE:$REPO_CODE" in
+      200:200) VERIFY_RESULT="PASS" ;;
+      401:*)   VERIFY_RESULT="FAIL_CREDENTIAL_REJECTED" ;;
+      200:404) VERIFY_RESULT="FAIL_REPOSITORY_OUT_OF_SCOPE" ;;
+      000:*)   VERIFY_RESULT="SKIPPED_NETWORK" ;;
+      *)       VERIFY_RESULT="INCONCLUSIVE" ;;
+    esac
+  else
+    VERIFY_RESULT="SKIPPED_NO_CURL"
+  fi
+fi
+unset TOKEN
 
 NEW_MODE="$(stat -c '%a' "$TARGET")"
 NEW_OWNER="$(stat -c '%U:%G' "$TARGET")"
@@ -152,14 +221,21 @@ echo "previous mode      : $OLD_MODE"
 echo "new mode           : $NEW_MODE"
 echo "new owner          : $NEW_OWNER"
 echo "value length       : $NEW_SIZE"
+echo "value round-trips  : YES"
 echo "token  echoed      : NO"
 echo "token  committed   : NO"
 echo "TOKEN_CONTENT_REDACTED=YES"
+echo "VERIFY             : $VERIFY_RESULT"
 
 if [ "$NEW_MODE" != "600" ] || [ "$NEW_OWNER" != "$TARGET_OWNER" ]; then
   echo "refusing: installed file does not have the expected custody" >&2
   exit 65
 fi
+
+case "$VERIFY_RESULT" in
+  FAIL_*) echo "the credential is installed but GitHub rejected it: re-check the token and re-run" >&2
+          exit 65 ;;
+esac
 
 echo "NEXT: run the witness readback to prove the credential works:"
 echo "  ${HOST}_probe: control-plane/c13-c14-witness/lw_readback.py --host $HOST --role c14 ..."
