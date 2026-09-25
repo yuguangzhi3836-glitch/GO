@@ -95,7 +95,7 @@ jobs:
           # 4. This commit must stay REACHABLE: it lives on an unmerged branch, so deleting
           #    that branch breaks the first checkout of the next dispatch, and nothing on the
           #    default branch shows it. Keep the branch, or move the pin deliberately.
-          ref: "48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4"
+          ref: "be3008823d20d4065164822431f17beab37d371c"
           persist-credentials: false
 
       - name: Check out the frozen candidate into candidate/
@@ -188,7 +188,7 @@ jobs:
           # 4. This commit must stay REACHABLE: it lives on an unmerged branch, so deleting
           #    that branch breaks the first checkout of the next dispatch, and nothing on the
           #    default branch shows it. Keep the branch, or move the pin deliberately.
-          ref: "48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4"
+          ref: "be3008823d20d4065164822431f17beab37d371c"
           persist-credentials: false
 
       - name: Check out the frozen candidate into candidate/ (never executed)
