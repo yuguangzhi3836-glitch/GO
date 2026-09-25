@@ -3,8 +3,6 @@
 > **Status: the installer is deployed to both hosts and now self-verifies against GitHub;
 > the readback tool is staged at `/tmp/ccv1-144a-tools`. CC is installed and fully green.
 > Only the HK paste remains, and it must be done by the credential owner in their own terminal.**
-> hosts; the readback tool is staged at `/tmp/ccv1-144a-tools`. Only the two pastes remain,
-> and they must be done by the credential owner in their own terminal.**
 
 - Task: `CCV1-144A-GITHUB-WITNESS-CREDENTIAL-ENABLEMENT`
 - Status: `OWNER_ACTION_REQUIRED = YES`
