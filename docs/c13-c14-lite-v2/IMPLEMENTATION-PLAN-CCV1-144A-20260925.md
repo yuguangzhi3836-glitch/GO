@@ -213,13 +213,58 @@ Fixed properly rather than re-dated:
 Had this not been fixed, every subsequent round would have started red for a reason
 unrelated to its own work.
 
-## 8. Required action (see the companion document)
+## 8. The witness chain driven by real metadata
+
+The C13/C14 *content* is still synthetic (there is no real C13/C14 execution), but the
+GitHub facts are the real ones. Both are labelled, so the seam cannot be misread:
+
+```text
+REAL_GITHUB_METADATA      = YES
+SYNTHETIC_ACCEPTANCE_DATA = YES
+  real run          36110672586 completed success
+  real run head     cec9646d28d0d11175c739cd88ef9a817961da4f
+  real workflow     .github/workflows/c13-c14-lite-poc.yml
+  real artifact     10853505252  c13c14-lite-c14-ffffffffffffffffffffffffffffffffffffffff
+  real digest       sha256:6202a6647d36083bde6d407b54e69fc19a91e0376370d15374f6ce3694b256fc
+  bytes verified    True
+```
+
+Feeding that through `FirstSeenLedger`:
+
+```text
+observe(real metadata + synthetic roots)          -> FIRST_SEEN
+observe(identical again)                          -> UNCHANGED
+observe(same identity, rewritten c14_root)        -> CONFLICT
+observe(same identity, rewritten artifact digest) -> CONFLICT
+```
+
+The ledger key is the execution identity, so a rewritten root or digest under the same
+identity is a conflict rather than a new entry — which is the property that makes
+"first seen" mean anything.
+
+The round verdict, computed from the measured on-host probes rather than written by
+hand:
+
+```text
+RESULT                        = BLOCKED_CREDENTIAL_PERMISSION
+METADATA_WITNESS_READY        = false
+BYTE_LEVEL_WITNESS_READY      = true   (proven from the workstation, not from the hosts)
+CCV1_145_FULL_CHAIN_SIMULATION = BLOCKED_CREDENTIAL_PERMISSION
+blocked: cc -> credential_repository_scope
+         hk -> no_github_api_credential_on_host
+```
+
+`BYTE_LEVEL_WITNESS_READY = true` here means the *mechanism* works end to end; it does
+not mean the two hosts can do it yet. The verdict's per-host booleans are the ones that
+matter for the next round, and they are false.
+
+## 9. Required action (see the companion document)
 
 `GITHUB-WITNESS-CREDENTIAL-OWNER-ACTION-20260925.md` states exactly what to create, for
 whom, and with which permissions — including the list of permissions that must **not**
 be granted. It is deliberately specific enough to be followed without interpretation.
 
-## 9. Boundaries
+## 10. Boundaries
 
 ```text
 NO HSM, KMS, WIF, Registration Authority, new ECS, third-party service
