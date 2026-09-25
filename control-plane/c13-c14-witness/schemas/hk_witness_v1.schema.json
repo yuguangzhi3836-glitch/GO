@@ -1,0 +1,80 @@
+{
+  "$id": "https://go.local/c13c14-witness/go.c13c14.witness.hk_witness.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Signed witness record. It can never authorise an action.",
+  "properties": {
+    "C13_ROOT": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "C14_ROOT": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "application_tree": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "artifact_metadata": {
+      "type": "object"
+    },
+    "authorizes_any_action": {
+      "const": false
+    },
+    "candidate_sha": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "first_seen": {
+      "type": "object"
+    },
+    "issued_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "key_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "public_key_pem": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "go.c13c14.witness.hk_witness.v1"
+    },
+    "signature": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "verification": {
+      "type": "object"
+    },
+    "witness_purpose": {
+      "const": "c13c14-acceptance-witness-hk"
+    },
+    "witness_role": {
+      "const": "HK"
+    }
+  },
+  "required": [
+    "C13_ROOT",
+    "C14_ROOT",
+    "application_tree",
+    "artifact_metadata",
+    "authorizes_any_action",
+    "candidate_sha",
+    "first_seen",
+    "issued_at",
+    "key_id",
+    "public_key_pem",
+    "schema_version",
+    "signature",
+    "verification",
+    "witness_purpose",
+    "witness_role"
+  ],
+  "title": "go.c13c14.witness.hk_witness.v1",
+  "type": "object"
+}

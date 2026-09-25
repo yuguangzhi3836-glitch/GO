@@ -1,0 +1,100 @@
+{
+  "$id": "https://go.local/c13c14-witness/go.c13c14.witness.first_seen_ledger.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Append-only first-seen ledger. The key is the execution identity; roots and digests are content, so a rewrite is a CONFLICT.",
+  "properties": {
+    "LEDGER_ROOT": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "entries": {
+      "items": {
+        "properties": {
+          "application_tree": {
+            "pattern": "^[0-9a-f]{40}$",
+            "type": "string"
+          },
+          "c13_artifact_digest": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "c13_execution_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "c13_root": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "c13_run_id": {
+            "type": "integer"
+          },
+          "c13_task_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "c14_artifact_digest": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "c14_execution_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "c14_root": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "c14_run_id": {
+            "type": "integer"
+          },
+          "c14_task_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "candidate_sha": {
+            "pattern": "^[0-9a-f]{40}$",
+            "type": "string"
+          },
+          "first_seen_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "verification_status": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "application_tree",
+          "c13_artifact_digest",
+          "c13_execution_id",
+          "c13_root",
+          "c13_run_id",
+          "c13_task_id",
+          "c14_artifact_digest",
+          "c14_execution_id",
+          "c14_root",
+          "c14_run_id",
+          "c14_task_id",
+          "candidate_sha",
+          "first_seen_at",
+          "verification_status"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "go.c13c14.witness.first_seen_ledger.v1"
+    }
+  },
+  "required": [
+    "LEDGER_ROOT",
+    "entries",
+    "schema_version"
+  ],
+  "title": "go.c13c14.witness.first_seen_ledger.v1",
+  "type": "object"
+}

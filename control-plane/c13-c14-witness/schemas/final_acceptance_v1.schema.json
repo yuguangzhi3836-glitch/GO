@@ -1,0 +1,97 @@
+{
+  "$id": "https://go.local/c13c14-witness/go.c13c14.witness.final_acceptance.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "An ACCEPTED result stops at READY_FOR_HUMAN_AUTHORIZATION and structurally cannot deploy.",
+  "properties": {
+    "C13_ROOT": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "C14_ROOT": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "CC_WITNESS": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "FINAL_ROOT": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "HK_WITNESS": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "application_tree": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "artifact_bytes_verified": {
+      "type": "boolean"
+    },
+    "artifact_metadata_verified": {
+      "type": "boolean"
+    },
+    "authorizes_any_action": {
+      "const": false
+    },
+    "auto_deploy": {
+      "const": false
+    },
+    "candidate_sha": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "gate": {
+      "type": "string"
+    },
+    "human_authorization_required": {
+      "const": true
+    },
+    "schema_version": {
+      "const": "go.c13c14.witness.final_acceptance.v1"
+    },
+    "status": {
+      "enum": [
+        "ACCEPTED",
+        "BLOCKED",
+        "REJECTED"
+      ]
+    }
+  },
+  "required": [
+    "C13_ROOT",
+    "C14_ROOT",
+    "CC_WITNESS",
+    "FINAL_ROOT",
+    "HK_WITNESS",
+    "application_tree",
+    "artifact_bytes_verified",
+    "artifact_metadata_verified",
+    "authorizes_any_action",
+    "auto_deploy",
+    "candidate_sha",
+    "gate",
+    "human_authorization_required",
+    "schema_version",
+    "status"
+  ],
+  "title": "go.c13c14.witness.final_acceptance.v1",
+  "type": "object"
+}
