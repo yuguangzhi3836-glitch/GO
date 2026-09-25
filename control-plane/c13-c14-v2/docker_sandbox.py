@@ -187,11 +187,15 @@ class DockerSandbox:
                     proc.kill()
                     proc.communicate()
                     raise Refusal("sandbox_timeout")
+                finally:
+                    # Capture before any refusal or post-exit inspect can fail.
+                    # These bounded diagnostic prefixes are not complete evidence
+                    # and must never be parsed/published as a passing test result.
+                    output.seek(0)
+                    self.last_output = output.read(MAX_OUTPUT + 1)
+                    errors.seek(0)
+                    self.last_stderr = errors.read(64000)
                 state = json.loads(self._command(self.docker + ["inspect", name]))[0]["State"]
-                output.seek(0)
-                self.last_output = output.read(MAX_OUTPUT + 1)
-                errors.seek(0)
-                self.last_stderr = errors.read(64000)
                 if proc.returncode or state["Running"] or state["OOMKilled"] or state["ExitCode"] != 0:
                     failure = Refusal("sandbox_process")
                     failure.add_note(self.last_stderr[:4000].decode("utf-8", errors="replace"))
