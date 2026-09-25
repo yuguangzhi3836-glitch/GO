@@ -48,11 +48,11 @@ def review(principal, order_id):
             'recorded_amount_minor': row.amount_minor, 'currency': row.currency,
             'operation_key': row.idempotency_key, 'parent_movement_id': row.parent_movement_id} for row in observed]
         result['money'] = {'state': 'NOT_AUTHORIZED', 'currency': source['currency'], 'authorized_minor': 0,
-            'captured_minor': 0, 'released_minor': 0, 'remaining_minor': 0, 'movement_ids': []}
+            'captured_minor': 0, 'released_minor': 0, 'compensated_minor': 0, 'net_captured_minor': 0, 'remaining_minor': 0, 'movement_ids': []}
         try:
             if root:
                 intent, _ = money._root(session, source)
-                _, rows = money._graph(session, intent)
+                _, rows = money._graph(session, intent, source)
                 result['money'] = money._result(intent, rows)
             elif observed or session.scalar(select(Intent).where(Intent.business_type == money.BUSINESS,
                     Intent.business_id == source['obligation_id'])):
@@ -60,7 +60,7 @@ def review(principal, order_id):
         except ValueError as error:
             result['blockers'].append(str(error))
             result['money'] = {'state': 'RECONCILIATION_REQUIRED', 'currency': source['currency'],
-                'authorized_minor': None, 'captured_minor': None, 'released_minor': None, 'remaining_minor': None,
+                'authorized_minor': None, 'captured_minor': None, 'released_minor': None, 'compensated_minor': None, 'net_captured_minor': None, 'remaining_minor': None,
                 'movement_ids': []}
         state = result['money']['state']
         result['can_authorize'] = state == 'NOT_AUTHORIZED' and not expired and order.status in {'CONFIRMED', 'IN_PROGRESS'}
@@ -78,6 +78,16 @@ def review(principal, order_id):
                 if state == 'SETTLED': item['blocker'] = 'SETTLED_MONEY_REQUIRES_SEPARATE_COMPENSATION_REVIEW'
             except ValueError as error:
                 item['blocker'] = str(error)
+            if state == 'SETTLED':
+                try:
+                    adjustment = authority.resolve_compensation(session, order_id, source['obligation_id'],
+                        case_id, case['version'], item['decision']['decision_hash'] if item['decision'] else '')
+                    _, _, _, plan = money._compensation_plan(session, source, adjustment)
+                    item['compensation'] = plan
+                    item['can_compensate'] = plan['amount_minor'] > 0
+                    item['blocker'] = None
+                except ValueError as error:
+                    item['compensation_blocker'] = str(error)
             result['decisions'].append(item)
         event = authority._release_event(session, order)
         if event:

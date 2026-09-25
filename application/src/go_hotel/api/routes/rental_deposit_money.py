@@ -59,3 +59,8 @@ def settle(order_id: str, obligation_id: str, body: Decision, principal: Princip
 @router.post('/internal/v1/mobility/rentals/orders/{order_id}/deposit-money/{obligation_id}/release')
 def release(order_id: str, obligation_id: str, body: Release, principal: Principal = Depends(admin_principal)):
     return call(service.release, principal, order_id, obligation_id, **body.model_dump())
+
+
+@router.post('/internal/v1/mobility/rentals/orders/{order_id}/deposit-money/{obligation_id}/compensate')
+def compensate(order_id: str, obligation_id: str, body: Decision, principal: Principal = Depends(admin_principal)):
+    return call(service.compensate, principal, order_id, obligation_id, **body.model_dump())

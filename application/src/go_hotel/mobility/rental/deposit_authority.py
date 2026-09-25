@@ -248,6 +248,14 @@ def _decision(session, order_id, obligation_id, case_id):
     binding = case.get('deposit_obligation')
     if not binding or binding['obligation_id'] != obligation_id: raise ValueError('DEPOSIT_CASE_UNBOUND')
     obligation = resolve_obligation(session, order_id, obligation_id, binding['revision'], binding['source_hash'], allow_expired=True)
+    return _case_decision_fact(o, obligation, case)
+
+
+def _case_decision_fact(o, obligation, case):
+    """Preserve the v1 decision hash for current or immutable historical snapshots."""
+    binding = case.get('deposit_obligation')
+    if not binding or binding.get('obligation_id') != obligation['obligation_id']:
+        raise ValueError('DEPOSIT_CASE_UNBOUND')
     if binding != {key: obligation[key] for key in binding}: raise ValueError('DEPOSIT_CASE_SOURCE_MISMATCH')
     if (case['status'] != 'ADJUDICATED' or case['money_instruction_state'] != 'AWAITING_C11_REVIEW'
             or case['actionable_award_minor'] is None): raise ValueError('DEPOSIT_DECISION_HELD')
@@ -258,7 +266,7 @@ def _decision(session, order_id, obligation_id, case_id):
     award = case['awarded_minor']
     if (type(award) is not int or not 0 <= award <= min(case['claimed_minor'], obligation['contract_snapshot']['maximum_damage_award_minor'])
             or case['actionable_award_minor'] != award): raise ValueError('DEPOSIT_DECISION_AMOUNT_INVALID')
-    fact = {'case_id': case_id, 'order_id': order_id, 'obligation_id': obligation_id,
+    fact = {'case_id': case['case_id'], 'order_id': o.order_id, 'obligation_id': obligation['obligation_id'],
             'case_version': case['version'], 'awarded_minor': award, 'owner_id': o.account_id,
             'currency': obligation['currency'], 'source_hash': obligation['source_hash'],
             'obligation_revision': obligation['revision'], 'decision_history': case['decision_history'],
@@ -278,6 +286,102 @@ def resolve_decision(session, order_id, obligation_id, case_id, expected_case_ve
     if type(expected_case_version) is not int or fact['case_version'] != expected_case_version or fact['decision_hash'] != expected_decision_hash:
         raise ValueError('DEPOSIT_DECISION_VERSION_CONFLICT')
     return fact
+
+
+def resolve_compensation(session, order_id, obligation_id, case_id, expected_case_version, expected_decision_hash):
+    """Current independent reduction authority, never a computed money refund.
+
+    C11 must prove which historical decision produced its actual capture and
+    subtract all prior confirmed compensation before determining any difference.
+    This resolver does not assert that a capture exists or that money was returned.
+    """
+    fact = resolve_decision(session, order_id, obligation_id, case_id,
+                            expected_case_version, expected_decision_hash)
+    events = [e for e in damage._history(session, order_id) if e['case']['case_id'] == case_id]
+    return _compensation_fact(fact, events)
+
+
+def _compensation_fact(fact, events, *, require_reduction=True):
+    current = events[-1]['case']
+    adjudications = [e for e in events if e['case']['status'] == 'ADJUDICATED']
+    history = current['decision_history']
+    if len(history) < 2: raise ValueError('DEPOSIT_COMPENSATION_APPEAL_REQUIRED')
+    if len(adjudications) != len(history): raise ValueError('DEPOSIT_COMPENSATION_LINEAGE_INVALID')
+    prior_facts, prior_reviewers, previous_version = [], set(), None
+    for index, event in enumerate(adjudications):
+        case = event['case']; decision = history[index]
+        reviewer = decision.get('reviewer_id')
+        if (case.get('deposit_obligation') != current['deposit_obligation']
+                or case.get('owner_id') != current['owner_id'] or case.get('currency') != current['currency']
+                or case.get('opened_by') != current['opened_by']
+                or case.get('contract_snapshot') != current['contract_snapshot']
+                or case.get('claimed_minor') != current['claimed_minor']
+                or case.get('decision_history') != history[:index + 1]
+                or case.get('version') != decision.get('version')
+                or case.get('awarded_minor') != decision.get('award_minor')
+                or case.get('actionable_award_minor') != decision.get('award_minor')
+                or case.get('reviewer_id') != reviewer or event.get('actor_id') != reviewer
+                or event.get('actor_type') != 'GO_ADMIN'
+                or reviewer in prior_reviewers | {current['owner_id'], current['opened_by']}):
+            raise ValueError('DEPOSIT_COMPENSATION_LINEAGE_INVALID')
+        if index:
+            appeals = case.get('appeals') or []
+            if (decision.get('supersedes_decision_version') != previous_version or not appeals
+                    or appeals[-1].get('decision_version') != previous_version
+                    or appeals[-1].get('actor_id') != current['owner_id']):
+                raise ValueError('DEPOSIT_COMPENSATION_LINEAGE_INVALID')
+        historical = {k: deepcopy(v) for k, v in fact.items() if k != 'decision_hash'}
+        historical.update(case_version=case['version'], awarded_minor=case['awarded_minor'],
+                          decision_history=deepcopy(case['decision_history']))
+        historical_hash = digest(historical)
+        if index == len(history) - 1:
+            if historical_hash != fact['decision_hash']: raise ValueError('DEPOSIT_COMPENSATION_LINEAGE_INVALID')
+        else:
+            prior_facts.append({'case_version': case['version'], 'decision_hash': historical_hash,
+                                'awarded_minor': case['awarded_minor'], 'reviewer_id': reviewer})
+        prior_reviewers.add(reviewer); previous_version = case['version']
+    if fact['awarded_minor'] >= history[-2]['award_minor']:
+        if not require_reduction: return None
+        raise ValueError('DEPOSIT_COMPENSATION_REDUCTION_REQUIRED')
+    return {**fact, 'prior_decisions': prior_facts, 'reviewer_id': history[-1]['reviewer_id'],
+            'payee_id': current['deposit_obligation']['payee_id'],
+            'vehicle_id': current['deposit_obligation']['vehicle_id'],
+            'approval_evidence': deepcopy(history[-1]['evidence']),
+            'authority_scope': 'REDUCE_ONLY', 'financial_effect_asserted': False}
+
+
+def resolve_compensation_history(session, order_id, obligation_id):
+    """Read historical reduction authority for receipts, never authorize new money.
+
+    A later pending appeal or upward decision does not erase the authority that
+    justified an earlier booked compensation. New executions MUST use the latest
+    resolve_compensation gate instead of this immutable-history view.
+    """
+    isolated()
+    order = _locked_order(session, order_id)
+    events = damage._history(session, order_id)
+    per_case, reductions = {}, []
+    for event in events:
+        case = event['case']; cid = case['case_id']
+        per_case.setdefault(cid, []).append(event)
+        if case['status'] != 'ADJUDICATED': continue
+        binding = case.get('deposit_obligation')
+        if not binding or binding.get('obligation_id') != obligation_id: continue
+        source = resolve_obligation(session, order_id, obligation_id,
+                                    binding['revision'], binding['source_hash'], allow_expired=True)
+        fact = _case_decision_fact(order, source, case)
+        if len(case['decision_history']) < 2: continue
+        reduction = _compensation_fact(fact, per_case[cid], require_reduction=False)
+        if reduction is not None: reductions.append(reduction)
+    return reductions
+
+
+def compensation_preview(p, order_id, obligation_id, case_id):
+    isolated(); damage._admin(p)
+    with transaction() as s:
+        fact = _decision(s, order_id, obligation_id, case_id)
+        return resolve_compensation(s, order_id, obligation_id, case_id,
+                                    fact['case_version'], fact['decision_hash'])
 
 
 RELEASE_KIND = 'RENTAL_DEPOSIT_RELEASE'

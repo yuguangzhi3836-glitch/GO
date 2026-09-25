@@ -32,7 +32,7 @@ with (evidence / 'runtime.log').open('w') as log:
                 str(root / 'ci/journey-v2/rental-operations-host.mjs')],
                 stdout=widget_log, stderr=subprocess.STDOUT, env=env)
         result = subprocess.run(['node', str(root / 'ci/journey-v2/browser.mjs')], env=dict(env,
-            GO_JOURNEY_STATE=str(state), GO_JOURNEY_EVIDENCE=str(evidence)))
+            GO_JOURNEY_STATE=str(state), GO_JOURNEY_EVIDENCE=str(evidence), GO_JOURNEY_PYTHON=sys.executable))
         capacity = subprocess.run([sys.executable, str(root / 'ci/journey-v2/capacity.py'),
             str(state), str(evidence)], env=env)
         audit = subprocess.run([sys.executable, str(root / 'ci/journey-v2/ledger.py'),
@@ -41,9 +41,11 @@ with (evidence / 'runtime.log').open('w') as log:
             str(state), str(evidence)], env=env)
         operations_audit = subprocess.run([sys.executable, str(root / 'ci/journey-v2/operations-ledger.py'),
             str(state), str(evidence)], env=env)
+        compensation_audit = subprocess.run([sys.executable, str(root / 'ci/journey-v2/compensation-ledger.py'),
+            'audit', str(state), str(evidence)], env=env)
         for name in ['runtime-binding.json', 'fixture-identities.json', 'hotel-price-fixtures.json']:
             shutil.copyfile(state / name, evidence / name)
-        sys.exit(widget.returncode or result.returncode or capacity.returncode or audit.returncode or hotel_audit.returncode or operations_audit.returncode)
+        sys.exit(widget.returncode or result.returncode or capacity.returncode or audit.returncode or hotel_audit.returncode or operations_audit.returncode or compensation_audit.returncode)
     finally:
         process.terminate()
         try: process.wait(timeout=15)

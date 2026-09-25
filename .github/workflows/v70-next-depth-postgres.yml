@@ -142,6 +142,8 @@ jobs:
             tests/test_c05_policy_operations.py \
             tests/test_rental_operations.py \
             tests/payments/test_c11_deposit_operations_review.py \
+            tests/payments/test_c11_deposit_compensation.py \
+            tests/test_rental_compensation_authority.py \
             --junitxml="$RUNNER_TEMP/next-depth-pg/cell-depth-increment-junit.xml" \
             2>&1 | tee "$RUNNER_TEMP/next-depth-pg/cell-depth-increment.log"
           python - <<'PY'

@@ -67,8 +67,8 @@
           if(!current())return;
           const labels={NOT_AUTHORIZED:'尚未授权',AUTHORIZED:'测试授权已记录',SETTLED:'测试资金处理已完成',RECONCILIATION_REQUIRED:'资金状态待核验'};
           section.insertAdjacentHTML('beforeend',`<h3>押金资金记录</h3><p data-deposit-money-state>${esc(labels[funds.state]||'资金状态待核验')}</p>`);
-          if(['AUTHORIZED','SETTLED'].includes(funds.state)&&['authorized_minor','captured_minor','released_minor','remaining_minor'].every(k=>Number.isSafeInteger(funds[k])&&funds[k]>=0)){
-            section.insertAdjacentHTML('beforeend',`<p>已授权 ${esc(money(funds.authorized_minor,funds.currency))} · 已扣收 ${esc(money(funds.captured_minor,funds.currency))} · 已释放 ${esc(money(funds.released_minor,funds.currency))} · 待处理授权 ${esc(money(funds.remaining_minor,funds.currency))}</p>`);
+          if(['AUTHORIZED','SETTLED'].includes(funds.state)&&['authorized_minor','captured_minor','released_minor','compensated_minor','net_captured_minor','remaining_minor'].every(k=>Number.isSafeInteger(funds[k])&&funds[k]>=0)){
+            section.insertAdjacentHTML('beforeend',`<p>已授权 ${esc(money(funds.authorized_minor,funds.currency))} · 已扣收 ${esc(money(funds.captured_minor,funds.currency))} · 已释放 ${esc(money(funds.released_minor,funds.currency))} · 已补偿 <span data-deposit-compensated>${esc(money(funds.compensated_minor,funds.currency))}</span> · 净收 <span data-deposit-net-captured>${esc(money(funds.net_captured_minor,funds.currency))}</span> · 待处理授权 ${esc(money(funds.remaining_minor,funds.currency))}</p>`);
           }
         }
       }

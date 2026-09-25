@@ -22,6 +22,12 @@
         expected_case_version:d.case_version,expected_decision_hash:d.decision_hash},
         summary:'按第 '+d.case_version+' 版裁决扣款 '+cash(d.awarded_minor,s.currency)+'，释放其余授权余额。案件：'+d.case_id});
     }
+    for(const item of snapshot.decisions || []) if(item.can_compensate && item.compensation){
+      const plan=item.compensation;
+      items.push({id:'compensate:'+plan.case_id,title:'执行申诉减收补偿',url:base+'/compensate',body:{...body,
+        case_id:plan.case_id,expected_case_version:plan.case_version,expected_decision_hash:plan.decision_hash},
+        summary:'按最新独立复核退回 '+cash(plan.amount_minor,s.currency)+'，补偿后净收 '+cash(plan.target_net_captured_minor,s.currency)+'。原扣款及释放记录保留，不重新授权。'});
+    }
     if(snapshot.release?.can_release){
       const f=snapshot.release.fact;
       items.push({id:'release',title:'释放已核验余额',url:base+'/release',body:{...body,
@@ -46,7 +52,7 @@
         <p role="status" aria-live="polite">${esc(message)}</p>
         <button class="btn" data-refresh ${busy?'disabled':''}>读取最新资金与决定</button>
         ${s?`<p>已接受条款版本：${esc(s.revision)} · ${s.state==='ACTIVATED'?'客人已确认':'等待客人确认'}<br>约定押金：${esc(cash(s.amount_minor,currency))} · 到期 ${esc(s.expires_at)}</p>`:''}
-        ${m?`<h4>${esc(readFailed?'旧快照：当前资金尚未核验':(labels[m.state] || '资金状态待核对'))}</h4><div class="business-facts-grid">${[['原授权',m.authorized_minor],['已扣款',m.captured_minor],['已释放',m.released_minor],['授权剩余',m.remaining_minor]].map(([name,value])=>`<p>${name}<br><b>${esc(cash(value,currency))}</b></p>`).join('')}</div>`:''}
+        ${m?`<h4>${esc(readFailed?'旧快照：当前资金尚未核验':(labels[m.state] || '资金状态待核对'))}</h4><div class="business-facts-grid">${[['原授权',m.authorized_minor],['已扣款',m.captured_minor],['已释放',m.released_minor],['已补偿',m.compensated_minor],['净收',m.net_captured_minor],['授权剩余',m.remaining_minor]].map(([name,value])=>`<p>${name}<br><b>${esc(cash(value,currency))}</b></p>`).join('')}</div>`:''}
         ${unknown?'<p role="alert">存在未知或不一致的资金证据。当前仅可核对，不提供授权、扣款或释放操作，也不会把缺记录解释为未执行。</p>':''}
         ${(snapshot?.blockers || []).map(code=>`<p>${esc(reasons[code] || '来源或资金证据需要核对，暂不执行。')}</p>`).join('')}
         ${(snapshot?.decisions || []).map(item=>`<p>案件 ${esc(item.case_id)} · 第 ${esc(item.case_version)} 版${item.blocker?'<br>'+esc(reasons[item.blocker] || '该案件当前不能执行结算。'):''}</p>`).join('')}
@@ -68,7 +74,8 @@
         if(!result || result.order_id!==orderId || result.read_only!==true)throw Error('返回的资金工作区不匹配当前订单');
         snapshot=result;readFailed=false;
         if(pending && (pending.id==='authorize' && ['AUTHORIZED','SETTLED'].includes(result.money?.state)
-            || pending.id!=='authorize' && result.money?.state==='SETTLED'))pending=null;
+            || !pending.id.startsWith('compensate:') && pending.id!=='authorize' && result.money?.state==='SETTLED'
+            || pending.id.startsWith('compensate:') && result.decisions?.some(item=>item.compensation?.already_applied && item.compensation.decision_hash===pending.body.expected_decision_hash)))pending=null;
         message='已读取服务端资金事实；操作仍需明确确认。';
       }catch(error){if(live()){readFailed=true;message='读取失败，暂停操作：'+String(error.message || error);}}
       finally{busy=false;draw();}

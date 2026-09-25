@@ -119,25 +119,34 @@ def _root(session, source, *, create=False):
     return intent, True
 
 
-def _graph(session, intent):
+def _graph(session, intent, source=None):
     rows = list(session.scalars(select(Movement).where(Movement.root_payment_intent_id == intent.payment_intent_id).with_for_update()))
     if any(row.state != 'CONFIRMED' for row in rows):
         raise ValueError('RENTAL_DEPOSIT_RECONCILIATION_REQUIRED')
     if any((row.business_type, row.business_id, row.currency) != (BUSINESS, intent.business_id, intent.currency)
            or type(row.amount_minor) is not int or row.amount_minor <= 0
-           or row.movement_type not in {'AUTHORIZATION', 'CAPTURE', 'RELEASE'} for row in rows):
+           or row.movement_type not in {'AUTHORIZATION', 'CAPTURE', 'RELEASE', 'COMPENSATION'} for row in rows):
         raise ValueError('RENTAL_DEPOSIT_GRAPH_INVALID')
     authorizations = [row for row in rows if row.movement_type == 'AUTHORIZATION']
     if len(authorizations) != 1:
         raise ValueError('RENTAL_DEPOSIT_AUTHORIZATION_REQUIRED')
     auth = authorizations[0]
     if auth.amount_minor != intent.amount_minor or auth.parent_movement_id or any(
-            row.parent_movement_id != auth.money_movement_id for row in rows if row != auth):
+            row.parent_movement_id != auth.money_movement_id for row in rows if row.movement_type in {'CAPTURE', 'RELEASE'}):
         raise ValueError('RENTAL_DEPOSIT_GRAPH_INVALID')
-    if sum(row.amount_minor for row in rows if row != auth) > auth.amount_minor:
+    if sum(row.amount_minor for row in rows if row.movement_type in {'CAPTURE', 'RELEASE'}) > auth.amount_minor:
+        raise ValueError('RENTAL_DEPOSIT_GRAPH_INVALID')
+    captures_by_id = {row.money_movement_id: row for row in rows if row.movement_type == 'CAPTURE'}
+    compensated = {}
+    for row in rows:
+        if row.movement_type == 'COMPENSATION':
+            if row.parent_movement_id not in captures_by_id:
+                raise ValueError('RENTAL_DEPOSIT_GRAPH_INVALID')
+            compensated[row.parent_movement_id] = compensated.get(row.parent_movement_id, 0) + row.amount_minor
+    if any(amount > captures_by_id[parent].amount_minor for parent, amount in compensated.items()):
         raise ValueError('RENTAL_DEPOSIT_GRAPH_INVALID')
     ledger = list(session.scalars(select(Ledger).where(Ledger.payment_intent_id == intent.payment_intent_id)))
-    captures = {row.money_movement_id: row for row in rows if row.movement_type == 'CAPTURE'}
+    captures = {row.money_movement_id: row for row in rows if row.movement_type in {'CAPTURE', 'COMPENSATION'}}
     if len(ledger) != len(captures) * 2 or any(entry.transaction_id not in captures for entry in ledger):
         raise ValueError('RENTAL_DEPOSIT_LEDGER_INVALID')
     for capture_id, capture in captures.items():
@@ -146,19 +155,30 @@ def _graph(session, intent):
         # Existing isolated legacy rows are read-only compatible only as a full,
         # exact two-entry capture. Never truncate IDs or rewrite booked facts.
         legacy = {('PAYMENT_CLEARING:LOCAL_MARKET', 'DEBIT'), (f'BUSINESS:{BUSINESS}:{intent.business_id}', 'CREDIT')}
+        if capture.movement_type == 'COMPENSATION':
+            expected = {(account, 'CREDIT' if direction == 'DEBIT' else 'DEBIT') for account, direction in expected}
+            legacy = {(account, 'CREDIT' if direction == 'DEBIT' else 'DEBIT') for account, direction in legacy}
         if len(entries) != 2 or {(entry.account_code, entry.direction) for entry in entries} not in (expected,legacy) or any(
                 entry.amount_minor != capture.amount_minor or entry.currency != intent.currency
-                or entry.entry_type != 'CAPTURE' or entry.evidence_hash != digest({'movement': capture_id}) for entry in entries):
+                or entry.entry_type != capture.movement_type or entry.evidence_hash != digest({'movement': capture_id}) for entry in entries):
             raise ValueError('RENTAL_DEPOSIT_LEDGER_INVALID')
+    for comp in (row for row in rows if row.movement_type == 'COMPENSATION'):
+        parent_pairs = {(entry.account_code, entry.direction) for entry in ledger if entry.transaction_id == comp.parent_movement_id}
+        pairs = {(entry.account_code, entry.direction) for entry in ledger if entry.transaction_id == comp.money_movement_id}
+        if pairs != {(account, 'CREDIT' if direction == 'DEBIT' else 'DEBIT') for account, direction in parent_pairs}:
+            raise ValueError('RENTAL_DEPOSIT_COMPENSATION_ACCOUNT_MISMATCH')
+    if compensated:
+        _verify_compensation_history(session, intent, rows, source)
     return auth, rows
 
 
 def _result(intent, rows):
     captured = sum(row.amount_minor for row in rows if row.movement_type == 'CAPTURE')
+    compensated = sum(row.amount_minor for row in rows if row.movement_type == 'COMPENSATION')
     released = sum(row.amount_minor for row in rows if row.movement_type == 'RELEASE')
     return {'payment_intent_id': intent.payment_intent_id, 'obligation_id': intent.business_id,
         'currency': intent.currency, 'authorized_minor': intent.amount_minor, 'captured_minor': captured,
-        'released_minor': released, 'remaining_minor': intent.amount_minor - captured - released,
+        'released_minor': released, 'compensated_minor': compensated, 'net_captured_minor': captured - compensated, 'remaining_minor': intent.amount_minor - captured - released,
         'movement_ids': [row.money_movement_id for row in rows],
         'state': 'SETTLED' if captured + released == intent.amount_minor else 'AUTHORIZED',
         'data_mode': 'ISOLATED_CONTRACT_FIXTURE', 'external_live': False}
@@ -179,7 +199,7 @@ def authorize(principal, order_id, obligation_id, expected_revision, expected_so
                 money.create_in_session(session, intent.payment_intent_id, {'movement_type': 'AUTHORIZATION',
                     'amount_minor': intent.amount_minor, 'mode': 'CONTRACT_SIMULATOR',
                     'evidence': [source['evidence_reference']]}, key, principal.user_id)
-        _, rows = _graph(session, intent)
+        _, rows = _graph(session, intent, source)
         return _result(intent, rows)
 
 
@@ -202,7 +222,7 @@ def settle(principal, order_id, obligation_id, expected_revision, expected_sourc
         if award:
             resolve_obligation(session, order_id, obligation_id, expected_revision, expected_source_hash)
         intent, _ = _root(session, source)
-        auth, rows = _graph(session, intent)
+        auth, rows = _graph(session, intent, source)
         prefix = 'rental-deposit:' + digest([obligation_id, case_id, expected_case_version, expected_decision_hash])
         operations = [('CAPTURE', award, prefix + ':capture'), ('RELEASE', intent.amount_minor - award, prefix + ':release')]
         expected = {(kind, key): (amount, auth.money_movement_id) for kind, amount, key in operations if amount}
@@ -215,7 +235,7 @@ def settle(principal, order_id, obligation_id, expected_revision, expected_sourc
                         'amount_minor': amount, 'parent_movement_id': auth.money_movement_id,
                         'mode': 'CONTRACT_SIMULATOR', 'evidence': [source['evidence_reference'],
                             'rental-damage-decision://' + case_id + '/' + expected_decision_hash]}, key, principal.user_id)
-        _, rows = _graph(session, intent)
+        _, rows = _graph(session, intent, source)
         return _result(intent, rows)
 
 
@@ -230,22 +250,22 @@ def status(principal, order_id, obligation_id, expected_revision, expected_sourc
             raise ValueError('MOBILITY_ORDER_NOT_FOUND')
         source = resolve_obligation(session, order_id, obligation_id, expected_revision, expected_source_hash, allow_expired=True)
         base = {'payment_intent_id': None, 'obligation_id': obligation_id, 'currency': source['currency'],
-                'authorized_minor': 0, 'captured_minor': 0, 'released_minor': 0, 'remaining_minor': 0,
+                'authorized_minor': 0, 'captured_minor': 0, 'released_minor': 0, 'compensated_minor': 0, 'net_captured_minor': 0, 'remaining_minor': 0,
                 'movement_ids': [], 'state': 'NOT_AUTHORIZED', 'data_mode': 'ISOLATED_CONTRACT_FIXTURE', 'external_live': False}
         root = session.scalar(select(Root).where(Root.business_type == BUSINESS, Root.business_id == obligation_id))
         if not root:
             orphan = session.scalar(select(Intent).where(Intent.business_type == BUSINESS, Intent.business_id == obligation_id))
             if orphan or session.scalar(select(Movement).where(Movement.business_type == BUSINESS, Movement.business_id == obligation_id)):
                 return {**base, 'state': 'RECONCILIATION_REQUIRED', 'authorized_minor': None,
-                        'captured_minor': None, 'released_minor': None, 'remaining_minor': None}
+                        'captured_minor': None, 'released_minor': None, 'compensated_minor': None, 'net_captured_minor': None, 'remaining_minor': None}
             return base
         try:
             intent, _ = _root(session, source)
-            _, rows = _graph(session, intent)
+            _, rows = _graph(session, intent, source)
             return _result(intent, rows)
         except ValueError:
             return {**base, 'state': 'RECONCILIATION_REQUIRED', 'authorized_minor': None,
-                    'captured_minor': None, 'released_minor': None, 'remaining_minor': None}
+                    'captured_minor': None, 'released_minor': None, 'compensated_minor': None, 'net_captured_minor': None, 'remaining_minor': None}
 
 
 def release(principal, order_id, obligation_id, expected_revision, expected_source_hash,
@@ -262,7 +282,7 @@ def release(principal, order_id, obligation_id, expected_revision, expected_sour
                 ) or closure.get('state') != 'RELEASE_APPROVED' or closure.get('held') is not False:
             raise ValueError('RENTAL_DEPOSIT_RELEASE_BINDING_INVALID')
         intent, _ = _root(session, source)
-        auth, rows = _graph(session, intent)
+        auth, rows = _graph(session, intent, source)
         key = 'rental-deposit-release:' + digest([obligation_id, expected_release_revision, expected_release_hash])
         if any(row.movement_type != 'AUTHORIZATION' and (row.movement_type, row.idempotency_key) != ('RELEASE', key) for row in rows):
             raise ValueError('RENTAL_DEPOSIT_SETTLEMENT_ALREADY_BOUND')
@@ -271,5 +291,115 @@ def release(principal, order_id, obligation_id, expected_revision, expected_sour
                 'amount_minor': auth.amount_minor, 'parent_movement_id': auth.money_movement_id,
                 'mode': 'CONTRACT_SIMULATOR', 'evidence': [source['evidence_reference'],
                     'c04-return-release://' + obligation_id + '/' + expected_release_hash]}, key, principal.user_id)
-        _, rows = _graph(session, intent)
+        _, rows = _graph(session, intent, source)
         return _result(intent, rows)
+
+
+def _compensation_plan(session, source, decision):
+    """Bind reduced appeal authority to the original booked capture, never a new root."""
+    if (decision.get('order_id'), decision.get('obligation_id'), decision.get('owner_id'),
+            decision.get('currency'), decision.get('source_hash'), decision.get('obligation_revision')) != (
+            source['order_id'], source['obligation_id'], source['owner_id'], source['currency'],
+            source['source_hash'], source['revision']) or decision.get('authority_scope') != 'REDUCE_ONLY':
+        raise ValueError('RENTAL_DEPOSIT_COMPENSATION_SOURCE_INVALID')
+    intent, _ = _root(session, source)
+    _, rows = _graph(session, intent, source)
+    result = _result(intent, rows)
+    if result['state'] != 'SETTLED':
+        raise ValueError('RENTAL_DEPOSIT_SETTLEMENT_REQUIRED')
+    captures = [row for row in rows if row.movement_type == 'CAPTURE']
+    if len(captures) != 1:
+        raise ValueError('RENTAL_DEPOSIT_ORIGINAL_CAPTURE_REQUIRED')
+    capture = captures[0]
+    prior = decision.get('prior_decisions', [])
+    originals = [fact for fact in prior if capture.idempotency_key == 'rental-deposit:' + digest([
+        source['obligation_id'], decision['case_id'], fact['case_version'], fact['decision_hash']]) + ':capture'
+        and capture.amount_minor == fact['awarded_minor']]
+    if len(originals) != 1:
+        raise ValueError('RENTAL_DEPOSIT_ORIGINAL_DECISION_MISMATCH')
+    # Legacy naming remains read compatible, but must not be reversed into RD.
+    entries = list(session.scalars(select(Ledger).where(Ledger.transaction_id == capture.money_movement_id)))
+    _assert_current_capture_accounts(intent.business_id, entries)
+    lineage = prior + [decision]
+    compensation_facts = []
+    for row in rows:
+        if row.movement_type != 'COMPENSATION':
+            continue
+        matches = [fact for fact in lineage if row.idempotency_key == 'rental-deposit-comp:' + digest([
+            source['obligation_id'], decision['case_id'], fact['case_version'], fact['decision_hash']])]
+        if len(matches) != 1 or matches[0]['case_version'] <= originals[0]['case_version']:
+            raise ValueError('RENTAL_DEPOSIT_COMPENSATION_LINEAGE_INVALID')
+        compensation_facts.append((matches[0]['case_version'], matches[0]['awarded_minor'], row))
+    net = capture.amount_minor
+    for _, target, row in sorted(compensation_facts, key=lambda fact: fact[0]):
+        if type(target) is not int or target < 0 or net - target != row.amount_minor:
+            raise ValueError('RENTAL_DEPOSIT_COMPENSATION_LINEAGE_INVALID')
+        net = target
+    award = decision.get('awarded_minor')
+    if type(award) is not int or award < 0 or award > result['net_captured_minor']:
+        raise ValueError('RENTAL_DEPOSIT_COMPENSATION_INCREASE_FORBIDDEN')
+    key = 'rental-deposit-comp:' + digest([source['obligation_id'], decision['case_id'],
+        decision['case_version'], decision['decision_hash']])
+    amount = result['net_captured_minor'] - award
+    old = next((row for row in rows if row.idempotency_key == key), None)
+    if old and (old.movement_type != 'COMPENSATION' or old.parent_movement_id != capture.money_movement_id or amount != 0):
+        raise ValueError('RENTAL_DEPOSIT_COMPENSATION_REPLAY_CONFLICT')
+    return intent, capture, rows, {'amount_minor': amount, 'target_net_captured_minor': award,
+        'operation_key': key, 'original_capture_id': capture.money_movement_id,
+        'case_id': decision['case_id'], 'case_version': decision['case_version'],
+        'decision_hash': decision['decision_hash'], 'already_applied': old is not None}
+
+
+def compensate(principal, order_id, obligation_id, expected_revision, expected_source_hash,
+               case_id, expected_case_version, expected_decision_hash):
+    _admin(principal)
+    from go_hotel.mobility.rental.deposit_authority import resolve_obligation, resolve_compensation
+    with transaction() as session:
+        source = resolve_obligation(session, order_id, obligation_id, expected_revision, expected_source_hash, allow_expired=True)
+        decision = resolve_compensation(session, order_id, obligation_id, case_id, expected_case_version, expected_decision_hash)
+        intent, capture, rows, plan = _compensation_plan(session, source, decision)
+        if plan['amount_minor']:
+            key = plan['operation_key']
+            with _scope(session, intent.payment_intent_id, {('COMPENSATION', key): (plan['amount_minor'], capture.money_movement_id)}):
+                money.create_in_session(session, intent.payment_intent_id, {'movement_type': 'COMPENSATION',
+                    'amount_minor': plan['amount_minor'], 'parent_movement_id': capture.money_movement_id,
+                    'mode': 'CONTRACT_SIMULATOR', 'evidence': [source['evidence_reference'],
+                        'rental-appeal-compensation://' + case_id + '/' + expected_decision_hash]}, key, principal.user_id)
+            _, rows = _graph(session, intent, source)
+        return {**_result(intent, rows), 'compensation_case_id': case_id,
+                'compensation_decision_hash': expected_decision_hash}
+
+
+def _assert_current_capture_accounts(obligation_id, entries):
+    if any(entry.account_code == f'BUSINESS:{BUSINESS}:{obligation_id}' for entry in entries):
+        raise ValueError('RENTAL_DEPOSIT_LEGACY_ACCOUNT_COMPENSATION_HOLD')
+
+
+def _verify_compensation_history(session, intent, rows, source):
+    """Readers also verify durable C04 authority; present appeal holds don't erase history."""
+    if source is None:
+        raise ValueError('RENTAL_DEPOSIT_COMPENSATION_SOURCE_REQUIRED')
+    from go_hotel.mobility.rental.deposit_authority import resolve_compensation_history
+    facts = resolve_compensation_history(session, source['order_id'], source['obligation_id'])
+    captures = {row.money_movement_id: row for row in rows if row.movement_type == 'CAPTURE'}
+    grouped = {}
+    for row in (item for item in rows if item.movement_type == 'COMPENSATION'):
+        matches = [fact for fact in facts if row.idempotency_key == 'rental-deposit-comp:' + digest([
+            source['obligation_id'], fact['case_id'], fact['case_version'], fact['decision_hash']])]
+        if len(matches) != 1:
+            raise ValueError('RENTAL_DEPOSIT_COMPENSATION_LINEAGE_INVALID')
+        fact = matches[0]
+        capture = captures[row.parent_movement_id]
+        originals = [prior for prior in fact['prior_decisions'] if capture.idempotency_key == 'rental-deposit:' + digest([
+            source['obligation_id'], fact['case_id'], prior['case_version'], prior['decision_hash']]) + ':capture'
+            and capture.amount_minor == prior['awarded_minor']]
+        expected_evidence = [source['evidence_reference'], 'rental-appeal-compensation://' + fact['case_id'] + '/' + fact['decision_hash']]
+        if len(originals) != 1 or row.evidence_json != expected_evidence:
+            raise ValueError('RENTAL_DEPOSIT_COMPENSATION_LINEAGE_INVALID')
+        grouped.setdefault(capture.money_movement_id, []).append((fact['case_version'], fact['awarded_minor'], row.amount_minor))
+    for parent, operations in grouped.items():
+        net = captures[parent].amount_minor
+        for _, award, amount in sorted(operations):
+            if type(award) is not int or award < 0 or net - award != amount:
+                raise ValueError('RENTAL_DEPOSIT_COMPENSATION_LINEAGE_INVALID')
+            net = award

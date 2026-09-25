@@ -75,3 +75,38 @@ test('settled appeal is presented as separate review, never another capture butt
   f.snapshot.decisions=[{case_id:'c1',case_version:5,can_settle:false,blocker:'SETTLED_MONEY_REQUIRES_SEPARATE_COMPENSATION_REVIEW'}];
   await start(f);assert.equal(f.forms.length,0);assert.ok(f.container.innerHTML.includes('单独补偿审核'));
 });
+
+test('compensation posts bound version and reads confirmed net amount',async()=>{
+  const f=fixture();f.snapshot.can_authorize=false;f.snapshot.money={state:'SETTLED',captured_minor:4000,compensated_minor:0,net_captured_minor:4000};
+  f.snapshot.decisions=[{can_compensate:true,compensation:{case_id:'c1',case_version:5,decision_hash:'f'.repeat(64),amount_minor:3000,target_net_captured_minor:1000}}];
+  f.post=async()=>{f.snapshot.money.compensated_minor=3000;f.snapshot.money.net_captured_minor=1000;f.snapshot.decisions[0].can_compensate=false;f.snapshot.decisions[0].compensation.already_applied=true;return {};};
+  await start(f);assert.ok(f.container.innerHTML.includes('执行申诉减收补偿'));
+  f.forms[0].querySelector().checked=true;await f.forms[0].onsubmit(submit);
+  const req=f.calls.find(x=>x.options);assert.ok(req.url.endsWith('/compensate'));assert.equal(req.options.body.expected_case_version,5);assert.equal('amount_minor' in req.options.body,false);
+  assert.equal(f.forms.length,0);assert.equal(f.retry,undefined);assert.ok(f.container.innerHTML.includes('已补偿'));assert.ok(f.container.innerHTML.includes('10.00'));
+});
+test('settled alone cannot confirm a lost compensation response',async()=>{
+  const f=fixture();f.snapshot.can_authorize=false;f.snapshot.money.state='SETTLED';
+  f.snapshot.decisions=[{can_compensate:true,compensation:{case_id:'c1',case_version:5,decision_hash:'f'.repeat(64),amount_minor:3000,target_net_captured_minor:1000}}];
+  f.post=async()=>{throw Error('lost')};await start(f);f.forms[0].querySelector().checked=true;await f.forms[0].onsubmit(submit);
+  assert.ok(f.retry);f.retry.querySelector().checked=true;await f.retry.onsubmit(submit);
+  const calls=f.calls.filter(x=>x.options);assert.equal(calls.length,2);assert.deepEqual(calls[0],calls[1]);
+});
+
+async function consumerMoney(funds){
+  let section;
+  const element=()=>({dataset:{},isConnected:true,innerHTML:'',insertAdjacentHTML(_,html){this.innerHTML+=html},append(){}});
+  const order={order_id:'r1'};
+  const context={Intl,URLSearchParams,Date,Symbol,Map,crypto:{randomUUID:()=> 'id'},state:{rentalOrder:order},renderMobilityOrder(){},
+    money:(n)=>String(n/100),api:async path=>path.includes('capabilities')?{simulation_available:true}:path.includes('damage-cases')?{items:[]}:path.includes('deposit-money')?funds:{
+      obligation_id:'d1',state:'ACTIVATED',revision:2,source_hash:'a'.repeat(64),source:{amount_minor:200000,currency:'CNY',expires_at:'2027-01-01T00:00:00',contract_snapshot:{maximum_damage_award_minor:200000}}},
+    document:{createElement:element,querySelector:()=>({append(s){section=s}})}};
+  vm.runInNewContext(fs.readFileSync('frontend/consumer/rental-deposit.js','utf8'),context);
+  context.renderMobilityOrder('RENTAL');await new Promise(resolve=>setImmediate(resolve));return section.innerHTML;
+}
+test('consumer sees compensation and net capture from verified money only',async()=>{
+  const html=await consumerMoney({state:'SETTLED',currency:'CNY',authorized_minor:200000,captured_minor:4000,released_minor:196000,compensated_minor:3000,net_captured_minor:1000,remaining_minor:0});
+  assert.ok(html.includes('data-deposit-compensated>30'));assert.ok(html.includes('data-deposit-net-captured>10'));
+  const unknown=await consumerMoney({state:'RECONCILIATION_REQUIRED',compensated_minor:null,net_captured_minor:null});
+  assert.ok(unknown.includes('资金状态待核验'));assert.equal(unknown.includes('data-deposit-compensated'),false);
+});

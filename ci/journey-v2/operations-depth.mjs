@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { selectDateRange } from './date-range.mjs';
+import { compensationDepth } from './compensation-depth.mjs';
 
 const policyBase='/internal/v1/ride-policy-operations';
 const moneyUrl=oid=>`/internal/v1/admin/mobility/rentals/orders/${oid}/deposit-money-review`;
@@ -218,6 +219,7 @@ export async function finishOperations(c){
     assert.ok(report.journeys.filter(x=>x.name.startsWith('operations-')).every(x=>x.result==='PASS'));
     report.operations.complete=true;
   });
+  await compensationDepth(c,consumer,{book,acceptedDeposit,adminRental,finance,completeRental,command,consumerRefresh});
   await fs.writeFile(path.join(process.env.GO_JOURNEY_EVIDENCE,'operations-order-checks.json'),JSON.stringify(report.operations,null,2)+'\n');
   await Promise.all([...Object.values(pages),consumer].map(p=>p.context().close()));
 }
