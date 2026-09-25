@@ -28,9 +28,9 @@ async function pageFor(role,width=1440){
   p.on('response',response=>{
     const url=new URL(response.url());if(!url.pathname.startsWith('/v1/')&&!url.pathname.startsWith('/internal/'))return;
     const item={role,width,time:new Date().toISOString(),method:response.request().method(),path:url.pathname,status:response.status()};report.network.push(item);
-    if(/\/(refund-quote|cancellation-quote|refund|cancel)$/.test(url.pathname)&&response.ok()){
+    if(/\/(refund-quote|cancellation-quote|refund-confirmed|refund|cancel)$/.test(url.pathname)&&response.ok()){
       pending.push(response.json().then(data=>business.push({path:url.pathname,status:response.status(),data:data.data||data})));
-      if(response.request().method()==='POST'&&/\/(refund|cancel)$/.test(url.pathname)){
+      if(response.request().method()==='POST'&&/\/(refund-confirmed|refund|cancel)$/.test(url.pathname)){
         const req=response.request();const headers=req.headers();
         refundRequests.set(url.pathname,{path:url.pathname,body:req.postData(),headers:Object.fromEntries(Object.entries(headers).filter(([k])=>['content-type','x-csrf-token','x-go-actor','idempotency-key'].includes(k)))});
       }
@@ -111,6 +111,28 @@ async function booked(p,vertical,before){
   const endpoint='/v1/consumer/transaction-orders/'+vertical+'/'+oid;
   const original=await read(p,endpoint);
   assert.equal(original.original_payment.capture_count,1);assert.ok(original.original_payment.captured_minor>0);
+  if(vertical==='RENTAL'){
+  await scenario(p,'RENTAL-deposit-explicit-consent-without-charge',async()=>{
+    assert.equal(vertical,'RENTAL');
+    await p.locator('[data-deposit-propose]').click();
+    await p.locator('[data-deposit-accept]').click();
+    const consent=p.locator('dialog[open]');await consent.waitFor();
+    const before=report.network.filter(x=>x.method==='POST'&&x.path.endsWith('/accept')&&x.path.includes('/deposit-obligation/')).length;
+    await consent.locator('[type=submit]').click();
+    assert.equal(await consent.isVisible(),true,'unchecked consent must remain open');
+    assert.equal(report.network.filter(x=>x.method==='POST'&&x.path.endsWith('/accept')&&x.path.includes('/deposit-obligation/')).length,before,'no implicit acceptance request');
+    await consent.locator('[data-consent]').check();await consent.locator('[type=submit]').click();await consent.waitFor({state:'detached'});
+    await p.locator('[data-deposit-money-state]').getByText('尚未授权',{exact:true}).waitFor();
+    const obligation=await read(p,`/v1/mobility/rentals/orders/${oid}/deposit-obligation`);
+    assert.equal(obligation.state,'ACTIVATED');assert.equal(obligation.financial_state,'NO_FINANCIAL_FACT_ASSERTED');
+    assert.equal(obligation.source.external_live,false);
+    const financial=await read(p,`/v1/mobility/rentals/orders/${oid}/deposit-money/${obligation.obligation_id}?expected_revision=${obligation.revision}&expected_source_hash=${obligation.source_hash}`);
+    assert.equal(financial.state,'NOT_AUTHORIZED');assert.equal(financial.payment_intent_id,null);
+    await p.setViewportSize({width:375,height:940});await noOverflow(p);
+    await p.locator('[data-deposit-refresh]').click();await p.locator('[data-deposit-money-state]').getByText('尚未授权',{exact:true}).waitFor();
+    assert.equal(await p.locator('[data-deposit-accept]').count(),0,'same terms not offered for repeat consent');
+  },'journeys');
+  }
   await scenario(p,`${vertical}-after-sales-refund`,async()=>{
     const selectors={HOTEL:'#cancel',FLIGHT:'#jRefund',RAIL:'#rref',RIDE:'#mcancel',RENTAL:'#mcancel',ATTRACTION:'#aref'};
     await p.locator(selectors[vertical]).click();
@@ -120,7 +142,7 @@ async function booked(p,vertical,before){
       await d.locator('[type=submit]').click();assert.equal(await d.count(),1,'confirmation must remain required');
       await dialog(p);
     }else{
-      const response=p.waitForResponse(r=>r.request().method()==='POST'&&/\/(refund|cancel)$/.test(new URL(r.url()).pathname));
+      const response=p.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname.includes('/'+oid+'/')&&/\/(refund-confirmed|refund|cancel)$/.test(new URL(r.url()).pathname));
       await p.locator('#uxConfirm').click();const r=await response;assert.ok(r.ok(),`Refund returned ${r.status()}: ${await r.text()}`);
     }
     await Promise.all(pending);
@@ -168,26 +190,6 @@ try{
     if(vertical==='RENTAL')await selectDateRange(consumer,'#mt1','#mt2',day(30)+'T10:00',day(32)+'T10:00');
     else await consumer.locator('#mt1').fill(day(30)+'T10:00');
     await consumer.locator('#mgo').click();await consumer.locator('[data-mob]').first().click();if(vertical==='RIDE')await dialog(consumer);await dialog(consumer);await dialog(consumer);await booked(consumer,vertical,before);
-  },'journeys');
-  await scenario(consumer,'RENTAL-deposit-explicit-consent-without-charge',async()=>{
-    const oid=expectedOrders.get('RENTAL');assert.ok(oid,'rental booking required');
-    await consumer.locator('[data-deposit-propose]').click();
-    await consumer.locator('[data-deposit-accept]').click();
-    const consent=consumer.locator('dialog[open]');await consent.waitFor();
-    const before=report.network.filter(x=>x.method==='POST'&&x.path.endsWith('/accept')&&x.path.includes('/deposit-obligation/')).length;
-    await consent.locator('[type=submit]').click();
-    assert.equal(await consent.isVisible(),true,'unchecked consent must remain open');
-    assert.equal(report.network.filter(x=>x.method==='POST'&&x.path.endsWith('/accept')&&x.path.includes('/deposit-obligation/')).length,before,'no implicit acceptance request');
-    await consent.locator('[data-consent]').check();await consent.locator('[type=submit]').click();await consent.waitFor({state:'detached'});
-    await consumer.locator('[data-deposit-money-state]').getByText('尚未授权',{exact:true}).waitFor();
-    const obligation=await read(consumer,`/v1/mobility/rentals/orders/${oid}/deposit-obligation`);
-    assert.equal(obligation.state,'ACTIVATED');assert.equal(obligation.financial_state,'NO_FINANCIAL_FACT_ASSERTED');
-    assert.equal(obligation.source.external_live,false);
-    const financial=await read(consumer,`/v1/mobility/rentals/orders/${oid}/deposit-money/${obligation.obligation_id}?expected_revision=${obligation.revision}&expected_source_hash=${obligation.source_hash}`);
-    assert.equal(financial.state,'NOT_AUTHORIZED');assert.equal(financial.payment_intent_id,null);
-    await consumer.setViewportSize({width:375,height:940});await noOverflow(consumer);
-    await consumer.locator('[data-deposit-refresh]').click();await consumer.locator('[data-deposit-money-state]').getByText('尚未授权',{exact:true}).waitFor();
-    assert.equal(await consumer.locator('[data-deposit-accept]').count(),0,'same terms not offered for repeat consent');
   },'journeys');
   await scenario(consumer,'ATTRACTION-two-visitors-slot-confirmed',async()=>{
     const before=orders.length;await home(consumer,'ATTRACTION');await consumer.locator('#adest').fill('东京');await consumer.locator('#adate').fill(day(30));await consumer.locator('#ago').click();await consumer.locator('[data-attr]').first().click();
