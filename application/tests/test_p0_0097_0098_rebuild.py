@@ -31,6 +31,27 @@ def test_0097_persists_direct_first_and_0098_server_resolves_payment_truth():
     with pytest.raises(ValueError,match='PAYMENT_PAYER_ORDER_MISMATCH'):
         pay.create_intent({'business_type':'FLIGHT_ORDER','business_id':'fo_0098','channel_priority':['ALIPAY']},'idem_other','other_guest')
 
+def test_partial_capture_psp_receipt_replay_survives_later_capture_but_not_mutation():
+    i=make_paid_intent();iid=i['payment_intent_id']
+    authorization=money.create(iid,{'movement_type':'AUTHORIZATION','amount_minor':10000,
+        'evidence':['isolated://auth'],'mode':'CONTRACT_SIMULATOR'},'partial-auth','finance')
+    def capture(amount,key):
+        return money.create(iid,{'movement_type':'CAPTURE','amount_minor':amount,
+            'parent_movement_id':authorization['money_movement_id'],
+            'evidence':['isolated://capture'],'mode':'CONTRACT_SIMULATOR'},key,'finance')
+    capture(8000,'partial-first')
+    receipt={'external_transaction_id':'partial-psp','amount_minor':8000,'currency':'CNY',
+        'evidence_reference':'isolated://psp','occurred_at':datetime.now(timezone.utc).isoformat()}
+    for invalid in [0,1,7999,8001,10001]:
+        with pytest.raises(ValueError,match='PSP_SETTLEMENT_PAYMENT_FACT_MISMATCH'):
+            pay.ingest_psp_line(iid,{**receipt,'amount_minor':invalid})
+    first=pay.ingest_psp_line(iid,receipt)
+    capture(2000,'partial-second')
+    assert pay.ingest_psp_line(iid,receipt)==first
+    with pytest.raises(ValueError,match='PSP_SETTLEMENT_TRANSACTION_FACT_CONFLICT'):
+        pay.ingest_psp_line(iid,{**receipt,'amount_minor':10000})
+    assert pay.reconcile(iid,{'external_transaction_id':'partial-psp'})['state']!='MATCHED'
+
 def test_0098_cumulative_money_guards_and_scoped_close_revalidation():
     i=make_paid_intent();iid=i['payment_intent_id']
     auth=money.create(iid,{'movement_type':'AUTHORIZATION','amount_minor':10000,'evidence':['e://auth'],'mode':'CONTRACT_SIMULATOR'},'m_auth','finance')

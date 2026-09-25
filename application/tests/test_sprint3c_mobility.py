@@ -1,6 +1,7 @@
+from registration_terms_test_support import register_synthetic_consumer
 from tests.vertical_transaction_helpers import pay_and_confirm
 def auth(client):
- r=client.post("/v1/consumer/auth/register",json={"email":"mobility@example.com","password":"StrongPass123!","display_name":"GO Mobility"}); assert r.status_code==200; t=client.post("/v1/mobile/auth/login",json={"email":"mobility@example.com","password":"StrongPass123!"}).json()["data"]; client.cookies.clear(); return {"Authorization":"Bearer "+t["access_token"]}
+ r=register_synthetic_consumer(client, json={"email":"mobility@example.com","password":"StrongPass123!","display_name":"GO Mobility"}); assert r.status_code==200; t=client.post("/v1/mobile/auth/login",json={"email":"mobility@example.com","password":"StrongPass123!"}).json()["data"]; client.cookies.clear(); return {"Authorization":"Bearer "+t["access_token"]}
 def test_ride_and_rental_golden_path(client):
  h=auth(client)
  s=client.post("/v1/mobility/rides/search",json={"pickup":"PVG","dropoff":"Shanghai Bund","pickup_at":"2026-09-01T10:00:00","currency":"CNY"});assert s.status_code==200

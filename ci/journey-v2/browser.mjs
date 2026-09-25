@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { hotelDepth } from './hotel-depth.mjs';
+import { selectDateRange } from './date-range.mjs';
 
 const out=process.env.GO_JOURNEY_EVIDENCE, origin='http://127.0.0.1:4186';
 const credentials=JSON.parse(await fs.readFile(path.join(process.env.GO_JOURNEY_STATE,'credentials.private.json'),'utf8'));
@@ -147,7 +148,7 @@ try{
   for(const [role,p]of [['consumer',consumer],['supplier',supplier],['admin',admin]])await scenario(p,`${role}-login`,async()=>{await login(p,role);await noOverflow(p);});
   await scenario(consumer,'vault-two-confirmed-travelers',async()=>{await traveler(consumer,'GO TEST ADULT A','SELF');await traveler(consumer,'GO TEST ADULT B','FAMILY');});
   await scenario(consumer,'HOTEL-search-quote-traveler-payment',async()=>{
-    const before=orders.length;await home(consumer,'HOTEL');await consumer.locator('#city').fill('TYO');await consumer.locator('#cin').fill(day(30));await consumer.locator('#cout').fill(day(32));await consumer.locator('#searchBtn').click();
+    const before=orders.length;await home(consumer,'HOTEL');await consumer.locator('#city').fill('TYO');await selectDateRange(consumer,'#cin','#cout',day(30),day(32));await consumer.locator('#searchBtn').click();
     await consumer.locator('[data-hotel]').first().click();await consumer.locator('[data-offer]').first().click();await consumer.locator('#continue').click();await consumer.locator('#create').click();
     await dialog(consumer);await dialog(consumer);await consumer.locator('#goHotelPay').click();await dialog(consumer);await booked(consumer,'HOTEL',before);
   },'journeys');
@@ -163,8 +164,10 @@ try{
     await dialog(consumer);await dialog(consumer);await dialog(consumer);await dialog(consumer);await booked(consumer,'RAIL',before);
   },'journeys');
   for(const vertical of ['RIDE','RENTAL'])await scenario(consumer,`${vertical}-traveler-confirmed`,async()=>{
-    const before=orders.length;await home(consumer,vertical);await consumer.locator('#m1').fill(vertical==='RIDE'?'PVG':'NRT');await consumer.locator('#m2').fill(vertical==='RIDE'?'上海外滩':'NRT');await consumer.locator('#mt1').fill(day(30)+'T10:00');
-    if(vertical==='RENTAL')await consumer.locator('#mt2').fill(day(32)+'T10:00');await consumer.locator('#mgo').click();await consumer.locator('[data-mob]').first().click();await dialog(consumer);await dialog(consumer);await booked(consumer,vertical,before);
+    const before=orders.length;await home(consumer,vertical);await consumer.locator('#m1').fill(vertical==='RIDE'?'PVG':'NRT');await consumer.locator('#m2').fill(vertical==='RIDE'?'上海外滩':'NRT');
+    if(vertical==='RENTAL')await selectDateRange(consumer,'#mt1','#mt2',day(30)+'T10:00',day(32)+'T10:00');
+    else await consumer.locator('#mt1').fill(day(30)+'T10:00');
+    await consumer.locator('#mgo').click();await consumer.locator('[data-mob]').first().click();await dialog(consumer);await dialog(consumer);await booked(consumer,vertical,before);
   },'journeys');
   await scenario(consumer,'ATTRACTION-two-visitors-slot-confirmed',async()=>{
     const before=orders.length;await home(consumer,'ATTRACTION');await consumer.locator('#adest').fill('东京');await consumer.locator('#adate').fill(day(30));await consumer.locator('#ago').click();await consumer.locator('[data-attr]').first().click();

@@ -1,3 +1,4 @@
+from registration_terms_test_support import register_synthetic_consumer
 from concurrent.futures import ThreadPoolExecutor
 import json
 import pytest
@@ -146,7 +147,7 @@ def test_invalid_edit_is_atomic_and_cannot_change_relationship_or_certification(
 
 
 def test_api_requires_owner_strict_permission_and_explicit_uncached_inspection(client):
-    r=client.post('/v1/consumer/auth/register',json={'email':'depth04@example.test','password':'StrongPass123!','display_name':'NICKNAME'})
+    r=register_synthetic_consumer(client, json={'email':'depth04@example.test','password':'StrongPass123!','display_name':'NICKNAME'})
     uid=r.json()['data']['profile']['user_id']
     token=client.post('/v1/mobile/auth/login',json={'email':'depth04@example.test','password':'StrongPass123!'}).json()['data']['access_token']
     client.cookies.clear();headers={'Authorization':'Bearer '+token}

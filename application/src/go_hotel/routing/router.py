@@ -1,5 +1,6 @@
 from __future__ import annotations
 import asyncio
+from starlette.concurrency import run_in_threadpool
 from datetime import datetime, timezone
 from hashlib import sha256
 from sqlalchemy import select
@@ -36,7 +37,7 @@ class TrafficRouter:
         return active
 
     async def search(self, *, request_key:str, city_code:str, check_in:str, check_out:str, currency:str) -> tuple[list[RouteCandidate], RoutingDecision]:
-        eligible=self._active(request_key)
+        eligible=await run_in_threadpool(self._active, request_key)
         async def call(item):
             cid=item["connector_id"]
             try:
@@ -45,6 +46,10 @@ class TrafficRouter:
             except Exception as exc:
                 return item,[],str(exc)
         results=await asyncio.gather(*(call(i) for i in eligible))
+        return await run_in_threadpool(self._rank_and_save_search, results, request_key)
+
+    def _rank_and_save_search(self, results, request_key):
+        # SLA reads and decision writes own their sessions inside the worker.
         candidates=[]; failed=[]
         for item,offers,error in results:
             if error: failed.append(item["connector_id"]); continue

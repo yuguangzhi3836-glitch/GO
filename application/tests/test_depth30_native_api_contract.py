@@ -2,6 +2,7 @@
 
 This verifies API compatibility; it is not React Native/device/browser E2E.
 """
+from registration_terms_test_support import register_synthetic_consumer
 from datetime import date, timedelta
 from pathlib import Path
 import json
@@ -38,7 +39,7 @@ def bridge(client, headers, task):
 
 def test_native_six_vertical_creation_payment_and_refund_contracts(client):
     email='native-depth30@example.test'
-    registered=client.post('/v1/consumer/auth/register',json={'email':email,'password':'StrongPass123!','display_name':'ISOLATED NATIVE TEST'})
+    registered=register_synthetic_consumer(client, json={'email':email,'password':'StrongPass123!','display_name':'ISOLATED NATIVE TEST'})
     assert registered.status_code==200,registered.text
     uid=registered.json()['data']['profile']['user_id']
     token=client.post('/v1/mobile/auth/login',json={'email':email,'password':'StrongPass123!'}).json()['data']['access_token']

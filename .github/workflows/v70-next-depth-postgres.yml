@@ -67,8 +67,8 @@ jobs:
           candidate=json.loads(pathlib.Path('ci/next-depth/CANDIDATE.json').read_text())
           actual=subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
           assert actual==candidate['application_git_tree']
-          assert candidate['source_anchor']=='fef9c748adb77d37ba5d4dc4fa4662eb668303a1'
-          assert candidate['parent_candidate_commit']=='a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b'
+          assert candidate['source_anchor']=='aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0'
+          assert candidate['parent_candidate_commit']=='0c3da07bc32009dee16c69125111f8e4ea9d546b'
           PY
       - name: Install inherited frozen dependencies
         shell: bash
@@ -85,6 +85,17 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/next-depth-pg/${{ matrix.cell }}"
           python -B '${{ matrix.script }}' --evidence-dir "$RUNNER_TEMP/next-depth-pg/${{ matrix.cell }}" 2>&1 | tee "$RUNNER_TEMP/next-depth-pg/driver.log"
+      - name: Payment integration on the same isolated PostgreSQL version
+        if: matrix.cell == 'C11'
+        working-directory: application
+        env:
+          GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+        run: >-
+          python -B -m pytest -q -p no:cacheprovider
+          tests/test_omnichannel_payment_finance_os.py
+          tests/test_p0_0100_real_external_execution.py
+          tests/test_unified_money_movement_finance_close.py
+          --junitxml=${{ runner.temp }}/next-depth-pg/payment-junit.xml
       - name: Bind original logs and process observations
         if: always()
         shell: bash

@@ -2,6 +2,7 @@
 import pytest
 from sqlalchemy import select
 from go_hotel.db.models import (AlipayAuthorizationRow as Authorization,
+    HostedDirectReservationRow as Reservation,
     OmnichannelMoneyMovementRow as Movement, HostedStayCreditRow as Credit,
     HostedCreditAllocationRow as Allocation, HostedCreditValueEventRow as CreditEvent)
 from go_hotel.db.session import SessionLocal
@@ -32,6 +33,59 @@ def allocation_state(order):
         events = list(session.scalars(select(CreditEvent).where(CreditEvent.reservation_id == order['hosted_reservation_id'])))
         return (allocation.state, allocation.fulfilled_minor, allocation.restored_minor,
                 sorted((e.event_id, e.event_hash) for e in events))
+
+
+def test_active_authorization_currency_mismatch_requires_reconciliation(client, monkeypatch):
+    original, owner, _, _, _, credit = issued(client, monkeypatch)
+    quote = redemption(original, owner, credit, 100000)
+    redeemed = redeem(original, owner, credit, quote)
+    reservation_id = redeemed['reservation_id']
+    with SessionLocal.begin() as session:
+        authorization = session.scalar(select(Authorization).where(
+            Authorization.hosted_reservation_id == reservation_id))
+        authorization.currency = 'USD'
+    with pytest.raises(ValueError, match='PAYMENT_RECONCILIATION_REQUIRED'):
+        payment.authorize(reservation_id, {'mode': 'CONTRACT_DRY_RUN'}, 'currency-mismatch-retry')
+    with SessionLocal() as session:
+        authorizations = list(session.scalars(select(Authorization).where(
+            Authorization.hosted_reservation_id == reservation_id)))
+        assert len(authorizations) == 1 and authorizations[0].currency == 'USD'
+
+
+@pytest.mark.parametrize('mismatch', ['amount', 'currency'])
+def test_final_capture_revalidates_authorization_terms(client, monkeypatch, mismatch):
+    order, aid, _ = ready(client, monkeypatch)
+    with SessionLocal.begin() as session:
+        reservation = session.get(Reservation, order['hosted_reservation_id'])
+        if mismatch == 'amount':
+            reservation.amount_minor += 1
+        else:
+            reservation.currency = 'USD'
+    before = summary(order)
+    with pytest.raises(ValueError, match='PAYMENT_RECONCILIATION_REQUIRED'):
+        payment.capture(aid, {'mode': 'CONTRACT_DRY_RUN'})
+    with SessionLocal() as session:
+        authorization = session.get(Authorization, aid)
+        assert authorization.state == 'FULFILLED_ELIGIBLE_FOR_CONTRACT_CAPTURE'
+        assert not [m for m in hosted_money.movements(session, authorization)
+                    if m.movement_type == 'CAPTURE']
+    assert summary(order) == before
+
+
+def test_mixed_funding_capture_accepts_cash_leg_plus_frozen_credit(client, monkeypatch):
+    order, aid, _ = ready(client, monkeypatch)
+    with SessionLocal() as session:
+        reservation = session.get(Reservation, order['hosted_reservation_id'])
+        authorization = session.get(Authorization, aid)
+        allocation = session.get(Allocation, order['hosted_reservation_id'])
+        assert authorization.currency == reservation.currency
+        assert authorization.amount_minor == 38000
+        assert allocation.applied_minor == 162000
+        assert authorization.amount_minor + allocation.applied_minor == reservation.amount_minor
+    payment.capture(aid, {'mode': 'CONTRACT_DRY_RUN'})
+    funds = summary(order)
+    assert funds['capture_minor'] == 38000 and funds['held_minor'] == 0
+    assert allocation_state(order)[0:2] == ('SETTLED', 162000)
 
 
 @pytest.mark.parametrize('source', ['cash_authorization', 'credit_capture'])

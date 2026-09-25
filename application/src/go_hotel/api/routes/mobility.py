@@ -24,7 +24,7 @@ class RentalSearch(BaseModel):pickup_location:str;return_location:str;pickup_at:
 class RentalBook(RentalSearch):offer_id:str;drivers:list[dict]=Field(default_factory=list);traveler_ids:list[str]=Field(default_factory=list)
 class Modify(BaseModel):new_time:str
 class Fulfillment(BaseModel):action:str;evidence_reference:str
-class ExternalState(BaseModel):state:str;evidence_reference:str
+class ExternalState(BaseModel):state:str;evidence_reference:str;confirmation_episode_reference:str|None=None
 @router.post("/v1/mobility/rides/search")
 def rs(b:RideSearch):
  try:items=m.ride_search(**b.model_dump())
@@ -78,7 +78,7 @@ def fulfill(order_id:str,b:Fulfillment,p:Principal=Depends(consumer_principal),i
  return run_idempotent('MOBILITY_FULFILLMENT',idempotency_key,{'user_id':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(m.fulfill,p.user_id,order_id,b.action,b.evidence_reference))
 @router.post("/internal/v1/admin/mobility/orders/{order_id}/external-state")
 def external_state(order_id:str,b:ExternalState,p:Principal=Depends(admin_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
- return run_idempotent('MOBILITY_ADMIN_EXTERNAL_STATE',idempotency_key,{'actor':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(m.admin_external_state,order_id,b.state,b.evidence_reference,p.user_id))
+ return run_idempotent('MOBILITY_ADMIN_EXTERNAL_STATE',idempotency_key,{'actor':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(m.admin_external_state,order_id,b.state,b.evidence_reference,p.user_id,b.confirmation_episode_reference))
 
 class RentalChangeDates(BaseModel):
  model_config=ConfigDict(extra='forbid')

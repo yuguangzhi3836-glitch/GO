@@ -40,7 +40,7 @@ export default function FlightTripDetail({route,navigation}:any) {
         {cell.officialUrl&&<Btn title="前往航空公司办理" onPress={()=>{const fresh=flightCells(order,checkin).find((x:any)=>x.legIndex===cell.legIndex&&x.passengerIndex===cell.passengerIndex);if(fresh?.officialUrl)void open(fresh.officialUrl);else setError('值机信息已过期，请刷新。')}}/>}
         {cell.passUrl&&<Btn title="查看该乘机人的登机牌" onPress={()=>{const fresh=flightCells(order,checkin).find((x:any)=>x.legIndex===cell.legIndex&&x.passengerIndex===cell.passengerIndex);if(fresh?.passUrl)void open(fresh.passUrl);else setError('登机牌信息已过期，请刷新。')}}/>}
       </View>)}
-      {checkin?.data_mode==='SIMULATION'&&<Text style={screen.sub}>当前为模拟体验，不能用于实际出行。</Text>}
+      {checkin?.data_mode==='SIMULATION'&&<Text style={screen.sub}>当前未连接航空公司实时服务，请勿作为实际出行凭证。</Text>}
       {order.status==='TICKETED'&&<View style={screen.card}><Btn title="核对改签方案" onPress={()=>navigation.navigate('FlightChange',{orderId:id})}/></View>}
     </>}
   </ScrollView>;

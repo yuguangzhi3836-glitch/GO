@@ -14,6 +14,7 @@ from go_hotel.db.models import FlightOfferRow
 from go_hotel.db.session import SessionLocal
 from go_hotel.domain.models import new_id
 from go_hotel.flight.service import flight_service, now
+from go_hotel.flight.airports import resolve_airport
 
 
 TripType = Literal["ONE_WAY", "ROUND_TRIP", "MULTI_CITY"]
@@ -21,14 +22,14 @@ TripType = Literal["ONE_WAY", "ROUND_TRIP", "MULTI_CITY"]
 
 class Leg(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    origin: str = Field(pattern=r"^[A-Z]{3}$")
-    destination: str = Field(pattern=r"^[A-Z]{3}$")
+    origin: str = Field(min_length=1, max_length=120)
+    destination: str = Field(min_length=1, max_length=120)
     departure_date: date
 
     @field_validator("origin", "destination", mode="before")
     @classmethod
     def normalize_airport(cls, value):
-        return value.strip().upper() if isinstance(value, str) else value
+        return resolve_airport(value)['iata'] if isinstance(value, str) else value
 
     @model_validator(mode="after")
     def validate_leg(self):

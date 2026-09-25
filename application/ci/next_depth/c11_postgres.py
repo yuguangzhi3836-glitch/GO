@@ -18,6 +18,7 @@ from uuid import uuid4
 from xml.etree.ElementTree import Element,SubElement,ElementTree
 from sqlalchemy import create_engine,text,select
 from sqlalchemy.engine import make_url
+from sqlalchemy.orm.attributes import flag_modified
 
 
 def main():
@@ -28,7 +29,8 @@ def main():
         'source_commit':os.getenv('GO_C11_SOURCE_COMMIT','UNSPECIFIED'),'started_at':datetime.now(timezone.utc).isoformat(),
         'python':sys.version,'status':'RUNNING','workers':'normal subprocesses','C14':'PENDING','C13':'PENDING'}
     source=['src/go_hotel/api/idempotency.py','src/go_hotel/repositories/sql.py','src/go_hotel/api/routes/flight.py',
-        'src/go_hotel/flight/service.py','src/go_hotel/flight/payment_recovery.py','src/go_hotel/services/mutation_boundary.py',
+        'src/go_hotel/flight/service.py','src/go_hotel/flight/payment_recovery.py','src/go_hotel/services/mutation_boundary.py','src/go_hotel/services/recovery.py',
+        'src/go_hotel/services/flight_command_lease.py',
         'ci/next_depth/c11_postgres.py','ci/next_depth/c11_process_actor.py']
     execution['source_files']=[{'path':f,'sha256':hashlib.sha256((root/f).read_bytes()).hexdigest()} for f in source]
     def save(): (output/'execution.json').write_text(json.dumps(execution,indent=2)+'\n')
@@ -112,7 +114,7 @@ def main():
     try:
         Base.metadata.create_all(engine)
         for op in ['checkout','change']:
-            for scenario in ['same_key','different_key','recover','kill_before_bridge','kill_after_money']:
+            for scenario in ['same_key','different_key','recover','kill_before_bridge','kill_after_money','live_past_lease']:
                 label=op+'-'+scenario;case=SubElement(suite,'testcase',name=label);started=time.monotonic();active=None
                 try:
                     oid,qid=fixture(op,label);key='request-'+label;barrier=output/label
@@ -120,6 +122,24 @@ def main():
                     active=launch(command(op,oid,qid,key,pause,barrier,fault=scenario=='recover'))
                     wait_ready(active,barrier)
                     before=observe(op,oid,qid,label+'-before')
+                    if scenario=='live_past_lease':
+                        # Wall-clock wait exceeds the original 15-second lease.
+                        # A second OS process runs the actual recovery worker;
+                        # it must not claim the still-live command.
+                        time.sleep(17)
+                        contender=subprocess.run([sys.executable,'-c',
+                            'import asyncio,json; from go_hotel.services.recovery import recovery_worker; print(json.dumps(asyncio.run(recovery_worker.run_once())))'],
+                            cwd=root,env=env,text=True,capture_output=True,timeout=15,check=False)
+                        (output/(label+'-live-contender.log')).write_text(contender.stdout+contender.stderr)
+                        assert contender.returncode==0,contender.stderr
+                        outcome=json.loads(contender.stdout.strip().splitlines()[-1])
+                        assert outcome['recovered']==0 and outcome['failed']==0,outcome
+                        live=observe(op,oid,qid,label+'-live')
+                        first=next(c['body'] for c in before['claims'] if c['operation'].startswith('RESOURCE:'))
+                        current=next(c['body'] for c in live['claims'] if c['operation'].startswith('RESOURCE:'))
+                        assert current['execution_token']==first['execution_token']
+                        assert current['heartbeat_ms']>first['lease_until_ms']
+                        assert live['money']==before['money']
                     if scenario=='recover':
                         assert collect(active,label+'-first')['http']!=200;active=None
                         result=run(op,oid,qid,key,label+'-recover');assert result['http']==200
@@ -128,11 +148,36 @@ def main():
                     elif scenario.startswith('kill_'):
                         active.kill();stdout,_=active.communicate(timeout=10)
                         (output/(label+'-killed.log')).write_text(stdout+'\nexit='+str(active.returncode)+'\n');assert active.returncode<0;active=None
-                        assert run(op,oid,qid,key,label+'-restart')['http']==409
-                        assert run(op,oid,qid,key+'-other',label+'-other')['http']==409
+                        # SIGKILL leaves RUNNING.  Expire its persisted lease and
+                        # run the normal recovery-worker in a second OS process.
+                        rid=qid or oid
+                        with SessionLocal.begin() as s:
+                            # Cast the JSON column through JSONB for an atomic update: this verifies
+                            # the worker reads the persisted expired lease, rather
+                            # than an ORM in-memory value.
+                            if s.bind.dialect.name == 'postgresql':
+                                s.execute(text("UPDATE idempotency_record_runtime SET response_body = jsonb_set(response_body::jsonb, '{lease_until_ms}', '1'::jsonb)::json WHERE resource_id = :rid AND response_code = 102"), {'rid':rid})
+                            else:
+                                for claim in s.scalars(select(Claim).where(Claim.resource_id==rid, Claim.response_code==102)):
+                                    if claim.response_body.get('status')=='RUNNING':
+                                        claim.response_body={**claim.response_body,'lease_until_ms':1}
+                                        flag_modified(claim, 'response_body')
+                        recovery=subprocess.run([sys.executable,'-c',
+                            'import asyncio,json; from go_hotel.services.recovery import recovery_worker; print(json.dumps(asyncio.run(recovery_worker.run_once())))'],
+                            cwd=root,env=env,text=True,capture_output=True,timeout=35,check=False)
+                        (output/(label+'-recovery-worker.log')).write_text(recovery.stdout+recovery.stderr)
+                        assert recovery.returncode==0,recovery.stdout+recovery.stderr
+                        assert json.loads(recovery.stdout.strip().splitlines()[-1])['recovered']>=1
+                        recovered=run(op,oid,qid,key,label+'-recovered')
+                        assert recovered['http']==200
                         after=observe(op,oid,qid,label+'-after')
-                        assert after['money']==before['money'] and after['root_ids']==before['root_ids']
-                        assert any(c['operation'].startswith('RESOURCE:') and c['body'].get('status')=='RUNNING' for c in after['claims'])
+                        if scenario == 'kill_before_bridge':
+                            assert not before['money'] and not before['root_ids']
+                            assert len(after['root_ids']) == 1
+                            assert len(after['money']) == (2 if op == 'checkout' else 1)
+                        else:
+                            assert after['money']==before['money'] and after['root_ids']==before['root_ids']
+                        assert any(c['operation'].startswith('RESOURCE:') and c['code']==200 for c in after['claims'])
                     else:
                         second=key if scenario=='same_key' else key+'-other'
                         assert run(op,oid,qid,second,label+'-second')['http']==409
@@ -160,8 +205,10 @@ def main():
     failures=sum(c['status']=='FAIL' for c in cases)
     suite.set('tests',str(len(cases)));suite.set('failures',str(failures));ElementTree(suite).write(output/'junit.xml',encoding='utf-8',xml_declaration=True)
     (output/'results.json').write_text(json.dumps(cases,indent=2)+'\n')
+    hard_death_cases=[case for case in cases if '-kill_' in case['case']]
+    hard_death_result='PASS' if len(hard_death_cases)==4 and all(case['status']=='PASS' for case in hard_death_cases) else 'NOT_PROVEN'
     execution.update(finished_at=datetime.now(timezone.utc).isoformat(),status='TEST_FAILED' if failures else 'EVIDENCE_READY',tests=len(cases),failures=failures,
-        hard_death_auto_recovery='HOLD: RUNNING is never automatically stolen; tests prove no duplicate execution')
+        hard_death_auto_recovery=hard_death_result)
     save();print(json.dumps({'status':execution['status'],'tests':len(cases),'failures':failures,'backend':execution['database_backend']}))
     return 1 if failures else 0
 

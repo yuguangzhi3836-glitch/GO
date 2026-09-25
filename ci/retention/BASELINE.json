@@ -1,10 +1,10 @@
 {
-  "schema": "go.v70.retention.rebind.v2",
-  "product_candidate_commit": "cb1181bf40b0e24f55ef095d8f1ee8857bdd6517",
-  "application_git_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
-  "source_anchor_main": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
-  "preintegration_candidate": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
-  "preintegration_application_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
+  "schema": "go.v70.retention.rebind.v3",
+  "product_candidate_commit": "de8436ded10b74ce54b93678251354e731110375",
+  "application_git_tree": "b7fccc50bb331a3ba6ef8384915d083d10e8f5ad",
+  "source_anchor_main": "febb925eeb781223f17002b91479f2eac9b71acc",
+  "preintegration_candidate": "9950bde1def11b27ed137d7db02a3047befda4fa",
+  "preintegration_application_tree": "9c83d92434301356228c1b79294fcd829d675ebf",
   "inherited_manifest": {
     "path": "ci/retention/BASELINE_INHERITED.json",
     "git_blob": "8eda2e86ad5164c0e8203a068026ef195cb3f995",
@@ -13,8 +13,8 @@
   "approved_application_overrides": {
     "src/go_hotel/db/models.py": {
       "mode": "100644",
-      "git_blob": "f0e014f47560ca3f8ecae9ffc2af0cb3746efb38",
-      "reason": "C11 verified FlightOrderRow.status width 32->64"
+      "git_blob": "7f4a4bda456d23a3d61dbb78ea910dbe6f5fdd07",
+      "reason": "exact independently C14/C13 accepted C01 product blob"
     },
     "alembic/versions/0134_flight_status_width.py": {
       "mode": "100644",
@@ -23,16 +23,281 @@
     },
     "tests/test_depth25_migration_history.py": {
       "mode": "100644",
-      "git_blob": "fa51562f48d4429f5ad22e406c0101a7e9de29f0",
-      "reason": "0134 SQLite partial history compatibility and current-head assertions; original data guards retained"
+      "git_blob": "c22175490ea24a2bc24f382cbe840665b61c9c9b",
+      "reason": "TEST_ONLY shared hygiene #178; exact retained assertions/episode fixture reconciliation"
     },
     "tests/test_parent_implementation_code_review_debt_closure.py": {
       "mode": "100644",
-      "git_blob": "27eb179446a34b6bab7bc32a9450dab6686aa6e5",
-      "reason": "TEST_ONLY: align stale Alembic current-head expectation from 0133 to 0134; no product or runtime behavior change"
+      "git_blob": "729ae6ca8fffdc48e604eaae49e647dbed071786",
+      "reason": "TEST_ONLY shared hygiene #178; exact retained assertions/episode fixture reconciliation"
+    },
+    "src/go_hotel/go_ai/service.py": {
+      "mode": "100644",
+      "git_blob": "e3f66f7c4fca49a9e16fccc78329af1c7cd5a5be",
+      "reason": "exact independently C14/C13 accepted C08 product blob"
+    },
+    "alembic/versions/0135_go_ai_execution.py": {
+      "mode": "100644",
+      "git_blob": "e6a17650c3d404db48c3340d3a89c28c03510fb6",
+      "reason": "V70-R3-C08-01 GO AI-specific durable ownership/checkpoint boundary"
+    },
+    "tests/go_ai/test_c08_durable_execution.py": {
+      "mode": "100644",
+      "git_blob": "244db1c089cab2d41dc992691251cafbed162a9b",
+      "reason": "exact independently C14/C13 accepted C08 product blob"
+    },
+    "tests/go_ai/c08_hard_exit_worker.py": {
+      "mode": "100644",
+      "git_blob": "4991a791846ceb44a797367d587eb90a55ea13eb",
+      "reason": "TEST_ONLY: provision GO AI durable execution table in hard-exit recovery fixture"
+    },
+    "alembic/versions/0135_journey_search_trigram.py": {
+      "mode": "100644",
+      "git_blob": "3b27a85564fa0258f6f9fcf6222f605f86464dec",
+      "reason": "C10 exact passed migration blob; parallel head"
+    },
+    "alembic/versions/0136_merge_go_ai_journey.py": {
+      "mode": "100644",
+      "git_blob": "36b59347ff5892b74f0b21a90c3d1f622f9bfd7c",
+      "reason": "lineage-only merge of C08 and C10 heads"
+    },
+    "src/go_hotel/api/routes/journey.py": {
+      "mode": "100644",
+      "git_blob": "977e1ddce3aeee40bbe6a4a7dfedcb3f0a87cc70",
+      "reason": "exact independently C14/C13 accepted C10 product blob"
+    },
+    "src/go_hotel/journey/service.py": {
+      "mode": "100644",
+      "git_blob": "c401578c19c011381386be8dacb618b4811bb0ed",
+      "reason": "exact independently C14/C13 accepted C10 product blob"
+    },
+    "tests/journey/test_c10_pagination_search.py": {
+      "mode": "100644",
+      "git_blob": "2ca1cd1ce0953d8951f295aee82f319ed7929567",
+      "reason": "TEST_ONLY: exact accepted PR173 isolated cardinality correction"
+    },
+    "tests/test_depth48_flight_migration.py": {
+      "mode": "100644",
+      "git_blob": "a550091d9e8597826a59a429a66f78dfc7d0e671",
+      "reason": "TEST_ONLY shared hygiene #178; exact retained assertions/episode fixture reconciliation"
+    },
+    "src/go_hotel/services/alipay_safeguarded_settlement.py": {
+      "mode": "100644",
+      "git_blob": "0ceea1c49c1ea6eedcc431e92becd19e326c42c0",
+      "reason": "COMPOSED: inherit PR171 authorization replay only, preserving PR172/173 capture guards; requires unified gate"
+    },
+    "tests/test_v70_next_c01_unknown_funding.py": {
+      "mode": "100644",
+      "git_blob": "f2c0bb64c456d53bee89c05d98fb613941a371ea",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "src/go_hotel/api/routes/operations_console.py": {
+      "mode": "100644",
+      "git_blob": "61b62b64943a25abb1a19fd693aae9167ca91d87",
+      "reason": "exact independently C14/C13 accepted C04 product blob"
+    },
+    "tests/test_v70_r3_c04_admin_reconciliation.py": {
+      "mode": "100644",
+      "git_blob": "4451f462fc9c3036f662c6151299aa4b0c9b9849",
+      "reason": "exact independently C14/C13 accepted C04 product blob"
+    },
+    "src/go_hotel/api/routes/mobility.py": {
+      "mode": "100644",
+      "git_blob": "c91ff19ef319f4bec5b686a4bb561cfda27c244c",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "src/go_hotel/mobility/ride/recovery_evidence.py": {
+      "mode": "100644",
+      "git_blob": "fbf2dbfe19bd13ad9bf90b9a8c62f31c797a49d2",
+      "reason": "exact independently C14/C13 accepted C05 product blob"
+    },
+    "src/go_hotel/mobility/ride/service.py": {
+      "mode": "100644",
+      "git_blob": "a5eede19bf1814ec43495dcb81485efcc8306f74",
+      "reason": "exact independently C14/C13 accepted C05 product blob"
+    },
+    "src/go_hotel/mobility/service.py": {
+      "mode": "100644",
+      "git_blob": "093fe7884d08fc8d402de97877ab4cda92610186",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "tests/test_rc20_2_all_b_to_a.py": {
+      "mode": "100644",
+      "git_blob": "6618ab07297284c5308739170338c7b78b825d0e",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "tests/test_v70_r3_c05_current_unknown_episode.py": {
+      "mode": "100644",
+      "git_blob": "d2967e27be0661c56f969177a1006b3b27e5f832",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "tests/test_v70_round2_c05_recovery_fulfillment.py": {
+      "mode": "100644",
+      "git_blob": "5c0d06f9e8abacdb70d0b9e49ef643c2a9faee80",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "src/go_hotel/travel_intelligence/preferences.py": {
+      "mode": "100644",
+      "git_blob": "74182160de0ad6f1abfadd84f082d886b7800df1",
+      "reason": "exact independently C14/C13 accepted C07 product blob"
+    },
+    "tests/c07_preference_process_actor.py": {
+      "mode": "100644",
+      "git_blob": "f2941b467293affda87732be656c6b04725df5f9",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "tests/test_round2_c07_explicit_preferences.py": {
+      "mode": "100644",
+      "git_blob": "55626ec9debbcc902d2115550b7b14c8f6632815",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "src/go_hotel/judgment/service.py": {
+      "mode": "100644",
+      "git_blob": "74d6d17099ff850babc9e6d38355cd83375f3b80",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "src/go_hotel/repositories/sql.py": {
+      "mode": "100644",
+      "git_blob": "601dd9fb443fb300b0b5da0ed4504f341b9aa2bb",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "tests/judgment/test_next_depth_concurrent_judgment.py": {
+      "mode": "100644",
+      "git_blob": "946b0dfab11463c61691cb74d0e18be7413377eb",
+      "reason": "exact independently C14/C13 accepted scoped Cell blob inherited by PR130"
+    },
+    "tests/payments/test_c11_flight_idempotency_recovery.py": {
+      "mode": "100644",
+      "git_blob": "1b9436ef718eb5e89b4ff621bff5db8c67375e90",
+      "reason": "exact independently C14/C13 accepted C11 product blob"
+    },
+    "alembic/versions/0137_hosted_money_unknown_episode.py": {
+      "mode": "100644",
+      "git_blob": "ad8ad8ed8e7a32c3a089229708b6b4509097159a",
+      "reason": "exact independently C14/C13 accepted C01 product blob"
+    },
+    "src/go_hotel/api/routes/hosted_direct_booking.py": {
+      "mode": "100644",
+      "git_blob": "ecd9794010616be3f8c776db91e6b41b1c503b4f",
+      "reason": "exact independently C14/C13 accepted C01 product blob"
+    },
+    "src/go_hotel/attractions/policy_registry.py": {
+      "mode": "100644",
+      "git_blob": "9f34cccbc614a879428d194f02779b4dc241a0be",
+      "reason": "exact independently C14/C13 accepted C06 product blob"
+    },
+    "src/go_hotel/flight/coupon_authority.py": {
+      "mode": "100644",
+      "git_blob": "65c19d6f1e2f41d4ba3194bf24730c1acb009f6d",
+      "reason": "exact independently C14/C13 accepted C02 product blob"
+    },
+    "src/go_hotel/mobility/rental/reconciliation.py": {
+      "mode": "100644",
+      "git_blob": "3fdee475112a8124c9f71fc58ebd2953ca826d88",
+      "reason": "exact independently C14/C13 accepted C04 product blob"
+    },
+    "src/go_hotel/security/deps.py": {
+      "mode": "100644",
+      "git_blob": "b3988aa5788f551551f72f41088c2a5b8feb690b",
+      "reason": "exact independently C14/C13 accepted C04 product blob"
+    },
+    "src/go_hotel/security/service.py": {
+      "mode": "100644",
+      "git_blob": "63c0043d7e620a853f30cccaaa95475e764e119a",
+      "reason": "exact independently C14/C13 accepted C04 product blob"
+    },
+    "src/go_hotel/services/flight_change_resolution.py": {
+      "mode": "100644",
+      "git_blob": "1c672457d6de2d8222960f05bca26bc72130909d",
+      "reason": "exact independently C14/C13 accepted C11 product blob"
+    },
+    "src/go_hotel/services/hosted_money.py": {
+      "mode": "100644",
+      "git_blob": "9732169be62be24941852b10017ed34da631493b",
+      "reason": "exact independently C14/C13 accepted C01 product blob"
+    },
+    "src/go_hotel/services/outbox.py": {
+      "mode": "100644",
+      "git_blob": "277c40dcba9e5bfe352a1e4e8af69429d843b37b",
+      "reason": "exact independently C14/C13 accepted C09 product blob"
+    },
+    "tests/test_c06_internal_policy_registry.py": {
+      "mode": "100644",
+      "git_blob": "3caedb35ba29b934edd25fb894f47e2a13aab245",
+      "reason": "exact independently C14/C13 accepted C06 product blob"
+    },
+    "tests/test_next_depth_c06_supplier_validity.py": {
+      "mode": "100644",
+      "git_blob": "b804755e3a98a156f52acf444164ddda52da4f6a",
+      "reason": "exact independently C14/C13 accepted C06 product blob"
+    },
+    "tests/test_outbox_resilience.py": {
+      "mode": "100644",
+      "git_blob": "276973c2261b86105a6c5c402f6b2b45c0cd928c",
+      "reason": "exact independently C14/C13 accepted C09 product blob"
+    },
+    "tests/test_v70_r3_c02_coupon_authority.py": {
+      "mode": "100644",
+      "git_blob": "b14af3952705ed76572036e2ee404fe545c442de",
+      "reason": "exact independently C14/C13 accepted C02 product blob"
+    },
+    "tests/test_v70_r3_c04_http_get_zero_write.py": {
+      "mode": "100644",
+      "git_blob": "1520ec9ac4557d458218cbb1430632f3e0d456f4",
+      "reason": "exact independently C14/C13 accepted C04 product blob"
+    },
+    "tests/test_v70_r4_c01_unknown_episode.py": {
+      "mode": "100644",
+      "git_blob": "62c3928804bb6e6b72d76622b5077da551c0b604",
+      "reason": "exact independently C14/C13 accepted C01 product blob"
+    },
+    "tests/test_v70_r4_c05_episode_reference_reuse.py": {
+      "mode": "100644",
+      "git_blob": "d1fe9b5421ea8abb3eecdfa96e19a23db971f197",
+      "reason": "exact independently C14/C13 accepted C05 product blob"
+    },
+    "tests/test_v70_r4_c05_failed_episode.py": {
+      "mode": "100644",
+      "git_blob": "5511896339d738ee1cc3321798cfe2341d64e16f",
+      "reason": "exact independently C14/C13 accepted C05 product blob"
+    },
+    "tests/test_v70_r4_c07_consent_provenance.py": {
+      "mode": "100644",
+      "git_blob": "63b128a6e8bc8d65c8d55dbff5d81629ac128e75",
+      "reason": "exact independently C14/C13 accepted C07 product blob"
+    },
+    "tests/test_v70_r5_c05_concurrent_unknown.py": {
+      "mode": "100644",
+      "git_blob": "8914debaedf2d440d320e67cfdedc97d70563e3a",
+      "reason": "exact independently C14/C13 accepted C05 product blob"
+    },
+    "tests/test_v70_r5_c06_raw_payload_binding.py": {
+      "mode": "100644",
+      "git_blob": "0b3b3e8954150ad3346e6f28937df742976a1747",
+      "reason": "exact independently C14/C13 accepted C06 product blob"
+    },
+    "tests/test_v70_r6_c02_partial_party_authority.py": {
+      "mode": "100644",
+      "git_blob": "9474731379677f277b473328b4085550905fc1a3",
+      "reason": "exact independently C14/C13 accepted C02 product blob"
+    },
+    "tests/test_depth18_regional_queue.py": {
+      "mode": "100644",
+      "git_blob": "a500133d755abfe018d9850c504ed0448d2a701d",
+      "reason": "TEST_ONLY: exact PR177 independently C14/C13 accepted stable replacement lease"
+    },
+    "tests/test_v70_next_c01_authorization_replay.py": {
+      "mode": "100644",
+      "git_blob": "8445bed95c232f5904a8f55d0dbd4d0e35f8147b",
+      "reason": "exact independently accepted PR171 authorization replay test"
+    },
+    "tests/test_final_depth_terminal_hardening.py": {
+      "mode": "100644",
+      "git_blob": "1e7731c42bb6620dc266a7b7cc5e0322dcbebac0",
+      "reason": "TEST_ONLY shared hygiene #178; exact retained assertions/episode fixture reconciliation"
     }
   },
-  "migration_head": "0134_flight_status_width",
+  "migration_head": "0137_hosted_unknown_episode",
   "verified_inherited_evidence": {
     "pr74_workflow_run": 34807203728,
     "c11_original_postgresql_cases": "10/10 PASS",
@@ -40,18 +305,19 @@
     "canonical_parent_retention_run": 34825183779
   },
   "gate_order": [
-    "RETENTION",
-    "C07_POSTGRES",
-    "C09_POSTGRES",
-    "C11_POSTGRES",
-    "REGRESSION",
+    "SOURCE_BINDING",
+    "ISOLATED_PG_INTEGRATION",
+    "PARENT_REGRESSION",
     "C14",
     "C13"
   ],
   "hk_deploy": "HOLD",
   "final_release": "HOLD",
   "production": "HOLD",
-  "repair_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
-  "source_tree_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
-  "historical_pass_transferred": false
+  "repair_parent_commit": "febb925eeb781223f17002b91479f2eac9b71acc",
+  "source_tree_sha256": "a0a4fe24987f4bd46fef34ce0b97e4c3dab93d54dabe0111da1d26a43e652430",
+  "historical_pass_transferred": false,
+  "migration_file": "alembic/versions/0137_hosted_money_unknown_episode.py",
+  "verified_current_generation_ledger": "ci/integration/ACCEPTED_CELL_LEDGER.json",
+  "c06_external_supplier_provenance": "BLOCKED_EXTERNAL"
 }

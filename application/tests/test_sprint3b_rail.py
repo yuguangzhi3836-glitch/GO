@@ -1,7 +1,8 @@
+from registration_terms_test_support import register_synthetic_consumer
 from go_hotel.rail.service import rail_service
 from tests.vertical_transaction_helpers import confirm_existing_fulfillment
 def auth(client,email='rail@example.com'):
-    r=client.post('/v1/consumer/auth/register',json={'email':email,'password':'StrongPass123!','display_name':'Rail Traveler'})
+    r=register_synthetic_consumer(client, json={'email':email,'password':'StrongPass123!','display_name':'Rail Traveler'})
     assert r.status_code==200,r.text
     t=client.post('/v1/mobile/auth/login',json={'email':email,'password':'StrongPass123!'}).json()['data']
     client.cookies.clear()

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from go_hotel.services import catalog_scope
 
 from datetime import datetime, timezone
 from html.parser import HTMLParser
@@ -313,6 +314,9 @@ class HotelDiscoveryOrchestratorService:
         self._transport = transport
 
     def _event(self, s, event_type: str, evidence: dict, actor: str, hotel_id: str | None = None):
+        catalog_scope.scope_lock(s)
+        if evidence.get("job_id"):catalog_scope.require_job(s,evidence["job_id"])
+        if hotel_id:catalog_scope.require_hotel(s,hotel_id)
         row = HotelAutoPageEventRow(
             hotel_auto_page_event_id=_ident("hape"), hotel_id=hotel_id,
             event_type=event_type, evidence_json=evidence, actor=actor, created_at=_now(),
@@ -336,10 +340,15 @@ class HotelDiscoveryOrchestratorService:
     def register_seed(self, seed: dict, actor: str = "SYSTEM") -> dict:
         if not isinstance(seed, dict):
             raise ValueError("DISCOVERY_SEED_INVALID")
+        with SessionLocal() as s:
+            catalog_scope.require_seed(s,seed)
         fp = self._seed_fingerprint(seed)
         job_id = f"hdj_{fp[:32]}"
         with SessionLocal() as s:
+            catalog_scope.scope_lock(s)
+            catalog_scope.require_seed(s,seed)
             events = s.scalars(select(HotelAutoPageEventRow).where(HotelAutoPageEventRow.event_type == "DISCOVERY_JOB_CREATED")).all()
+            events = catalog_scope.visible_events(s,events)
             for e in events:
                 ev = e.evidence_json or {}
                 if ev.get("seed_fingerprint") == fp:
@@ -351,7 +360,8 @@ class HotelDiscoveryOrchestratorService:
 
     def list_seeds(self, limit: int = 100) -> list[dict]:
         with SessionLocal() as s:
-            rows = s.scalars(select(HotelAutoPageEventRow).where(HotelAutoPageEventRow.event_type == "DISCOVERY_SEED_REGISTERED").order_by(HotelAutoPageEventRow.created_at.desc()).limit(max(1, min(limit, 1000)))).all()
+            rows = s.scalars(select(HotelAutoPageEventRow).where(HotelAutoPageEventRow.event_type == "DISCOVERY_SEED_REGISTERED",catalog_scope.event_filter(s)).order_by(HotelAutoPageEventRow.created_at.desc()).limit(max(1, min(limit, 1000)))).all()
+            rows = catalog_scope.visible_events(s,rows)
             return [{"created_at": r.created_at.isoformat(), **(r.evidence_json or {})} for r in rows]
 
     def _private_test_override(self) -> bool:
@@ -556,6 +566,7 @@ class HotelDiscoveryOrchestratorService:
 
     def _job_seed(self, job_id: str) -> dict:
         with SessionLocal() as s:
+            catalog_scope.require_job(s,job_id)
             rows = s.scalars(select(HotelAutoPageEventRow).where(HotelAutoPageEventRow.event_type == "DISCOVERY_JOB_CREATED").order_by(HotelAutoPageEventRow.created_at.desc())).all()
             for r in rows:
                 ev = r.evidence_json or {}
@@ -662,6 +673,8 @@ class HotelDiscoveryOrchestratorService:
                 "DISCOVERY_JOB_CREATED", "DISCOVERY_JOB_STARTED", "DISCOVERY_SOURCE_SNAPSHOTTED",
                 "DISCOVERY_SOURCE_FAILED", "DISCOVERY_JOB_FINISHED", "DISCOVERY_JOB_RETRY_REQUESTED",
             ])).order_by(HotelAutoPageEventRow.created_at.asc())).all()
+            catalog_scope.require_job(s,job_id)
+            rows = catalog_scope.visible_events(s,rows)
             events = [r for r in rows if (r.evidence_json or {}).get("job_id") == job_id]
             if not events:
                 raise ValueError("DISCOVERY_JOB_NOT_FOUND")
@@ -715,3 +728,4 @@ class HotelDiscoveryOrchestratorService:
 
 
 hotel_discovery_orchestrator_service = HotelDiscoveryOrchestratorService()
+

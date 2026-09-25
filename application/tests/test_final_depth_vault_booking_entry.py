@@ -1,3 +1,4 @@
+from registration_terms_test_support import register_synthetic_consumer
 from tests.attraction_fixtures import quoted_attraction
 from sqlalchemy import select
 from go_hotel.services.personal_travel_vault import personal_travel_vault_service as vault
@@ -7,7 +8,7 @@ from go_hotel.db.models import ProfileDataReleaseAuditRow
 
 def _auth_and_vault(client):
     email='final-vault-entry@example.com'
-    r=client.post('/v1/consumer/auth/register',json={'email':email,'password':'StrongPass123!','display_name':'Vault Traveler'})
+    r=register_synthetic_consumer(client, json={'email':email,'password':'StrongPass123!','display_name':'Vault Traveler'})
     assert r.status_code==200,r.text
     user_id=r.json()['data']['profile']['user_id']
     t=client.post('/v1/mobile/auth/login',json={'email':email,'password':'StrongPass123!'}).json()['data']

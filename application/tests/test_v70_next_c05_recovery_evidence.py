@@ -40,3 +40,18 @@ def test_missing_or_corrupt_unknown_evidence_does_not_restore_ride(phase, fault)
     assert svc.get(owner, oid) == before
     with SessionLocal() as session:
         assert session.get(MobilityRideOrderRow, oid).status == 'UNKNOWN_EXTERNAL_STATE'
+
+def test_corrupt_historical_execution_binding_blocks_new_unknown_episode():
+    """An evidence row bound to another order cannot be extended as this order's chain."""
+    svc, owner, oid = booked('RIDE')
+    with SessionLocal.begin() as session:
+        first = session.scalar(select(Evidence).where(
+            Evidence.execution_id == 'rc20:RIDE:' + oid).order_by(Evidence.sequence_no))
+        assert first is not None
+        first.execution_item_id = 'ride_ord_other'
+    before = svc.get(owner, oid)
+    with pytest.raises(ValueError, match='RIDE_RECOVERY_EVIDENCE_INVALID'):
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://new-episode', 'ops')
+    assert svc.get(owner, oid) == before
+    with SessionLocal() as session:
+        assert session.get(MobilityRideOrderRow, oid).status == 'CONFIRMED'

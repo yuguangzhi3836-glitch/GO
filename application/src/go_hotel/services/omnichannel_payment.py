@@ -22,6 +22,7 @@ ORDER_TYPES={
 }
 TERMINAL={'SUCCEEDED','FAILED'}
 def now():return datetime.now(timezone.utc)
+def utc(v):return v.replace(tzinfo=timezone.utc) if v and v.tzinfo is None else v
 def ident(p):return f'{p}_{uuid.uuid4().hex}'
 def digest(x):return hashlib.sha256(json.dumps(x,sort_keys=True,separators=(',',':'),default=str).encode()).hexdigest()
 def out(r):return {c.name:(getattr(r,c.name).isoformat() if isinstance(getattr(r,c.name),datetime) else getattr(r,c.name)) for c in r.__table__.columns}
@@ -122,18 +123,46 @@ class OmnichannelPaymentService:
    if i.state not in {'FAILED','REQUIRES_CHANNEL_SELECTION'}:raise ValueError('CHANNEL_FALLBACK_NOT_ALLOWED')
    if channel not in i.channel_priority_json:raise ValueError('CHANNEL_NOT_ALLOWED_FOR_INTENT')
    i.selected_channel=channel;i.user_channel_consent_at=now();i.state='READY';i.updated_at=now();s.commit();return out(i)
- def ingest_psp_line(self,iid,b):
+ def ingest_psp_line_in_session(self,s,iid,b):
   required=('external_transaction_id','amount_minor','currency','evidence_reference','occurred_at')
   if any(b.get(x) in (None,'') for x in required):raise ValueError('PSP_SETTLEMENT_FACT_REQUIRED')
+  i=s.get(Intent,iid);root=s.scalar(select(OrderRoot).where(OrderRoot.payment_intent_id==iid))
+  if not i or not root:raise ValueError('PAYMENT_ORDER_ROOT_REQUIRED')
+  if b['currency']!=i.currency:raise ValueError('PSP_SETTLEMENT_PAYMENT_FACT_MISMATCH')
+  occurred_at=datetime.fromisoformat(b['occurred_at'].replace('Z','+00:00'))
+  old=s.scalar(select(PspLine).where(PspLine.external_transaction_id==b['external_transaction_id']).with_for_update())
+  if old:
+   prior=(old.payment_intent_id,old.legal_entity_id,old.amount_minor,old.currency,old.evidence_reference,utc(old.occurred_at))
+   incoming=(iid,root.legal_entity_id,int(b['amount_minor']),b['currency'],b['evidence_reference'],utc(occurred_at))
+   if prior!=incoming:raise ValueError('PSP_SETTLEMENT_TRANSACTION_FACT_CONFLICT')
+   return out(old)
+  # A partial capture is an authoritative money fact too. Reconciliation below
+  # still requires the PSP, bank and balanced capture ledger to agree. Checking
+  # immutable receipt replay first keeps a valid prior line replayable after a
+  # later capture without accepting edits to that receipt.
+  captured=sum(x.amount_minor for x in s.scalars(select(Movement).where(
+   Movement.root_payment_intent_id==iid,Movement.movement_type=='CAPTURE',
+   Movement.state=='CONFIRMED',Movement.currency==i.currency)))
+  if int(b['amount_minor']) not in {i.amount_minor,captured} or int(b['amount_minor'])<=0:
+   raise ValueError('PSP_SETTLEMENT_PAYMENT_FACT_MISMATCH')
+  r=PspLine(psp_settlement_line_id=ident('psp'),payment_intent_id=iid,external_transaction_id=b['external_transaction_id'],channel=i.selected_channel or 'UNSELECTED',legal_entity_id=root.legal_entity_id,amount_minor=int(b['amount_minor']),currency=b['currency'],evidence_reference=b['evidence_reference'],occurred_at=occurred_at);s.add(r);s.flush();return out(r)
+ def ingest_psp_line(self,iid,b):
   with SessionLocal() as s:
-   i=s.get(Intent,iid);root=s.scalar(select(OrderRoot).where(OrderRoot.payment_intent_id==iid))
-   if not i or not root:raise ValueError('PAYMENT_ORDER_ROOT_REQUIRED')
-   r=PspLine(psp_settlement_line_id=ident('psp'),payment_intent_id=iid,external_transaction_id=b['external_transaction_id'],channel=i.selected_channel or 'UNSELECTED',legal_entity_id=root.legal_entity_id,amount_minor=int(b['amount_minor']),currency=b['currency'],evidence_reference=b['evidence_reference'],occurred_at=datetime.fromisoformat(b['occurred_at'].replace('Z','+00:00')));s.add(r);s.commit();return out(r)
- def ingest_bank_line(self,b):
+   r=self.ingest_psp_line_in_session(s,iid,b);s.commit();return r
+ def ingest_bank_line_in_session(self,s,b):
   required=('bank_line_identity','legal_entity_id','amount_minor','currency','payment_reference','evidence_reference','booked_at')
   if any(b.get(x) in (None,'') for x in required):raise ValueError('BANK_STATEMENT_FACT_REQUIRED')
+  booked_at=datetime.fromisoformat(b['booked_at'].replace('Z','+00:00'))
+  old=s.scalar(select(BankLine).where(BankLine.bank_line_identity==b['bank_line_identity']).with_for_update())
+  if old:
+   prior=(old.legal_entity_id,old.amount_minor,old.currency,old.payment_reference,old.evidence_reference,utc(old.booked_at))
+   incoming=(b['legal_entity_id'],int(b['amount_minor']),b['currency'],b['payment_reference'],b['evidence_reference'],utc(booked_at))
+   if prior!=incoming:raise ValueError('BANK_STATEMENT_LINE_FACT_CONFLICT')
+   return out(old)
+  r=BankLine(bank_statement_line_id=ident('bsl'),bank_line_identity=b['bank_line_identity'],legal_entity_id=b['legal_entity_id'],amount_minor=int(b['amount_minor']),currency=b['currency'],payment_reference=b['payment_reference'],evidence_reference=b['evidence_reference'],booked_at=booked_at);s.add(r);s.flush();return out(r)
+ def ingest_bank_line(self,b):
   with SessionLocal() as s:
-   r=BankLine(bank_statement_line_id=ident('bsl'),bank_line_identity=b['bank_line_identity'],legal_entity_id=b['legal_entity_id'],amount_minor=int(b['amount_minor']),currency=b['currency'],payment_reference=b['payment_reference'],evidence_reference=b['evidence_reference'],booked_at=datetime.fromisoformat(b['booked_at'].replace('Z','+00:00')));s.add(r);s.commit();return out(r)
+   r=self.ingest_bank_line_in_session(s,b);s.commit();return r
  def reconcile(self,iid,b):
   with SessionLocal() as s:
    i=s.scalar(select(Intent).where(Intent.payment_intent_id==iid).with_for_update());root=s.scalar(select(OrderRoot).where(OrderRoot.payment_intent_id==iid))
@@ -153,20 +182,31 @@ class OmnichannelPaymentService:
   if channel not in CHANNELS:raise ValueError('UNSUPPORTED_PAYMENT_CHANNEL')
   key=os.getenv(f'GO_PAYMENT_WEBHOOK_KEY_{channel}')
   if not key:raise ValueError('PAYMENT_WEBHOOK_KEY_NOT_CONFIGURED')
+  required=('external_event_id','payment_attempt_id','external_operation_id','state','operation','amount_minor','currency','occurred_at')
+  if any(b.get(x) in (None,'') for x in required):raise ValueError('PAYMENT_CALLBACK_FACTS_REQUIRED')
   raw=json.dumps(b,sort_keys=True,separators=(',',':'));expected=hmac.new(key.encode(),raw.encode(),hashlib.sha256).hexdigest()
   if not hmac.compare_digest(expected,signature):raise ValueError('PAYMENT_WEBHOOK_SIGNATURE_INVALID')
   occurred=b.get('occurred_at')
-  if not occurred:raise ValueError('PAYMENT_CALLBACK_OCCURRED_AT_REQUIRED')
   event_at=datetime.fromisoformat(occurred.replace('Z','+00:00'))
   if event_at<now()-timedelta(hours=24) or event_at>now()+timedelta(minutes=5):raise ValueError('PAYMENT_CALLBACK_OUTSIDE_REPLAY_WINDOW')
+  payload_hash=digest(b)
   with SessionLocal() as s:
-   old=s.scalar(select(Receipt).where(Receipt.channel==channel,Receipt.external_event_id==b['external_event_id']))
-   if old:return {'duplicate':True,'receipt':out(old)}
+   old=s.scalar(select(Receipt).where(Receipt.channel==channel,Receipt.external_event_id==b['external_event_id']).with_for_update())
+   if old:
+    if old.payload_hash!=payload_hash:raise ValueError('PAYMENT_CALLBACK_EVENT_PAYLOAD_CONFLICT')
+    return {'duplicate':True,'receipt':out(old)}
    a=s.scalar(select(Attempt).where(Attempt.payment_attempt_id==b['payment_attempt_id']).with_for_update());i=s.scalar(select(Intent).where(Intent.payment_intent_id==a.payment_intent_id).with_for_update()) if a else None
    if not a or a.channel!=channel:raise ValueError('PAYMENT_ATTEMPT_CHANNEL_MISMATCH')
+   # Generic HMAC is only the contract-simulator receipt boundary. A real PSP
+   # callback must be verified by the provider-specific adapter before ingress.
+   if a.external_invoked:raise ValueError('REAL_PSP_WEBHOOK_VERIFIER_NOT_INSTALLED')
+   if str(b['operation'])!=i.operation:raise ValueError('PAYMENT_CALLBACK_OPERATION_MISMATCH')
+   if int(b['amount_minor'])!=i.amount_minor:raise ValueError('PAYMENT_CALLBACK_AMOUNT_MISMATCH')
+   if str(b['currency'])!=i.currency:raise ValueError('PAYMENT_CALLBACK_CURRENCY_MISMATCH')
+   if a.external_operation_id and b['external_operation_id']!=a.external_operation_id:raise ValueError('PAYMENT_CALLBACK_EXTERNAL_OPERATION_MISMATCH')
    mapped={'SUCCEEDED':'SUCCEEDED','FAILED':'FAILED','PENDING':'UNKNOWN_EXTERNAL_STATE'}.get(b['state'])
    if not mapped:raise ValueError('INVALID_EXTERNAL_PAYMENT_STATE')
-   r=Receipt(webhook_receipt_id=ident('owr'),channel=channel,external_event_id=b['external_event_id'],payment_attempt_id=a.payment_attempt_id,signature_verified=True,payload_hash=digest(b),received_at=now());s.add(r);self._transition(s,a,i,mapped,b.get('external_operation_id'));s.commit();return {'duplicate':False,'receipt':out(r),'intent':out(i)}
+   r=Receipt(webhook_receipt_id=ident('owr'),channel=channel,external_event_id=b['external_event_id'],payment_attempt_id=a.payment_attempt_id,signature_verified=True,payload_hash=payload_hash,received_at=now());s.add(r);self._transition(s,a,i,mapped,b['external_operation_id']);s.commit();return {'duplicate':False,'receipt':out(r),'intent':out(i)}
  def _ledger(self,s,i):
   raise ValueError('PAYMENT_SUCCESS_DOES_NOT_POST_GL_USE_CAPTURE_MOVEMENT')
  def _legacy_ledger_disabled(self,s,i):

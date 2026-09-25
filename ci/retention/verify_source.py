@@ -4,6 +4,7 @@ import json
 import pathlib
 import subprocess
 import sys
+import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 APP = ROOT / 'application'
@@ -42,12 +43,15 @@ def main():
         fingerprint[path] = digest
     for path, digest in inherited['compatibility_git_blobs'].items():
         assert blob((ROOT/path).read_bytes()) == digest, 'COMPATIBILITY_CHANGED:' + path
-    migration=(APP/'alembic/versions/0134_flight_status_width.py').read_text()
-    assert 'revision = "0134_flight_status_width"' in migration
-    assert 'down_revision = "0133_flight_change_plan"' in migration
+    migration_path = APP/current['migration_file']
+    migration = migration_path.read_text()
+    assert re.search(r"^revision\s*=\s*['\"]" + re.escape(current['migration_head']) + r"['\"]", migration, re.M), 'WRONG_MIGRATION_HEAD'
+    assert current['migration_head'] == '0138_supplier_library_import'
+    assert re.search(r"^down_revision\s*=\s*['\"]0137_hosted_unknown_episode['\"]", migration, re.M)
     model=(APP/'src/go_hotel/db/models.py').read_text()
     assert 'status: Mapped[str] = mapped_column(String(64), nullable=False, index=True)' in model
     tree = hashlib.sha256(''.join(f'{p}\0{h}\n' for p,h in sorted(fingerprint.items())).encode()).hexdigest()
+    assert tree == current['source_tree_sha256'], 'WRONG_SOURCE_FINGERPRINT'
     out=pathlib.Path(sys.argv[1]).resolve()
     assert APP not in out.parents and out != APP
     out.mkdir(parents=True,exist_ok=True)
@@ -55,7 +59,7 @@ def main():
     report={'product_candidate_commit':current['product_candidate_commit'],'gate_commit':git('rev-parse','HEAD'),
             'application_tree':current['application_git_tree'],'source_files':len(expected),'source_tree_sha256':tree,
             'inherited_baseline_blob':current['inherited_manifest']['git_blob'],'approved_overrides':sorted(overrides),
-            'migration_head':'0134_flight_status_width','byte_retention':'PASS','deployment':'NOT_RUN',
+            'migration_head':current['migration_head'],'byte_retention':'PASS','deployment':'NOT_RUN',
             'final_release':'HOLD','production':'HOLD'}
     (out/'RETENTION_RESULT.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report))

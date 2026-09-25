@@ -4,6 +4,7 @@ from go_hotel.security.deps import consumer_principal, admin_principal
 from go_hotel.security.service import Principal
 from go_hotel.flight.service import flight_service
 from go_hotel.flight.journeys import JourneySearch, JourneyCompose, search_journey, compose_journey
+from go_hotel.flight.airports import AirportResolutionError, resolve_airport
 from go_hotel.api.idempotency import run_idempotent, run_recoverable_idempotent
 from go_hotel.api.refund_confirmation import RefundConfirmation
 from go_hotel.services.booking_data_release import release_booking_data
@@ -46,7 +47,25 @@ def wrap(fn,*args):
         raise HTTPException(422 if "INVALID" in str(e) or "CHANGEABLE" in str(e) or "REFUNDABLE" in str(e) else 404,detail=str(e))
 
 @router.post('/v1/flights/search')
-def search(body:SearchBody): return {"data":{"items":flight_service.search(**body.model_dump()),"comparison_basis":["total_price","baggage","change_refund","total_travel_time"]}}
+def search(body:SearchBody):
+    try:
+        origin = resolve_airport(body.origin)
+        destination = resolve_airport(body.destination)
+    except AirportResolutionError as exc:
+        status = 409 if exc.code == 'AIRPORT_AMBIGUOUS' else 422
+        raise HTTPException(status, detail={
+            'code': exc.code, 'query': exc.query, 'candidates': list(exc.candidates),
+        }) from exc
+    if origin['iata'] == destination['iata']:
+        raise HTTPException(422, detail={'code': 'AIRPORTS_MUST_DIFFER'})
+    criteria = body.model_dump() | {
+        'origin': origin['iata'], 'destination': destination['iata'],
+    }
+    return {'data': {
+        'items': flight_service.search(**criteria),
+        'resolved_airports': {'origin': origin, 'destination': destination},
+        'comparison_basis': ['total_price', 'baggage', 'change_refund', 'total_travel_time'],
+    }}
 @router.post('/v1/flights/journeys/search')
 def journey_search(body: JourneySearch): return wrap(search_journey, body)
 @router.post('/v1/flights/journeys/compose')
@@ -79,7 +98,12 @@ def order(order_id:str,p:Principal=Depends(consumer_principal)): return wrap(fli
 @router.get('/v1/flights/trips')
 def trips(p:Principal=Depends(consumer_principal)): return {"data":{"items":flight_service.trips(p.user_id)}}
 @router.post('/v1/flights/orders/{order_id}/change-quote')
-def change_quote(order_id:str,body:ChangeQuoteBody,p:Principal=Depends(consumer_principal)): return wrap(flight_service.change_quote,p.user_id,order_id,body.new_departure_date,body.leg_index,[x.model_dump() for x in body.changes] if body.changes is not None else None)
+def change_quote(order_id:str,body:ChangeQuoteBody,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+    changes=[x.model_dump() for x in body.changes] if body.changes is not None else None
+    payload={'user_id':p.user_id,'order_id':order_id,'new_departure_date':body.new_departure_date,
+             'leg_index':body.leg_index,'changes':changes}
+    return run_idempotent('FLIGHT_CHANGE_QUOTE',idempotency_key,payload,
+        lambda:wrap(flight_service.change_quote,p.user_id,order_id,body.new_departure_date,body.leg_index,changes))
 @router.post('/v1/flights/orders/{order_id}/execute-change/{quote_id}')
 def execute_change(order_id:str,quote_id:str,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key'),body:ChangeConfirmation|None=Body(default=None)):
     confirmation=body.model_dump() if body else None

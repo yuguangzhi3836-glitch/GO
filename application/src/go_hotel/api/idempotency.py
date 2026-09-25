@@ -4,6 +4,7 @@ from go_hotel.repositories.sql import repo
 import logging
 from uuid import uuid4
 from go_hotel.services.mutation_boundary import MutationBoundary
+from go_hotel.services.flight_command_lease import flight_command_lease
 
 _PROD = {"prod", "production"}
 _RECOVERABLE = {'FLIGHT_CHECKOUT', 'FLIGHT_EXECUTE_CHANGE'}
@@ -46,7 +47,10 @@ def run_recoverable_idempotent(operation, key, payload, resource_id, fn, recover
         raise HTTPException(409, detail={'code': 'IDEMPOTENCY_IN_PROGRESS', 'message': 'Execution is active or requires recovery review'})
     boundary = MutationBoundary(recovering=mode == 'RECOVER')
     try:
-        response = (recover if boundary.recovering else fn)(boundary)
+        # A real, fenced heartbeat means a live command is not reclaimed while
+        # it crosses its local transactional/money boundary.
+        with flight_command_lease(operation, key, resource_id, token):
+            response = (recover if boundary.recovering else fn)(boundary)
     except BaseException:
         try:
             repo.finish_recoverable_idempotency(operation, key, payload, resource_id, token,

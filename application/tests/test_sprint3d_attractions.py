@@ -1,8 +1,9 @@
+from registration_terms_test_support import register_synthetic_consumer
 from tests.attraction_fixtures import quoted_attraction
 from go_hotel.attractions.service import attraction_service
 from tests.vertical_transaction_helpers import pay_and_confirm
 def auth(client):
- r=client.post("/v1/consumer/auth/register",json={"email":"attr@example.com","password":"StrongPass123!","display_name":"GO Attractions"});assert r.status_code==200
+ r=register_synthetic_consumer(client, json={"email":"attr@example.com","password":"StrongPass123!","display_name":"GO Attractions"});assert r.status_code==200
  t=client.post("/v1/mobile/auth/login",json={"email":"attr@example.com","password":"StrongPass123!"}).json()["data"];client.cookies.clear();return {"Authorization":"Bearer "+t["access_token"]}
 def test_attraction_golden_path(client):
  h=auth(client)

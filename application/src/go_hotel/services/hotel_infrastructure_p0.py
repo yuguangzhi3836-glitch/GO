@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 
 from go_hotel.db.session import SessionLocal
+from go_hotel.services import catalog_scope
 from go_hotel.db.models import (
     HotelCanonicalProfileRow, HotelContentSourceSnapshotRow, HotelContactPointRow,
     HotelAutoPageVersionRow, HotelRegistrationDirectRow, HotelAutoPageEventRow,
@@ -94,6 +95,9 @@ class HotelInfrastructureP0Service:
         if env not in {"staging","test","testing","development","dev"}:
             raise ValueError("CLEAN_SLATE_RESET_NON_PRODUCTION_ONLY")
         if confirmation!=RESET_CONFIRMATION: raise ValueError("CLEAN_SLATE_RESET_CONFIRMATION_REQUIRED")
+        with SessionLocal() as s:
+            if catalog_scope.state(s):
+                raise ValueError("CATALOG_SCOPE_RESET_REQUIRED")
         preview=self.reset_preview(); ids=set(preview["hotel_ids"])
         with SessionLocal.begin() as s:
             # Travel Graph projections derived from these hotel canonical IDs.
@@ -130,6 +134,7 @@ class HotelInfrastructureP0Service:
     def completeness_gate(self,hotel_id:str,*,tier:int)->dict:
         from go_hotel.services.hotel_autopage_factory import hotel_autopage_factory_service
         with SessionLocal() as s:
+            catalog_scope.require_hotel(s, hotel_id)
             p=s.get(HotelCanonicalProfileRow,hotel_id)
             if not p: raise ValueError("HOTEL_CANONICAL_NOT_FOUND")
             result=hotel_autopage_factory_service.catalog_quality(p)
@@ -137,6 +142,7 @@ class HotelInfrastructureP0Service:
 
     def project_to_travel_graph(self,hotel_id:str)->dict:
         with SessionLocal() as s:
+            catalog_scope.require_hotel(s, hotel_id)
             p=s.get(HotelCanonicalProfileRow,hotel_id)
             if not p: raise ValueError("HOTEL_CANONICAL_NOT_FOUND")
             c=p.canonical_json or {}
@@ -149,3 +155,4 @@ class HotelInfrastructureP0Service:
         return {"hotel_id":hotel_id,"go_entity_id":eid,"fact_sources":len(snaps)+1}
 
 hotel_infrastructure_p0_service=HotelInfrastructureP0Service()
+

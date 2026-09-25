@@ -1,0 +1,23 @@
+{
+  "repository": "yuguangzhi3836-glitch/GO",
+  "required_base_commit": "f827a3aefd95fd95dedb2bd2ecc93ae01111ea90",
+  "required_base_root_tree": "87f105397eaa6d9dba2caa28919336163a1c39b9",
+  "required_base_application_tree": "eef8adc0d99f679220e51efc9d6c5ca28ba6ab0c",
+  "application_only": true,
+  "exclude_control_plane": true,
+  "exclude_pr201": true,
+  "source_sha256": {
+    "catalog_review/operator_inputs/aoluguya_hyatt_expanded_40_plan.json": "7fa891e6100f457e96a9c1ddcd9d0c4c3a4d71c3ca900cc99026f45124255265",
+    "catalog_review/hk_public_area_preflight/HK_PUBLIC_AREA_MEMORY_PREFLIGHT.json": "2f63764c44d947f0ce2cac90faec892e59234e37711c331a2900b00ca9d59f3c",
+    "catalog_review/hk_media_preflight/HK_PUBLIC_MEMORY_PREFLIGHT.json": "2399f6c827b48af612a4a05f6494b00ee281cf9812079e37b1cc8ba6fc38e566",
+    "catalog_review/aoluguya_hyatt_public_area_candidates.json": "01496653b549252c619125371a7b97561b73d06de8ac741841d5c57fa4a873ed"
+  },
+  "plan_semantic_sha256": "59e04e59b5a27a1a6df2baeca1ba269430c605fe3f48bcbb86d536a4a2cdf6ba",
+  "old21_fixture_unchanged": true,
+  "verified_base_git_blobs": true,
+  "tests": {
+    "passed": 43,
+    "failed": 0,
+    "command": "node --test application/tests_frontend/*.test.mjs"
+  }
+}

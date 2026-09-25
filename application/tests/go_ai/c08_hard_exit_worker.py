@@ -6,7 +6,7 @@ import sys
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from go_hotel.db.models import Base, GoAIInvocationRow, GoAIRequestRow
+from go_hotel.db.models import Base, GoAIExecutionRow, GoAIInvocationRow, GoAIRequestRow
 from go_hotel.go_ai import service as service_module
 from go_hotel.go_ai.registry import GOAIProviderRegistry
 from test_c08_synthesis_audit_finalization import SynthesisProvider
@@ -14,7 +14,14 @@ from test_c08_synthesis_audit_finalization import SynthesisProvider
 
 def main(database, calls_path, checkpoint):
     engine = create_engine(f"sqlite+pysqlite:///{database}")
-    Base.metadata.create_all(engine, tables=[GoAIRequestRow.__table__, GoAIInvocationRow.__table__])
+    Base.metadata.create_all(
+        engine,
+        tables=[
+            GoAIRequestRow.__table__,
+            GoAIInvocationRow.__table__,
+            GoAIExecutionRow.__table__,
+        ],
+    )
     service_module.SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
     class CountingProvider(SynthesisProvider):
         def generate(self, request):

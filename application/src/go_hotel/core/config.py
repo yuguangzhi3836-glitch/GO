@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     allowed_origins: str = ""
     trace_sample_rate: float = 1.0
     slow_request_ms: int = 1500
+    # Registration cannot open until a real outbound verification service and its
+    # delivery/receipt acceptance evidence have been approved for the environment.
+    registration_verification_enabled: bool = False
     mobile_push_mode: str = "mock"
     expo_push_url: str = "https://exp.host/--/api/v2/push/send"
     mobile_push_batch_size: int = 100

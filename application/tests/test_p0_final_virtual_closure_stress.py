@@ -268,6 +268,9 @@ def test_stress_payment_webhook_replay_is_idempotent():
         "external_event_id": uid("evt"),
         "payment_attempt_id": attempt["payment_attempt_id"],
         "state": "SUCCEEDED",
+        "operation": intent['operation'],
+        "amount_minor": intent['amount_minor'],
+        "currency": intent['currency'],
         "external_operation_id": uid("ext-pay"),
         "occurred_at": datetime.now(timezone.utc).isoformat(),
     }

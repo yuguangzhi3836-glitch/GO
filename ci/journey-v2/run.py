@@ -26,13 +26,15 @@ with (evidence / 'runtime.log').open('w') as log:
             raise TimeoutError('ISOLATED_RUNTIME_NOT_READY')
         result = subprocess.run(['node', str(root / 'ci/journey-v2/browser.mjs')], env=dict(env,
             GO_JOURNEY_STATE=str(state), GO_JOURNEY_EVIDENCE=str(evidence)))
+        capacity = subprocess.run([sys.executable, str(root / 'ci/journey-v2/capacity.py'),
+            str(state), str(evidence)], env=env)
         audit = subprocess.run([sys.executable, str(root / 'ci/journey-v2/ledger.py'),
             str(state), str(evidence)], env=env)
         hotel_audit = subprocess.run([sys.executable, str(root / 'ci/journey-v2/hotel-ledger.py'),
             str(state), str(evidence)], env=env)
         for name in ['runtime-binding.json', 'fixture-identities.json', 'hotel-price-fixtures.json']:
             shutil.copyfile(state / name, evidence / name)
-        sys.exit(result.returncode or audit.returncode or hotel_audit.returncode)
+        sys.exit(result.returncode or capacity.returncode or audit.returncode or hotel_audit.returncode)
     finally:
         process.terminate()
         try: process.wait(timeout=15)

@@ -1,3 +1,4 @@
+from registration_terms_test_support import register_synthetic_consumer
 from tests.attraction_fixtures import quoted_attraction
 from datetime import date, timedelta
 import json
@@ -70,7 +71,7 @@ def test_autonomy_without_qualification_registry_is_denied():
     assert not result.allowed and result.code=='AUTONOMY_QUALIFICATION_REGISTRY_REQUIRED'
 
 def book_all(client):
-    r=client.post('/v1/consumer/auth/register',json={'email':'master-03@example.test','password':'StrongPass123!','display_name':'ACCOUNT NICKNAME'})
+    r=register_synthetic_consumer(client, json={'email':'master-03@example.test','password':'StrongPass123!','display_name':'ACCOUNT NICKNAME'})
     assert r.status_code==200,r.text
     uid=r.json()['data']['profile']['user_id']
     token=client.post('/v1/mobile/auth/login',json={'email':'master-03@example.test','password':'StrongPass123!'}).json()['data']['access_token']
