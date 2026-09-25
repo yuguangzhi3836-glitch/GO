@@ -125,6 +125,36 @@ def check_artifact_discipline(name: str, raw: str, failures: list) -> None:
         failures.append(f"{name}: artifacts must declare retention-days")
 
 
+def check_env_export_is_not_same_step(name: str, document: dict, failures: list) -> None:
+    """$GITHUB_ENV values only exist for LATER steps.
+
+    A step that *produces* a value and then immediately calls a ``lite_cli.py``
+    subcommand that consumes it is a bug that only shows up on a real runner (it
+    was an actual remote failure). ``scope`` produces the digest and is therefore
+    allowed in the same step; ``spec`` / ``seal`` / ``review`` / ``verify`` /
+    ``bind-ledger`` consume it and may not be.
+    """
+    if "__raw__" in document:
+        return
+    producers = ("LITE_SCOPE_SHA256", "LITE_TEST_INVENTORY_SHA256")
+    consumers = ("spec", "seal", "review", "verify", "bind-ledger")
+    for job_name, job in (document.get("jobs") or {}).items():
+        for step in (job or {}).get("steps", []) or []:
+            run = step.get("run") or ""
+            if not isinstance(run, str):
+                continue
+            produced = [key for key in producers if re.search(rf'echo "{key}=', run)]
+            if not produced:
+                continue
+            for subcommand in consumers:
+                if re.search(rf"lite_cli\.py\s+{re.escape(subcommand)}\b", run):
+                    failures.append(
+                        f"{name}: step '{step.get('name')}' in job '{job_name}' exports {produced} and calls "
+                        f"'lite_cli.py {subcommand}' in the same step (the exported value would not be visible)"
+                    )
+                    break
+
+
 def run() -> dict:
     failures = []
     checked = []
@@ -140,6 +170,7 @@ def run() -> dict:
         check_credential_boundary(name, document, raw, failures)
         check_dispatch_surface(name, document, failures)
         check_artifact_discipline(name, raw, failures)
+        check_env_export_is_not_same_step(name, document, failures)
     return {
         "gate": "PASS" if not failures else "FAIL",
         "yaml_parser": "PyYAML" if yaml is not None else "text-scan-fallback",

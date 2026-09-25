@@ -39,7 +39,7 @@ env:
   LITE_CANDIDATE_SHA: "ffffffffffffffffffffffffffffffffffffffff"
   LITE_APPLICATION_TREE: "ffffffffffffffffffffffffffffffffffffffff"
   LITE_CELL_PAIR: "C13+C14"
-  LITE_ISSUE_NUMBER: "0"
+  LITE_ISSUE_NUMBER: ""
   LITE_REQUEST_ID: "poc-only-request"
   LITE_LEDGER_ROUND_ID: "POC_ONLY"
   LITE_C14_TASK_ID: "POC-C14-TASK"
@@ -81,6 +81,12 @@ jobs:
             --rule-version poc \
             --out "$RUNNER_TEMP/scope.json" > /dev/null
           echo "LITE_SCOPE_SHA256=$(grep -o '[0-9a-f]\{64\}' "$RUNNER_TEMP/scope.json" | head -1)" >> "$GITHUB_ENV"
+
+      # Values appended to $GITHUB_ENV only exist for LATER steps, so the contract
+      # must be built in its own step after the scope digest is exported.
+      - name: Build the frozen PoC contract
+        run: |
+          set -euo pipefail
           python control-plane/c13-c14-lite/lite_cli.py spec --role c14 \
             --spec "$RUNNER_TEMP/poc.spec.json" \
             --facts "$RUNNER_TEMP/poc.facts.json" \
