@@ -97,6 +97,23 @@ jobs:
           tests/test_unified_money_movement_finance_close.py
           tests/test_p0_0097_0098_rebuild.py
           --junitxml=${{ runner.temp }}/next-depth-pg/payment-junit.xml
+      - name: Outbox row-lock concurrency on real PostgreSQL
+        if: matrix.cell == 'C11'
+        working-directory: application
+        env:
+          GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+        run: |
+          python -B -m pytest -q -p no:cacheprovider \
+            tests/test_outbox_resilience.py::test_postgresql_two_workers_claim_one_row_once \
+            --junitxml="$RUNNER_TEMP/next-depth-pg/outbox-junit.xml"
+          python - <<'PY'
+          import json, os, pathlib, xml.etree.ElementTree as ET
+          report=pathlib.Path(os.environ['RUNNER_TEMP'])/'next-depth-pg/outbox-junit.xml'
+          suites=ET.parse(report).getroot().findall('testsuite')
+          metrics={key:sum(int(suite.get(key,0)) for suite in suites) for key in ('tests','failures','errors','skipped')}
+          assert metrics==dict(tests=1,failures=0,errors=0,skipped=0),metrics
+          print(json.dumps({'outbox_postgres':metrics}))
+          PY
       - name: Bind original logs and process observations
         if: always()
         shell: bash
