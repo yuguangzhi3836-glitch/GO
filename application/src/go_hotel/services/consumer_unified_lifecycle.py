@@ -109,6 +109,9 @@ class ConsumerUnifiedLifecycleService:
   r=s.scalar(select(Life).where(Life.vertical==b['vertical'],Life.order_id==b['order_id']).with_for_update())
   if r:
    if r.account_id!=b['account_id']:raise ValueError('UNIFIED_LIFECYCLE_ACCOUNT_IMMUTABLE')
+   # A later fact (or replay) cannot reassign the order's supplier. Missing
+   # historical identity needs an explicit repair, not an ordinary projection.
+   if r.supplier_id!=b.get('supplier_id'):raise ValueError('UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE')
    if idempotent_if_exists:return out(r)|{'stale_ignored':True}
    existing_at=r.source_updated_at
    if existing_at.tzinfo is None:existing_at=existing_at.replace(tzinfo=timezone.utc)

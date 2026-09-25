@@ -141,7 +141,7 @@ def test_supplier_confirmed_date_change_uses_frozen_policy_on_new_session(monkey
     quote = svc.change_quote(owner, oid, '2026-09-16', '17:00')
     svc.execute_change(owner, oid, quote['quote_id'])
     assert svc.get(owner, oid)['status'] == 'UNKNOWN_EXTERNAL_STATE'
-    svc.admin_external_state(oid, 'CONFIRMED', 'isolated://change-proof', 'ops', 'NEW-SUPPLIER', 'NEW-VOUCHER')
+    svc.admin_external_state(oid, 'CONFIRMED', 'isolated://change-proof', 'ops', 'NEW-SUPPLIER', 'NEW-VOUCHER', quote['quote_id'])
     window = svc.get(owner, oid)['redemption_window']
     assert window['opens_at'] == '2026-09-16T07:30:00+00:00'
     assert window['closes_at'] == '2026-09-16T10:00:00+00:00'

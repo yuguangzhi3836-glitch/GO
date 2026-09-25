@@ -11,13 +11,54 @@ from go_hotel.db.models import (
  OrderSupplierFulfillmentRow as Fulfillment,OrderSupplierFulfillmentEventRow as FEvent,
  OrderRow,FlightOrderRow,RailOrderRow,MobilityRideOrderRow,MobilityRentalOrderRow,AttractionOrderRow,
  ConsumerUnifiedLifecycleRow as Life,ConsumerUnifiedLifecycleEventRow as LifeEvent,
- OmnichannelPaymentIntentRow as Intent,OmnichannelMoneyMovementRow as Movement
+ OmnichannelPaymentIntentRow as Intent,OmnichannelMoneyMovementRow as Movement,
+ PaymentOrderRootRow as Root,PaymentOrderFactBindingRow as Binding
 )
 MODELS={'HOTEL_ORDER':('HOTEL',OrderRow),'FLIGHT_ORDER':('FLIGHT',FlightOrderRow),'RAIL_ORDER':('RAIL',RailOrderRow),'RIDE_ORDER':('RIDE',MobilityRideOrderRow),'RENTAL_ORDER':('RENTAL',MobilityRentalOrderRow),'ATTRACTION_ORDER':('ATTRACTION',AttractionOrderRow)}
 def now():return datetime.now(timezone.utc)
 def ident(p):return f'{p}_{uuid.uuid4().hex}'
 def digest(x):return hashlib.sha256(json.dumps(x,sort_keys=True,separators=(',',':'),default=str).encode()).hexdigest()
 def out(r):return {c.name:(getattr(r,c.name).isoformat() if isinstance(getattr(r,c.name),datetime) else getattr(r,c.name)) for c in r.__table__.columns}
+
+def _payment_state(s, f, order):
+ """Supplier outcomes never supply money truth; read the bound C11 graph."""
+ unknown='UNKNOWN_EXTERNAL_STATE'
+ i=s.get(Intent,f.payment_intent_id)
+ root=s.scalar(select(Root).where(Root.payment_intent_id==f.payment_intent_id))
+ binding=s.scalar(select(Binding).where(Binding.payment_intent_id==f.payment_intent_id))
+ expected=(f.business_type,f.business_id,order.account_id,f.supplier_id,order.total_amount_minor,order.currency)
+ if not i or not root or not binding or i.state!='SUCCEEDED':return unknown
+ if (i.business_type,i.business_id,i.payer_id,i.payee_id,i.amount_minor,i.currency)!=expected:return unknown
+ if (binding.business_type,binding.business_id,binding.payer_id,binding.payee_id,binding.amount_minor,binding.currency)!=expected:return unknown
+ if (root.business_type,root.business_id,root.legal_entity_id)!=(f.business_type,f.business_id,binding.legal_entity_id):return unknown
+ rows=s.scalars(select(Movement).where(Movement.root_payment_intent_id==i.payment_intent_id)).all()
+ if any(x.state!='CONFIRMED' for x in rows):return unknown
+ if any((x.business_type,x.business_id,x.currency)!=(f.business_type,f.business_id,i.currency)
+        or type(x.amount_minor) is not int or x.amount_minor<=0 for x in rows):return unknown
+ by_id={x.money_movement_id:x for x in rows}
+ parents={'CAPTURE':'AUTHORIZATION','RELEASE':'AUTHORIZATION','REFUND':'CAPTURE','COMPENSATION':'CAPTURE','PAYOUT':'CAPTURE'}
+ for movement in rows:
+  if movement.movement_type=='AUTHORIZATION':
+   if movement.parent_movement_id:return unknown
+  else:
+   parent=by_id.get(movement.parent_movement_id)
+   if movement.movement_type not in parents or not parent or parent.movement_type!=parents[movement.movement_type]:return unknown
+ for parent in rows:
+  children=[x for x in rows if x.parent_movement_id==parent.money_movement_id]
+  if parent.movement_type=='AUTHORIZATION' and sum(x.amount_minor for x in children if x.movement_type in {'CAPTURE','RELEASE'})>parent.amount_minor:return unknown
+  if parent.movement_type=='CAPTURE' and sum(x.amount_minor for x in children if x.movement_type in {'REFUND','COMPENSATION'})>parent.amount_minor:return unknown
+ auth=sum(x.amount_minor for x in rows if x.movement_type=='AUTHORIZATION')
+ captured=sum(x.amount_minor for x in rows if x.movement_type=='CAPTURE')
+ released=sum(x.amount_minor for x in rows if x.movement_type=='RELEASE')
+ refunded=sum(x.amount_minor for x in rows if x.movement_type in {'REFUND','COMPENSATION'})
+ if captured!=i.amount_minor or auth>i.amount_minor or captured+released>auth or refunded>captured:return unknown
+ if refunded==captured:return 'REFUNDED'
+ return 'PARTIALLY_REFUNDED' if refunded else 'PAID'
+
+def _project_lifecycle(s,f,order,vertical,state,evidence,existing,payment_state):
+ life_state='CONFIRMED' if state=='SUPPLIER_CONFIRMED' else ('FAILED' if state=='SUPPLIER_FAILED' else 'UNKNOWN_EXTERNAL_STATE')
+ refund_state='REFUND_COMPLETED' if payment_state=='REFUNDED' else existing.refund_state if existing else 'NOT_REQUESTED'
+ return consumer_unified_lifecycle_service.project_in_session(s,{'account_id':order.account_id,'vertical':vertical,'order_id':f.business_id,'supplier_id':f.supplier_id,'title':f'{vertical} {f.business_id}','lifecycle_state':life_state,'payment_state':payment_state,'refund_state':refund_state,'change_allowed':False,'cancel_allowed':state=='SUPPLIER_CONFIRMED','facts':{'supplier_confirmation_reference':f.supplier_confirmation_reference,'external_operation_id':f.external_operation_id},'evidence_reference':evidence,'source_updated_at':now(),'event_type':'SUPPLIER_FACT_PROJECTED'})
 class OrderSupplierFulfillmentService:
  def get(self,fid):
   with SessionLocal() as s:
@@ -54,12 +95,18 @@ class OrderSupplierFulfillmentService:
      raise ValueError('RAIL_CONFIRMED_TICKET_IDENTITY_IMMUTABLE')
    same_external=(not b.get('external_operation_id') or b.get('external_operation_id')==f.external_operation_id)
    same_confirmation=(state!='SUPPLIER_CONFIRMED' or b.get('supplier_confirmation_reference')==f.supplier_confirmation_reference)
+   payment_state=_payment_state(s,f,order)
    if f.state==state and same_external and same_confirmation:
-    life=out(existing_life) if existing_life else None
+    # Idempotent supplier delivery does not make an old money projection fresh.
+    # Refresh only the read model; never replay the supplier mutation/event.
+    expected_refund='REFUND_COMPLETED' if payment_state=='REFUNDED' else existing_life.refund_state if existing_life else 'NOT_REQUESTED'
+    if not existing_life or existing_life.payment_state!=payment_state or existing_life.refund_state!=expected_refund:
+     life=_project_lifecycle(s,f,order,vertical,state,b['evidence_reference'],existing_life,payment_state)
+     s.commit()
+    else:life=out(existing_life)
     return {'fulfillment':out(f),'unified_lifecycle':life,'replayed':True}
    if state=='SUPPLIER_CONFIRMED':
-    i=s.get(Intent,f.payment_intent_id);captured=sum(x.amount_minor for x in s.scalars(select(Movement).where(Movement.root_payment_intent_id==f.payment_intent_id,Movement.movement_type=='CAPTURE',Movement.state=='CONFIRMED')).all())
-    if not i or captured!=i.amount_minor or f.state not in {'CAPTURE_CONFIRMED_READY_FOR_SUPPLIER','SUPPLIER_MUTATION_SENT','UNKNOWN_EXTERNAL_STATE'}:raise ValueError('FULL_CAPTURED_MONEY_GRAPH_REQUIRED_BEFORE_SUPPLIER_CONFIRMATION')
+    if payment_state!='PAID' or f.state not in {'CAPTURE_CONFIRMED_READY_FOR_SUPPLIER','SUPPLIER_MUTATION_SENT','UNKNOWN_EXTERNAL_STATE'}:raise ValueError('FULL_CAPTURED_MONEY_GRAPH_REQUIRED_BEFORE_SUPPLIER_CONFIRMATION')
    f.state=state;f.external_operation_id=b.get('external_operation_id') or f.external_operation_id;f.supplier_confirmation_reference=b.get('supplier_confirmation_reference') or f.supplier_confirmation_reference;f.evidence_reference=b['evidence_reference'];f.updated_at=now()
    s.add(FEvent(order_supplier_fulfillment_event_id=ident('osfe'),order_supplier_fulfillment_id=f.order_supplier_fulfillment_id,event_type='SUPPLIER_FACT_RECORDED',state=state,evidence_reference=b['evidence_reference'],payload_hash=digest(b),occurred_at=now()))
    if state=='SUPPLIER_CONFIRMED':
@@ -76,7 +123,6 @@ class OrderSupplierFulfillmentService:
     order.status='FAILED';order.updated_at=now();append_vertical_evidence(s,vertical,f.business_id,'SUPPLIER_FAILED',order.status,{'external_operation_id':f.external_operation_id,'evidence_reference':b['evidence_reference']})
    else:
     order.status='UNKNOWN_EXTERNAL_STATE';order.updated_at=now();append_vertical_evidence(s,vertical,f.business_id,'EXTERNAL_STATE_UNKNOWN',order.status,{'external_operation_id':f.external_operation_id,'evidence_reference':b['evidence_reference']})
-   life_state='CONFIRMED' if state=='SUPPLIER_CONFIRMED' else ('FAILED' if state=='SUPPLIER_FAILED' else 'UNKNOWN_EXTERNAL_STATE')
-   life=consumer_unified_lifecycle_service.project_in_session(s,{'account_id':order.account_id,'vertical':vertical,'order_id':f.business_id,'supplier_id':f.supplier_id,'title':f'{vertical} {f.business_id}','lifecycle_state':life_state,'payment_state':'PAID','refund_state':'NOT_REQUESTED','change_allowed':False,'cancel_allowed':state=='SUPPLIER_CONFIRMED','facts':{'supplier_confirmation_reference':f.supplier_confirmation_reference,'external_operation_id':f.external_operation_id},'evidence_reference':b['evidence_reference'],'source_updated_at':now(),'event_type':'SUPPLIER_FACT_PROJECTED'})
+   life=_project_lifecycle(s,f,order,vertical,state,b['evidence_reference'],existing_life,payment_state)
    s.commit();return {'fulfillment':out(f),'unified_lifecycle':life}
 order_supplier_fulfillment_service=OrderSupplierFulfillmentService()

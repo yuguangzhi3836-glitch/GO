@@ -23,6 +23,8 @@ def now() -> datetime:
 class RideService:
     def search(self, pickup: str, dropoff: str, pickup_at: str, currency: str = "CNY"):
         production_truth_required("RIDE", "SEARCH")
+        if currency != "CNY":
+            raise ValueError("RIDE_ENGINEERING_CURRENCY_INVALID")
         return [
             {"offer_id": "ride_standard", "vehicle_class": "COMFORT", "total_amount_minor": 16800, "currency": currency, "included_wait_minutes": 60, "service_policy": engineering_policy("ride_standard"), "meet_and_greet": True, "cancellation": {"free_until_hours": 24, "late_fee_minor": 8400}, "external_live": False},
             {"offer_id": "ride_premium", "vehicle_class": "PREMIUM", "total_amount_minor": 26800, "currency": currency, "included_wait_minutes": 90, "service_policy": engineering_policy("ride_premium"), "meet_and_greet": True, "cancellation": {"free_until_hours": 24, "late_fee_minor": 13400}, "external_live": False},
@@ -30,6 +32,10 @@ class RideService:
 
     def create(self, account: str, body: dict):
         production_truth_required("RIDE", "CREATE_ORDER")
+        # These engineering offers have fixed CNY prices; accepting another
+        # currency would relabel the amount without a supplier fare or FX quote.
+        if body.get("currency", "CNY") != "CNY":
+            raise ValueError("RIDE_ENGINEERING_CURRENCY_INVALID")
         reject_client_rules(body)
         prices = {"ride_standard": 16800, "ride_premium": 26800}
         total = prices.get(body["offer_id"])

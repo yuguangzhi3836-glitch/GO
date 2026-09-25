@@ -36,7 +36,8 @@ def project_vertical_lifecycle(session, vertical: str, order, evidence_reference
         'supplier_id':supplier_id,
         'title':f'{vertical} {order.order_id}',
         'lifecycle_state':life,
-        'payment_state':'PAID' if paid else 'PENDING',
+        # An unresolved external outcome is not evidence of payment success.
+        'payment_state':'UNKNOWN_EXTERNAL_STATE' if native=='UNKNOWN_EXTERNAL_STATE' else 'PAID' if paid else 'PENDING',
         'refund_state':'REFUND_COMPLETED' if native=='REFUNDED' else 'REFUND_PROCESSING' if native=='REFUND_PENDING' else 'NOT_REQUESTED',
         'change_allowed':life=='CONFIRMED' and native not in {'REFUND_PENDING','CHANGE_PENDING'},
         'cancel_allowed':life in {'CONFIRMED','IN_PROGRESS'} and native not in {'REFUND_PENDING','CHANGE_PENDING'},

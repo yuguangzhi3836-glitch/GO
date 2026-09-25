@@ -13,6 +13,7 @@ def w(fn,*x):
  try:return {"data":fn(*x)}
  except ValueError as e:
   msg=str(e)
+  if msg in {'ATTRACTION_RESOLUTION_QUOTE_ID_REQUIRED','ATTRACTION_RESOLUTION_QUOTE_INVALID'}:raise HTTPException(409,detail=msg)
   if msg=='REFUND_QUOTE_CHANGED_RECONFIRM_REQUIRED':raise HTTPException(409,detail=msg)
   if msg in {'REFUND_ALREADY_PROCESSING','REFUND_LEASE_LOST','UNPAID_CANCELLATION_NOT_ALLOWED','PAYMENT_ALREADY_STARTED_RECONCILIATION_REQUIRED'}:raise HTTPException(409,detail=msg)
   code=503 if "PROVIDER_TRUTH_REQUIRED" in msg else (422 if any(k in msg for k in ("ILLEGAL_STATE","CHANGEABLE","REFUNDABLE","INVALID","RECONCILIATION","INVENTORY_CHANGED")) else (400 if "NON_REFUNDABLE" in msg else 404))
@@ -22,7 +23,7 @@ class Prebook(BaseModel):offer_id:str;visit_date:str;quantity:int=Field(default=
 class Book(BaseModel):prebook_id:str;offer_id:str;visit_date:str;session_time:str|None=None;quantity:int=Field(default=1,ge=1,le=100,strict=True);currency:str="CNY";attendees:list[dict]=Field(default_factory=list);traveler_ids:list[str]=Field(default_factory=list)
 class Change(BaseModel):new_visit_date:str;new_session_time:str|None=None
 class Redeem(BaseModel):evidence_reference:str
-class ExternalState(BaseModel):state:str;evidence_reference:str;supplier_reference:str|None=None;voucher_code:str|None=None
+class ExternalState(BaseModel):state:str;evidence_reference:str;supplier_reference:str|None=None;voucher_code:str|None=None;quote_id:str|None=None
 @router.post("/v1/attractions/search")
 def search(b:Search):
  try:items=a.search(**b.model_dump())
@@ -61,7 +62,7 @@ def redeem(order_id:str,b:Redeem,p:Principal=Depends(consumer_principal),idempot
  return run_idempotent('ATTRACTION_REDEEM',idempotency_key,{'user_id':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(a.redeem,p.user_id,order_id,b.evidence_reference))
 @router.post("/internal/v1/admin/attractions/orders/{order_id}/external-state")
 def external_state(order_id:str,b:ExternalState,p:Principal=Depends(admin_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
- return run_idempotent('ATTRACTION_ADMIN_EXTERNAL_STATE',idempotency_key,{'actor':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(a.admin_external_state,order_id,b.state,b.evidence_reference,p.user_id,b.supplier_reference,b.voucher_code))
+ return run_idempotent('ATTRACTION_ADMIN_EXTERNAL_STATE',idempotency_key,{'actor':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(a.admin_external_state,order_id,b.state,b.evidence_reference,p.user_id,b.supplier_reference,b.voucher_code,b.quote_id))
 
 @router.post('/v1/attractions/orders/{order_id}/cancel-unpaid')
 def cancel_unpaid(order_id:str,p:Principal=Depends(consumer_principal)):

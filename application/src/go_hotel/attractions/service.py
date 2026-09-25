@@ -139,6 +139,7 @@ class AttractionService:
   self.get(account,order_id)
   with transaction(SessionLocal) as s:
    o=s.get(AttractionOrderRow,order_id,with_for_update=True);q=s.get(AttractionChangeQuoteRow,quote_id,with_for_update=True)
+   if o and o.account_id==account and q and q.order_id==order_id and q.status=='PENDING_SUPPLIER' and o.status=='UNKNOWN_EXTERNAL_STATE':return self.out(o)
    if not o or o.account_id!=account or o.status!="CONFIRMED" or not q or q.order_id!=order_id or q.status!="QUOTED" or q.expires_at<now(): raise ValueError("ATTRACTION_CHANGE_QUOTE_NOT_FOUND")
    current,_=self._catalog(o.product_id,q.new_visit_date,q.new_session_time,o.currency)
    capacity.prepare_change_in(s,'ATTRACTION',order_id,quote_id,capacity.attraction_resource(o.product_id,q.new_visit_date,q.new_session_time),current['inventory'],o.quantity)
@@ -167,13 +168,19 @@ class AttractionService:
    window=validity.for_order(self._order_terms(s,order_id),o.visit_date,o.session_time);validity.guard(window,db_now_ms(s))
    voucher_code=o.voucher_code; supplier_reference=o.supplier_reference
    o.status="FULFILLED";o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",order_id,"VOUCHER_REDEEMED",o.status,{"evidence_reference":evidence_reference,"voucher_code":voucher_code,"supplier_reference":supplier_reference,"redemption_window":window,"external_live":False});project_vertical_lifecycle(s,"ATTRACTION",o,evidence_reference,facts={"voucher_code":voucher_code,"supplier_reference":supplier_reference});return self.out(o)
- def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,voucher_code=None):
+ def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,voucher_code=None,quote_id=None):
   if not str(evidence_reference or '').strip() or not str(actor or '').strip(): raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
   state=state.upper()
   with transaction(SessionLocal) as s:
    o=s.get(AttractionOrderRow,order_id,with_for_update=True)
    if not o: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
    pending=s.scalar(select(AttractionChangeQuoteRow).where(AttractionChangeQuoteRow.order_id==order_id,AttractionChangeQuoteRow.status=='PENDING_SUPPLIER').order_by(AttractionChangeQuoteRow.created_at.desc()))
+   if quote_id is not None and (not pending or pending.quote_id!=quote_id):
+    raise ValueError('ATTRACTION_RESOLUTION_QUOTE_INVALID')
+   if pending and quote_id is None:
+    # Even the first change may follow an ordinary UNKNOWN recovery. Require
+    # its identity so that an old unbound recovery cannot confirm this change.
+    raise ValueError('ATTRACTION_RESOLUTION_QUOTE_ID_REQUIRED')
    if state=="UNKNOWN_EXTERNAL_STATE":
     if o.status!="CONFIRMED": raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
     o.status=state;kind="EXTERNAL_STATE_UNKNOWN"

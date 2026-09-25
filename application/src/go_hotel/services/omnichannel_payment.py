@@ -28,6 +28,11 @@ def digest(x):return hashlib.sha256(json.dumps(x,sort_keys=True,separators=(',',
 def out(r):return {c.name:(getattr(r,c.name).isoformat() if isinstance(getattr(r,c.name),datetime) else getattr(r,c.name)) for c in r.__table__.columns}
 def legal_entity(currency):return 'GO_CN' if currency=='CNY' else 'GO_GLOBAL'
 class OmnichannelPaymentService:
+ def create_consumer_intent(self,b,key,payer):
+  # Consumer requests select an existing business obligation, never its payee,
+  # amount, currency or type of money authority. Other obligations are internal.
+  if b.get('business_type') not in ORDER_TYPES:raise ValueError('CONSUMER_PAYMENT_SOURCE_FACT_REQUIRED')
+  return self.create_intent(b,key,payer)
  def bind(self,b):
   if b['channel'] not in CHANNELS:raise ValueError('UNSUPPORTED_PAYMENT_CHANNEL')
   refs=[b.get('credential_reference'),b.get('webhook_key_reference')]

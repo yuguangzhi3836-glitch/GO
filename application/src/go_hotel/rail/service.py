@@ -144,8 +144,8 @@ class RailService:
         try:
             if date.fromisoformat(new_travel_date).isoformat()!=new_travel_date:raise ValueError()
         except (ValueError,TypeError):raise ValueError('RAIL_DATE_INVALID') from None
-        with SessionLocal.begin() as s:
-            o=s.get(RailOrderRow,order_id)
+        with transaction(SessionLocal) as s:
+            o=s.get(RailOrderRow,order_id,with_for_update=True)
             if not o or o.account_id!=account_id or o.status!="TICKETED": raise ValueError("RAIL_ORDER_NOT_CHANGEABLE")
             current=o.current_journey or {}; seat=new_seat_class or current.get("seat_class","SECOND_CLASS")
             count=contracts.party_count(len(o.passengers or []))
@@ -165,6 +165,14 @@ class RailService:
                 if o.status!='TICKETED' or q.status!='QUOTED' or q.expires_at.replace(tzinfo=q.expires_at.tzinfo or UTC).timestamp()*1000<=db_now_ms(s):raise ValueError('RAIL_CHANGE_QUOTE_INVALID')
                 target=capacity.rail_resource(dict(o.current_journey,travel_date=q.new_travel_date,train_no=q.new_train_no,seat_class=q.new_seat_class))
                 capacity.prepare_change_in(s,'RAIL',order_id,quote_id,target,capacity.RAIL_LIMITS[q.new_seat_class],len(o.passengers))
+                # Every peer quote was priced against the old journey. Once a
+                # change starts, it cannot remain executable after that journey
+                # changes. Quote creation takes the same order lock.
+                for peer in s.scalars(select(RailChangeQuoteRow).where(
+                    RailChangeQuoteRow.order_id==order_id,
+                    RailChangeQuoteRow.quote_id!=quote_id,
+                    RailChangeQuoteRow.status=='QUOTED')):
+                    peer.status='SUPERSEDED'
                 q.status='PREPARING';o.status='CHANGE_PENDING';o.updated_at=now()
                 append_vertical_evidence(s,'RAIL',order_id,'CHANGE_PAYMENT_PREPARING',o.status,{'quote_id':quote_id})
                 project_vertical_lifecycle(s,'RAIL',o,'change-preparing:'+quote_id,facts={'quote_id':quote_id})

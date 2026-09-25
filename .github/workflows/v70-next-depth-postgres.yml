@@ -15,7 +15,7 @@ concurrency:
 jobs:
   postgres:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
@@ -113,6 +113,34 @@ jobs:
           metrics={key:sum(int(suite.get(key,0)) for suite in suites) for key in ('tests','failures','errors','skipped')}
           assert metrics==dict(tests=1,failures=0,errors=0,skipped=0),metrics
           print(json.dumps({'outbox_postgres':metrics}))
+          PY
+      - name: Current C01-C14 depth increment on isolated PostgreSQL
+        if: matrix.cell == 'C11'
+        working-directory: application
+        shell: bash
+        env:
+          GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+          APP_ENV: test
+          MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED: 'false'
+        run: |
+          set -euo pipefail
+          python -B -m pytest -q -p no:cacheprovider \
+            tests/test_rental_damage_disputes.py \
+            tests/test_c03_c06_change_quote_fencing.py \
+            tests/test_c05_engineering_currency.py \
+            tests/test_c10_lifecycle_supplier_identity.py \
+            tests/test_c10_unknown_payment_projection.py \
+            tests/test_c10_supplier_money_projection.py \
+            tests/test_c11_consumer_payment_source_boundary.py \
+            --junitxml="$RUNNER_TEMP/next-depth-pg/cell-depth-increment-junit.xml" \
+            2>&1 | tee "$RUNNER_TEMP/next-depth-pg/cell-depth-increment.log"
+          python - <<'PY'
+          import json, os, pathlib, xml.etree.ElementTree as ET
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'next-depth-pg/cell-depth-increment-junit.xml'
+          suites=ET.parse(p).getroot().findall('testsuite')
+          counts={key:sum(int(s.get(key,0)) for s in suites) for key in ('tests','failures','errors','skipped')}
+          assert counts['tests']>0 and counts['failures']==counts['errors']==counts['skipped']==0, counts
+          print(json.dumps({'isolated_postgres_increment':counts}))
           PY
       - name: Bind original logs and process observations
         if: always()
