@@ -15,16 +15,25 @@
   root tree `85ab281cfc10375081fe36c96482cf108c56280b`；GitHub 已 gpgsig 签名；
   `merged_by = chenzhenxi1-sudo`）
   ⇒ **注册后 main = `7db7b2aa5…`**，撤销时"回到注册前"要回到的是 `aa2ec62b…`。
-- Backend 固定引用: `37b31e0a5a8910400e138292d01badc67270b167`（写死在两条 workflow 内；
-  **取代** `a67ea8ac0cbf7990ce7fa1570eef7a0de29bab40`，因为前者含 D-2/D-3 的修复）。
+- Backend 固定引用: `48c2386d2dfc4d2e1e8c914dc7c7376af6bd1eb4`（写死在两条 workflow 内；
+  **取代** `37b31e0a5a8910400e138292d01badc67270b167`（含 D-2/D-3 修复），
+  再往前是 `a67ea8ac0cbf7990ce7fa1570eef7a0de29bab40`。当前这个含 **D-4 修复**
+  （BLOCKED 语义 + `raw-evidence`）。**两条 workflow 用同一个 pin**，避免一轮里跑两个后端版本。
   ⚠⚠ **软依赖**：该 commit 活在**未合并**的分支 `cc/c13-c14-lite-v2-defect-fixes-20260925` 上，
   远端可达性实测 `GET /commits/…` = **HTTP 200**。⇒ **不得删除该分支**，否则下一次 dispatch 的
   第一段 checkout 就会失败，而**从 `main` 上看不出任何异常**。这是"钉死 ref"必然带来的代价。
-- 🆕 **替换注册 = PR #253**（Draft，base=`main`@`7db7b2aa5`，**2 文件 / +81-7**，单 commit
-  `55e437edcf673856bd875b37dab28be86cd22386`，`mergeable=true` / `mergeable_state=clean`）：
-  修 D-1（changed-path 边界）与 D-2（workflow identity）。合并后 `main` 上这两条 workflow 的
-  注册内容即为该版本。⚠ **推 #253 时发现 `github.com:443` 直连不通**（`api.github.com` 正常），
-  本次 push 显式走本机 Clash `127.0.0.1:7897`；**未改任何 Clash 配置 / 规则 / DNS / TUN**。
+- ✅ **替换注册 = PR #253**（**已 MERGED**，base=`main`@`7db7b2aa5`，**2 文件 / +81-7**，单 commit
+  `55e437edcf673856bd875b37dab28be86cd22386`）：
+  修 D-1（changed-path 边界）与 D-2（workflow identity）。
+  **`REGISTRATION_MERGE_SHA_2 = 3cd7be752330f377e3446942da4f881df13d183d`**
+  （merge commit；`parent1 = 7db7b2aa5…`、`parent2 = 55e437edc…`；2026-09-25 22:34:18 +0800）
+  ⇒ **当前 `main` = `3cd7be75…`**。⚠ 推 #253 时发现 `github.com:443` 直连不通（`api.github.com` 正常），
+  当时显式走本机 Clash `127.0.0.1:7897`；**未改任何 Clash 配置 / 规则 / DNS / TUN**。
+  （后续已按 Eason 指示把 github 走代理设为持久规则，见 `~/.workbuddy/MEMORY.md`。）
+- 🆕 **D-4 修复 = PR #254**（Draft，base=`main`@`3cd7be75`，**2 文件 / +50-7**，单 commit
+  `2958b494317d6c959c9e988f86bfe895feb4767f`）：修 BLOCKED 语义（非通过结论必须带证据、
+  不得伪装成 provider failure）＋ C14 增加 **always-publish raw review evidence**。
+  合并后 `main` 上两条 workflow 即为该版本。
 
 ---
 
@@ -45,7 +54,8 @@ run、artifact 或 Evidence，**不需要**改写 `main` 历史，**不需要**�
 
 ```text
 main（注册前 baseline）                = aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0
-main（当前，注册已合并）               = 7db7b2aa52ecabc1ff1c92d9d1673f44f5ce68c5
+main（注册 #1 合并后）                 = 7db7b2aa52ecabc1ff1c92d9d1673f44f5ce68c5
+main（注册 #2 合并后 = **当前**）       = 3cd7be752330f377e3446942da4f881df13d183d
 main 上 workflow 总数                  = 26（注册前）→ 28（注册后，实测 28）
 main 上 c13/c14 workflow              = 0（注册前）；注册后 = 2（PR #252）
 main 上 control-plane/c13-c14-lite   = 不存在（backend 从未合并进 main）
@@ -95,6 +105,10 @@ C13 production run                     : 0（两轮都只派发 C14）
 历史 POC run                          : 若干次（POC_ONLY），是历史事实，**不主动删除**
                                         ⚠ 其 artifact 同样受 GitHub retention 期限约束；若要作为
                                           长期审计证据，须在到期前归档（见 §2.I）
+🆕 **raw review evidence（PR #254 合并后生效）**: C14 每次 run 还会产出
+  artifact `c13c14-lite-c14-raw-<candidate_sha>`（spec/facts/contract/outcome/scope +
+  seal 结果与拒绝记录 + `raw_evidence_manifest.json`，90 天）。它**不是** sealed bundle：
+  封存件仍只在 seal 成功时发布。⚠ 同样受 retention 约束 ⇒ 若作为长期审计证据须提前归档。
 ```
 
 ### 1.3 Host secret 状态（两台，各 3 个文件）
@@ -182,12 +196,16 @@ last_valid_round = <最后一个有效 round 的 id>
 **这是最干净的一步，也是设计成这样的原因。**
 
 ```bash
-# 顺序不能颠倒：先撤替换注册，再撤原始注册；颠倒会与后来改动过的文件冲突。
+# 顺序不能颠倒：先撤最后一次改动，再依次往回；颠倒会与后来改动过的文件冲突。
 # 在 main 上
-git revert --no-edit <PR #253 的 merge commit>     # 文件回到注册时的内容
+git revert --no-edit 2958b494317d6c959c9e988f86bfe895feb4767f   # PR #254（D-4 修复）→ 回到 3cd7be75 的内容
+git revert --no-edit 3cd7be752330f377e3446942da4f881df13d183d   # PR #253 的 merge → 回到注册 #1 的内容
 git revert --no-edit 85533dd5790b8cfbbf48e3ae387cb47aab82a8d3   # 删除两个文件
 git push origin main          # 走正常 PR 流程亦可
 ```
+
+⚠ `2958b4943` 尚未合并：**若 #254 未合并，则跳过第一条**，从 `3cd7be75`（#253 的 merge）开始。
+⚠ 每一步都要 `git apply --check --reverse` 先验证再动手；不要跳序。
 
 已用 `git apply --check --reverse` 验证：`85533dd5` 的 patch 反向应用**完整移除两个文件、528 行全删、
 不留残件**；`55e437edc` 的 patch 亦**完整反向应用**（REVERSE-APPLY OK）。
