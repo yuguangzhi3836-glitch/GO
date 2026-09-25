@@ -9,8 +9,13 @@ const browser=await chromium.launch({headless:true,...(executablePath?{executabl
 const fixture={order_id:'order1',order_status:'COMPLETED',currency:'CNY',actor_type:'CONSUMER',actor_id:'owner',writes_enabled:true,actions:[],obligation:null,release:null,receipts:[],cases:[{case:{case_id:'case1',version:1,status:'AWAITING_CUSTOMER',claimed_minor:10000,currency:'CNY',awarded_minor:null,appeals:[],decision_reason:'',money_instruction_state:'BLOCKED_PENDING_DECISION'},actions:['RESPONSE']}]};
 async function setup(behavior='normal'){
   const page=await browser.newPage({viewport:{width:390,height:844}});
+  page.on('pageerror',error=>console.error('widget pageerror:',error.message));
   await page.route('**/*',r=>r.fulfill({contentType:'text/html',body:'<main><section id="widget"></section></main>'}));
-  await page.goto('http://rental.test/');
+  // Match the secure browser context of HTTPS deployments and loopback HTTP.
+  // Every request is still intercepted above; this never contacts rental.test.
+  await page.goto('https://rental.test/');
+  const context=await page.evaluate(()=>({secure:window.isSecureContext,uuid:typeof crypto.randomUUID}));
+  assert.deepEqual(context,{secure:true,uuid:'function'},'widget fixture requires native secure-context UUID support');
   await page.evaluate(({fixture,behavior})=>{
     window.state=fixture;window.calls=[];window.behavior=behavior;
     window.request=async(path,options)=>{

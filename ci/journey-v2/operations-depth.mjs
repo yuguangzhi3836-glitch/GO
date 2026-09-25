@@ -42,7 +42,22 @@ export async function prepareOperations(ctx) {
   return ops;
 }
 
-async function policyPage(c,p){await p.goto(c.origin+'/go-admin/#/ride-policy-operations');await p.getByRole('heading',{name:'用车取消政策运营',exact:true}).waitFor();await p.locator('[data-draft=ride_standard]').waitFor();}
+async function policyPage(c,p){
+  await p.goto(c.origin+'/go-admin/#/ride-policy-operations');
+  await p.getByRole('heading',{name:'用车取消政策运营',exact:true}).waitFor();
+  // Navigating to the same hash is not a new render. Another administrator may
+  // have changed the registry since this page was opened. Refresh via the real
+  // workspace control, then wait for its authoritative read and completed draw.
+  const refresh=p.locator('#view [data-refresh]:not([disabled])');
+  await refresh.waitFor();
+  const response=p.waitForResponse(r=>r.request().method()==='GET'&&new URL(r.url()).pathname===policyBase);
+  await refresh.click();const r=await response;assert.ok(r.ok(),await r.text());
+  const snapshot=(await r.json()).data;
+  await refresh.waitFor();
+  assert.equal(snapshot.registry_enabled,true);
+  await p.locator('[data-draft=ride_standard]').waitFor();
+  return snapshot;
+}
 async function draft(c,offer,version,after){
   const p=c.pages.maker;await policyPage(c,p);const f=p.locator(`[data-draft="${offer}"]`);
   for(const [name,value] of Object.entries({version,hours:'24',before:'0',after:String(after),from:c.day(-2)+'T00:00',until:c.day(90)+'T23:59'}))await f.locator(`[name="${name}"]`).fill(value);
@@ -53,7 +68,11 @@ async function draft(c,offer,version,after){
   assert.ok(row);assert.equal(row.state,'DRAFT');return row;
 }
 async function transition(c,row,action,p){
-  await policyPage(c,p);const f=p.locator(`[data-version="${row.policy_id}"]`);await f.locator('[data-confirm]').check();
+  const snapshot=await policyPage(c,p);
+  const current=snapshot.offers.flatMap(o=>o.versions).find(v=>v.policy_id===row.policy_id);
+  assert.ok(current,'fresh policy snapshot must contain the target version');
+  assert.equal(current[action==='activate'?'can_activate':'can_revoke'],true,'fresh actor authority must allow the requested action');
+  const f=p.locator(`[data-version="${row.policy_id}"]`);await f.locator('[data-confirm]').check();
   const response=p.waitForResponse(r=>r.request().method()==='POST'&&new URL(r.url()).pathname===`${policyBase}/${row.policy_id}/${action}`);
   await f.getByRole('button',{name:action==='activate'?'由另一管理员激活工程版本':'撤销此版本',exact:true}).click();const r=await response;assert.ok(r.ok(),await r.text());
   const state=await c.read(p,policyBase);assert.equal(state.offers.flatMap(o=>o.versions).find(v=>v.policy_id===row.policy_id).state,action==='activate'?'ACTIVE':'REVOKED');
