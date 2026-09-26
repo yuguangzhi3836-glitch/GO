@@ -91,7 +91,7 @@ def crash(*a,**kw):
 setattr(r.vertical_money_bridge,method,crash)
 rail_service.admin_external_state(os.environ['ORDER'],state,'isolated://resolution','ops','CHANGED' if state=='TICKETED' else None,['NEW-A','NEW-B'] if state=='TICKETED' else [],os.environ['QUOTE'])
 '''
-    env={**os.environ,'DATABASE_URL':str(engine.url),'PYTHONPATH':os.path.abspath('src'),'ORDER':c[2],'QUOTE':c[3],'DECISION':decision}
+    env={**os.environ,'DATABASE_URL':engine.url.render_as_string(hide_password=False),'PYTHONPATH':os.path.abspath('src'),'ORDER':c[2],'QUOTE':c[3],'DECISION':decision}
     p=subprocess.run([sys.executable,'-c',code],env=env,capture_output=True,timeout=30)
     assert p.returncode==72,p.stderr.decode()
     with pytest.raises(ValueError,match='ALREADY_PROCESSING'):resolve(c,decision)

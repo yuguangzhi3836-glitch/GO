@@ -586,17 +586,22 @@
   ],
   "development_candidate": {
     "pr": 265,
-    "branch": "integration/tickets-preinventory-20260926",
-    "previous_product_commit": "549263ae86185dbed571c164026e484cd339ea33",
-    "sqlite": {
-      "tests": 217,
-      "failures": 0,
-      "errors": 0,
-      "skipped": 0,
-      "independent": false
+    "remote_head": "90adfa9b664f9ca712840a4caa700b804b851268",
+    "remote_application_tree": "b45058e3e0545c71e2d91ab90feb4bf4fb2116f8",
+    "remote_ci": {
+      "run": 36242875841,
+      "passed": 215,
+      "failed": 2,
+      "sqlite_migration_cases_included": 2
     },
-    "postgres_status": "CURRENT_CANDIDATE_PENDING",
-    "superseded_postgres_run": 36242498675,
-    "failed_infrastructure_run": 36242406400
+    "local_patch": {
+      "tests": 219,
+      "failed": 0,
+      "skipped": 0,
+      "files": 3
+    },
+    "upload": "AUTHORIZED_PENDING_UPLOAD",
+    "reason": "User explicitly approved upload to existing private GO Draft PR265 and isolated CI on 2026-09-26",
+    "C13": "NOT_EXECUTED"
   }
 }

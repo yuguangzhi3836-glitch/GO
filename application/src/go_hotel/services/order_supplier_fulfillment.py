@@ -85,6 +85,10 @@ class OrderSupplierFulfillmentService:
     'ATTRACTION':{'REFUNDED','FULFILLED','CLOSED_BY_SUPPLIER','FAILED','CANCELLED'},
    }
    if str(order.status) in terminal_by_vertical.get(vertical,set()):raise ValueError('TERMINAL_ORDER_SUPPLIER_FACT_REJECTED')
+   if vertical in {'FLIGHT','RAIL'} and f.state=='SUPPLIER_CONFIRMED' and order.status!='TICKETED':
+    # A delayed initial issuance receipt cannot settle a later change/refund
+    # episode or refresh its read model back to an apparent success.
+    raise ValueError('TICKET_OPERATION_RECONCILIATION_REQUIRED')
    existing_life=s.scalar(select(Life).where(Life.vertical==vertical,Life.order_id==f.business_id))
    projected_life='CONFIRMED' if state=='SUPPLIER_CONFIRMED' else ('FAILED' if state=='SUPPLIER_FAILED' else 'UNKNOWN_EXTERNAL_STATE')
    if existing_life and existing_life.lifecycle_state in {'COMPLETED','CANCELLED','FAILED'} and projected_life!=existing_life.lifecycle_state:

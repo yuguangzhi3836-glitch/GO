@@ -20,7 +20,9 @@ def business_facts():
               m.RailOrderRow, m.RailChangeQuoteRow, m.FlightChangeResolutionRow,
               m.RailChangeResolutionRow, m.OmnichannelMoneyMovementRow,
               m.OmnichannelLedgerEntryRow, m.VerticalCapacityClaimRow,
-              m.VerticalCapacityBucketRow]
+              m.VerticalCapacityBucketRow, m.ConsumerUnifiedLifecycleRow,
+              m.ConsumerUnifiedLifecycleEventRow, m.OrderSupplierFulfillmentRow,
+              m.OrderSupplierFulfillmentEventRow, m.JourneyRecoveryEvidenceChainRow]
     with SessionLocal() as s:
         return {model.__name__: sorted(json.dumps(
             {c.name: getattr(row, c.name) for c in model.__table__.columns},
@@ -186,4 +188,20 @@ def test_admin_cannot_invent_initial_flight_tickets_from_unknown_supplier():
     before=business_facts()
     with pytest.raises(ValueError, match='FLIGHT_.*(TICKET|REFERENCE).*INVALID'):
         svc.admin_external_state(oid,'TICKETED','isolated://admin-check','order-operator')
+    assert business_facts()==before
+
+
+@pytest.mark.parametrize('vertical',['FLIGHT','RAIL'])
+def test_initial_supplier_replay_cannot_publish_success_over_pending_change(vertical):
+    from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as fulfillment
+    svc, oid = pending_order(vertical)
+    svc.checkout('owner',oid,'isolated')
+    fid, fact = supplier_fact(oid,['ORIGINAL-TICKET'])
+    fulfillment.record_supplier_fact(fid,fact)
+    q=svc.change_quote('owner',oid,(datetime.now().date()+timedelta(days=12)).isoformat())
+    svc.execute_change('owner',oid,q['quote_id'])
+    assert svc.order('owner',oid)['status']=='UNKNOWN_EXTERNAL_STATE'
+    before=business_facts()
+    with pytest.raises(ValueError,match='TICKET_OPERATION_RECONCILIATION_REQUIRED'):
+        fulfillment.record_supplier_fact(fid,fact)
     assert business_facts()==before

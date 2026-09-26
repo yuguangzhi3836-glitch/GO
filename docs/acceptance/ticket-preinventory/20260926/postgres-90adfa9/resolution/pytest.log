@@ -1,0 +1,615 @@
+...............................FF....................................... [ 75%]
+........................                                                 [100%]
+=================================== FAILURES ===================================
+_______________ test_process_exit_after_money_recovers[TICKETED] _______________
+
+decision = 'TICKETED'
+
+    @pytest.mark.parametrize('decision',['TICKETED','FAILED'])
+    def test_process_exit_after_money_recovers(decision):
+        c=pending()
+        code='''import os
+    from go_hotel.services import rail_change_resolution as r
+    from go_hotel.rail.service import rail_service
+    state=os.environ['DECISION']
+    method='capture_adjustment' if state=='TICKETED' else 'release_adjustment'
+    original=getattr(r.vertical_money_bridge,method)
+    def crash(*a,**kw):
+     original(*a,**kw)
+     os._exit(72)
+    setattr(r.vertical_money_bridge,method,crash)
+    rail_service.admin_external_state(os.environ['ORDER'],state,'isolated://resolution','ops','CHANGED' if state=='TICKETED' else None,['NEW-A','NEW-B'] if state=='TICKETED' else [],os.environ['QUOTE'])
+    '''
+        env={**os.environ,'DATABASE_URL':str(engine.url),'PYTHONPATH':os.path.abspath('src'),'ORDER':c[2],'QUOTE':c[3],'DECISION':decision}
+        p=subprocess.run([sys.executable,'-c',code],env=env,capture_output=True,timeout=30)
+>       assert p.returncode==72,p.stderr.decode()
+E       AssertionError: Traceback (most recent call last):
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 149, in __init__
+E             self._dbapi_connection = engine.raw_connection()
+E                                      ^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3284, in raw_connection
+E             return self.pool.connect()
+E                    ^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 445, in connect
+E             return _ConnectionFairy._checkout(self)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1287, in _checkout
+E             fairy = _ConnectionRecord.checkout(pool)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 709, in checkout
+E             rec = pool._do_get()
+E                   ^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 176, in _do_get
+E             with util.safe_reraise():
+E                  ^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+E             raise exc_value.with_traceback(exc_tb)
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 174, in _do_get
+E             return self._create_connection()
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 386, in _create_connection
+E             return _ConnectionRecord(self)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 671, in __init__
+E             self.__connect()
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+E             with util.safe_reraise():
+E                  ^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+E             raise exc_value.with_traceback(exc_tb)
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 891, in __connect
+E             self.dbapi_connection = connection = pool._invoke_creator(self)
+E                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 645, in connect
+E             return dialect.connect(*cargs_tup, **cparams)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 857, in connect
+E             return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/psycopg/connection.py", line 126, in connect
+E             raise last_ex.with_traceback(None)
+E         psycopg.OperationalError: connection failed: connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "go_ci"
+E         
+E         The above exception was the direct cause of the following exception:
+E         
+E         Traceback (most recent call last):
+E           File "<string>", line 11, in <module>
+E           File "/home/runner/work/GO/GO/application/src/go_hotel/rail/service.py", line 215, in admin_external_state
+E             return reconcile(order_id,state,evidence_reference,actor,supplier_reference,ticket_numbers,quote_id,self._order)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/runner/work/GO/GO/application/src/go_hotel/services/rail_change_resolution.py", line 84, in reconcile
+E             o = s.get(Order, order_id, with_for_update=True)
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 3845, in get
+E             return self._get_impl(
+E                    ^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4032, in _get_impl
+E             return db_load_fn(
+E                    ^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/loading.py", line 702, in _load_on_pk_identity
+E             session.execute(
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2473, in execute
+E             return self._execute_internal(
+E                    ^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2350, in _execute_internal
+E             conn = self._connection_for_bind(bind)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2173, in _connection_for_bind
+E             return trans._connection_for_bind(engine, execution_options)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "<sqlalchemy generated _go() wrapper for sqlalchemy.orm.session.SessionTransaction._connection_for_bind>", line 2, in _connection_for_bind
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+E             ret_value = fn(self, *arg, **kw)
+E                         ^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1203, in _connection_for_bind
+E             conn = bind.connect()
+E                    ^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3260, in connect
+E             return self._connection_cls(self)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 151, in __init__
+E             Connection._handle_dbapi_exception_noconnection(
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2417, in _handle_dbapi_exception_noconnection
+E             raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 149, in __init__
+E             self._dbapi_connection = engine.raw_connection()
+E                                      ^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3284, in raw_connection
+E             return self.pool.connect()
+E                    ^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 445, in connect
+E             return _ConnectionFairy._checkout(self)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1287, in _checkout
+E             fairy = _ConnectionRecord.checkout(pool)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 709, in checkout
+E             rec = pool._do_get()
+E                   ^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 176, in _do_get
+E             with util.safe_reraise():
+E                  ^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+E             raise exc_value.with_traceback(exc_tb)
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 174, in _do_get
+E             return self._create_connection()
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 386, in _create_connection
+E             return _ConnectionRecord(self)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 671, in __init__
+E             self.__connect()
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+E             with util.safe_reraise():
+E                  ^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+E             raise exc_value.with_traceback(exc_tb)
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 891, in __connect
+E             self.dbapi_connection = connection = pool._invoke_creator(self)
+E                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 645, in connect
+E             return dialect.connect(*cargs_tup, **cparams)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 857, in connect
+E             return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/psycopg/connection.py", line 126, in connect
+E             raise last_ex.with_traceback(None)
+E         sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "go_ci"
+E         (Background on this error at: https://sqlalche.me/e/21/e3q8)
+E         
+E       assert 1 == 72
+E        +  where 1 = CompletedProcess(args=['/opt/hostedtoolcache/Python/3.12.14/x64/bin/python', '-c', "import os\nfrom go_hotel.services ...TAL:  password authentication failed for user "go_ci"\n(Background on this error at: https://sqlalche.me/e/21/e3q8)\n').returncode
+
+tests/test_depth22_rail_resolution.py:96: AssertionError
+________________ test_process_exit_after_money_recovers[FAILED] ________________
+
+decision = 'FAILED'
+
+    @pytest.mark.parametrize('decision',['TICKETED','FAILED'])
+    def test_process_exit_after_money_recovers(decision):
+        c=pending()
+        code='''import os
+    from go_hotel.services import rail_change_resolution as r
+    from go_hotel.rail.service import rail_service
+    state=os.environ['DECISION']
+    method='capture_adjustment' if state=='TICKETED' else 'release_adjustment'
+    original=getattr(r.vertical_money_bridge,method)
+    def crash(*a,**kw):
+     original(*a,**kw)
+     os._exit(72)
+    setattr(r.vertical_money_bridge,method,crash)
+    rail_service.admin_external_state(os.environ['ORDER'],state,'isolated://resolution','ops','CHANGED' if state=='TICKETED' else None,['NEW-A','NEW-B'] if state=='TICKETED' else [],os.environ['QUOTE'])
+    '''
+        env={**os.environ,'DATABASE_URL':str(engine.url),'PYTHONPATH':os.path.abspath('src'),'ORDER':c[2],'QUOTE':c[3],'DECISION':decision}
+        p=subprocess.run([sys.executable,'-c',code],env=env,capture_output=True,timeout=30)
+>       assert p.returncode==72,p.stderr.decode()
+E       AssertionError: Traceback (most recent call last):
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 149, in __init__
+E             self._dbapi_connection = engine.raw_connection()
+E                                      ^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3284, in raw_connection
+E             return self.pool.connect()
+E                    ^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 445, in connect
+E             return _ConnectionFairy._checkout(self)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1287, in _checkout
+E             fairy = _ConnectionRecord.checkout(pool)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 709, in checkout
+E             rec = pool._do_get()
+E                   ^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 176, in _do_get
+E             with util.safe_reraise():
+E                  ^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+E             raise exc_value.with_traceback(exc_tb)
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 174, in _do_get
+E             return self._create_connection()
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 386, in _create_connection
+E             return _ConnectionRecord(self)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 671, in __init__
+E             self.__connect()
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+E             with util.safe_reraise():
+E                  ^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+E             raise exc_value.with_traceback(exc_tb)
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 891, in __connect
+E             self.dbapi_connection = connection = pool._invoke_creator(self)
+E                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 645, in connect
+E             return dialect.connect(*cargs_tup, **cparams)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 857, in connect
+E             return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/psycopg/connection.py", line 126, in connect
+E             raise last_ex.with_traceback(None)
+E         psycopg.OperationalError: connection failed: connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "go_ci"
+E         
+E         The above exception was the direct cause of the following exception:
+E         
+E         Traceback (most recent call last):
+E           File "<string>", line 11, in <module>
+E           File "/home/runner/work/GO/GO/application/src/go_hotel/rail/service.py", line 215, in admin_external_state
+E             return reconcile(order_id,state,evidence_reference,actor,supplier_reference,ticket_numbers,quote_id,self._order)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/home/runner/work/GO/GO/application/src/go_hotel/services/rail_change_resolution.py", line 84, in reconcile
+E             o = s.get(Order, order_id, with_for_update=True)
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 3845, in get
+E             return self._get_impl(
+E                    ^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4032, in _get_impl
+E             return db_load_fn(
+E                    ^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/loading.py", line 702, in _load_on_pk_identity
+E             session.execute(
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2473, in execute
+E             return self._execute_internal(
+E                    ^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2350, in _execute_internal
+E             conn = self._connection_for_bind(bind)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2173, in _connection_for_bind
+E             return trans._connection_for_bind(engine, execution_options)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "<sqlalchemy generated _go() wrapper for sqlalchemy.orm.session.SessionTransaction._connection_for_bind>", line 2, in _connection_for_bind
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+E             ret_value = fn(self, *arg, **kw)
+E                         ^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1203, in _connection_for_bind
+E             conn = bind.connect()
+E                    ^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3260, in connect
+E             return self._connection_cls(self)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 151, in __init__
+E             Connection._handle_dbapi_exception_noconnection(
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2417, in _handle_dbapi_exception_noconnection
+E             raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 149, in __init__
+E             self._dbapi_connection = engine.raw_connection()
+E                                      ^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3284, in raw_connection
+E             return self.pool.connect()
+E                    ^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 445, in connect
+E             return _ConnectionFairy._checkout(self)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1287, in _checkout
+E             fairy = _ConnectionRecord.checkout(pool)
+E                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 709, in checkout
+E             rec = pool._do_get()
+E                   ^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 176, in _do_get
+E             with util.safe_reraise():
+E                  ^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+E             raise exc_value.with_traceback(exc_tb)
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 174, in _do_get
+E             return self._create_connection()
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 386, in _create_connection
+E             return _ConnectionRecord(self)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 671, in __init__
+E             self.__connect()
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+E             with util.safe_reraise():
+E                  ^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+E             raise exc_value.with_traceback(exc_tb)
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 891, in __connect
+E             self.dbapi_connection = connection = pool._invoke_creator(self)
+E                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 645, in connect
+E             return dialect.connect(*cargs_tup, **cparams)
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 857, in connect
+E             return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+E                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/psycopg/connection.py", line 126, in connect
+E             raise last_ex.with_traceback(None)
+E         sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "go_ci"
+E         (Background on this error at: https://sqlalche.me/e/21/e3q8)
+E         
+E       assert 1 == 72
+E        +  where 1 = CompletedProcess(args=['/opt/hostedtoolcache/Python/3.12.14/x64/bin/python', '-c', "import os\nfrom go_hotel.services ...TAL:  password authentication failed for user "go_ci"\n(Background on this error at: https://sqlalche.me/e/21/e3q8)\n').returncode
+
+tests/test_depth22_rail_resolution.py:96: AssertionError
+=============================== warnings summary ===============================
+tests/test_depth48_flight_changes.py::test_selected_legs_replace_only_their_passenger_tickets_then_refund[ROUND_TRIP-changes0]
+  /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_depth22_rail_resolution.py::test_migration_retains_nonempty_journal
+tests/test_depth22_rail_resolution.py::test_migration_retains_nonempty_journal
+tests/test_depth22_rail_resolution.py::test_migration_retains_nonempty_journal
+tests/test_depth22_rail_resolution.py::test_migration_retains_nonempty_journal
+tests/test_depth22_rail_resolution.py::test_migration_retains_nonempty_journal
+  /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_depth22_rail_resolution.py::test_process_exit_after_money_recovers[TICKETED] - AssertionError: Traceback (most recent call last):
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 149, in __init__
+      self._dbapi_connection = engine.raw_connection()
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3284, in raw_connection
+      return self.pool.connect()
+             ^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 445, in connect
+      return _ConnectionFairy._checkout(self)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1287, in _checkout
+      fairy = _ConnectionRecord.checkout(pool)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 709, in checkout
+      rec = pool._do_get()
+            ^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 176, in _do_get
+      with util.safe_reraise():
+           ^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+      raise exc_value.with_traceback(exc_tb)
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 174, in _do_get
+      return self._create_connection()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 386, in _create_connection
+      return _ConnectionRecord(self)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 671, in __init__
+      self.__connect()
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+      with util.safe_reraise():
+           ^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+      raise exc_value.with_traceback(exc_tb)
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 891, in __connect
+      self.dbapi_connection = connection = pool._invoke_creator(self)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 645, in connect
+      return dialect.connect(*cargs_tup, **cparams)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 857, in connect
+      return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/psycopg/connection.py", line 126, in connect
+      raise last_ex.with_traceback(None)
+  psycopg.OperationalError: connection failed: connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "go_ci"
+  
+  The above exception was the direct cause of the following exception:
+  
+  Traceback (most recent call last):
+    File "<string>", line 11, in <module>
+    File "/home/runner/work/GO/GO/application/src/go_hotel/rail/service.py", line 215, in admin_external_state
+      return reconcile(order_id,state,evidence_reference,actor,supplier_reference,ticket_numbers,quote_id,self._order)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/home/runner/work/GO/GO/application/src/go_hotel/services/rail_change_resolution.py", line 84, in reconcile
+      o = s.get(Order, order_id, with_for_update=True)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 3845, in get
+      return self._get_impl(
+             ^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4032, in _get_impl
+      return db_load_fn(
+             ^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/loading.py", line 702, in _load_on_pk_identity
+      session.execute(
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2473, in execute
+      return self._execute_internal(
+             ^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2350, in _execute_internal
+      conn = self._connection_for_bind(bind)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2173, in _connection_for_bind
+      return trans._connection_for_bind(engine, execution_options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "<sqlalchemy generated _go() wrapper for sqlalchemy.orm.session.SessionTransaction._connection_for_bind>", line 2, in _connection_for_bind
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+      ret_value = fn(self, *arg, **kw)
+                  ^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1203, in _connection_for_bind
+      conn = bind.connect()
+             ^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3260, in connect
+      return self._connection_cls(self)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 151, in __init__
+      Connection._handle_dbapi_exception_noconnection(
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2417, in _handle_dbapi_exception_noconnection
+      raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 149, in __init__
+      self._dbapi_connection = engine.raw_connection()
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3284, in raw_connection
+      return self.pool.connect()
+             ^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 445, in connect
+      return _ConnectionFairy._checkout(self)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1287, in _checkout
+      fairy = _ConnectionRecord.checkout(pool)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 709, in checkout
+      rec = pool._do_get()
+            ^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 176, in _do_get
+      with util.safe_reraise():
+           ^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+      raise exc_value.with_traceback(exc_tb)
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 174, in _do_get
+      return self._create_connection()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 386, in _create_connection
+      return _ConnectionRecord(self)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 671, in __init__
+      self.__connect()
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+      with util.safe_reraise():
+           ^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+      raise exc_value.with_traceback(exc_tb)
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 891, in __connect
+      self.dbapi_connection = connection = pool._invoke_creator(self)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 645, in connect
+      return dialect.connect(*cargs_tup, **cparams)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 857, in connect
+      return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/psycopg/connection.py", line 126, in connect
+      raise last_ex.with_traceback(None)
+  sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "go_ci"
+  (Background on this error at: https://sqlalche.me/e/21/e3q8)
+  
+assert 1 == 72
+ +  where 1 = CompletedProcess(args=['/opt/hostedtoolcache/Python/3.12.14/x64/bin/python', '-c', "import os\nfrom go_hotel.services ...TAL:  password authentication failed for user "go_ci"\n(Background on this error at: https://sqlalche.me/e/21/e3q8)\n').returncode
+FAILED tests/test_depth22_rail_resolution.py::test_process_exit_after_money_recovers[FAILED] - AssertionError: Traceback (most recent call last):
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 149, in __init__
+      self._dbapi_connection = engine.raw_connection()
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3284, in raw_connection
+      return self.pool.connect()
+             ^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 445, in connect
+      return _ConnectionFairy._checkout(self)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1287, in _checkout
+      fairy = _ConnectionRecord.checkout(pool)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 709, in checkout
+      rec = pool._do_get()
+            ^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 176, in _do_get
+      with util.safe_reraise():
+           ^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+      raise exc_value.with_traceback(exc_tb)
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 174, in _do_get
+      return self._create_connection()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 386, in _create_connection
+      return _ConnectionRecord(self)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 671, in __init__
+      self.__connect()
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+      with util.safe_reraise():
+           ^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+      raise exc_value.with_traceback(exc_tb)
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 891, in __connect
+      self.dbapi_connection = connection = pool._invoke_creator(self)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 645, in connect
+      return dialect.connect(*cargs_tup, **cparams)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 857, in connect
+      return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/psycopg/connection.py", line 126, in connect
+      raise last_ex.with_traceback(None)
+  psycopg.OperationalError: connection failed: connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "go_ci"
+  
+  The above exception was the direct cause of the following exception:
+  
+  Traceback (most recent call last):
+    File "<string>", line 11, in <module>
+    File "/home/runner/work/GO/GO/application/src/go_hotel/rail/service.py", line 215, in admin_external_state
+      return reconcile(order_id,state,evidence_reference,actor,supplier_reference,ticket_numbers,quote_id,self._order)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/home/runner/work/GO/GO/application/src/go_hotel/services/rail_change_resolution.py", line 84, in reconcile
+      o = s.get(Order, order_id, with_for_update=True)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 3845, in get
+      return self._get_impl(
+             ^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4032, in _get_impl
+      return db_load_fn(
+             ^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/loading.py", line 702, in _load_on_pk_identity
+      session.execute(
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2473, in execute
+      return self._execute_internal(
+             ^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2350, in _execute_internal
+      conn = self._connection_for_bind(bind)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2173, in _connection_for_bind
+      return trans._connection_for_bind(engine, execution_options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "<sqlalchemy generated _go() wrapper for sqlalchemy.orm.session.SessionTransaction._connection_for_bind>", line 2, in _connection_for_bind
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+      ret_value = fn(self, *arg, **kw)
+                  ^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1203, in _connection_for_bind
+      conn = bind.connect()
+             ^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3260, in connect
+      return self._connection_cls(self)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 151, in __init__
+      Connection._handle_dbapi_exception_noconnection(
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2417, in _handle_dbapi_exception_noconnection
+      raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 149, in __init__
+      self._dbapi_connection = engine.raw_connection()
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3284, in raw_connection
+      return self.pool.connect()
+             ^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 445, in connect
+      return _ConnectionFairy._checkout(self)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1287, in _checkout
+      fairy = _ConnectionRecord.checkout(pool)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 709, in checkout
+      rec = pool._do_get()
+            ^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 176, in _do_get
+      with util.safe_reraise():
+           ^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+      raise exc_value.with_traceback(exc_tb)
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 174, in _do_get
+      return self._create_connection()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 386, in _create_connection
+      return _ConnectionRecord(self)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 671, in __init__
+      self.__connect()
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+      with util.safe_reraise():
+           ^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 166, in __exit__
+      raise exc_value.with_traceback(exc_tb)
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 891, in __connect
+      self.dbapi_connection = connection = pool._invoke_creator(self)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 645, in connect
+      return dialect.connect(*cargs_tup, **cparams)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 857, in connect
+      return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/psycopg/connection.py", line 126, in connect
+      raise last_ex.with_traceback(None)
+  sqlalchemy.exc.OperationalError: (psycopg.OperationalError) connection failed: connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "go_ci"
+  (Background on this error at: https://sqlalche.me/e/21/e3q8)
+  
+assert 1 == 72
+ +  where 1 = CompletedProcess(args=['/opt/hostedtoolcache/Python/3.12.14/x64/bin/python', '-c', "import os\nfrom go_hotel.services ...TAL:  password authentication failed for user "go_ci"\n(Background on this error at: https://sqlalche.me/e/21/e3q8)\n').returncode
+2 failed, 94 passed, 6 warnings in 316.74s (0:05:16)
