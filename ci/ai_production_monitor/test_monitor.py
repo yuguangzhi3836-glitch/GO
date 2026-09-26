@@ -89,6 +89,14 @@ class MonitorTests(unittest.TestCase):
             archive.writestr("nested/c14_bundle.json", json.dumps(payload))
         self.assertEqual(monitor._bundle_from_zip(buf.getvalue(), "c14"), payload)
 
+    def test_poc_only_artifact_is_not_production_evidence(self):
+        buf = BytesIO()
+        with zipfile.ZipFile(buf, "w") as archive:
+            archive.writestr("poc.json", '{"round_id":"POC_ONLY"}')
+            archive.writestr("logs/poc.spec.json", '{"candidate_sha":"' + ("f" * 40) + '"}')
+        with self.assertRaises(monitor.NonProductionArtifact):
+            monitor._bundle_from_zip(buf.getvalue(), "c14")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
