@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.rebind.v3",
-  "product_candidate_commit": "1d7df6f63525e4e9809da8f5ea3461f74090b1a0",
-  "application_git_tree": "978e6b99ca391cc8913db0942aece15009a96b30",
+  "product_candidate_commit": "90f228e105b7fd0d8d6c4e9810eccd84534c31a1",
+  "application_git_tree": "517c1aadc3b2bb624c79717ad1a2dc5817b37697",
   "source_anchor_main": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
   "preintegration_candidate": "9950bde1def11b27ed137d7db02a3047befda4fa",
   "preintegration_application_tree": "9c83d92434301356228c1b79294fcd829d675ebf",
@@ -636,11 +636,7 @@
       "git_blob": "277c40dcba9e5bfe352a1e4e8af69429d843b37b",
       "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
-    "src/go_hotel/services/payment_sandbox_runtime.py": {
-      "mode": "100644",
-      "git_blob": "5bed44772677160416d522307b1df26bd0046953",
-      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
-    },
+    "src/go_hotel/services/payment_sandbox_runtime.py": "5d0a26fc60360078477bb2337687527e3e5ebc08",
     "src/go_hotel/services/personal_travel_vault.py": {
       "mode": "100644",
       "git_blob": "36f8564cc8b0ab6258676a78ba3bcdd28c347ef6",
@@ -1810,7 +1806,9 @@
       "mode": "100644",
       "git_blob": "f93292ab010372eefa15a22d48374af748205303",
       "reason": "Lossless account width migration after actual PostgreSQL full-day capture failures; 7-file repair authorized by user 2026-09-26"
-    }
+    },
+    "src/go_hotel/services/payment_sandbox_cutover.py": "ab2783c66a0c949b4a2cb42f537b84b2719ce7be",
+    "tests/test_payment_sandbox_audit_integrity.py": "1a17d3824d163bef9fd8b7cbc89581974cd34830"
   },
   "migration_head": "0140_ledger_account_width",
   "verified_inherited_evidence": {
@@ -1830,12 +1828,12 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "febb925eeb781223f17002b91479f2eac9b71acc",
-  "source_tree_sha256": "0a1971254e4842364cbc0fbaef37e132ad337b8a108d9906475002ac52797d72",
+  "source_tree_sha256": "d850a3a695946bf0d5e9cdec9a82a89432cfaaaa8b7b5a370c756b9dccbca8ed",
   "historical_pass_transferred": false,
   "migration_file": "alembic/versions/0140_ledger_account_width.py",
   "verified_current_generation_ledger": "ci/depth9/CANDIDATE.json",
   "c06_external_supplier_provenance": "BLOCKED_EXTERNAL",
-  "source_files": 1546,
+  "source_files": 1547,
   "integration_evidence": "ci/depth9/CANDIDATE.json",
   "engineering_continuation": {
     "round": 7,
@@ -2100,5 +2098,20 @@
     "checklist_version": "1.1.0",
     "independent_acceptance": "PENDING_EXACT_HEAD_CI",
     "historical_pass_transferred": false
+  },
+  "payment_audit_integrity_repair": {
+    "parent_gate": "138e24d76a9f87b9fac9862c7f44a523679aef0b",
+    "product_candidate_commit": "90f228e105b7fd0d8d6c4e9810eccd84534c31a1",
+    "source_files": {
+      "src/go_hotel/services/payment_sandbox_cutover.py": "ab2783c66a0c949b4a2cb42f537b84b2719ce7be",
+      "src/go_hotel/services/payment_sandbox_runtime.py": "5d0a26fc60360078477bb2337687527e3e5ebc08",
+      "tests/test_payment_sandbox_audit_integrity.py": "1a17d3824d163bef9fd8b7cbc89581974cd34830"
+    },
+    "local_implementation_tests": 23,
+    "independent_sqlite_tests": 12,
+    "C13": "PASS_SCOPED_SQLITE_ONLY",
+    "postgres": "PENDING_EXACT_CANDIDATE",
+    "full_internal_payment_acceptance": "PENDING",
+    "external_payment": "NOT_CONNECTED"
   }
 }

@@ -76,6 +76,30 @@ jobs:
           set -euo pipefail
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Payment audit integrity and independent adversarial checks
+        if: matrix.cell == 'C11'
+        working-directory: application
+        shell: bash
+        env:
+          GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+          APP_ENV: test
+          PYTHONPATH: src:tests
+          MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED: 'false'
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/next-depth-pg"
+          python -B -m pytest -q -p no:cacheprovider \
+            tests/test_payment_sandbox_audit_integrity.py \
+            ../docs/acceptance/c01-c14/round8/payment-preexternal-audit/review/v2/test_independent_review_v2.py \
+            --junitxml="$RUNNER_TEMP/next-depth-pg/payment-audit-junit.xml" \
+            2>&1 | tee "$RUNNER_TEMP/next-depth-pg/payment-audit.log"
+          python - <<'PY'
+          import os, pathlib, xml.etree.ElementTree as ET
+          root=ET.parse(pathlib.Path(os.environ['RUNNER_TEMP'])/'next-depth-pg/payment-audit-junit.xml').getroot()
+          counts={k:sum(int(s.get(k,0)) for s in root.findall('testsuite')) for k in ('tests','failures','errors','skipped')}
+          assert counts['tests']==35 and counts['failures']==counts['errors']==counts['skipped']==0, counts
+          print(counts)
+          PY
       - name: Run actual isolated process recovery and concurrency checks
         working-directory: application
         shell: bash
