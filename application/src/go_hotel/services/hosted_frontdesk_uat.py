@@ -116,8 +116,15 @@ class Service:
     if not s.scalar(select(HostedSlaEscalationRow).where(HostedSlaEscalationRow.hosted_reservation_id==stay.hosted_reservation_id,HostedSlaEscalationRow.state=='OPEN')):s.add(HostedSlaEscalationRow(escalation_id=ident('hse'),hosted_reservation_id=stay.hosted_reservation_id,escalation_level='DUTY_MANAGER',manager_staff_id=manager.staff_id,state='OPEN',reason='PENDING_HOTEL_CONFIRMATION_SLA',created_at=now()));created+=1
    s.commit();return {'escalations_created':created,'manager_alert_state':'QUEUED_NOT_SENT','payment_live':False}
  def voucher(self,reservation_id,actor):
+  from go_hotel.services import hosted_money
   with SessionLocal() as s:
-   r=s.get(HostedDirectReservationRow,reservation_id);offer=s.get(HostedDirectRoomOfferRow,r.hosted_offer_id);self._role(s,offer.hosted_hotel_id,actor,ROLES);nights=s.query(HostedReservationNightRow).filter_by(hosted_reservation_id=reservation_id).count();return {'voucher_type':'ARRIVAL_CONFIRMATION','printable':True,'reservation_id':reservation_id,'guest_name':masked(r.guest_name),'room_name':offer.room_name,'check_in':r.check_in,'check_out':r.check_out,'nights':nights,'amount_minor':r.amount_minor,'payment_state':r.payment_state,'payment_captured':False}
+   r=s.get(HostedDirectReservationRow,reservation_id)
+   if not r:raise ValueError('RESERVATION_NOT_FOUND')
+   offer=s.get(HostedDirectRoomOfferRow,r.hosted_offer_id);self._role(s,offer.hosted_hotel_id,actor,ROLES)
+   nights=s.query(HostedReservationNightRow).filter_by(hosted_reservation_id=reservation_id).count()
+   funds=hosted_money.summary(s,r)
+   captured=funds['capture_minor'] if funds else 0;refunded=funds['refund_minor'] if funds else 0
+   return {'voucher_type':'ARRIVAL_CONFIRMATION','printable':True,'reservation_id':reservation_id,'guest_name':masked(r.guest_name),'room_name':offer.room_name,'check_in':r.check_in,'check_out':r.check_out,'nights':nights,'amount_minor':r.amount_minor,'currency':r.currency,'payment_state':r.payment_state,'payment_captured':captured>0,'captured_minor':captured,'refunded_minor':refunded,'net_capture_minor':captured-refunded,'funds_scope':'CANONICAL_ISOLATED_SIMULATION' if funds else 'NO_CANONICAL_MONEY_GRAPH','external_payment_confirmed':False,'production_live':False}
  def daily_close(self,hotel_id,b,actor):
   from go_hotel.services.hosted_business_day import close
   return close(hotel_id,b,actor,self._role)

@@ -65,10 +65,21 @@ def snapshot(s, hotel_id, business_date):
             intent = s.get(m.OmnichannelPaymentIntentRow, root.payment_intent_id)
             binding = s.scalar(select(m.PaymentOrderFactBindingRow).where(m.PaymentOrderFactBindingRow.payment_intent_id == root.payment_intent_id))
             source_bindings.append({'root': out(root), 'intent': out(intent) if intent else None, 'binding': out(binding) if binding else None})
-            if not intent or not binding or (binding.payee_id, binding.amount_minor, binding.currency, binding.payer_id) != (hotel_id, intent.amount_minor, intent.currency, intent.payer_id):
+            if not intent or not binding or (binding.payee_id, binding.amount_minor, binding.currency, binding.payer_id, binding.business_type, binding.business_id, binding.legal_entity_id) != (hotel_id, intent.amount_minor, intent.currency, intent.payer_id, root.business_type, root.business_id, root.legal_entity_id) or (intent.payee_id,intent.business_type,intent.business_id)!=(hotel_id,root.business_type,root.business_id):
                 blockers.append('MONEY_ORDER_BINDING_DIFFERENCE:' + root.payment_intent_id)
+            auth_moves = [x for x in graph if x.root_payment_intent_id == root.payment_intent_id and x.movement_type == 'AUTHORIZATION']
+            if intent and (len(auth_moves) != (1 if intent.amount_minor else 0) or sum(x.amount_minor for x in auth_moves) != intent.amount_minor or any(x.currency != intent.currency or x.amount_minor < 0 for x in graph if x.root_payment_intent_id == root.payment_intent_id)):
+                blockers.append('AUTHORIZATION_INTENT_DIFFERENCE:' + root.payment_intent_id)
             if intent and intent.amount_minor and not any(x.root_payment_intent_id == root.payment_intent_id and x.movement_type == 'AUTHORIZATION' for x in graph):
                 blockers.append('MISSING_AUTHORIZATION_MOVEMENT:' + root.payment_intent_id)
+        if a and roots and not s.get(m.HostedCreditAllocationRow,r.hosted_reservation_id):
+            try:
+                current_root = hosted_money.root(s,a)
+                current_intent = s.get(m.OmnichannelPaymentIntentRow,current_root.payment_intent_id) if current_root else None
+                if not current_intent or (current_intent.amount_minor,current_intent.currency)!=(r.amount_minor,r.currency):
+                    blockers.append('RESERVATION_FUNDING_DIFFERENCE:' + r.hosted_reservation_id)
+            except ValueError:
+                blockers.append('FARE_FUNDING_ROOT_MISMATCH:' + r.hosted_reservation_id)
         order_facts.append({k: getattr(r, k) for k in ('hosted_reservation_id','hosted_offer_id','check_in','check_out','amount_minor','currency','created_at','updated_at')})
         lifetime.extend(graph)
         all_intents.update(x.root_payment_intent_id for x in graph)
@@ -91,6 +102,9 @@ def snapshot(s, hotel_id, business_date):
             blockers.extend('OPEN_DISPUTE:' + x for x in disputes)
             refunds = list(s.scalars(select(m.RefundEligibilityRow).join(m.PostStayDecisionRow, m.PostStayDecisionRow.post_stay_decision_id == m.RefundEligibilityRow.post_stay_decision_id).join(m.PostStayDisputeCaseRow, m.PostStayDisputeCaseRow.dispute_case_id == m.PostStayDecisionRow.dispute_case_id).where(m.PostStayDisputeCaseRow.stay_lifecycle_id == guest.stay_lifecycle_id)))
             blockers.extend('PENDING_REFUND:' + x.refund_eligibility_id for x in refunds if x.eligible_amount_minor > 0 and x.decision != 'REFUND_CONFIRMED_SIMULATION')
+    hotel_intents = set(s.scalars(select(m.OmnichannelPaymentIntentRow.payment_intent_id).where(m.OmnichannelPaymentIntentRow.payee_id == hotel_id,m.OmnichannelPaymentIntentRow.business_type.in_([hosted_money.BUSINESS,'HOSTED_HOTEL_FARE_CHANGE']),m.OmnichannelPaymentIntentRow.created_at < end)))
+    blockers.extend('UNMAPPED_HOTEL_MONEY_INTENT:' + x for x in sorted(hotel_intents - all_intents))
+    all_intents.update(hotel_intents)
     expected_pools = set(s.scalars(pools))
     actual_pools = {x.inventory_pool_id for x in days}
     blockers.extend('MISSING_INVENTORY_DAY:' + x for x in sorted(expected_pools - actual_pools))
@@ -124,6 +138,9 @@ def snapshot(s, hotel_id, business_date):
         entries = [x for x in ledger if x.transaction_id == move.money_movement_id]
         from go_hotel.services.unified_money_movement import business_ledger_account_code
         intent = s.get(m.OmnichannelPaymentIntentRow, move.root_payment_intent_id)
+        if not intent:
+            blockers.append('MISSING_PAYMENT_INTENT:' + move.root_payment_intent_id)
+            continue
         pairs = {(f'PAYMENT_CLEARING:{intent.selected_channel}', 'DEBIT'), (business_ledger_account_code(intent.business_type, intent.business_id), 'CREDIT')}
         if move.movement_type in {'REFUND', 'COMPENSATION', 'PAYOUT'}:
             pairs = {(account, 'CREDIT' if direction == 'DEBIT' else 'DEBIT') for account, direction in pairs}
@@ -167,11 +184,49 @@ def immutable_facts_hash(s, hotel_id, end):
     bindings = list(s.scalars(select(m.PaymentOrderFactBindingRow).where(m.PaymentOrderFactBindingRow.payment_intent_id.in_(ids)).order_by(m.PaymentOrderFactBindingRow.payment_order_fact_binding_id))) if ids else []
     movements = list(s.scalars(select(m.OmnichannelMoneyMovementRow).where(m.OmnichannelMoneyMovementRow.root_payment_intent_id.in_(ids),m.OmnichannelMoneyMovementRow.created_at < end).order_by(m.OmnichannelMoneyMovementRow.money_movement_id))) if ids else []
     mids = [x.money_movement_id for x in movements]
-    ledger = list(s.scalars(select(m.OmnichannelLedgerEntryRow).where(m.OmnichannelLedgerEntryRow.transaction_id.in_(mids)).order_by(m.OmnichannelLedgerEntryRow.ledger_entry_id))) if mids else []
+    ledger = list(s.scalars(select(m.OmnichannelLedgerEntryRow).where(m.OmnichannelLedgerEntryRow.payment_intent_id.in_(ids),((m.OmnichannelLedgerEntryRow.transaction_id.in_(mids)) | (m.OmnichannelLedgerEntryRow.created_at < end))).order_by(m.OmnichannelLedgerEntryRow.ledger_entry_id))) if mids else []
     return digest([[stable(x) for x in intents], [stable(x) for x in roots], [out(x) for x in bindings], [stable(x) for x in movements], [out(x) for x in ledger]])
 
 
+def verify_archived_orders(s, archived, end):
+    """Lifecycle progress is legitimate; changed money/dates need an executed quote."""
+    fields = ('hosted_offer_id','check_in','check_out','amount_minor','currency')
+    from go_hotel.services.omnichannel_payment import digest as quote_digest
+    for fact in archived.exception_summary_json.get('order_facts', []):
+        r = s.get(m.HostedDirectReservationRow, fact['hosted_reservation_id'])
+        if not r:
+            raise ValueError('DAILY_CLOSE_SOURCE_CHANGED_REVIEW_REQUIRED')
+        if all(getattr(r,k) == fact[k] for k in fields):
+            continue
+        if r.hosted_offer_id != fact['hosted_offer_id'] or r.currency != fact['currency']:
+            raise ValueError('DAILY_CLOSE_SOURCE_CHANGED_REVIEW_REQUIRED')
+        events = s.scalars(select(m.HostedDirectReservationEventRow).where(m.HostedDirectReservationEventRow.hosted_reservation_id == r.hosted_reservation_id,m.HostedDirectReservationEventRow.occurred_at >= end,m.HostedDirectReservationEventRow.event_type.in_(['CHANGE_DATE_CONFIRMED','EXTEND_STAY_CONFIRMED'])).order_by(m.HostedDirectReservationEventRow.occurred_at.desc())).all()
+        verified = False
+        for event in events:
+            quote = s.get(m.HostedFareQuoteRow,(event.payload_json or {}).get('quote_id'))
+            if quote and quote.hosted_reservation_id == r.hosted_reservation_id and quote.state == 'EXECUTED' and quote.quote_hash == quote_digest(quote.quote_json) and all(quote.result_json.get(k) == getattr(r,k) for k in ('check_in','check_out','amount_minor','currency')):
+                verified = True
+                break
+        if not verified:
+            raise ValueError('DAILY_CLOSE_SOURCE_CHANGED_REVIEW_REQUIRED')
+
+
 def close(hotel_id, body, actor, authorize):
+    from sqlalchemy.exc import DBAPIError
+    for attempt in range(3):
+        try:
+            return _close_once(hotel_id, body, actor, authorize)
+        except DBAPIError as exc:
+            code = getattr(exc.orig, 'sqlstate', None) or getattr(exc.orig, 'pgcode', None)
+            constraint = getattr(getattr(exc.orig, 'diag', None), 'constraint_name', None)
+            retry = code in {'40001','40P01'} or (code == '23505' and constraint == 'uq_hosted_daily_close')
+            if not retry:
+                raise
+            if attempt == 2:
+                raise ValueError('DAILY_CLOSE_CONCURRENT_RETRY_REQUIRED') from exc
+
+
+def _close_once(hotel_id, body, actor, authorize):
     business_date = body.get('business_date') or now().astimezone(ZONE).date().isoformat()
     start, end = window(business_date)
     with managed_session() as s:
@@ -181,6 +236,7 @@ def close(hotel_id, body, actor, authorize):
         s.get(m.HostedDirectHotelRow, hotel_id, with_for_update=True)
         old = s.scalar(select(m.HostedDailyCloseRow).where(m.HostedDailyCloseRow.hosted_hotel_id == hotel_id, m.HostedDailyCloseRow.business_date == business_date))
         if old:
+            verify_archived_orders(s,old,end)
             archived = {'hotel_id': hotel_id, 'business_date': business_date, 'inventory': old.inventory_snapshot_json, 'reservations': old.reservation_summary_json, 'exceptions': old.exception_summary_json}
             if digest(archived) != old.evidence_hash or old.exception_summary_json.get('immutable_facts_hash') != immutable_facts_hash(s, hotel_id, end):
                 raise ValueError('DAILY_CLOSE_SOURCE_CHANGED_REVIEW_REQUIRED')

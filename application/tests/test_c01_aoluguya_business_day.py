@@ -27,7 +27,7 @@ def business(monkeypatch,tmp_path):
         pool=s.get(m.HostedDirectInventoryPoolRow,h['pool']);pool.physical_room_key='ROUND_DREAM_KING';pool.physical_room_name=offer.room_name;pool.capacity_total=pool.capacity_available=50
         for d in s.scalars(select(m.HostedInventoryDayRow)):d.capacity_total=d.capacity_available=50
         for d in s.scalars(select(m.HostedRateCalendarDayRow)):d.price_minor=69800
-        hotel=s.get(m.HostedDirectHotelRow,h['hotel']);hotel.contact_json={**hotel.contact_json,'phone':'0451-88800808','check_in_after':'14:00','check_out_before':'12:00','operating_clock_policy':{'timezone':'Asia/Shanghai','check_in_after':'14:00','check_out_before':'12:00'},'source_reference':'user-confirmed-2026-08-18-and-2026-09-05','exercise_scope':'FIVE_POOLS_SIX_CONFIRMED_RATES_UNKNOWN_RATES_CLOSED'}
+        hotel=s.get(m.HostedDirectHotelRow,h['hotel']);hotel.contact_json={**hotel.contact_json,'phone':'0451-88800808','check_in_after':'14:00','check_out_before':'12:00','operating_clock_policy':{'timezone':'Asia/Shanghai','check_in_after':'14:00','check_out_before':'12:00'},'cancellation_anchor_authority':'UNCONFIRMED_SIMULATION_ONLY','source_reference':'user-confirmed-2026-08-18-and-2026-09-05','exercise_scope':'FIVE_POOLS_SIX_CONFIRMED_RATES_UNKNOWN_RATES_CLOSED'}
     pools={'ROUND_DREAM_KING':h['pool']}
     with SessionLocal.begin() as s:
         for key,name in [('ROUND_DREAM_TWIN','摄罗子·圆梦双床房'),('PILLOW_MOON_KING','摄罗子·枕月大床房'),('PILLOW_MOON_TWIN','摄罗子·枕月双床房'),('SLEEPING_CLOUD_TWIN','摄罗子·卧云双床房')]:
@@ -37,7 +37,7 @@ def business(monkeypatch,tmp_path):
     for key,name in [('ROUND_DREAM_KING','摄罗子·圆梦大床房'),('ROUND_DREAM_TWIN','摄罗子·圆梦双床房')]:
         for breakfast,price in [(0,69800),(1,79800),(2,89800)]:
             if key=='ROUND_DREAM_KING' and breakfast==0:continue
-            offer=booking.upsert_offer(h['hotel'],{'room_name':name,'rate_name':str(breakfast)+'早餐','price_minor':price,'inventory':50,'cancellation_policy':'确认后30分钟免费取消；其他条款待确认'},'fixture')['hosted_offer_id'];offer_ids.append(offer)
+            offer=booking.upsert_offer(h['hotel'],{'room_name':name,'rate_name':str(breakfast)+'早餐','price_minor':price,'inventory':50,'cancellation_policy':'30分钟免费取消；起算点待确认，隔离演练按酒店确认起算'},'fixture')['hosted_offer_id'];offer_ids.append(offer)
             with SessionLocal.begin() as s:
                 s.add(m.HostedDirectRateVariantRow(rate_variant_id=ident('rate'),inventory_pool_id=pools[key],hosted_offer_id=offer,breakfast_count=breakfast,benefits_json=[],payment_mode='CONTRACT_SIMULATOR',state='ACTIVE'))
     ops.bootstrap_calendar(h['hotel'],{'start_date':h['day'].isoformat(),'end_date':(h['end']+timedelta(days=1)).isoformat()})
@@ -143,6 +143,9 @@ def test_complete_business_day_with_cancel_refund_difference_repair_and_replay(h
     h['clock']['at']=window(day)[1]
     result=close_day(http,h,day);report=result['exception_summary_json'];cny=report['currencies']['CNY']
     assert report['payment_transactions']==report['refund_transactions']==1
+    voucher=http.get(f'/internal/v1/hosted-direct/reservations/{rid}/arrival-voucher',headers=h['manager_headers'])
+    assert voucher.status_code==200,voucher.text
+    receipt=voucher.json()['data'];assert (receipt['payment_captured'],receipt['captured_minor'],receipt['refunded_minor'],receipt['net_capture_minor'],receipt['external_payment_confirmed'])==(True,69800,9800,60000,False)
     assert (cny['authorization_minor'],cny['capture_minor'],cny['release_minor'],cny['refund_minor'],cny['net_capture_minor'],cny['difference_minor'])==(139600,69800,69800,9800,60000,0)
     assert close_day(http,h,day)==result
     with SessionLocal() as s:
@@ -225,3 +228,39 @@ def test_same_hotel_room_cannot_be_assigned_to_two_overlapping_stays(http,busine
     post(http,f'/internal/v1/stays/{sid}/arrive',h['maker_headers'])
     response=post(http,f'/internal/v1/stays/{sid}/room-assignment',h['maker_headers'],{'room_reference':' synthetic-201 '},status=409)
     assert response['detail']=='ROOM_ALREADY_ASSIGNED_FOR_STAY'
+
+
+@pytest.mark.parametrize('field,value',[('amount_minor',69801),('currency','USD')])
+def test_authorization_fact_must_match_bound_intent(http,business,field,value):
+    h=business;purchase(http,h,'auth-corruption')
+    with SessionLocal.begin() as s:
+        row=s.scalar(select(m.OmnichannelMoneyMovementRow).where(m.OmnichannelMoneyMovementRow.movement_type=='AUTHORIZATION'));setattr(row,field,value)
+    h['clock']['at']=window(h['day'].isoformat())[1]
+    result=close_day(http,h,h['day'].isoformat())
+    assert result['daily_close_id'] is None
+    assert any(x.startswith('AUTHORIZATION_INTENT_DIFFERENCE:') for x in result['exception_summary_json']['blockers'])
+
+
+@pytest.mark.parametrize('field,value',[('amount_minor',69801),('currency','USD'),('check_out','2026-12-31')])
+def test_archived_order_mutation_without_executed_change_proof_is_rejected(http,business,field,value):
+    h=business;rid,_=purchase(http,h,'archived-corruption');h['clock']['at']=window(h['day'].isoformat())[1]
+    assert close_day(http,h,h['day'].isoformat())['daily_close_id']
+    with SessionLocal.begin() as s:setattr(s.get(m.HostedDirectReservationRow,rid),field,value)
+    post(http,f"/internal/v1/hosted-direct/hotels/{h['hotel']}/daily-closes",h['manager_headers'],{'business_date':h['day'].isoformat()},status=409)
+
+
+def test_concurrent_day_close_has_one_durable_result(http,business):
+    from concurrent.futures import ThreadPoolExecutor
+    h=business;purchase(http,h,'parallel-close');h['clock']['at']=window(h['day'].isoformat())[1]
+    def close_one(_):return desk.daily_close(h['hotel'],{'business_date':h['day'].isoformat()},h['manager'].user_id)
+    with ThreadPoolExecutor(max_workers=4) as pool:results=list(pool.map(close_one,range(4)))
+    assert len({x['daily_close_id'] for x in results})==1 and results[0]['daily_close_id']
+    with SessionLocal() as s:assert s.query(m.HostedDailyCloseRow).count()==1
+
+
+def test_order_amount_difference_is_blocked_before_first_close(http,business):
+    h=business;rid,_=purchase(http,h,'order-corruption')
+    with SessionLocal.begin() as s:s.get(m.HostedDirectReservationRow,rid).amount_minor+=1
+    h['clock']['at']=window(h['day'].isoformat())[1]
+    result=close_day(http,h,h['day'].isoformat())
+    assert result['daily_close_id'] is None and any(x.startswith('RESERVATION_FUNDING_DIFFERENCE:') for x in result['exception_summary_json']['blockers'])
