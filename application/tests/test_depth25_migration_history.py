@@ -20,7 +20,7 @@ def test_fresh_database_can_apply_entire_chain_without_stamp(tmp_path, monkeypat
     db, cfg = config(tmp_path, monkeypatch)
     command.upgrade(cfg, 'head')
     with sqlite3.connect(db) as s:
-        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0139_hosted_publication_review'
+        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0140_ledger_account_width'
         media_columns={r[1] for r in s.execute('PRAGMA table_info(hosted_media_asset)')}
         assert {'submitted_by','submitter_binding_hash'} <= media_columns
         assert s.execute("SELECT name FROM sqlite_master WHERE name='hosted_publication_review'").fetchone()

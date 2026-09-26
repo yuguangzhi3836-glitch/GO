@@ -5504,7 +5504,7 @@ class OmnichannelLedgerEntryRow(Base):
     ledger_entry_id: Mapped[str]=mapped_column(String(64),primary_key=True)
     transaction_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     payment_intent_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
-    account_code: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
+    account_code: Mapped[str]=mapped_column(String(128),nullable=False,index=True)
     direction: Mapped[str]=mapped_column(String(8),nullable=False)
     amount_minor: Mapped[int]=mapped_column(BigInteger,nullable=False)
     currency: Mapped[str]=mapped_column(String(3),nullable=False)

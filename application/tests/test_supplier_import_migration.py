@@ -19,7 +19,7 @@ def test_import_migration_roundtrip_protects_authorization_history(tmp_path, mon
     command.upgrade(cfg, 'head')
     with sqlite3.connect(path) as session:
         revision = session.execute('SELECT version_num FROM alembic_version').fetchone()[0]
-        assert revision == '0139_hosted_publication_review' and len(revision) <= 32
+        assert revision == '0140_ledger_account_width' and len(revision) <= 32
         session.execute("INSERT INTO hotel_partner_import_authorization "
                         "(authorization_id, property_id, supplier_id, provider, state_hash, status, requested_by, created_at, expires_at) "
                         "VALUES ('auth-1', 'property-1', 'supplier-1', 'CTRIP', 'opaque-test-hash', 'CONSUMED', 'owner', '2026-09-18', '2026-09-19')")
