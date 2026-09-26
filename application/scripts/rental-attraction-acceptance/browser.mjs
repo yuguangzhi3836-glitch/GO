@@ -98,9 +98,19 @@ async function ticketWork(p,orderId,action,note,receipt=null){
  await p.locator(`[data-ticket-form][data-ticket-revision="${result.workflow.revision}"]`).waitFor();return result;
 }
 async function adminAttraction(p,orderId){
- await p.goto(origin+'/go-admin/#/vertical-attraction');await p.locator('#adminOrderId').fill(orderId);await p.locator('#adminOrderSearch [type=submit]').click();
+ const initial=waitResponse(p,'/internal/v1/admin/operations/verticals/ATTRACTION');
+ await p.goto(origin+'/go-admin/#/vertical-attraction');await data(await initial);
+ await p.getByRole('heading',{name:'景点门票 / 体验运营',exact:true}).waitFor();await p.locator('#adminOrderSearch [type=submit]:enabled').waitFor();
+ await p.locator('#adminOrderId').fill(orderId);assert.equal(await p.locator('#adminOrderId').inputValue(),orderId);
+ const filtered=p.waitForResponse(r=>{const u=new URL(r.url());return r.request().method()==='GET'&&u.pathname==='/internal/v1/admin/operations/verticals/ATTRACTION'&&u.searchParams.get('order_id')===orderId;});
+ await p.locator('#adminOrderSearch [type=submit]').click();const listing=await data(await filtered);assert.deepEqual(listing.orders.map(o=>o.order_id),[orderId]);
+ await p.waitForFunction(id=>document.querySelector('#adminOrderId')?.value===id&&document.querySelectorAll('#adminOrders tbody tr').length===1&&document.querySelector('#adminOrders tbody tr td')?.textContent===id,orderId);
  const read=waitResponse(p,`/internal/v1/admin/ticket-operations/ATTRACTION/${orderId}`);
- await p.locator('[data-ticket-links]').getByRole('button',{name:orderId,exact:true}).click();const view=await data(await read);await p.locator('[data-ticket-form]').waitFor();return view;
+ await p.locator('[data-ticket-links]').getByRole('button',{name:orderId,exact:true}).click();const view=await data(await read);assert.equal(view.order.order_id,orderId);await p.locator('[data-ticket-form]').waitFor();return view;
+}
+async function attractionOrderRow(p,orderId,status){
+ const row=p.locator('#adminOrders tbody tr').filter({has:p.getByText(orderId,{exact:true})});
+ await row.getByText(status,{exact:true}).waitFor();assert.equal(await row.count(),1);assert.equal(await p.locator('#adminOrderId').inputValue(),orderId);assert.equal(await p.locator('#adminOrders tbody tr').count(),1);return row;
 }
 async function reopenAttraction(p,orderId){
  await p.locator('[data-nav=trips]').click();await p.locator('#tripQuery').fill(orderId);
@@ -249,7 +259,7 @@ try{
  });
  await step('administrator-applies-attraction-change',maker,async()=>{
   await adminAttraction(maker,managedAttraction.order_id);const result=await ticketWork(maker,managedAttraction.order_id,'APPLY','隔离验收：按已登记精确报价回执应用');assert.equal(result.workflow.stage,'APPLIED');
-  await maker.getByText('BROWSER-ATTR-VOUCHER',{exact:false}).first().waitFor();await maker.locator('#adminOrders').getByText('CONFIRMED',{exact:true}).waitFor();report.facts.attraction_change_application=result;
+  await maker.getByText('BROWSER-ATTR-VOUCHER',{exact:false}).first().waitFor();const row=await attractionOrderRow(maker,managedAttraction.order_id,'已确认');await row.getByText('BROWSER-ATTR-VOUCHER',{exact:true}).waitFor();await row.getByText(day(46),{exact:true}).waitFor();report.facts.attraction_change_application=result;
  });
  await step('consumer-sees-confirmed-attraction-change',consumer,async()=>{
   const order=await reopenAttraction(consumer,managedAttraction.order_id);assert.equal(order.status,'CONFIRMED');assert.equal(order.visit_date,day(46));assert.equal(order.voucher_code,'BROWSER-ATTR-VOUCHER');await consumer.getByText('BROWSER-ATTR-VOUCHER',{exact:true}).waitFor();report.facts.attraction_changed_consumer=order;
@@ -264,7 +274,7 @@ try{
   const result=await ticketWork(attractionSupplier,managedAttraction.order_id,'RECEIPT','隔离验收：闭园无法履约陈述',{state:'CLOSED_BY_SUPPLIER',evidence_reference:'isolated://browser-attraction-closed'});assert.equal(result.workflow.stage,'RECEIPT_RECORDED');report.facts.attraction_closure_receipt=result;
  });
  await step('administrator-applies-attraction-closure',maker,async()=>{
-  await adminAttraction(maker,managedAttraction.order_id);const result=await ticketWork(maker,managedAttraction.order_id,'APPLY','隔离验收：应用闭园，尚未退款不得关闭');assert.equal(result.workflow.stage,'APPLIED');await maker.locator('#adminOrders').getByText('CLOSED_BY_SUPPLIER',{exact:true}).waitFor();report.facts.attraction_closure_application=result;
+  await adminAttraction(maker,managedAttraction.order_id);const result=await ticketWork(maker,managedAttraction.order_id,'APPLY','隔离验收：应用闭园，尚未退款不得关闭');assert.equal(result.workflow.stage,'APPLIED');await attractionOrderRow(maker,managedAttraction.order_id,'供应商闭园');report.facts.attraction_closure_application=result;
  });
  await step('consumer-confirms-full-closure-refund',consumer,async()=>{
   const current=await reopenAttraction(consumer,managedAttraction.order_id);assert.equal(current.status,'CLOSED_BY_SUPPLIER');assert.equal(await consumer.locator('#ared').isDisabled(),true);
