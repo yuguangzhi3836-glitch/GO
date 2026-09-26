@@ -72,7 +72,7 @@ def content_snapshot(hotel_id:str,p:Principal=Depends(require_permission('admin:
 @router.post('/internal/v1/hosted-direct/content-snapshots/{snapshot_id}/approve')
 def content_approve(snapshot_id:str,b:Payload,p:Principal=Depends(require_permission('admin:approve'))):return call(content_svc.approve,snapshot_id,b.model_dump(exclude_none=True),p)
 @router.post('/internal/v1/hosted-direct/hotels/{hotel_id}/media-assets')
-def media_asset(hotel_id:str,b:Payload,p:Principal=Depends(admin_principal)):return call(content_svc.media,hotel_id,b.model_dump(exclude_none=True),p.user_id)
+def media_asset(hotel_id:str,b:Payload,p:Principal=Depends(require_permission('admin:rules'))):return call(content_svc.media,hotel_id,b.model_dump(exclude_none=True),p)
 @router.get('/internal/v1/hosted-direct/hotels/{hotel_id}/operations-gate')
 def operations_gate(hotel_id:str,p:Principal=Depends(admin_principal)):return call(content_svc.gate,hotel_id)
 @router.post('/v1/direct/{slug}/managed-reservations')

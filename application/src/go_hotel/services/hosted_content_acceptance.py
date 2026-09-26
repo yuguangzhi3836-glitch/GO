@@ -2,7 +2,9 @@
 
 The only enabled approval source is explicit isolated engineering provisioning.
 No public staff-role assignment can grant the reserved content approval role.
-This module does not establish media rights or gate all publication paths.
+Media registration preserves unverified claims only. A legacy RIGHTS_VERIFIED
+label is not independently verified rights evidence. This module does not gate
+all publication paths.
 """
 import hashlib,json,uuid,os
 from copy import deepcopy
@@ -124,14 +126,29 @@ class Service:
    row=HostedContentApprovalRow(content_approval_id=ident('hca'),content_snapshot_id=snapshot_id,
     approver_id=actor,approver_role=APPROVAL_ROLE,decision=b['decision'],evidence_reference=evidence,decided_at=decided)
    s.add(row);s.flush();return approval_out(row)
- def media(self,hotel_id,b,actor):
-  if b.get('rights_owner')!='哈尔滨敖麓谷雅酒店' or not b.get('rights_evidence_reference'):raise ValueError('HOTEL_OWNED_MEDIA_RIGHTS_EVIDENCE_REQUIRED')
-  if b.get('asset_role') not in ('HERO','ROOM') or not b.get('storage_reference'):raise ValueError('MEDIA_ROLE_AND_STORAGE_REFERENCE_REQUIRED')
-  if b.get('asset_role')=='ROOM' and not b.get('physical_room_key'):raise ValueError('PHYSICAL_ROOM_KEY_REQUIRED')
-  with SessionLocal() as s:
-   if not s.get(HostedDirectHotelRow,hotel_id):raise ValueError('HOSTED_HOTEL_NOT_FOUND')
-   if b.get('asset_role')=='ROOM' and not s.scalar(select(HostedDirectInventoryPoolRow).where(HostedDirectInventoryPoolRow.hosted_hotel_id==hotel_id,HostedDirectInventoryPoolRow.physical_room_key==b['physical_room_key'])):raise ValueError('PHYSICAL_ROOM_POOL_NOT_FOUND')
-   r=HostedMediaAssetRow(media_asset_id=ident('hma'),hosted_hotel_id=hotel_id,asset_role=b['asset_role'],physical_room_key=b.get('physical_room_key'),storage_reference=b['storage_reference'],rights_owner=b['rights_owner'],rights_evidence_reference=b['rights_evidence_reference'],state='RIGHTS_VERIFIED',created_at=now());s.add(r);s.commit();return out(r)
+ def media(self,hotel_id,b,principal):
+  with transaction(SessionLocal) as s:
+   actor=principal_checked(s,principal,'admin:rules')
+   if not s.get(HostedDirectHotelRow,hotel_id,with_for_update=True):raise ValueError('HOSTED_HOTEL_NOT_FOUND')
+   # Existing explicit engineering provisioning permits a scoped draft only;
+   # it does not establish hotel delegation or grant media rights.
+   binding_checked(s,hotel_id,actor)
+   if not isinstance(b,dict) or set(b)-{'asset_role','physical_room_key','storage_reference','rights_owner','rights_evidence_reference'}:raise ValueError('MEDIA_CLAIM_FIELDS_INVALID')
+   fields={}
+   for name,maximum in [('storage_reference',512),('rights_owner',256),('rights_evidence_reference',512)]:
+    value=b.get(name)
+    if not isinstance(value,str) or not value.strip() or len(value)>maximum:raise ValueError('MEDIA_CLAIM_FIELDS_INVALID')
+    fields[name]=value.strip()
+   if fields['rights_owner']!='哈尔滨敖麓谷雅酒店':raise ValueError('HOTEL_OWNED_MEDIA_RIGHTS_EVIDENCE_REQUIRED')
+   if b.get('asset_role') not in ('HERO','ROOM'):raise ValueError('MEDIA_ROLE_AND_STORAGE_REFERENCE_REQUIRED')
+   room=b.get('physical_room_key')
+   if b['asset_role']=='ROOM':
+    if not isinstance(room,str) or not room.strip() or len(room)>128:raise ValueError('PHYSICAL_ROOM_KEY_REQUIRED')
+    room=room.strip()
+    if not s.scalar(select(HostedDirectInventoryPoolRow).where(HostedDirectInventoryPoolRow.hosted_hotel_id==hotel_id,HostedDirectInventoryPoolRow.physical_room_key==room)):raise ValueError('PHYSICAL_ROOM_POOL_NOT_FOUND')
+   elif room is not None:raise ValueError('HERO_PHYSICAL_ROOM_KEY_NOT_ALLOWED')
+   r=HostedMediaAssetRow(media_asset_id=ident('hma'),hosted_hotel_id=hotel_id,asset_role=b['asset_role'],physical_room_key=room,**fields,state='PENDING_RIGHTS_REVIEW',created_at=now())
+   s.add(r);s.flush();return out(r)
  def gate(self,hotel_id):
   with SessionLocal() as s:
    if not s.get(HostedDirectHotelRow,hotel_id):raise ValueError('HOSTED_HOTEL_NOT_FOUND')
@@ -150,13 +167,16 @@ class Service:
     if approval.approver_id==body['created_by']:raise ValueError('HOTEL_CONTENT_MAKER_CHECKER_REQUIRED')
     content_ok=True
    except (PermissionError,ValueError) as exc:block.append(str(exc))
-   assets=list(s.scalars(select(HostedMediaAssetRow).where(HostedMediaAssetRow.hosted_hotel_id==hotel_id,HostedMediaAssetRow.state=='RIGHTS_VERIFIED')))
-   roles={x.asset_role for x in assets};rooms=set(s.scalars(select(HostedDirectInventoryPoolRow.physical_room_key).where(HostedDirectInventoryPoolRow.hosted_hotel_id==hotel_id)));covered={x.physical_room_key for x in assets if x.asset_role=='ROOM'}
-   if 'HERO' not in roles:block.append('HOTEL_OWNED_HERO_IMAGE_REQUIRED')
-   if rooms-covered:block.append('HOTEL_OWNED_ROOM_IMAGES_REQUIRED')
-   return {'state':'OPERATIONS_ACCEPTED' if not block else 'BLOCKED_PENDING_CONTENT_AND_MEDIA','blockers':block,
+   # There is no trusted Hosted media-rights resolver yet. Old labels and
+   # caller-supplied storage/license references cannot stand in for one.
+   # Retain all historical rows; a read never upgrades or rewrites evidence.
+   rooms=set(s.scalars(select(HostedDirectInventoryPoolRow.physical_room_key).where(HostedDirectInventoryPoolRow.hosted_hotel_id==hotel_id)))
+   block.extend(['HOTEL_MEDIA_RIGHTS_AUTHORITY_UNVERIFIED','HOTEL_OWNED_HERO_IMAGE_REQUIRED'])
+   if rooms:block.append('HOTEL_OWNED_ROOM_IMAGES_REQUIRED')
+   return {'state':'BLOCKED_PENDING_CONTENT_AND_MEDIA','blockers':block,
     'content_approval_verified':content_ok,'authority_mode':'ISOLATED_FIXTURE' if content_ok else 'HOLD',
+    'media_rights_verified':False,'media_rights_state':'HOLD_UNVERIFIED',
     'real_hotel_authority_state':'HOLD_UNVERIFIED','snapshot_id':snap.content_snapshot_id if snap else None,
-    'latest_content_decision':approval.decision if approval else None,'missing_room_images':sorted(rooms-covered),
+    'latest_content_decision':approval.decision if approval else None,'missing_room_images':sorted(rooms),
     'payment_live':False,'production_live':False}
 hosted_content_acceptance_service=Service()
