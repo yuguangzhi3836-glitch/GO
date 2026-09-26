@@ -140,7 +140,7 @@ def crash(*a,**kw):
 r.vertical_money_bridge.refund_with_adjustments=crash
 (rail_service if os.environ['CASE_VERTICAL']=='RAIL' else attraction_service).refund(os.environ['CASE_OWNER'],os.environ['CASE_ORDER'])
 '''
-    env={**os.environ,'PYTHONPATH':os.path.abspath('src'),'DATABASE_URL':str(engine.url),
+    env={**os.environ,'PYTHONPATH':os.path.abspath('src'),'DATABASE_URL':engine.url.render_as_string(hide_password=False),
         'CASE_VERTICAL':vertical,'CASE_OWNER':owner,'CASE_ORDER':oid}
     proc=subprocess.run([sys.executable,'-c',code],env=env,capture_output=True,timeout=30)
     assert proc.returncode==71,proc.stderr.decode()

@@ -193,7 +193,7 @@ from go_hotel.rail.service import rail_service
 rail_service.create_order('owner',os.environ['PREBOOK'],[{'full_name':'Person 0'},{'full_name':'Person 1'}])
 os._exit(73)
 '''
-    env={**os.environ,'DATABASE_URL':str(engine.url),'PYTHONPATH':os.path.abspath('src'),'PREBOOK':q['prebook_id']}
+    env={**os.environ,'DATABASE_URL':engine.url.render_as_string(hide_password=False),'PYTHONPATH':os.path.abspath('src'),'PREBOOK':q['prebook_id']}
     p=subprocess.run([sys.executable,'-c',code],env=env,capture_output=True,timeout=30)
     assert p.returncode==73,p.stderr.decode()
     assert ledger()==2
