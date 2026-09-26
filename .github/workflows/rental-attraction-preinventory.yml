@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [rental, attraction, independent]
+        suite: [rental, attraction, recovery, independent]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     services:
@@ -74,7 +74,8 @@ jobs:
           set -o pipefail
           case "$TEST_SUITE" in
             rental) suites=(tests/test_rental_supplier_claim.py tests/test_rental_operations.py tests/test_rental_deposit_authority.py tests/test_rental_compensation_authority.py tests/test_rental_damage_disputes.py tests/payments/test_c11_rental_deposit_money.py tests/test_c04_refund_terminal_integrity.py tests/test_depth06_rental_settlement.py) ;;
-            attraction) suites=(tests/test_refund_http_replay_truth.py tests/test_idempotency.py tests/test_c11_idempotency_completion_guard.py tests/test_depth31_refund_consent.py tests/test_depth33_mobility_refund_consent.py tests/test_rental_attraction_preinventory.py tests/test_sprint3d_attractions.py tests/test_depth20_attraction_contract.py tests/test_depth26_attraction_terms.py tests/test_c03_c06_change_quote_fencing.py tests/test_next_depth_c06_supplier_validity.py tests/test_depth21_refund_recovery.py tests/test_depth23_capacity.py tests/test_final_depth_terminal_hardening.py) ;;
+            attraction) suites=(tests/test_refund_http_replay_truth.py tests/test_idempotency.py tests/test_c11_idempotency_completion_guard.py tests/test_depth31_refund_consent.py tests/test_depth33_mobility_refund_consent.py tests/test_rental_attraction_preinventory.py tests/test_sprint3d_attractions.py tests/test_depth20_attraction_contract.py tests/test_depth26_attraction_terms.py tests/test_c03_c06_change_quote_fencing.py tests/test_next_depth_c06_supplier_validity.py tests/test_final_depth_terminal_hardening.py) ;;
+            recovery) suites=(tests/test_depth21_refund_recovery.py tests/test_depth23_capacity.py tests/test_depth24_expiry.py) ;;
             independent) suites=(tests/independent_rental_attractions) ;;
             *) exit 1 ;;
           esac
