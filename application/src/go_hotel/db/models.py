@@ -5450,7 +5450,7 @@ class OmnichannelMerchantBindingRow(Base):
     credential_reference: Mapped[str]=mapped_column(String(512),nullable=False)
     webhook_key_reference: Mapped[str]=mapped_column(String(512),nullable=False)
     capabilities_json: Mapped[list]=mapped_column(JSON,nullable=False)
-    state: Mapped[str]=mapped_column(String(24),nullable=False,index=True)
+    state: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     updated_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
     __table_args__=(UniqueConstraint('owner_type','owner_id','channel','market',name='uq_omni_merchant_channel'),)
 
@@ -6318,7 +6318,7 @@ class HostedDirectReservationRow(Base):
     check_out: Mapped[str]=mapped_column(String(10),nullable=False)
     amount_minor: Mapped[int]=mapped_column(Integer,nullable=False)
     currency: Mapped[str]=mapped_column(String(8),nullable=False)
-    reservation_state: Mapped[str]=mapped_column(String(40),nullable=False,index=True)
+    reservation_state: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     payment_state: Mapped[str]=mapped_column(String(40),nullable=False,index=True)
     hotel_confirmation_reference: Mapped[str|None]=mapped_column(String(128))
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
@@ -6495,7 +6495,7 @@ class HostedActionApprovalRow(Base):
     requester_id: Mapped[str]=mapped_column(String(64),nullable=False)
     checker_id: Mapped[str|None]=mapped_column(String(64))
     evidence_reference: Mapped[str|None]=mapped_column(String(512))
-    state: Mapped[str]=mapped_column(String(24),nullable=False,index=True)
+    state: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
 class HostedDailyCloseRow(Base):
     __tablename__='hosted_daily_close'
@@ -6546,7 +6546,7 @@ class AlipayCredentialBindingRow(Base):
     alipay_public_key_reference: Mapped[str]=mapped_column(String(512),nullable=False)
     kms_private_key_reference: Mapped[str]=mapped_column(String(512),nullable=False)
     certificate_mode: Mapped[bool]=mapped_column(Boolean,nullable=False)
-    state: Mapped[str]=mapped_column(String(32),nullable=False,index=True)
+    state: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     updated_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
 class AlipayAuthorizationRow(Base):
     __tablename__='alipay_authorization'
@@ -6590,7 +6590,7 @@ class AlipayReconciliationRow(Base):
     payment_amount_minor: Mapped[int]=mapped_column(Integer,nullable=False)
     refund_amount_minor: Mapped[int]=mapped_column(Integer,nullable=False)
     settlement_amount_minor: Mapped[int]=mapped_column(Integer,nullable=False)
-    decision: Mapped[str]=mapped_column(String(32),nullable=False,index=True)
+    decision: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     evidence_hash: Mapped[str]=mapped_column(String(64),nullable=False)
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
 

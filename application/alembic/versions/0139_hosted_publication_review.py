@@ -34,8 +34,36 @@ def compatible(actual,expected,dialect=None):
         raise RuntimeError('HOSTED_PUBLICATION_SCHEMA_MISMATCH:'+expected.name)
 
 
+STATE_WIDTHS=(('hosted_direct_reservation','reservation_state',40),
+              ('hosted_action_approval','state',24),
+              ('alipay_credential_binding','state',32),
+              ('alipay_reconciliation','decision',32),
+              ('omnichannel_merchant_binding','state',24))
+
+
+def state_columns(bind):
+    inspector=sa.inspect(bind);result=[]
+    for table,name,old_width in STATE_WIDTHS:
+        if not inspector.has_table(table):continue
+        column=next((c for c in inspector.get_columns(table) if c['name']==name),None)
+        if (column is None or not isinstance(column['type'],sa.String)
+                or column['type'].length not in (old_width,64) or column['nullable']):
+            raise RuntimeError('HOSTED_STATE_SCHEMA_MISMATCH:'+table+'.'+name)
+        result.append((table,name,old_width,column))
+    return result
+
+
+def resize_states(columns,upgrade):
+    for table,name,old_width,column in columns:
+        width=64 if upgrade else old_width
+        if column['type'].length==width:continue
+        with op.batch_alter_table(table) as batch:
+            batch.alter_column(name,existing_type=column['type'],type_=sa.String(width),existing_nullable=False)
+
+
 def upgrade():
     bind=op.get_bind();inspector=sa.inspect(bind)
+    states=state_columns(bind)
     # Isolated historical upgrades may omit this unrelated table. Some inherited
     # migrations use current metadata; validate fields already created by them.
     if inspector.has_table('hosted_media_asset'):
@@ -44,6 +72,7 @@ def upgrade():
             column=sa.Column(name,sa.String(64),nullable=True)
             if name in existing:compatible(existing[name],column,bind.dialect.name)
             else:op.add_column('hosted_media_asset',column)
+    resize_states(states,upgrade=True)
     columns=review_columns()
     if inspector.has_table('hosted_publication_review'):
         existing={c['name']:c for c in inspector.get_columns('hosted_publication_review')}
@@ -61,11 +90,18 @@ def upgrade():
 
 def downgrade():
     bind=op.get_bind()
+    states=state_columns(bind)
+    # Check every possible loss before any DDL, including SQLite's nontransactional DDL.
+    for table,name,old_width,column in states:
+        if bind.execute(sa.text(f'SELECT COUNT(*) FROM {table} WHERE length({name}) > :width'),{'width':old_width}).scalar():
+            raise RuntimeError('HOSTED_STATE_DOWNGRADE_DATA_PRESENT:'+table+'.'+name)
     if bind.execute(sa.text('SELECT COUNT(*) FROM hosted_publication_review')).scalar():
         raise RuntimeError('HOSTED_PUBLICATION_DOWNGRADE_DATA_PRESENT')
     if sa.inspect(bind).has_table('hosted_media_asset'):
         if bind.execute(sa.text('SELECT COUNT(*) FROM hosted_media_asset WHERE submitted_by IS NOT NULL OR submitter_binding_hash IS NOT NULL')).scalar():
             raise RuntimeError('HOSTED_MEDIA_PROVENANCE_DOWNGRADE_DATA_PRESENT')
+    resize_states(states,upgrade=False)
+    if sa.inspect(bind).has_table('hosted_media_asset'):
         op.drop_column('hosted_media_asset','submitter_binding_hash')
         op.drop_column('hosted_media_asset','submitted_by')
     op.drop_index('ix_hosted_publication_review_hosted_hotel_id', table_name='hosted_publication_review')

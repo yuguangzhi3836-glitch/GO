@@ -85,6 +85,15 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/next-depth-pg/${{ matrix.cell }}"
           python -B '${{ matrix.script }}' --evidence-dir "$RUNNER_TEMP/next-depth-pg/${{ matrix.cell }}" 2>&1 | tee "$RUNNER_TEMP/next-depth-pg/driver.log"
+      - name: Hosted historical state widths on actual PostgreSQL
+        if: matrix.cell == 'C11'
+        working-directory: application
+        env:
+          GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+        run: >-
+          python -B -m pytest -q -p no:cacheprovider
+          tests/test_depth25_migration_history.py -k hosted_publication_state
+          --junitxml=${{ runner.temp }}/next-depth-pg/hosted-state-widths-junit.xml
       - name: Payment integration on the same isolated PostgreSQL version
         if: matrix.cell == 'C11'
         working-directory: application

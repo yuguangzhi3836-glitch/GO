@@ -231,3 +231,81 @@ def test_hosted_publication_postgres_schema_requires_timezone_type(timezone):
     if timezone:hosted_publication_migration().compatible(actual,expected,'postgresql')
     else:
         with pytest.raises(RuntimeError,match='SCHEMA_MISMATCH'):hosted_publication_migration().compatible(actual,expected,'postgresql')
+
+
+@pytest.fixture
+def hosted_state_migration_engine(tmp_path):
+    import os,uuid
+    import sqlalchemy as sa
+    url=os.getenv('GO_TEST_DATABASE_URL','')
+    if url.startswith('postgresql'):
+        schema='hosted_width_'+uuid.uuid4().hex
+        admin=sa.create_engine(url)
+        with admin.begin() as connection:connection.execute(sa.text(f'CREATE SCHEMA {schema}'))
+        engine=sa.create_engine(url,connect_args={'options':f'-csearch_path={schema}'})
+        try:yield engine
+        finally:
+            engine.dispose()
+            with admin.begin() as connection:connection.execute(sa.text(f'DROP SCHEMA {schema} CASCADE'))
+            admin.dispose()
+    else:
+        engine=sa.create_engine('sqlite+pysqlite:///'+str(tmp_path/'hosted-states.db'))
+        try:yield engine
+        finally:engine.dispose()
+
+
+@pytest.mark.parametrize('current_metadata',[False,True])
+def test_hosted_publication_state_width_upgrade_preserves_rows_and_indexes(hosted_state_migration_engine,current_metadata):
+    import sqlalchemy as sa
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    migration=hosted_publication_migration()
+    engine=hosted_state_migration_engine
+    with engine.begin() as connection:
+        for table,name,old_width in migration.STATE_WIDTHS:
+            width=64 if current_metadata else old_width
+            connection.execute(sa.text(f'CREATE TABLE {table} (id VARCHAR(64) PRIMARY KEY, {name} VARCHAR({width}) NOT NULL)'))
+            connection.execute(sa.text(f'CREATE INDEX ix_{table}_state ON {table} ({name})'))
+            connection.execute(sa.text(f"INSERT INTO {table} VALUES ('history','PENDING')"))
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.upgrade()
+            migration.upgrade()  # Inherited metadata may already contain new fields.
+            for table,name,_ in migration.STATE_WIDTHS:
+                assert next(c for c in sa.inspect(connection).get_columns(table) if c['name']==name)['type'].length==64
+                assert connection.execute(sa.text(f'SELECT * FROM {table}')).one()==('history','PENDING')
+                assert sa.inspect(connection).get_indexes(table)[0]['column_names']==[name]
+            migration.downgrade()
+            for table,name,old_width in migration.STATE_WIDTHS:
+                assert next(c for c in sa.inspect(connection).get_columns(table) if c['name']==name)['type'].length==old_width
+                assert connection.execute(sa.text(f'SELECT * FROM {table}')).one()==('history','PENDING')
+                assert sa.inspect(connection).get_indexes(table)[0]['column_names']==[name]
+    engine.dispose()
+
+
+@pytest.mark.parametrize('table,name,value',[
+    ('hosted_direct_reservation','reservation_state','HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING'),
+    ('hosted_action_approval','state','APPROVED_PENDING_EXECUTION'),
+    ('alipay_credential_binding','state','REFERENCE_BOUND_NOT_EXTERNALLY_VERIFIED'),
+    ('alipay_reconciliation','decision','CONTRACT_ONLY_NOT_EXTERNAL_RECONCILED'),
+    ('omnichannel_merchant_binding','state','REFERENCE_BOUND_NOT_CERTIFIED')])
+def test_hosted_publication_state_downgrade_refuses_truncation_before_ddl(hosted_state_migration_engine,table,name,value):
+    import sqlalchemy as sa
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    from go_hotel.db.models import HostedDirectReservationRow,HostedActionApprovalRow,AlipayCredentialBindingRow,AlipayReconciliationRow,OmnichannelMerchantBindingRow
+    models={model.__tablename__:model for model in (HostedDirectReservationRow,HostedActionApprovalRow,AlipayCredentialBindingRow,AlipayReconciliationRow,OmnichannelMerchantBindingRow)}
+    assert models[table].__table__.c[name].type.length>=len(value)
+    engine=hosted_state_migration_engine
+    migration=hosted_publication_migration()
+    with engine.begin() as connection:
+        for t,n,old_width in migration.STATE_WIDTHS:
+            connection.execute(sa.text(f'CREATE TABLE {t} (id VARCHAR(64) PRIMARY KEY, {n} VARCHAR({old_width}) NOT NULL)'))
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.upgrade()
+            connection.execute(sa.text(f'INSERT INTO {table} VALUES (:id,:value)'),{'id':'live-work','value':value})
+            with pytest.raises(RuntimeError,match='HOSTED_STATE_DOWNGRADE_DATA_PRESENT'):migration.downgrade()
+        assert connection.execute(sa.text(f'SELECT {name} FROM {table}')).scalar()==value
+        assert sa.inspect(connection).has_table('hosted_publication_review')
+        for t,n,_ in migration.STATE_WIDTHS:
+            assert next(c for c in sa.inspect(connection).get_columns(t) if c['name']==n)['type'].length==64
+    engine.dispose()
