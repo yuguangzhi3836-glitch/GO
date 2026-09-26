@@ -141,6 +141,55 @@ BOUNDARY_AFTER = """jobs:
 """
 
 
+#: Synthetic bytes standing in for a frozen candidate's first-parent diff. It is a shape
+#: fixture - the real bytes are git's, and the real-candidate verification is reported
+#: separately, never sealed as Evidence from here.
+SYNTHETIC_CANDIDATE_DIFF = (
+    "diff --git a/application/a.py b/application/a.py\n"
+    "index 1111111..2222222 100644\n"
+    "--- a/application/a.py\n"
+    "+++ b/application/a.py\n"
+    "@@ -1,2 +1,3 @@\n"
+    " import os\n"
+    "+frozen candidate content\n"
+    " \n"
+)
+
+#: The machine evidence shape the first real C13 run produced, used to build the fixture that
+#: proves the reviewer is now given something structured. Synthetic, and it says so.
+SYNTHETIC_MACHINE_INVENTORY = "control-plane/boss-deploy-request-v1/tests/test_deploy_entry.py"
+SYNTHETIC_JUNIT = (
+    "<?xml version='1.0' encoding='utf-8'?>\n"
+    "<testsuites name='pytest'>\n"
+    "<testsuite name='pytest' tests='305' failures='0' errors='0' skipped='0' time='12.5'>\n"
+    "</testsuite>\n"
+    "</testsuites>\n"
+)
+
+
+def synthetic_machine_files(root: pathlib.Path, *, candidate_sha: str, application_tree: str,
+                            junit: str = SYNTHETIC_JUNIT, manifest=True):
+    """The manifest.json + junit.xml pair the C13 machine job publishes."""
+    junit_path = root / "junit.xml"
+    junit_path.write_text(junit, encoding="utf-8")
+    manifest_path = root / "manifest.json"
+    if manifest is not False:
+        body = {
+            "inventory": SYNTHETIC_MACHINE_INVENTORY,
+            "postgres_version": "18.4",
+            "docker_used": True,
+            "junit_sha256": hashlib.sha256(junit.encode("utf-8")).hexdigest(),
+            "stdout_sha256": hashlib.sha256(b"synthetic machine stdout\n").hexdigest(),
+            "candidate_sha": candidate_sha,
+            "application_tree": application_tree,
+            "authorizes_any_action": False,
+        }
+        if isinstance(manifest, dict):
+            body.update(manifest)
+        manifest_path.write_text(json.dumps(body), encoding="utf-8")
+    return manifest_path, junit_path
+
+
 def _boundary_failures(raw: str) -> list:
     failures: list = []
     lite_workflow_check.check_changed_path_boundary("fixture.yml", raw, failures)
@@ -350,8 +399,12 @@ class RuleInputResolutionTests(unittest.TestCase):
                 read_file(RULE_INPUT_COMMIT, RULE_INPUT_SOURCE_PATH)
 
 
-class RuleInputRoundTests(unittest.TestCase):
-    """Drive the CLI exactly the way the workflow does, with a resolved rule input on disk."""
+class _RoundCliMixin:
+    """Drive the CLI exactly the way the workflow does, with a resolved rule input on disk.
+
+    Shared by the rule-input round tests and the review-content tests: both need the same
+    dispatch environment and the same frozen rule input beside it.
+    """
 
     def _env(self, directory, rule_input, **extra):
         now = datetime.datetime.now(datetime.timezone.utc)
@@ -386,10 +439,15 @@ class RuleInputRoundTests(unittest.TestCase):
         path.write_text(json.dumps(record), encoding="utf-8")
         return path
 
+class RuleInputRoundTests(_RoundCliMixin, unittest.TestCase):
+    """What the reviewer read on a resolved rule input, and what the record says it read."""
+
     def _seal_a_round(self, directory, rule_input, *, stub=True):
         root = pathlib.Path(directory)
         changed = root / "changed.txt"
         changed.write_text("application/a.py\n", encoding="utf-8")
+        candidate_diff = root / "candidate.diff"
+        candidate_diff.write_text(SYNTHETIC_CANDIDATE_DIFF, encoding="utf-8")
         env = self._env(root, rule_input)
         scope = root / "scope.json"
         self._run(["scope", "--role", "c14", "--rule-input", str(rule_input),
@@ -397,7 +455,9 @@ class RuleInputRoundTests(unittest.TestCase):
         env = {**env, "LITE_SCOPE_SHA256": json.loads(scope.read_text())["scope_sha256"]}
         spec, facts, contract = root / "spec.json", root / "facts.json", root / "contract.json"
         outcome, bundle = root / "outcome.json", root / "bundle.json"
-        self._run(["spec", "--role", "c14", "--spec", str(spec), "--facts", str(facts),
+        self._run(["spec", "--role", "c14", "--scope", str(scope),
+                   "--candidate-diff", str(candidate_diff),
+                   "--spec", str(spec), "--facts", str(facts),
                    "--contract", str(contract)], env)
         review = ["review", "--spec", str(spec), "--facts", str(facts), "--out", str(outcome)]
         if stub:
@@ -460,6 +520,8 @@ class RuleInputRoundTests(unittest.TestCase):
             root = pathlib.Path(directory)
             changed = root / "changed.txt"
             changed.write_text("application/a.py\n", encoding="utf-8")
+            candidate_diff = root / "candidate.diff"
+            candidate_diff.write_text(SYNTHETIC_CANDIDATE_DIFF, encoding="utf-8")
             env = self._env(root, rule_input)
             scope = root / "scope.json"
             self._run(["scope", "--role", "c14", "--rule-input", str(rule_input),
@@ -467,8 +529,10 @@ class RuleInputRoundTests(unittest.TestCase):
             os.environ.update({**env, "LITE_SCOPE_SHA256": json.loads(scope.read_text())["scope_sha256"]})
             self.addCleanup(lambda: [os.environ.pop(k, None) for k in env])
             spec, facts, contract = root / "spec.json", root / "facts.json", root / "contract.json"
-            self.assertEqual(lite_cli.main(["spec", "--role", "c14", "--spec", str(spec),
-                                            "--facts", str(facts), "--contract", str(contract)]), 0)
+            self.assertEqual(lite_cli.main(["spec", "--role", "c14", "--scope", str(scope),
+                                            "--candidate-diff", str(candidate_diff),
+                                            "--spec", str(spec), "--facts", str(facts),
+                                            "--contract", str(contract)]), 0)
             out = root / "outcome.json"
             with mock.patch.object(lite_ai_reviewer, "run",
                                    side_effect=AssertionError("the AI must not be called")):
@@ -481,8 +545,12 @@ class RuleInputRoundTests(unittest.TestCase):
             root = pathlib.Path(directory)
             env = self._env(root, root / "does-not-exist.json", LITE_SCOPE_SHA256="0" * 64)
             env.pop("LITE_RULE_INPUT")
+            for name, text in (("scope.json", "{}"), ("candidate.diff", SYNTHETIC_CANDIDATE_DIFF)):
+                (root / name).write_text(text, encoding="utf-8")
             completed = subprocess.run(
                 [sys.executable, str(ROOT / "lite_cli.py"), "spec", "--role", "c14",
+                 "--scope", str(root / "scope.json"),
+                 "--candidate-diff", str(root / "candidate.diff"),
                  "--spec", str(root / "s.json"), "--facts", str(root / "f.json"),
                  "--contract", str(root / "c.json")],
                 capture_output=True, text=True, env={**os.environ, **env})
@@ -967,3 +1035,246 @@ class RawEvidenceWorkflowTests(unittest.TestCase):
         lite_workflow_check.check_raw_evidence_survives_a_refused_seal(
             lite_workflow_check.C13_WORKFLOW, WORKFLOW_WITHOUT_RAW_STEPS, failures)
         self.assertEqual(failures, [])
+
+
+class ReviewContentInputTests(_RoundCliMixin, unittest.TestCase):
+    """The reviewer must be handed the CONTENT the round froze, not only its names.
+
+    CCV1-147B - the first real Review E2E. The sealed opinion said *"The frozen candidate
+    reports no changed paths"* while the very scope that record was bound to carried eight of
+    them: the facts had never carried the change surface at all, and the round still sealed
+    clean because every digest recomputed. These tests are RED against that backend.
+    """
+
+    CHANGED = ["application/a.py", "control-plane/boss-deploy-request-v1/go_deploy_request.py"]
+
+    def _cli(self, argv, env):
+        return subprocess.run([sys.executable, str(ROOT / "lite_cli.py"), *argv],
+                              capture_output=True, text=True, env={**os.environ, **env})
+
+    def _freeze(self, root, role, *, paths=None, criteria=(), inventory=None,
+                diff=SYNTHETIC_CANDIDATE_DIFF):
+        """Freeze a scope the way the workflow does, and stage the candidate diff beside it."""
+        paths = list(self.CHANGED if paths is None else paths)
+        changed = root / "changed_paths.txt"
+        changed.write_text("".join(f"{line}\n" for line in paths), encoding="utf-8")
+        rule_input = self._write_rule_input(root, fx.rule_input_record())
+        env = self._env(root, rule_input)
+        argv = ["scope", "--role", role, "--changed-paths", str(changed)]
+        if inventory is not None:
+            inventory_file = root / "test_inventory.txt"
+            inventory_file.write_text("".join(f"{line}\n" for line in inventory), encoding="utf-8")
+            argv += ["--inventory", str(inventory_file)]
+        for criterion in criteria:
+            argv += ["--criterion", criterion]
+        if role == "c14":
+            argv += ["--rule-input", str(rule_input)]
+        scope_path = root / "scope.json"
+        self._run(argv + ["--out", str(scope_path)], env)
+        env = {**env, "LITE_SCOPE_SHA256":
+               json.loads(scope_path.read_text(encoding="utf-8"))["scope_sha256"]}
+        candidate_diff = root / "candidate.diff"
+        if diff is not None:
+            candidate_diff.write_text(diff, encoding="utf-8")
+        return env, scope_path, candidate_diff
+
+    def _spec_argv(self, role, root, scope_path, candidate_diff, *, manifest=None, junit=None):
+        argv = ["spec", "--role", role,
+                "--scope", str(scope_path), "--candidate-diff", str(candidate_diff),
+                "--spec", str(root / f"{role}.spec.json"),
+                "--facts", str(root / f"{role}.facts.json"),
+                "--contract", str(root / f"{role}.contract.json")]
+        if manifest is not None:
+            argv += ["--machine-manifest", str(manifest)]
+        if junit is not None:
+            argv += ["--junit", str(junit)]
+        return argv
+
+    def _facts(self, root, role):
+        return json.loads((root / f"{role}.facts.json").read_text(encoding="utf-8"))
+
+    # ---------------------------------------------------------------- C14
+    def test_the_c14_facts_carry_the_frozen_change_surface_and_the_diff(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            env, scope_path, diff_path = self._freeze(root, "c14")
+            self._run(self._spec_argv("c14", root, scope_path, diff_path), env)
+            facts = self._facts(root, "c14")
+            self.assertEqual(facts["changed_paths"], self.CHANGED)
+            self.assertIn("+frozen candidate content", facts["candidate_diff"])
+
+    def test_the_c14_prompt_shows_the_rules_the_change_surface_and_the_diff(self):
+        """Not "the field exists": the bytes the model is actually sent carry all three."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            env, scope_path, diff_path = self._freeze(root, "c14")
+            self._run(self._spec_argv("c14", root, scope_path, diff_path), env)
+            prompt = lite_ai_reviewer.build_prompt("c14", self._facts(root, "c14"))
+            self.assertIn(fx.RULE_SOURCE_TEXT.strip(), prompt)
+            self.assertIn(fx.RULE_SOURCE_PATH, prompt)
+            for path in self.CHANGED:
+                self.assertIn(path, prompt)
+            self.assertIn("+frozen candidate content", prompt)
+
+    # ---------------------------------------------------------------- C13
+    def test_the_c13_facts_carry_the_content_the_criteria_and_the_machine_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            criteria = ["every required negative case refuses"]
+            env, scope_path, diff_path = self._freeze(
+                root, "c13", criteria=criteria, inventory=[SYNTHETIC_MACHINE_INVENTORY])
+            manifest, junit = synthetic_machine_files(
+                root, candidate_sha="a" * 40, application_tree="b" * 40)
+            self._run(self._spec_argv("c13", root, scope_path, diff_path,
+                                      manifest=manifest, junit=junit), env)
+            facts = self._facts(root, "c13")
+            self.assertEqual(facts["changed_paths"], self.CHANGED)
+            self.assertIn("+frozen candidate content", facts["candidate_diff"])
+            self.assertEqual(facts["acceptance_criteria"], criteria)
+            evidence = facts["machine_evidence"]
+            self.assertEqual(evidence["inventory"], SYNTHETIC_MACHINE_INVENTORY)
+            self.assertEqual(evidence["candidate_sha"], "a" * 40)
+            self.assertEqual(evidence["application_tree"], "b" * 40)
+            self.assertIs(evidence["docker_used"], True)
+            self.assertEqual(evidence["postgres_version"], "18.4")
+            self.assertEqual(evidence["junit"],
+                             {"tests": 305, "failures": 0, "errors": 0, "skipped": 0})
+            self.assertTrue(evidence["junit_sha256"])
+            self.assertTrue(evidence["stdout_sha256"])
+
+    def test_the_c13_prompt_shows_the_machine_evidence_and_the_diff(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            env, scope_path, diff_path = self._freeze(
+                root, "c13", criteria=["c1"], inventory=[SYNTHETIC_MACHINE_INVENTORY])
+            manifest, junit = synthetic_machine_files(
+                root, candidate_sha="a" * 40, application_tree="b" * 40)
+            self._run(self._spec_argv("c13", root, scope_path, diff_path,
+                                      manifest=manifest, junit=junit), env)
+            prompt = lite_ai_reviewer.build_prompt("c13", self._facts(root, "c13"))
+            for expected in (SYNTHETIC_MACHINE_INVENTORY, "305", "+frozen candidate content",
+                             self.CHANGED[0], "c1"):
+                self.assertIn(expected, prompt)
+
+    # ---------------------------------------------------------------- fail closed
+    def test_an_empty_change_surface_stops_the_round_before_the_review(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            env, scope_path, diff_path = self._freeze(root, "c14", paths=[])
+            completed = self._cli(self._spec_argv("c14", root, scope_path, diff_path), env)
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn("no changed paths", completed.stderr)
+
+    def test_a_scope_that_is_not_the_one_this_round_bound_is_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            env, scope_path, diff_path = self._freeze(root, "c14")
+            completed = self._cli(self._spec_argv("c14", root, scope_path, diff_path),
+                                  {**env, "LITE_SCOPE_SHA256": "0" * 64})
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn("is not the one this round bound", completed.stderr)
+
+    def test_a_scope_file_that_disagrees_with_its_own_digest_is_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            env, scope_path, diff_path = self._freeze(root, "c14")
+            document = json.loads(scope_path.read_text(encoding="utf-8"))
+            document["scope"]["changed_paths"].append("application/injected.py")
+            scope_path.write_text(json.dumps(document), encoding="utf-8")
+            completed = self._cli(self._spec_argv("c14", root, scope_path, diff_path), env)
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn("does not match its own scope digest", completed.stderr)
+
+    def test_a_missing_or_empty_candidate_diff_is_refused(self):
+        for label, diff in (("absent", None), ("empty", ""), ("blank", "   \n")):
+            with self.subTest(diff=label):
+                with tempfile.TemporaryDirectory() as directory:
+                    root = pathlib.Path(directory)
+                    env, scope_path, diff_path = self._freeze(root, "c14", diff=diff)
+                    completed = self._cli(self._spec_argv("c14", root, scope_path, diff_path), env)
+                    self.assertNotEqual(completed.returncode, 0)
+                    self.assertIn("candidate diff", completed.stderr)
+
+    def test_facts_that_disagree_with_the_frozen_scope_are_refused(self):
+        scope = {"changed_paths": ["application/a.py"]}
+        lite_cli._assert_facts_carry_the_frozen_content({"changed_paths": ["application/a.py"]}, scope)
+        with self.assertRaises(SystemExit):
+            lite_cli._assert_facts_carry_the_frozen_content({"changed_paths": ["application/b.py"]}, scope)
+        with self.assertRaises(SystemExit):
+            lite_cli._assert_facts_carry_the_frozen_content({"changed_paths": []}, scope)
+
+    def test_a_facts_builder_that_filters_the_change_surface_is_refused(self):
+        """The post-condition bites the moment the list is derived from anywhere but the scope."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            env, scope_path, diff_path = self._freeze(root, "c14")
+            real = lite_cli._facts
+
+            def helpful(role, spec, **kwargs):
+                built = real(role, spec, **kwargs)
+                built["changed_paths"] = [path for path in built["changed_paths"]
+                                          if path.startswith("application/")]
+                return built
+
+            os.environ.update(env)
+            self.addCleanup(lambda: [os.environ.pop(key, None) for key in env])
+            with mock.patch.object(lite_cli, "_facts", side_effect=helpful):
+                with self.assertRaises(SystemExit):
+                    lite_cli.main(self._spec_argv("c14", root, scope_path, diff_path))
+
+    def test_c13_cannot_be_built_without_the_machine_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            env, scope_path, diff_path = self._freeze(root, "c13")
+            missing = self._cli(self._spec_argv("c13", root, scope_path, diff_path), env)
+            self.assertNotEqual(missing.returncode, 0)
+            self.assertIn("requires --machine-manifest and --junit", missing.stderr)
+
+            baseless = self._cli(
+                self._spec_argv("c13", root, scope_path, diff_path,
+                                manifest=root / "absent-manifest.json",
+                                junit=root / "absent-junit.xml"), env)
+            self.assertNotEqual(baseless.returncode, 0)
+            self.assertIn("cannot read the machine manifest", baseless.stderr)
+
+            manifest, junit = synthetic_machine_files(
+                root, candidate_sha="a" * 40, application_tree="b" * 40, junit="not xml at all")
+            unparseable = self._cli(
+                self._spec_argv("c13", root, scope_path, diff_path, manifest=manifest, junit=junit),
+                env)
+            self.assertNotEqual(unparseable.returncode, 0)
+            self.assertIn("cannot read the machine junit", unparseable.stderr)
+
+    def test_c14_does_not_accept_the_c13_only_arguments(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            env, scope_path, diff_path = self._freeze(root, "c14")
+            manifest, junit = synthetic_machine_files(
+                root, candidate_sha="a" * 40, application_tree="b" * 40)
+            completed = self._cli(
+                self._spec_argv("c14", root, scope_path, diff_path, manifest=manifest, junit=junit),
+                env)
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn("c13 only", completed.stderr)
+
+    # ---------------------------------------------------------------- the digest binding
+    def test_editing_the_candidate_diff_moves_the_input_digest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            env, scope_path, diff_path = self._freeze(root, "c14")
+            argv = self._spec_argv("c14", root, scope_path, diff_path)
+
+            def reviewed():
+                self._run(argv, env)
+                self._run(["review", "--spec", str(root / "c14.spec.json"),
+                           "--facts", str(root / "c14.facts.json"),
+                           "--out", str(root / "c14.outcome.json"), "--stub"], env)
+                return json.loads((root / "c14.outcome.json").read_text(encoding="utf-8"))
+
+            first = reviewed()
+            self.assertEqual(first["verdict"], "PASS_SCOPED")
+            diff_path.write_text(SYNTHETIC_CANDIDATE_DIFF.replace(
+                "frozen candidate content", "tampered candidate content"), encoding="utf-8")
+            second = reviewed()
+            self.assertNotEqual(first["input_sha256"], second["input_sha256"])
+            self.assertNotEqual(first["prompt_sha256"], second["prompt_sha256"])

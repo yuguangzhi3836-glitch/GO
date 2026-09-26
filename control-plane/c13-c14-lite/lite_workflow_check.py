@@ -50,6 +50,10 @@ INVENTED_RULE_NAMES = ("GO_" + "CONSTITUTION", "PERMISSION_" + "BOUNDARY", "AI_B
 #: verify step already copies its opinion into the uploaded artefact directory.
 C14_RAW_ARTIFACT = "c13c14-lite-c14-raw-${{ inputs.candidate_sha }}"
 
+#: The frozen candidate's own first-parent diff. The reviewer has to be given the CONTENT, not
+#: just the names of the files that changed.
+CANDIDATE_DIFF_REDIRECT = "candidate.diff"
+
 try:  # pragma: no cover - trivial import guard
     import yaml
 except ImportError:  # pragma: no cover
@@ -237,6 +241,52 @@ def check_machine_step_installs_candidate_dependencies(name: str, document: dict
     if pytest_at and min(candidate_at) > min(pytest_at):
         failures.append(
             f"{name}: the candidate's dependencies are installed after pytest runs")
+
+
+def check_spec_carries_the_frozen_review_content(name: str, raw: str, failures: list) -> None:
+    """The reviewer must be handed the CONTENT the round froze, not only its names.
+
+    CCV1-147B, the first real Review E2E: the frozen scope carried eight changed paths while the
+    facts handed to the model carried an empty list and no diff at all, so the model faithfully
+    answered NOT_APPLICABLE for "no changed paths" - and nothing failed, because every digest
+    still recomputed. The backend now refuses that round before any AI call; this is the
+    structural half, so an edit that drops the arguments or the diff generation is caught at
+    review time instead of by an unexplained red run.
+
+    Comments are stripped first: this step's own explanation quotes the flags and would
+    otherwise satisfy the check on the file it is warning about.
+    """
+    if name not in PRODUCTION_WORKFLOWS:
+        return
+    code = "\n".join(_code_lines(raw))
+    if not any("git" in line and " diff " in line
+               and f'> "$RUNNER_TEMP/{CANDIDATE_DIFF_REDIRECT}"' in line
+               for line in code.splitlines()):
+        failures.append(
+            f"{name}: must freeze the candidate's own first-parent diff into "
+            f"$RUNNER_TEMP/{CANDIDATE_DIFF_REDIRECT} (file names alone are not the content the "
+            "reviewer has to judge)")
+    if f'test -s "$RUNNER_TEMP/{CANDIDATE_DIFF_REDIRECT}"' not in code:
+        failures.append(f"{name}: must refuse an empty candidate diff")
+    document = _document_from(raw)
+    if document is None:
+        return
+    spec_steps = [step for job in (document.get("jobs") or {}).values()
+                  for step in ((job or {}).get("steps") or [])
+                  if "lite_cli.py spec" in str(step.get("run") or "")]
+    if not spec_steps:
+        failures.append(f"{name}: no 'lite_cli.py spec' step found")
+        return
+    required = ["--scope", "--candidate-diff"]
+    if name == C13_WORKFLOW:
+        required += ["--machine-manifest", "--junit"]
+    for step in spec_steps:
+        step_code = "\n".join(_code_lines(str(step.get("run") or "")))
+        for flag in required:
+            if flag not in step_code:
+                failures.append(
+                    f"{name}: the spec step must be given {flag}; the frozen scope, the candidate "
+                    "diff and the machine evidence are inputs to the review, not defaults")
 
 
 def check_artifact_discipline(name: str, raw: str, failures: list) -> None:
@@ -582,6 +632,7 @@ def run() -> dict:
         check_credential_boundary(name, document, raw, failures)
         check_dispatch_surface(name, document, failures)
         check_artifact_discipline(name, raw, failures)
+        check_spec_carries_the_frozen_review_content(name, raw, failures)
         check_env_export_is_not_same_step(name, document, failures)
         check_readback_declares_the_run_head(name, raw, failures)
         check_changed_path_boundary(name, raw, failures)
