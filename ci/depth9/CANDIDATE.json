@@ -1,10 +1,10 @@
 {
   "schema": "go.unified.depth9.candidate.v1",
-  "source_commit": "b1bf0021b11016ee5108998504c55bd75204dd80",
+  "source_commit": "1d7df6f63525e4e9809da8f5ea3461f74090b1a0",
   "main_base": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
-  "application_git_tree": "c4f2b5ab4b2eedf275a8e4cfde05449444731bb0",
+  "application_git_tree": "978e6b99ca391cc8913db0942aece15009a96b30",
   "source_files": 1546,
-  "source_tree_sha256": "dcfca181fd43c8e9106cc4e1dfafa81cebadd157e9664b66bba43e67bc5f1ad0",
+  "source_tree_sha256": "0a1971254e4842364cbc0fbaef37e132ad337b8a108d9906475002ac52797d72",
   "inputs": {
     "202": "cd6345e32dd258c7f11f0766a36a168bad99a7f5",
     "204": "e9667461dcdc848f1fcfdf024bba905202235b49",
@@ -19,7 +19,7 @@
   },
   "migration_head": "0140_ledger_account_width",
   "historical_pass_transferred": false,
-  "C13": "ROUND8_PG_WIDTH_FIXED_PRODUCT_REVIEW_PENDING",
+  "C13": "PENDING_CURRENT_TEST_REBIND_REVIEW",
   "C14": "PENDING_RULES_REVIEW",
   "deployment": "NOT_RUN",
   "production": "HOLD",
@@ -54,10 +54,10 @@
   "engineering_continuation": {
     "round": 7,
     "parent_gate": "3fc5b59e6c3703d94462f763bd22db2bf8315651",
-    "product_candidate_commit": "b1bf0021b11016ee5108998504c55bd75204dd80",
+    "product_candidate_commit": "1d7df6f63525e4e9809da8f5ea3461f74090b1a0",
     "scope": "Scoped Hosted authority and enforced publication; atomic approval recovery; net-capture rental compensation",
     "developer_tests": 145,
-    "independent_c13": "ROUND8_PG_WIDTH_FIXED_PRODUCT_REVIEW_PENDING",
+    "independent_c13": "PENDING_CURRENT_TEST_REBIND_REVIEW",
     "independent_c14": "NOT_DISPATCHED_RULES_REVIEW_PENDING",
     "historical_pass_transferred": false,
     "real_hotel_authority": "HOLD_UNVERIFIED",
@@ -102,7 +102,16 @@
     "first_round8_product": "9a298cb3a093c4e75a043bdb2a4da14594fafd3c",
     "first_round8_c13": "FAIL_3_P1_55_EXECUTED_50_PASS_5_FAIL",
     "prior_round8_gate": "21288f811e04f0c46e9b24bc3330bcfe8e18c689",
-    "prior_round8_gate_verdict": "POSTGRES_FAIL_339_PASS_2_COMPLETE_CAPTURE_FAILURES"
+    "prior_round8_gate_verdict": "POSTGRES_FAIL_339_PASS_2_COMPLETE_CAPTURE_FAILURES",
+    "ledger_storage_test_repair": {
+      "base_gate": "ceb21e65a525993eeea34f50567c1089b16ece3a",
+      "path": "application/tests/payments/test_c11_deposit_ledger_width.py",
+      "failed_run": 36226335761,
+      "failed_job": 108360993033,
+      "storage_width": 128,
+      "deposit_identity_width": 64,
+      "tests": "PENDING_CURRENT_CI"
+    }
   },
   "engineering_continuation_history": [
     {
