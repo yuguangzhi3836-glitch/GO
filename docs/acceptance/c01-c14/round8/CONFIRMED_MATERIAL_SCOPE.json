@@ -45,14 +45,15 @@
     "check_in_after": "14:00",
     "check_out_before": "12:00",
     "timezone": "Asia/Shanghai",
-    "free_cancel_minutes_after_confirmation": 30
+    "free_cancel_minutes": 30
   },
   "unknown_not_opened": [
     "Other three room pool prices",
     "Post-cooling commercial cancellation fees",
     "Extra-bed pricing",
     "Real payment authority",
-    "Complete original 199-image manifest and rights"
+    "Complete original 199-image manifest and rights",
+    "30-minute cancellation clock anchor"
   ],
   "synthetic_only": [
     "Guest names and document hashes",
@@ -61,5 +62,12 @@
     "PNG publication assets",
     "Occupancy ceiling and unused change/credit/no-show rules"
   ],
-  "no_invented_real_source": true
+  "no_invented_real_source": true,
+  "unconfirmed_cancellation_anchor": {
+    "state": "UNCONFIRMED",
+    "user_original": "30分钟内免费取消",
+    "assistant_prior_interpretation": "酒店确认后30分钟",
+    "fixture_only_anchor": "HOTEL_CONFIRMED",
+    "actual_drill_cancellation": "Order, authorization, confirmation and cancellation share the same controlled instant; not dependent on anchor ambiguity"
+  }
 }

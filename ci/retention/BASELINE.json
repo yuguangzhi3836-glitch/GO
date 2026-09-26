@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.rebind.v3",
-  "product_candidate_commit": "9a298cb3a093c4e75a043bdb2a4da14594fafd3c",
-  "application_git_tree": "ba334dadcb8899fa60c352df0410367592bc236b",
+  "product_candidate_commit": "84950946635ff7f19c5b41cc7907a4917d9e6d06",
+  "application_git_tree": "c6f4d7773d528a52736729528ea553f4a23ba803",
   "source_anchor_main": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
   "preintegration_candidate": "9950bde1def11b27ed137d7db02a3047befda4fa",
   "preintegration_application_tree": "9c83d92434301356228c1b79294fcd829d675ebf",
@@ -1688,8 +1688,8 @@
     },
     "src/go_hotel/services/hosted_frontdesk_uat.py": {
       "mode": "100644",
-      "git_blob": "105edf23f5e607e7739126857672c9d6a742eb44",
-      "reason": "Round8 authorized isolated Aoluguya operating day: historical snapshots, canonical funds, arrival and cancellation boundaries"
+      "git_blob": "f0c87b74776f2b8dcbfea1565b1dd5be7d792833",
+      "reason": "Repair C13 independently reproduced round8 money/order/voucher failures and concurrent close guard"
     },
     "src/go_hotel/services/hosted_operation_authority.py": {
       "mode": "100644",
@@ -1788,8 +1788,8 @@
     },
     "src/go_hotel/services/hosted_business_day.py": {
       "mode": "100644",
-      "git_blob": "4bca4a532196bad59de313d72ed881155c45a718",
-      "reason": "Round8 authorized isolated Aoluguya operating day: historical snapshots, canonical funds, arrival and cancellation boundaries"
+      "git_blob": "3f7c0574aad0e3f45ce75a7797a4a4b5b8a60c22",
+      "reason": "Repair C13 independently reproduced round8 money/order/voucher failures and concurrent close guard"
     },
     "src/go_hotel/services/guest_stay_fulfillment.py": {
       "mode": "100644",
@@ -1798,8 +1798,8 @@
     },
     "tests/test_c01_aoluguya_business_day.py": {
       "mode": "100644",
-      "git_blob": "0d575e13fadbc3c642967dedcf128b26b7d1c743",
-      "reason": "Round8 authorized isolated Aoluguya operating day: historical snapshots, canonical funds, arrival and cancellation boundaries"
+      "git_blob": "6c937c39180b4cc9179ff8062452ce6da07b3703",
+      "reason": "Repair C13 independently reproduced round8 money/order/voucher failures and concurrent close guard"
     }
   },
   "migration_head": "0139_hosted_publication_review",
@@ -1820,7 +1820,7 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "febb925eeb781223f17002b91479f2eac9b71acc",
-  "source_tree_sha256": "5ff89ecdf56611742fab9af0a8e1cb2787830a672526fe7b3557786aa61f0e58",
+  "source_tree_sha256": "686849ca3cad656fab4620b216ad16d55d940ffd7f61b438fd02fae94cde43bb",
   "historical_pass_transferred": false,
   "migration_file": "alembic/versions/0139_hosted_publication_review.py",
   "verified_current_generation_ledger": "ci/depth9/CANDIDATE.json",
@@ -1830,10 +1830,10 @@
   "engineering_continuation": {
     "round": 7,
     "parent_gate": "3fc5b59e6c3703d94462f763bd22db2bf8315651",
-    "product_candidate_commit": "9a298cb3a093c4e75a043bdb2a4da14594fafd3c",
+    "product_candidate_commit": "84950946635ff7f19c5b41cc7907a4917d9e6d06",
     "scope": "Scoped Hosted authority and enforced publication; atomic approval recovery; net-capture rental compensation",
     "developer_tests": 145,
-    "independent_c13": "ROUND8_FROZEN_PRODUCT_REVIEW_PENDING",
+    "independent_c13": "ROUND8_FIX_CANDIDATE_REVIEW_PENDING",
     "independent_c14": "NOT_DISPATCHED_RULES_REVIEW_PENDING",
     "historical_pass_transferred": false,
     "real_hotel_authority": "HOLD_UNVERIFIED",
@@ -1874,7 +1874,9 @@
       "raw_failure_run": 36216819757,
       "lossy_downgrade": "REFUSED_BEFORE_DDL"
     },
-    "round8_scope": "ISOLATED_AOLUGUYA_OPERATING_DAY_WITH_EXCEPTIONS"
+    "round8_scope": "ISOLATED_AOLUGUYA_OPERATING_DAY_WITH_EXCEPTIONS",
+    "first_round8_product": "9a298cb3a093c4e75a043bdb2a4da14594fafd3c",
+    "first_round8_c13": "FAIL_3_P1_55_EXECUTED_50_PASS_5_FAIL"
   },
   "engineering_continuation_history": [
     {
