@@ -20,7 +20,10 @@ def test_fresh_database_can_apply_entire_chain_without_stamp(tmp_path, monkeypat
     db, cfg = config(tmp_path, monkeypatch)
     command.upgrade(cfg, 'head')
     with sqlite3.connect(db) as s:
-        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0138_supplier_library_import'
+        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0139_hosted_publication_review'
+        media_columns={r[1] for r in s.execute('PRAGMA table_info(hosted_media_asset)')}
+        assert {'submitted_by','submitter_binding_hash'} <= media_columns
+        assert s.execute("SELECT name FROM sqlite_master WHERE name='hosted_publication_review'").fetchone()
         columns = {r[1] for r in s.execute('PRAGMA table_info(connector_runtime_reconciliation)')}
         assert {'claimed_by', 'lease_expires_at', 'resolution_payload_json', 'superseded_reason'} <= columns
         assert s.execute("SELECT name FROM sqlite_master WHERE name='vertical_payment_deadline'").fetchone()
@@ -146,3 +149,85 @@ def test_flight_width_preserves_sqlite_history_and_blocks_lossy_downgrade(tmp_pa
         assert s.execute('SELECT * FROM flight_order_runtime').fetchone() == ('old', 'PAYMENT_PENDING')
         assert {r[1]: r[2] for r in s.execute('PRAGMA table_info(flight_order_runtime)')}['status'] == 'VARCHAR(32)'
         assert s.execute("SELECT name FROM sqlite_master WHERE name='flight_status_history_index'").fetchone()
+
+
+def hosted_publication_migration():
+    import importlib.util
+    from pathlib import Path
+    path=Path(__file__).resolve().parents[1]/'alembic/versions/0139_hosted_publication_review.py'
+    spec=importlib.util.spec_from_file_location('hosted_publication_migration',path)
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    return module
+
+
+@pytest.mark.parametrize('media_present',[False,True])
+def test_hosted_publication_migration_preserves_legacy_media_and_absent_table(tmp_path,media_present):
+    import sqlalchemy as sa
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    engine=sa.create_engine('sqlite+pysqlite:///'+str(tmp_path/'publication.db'))
+    migration=hosted_publication_migration()
+    with engine.begin() as connection:
+        if media_present:
+            connection.execute(sa.text('CREATE TABLE hosted_media_asset (media_asset_id VARCHAR(64) PRIMARY KEY)'))
+            connection.execute(sa.text("INSERT INTO hosted_media_asset VALUES ('historical-unverified')"))
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.upgrade()
+            assert sa.inspect(connection).has_table('hosted_media_asset')==media_present
+            if media_present:
+                assert connection.execute(sa.text('SELECT media_asset_id,submitted_by,submitter_binding_hash FROM hosted_media_asset')).one()==('historical-unverified',None,None)
+            migration.downgrade()
+        assert not sa.inspect(connection).has_table('hosted_publication_review')
+        if media_present:assert connection.execute(sa.text('SELECT * FROM hosted_media_asset')).one()==('historical-unverified',)
+    engine.dispose()
+
+
+@pytest.mark.parametrize('evidence',['media','review'])
+def test_hosted_publication_downgrade_refuses_losing_authority_history(tmp_path,evidence):
+    import sqlalchemy as sa
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    engine=sa.create_engine('sqlite+pysqlite:///'+str(tmp_path/'publication-history.db'))
+    migration=hosted_publication_migration()
+    with engine.begin() as connection:
+        connection.execute(sa.text('CREATE TABLE hosted_media_asset (media_asset_id VARCHAR(64) PRIMARY KEY)'))
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.upgrade()
+            if evidence=='media':connection.execute(sa.text("INSERT INTO hosted_media_asset VALUES ('original','server-submitter','authority-hash')"))
+            else:
+                connection.execute(sa.text("INSERT INTO hosted_publication_review VALUES ('review','hotel','{}','hash','checker','binding','APPROVE','isolated://proof','2026-09-26')"))
+            with pytest.raises(RuntimeError,match='DOWNGRADE_DATA_PRESENT'):migration.downgrade()
+        assert {'submitted_by','submitter_binding_hash'}<={c['name'] for c in sa.inspect(connection).get_columns('hosted_media_asset')}
+        assert sa.inspect(connection).has_table('hosted_publication_review')
+    engine.dispose()
+
+
+@pytest.mark.parametrize('existing',['metadata','wrong_column'])
+def test_hosted_publication_migration_validates_existing_metadata_schema(tmp_path,existing):
+    import sqlalchemy as sa
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    from go_hotel.db.models import HostedMediaAssetRow,HostedPublicationReviewRow
+    engine=sa.create_engine('sqlite+pysqlite:///'+str(tmp_path/'metadata.db'))
+    with engine.begin() as connection:
+        if existing=='metadata':
+            HostedMediaAssetRow.__table__.create(connection)
+            HostedPublicationReviewRow.__table__.create(connection)
+        else:
+            connection.execute(sa.text('CREATE TABLE hosted_media_asset (media_asset_id VARCHAR(64) PRIMARY KEY, submitted_by INTEGER)'))
+        with Operations.context(MigrationContext.configure(connection)):
+            if existing=='metadata':hosted_publication_migration().upgrade()
+            else:
+                with pytest.raises(RuntimeError,match='SCHEMA_MISMATCH'):hosted_publication_migration().upgrade()
+    engine.dispose()
+
+
+@pytest.mark.parametrize('timezone',[True,False])
+def test_hosted_publication_postgres_schema_requires_timezone_type(timezone):
+    import sqlalchemy as sa
+    from sqlalchemy.dialects.postgresql import TIMESTAMP
+    actual={'type':TIMESTAMP(timezone=timezone),'nullable':False}
+    expected=sa.Column('decided_at',sa.DateTime(timezone=True),nullable=False)
+    if timezone:hosted_publication_migration().compatible(actual,expected,'postgresql')
+    else:
+        with pytest.raises(RuntimeError,match='SCHEMA_MISMATCH'):hosted_publication_migration().compatible(actual,expected,'postgresql')
