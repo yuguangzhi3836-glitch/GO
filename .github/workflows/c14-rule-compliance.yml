@@ -131,6 +131,24 @@ jobs:
           wc -c < "$RUNNER_TEMP/candidate.diff"
           wc -l < "$RUNNER_TEMP/changed_paths.txt"
 
+      - name: Resolve the review brief from the candidate's own pull request (read-only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # WHAT WAS ASKED FOR, not only what changed. Until now C14 could see the change
+          # surface, the diff and the rule text but not the task the candidate was given, so it
+          # could only grade against its own idea of best practice. The brief is the candidate's
+          # own pull request, frozen as GitHub's raw facts by the commit -> pull requests API.
+          # The match must be unique (the candidate is that PR's head sha or its merge commit
+          # sha); zero or several matches is a refusal, never a guess. This step exits 0 even on
+          # a refusal, on purpose: the refusal is a *record*, and `spec` below stops the round on
+          # it - so the reason survives instead of being lost in a crashed step.
+          python control-plane/c13-c14-lite/lite_cli.py review-brief \
+            --candidate-sha "${{ inputs.candidate_sha }}" \
+            --repository "$GITHUB_REPOSITORY" \
+            --out "$RUNNER_TEMP/review_brief.json"
+
       - name: Resolve the authoritative rule sources (read-only, this run's commit)
         env:
           GH_TOKEN: ${{ github.token }}
@@ -213,6 +231,7 @@ jobs:
           python control-plane/c13-c14-lite/lite_cli.py spec --role c14 \
             --scope "$RUNNER_TEMP/scope.json" \
             --candidate-diff "$RUNNER_TEMP/candidate.diff" \
+            --review-brief "$RUNNER_TEMP/review_brief.json" \
             --spec "$RUNNER_TEMP/c14.spec.json" \
             --facts "$RUNNER_TEMP/c14.facts.json" \
             --contract "$RUNNER_TEMP/c14.contract.json"
@@ -270,6 +289,7 @@ jobs:
             --contract "$RUNNER_TEMP/c14.contract.json" \
             --outcome "$RUNNER_TEMP/c14.outcome.json" \
             --scope "$RUNNER_TEMP/scope.json" \
+            --review-brief "$RUNNER_TEMP/review_brief.json" \
             --seal-result "$RUNNER_TEMP/seal_result.json" \
             --seal-stdout "$RUNNER_TEMP/seal_stdout.txt" \
             --seal-stderr "$RUNNER_TEMP/seal_stderr.txt"

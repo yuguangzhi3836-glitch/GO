@@ -24,6 +24,42 @@ differ. Nothing here creates a task registry, a cell registry or a state machine
 Order is **C14 first, then C13 on the same frozen candidate**. `NOT_APPLICABLE` is
 a recorded C14 terminal state with scope, basis and rule version — never a skip.
 
+## The review brief (`REVIEW_BRIEF_V1`)
+
+Both cells are given the task context they grade against. Its exact scope:
+
+```text
+REVIEW_BRIEF_V1 =
+the associated pull request's declared delivery brief.
+It provides task context for C13/C14 review,
+but it is not an independent or immutable source
+of the original production-task authority.
+```
+
+In plain terms:
+
+- C13 and C14 now finally have the **question**, not only the **answer** (change surface,
+  candidate first-parent diff, rule text, machine evidence).
+- The question comes from the **candidate's own pull request declaration**, resolved
+  read-only from GitHub's own commit → pull requests answer and matched **uniquely** —
+  the candidate is that PR's `head.sha` or its `merge_commit_sha`; zero or several matches
+  is a refusal, never a guess.
+- A pull request body can still be **edited afterwards**, so the same candidate SHA can
+  later resolve to a different brief.
+- `input_sha256` binds exactly the brief the reviewer saw **in this round** — the bytes it
+  was shown. It does **not** establish that those bytes are the task the production AI
+  originally received. Binding and provenance are different questions, and this package
+  answers only the first one.
+- Closing that provenance gap (an immutable task spec, a task registry, a task digest, a
+  second ledger, a signature) is deliberately **not** done here. It is a separate decision,
+  and until it is taken no record may describe this brief as the immutable original task.
+
+Production convention — **not** a gate: an AI that opens the candidate pull request should
+carry the original task's **objective, scope, out-of-scope, acceptance criteria and
+validation / test plan** into the PR body faithfully, so the declared brief is as close to
+the task the candidate actually received as the current mechanism can get. Nothing in this
+package enforces that, and no template gate or preflight is implied.
+
 ## Files
 
 | File | Role |
@@ -31,6 +67,7 @@ a recorded C14 terminal state with scope, basis and rule version — never a ski
 | `lite_canonical.py` | canonical JSON + SHA256, same convention as `go_deploy_request.py` |
 | `lite_errors.py` | `Reject` / `Block` vocabulary and the six failure classes |
 | `lite_candidate.py` | frozen candidate contract, freshness, dispatch binding |
+| `lite_review_brief.py` | `REVIEW_BRIEF_V1`: the associated pull request's **declared** delivery brief, resolved read-only and matched uniquely (or refused) — task context, not an immutable original task |
 | `lite_identity.py` | execution identity and machine-checked independence |
 | `lite_bundle.py` | sealed C14 / C13 bundles, `NOT_APPLICABLE` record, roots |
 | `lite_prerequisite.py` | the C13 prerequisite gate over the sealed C14 record |

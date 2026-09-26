@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import pathlib
 from datetime import datetime, timedelta, timezone
 
 import lite_ai_reviewer
@@ -16,6 +17,7 @@ import lite_bundle
 import lite_candidate
 import lite_canonical
 import lite_errors
+import lite_review_brief
 import lite_rule_input
 
 #: A fixed instant, for tests that need one. It is **not** the default for the
@@ -62,6 +64,53 @@ QUALITY_SCOPE = seed_sha("synthetic-quality-test-scope", 64)
 RULE_SOURCE_PATH = "docs/governance/CHANGE_CONTROL_POLICY.md"
 RULE_SOURCE_TEXT = "Synthetic governance rule text for the fixture round.\n"
 AUTHORITY_COMMIT = seed_sha("synthetic-authority-commit")
+
+#: The synthetic review brief: the task the fixture candidate was answering. Values are derived
+#: from seeds and this is presented as the *shape* of a resolved brief, never as a real task and
+#: never as a real pull request.
+REVIEW_BRIEF_PR_NUMBER = 1717
+REVIEW_BRIEF_TITLE = "Synthetic candidate task for the fixture round"
+REVIEW_BRIEF_BODY = "Synthetic task body: this candidate answers the fixture brief.\n"
+
+
+def pull_request(candidate_sha=CANDIDATE_SHA, *, number=REVIEW_BRIEF_PR_NUMBER, as_merge=False) -> dict:
+    """One GitHub-shaped pull request, for exercising the brief resolver offline.
+
+    ``as_merge=True`` models the other legal candidate shape: the frozen candidate is the
+    *merge commit* of an already merged pull request, so its head SHA is a different commit.
+    """
+    return {
+        "number": number,
+        "title": REVIEW_BRIEF_TITLE,
+        "body": REVIEW_BRIEF_BODY,
+        "state": "closed",
+        "merged_at": "2026-09-25T08:00:00Z",
+        "merge_commit_sha": candidate_sha if as_merge else seed_sha(f"synthetic-merge-{number}"),
+        "html_url": f"https://github.com/{REPOSITORY}/pull/{number}",
+        "base": {"ref": "main"},
+        "head": {
+            "ref": f"synthetic/head-{number}",
+            "sha": seed_sha(f"synthetic-head-{number}") if as_merge else candidate_sha,
+        },
+    }
+
+
+def review_brief_record(candidate_sha=CANDIDATE_SHA, *, as_merge=False) -> dict:
+    """A brief record produced by the production resolver, so the fixture is consistent.
+
+    Hand-writing the record would let a fixture disagree with the real matching rule.
+    """
+    return lite_review_brief.resolve(
+        candidate_sha, lambda sha: [pull_request(sha, as_merge=as_merge)])
+
+
+def write_review_brief(path, candidate_sha=CANDIDATE_SHA, *, as_merge=False):
+    """Write a resolved brief to disk, for the ``spec`` CLI to consume."""
+    target = pathlib.Path(path)
+    target.write_text(
+        json.dumps(review_brief_record(candidate_sha, as_merge=as_merge), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8")
+    return target
 
 
 def rule_input_record(*, status="OK", reason=None, detail="") -> dict:
@@ -156,6 +205,11 @@ def role_facts(role: str, *, candidate_sha=CANDIDATE_SHA, application_tree=APPLI
             "cell_id": cell_id or ("C14" if role == "c14" else "C13"),
             "task_id": task_id or (C14_TASK if role == "c14" else C13_TASK),
         },
+        # Both cells grade the same paper: the delivery brief declared by the candidate's own
+        # pull request (REVIEW_BRIEF_V1 - declared, not an immutable original task). Present
+        # for c13 and c14 alike, because "acceptable for the declared task" is not a question
+        # either cell can answer without it.
+        "review_brief": review_brief_record(candidate_sha)["pull_request"],
     }
     if role == "c14":
         rule_input = rule_input_record()
