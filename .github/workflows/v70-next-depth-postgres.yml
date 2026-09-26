@@ -234,3 +234,83 @@ jobs:
           path: ${{ runner.temp }}/next-depth-pg
           if-no-files-found: error
           retention-days: 90
+
+  room-day:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_c11_isolated
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_c11_isolated"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+      APP_ENV: test
+      MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify frozen candidate source
+        run: |
+          python ci/retention/verify_source.py "$RUNNER_TEMP/room-day/source"
+          python ci/retention/verify_alignment.py "$RUNNER_TEMP/room-day/alignment.json"
+      - name: Install inherited frozen dependencies
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Room ownership, authority, independent day and legacy compatibility
+        working-directory: application
+        env:
+          PYTHONPATH: src
+        shell: bash
+        run: |
+          set -euo pipefail
+          export GO_C13_ARTIFACT_DIR="$RUNNER_TEMP/room-day/independent-day"
+          python -B -m pytest -q -p no:cacheprovider \
+            tests/test_hosted_room_registry.py tests/test_c01_room_registry_journey.py \
+            tests/test_c13_room_registry_authority.py tests/test_c13_aoluguya_independent_day.py \
+            tests/test_c01_aoluguya_business_day.py \
+            tests/test_guest_stay_fulfillment_settlement_eligibility.py \
+            tests/test_post_stay_dispute_refund_reconciliation.py tests/test_depth06_direct_checkout.py \
+            --junitxml="$RUNNER_TEMP/room-day/junit.xml" 2>&1 | tee "$RUNNER_TEMP/room-day/tests.log"
+          python - <<'PY'
+          import os, pathlib, xml.etree.ElementTree as ET, json
+          from sqlalchemy import text
+          from go_hotel.db.session import engine
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'room-day'
+          root=ET.parse(out/'junit.xml').getroot()
+          counts={k:sum(int(s.get(k,0)) for s in root.findall('testsuite')) for k in ('tests','failures','errors','skipped')}
+          assert counts['tests']==93 and counts['failures']==counts['errors']==counts['skipped']==0, counts
+          with engine.connect() as s: version=s.scalar(text('select version()'))
+          assert 'PostgreSQL 18.4' in version
+          (out/'RESULT.json').write_text(json.dumps({'counts':counts,'database':version,'scope':'isolated physical-room and complete hotel business-day contracts','external_payment':'NOT_CONNECTED'},indent=2)+'\n')
+          print(counts)
+          PY
+      - name: Bind original evidence to source
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'room-day';out.mkdir(exist_ok=True)
+          report={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'application_git_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'files':{str(p.relative_to(out)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(out.rglob('*')) if p.is_file()},'external_payment':'NOT_CONNECTED','production':'HOLD'}
+          (out/'EVIDENCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: room-day-pg-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/room-day
+          if-no-files-found: error
+          retention-days: 90

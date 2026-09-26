@@ -1,10 +1,10 @@
 {
   "schema": "go.unified.depth9.candidate.v1",
-  "source_commit": "90f228e105b7fd0d8d6c4e9810eccd84534c31a1",
+  "source_commit": "d838f05d0d180a621f8e4cbd7b23074c9cd71e4d",
   "main_base": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
-  "application_git_tree": "517c1aadc3b2bb624c79717ad1a2dc5817b37697",
-  "source_files": 1547,
-  "source_tree_sha256": "d850a3a695946bf0d5e9cdec9a82a89432cfaaaa8b7b5a370c756b9dccbca8ed",
+  "application_git_tree": "8a5b54d10a7df6b8ca04d27076b80a3f2ea09024",
+  "source_files": 1552,
+  "source_tree_sha256": "30b78e8f1f8020388103a494e06a698d5fce69f5f0366cf9964fe6b89fe73511",
   "inputs": {
     "202": "cd6345e32dd258c7f11f0766a36a168bad99a7f5",
     "204": "e9667461dcdc848f1fcfdf024bba905202235b49",
@@ -337,5 +337,40 @@
     "postgres": "PENDING_EXACT_CANDIDATE",
     "full_internal_payment_acceptance": "PENDING",
     "external_payment": "NOT_CONNECTED"
+  },
+  "room_business_day_repair": {
+    "parent_gate": "7c006399aa41a4a4ba8486100ca25b26a402d625",
+    "product_candidate_commit": "d838f05d0d180a621f8e4cbd7b23074c9cd71e4d",
+    "source_files": {
+      "src/go_hotel/services/hosted_room_registry.py": "21e20f06a3c9af27eb6e2a540b6e7e01fed8eec9",
+      "src/go_hotel/services/guest_stay_fulfillment.py": "a292636390a46bb9745890dc6cf39f189bbd8666",
+      "src/go_hotel/services/hosted_operation_authority.py": "6c238dba30d4b529a8537264e1d174bdd5b05f4b",
+      "src/go_hotel/api/routes/hosted_direct_booking.py": "d97ee1432e2960c07cc41466bdfa51b94a5defc6",
+      "tests/hosted_review_support.py": "71de618cae8710125c770e46db1c5bc98314c10b",
+      "tests/test_c01_aoluguya_business_day.py": "eeac7775d936e98a429568702c58160a2172abcf",
+      "tests/test_depth06_direct_checkout.py": "34278fcf354b375ccab05e8f323f1c27e01e69da",
+      "tests/test_guest_stay_fulfillment_settlement_eligibility.py": "065e3ec5c54ca9e290c634459c30623b17b5ba2e",
+      "tests/test_post_stay_dispute_refund_reconciliation.py": "3a54f575f583c6143569804fd5b3b108b189c92f",
+      "tests/test_hosted_room_registry.py": "426260b929856bee1a496b83910041c3028c0d1b",
+      "tests/test_c01_room_registry_journey.py": "dfaa6b69a957b39a7d7f3a6dd15a1b9e7afaee22",
+      "tests/test_c13_aoluguya_independent_day.py": "7bfeb8c67aab3b6f0d1140a2e96fb6a735966a14",
+      "tests/test_c13_room_registry_authority.py": "d45504fa8fe996b9dc56e9154f3afaefa1b126a5"
+    },
+    "local_regression": {
+      "tests": 86,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "independent_authority": {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "postgres": "PENDING_CURRENT_CANDIDATE",
+    "full_scope": "PENDING_CURRENT_EVIDENCE",
+    "external_payment": "NOT_CONNECTED",
+    "real_room_registry": "HOLD_HOTEL_CONFIRMATION_REQUIRED"
   }
 }
