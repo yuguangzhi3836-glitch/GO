@@ -31,6 +31,10 @@ PASSLIKE_C14 = {"PASS_SCOPED", "NOT_APPLICABLE"}
 PASSLIKE_C13 = {"PASS_SCOPED"}
 
 
+class NonProductionArtifact(ValueError):
+    """Known synthetic/POC artifact that must not enter production metrics."""
+
+
 @dataclass(frozen=True)
 class ReviewRecord:
     role: str
@@ -169,8 +173,12 @@ def _parse_time(value: str | None) -> datetime:
 def _bundle_from_zip(raw: bytes, role: str) -> dict:
     expected = f"{role}_bundle.json"
     with zipfile.ZipFile(io.BytesIO(raw)) as archive:
-        names = [name for name in archive.namelist() if name.rsplit("/", 1)[-1] == expected]
+        archive_names = archive.namelist()
+        names = [name for name in archive_names if name.rsplit("/", 1)[-1] == expected]
         if len(names) != 1:
+            poc_markers = {"poc.json", "logs/poc.spec.json", "logs/poc.contract.json"}
+            if poc_markers.intersection(archive_names):
+                raise NonProductionArtifact("POC_ONLY artifact")
             raise ValueError(f"artifact must contain exactly one {expected}; found={names}")
         return json.loads(archive.read(names[0]).decode("utf-8"))
 
@@ -208,6 +216,8 @@ def collect_records(api: GitHubAPI, cutoff: datetime) -> tuple[list[ReviewRecord
                 artifact_id=int(artifact_id) if artifact_id is not None else None,
                 failure_class=bundle.get("failure_class"),
             ))
+        except NonProductionArtifact:
+            continue
         except Exception as error:
             warnings.append(f"artifact {artifact_id} ({name}): {type(error).__name__}: {error}")
     records.sort(key=lambda item: item.issued_at)
