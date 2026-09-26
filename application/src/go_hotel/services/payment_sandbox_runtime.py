@@ -94,13 +94,19 @@ class PaymentSandboxRuntimeService:
                 "EXTERNAL_EXECUTOR": payment_sandbox_executor.configured,
             }
             external = checks["PSP_SANDBOX_APP"] and checks["PSP_KMS_CREDENTIAL"] and checks["EXTERNAL_EXECUTOR"]
+            # References and a configured delegate are preparation, not evidence
+            # of a certified connection. Revocation, expiry and integrity apply.
+            certified = bool(external and row.application_state == "SANDBOX_CERTIFIED_NOT_LIVE"
+                             and cutover_svc.status(row.provider)["sandbox_execution_allowed"])
             return {
                 "state": "READY_FOR_EXTERNAL_PSP_SANDBOX" if external else READY_STATE,
                 "checks": checks,
                 "blockers": [k for k,v in checks.items() if not v],
                 "lifecycle": ["PAYMENT_INTENT","PAYMENT_LINK","PSP_CALLBACK","AUTHORIZATION","CAPTURE","REFUND","LEDGER","SETTLEMENT_HOLD","CHECKOUT_RELEASE"],
                 "funds_rule": "NO_HOTEL_PAYOUT_BEFORE_FULFILLMENT_AND_CHECKOUT_GATE",
-                "external_psp_connected": external,
+                "internal_checks_basis": "IMPLEMENTATION_DECLARATIONS_NOT_ACCEPTANCE_EVIDENCE",
+                "external_configuration_present": bool(external),
+                "external_psp_connected": certified,
                 "payment_live": False,
                 "real_money_moved": False,
             }
@@ -135,7 +141,7 @@ class PaymentSandboxRuntimeService:
                 "blockers": blockers,
                 "required_scenarios": list(CERTIFICATION_SCENARIOS),
                 "merchant_state": merchant.state if merchant else None,
-                "payment_sandbox_certified": bool(merchant and merchant.state == CERTIFIED_STATE),
+                "payment_sandbox_certified": cutover_svc.status(channel)["certification_valid"],
                 "payment_live": False,
                 "real_money_moved": False,
             }
