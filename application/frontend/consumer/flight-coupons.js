@@ -5,6 +5,11 @@
   const label=c=>`${c.passenger_name} · 第 ${c.leg_index+1} 程 · ${c.leg.origin} → ${c.leg.destination} · ${c.leg.departure_date}`;
   const states={ISSUED:'已出票',UNISSUED:'等待出票',REFUNDED:'已退票',REFUND_PENDING:'退款处理中',CHANGE_PENDING:'改签处理中',UNKNOWN_EXTERNAL_STATE:'等待核实',FAILED:'处理失败'};
   function cards(order){return (order.coupons||[]).map(c=>`<article class="j-panel"><h3>${esc(label(c))}</h3><p>${esc(states[c.state]||c.state)}${c.usable?' · 票券有效':''}</p><p>票号 ${esc(c.ticket_number||'等待确认')} · 预订编号 ${esc(c.supplier_reference||'等待确认')}</p></article>`).join('');}
+  function moneySummary(order){
+    if(!Number.isSafeInteger(order.refunded_amount_minor))return '';
+    const format=n=>new Intl.NumberFormat('zh-CN',{style:'currency',currency:order.currency}).format(n/100);
+    return `<div class="j-panel"><p>累计实付 ${esc(format(order.total_amount_minor))}</p><p>累计已退 ${esc(format(order.refunded_amount_minor))}</p><p data-coupon-net>净实付 ${esc(format(order.total_amount_minor-order.refunded_amount_minor))}</p></div>`;
+  }
   function confirmation(q){return {quote_hash:q.quote_hash,expected_refund_amount_minor:q.refund_amount_minor,currency:q.currency,confirmed:true};}
   async function refund(order,request,reload,current=()=>true){
     const original=JSON.parse(JSON.stringify(order)),oid=original.order_id,path='/v1/flights/orders/'+oid;
@@ -38,5 +43,5 @@
         });
     }catch(e){if(typeof toast==='function')toast(e.message||'请刷新查看退票进度。');}
   }
-  window.GOFlightCoupons={cards,confirmation,refund};
+  window.GOFlightCoupons={cards,moneySummary,confirmation,refund};
 })();

@@ -10,10 +10,17 @@
     return `<a class="j-select" href="${esc(url)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">${label}</a>`;
   }
   function flightHTML(order,result){
-    const rows=(result.items||[]).map(cell=>{
-      const leg=(order.itinerary||[])[cell.leg_index]||{},person=(order.passengers||[])[cell.passenger_index]||{};
-      const state=Object.hasOwn(labels,cell.state)?cell.state:'CHECK_IN_UNVERIFIED';
-      return `<article class="go-travel-cell"><h3>第 ${Number(cell.leg_index)+1} 程 · ${esc(leg.origin)} → ${esc(leg.destination)}</h3><p>${esc(leg.departure_date)} · ${esc(person.full_name||`乘机人 ${Number(cell.passenger_index)+1}`)}</p><strong>${labels[state]}</strong>${cell.check_in_opens_at&&state==='CHECK_IN_NOT_OPEN'?`<p>预计开放时间 ${esc(cell.check_in_opens_at)}</p>`:''}<div class="go-travel-actions">${state!=='CHECK_IN_UNVERIFIED'?link(cell.official_check_in_url,'前往航空公司办理'):''}${state==='BOARDING_PASS_AVAILABLE'?link(cell.boarding_pass_reference,'查看这位乘机人的登机牌'):''}</div></article>`;
+    const modern=Array.isArray(order.coupons)&&order.coupons.length>0;
+    const cells=modern?order.coupons:(result.items||[]);
+    const rows=cells.map(c=>{
+      const facts=result.flight_order_id===order.order_id?(result.items||[]).filter(x=>x.leg_index===c.leg_index&&x.passenger_index===c.passenger_index):[];
+      const cell=facts.length===1?facts[0]:{};
+      const leg=(modern?c.leg:(order.itinerary||[])[c.leg_index])||{},person=(order.passengers||[])[c.passenger_index]||{};
+      const usable=modern?c.usable:order.status==='TICKETED';
+      const fresh=cell.observed_ms<=Date.now()&&cell.expires_ms>Date.now();
+      const state=usable&&fresh&&Object.hasOwn(labels,cell.state)?cell.state:'CHECK_IN_UNVERIFIED';
+      const label=modern&&!usable?(c.state==='REFUNDED'?'该票券已退票，不可值机':'该票券暂不可值机，请查看处理进度'):labels[state];
+      return `<article class="go-travel-cell" data-checkin-coupon="${esc(modern?c.coupon_id:'')}"><h3>第 ${Number(c.leg_index)+1} 程 · ${esc(leg.origin)} → ${esc(leg.destination)}</h3><p>${esc(leg.departure_date)} · ${esc(person.full_name||`乘机人 ${Number(c.passenger_index)+1}`)}</p><strong>${label}</strong>${cell.check_in_opens_at&&state==='CHECK_IN_NOT_OPEN'?`<p>预计开放时间 ${esc(cell.check_in_opens_at)}</p>`:''}<div class="go-travel-actions">${state!=='CHECK_IN_UNVERIFIED'?link(cell.official_check_in_url,'前往航空公司办理'):''}${state==='BOARDING_PASS_AVAILABLE'?link(cell.boarding_pass_reference,'查看这位乘机人的登机牌'):''}</div></article>`;
     }).join('');
     return `<h2>值机与登机牌</h2><p>每位乘机人的每一程，分别核对。</p>${rows||'<p>暂无可核实的客票信息，请稍后刷新订单。</p>'}<p class="muted">当前未连接航空公司实时服务，请勿作为实际出行凭证。信息未核实时不会显示为已值机。</p>`;
   }

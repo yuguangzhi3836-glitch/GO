@@ -48,9 +48,9 @@ export function flightCells(order: any, result: any, now = Date.now()) {
       const fresh = fact && typeof fact.fact_id === 'string' && fact.fact_id.length > 0 &&
         Number.isFinite(fact.observed_ms) && Number.isFinite(fact.expires_ms) &&
         fact.observed_ms <= now && fact.expires_ms > now;
-      const state = fresh && checkinStates.has(fact.state) ? fact.state : 'CHECK_IN_UNVERIFIED';
+      const state = coupon&&!coupon.usable ? (coupon.state==='REFUNDED'?'COUPON_REFUNDED':'COUPON_UNAVAILABLE') : fresh && checkinStates.has(fact.state) ? fact.state : 'CHECK_IN_UNVERIFIED';
       return {legIndex, passengerIndex, leg:coupon?.leg||leg, person, state,
-        officialUrl: state !== 'CHECK_IN_UNVERIFIED' ? httpsLink(fact.official_check_in_url) : null,
+        officialUrl: checkinStates.has(state) ? httpsLink(fact.official_check_in_url) : null,
         passUrl: state === 'BOARDING_PASS_AVAILABLE' ? httpsLink(fact.boarding_pass_reference) : null};
     }));
 }

@@ -6,7 +6,7 @@ import {Brand,Btn,Price,StatusPill} from '../components/GO';
 import {api} from '../api/client';
 import {flightCells} from '../domain/tripFacts';
 import OrderActions from '../components/OrderActions';
-const labels:Record<string,string>={CHECK_IN_UNVERIFIED:'等待核实值机信息',CHECK_IN_NOT_OPEN:'值机未开放',CHECK_IN_OPEN:'值机已开放',CHECKED_IN:'已值机',BOARDING_PASS_AVAILABLE:'登机牌可用'};
+const labels:Record<string,string>={COUPON_REFUNDED:'该票券已退票，不可值机',COUPON_UNAVAILABLE:'该票券暂不可值机，请查看处理进度',CHECK_IN_UNVERIFIED:'等待核实值机信息',CHECK_IN_NOT_OPEN:'值机未开放',CHECK_IN_OPEN:'值机已开放',CHECKED_IN:'已值机',BOARDING_PASS_AVAILABLE:'登机牌可用'};
 export default function FlightTripDetail({route,navigation}:any) {
   const id=route.params?.orderId,sequence=useRef(0);
   const [order,setOrder]=useState<any>(null),[checkin,setCheckin]=useState<any>(null),[error,setError]=useState(''),[loading,setLoading]=useState(true);
@@ -31,7 +31,8 @@ export default function FlightTripDetail({route,navigation}:any) {
       <View style={screen.card}><StatusPill text={order.status} tone="navy"/>
         {(order.itinerary||[]).map((leg:any,i:number)=><Text key={i} style={screen.sub}>第 {i+1} 程 · {leg.carrier_code}{leg.flight_number} · {leg.departure_date} · {leg.origin} → {leg.destination}</Text>)}
         <Text style={screen.sub}>PNR：{order.pnr||'待核实'}</Text><Text style={screen.sub}>电子票号：{order.ticket_numbers?.join('、')||'待出票'}</Text>
-        <Price minor={order.total_amount_minor} currency={order.currency}/><OrderActions order={order} vertical="FLIGHT" navigation={navigation}/>
+        <Text style={screen.sub}>累计实付</Text><Price minor={order.total_amount_minor} currency={order.currency}/>
+        {Number.isSafeInteger(order.refunded_amount_minor)&&<><Text style={screen.sub}>累计已退</Text><Price minor={order.refunded_amount_minor} currency={order.currency}/><Text style={screen.sub}>净实付</Text><Price minor={order.total_amount_minor-order.refunded_amount_minor} currency={order.currency}/></>}<OrderActions order={order} vertical="FLIGHT" navigation={navigation}/>
       </View>
       {(order.coupons||[]).map((c:any)=><View style={screen.card} key={c.coupon_id}>
         <Text style={screen.h2}>{c.passenger_name} · 第 {c.leg_index+1} 程</Text>

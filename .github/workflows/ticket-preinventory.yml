@@ -75,7 +75,7 @@ jobs:
             core) suites=(tests/test_ticket_preinventory_boundaries.py tests/test_sprint3a_flight.py tests/test_sprint3b_rail.py tests/test_depth05_flight_parties.py tests/test_flight_journey_depth.py) ;;
             resolution) suites=(tests/test_depth48_flight_changes.py tests/test_next_depth_c03_payment_inventory_races.py tests/test_depth22_rail_resolution.py tests/payments/test_c11_flight_idempotency_recovery.py) ;;
             shared) suites=(tests/test_depth20_api_fulfillment.py tests/test_c10_supplier_money_projection.py tests/test_final_depth_terminal_hardening.py tests/test_depth32_flight_refund_consent.py) ;;
-            coupons) suites=(tests/test_flight_partial_runtime.py tests/test_ticket_operations_runtime.py tests/test_flight_coupon_migration.py tests/test_depth19_travel_facts.py tests/independent_ticket/test_independent_coupon_readiness.py tests/independent_ticket/test_independent_ticket_operations.py) ;;
+            coupons) suites=(tests/test_flight_partial_runtime.py tests/test_ticket_operations_runtime.py tests/test_flight_coupon_migration.py tests/test_depth19_travel_facts.py tests/independent_ticket/test_independent_coupon_readiness.py tests/independent_ticket/test_independent_ticket_operations.py tests/independent_ticket/test_independent_completed_money.py) ;;
             *) exit 1 ;;
           esac
           python -m pytest "${suites[@]}" --junitxml=../ticket-evidence/junit.xml 2>&1 | tee ../ticket-evidence/pytest.log
@@ -118,6 +118,7 @@ jobs:
       - name: Real browser ticket operations in disposable runtime
         run: |
           set -euo pipefail
+          node --experimental-strip-types application/scripts/ticket-acceptance/checkin.test.mjs
           ROOT="$RUNNER_TEMP/ticket-browser-source"
           STATE="$RUNNER_TEMP/ticket-browser-state"
           TREE=$(python application/scripts/ticket-acceptance/prepare.py "$ROOT")

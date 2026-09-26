@@ -11,6 +11,7 @@
   async function load(){
    const d=await request('GET');revision=d.workflow.revision;
    root.innerHTML=`<h2>票务处理工作台</h2><p>订单 ${esc(id)} · ${esc(d.order.status)} · 工作流 ${esc(d.workflow.stage)}</p>
+    ${Number.isSafeInteger(d.order.refunded_amount_minor)?`<p>累计实付 ${esc(d.order.currency)} ${(d.order.total_amount_minor/100).toFixed(2)} · 累计已退 ${(d.order.refunded_amount_minor/100).toFixed(2)} · 净实付 ${((d.order.total_amount_minor-d.order.refunded_amount_minor)/100).toFixed(2)}</p>`:''}
     <p>当前处理人 ${esc(d.workflow.assignee||'待领取')}</p>
     ${(d.order.coupons||[]).map(c=>`<p>${esc(c.passenger_name)} · 第 ${c.leg_index+1} 程 · ${esc(c.leg.departure_date)} · ${esc(c.state)} · 票号 ${esc(c.ticket_number)}</p>`).join('')}
     ${(d.order.change_quotes||[]).filter(q=>['AUTHORIZATION_PENDING','PENDING_SUPPLIER'].includes(q.status)).map(q=>`<p>待处理改签 ${esc(q.quote_id)}：${esc(JSON.stringify(q.changes))}</p>`).join('')}

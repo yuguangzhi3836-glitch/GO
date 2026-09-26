@@ -1,0 +1,20 @@
+{
+  "status": "LOCAL_COMPLETED_MONEY_REVIEW_ONLY",
+  "declared_remote_candidate": "a5db9a1fa1da6c7433607ddc297318246a35e2ff",
+  "local_checkpoint": "d207731e5fa3f428c2ccb2b453635dd31a930afe",
+  "remote_equivalence": "PENDING_FINAL_CI_SOURCE_FINGERPRINT_REVIEW",
+  "source_sha256": {
+    "src/go_hotel/flight/coupon_refunds.py": "d1384706f760fd83624244953e8541e2d00c5bfa69a87bf809c78cbdccd09874",
+    "tests/test_flight_partial_runtime.py": "f1f035c36da0a0d4acda86a3357e31c35a921f8d07de13378e6d2b5887252681",
+    "scripts/ticket-acceptance/prepare.py": "e8ecd0d2c34ff791331b33dbff66fcc82a14e12473a5a3ece5c0a93a59916120"
+  },
+  "evidence_sha256": {
+    "test_independent_completed_money.py": "612782f297945a12d1bd38b40a49c852ed98df1e74d76ff2177c8ea36d3f7921",
+    "final-money-review.xml": "b49284e356e6fc514e9b31ef8de9f0b212e73626697cfe7c1bfe8ceba815f376"
+  },
+  "limitations": [
+    "SQLite only for this independent probe",
+    "Process death test uses actual os._exit but lease expiry is manually advanced to zero",
+    "Final immutable CI/browser/source raw evidence pending"
+  ]
+}
