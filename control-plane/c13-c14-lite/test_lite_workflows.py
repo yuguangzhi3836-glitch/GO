@@ -236,6 +236,15 @@ class DispatchEnvRobustnessTests(unittest.TestCase):
             env["LITE_RULE_INPUT"] = str(rule_input)
         return env
 
+    def review_brief(self, directory):
+        """The task both cells grade, frozen from the candidate's own pull request.
+
+        ``spec`` requires it for the same reason it requires the diff: the reviewer needs the
+        question as well as the answer. Every spec call below stages one, exactly as the
+        workflow's read-only review-brief step does.
+        """
+        return fx.write_review_brief(f"{directory}/review_brief.json", "f" * 40)
+
     def test_spec_succeeds_when_optional_variables_are_absent(self):
         import json
         import tempfile
@@ -255,9 +264,11 @@ class DispatchEnvRobustnessTests(unittest.TestCase):
             )
             self.assertEqual(scope.returncode, 0, scope.stderr)
             digest = json.loads(pathlib.Path(directory, "scope.json").read_text(encoding="utf-8"))["scope_sha256"]
+            self.review_brief(directory)
             spec = self.run_cli(
                 ["spec", "--role", "c14", "--scope", f"{directory}/scope.json",
                  "--candidate-diff", str(candidate_diff),
+                 "--review-brief", f"{directory}/review_brief.json",
                  "--spec", f"{directory}/spec.json",
                  "--facts", f"{directory}/facts.json", "--contract", f"{directory}/contract.json"],
                 self.spec_env(directory, digest, rule_input=rule_input),
@@ -290,9 +301,11 @@ class DispatchEnvRobustnessTests(unittest.TestCase):
                 pathlib.Path(directory, "scope.json").read_text(encoding="utf-8"))["scope_sha256"]
             env = self.spec_env(directory, digest, rule_input=rule_input)
             env.update({"LITE_AI_MODEL": "", "LITE_PRINCIPAL_ID": "", "LITE_ISSUE_NUMBER": ""})
+            self.review_brief(directory)
             result = self.run_cli(
                 ["spec", "--role", "c14", "--scope", f"{directory}/scope.json",
                  "--candidate-diff", str(candidate_diff),
+                 "--review-brief", f"{directory}/review_brief.json",
                  "--spec", f"{directory}/s.json",
                  "--facts", f"{directory}/f.json", "--contract", f"{directory}/c.json"],
                 env,
@@ -306,9 +319,11 @@ class DispatchEnvRobustnessTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             env = self.spec_env(directory, "0" * 64)
             del env["LITE_SCOPE_SHA256"]
+            self.review_brief(directory)
             result = self.run_cli(
                 ["spec", "--role", "c14", "--scope", f"{directory}/scope.json",
                  "--candidate-diff", f"{directory}/candidate.diff",
+                 "--review-brief", f"{directory}/review_brief.json",
                  "--spec", f"{directory}/s.json",
                  "--facts", f"{directory}/f.json", "--contract", f"{directory}/c.json"],
                 env,
@@ -353,7 +368,8 @@ class ReviewContentInputGuardTests(unittest.TestCase):
     )
 
     C14_FLAGS = ("            --scope \"$RUNNER_TEMP/scope.json\" \\\n"
-                 "            --candidate-diff \"$RUNNER_TEMP/candidate.diff\" \\\n")
+                 "            --candidate-diff \"$RUNNER_TEMP/candidate.diff\" \\\n"
+                 "            --review-brief \"$RUNNER_TEMP/review_brief.json\" \\\n")
     C13_FLAGS = C14_FLAGS + ("            --machine-manifest \"$RUNNER_TEMP/manifest.json\" \\\n"
                              "            --junit \"$RUNNER_TEMP/junit.xml\" \\\n")
 

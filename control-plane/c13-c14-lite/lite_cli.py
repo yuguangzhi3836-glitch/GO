@@ -12,6 +12,9 @@ Subcommands
 ``seal``          seal a bundle from the contract, the review outcome and machine evidence
 ``verify``        verify a whole C13+C14 round and write the decision
 ``bind-ledger``   DRY RUN binding of two execution records onto the existing ledger
+``review-brief``  resolve the candidate's own pull request read-only (GitHub's own commit ->
+                  pull requests answer), so both cells get the task being graded and not only
+                  the change being judged
 ``rule-input``    resolve the authoritatively declared C14 rule sources from the default
                   branch, or record deterministically why it cannot
 ``workflow-identity``
@@ -21,9 +24,9 @@ Subcommands
                   destroy the only copy of the reviewer's reasoning (it never writes a
                   sealed bundle: raw review evidence is not sealed evidence)
 
-No subcommand contacts a database, a credential store or a deployment path. The only two
-that touch the network at all are ``rule-input`` and ``workflow-identity``, and both are
-read-only GETs made with the token the job already has.
+No subcommand contacts a database, a credential store or a deployment path. The only three
+that touch the network at all are ``review-brief``, ``rule-input`` and ``workflow-identity``,
+and all three are read-only GETs made with the token the job already has.
 """
 from __future__ import annotations
 
@@ -46,6 +49,7 @@ import lite_chain  # noqa: E402
 import lite_errors  # noqa: E402
 import lite_execution_record  # noqa: E402
 import lite_ledger_binding  # noqa: E402
+import lite_review_brief  # noqa: E402
 import lite_rule_input  # noqa: E402
 
 # There used to be DEFAULT_APPLICABLE_RULES / DEFAULT_RULE_VERSION here: three rule-set
@@ -237,6 +241,32 @@ def _machine_evidence(manifest_path, junit_path) -> dict:
     }
 
 
+def _read_review_brief(path) -> dict:
+    """The task the candidate was answering, frozen from its own pull request.
+
+    Without it the reviewer knows what changed but not what was asked for, so it can only
+    grade against its own idea of best practice - which is how an acceptable candidate is
+    sent back for findings the original task never mentioned. A brief that could not be
+    resolved is a hard stop, decided here before any AI call, and it is never replaced by a
+    guessed pull request, a branch name or a default.
+    """
+    try:
+        document = _read(path)
+    except (OSError, ValueError) as error:
+        raise SystemExit(f"spec: cannot read the review brief {path}: {type(error).__name__}")
+    if not isinstance(document, dict) or document.get("schema_version") != lite_review_brief.SCHEMA_VERSION:
+        raise SystemExit(f"spec: {path} is not a review brief record")
+    if document.get("status") != "OK" or not isinstance(document.get("pull_request"), dict):
+        raise SystemExit(
+            "spec: there is no review brief for this candidate "
+            f"({document.get('status')}: {document.get('reason')} - {document.get('detail')}); "
+            "a review with no task to grade cannot be assembled")
+    brief = document["pull_request"]
+    if set(brief) != set(lite_review_brief.BRIEF_FIELDS) | {"matched_by"}:
+        raise SystemExit(f"spec: {path} carries an unexpected review brief shape")
+    return brief
+
+
 def _assert_facts_carry_the_frozen_content(facts: dict, scope: dict) -> None:
     """The reviewer may not be told about a different change surface than the round froze.
 
@@ -249,7 +279,7 @@ def _assert_facts_carry_the_frozen_content(facts: dict, scope: dict) -> None:
 
 
 def _facts(role: str, spec: dict, *, task_id: str, scope: dict, candidate_diff: str,
-           machine_manifest=None, junit=None) -> dict:
+           review_brief: dict, machine_manifest=None, junit=None) -> dict:
     facts = {
         "repository": spec["repository"],
         "candidate_sha": spec["candidate_sha"],
@@ -272,6 +302,11 @@ def _facts(role: str, spec: dict, *, task_id: str, scope: dict, candidate_diff: 
         # own bytes (the candidate's first-parent diff) - there is no diff authority, no
         # signature and no second registry behind them.
         "candidate_diff": candidate_diff,
+        # And, from here on, WHICH TASK this is: the candidate's own pull request, frozen as
+        # GitHub's raw facts. Both cells receive it, so both grade the same paper. It is a
+        # plain facts key and nothing more - the existing facts digest binds it, so it needs
+        # no signature, no second registry and no authority of its own.
+        "review_brief": dict(review_brief),
     }
     if role == "c14":
         rule_input = spec["rule_input"]
@@ -321,8 +356,15 @@ def cmd_spec(args) -> int:
     if not scope.get("changed_paths"):
         raise SystemExit("spec: the frozen scope carries no changed paths (there is nothing to review)")
     candidate_diff = _read_candidate_diff(args.candidate_diff)
+    # The paper both cells grade. It was resolved from this same frozen candidate SHA by the
+    # ``review-brief`` step, and it is re-checked against the candidate here rather than taken
+    # on trust: a brief belonging to some other candidate would grade the wrong task.
+    review_brief = _read_review_brief(args.review_brief)
+    if spec["candidate_sha"] not in (review_brief["head_sha"], review_brief["merge_commit_sha"]):
+        raise SystemExit("spec: the review brief does not belong to the frozen candidate")
     facts = _facts(args.role, spec, task_id=_task_id(args.role, spec), scope=scope,
-                   candidate_diff=candidate_diff, machine_manifest=args.machine_manifest,
+                   candidate_diff=candidate_diff, review_brief=review_brief,
+                   machine_manifest=args.machine_manifest,
                    junit=args.junit)
     _assert_facts_carry_the_frozen_content(facts, scope)
     prompt = lite_ai_reviewer.build_prompt(args.role, facts)
@@ -727,6 +769,9 @@ def cmd_raw_evidence(args) -> int:
         "contract": args.contract,
         "outcome": args.outcome,
         "scope": args.scope,
+        # The brief is staged for the same reason as everything else here: when a round is
+        # refused, "what task was it being graded against" is part of why the refusal happened.
+        "review_brief": args.review_brief,
         "seal_result": args.seal_result,
         "seal_stdout": args.seal_stdout,
         "seal_stderr": args.seal_stderr,
@@ -777,6 +822,33 @@ def cmd_raw_evidence(args) -> int:
     return 0
 
 
+def cmd_review_brief(args) -> int:
+    """Resolve the candidate's own pull request read-only, or record why we cannot.
+
+    Always exits 0, like ``rule-input``: a refusal is a *recorded* BLOCKED, and the ``spec``
+    step then refuses to build a round from it - so the reason survives instead of being lost
+    in a crashed step. Settling it here also settles it before any AI call, which matters: a
+    reviewer with no brief can only grade the candidate against its own idea of best practice.
+
+    The association is GitHub's own commit -> pull requests answer, and it has to be unique.
+    A title, a branch name, a recency order or "the first result" is never used to break a
+    tie; an unresolvable or ambiguous lookup is a refusal, not a guess.
+    """
+    repository = args.repository or os.environ.get("GITHUB_REPOSITORY") or ""
+    if not repository:
+        raise SystemExit("review-brief: no repository (set GITHUB_REPOSITORY or --repository)")
+    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if not token:
+        raise SystemExit("review-brief: no token (set GH_TOKEN or GITHUB_TOKEN)")
+    list_pulls = lite_review_brief.github_pull_reader(repository, token)
+    record = lite_review_brief.resolve(args.candidate_sha, list_pulls)
+    _write(args.out, record)
+    print(json.dumps({"review_brief_status": record["status"], "reason": record["reason"],
+                      "matched_by": record["matched_by"],
+                      "pull_request_number": (record["pull_request"] or {}).get("number")}))
+    return 0
+
+
 def cmd_rule_input(args) -> int:
     """Resolve the declared rule sources read-only, or record why we cannot.
 
@@ -822,6 +894,10 @@ def main(argv=None) -> int:
                       help="the scope.json this round froze; the change surface is read from it")
     spec.add_argument("--candidate-diff", required=True,
                       help="the frozen candidate's own first-parent diff")
+    # Required for the same reason one level up: the diff is the answer, the brief is the
+    # question. Without it a reviewer can only grade against its own idea of best practice.
+    spec.add_argument("--review-brief", required=True,
+                      help="the review-brief record for this candidate (the task being graded)")
     spec.add_argument("--machine-manifest", help="c13 only: the machine-test manifest.json")
     spec.add_argument("--junit", help="c13 only: the machine-test junit.xml")
     spec.set_defaults(func=cmd_spec)
@@ -872,6 +948,13 @@ def main(argv=None) -> int:
                         help="write the decision and exit 0 even when it is not ACCEPT (the decision file still carries the truth)")
     verify.set_defaults(func=cmd_verify)
 
+    brief = sub.add_parser("review-brief")
+    brief.add_argument("--candidate-sha", required=True,
+                       help="the frozen candidate commit SHA (its PR head or merge commit)")
+    brief.add_argument("--out", required=True)
+    brief.add_argument("--repository", help="defaults to GITHUB_REPOSITORY")
+    brief.set_defaults(func=cmd_review_brief)
+
     rulein = sub.add_parser("rule-input")
     rulein.add_argument("--out", required=True)
     rulein.add_argument("--repository", help="defaults to GITHUB_REPOSITORY")
@@ -893,6 +976,7 @@ def main(argv=None) -> int:
     rawev.add_argument("--contract")
     rawev.add_argument("--outcome")
     rawev.add_argument("--scope")
+    rawev.add_argument("--review-brief")
     rawev.add_argument("--seal-result")
     rawev.add_argument("--seal-stdout")
     rawev.add_argument("--seal-stderr")

@@ -266,6 +266,26 @@ jobs:
           cp c14-input/c14_contract.json "$RUNNER_TEMP/c14.contract.json"
           wc -l "$RUNNER_TEMP/test_inventory.txt"
 
+      - name: Resolve the review brief from the candidate's own pull request (read-only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # WHAT WAS ASKED FOR, not only what changed. Until now C13 could see the change
+          # surface, the diff, the acceptance criteria and the machine evidence but not the task
+          # the candidate was given - so "is this acceptable for the task" was being answered
+          # against the reviewer's own best practice. The brief is the candidate's own pull
+          # request, frozen as GitHub's raw facts by the commit -> pull requests API. The match
+          # must be unique (the candidate is that PR's head sha or its merge commit sha); zero or
+          # several matches is a refusal, never a guess. It is resolved from the same frozen
+          # candidate SHA C14 used, so both cells grade the same paper. This step exits 0 even on
+          # a refusal, on purpose: the refusal is a *record*, and `spec` below stops the round on
+          # it - so the reason survives instead of being lost in a crashed step.
+          python control-plane/c13-c14-lite/lite_cli.py review-brief \
+            --candidate-sha "${{ inputs.candidate_sha }}" \
+            --repository "$GITHUB_REPOSITORY" \
+            --out "$RUNNER_TEMP/review_brief.json"
+
       - name: Bind the workflow definition that is actually executing
         env:
           GH_TOKEN: ${{ github.token }}
@@ -320,6 +340,7 @@ jobs:
           python control-plane/c13-c14-lite/lite_cli.py spec --role c13 \
             --scope "$RUNNER_TEMP/scope.json" \
             --candidate-diff "$RUNNER_TEMP/candidate.diff" \
+            --review-brief "$RUNNER_TEMP/review_brief.json" \
             --machine-manifest "$RUNNER_TEMP/manifest.json" \
             --junit "$RUNNER_TEMP/junit.xml" \
             --spec "$RUNNER_TEMP/c13.spec.json" \

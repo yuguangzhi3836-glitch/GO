@@ -453,10 +453,12 @@ class RuleInputRoundTests(_RoundCliMixin, unittest.TestCase):
         self._run(["scope", "--role", "c14", "--rule-input", str(rule_input),
                    "--changed-paths", str(changed), "--out", str(scope)], env)
         env = {**env, "LITE_SCOPE_SHA256": json.loads(scope.read_text())["scope_sha256"]}
+        fx.write_review_brief(root / "review_brief.json", env["LITE_CANDIDATE_SHA"])
         spec, facts, contract = root / "spec.json", root / "facts.json", root / "contract.json"
         outcome, bundle = root / "outcome.json", root / "bundle.json"
         self._run(["spec", "--role", "c14", "--scope", str(scope),
                    "--candidate-diff", str(candidate_diff),
+                   "--review-brief", str(root / "review_brief.json"),
                    "--spec", str(spec), "--facts", str(facts),
                    "--contract", str(contract)], env)
         review = ["review", "--spec", str(spec), "--facts", str(facts), "--out", str(outcome)]
@@ -528,9 +530,11 @@ class RuleInputRoundTests(_RoundCliMixin, unittest.TestCase):
                        "--changed-paths", str(changed), "--out", str(scope)], env)
             os.environ.update({**env, "LITE_SCOPE_SHA256": json.loads(scope.read_text())["scope_sha256"]})
             self.addCleanup(lambda: [os.environ.pop(k, None) for k in env])
+            fx.write_review_brief(root / "review_brief.json", env["LITE_CANDIDATE_SHA"])
             spec, facts, contract = root / "spec.json", root / "facts.json", root / "contract.json"
             self.assertEqual(lite_cli.main(["spec", "--role", "c14", "--scope", str(scope),
                                             "--candidate-diff", str(candidate_diff),
+                                            "--review-brief", str(root / "review_brief.json"),
                                             "--spec", str(spec), "--facts", str(facts),
                                             "--contract", str(contract)]), 0)
             out = root / "outcome.json"
@@ -547,10 +551,12 @@ class RuleInputRoundTests(_RoundCliMixin, unittest.TestCase):
             env.pop("LITE_RULE_INPUT")
             for name, text in (("scope.json", "{}"), ("candidate.diff", SYNTHETIC_CANDIDATE_DIFF)):
                 (root / name).write_text(text, encoding="utf-8")
+            fx.write_review_brief(root / "review_brief.json", env["LITE_CANDIDATE_SHA"])
             completed = subprocess.run(
                 [sys.executable, str(ROOT / "lite_cli.py"), "spec", "--role", "c14",
                  "--scope", str(root / "scope.json"),
                  "--candidate-diff", str(root / "candidate.diff"),
+                 "--review-brief", str(root / "review_brief.json"),
                  "--spec", str(root / "s.json"), "--facts", str(root / "f.json"),
                  "--contract", str(root / "c.json")],
                 capture_output=True, text=True, env={**os.environ, **env})
@@ -838,7 +844,7 @@ class RawEvidencePreservationTests(unittest.TestCase):
 
     def _args(self, out, **paths):
         base = {"spec": None, "facts": None, "contract": None, "outcome": None, "scope": None,
-                "seal_result": None, "seal_stdout": None, "seal_stderr": None}
+                "review_brief": None, "seal_result": None, "seal_stdout": None, "seal_stderr": None}
         base.update(paths)
         return argparse.Namespace(out=out, **base)
 
@@ -1076,11 +1082,16 @@ class ReviewContentInputTests(_RoundCliMixin, unittest.TestCase):
         candidate_diff = root / "candidate.diff"
         if diff is not None:
             candidate_diff.write_text(diff, encoding="utf-8")
+        # Both cells grade the same paper: the task frozen from the candidate's own pull
+        # request. Written here because `spec` now requires it, for the same reason it requires
+        # the diff - the reviewer needs the question as well as the answer.
+        fx.write_review_brief(root / "review_brief.json", env["LITE_CANDIDATE_SHA"])
         return env, scope_path, candidate_diff
 
     def _spec_argv(self, role, root, scope_path, candidate_diff, *, manifest=None, junit=None):
         argv = ["spec", "--role", role,
                 "--scope", str(scope_path), "--candidate-diff", str(candidate_diff),
+                "--review-brief", str(root / "review_brief.json"),
                 "--spec", str(root / f"{role}.spec.json"),
                 "--facts", str(root / f"{role}.facts.json"),
                 "--contract", str(root / f"{role}.contract.json")]

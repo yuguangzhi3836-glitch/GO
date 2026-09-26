@@ -54,6 +54,11 @@ C14_RAW_ARTIFACT = "c13c14-lite-c14-raw-${{ inputs.candidate_sha }}"
 #: just the names of the files that changed.
 CANDIDATE_DIFF_REDIRECT = "candidate.diff"
 
+#: The resolved review brief - the task the candidate was answering. Read-only, from the
+#: candidate's own pull request: the reviewer needs the question as well as the answer, or it
+#: grades the candidate against its own idea of best practice.
+REVIEW_BRIEF_REDIRECT = "review_brief.json"
+
 try:  # pragma: no cover - trivial import guard
     import yaml
 except ImportError:  # pragma: no cover
@@ -277,7 +282,7 @@ def check_spec_carries_the_frozen_review_content(name: str, raw: str, failures: 
     if not spec_steps:
         failures.append(f"{name}: no 'lite_cli.py spec' step found")
         return
-    required = ["--scope", "--candidate-diff"]
+    required = ["--scope", "--candidate-diff", "--review-brief"]
     if name == C13_WORKFLOW:
         required += ["--machine-manifest", "--junit"]
     for step in spec_steps:
@@ -286,7 +291,43 @@ def check_spec_carries_the_frozen_review_content(name: str, raw: str, failures: 
             if flag not in step_code:
                 failures.append(
                     f"{name}: the spec step must be given {flag}; the frozen scope, the candidate "
-                    "diff and the machine evidence are inputs to the review, not defaults")
+                    "diff, the review brief and the machine evidence are inputs to the review, "
+                    "not defaults")
+
+
+def check_review_brief_is_resolved_read_only(name: str, raw: str, failures: list) -> None:
+    """Both cells must be given the TASK, resolved read-only from the candidate's own PR.
+
+    The runtime already fails closed: a brief that cannot be resolved uniquely, or that is
+    absent, stops the round in ``spec`` before any AI call. This is the structural half, so an
+    edit that drops the step or the argument is caught when the workflow is reviewed instead of
+    by an unexplained red run - the same reason the diff/frozen-content check exists.
+
+    It deliberately does not require any particular matching *implementation* here: it requires
+    that the resolver is the backend subcommand (so the matching rule stays in reviewable Python
+    and stays deterministic), that it is given the frozen candidate SHA, and that it writes the
+    file ``spec`` is later handed.
+
+    Comments are stripped first: the step's own explanation quotes these flags.
+    """
+    if name not in PRODUCTION_WORKFLOWS:
+        return
+    code = "\n".join(_code_lines(raw))
+    lines = code.splitlines()
+    resolver = [index for index, line in enumerate(lines) if "lite_cli.py review-brief" in line]
+    if not resolver:
+        failures.append(
+            f"{name}: must resolve the review brief with 'lite_cli.py review-brief'; the "
+            "reviewer needs the task, not only the change surface")
+        return
+    for index in resolver:
+        block = "\n".join(lines[index:index + 6])
+        if "--candidate-sha" not in block:
+            failures.append(f"{name}: the review-brief step must be given the frozen candidate SHA")
+        if f'$RUNNER_TEMP/{REVIEW_BRIEF_REDIRECT}' not in block:
+            failures.append(
+                f"{name}: the review-brief step must write $RUNNER_TEMP/{REVIEW_BRIEF_REDIRECT} "
+                "for the spec step to consume")
 
 
 def check_artifact_discipline(name: str, raw: str, failures: list) -> None:
@@ -633,6 +674,7 @@ def run() -> dict:
         check_dispatch_surface(name, document, failures)
         check_artifact_discipline(name, raw, failures)
         check_spec_carries_the_frozen_review_content(name, raw, failures)
+        check_review_brief_is_resolved_read_only(name, raw, failures)
         check_env_export_is_not_same_step(name, document, failures)
         check_readback_declares_the_run_head(name, raw, failures)
         check_changed_path_boundary(name, raw, failures)

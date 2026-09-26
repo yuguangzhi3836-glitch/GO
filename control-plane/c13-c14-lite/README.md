@@ -31,6 +31,7 @@ a recorded C14 terminal state with scope, basis and rule version — never a ski
 | `lite_canonical.py` | canonical JSON + SHA256, same convention as `go_deploy_request.py` |
 | `lite_errors.py` | `Reject` / `Block` vocabulary and the six failure classes |
 | `lite_candidate.py` | frozen candidate contract, freshness, dispatch binding |
+| `lite_review_brief.py` | the task the candidate was answering: its pull request, resolved read-only and matched uniquely (or refused) |
 | `lite_identity.py` | execution identity and machine-checked independence |
 | `lite_bundle.py` | sealed C14 / C13 bundles, `NOT_APPLICABLE` record, roots |
 | `lite_prerequisite.py` | the C13 prerequisite gate over the sealed C14 record |
