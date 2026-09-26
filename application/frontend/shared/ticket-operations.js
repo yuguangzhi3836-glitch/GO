@@ -12,7 +12,7 @@
   async function load(){
    const d=await request('GET');revision=d.workflow.revision;
    root.innerHTML=`<h2>${attraction?'景点门票处理工作台':'票务处理工作台'}</h2><p>订单 ${esc(id)} · ${esc(d.order.status)} · 工作流 ${esc(d.workflow.stage)}</p>
-    ${attraction?`<p>游玩日期 ${esc(d.order.visit_date)} · 场次 ${esc(d.order.session_time)} · 凭证 ${esc(d.order.voucher_code||'待核对')}</p><p>供应商仅提交处理陈述；管理员按回执核对订单，复核由另一位管理员完成。退款仍由原订单退款流程处理。</p>`:''}
+    ${attraction?`<p>游玩日期 ${esc(d.order.visit_date)} · 场次 ${esc(d.order.session_time)} · 凭证 ${esc(d.order.voucher_code||({REFUNDED:'已退款，不可使用',CANCELLED:'已取消，不可使用',CLOSED_BY_SUPPLIER:'供应商闭园，不可使用',FULFILLED:'已核销，不可再次使用'}[d.order.status]||'待核对'))}</p><p>供应商仅提交处理陈述；管理员按回执核对订单，复核由另一位管理员完成。退款仍由原订单退款流程处理。</p>`:''}
     ${d.order.money_summary?.verified?`<p>累计实付 ${esc(d.order.currency)} ${(d.order.money_summary.captured_minor/100).toFixed(2)} · 累计已退 ${(d.order.money_summary.refunded_minor/100).toFixed(2)} · 净实付 ${(d.order.money_summary.net_minor/100).toFixed(2)}</p>`:''}
     <p>当前处理人 ${esc(d.workflow.assignee||'待领取')}</p>
     ${(d.order.coupons||[]).map(c=>`<p>${esc(c.passenger_name)} · 第 ${c.leg_index+1} 程 · ${esc(c.leg.departure_date)} · ${esc(c.state)} · 票号 ${esc(c.ticket_number)}</p>`).join('')}

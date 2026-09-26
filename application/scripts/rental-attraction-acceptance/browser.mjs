@@ -291,7 +291,7 @@ try{
  });
  await step('independent-administrator-verifies-refund-and-closes',checker,async()=>{
   const view=await adminAttraction(checker,managedAttraction.order_id);assert.equal(view.order.money_summary.verified,true);assert.equal(view.order.money_summary.refunded_minor,managedAttraction.total_amount_minor);assert.equal(view.order.money_summary.net_minor,0);
-  const verified=await ticketWork(checker,managedAttraction.order_id,'VERIFY','隔离验收：独立核对原订单全额退款资金');assert.equal(verified.workflow.stage,'VERIFIED');const closed=await ticketWork(checker,managedAttraction.order_id,'FOLLOW_UP','隔离验收：消费者已见退款，关闭闭园处理');assert.equal(closed.workflow.stage,'CLOSED');report.facts.attraction_refund_closed={money:view.order.money_summary,workflow:closed.workflow};
+  const verified=await ticketWork(checker,managedAttraction.order_id,'VERIFY','隔离验收：独立核对原订单全额退款资金');assert.equal(verified.workflow.stage,'VERIFIED');const closed=await ticketWork(checker,managedAttraction.order_id,'FOLLOW_UP','隔离验收：消费者已见退款，关闭闭园处理');assert.equal(closed.workflow.stage,'CLOSED');const row=await attractionOrderRow(checker,managedAttraction.order_id,'已退款');assert.ok(!(await row.innerText()).includes('BROWSER-ATTR-VOUCHER'));await checker.locator('[data-ticket-detail]').getByText('凭证 已退款，不可使用',{exact:false}).waitFor();assert.equal(view.order.voucher_code,null);report.facts.attraction_refund_closed={money:view.order.money_summary,workflow:closed.workflow};
  });
  assert.deepEqual(report.errors,[]);report.result='PASS';
 }catch(e){report.result='FAIL';report.error=e.message;process.exitCode=1;}

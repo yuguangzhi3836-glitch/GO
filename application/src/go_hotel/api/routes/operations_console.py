@@ -19,7 +19,14 @@ router = APIRouter(prefix='/internal/v1/admin/operations', tags=['go-operations-
 VERTICALS = {'HOTEL','FLIGHT','RAIL','RIDE','RENTAL','ATTRACTION'}
 
 def _row_dict(row, fields):
-    return {f: getattr(row, f, None) for f in fields}
+    data = {f: getattr(row, f, None) for f in fields}
+    # Stored supplier credentials are historical evidence after the order leaves
+    # CONFIRMED. Match the consumer/workbench projection without erasing history.
+    if isinstance(row, AttractionOrderRow) and row.status != 'CONFIRMED':
+        for key in ('voucher_code', 'supplier_reference'):
+            if key in data:
+                data[key] = None
+    return data
 
 def _sample(s, model, fields, limit=50):
     rows = s.scalars(select(model).limit(limit)).all()
