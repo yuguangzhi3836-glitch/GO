@@ -1,7 +1,7 @@
 (() => {
  'use strict';
  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- async function mount(root,api,vertical,id,admin){
+ async function mount(root,api,vertical,id,admin,refreshParent=null){
   const endpoint=(admin?'/internal/v1/admin':'/v1/supplier')+'/ticket-operations/'+encodeURIComponent(vertical)+'/'+encodeURIComponent(id);
   const identity=await api.me(),userId=(identity.data||identity).user_id;
   if(!userId)throw Error('无法核对当前账号');
@@ -22,7 +22,7 @@
     <label>票号（每行一个，与所选票券顺序一致）<textarea name="ticket_numbers"></textarea></label><label>改签报价编号（改签回执必填）<input name="quote_id" maxlength="64"></label></fieldset>
     <button class="btn primary" type="submit" ${d.can_operate?'':'disabled'}>提交处理</button><button class="btn" type="button" data-ticket-reload>刷新状态</button></form>
     <p role="status" data-ticket-message></p><h3>处理与复核记录</h3>${d.events.map(e=>`<p>${esc(e.action)} · ${esc(e.actor_id)} · ${esc(e.note)}</p>`).join('')||'<p>尚无处理记录</p>'}`;
-   root.querySelector('[data-ticket-reload]').onclick=()=>load().catch(show);
+   root.querySelector('[data-ticket-reload]').onclick=()=>refresh().catch(show);
    root.querySelector('form').onsubmit=async e=>{
     e.preventDefault();if(busy)return;busy=true;const form=e.currentTarget,button=form.querySelector('[type=submit]');button.disabled=true;
     try{
@@ -32,10 +32,11 @@
       for(const k of ['supplier_reference','quote_id'])if(f.get(k))payload.receipt[k]=f.get(k);
       const tickets=String(f.get('ticket_numbers')||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(tickets.length)payload.receipt.ticket_numbers=tickets;}
      const fingerprint=JSON.stringify(payload);if(!command||command.fingerprint!==fingerprint)command={fingerprint,id:crypto.randomUUID()};
-     await request('POST',{...payload,command_id:command.id});command=null;await load();
+     await request('POST',{...payload,command_id:command.id});command=null;await refresh();
     }catch(error){show(error)}finally{busy=false;if(button.isConnected)button.disabled=!d.can_operate;}
    };
   }
+  async function refresh(){if(!active())return;if(refreshParent)await refreshParent();else await load();}
   function show(e){if(active()){const node=root.querySelector('[data-ticket-message]');if(node)node.textContent=e.message||'处理结果待核实，请刷新';else root.textContent=e.message;}}
   await load().catch(show);
  }

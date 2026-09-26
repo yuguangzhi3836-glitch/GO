@@ -248,11 +248,13 @@ async function supplierCommandCenter(){
 }
 async function supplierOrders(){const data=unwrap(await api.request('/v1/supplier/transaction-orders'));const arr=data.items||[];const body=table(arr,true,'订单');$('#view').innerHTML=supplierStructuredShell('/orders',body,{'待确认':arr.filter(x=>String(x.state||x.status).includes('PENDING')).length,'已确认':arr.filter(x=>String(x.state||x.status).includes('CONFIRMED')).length,'履约中':arr.filter(x=>String(x.state||x.status).includes('STAY')).length,'售后中':arr.filter(x=>/CANCEL|REFUND/.test(String(x.state||x.status))).length});bindRows(arr,r=>r.vertical==='HOTEL'?orderWorkbench(r.order_id):supplierTransactionWorkbench(r.vertical,r.order_id))}
 async function supplierTransactionWorkbench(vertical,id){
+ const view=$('#view'),route=location.hash;
  const d=unwrap(await api.request(`/v1/supplier/transaction-orders/${encodeURIComponent(vertical)}/${encodeURIComponent(id)}`)),p=d.original_payment;
+ if($('#view')!==view||location.hash!==route)return;
  currentSupplierRoute='/orders';
  $('#view').innerHTML=`<button class="btn" id="back">← 返回订单</button><div class="section-head"><h2>订单详情</h2><span class="status">${esc(supplierFriendlyValue(d.order.status))}</span></div>${supplierObjectCard('订单事实',d.order)}<section class="card"><h3>原始付款与退款</h3><p>以下为本订单原始付款的处理记录；改期补款另行核对。</p><div class="kv"><div>已扣款</div><div>${esc(money(p.captured_minor,p.currency))}</div><div>已退款</div><div>${esc(money(p.refunded_minor,p.currency))}</div><div>净付款</div><div>${esc(money(p.net_minor,p.currency))}</div></div><p role="status">${p.binding_state==='BOUND'?'付款记录已关联': '付款记录待核对'}</p></section><h3>退款申请与进度</h3>${table(d.refunds,false,'退款记录')}`;
  $('#back').onclick=supplierOrders;
- if(['FLIGHT','RAIL'].includes(vertical)){const root=document.createElement('section');root.className='card';$('#view').appendChild(root);await window.GOTicketOperations.mount(root,api,vertical,id,false);}
+ if(['FLIGHT','RAIL'].includes(vertical)){const root=document.createElement('section');root.className='card';view.appendChild(root);await window.GOTicketOperations.mount(root,api,vertical,id,false,async()=>{if(!root.isConnected||location.hash!==route)return;view.innerHTML='<p role="status">正在刷新订单状态…</p>';try{await supplierTransactionWorkbench(vertical,id)}catch(e){if($('#view')===view&&location.hash===route){view.innerHTML='<p role="alert">订单刷新失败，请重试</p><button class="btn" data-ticket-retry>重新加载</button>';view.querySelector('[data-ticket-retry]').onclick=()=>supplierTransactionWorkbench(vertical,id).catch(error=>notice(error.message,true));}}});}
 }
 function cashAfterSalesCard(c){
  if(!c)return '';
@@ -376,12 +378,18 @@ async function adminVertical(v,title){
     <button class="btn" data-page-kind="${kind}" data-direction="-1" ${p.has_previous?'':'disabled'}>上一页</button>
     <span data-page-summary="${kind}" aria-live="polite">第 ${p.page} / ${p.pages} 页 · 共 ${p.total} 条</span>
     <button class="btn" data-page-kind="${kind}" data-direction="1" ${p.has_next?'':'disabled'}>下一页</button></nav>`;
-  async function load(next){
+  async function load(next,selectedTicket=null){
     const id=++requestId;
     // A new query invalidates the previous order immediately, including while
     // the replacement query is still in flight or ultimately fails.
     view.querySelector('#rentalOperationsWorkspace')?.remove();
     view.querySelector('#ticketOperationsWorkspace')?.remove();
+    if(selectedTicket){
+      // The operation changed native facts: do not leave the previous table
+      // visible as current while refreshing, including if the read fails.
+      view.querySelector('#adminOrders')?.replaceChildren(document.createTextNode('正在刷新订单状态…'));
+      view.querySelector('#adminRefunds')?.replaceChildren(document.createTextNode('正在刷新退款状态…'));
+    }
     const disabledBefore=[...view.querySelectorAll('#adminOrderSearch button,[data-page-kind]')].map(b=>[b,b.disabled]);
     disabledBefore.forEach(([b])=>b.disabled=true);
     try{
@@ -406,8 +414,10 @@ async function adminVertical(v,title){
       if(['FLIGHT','RAIL'].includes(v)){
         const work=document.createElement('section');work.id='ticketOperationsWorkspace';work.className='card';view.appendChild(work);
         work.innerHTML='<h2>选择订单处理票务</h2><div data-ticket-links></div><section data-ticket-detail></section>';
+        const open=async orderId=>{const root=document.createElement('section');work.querySelector('[data-ticket-detail]').replaceChildren(root);await window.GOTicketOperations.mount(root,api,v,orderId,true,()=>load({...state},orderId));};
         x.orders.forEach(order=>{const b=document.createElement('button');b.className='btn';b.textContent=order.order_id;
-          b.onclick=()=>{const root=document.createElement('section');work.querySelector('[data-ticket-detail]').replaceChildren(root);window.GOTicketOperations.mount(root,api,v,order.order_id,true);};work.querySelector('[data-ticket-links]').appendChild(b);});
+          b.onclick=()=>open(order.order_id).catch(e=>notice(e.message,true));work.querySelector('[data-ticket-links]').appendChild(b);});
+        if(selectedTicket&&x.orders.some(o=>o.order_id===selectedTicket))await open(selectedTicket);
       }
       if(v==='RIDE')view.insertAdjacentHTML('beforeend','<section class="card"><a class="btn" href="#/ride-policy-operations">管理用车取消政策</a></section>');
       if(v==='RENTAL'){
