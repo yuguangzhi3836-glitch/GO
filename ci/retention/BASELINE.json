@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.rebind.v3",
-  "product_candidate_commit": "0bee8d59841ac387b572f2a953e829774f9089b1",
-  "application_git_tree": "6ca210c5d459f0e5ff45929a31df0d1edf77d843",
+  "product_candidate_commit": "26348745cb3e4c912363afd0bd9a3682e53cefd2",
+  "application_git_tree": "6ca4c1ba2ccdf19a49dda6df1650c3e79d357529",
   "source_anchor_main": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
   "preintegration_candidate": "9950bde1def11b27ed137d7db02a3047befda4fa",
   "preintegration_application_tree": "9c83d92434301356228c1b79294fcd829d675ebf",
@@ -263,8 +263,8 @@
     },
     "src/go_hotel/api/routes/hosted_direct_booking.py": {
       "mode": "100644",
-      "git_blob": "b268815a97b57c963612cd7d86ffffc65a49a027",
-      "reason": "C01-C14 engineering depth continuation from cba99d085ffe8ff576e44120ac796e59b4ff11bf; independent acceptance pending; historical PASS not transferred"
+      "git_blob": "277a36d9880aaa59a64f64ff9013a490f08df953",
+      "reason": "Round6 media authorization repair; independent review pending, no historical PASS transfer"
     },
     "src/go_hotel/api/routes/hotel.py": {
       "mode": "100644",
@@ -1653,18 +1653,23 @@
     },
     "src/go_hotel/services/hosted_content_acceptance.py": {
       "mode": "100644",
-      "git_blob": "ed084fd4ca84a5f5d0db7ed03814aa494e1ee333",
-      "reason": "C01-C14 engineering depth continuation from cba99d085ffe8ff576e44120ac796e59b4ff11bf; independent acceptance pending; historical PASS not transferred"
+      "git_blob": "1e1fe6176e0bd742b9c18b4fd9dff2b26259bedb",
+      "reason": "Round6 media authorization repair; independent review pending, no historical PASS transfer"
     },
     "tests/test_hosted_content_operations_acceptance.py": {
       "mode": "100644",
-      "git_blob": "5e4626bb1a0692b49c7b3b2fda5e6755fbab39ea",
-      "reason": "C01-C14 engineering depth continuation from cba99d085ffe8ff576e44120ac796e59b4ff11bf; independent acceptance pending; historical PASS not transferred"
+      "git_blob": "94e058f0174d81f429953bdff246356d7d6605bc",
+      "reason": "Round6 media authorization repair; independent review pending, no historical PASS transfer"
     },
     "tests/test_c01_hosted_content_authority.py": {
       "mode": "100644",
       "git_blob": "cb76b7e60b694a6eb27a858112e0ea09c89a8836",
       "reason": "C01-C14 engineering depth continuation from cba99d085ffe8ff576e44120ac796e59b4ff11bf; independent acceptance pending; historical PASS not transferred"
+    },
+    "tests/test_c01_hosted_media_authority.py": {
+      "mode": "100644",
+      "git_blob": "dc3a331072037dd5247e9c1dac1aec4f60e9c770",
+      "reason": "Round6 media authorization repair; independent review pending, no historical PASS transfer"
     }
   },
   "migration_head": "0138_supplier_library_import",
@@ -1685,29 +1690,32 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "febb925eeb781223f17002b91479f2eac9b71acc",
-  "source_tree_sha256": "92f03f997986b7a45ba150478177a182f10c09c5319ac785a7badbcc8356237a",
+  "source_tree_sha256": "cfa49b73804de50c93c47e46a032ed952b88cbd0dd1dcc7476afc40d38d7a922",
   "historical_pass_transferred": false,
   "migration_file": "alembic/versions/0138_supplier_library_import.py",
   "verified_current_generation_ledger": "ci/depth9/CANDIDATE.json",
   "c06_external_supplier_provenance": "BLOCKED_EXTERNAL",
-  "source_files": 1535,
+  "source_files": 1536,
   "integration_evidence": "ci/depth9/CANDIDATE.json",
   "engineering_continuation": {
-    "parent_commit": "cba99d085ffe8ff576e44120ac796e59b4ff11bf",
-    "prior_binding": {
-      "product_candidate_commit": "1ee6fd666ac32bf712b951080ae9d80714a51d47",
-      "application_git_tree": "d487902d1bf40fdb1c50092265631575ab1e7c49",
-      "source_files": 1534,
-      "source_tree_sha256": "fe7dfed28cc3ce49d7666a9f18babccf4d5deb4917eff441074fdbb2eee87007"
-    },
-    "changed_application_paths": [
-      "application/src/go_hotel/api/routes/hosted_direct_booking.py",
+    "round": 6,
+    "parent_gate": "4cac30225c3094ded0bc1d2aa06d1b3960c7bfe3",
+    "product_candidate_commit": "26348745cb3e4c912363afd0bd9a3682e53cefd2",
+    "scope": "C01 Hosted media unverified claims and scoped registration only",
+    "paths": [
       "application/src/go_hotel/services/hosted_content_acceptance.py",
-      "application/tests/test_c01_hosted_content_authority.py",
-      "application/tests/test_hosted_content_operations_acceptance.py"
+      "application/src/go_hotel/api/routes/hosted_direct_booking.py",
+      "application/tests/test_hosted_content_operations_acceptance.py",
+      "application/tests/test_c01_hosted_media_authority.py"
     ],
-    "acceptance": "PENDING_INDEPENDENT",
-    "historical_pass_transferred": false
+    "developer_tests": 58,
+    "independent_c13": "NOT_DISPATCHED",
+    "independent_c14": "NOT_DISPATCHED",
+    "historical_pass_transferred": false,
+    "real_hotel_authority": "HOLD_UNVERIFIED",
+    "media_rights": "HOLD_UNVERIFIED",
+    "publication_page_booking": "NOT_CLOSED",
+    "deployment": "NOT_RUN"
   },
   "engineering_continuation_history": [
     {
@@ -1872,6 +1880,23 @@
         "application/tests/payments/test_c11_deposit_compensation.py",
         "application/tests/test_rental_compensation_authority.py",
         "application/tests_frontend/rental_deposit_operations.test.mjs"
+      ],
+      "acceptance": "PENDING_INDEPENDENT",
+      "historical_pass_transferred": false
+    },
+    {
+      "parent_commit": "cba99d085ffe8ff576e44120ac796e59b4ff11bf",
+      "prior_binding": {
+        "product_candidate_commit": "1ee6fd666ac32bf712b951080ae9d80714a51d47",
+        "application_git_tree": "d487902d1bf40fdb1c50092265631575ab1e7c49",
+        "source_files": 1534,
+        "source_tree_sha256": "fe7dfed28cc3ce49d7666a9f18babccf4d5deb4917eff441074fdbb2eee87007"
+      },
+      "changed_application_paths": [
+        "application/src/go_hotel/api/routes/hosted_direct_booking.py",
+        "application/src/go_hotel/services/hosted_content_acceptance.py",
+        "application/tests/test_c01_hosted_content_authority.py",
+        "application/tests/test_hosted_content_operations_acceptance.py"
       ],
       "acceptance": "PENDING_INDEPENDENT",
       "historical_pass_transferred": false
