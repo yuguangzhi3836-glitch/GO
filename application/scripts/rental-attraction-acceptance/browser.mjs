@@ -98,8 +98,14 @@ async function ticketWork(p,orderId,action,note,receipt=null){
  await p.locator(`[data-ticket-form][data-ticket-revision="${result.workflow.revision}"]`).waitFor();return result;
 }
 async function adminAttraction(p,orderId){
- const initial=waitResponse(p,'/internal/v1/admin/operations/verticals/ATTRACTION');
- await p.goto(origin+'/go-admin/#/vertical-attraction');await data(await initial);
+ const target=origin+'/go-admin/#/vertical-attraction';
+ // Same-document goto to the current hash does not cause a fresh list request.
+ // Re-use the visible normal search form; its submit below always reloads the
+ // exact target order and the workbench from authoritative GET responses.
+ if(p.url()!==target){
+  const initial=waitResponse(p,'/internal/v1/admin/operations/verticals/ATTRACTION');
+  await p.goto(target);await data(await initial);
+ }
  await p.getByRole('heading',{name:'景点门票 / 体验运营',exact:true}).waitFor();await p.locator('#adminOrderSearch [type=submit]:enabled').waitFor();
  await p.locator('#adminOrderId').fill(orderId);assert.equal(await p.locator('#adminOrderId').inputValue(),orderId);
  const filtered=p.waitForResponse(r=>{const u=new URL(r.url());return r.request().method()==='GET'&&u.pathname==='/internal/v1/admin/operations/verticals/ATTRACTION'&&u.searchParams.get('order_id')===orderId;});
