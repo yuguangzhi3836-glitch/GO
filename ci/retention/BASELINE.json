@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.rebind.v3",
-  "product_candidate_commit": "afc142e16c050c0000da5a11a312620387be8f79",
-  "application_git_tree": "ac23b75a75325091c5a95434238473a5592468a7",
+  "product_candidate_commit": "9a298cb3a093c4e75a043bdb2a4da14594fafd3c",
+  "application_git_tree": "ba334dadcb8899fa60c352df0410367592bc236b",
   "source_anchor_main": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
   "preintegration_candidate": "9950bde1def11b27ed137d7db02a3047befda4fa",
   "preintegration_application_tree": "9c83d92434301356228c1b79294fcd829d675ebf",
@@ -558,8 +558,8 @@
     },
     "src/go_hotel/services/hosted_fare_rules.py": {
       "mode": "100644",
-      "git_blob": "a4d39a0186ebd561a957585fe9a092425fd7b391",
-      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+      "git_blob": "f2559da4395022d0158d851bd7435a9370bd4bab",
+      "reason": "Round8 authorized isolated Aoluguya operating day: historical snapshots, canonical funds, arrival and cancellation boundaries"
     },
     "src/go_hotel/services/hosted_money.py": {
       "mode": "100644",
@@ -573,8 +573,8 @@
     },
     "src/go_hotel/services/hotel_cancellation_clock.py": {
       "mode": "100644",
-      "git_blob": "19e78c817d17c795ee6c6574a8c00d8aee4895e8",
-      "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
+      "git_blob": "a74ffb9322014d8947502b07f99e7fdc9df6e396",
+      "reason": "Round8 authorized isolated Aoluguya operating day: historical snapshots, canonical funds, arrival and cancellation boundaries"
     },
     "src/go_hotel/services/hotel_catalog_quality.py": {
       "mode": "100644",
@@ -678,8 +678,8 @@
     },
     "src/go_hotel/services/unified_money_movement.py": {
       "mode": "100644",
-      "git_blob": "44ae81bff30d73e32095db5487b9326528a852fc",
-      "reason": "C01-C14 engineering depth continuation from 7a290b2b17baaa778820f6d8e23ad22ba97e1449; independent acceptance pending; historical PASS not transferred"
+      "git_blob": "7ed0fc16094ff777231b0643b6854fb9f1d7cc0a",
+      "reason": "Round8 authorized isolated Aoluguya operating day: historical snapshots, canonical funds, arrival and cancellation boundaries"
     },
     "src/go_hotel/travel_intelligence/preferences.py": {
       "mode": "100644",
@@ -1688,8 +1688,8 @@
     },
     "src/go_hotel/services/hosted_frontdesk_uat.py": {
       "mode": "100644",
-      "git_blob": "777252d0d6e6141ff3ef8918a5bc9d7d79ef89e6",
-      "reason": "Round7 explicit user-authorized repair; independent review and full CI required"
+      "git_blob": "105edf23f5e607e7739126857672c9d6a742eb44",
+      "reason": "Round8 authorized isolated Aoluguya operating day: historical snapshots, canonical funds, arrival and cancellation boundaries"
     },
     "src/go_hotel/services/hosted_operation_authority.py": {
       "mode": "100644",
@@ -1758,8 +1758,8 @@
     },
     "tests/test_hosted_frontdesk_uat_daily_close.py": {
       "mode": "100644",
-      "git_blob": "ea93a28d4b4ffa2885175b9f292fa179589e6d5c",
-      "reason": "Round7 explicit user-authorized repair; independent review and full CI required"
+      "git_blob": "e934da3c7222831c0cf62dab16b5a12ec58dbf3a",
+      "reason": "Round8 authorized isolated Aoluguya operating day: historical snapshots, canonical funds, arrival and cancellation boundaries"
     },
     "tests/test_master03_inventory_security.py": {
       "mode": "100644",
@@ -1785,6 +1785,21 @@
       "mode": "100644",
       "git_blob": "3adb069f59a4501515c0d495b9bd07811fffe1a9",
       "reason": "Explicit new authority/publication prerequisites in inherited regression tests; preserve assertions"
+    },
+    "src/go_hotel/services/hosted_business_day.py": {
+      "mode": "100644",
+      "git_blob": "4bca4a532196bad59de313d72ed881155c45a718",
+      "reason": "Round8 authorized isolated Aoluguya operating day: historical snapshots, canonical funds, arrival and cancellation boundaries"
+    },
+    "src/go_hotel/services/guest_stay_fulfillment.py": {
+      "mode": "100644",
+      "git_blob": "d7684e0831d2ead818130322d26f904b790fb0db",
+      "reason": "Round8 authorized isolated Aoluguya operating day: historical snapshots, canonical funds, arrival and cancellation boundaries"
+    },
+    "tests/test_c01_aoluguya_business_day.py": {
+      "mode": "100644",
+      "git_blob": "0d575e13fadbc3c642967dedcf128b26b7d1c743",
+      "reason": "Round8 authorized isolated Aoluguya operating day: historical snapshots, canonical funds, arrival and cancellation boundaries"
     }
   },
   "migration_head": "0139_hosted_publication_review",
@@ -1805,20 +1820,20 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "febb925eeb781223f17002b91479f2eac9b71acc",
-  "source_tree_sha256": "67dca501719f5985ebfcc668c635d051242df99063b8e40440fb39da55f85785",
+  "source_tree_sha256": "5ff89ecdf56611742fab9af0a8e1cb2787830a672526fe7b3557786aa61f0e58",
   "historical_pass_transferred": false,
   "migration_file": "alembic/versions/0139_hosted_publication_review.py",
   "verified_current_generation_ledger": "ci/depth9/CANDIDATE.json",
   "c06_external_supplier_provenance": "BLOCKED_EXTERNAL",
-  "source_files": 1542,
+  "source_files": 1544,
   "integration_evidence": "ci/depth9/CANDIDATE.json",
   "engineering_continuation": {
     "round": 7,
     "parent_gate": "3fc5b59e6c3703d94462f763bd22db2bf8315651",
-    "product_candidate_commit": "afc142e16c050c0000da5a11a312620387be8f79",
+    "product_candidate_commit": "9a298cb3a093c4e75a043bdb2a4da14594fafd3c",
     "scope": "Scoped Hosted authority and enforced publication; atomic approval recovery; net-capture rental compensation",
     "developer_tests": 145,
-    "independent_c13": "FIXED_WIDTH_CANDIDATE_REVIEW_AND_FULL_CI_PENDING",
+    "independent_c13": "ROUND8_FROZEN_PRODUCT_REVIEW_PENDING",
     "independent_c14": "NOT_DISPATCHED_RULES_REVIEW_PENDING",
     "historical_pass_transferred": false,
     "real_hotel_authority": "HOLD_UNVERIFIED",
@@ -1858,7 +1873,8 @@
       "length": 64,
       "raw_failure_run": 36216819757,
       "lossy_downgrade": "REFUSED_BEFORE_DDL"
-    }
+    },
+    "round8_scope": "ISOLATED_AOLUGUYA_OPERATING_DAY_WITH_EXCEPTIONS"
   },
   "engineering_continuation_history": [
     {
