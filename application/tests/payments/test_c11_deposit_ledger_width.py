@@ -1,6 +1,6 @@
 """Exercise the real account-code column limit absent from ordinary SQLite VARCHAR."""
 import pytest
-from sqlalchemy import select, text
+from sqlalchemy import inspect, select, text
 from sqlalchemy.exc import DBAPIError
 
 from go_hotel.db.models import OmnichannelLedgerEntryRow as Ledger
@@ -10,8 +10,14 @@ from go_hotel.services import rental_deposit_money as service
 from tests.payments.test_c11_rental_deposit_money import obligation, args, decide, settle, OWNER, CHECKER
 
 
+LEDGER_ACCOUNT_WIDTH = 128  # Migration 0140 storage contract; RD identities retain their 64-char limit.
+
+
 @pytest.fixture
 def enforced_account_width():
+    assert Ledger.__table__.c.account_code.type.length == LEDGER_ACCOUNT_WIDTH
+    columns = {column['name']: column for column in inspect(engine).get_columns('omnichannel_ledger_entry')}
+    assert columns['account_code']['type'].length == LEDGER_ACCOUNT_WIDTH
     # PostgreSQL enforces VARCHAR itself. SQLite needs an equivalent DB trigger,
     # not a Python assertion that would let an oversized INSERT pass unnoticed.
     if engine.dialect.name == 'sqlite':
@@ -19,8 +25,8 @@ def enforced_account_width():
             for action in ('INSERT', 'UPDATE'):
                 connection.execute(text(f'''CREATE TRIGGER ledger_account_width_{action}
                     BEFORE {action} ON omnichannel_ledger_entry
-                    WHEN length(NEW.account_code) > 64
-                    BEGIN SELECT RAISE(ABORT, 'account_code exceeds VARCHAR(64)'); END'''))
+                    WHEN length(NEW.account_code) > {LEDGER_ACCOUNT_WIDTH}
+                    BEGIN SELECT RAISE(ABORT, 'account_code exceeds VARCHAR({LEDGER_ACCOUNT_WIDTH})'); END'''))
     yield
     if engine.dialect.name == 'sqlite':
         with engine.begin() as connection:
@@ -38,15 +44,25 @@ def test_deposit_capture_release_passes_database_column_constraint(obligation, e
         entries = list(session.scalars(select(Ledger)))
         credit = next(entry for entry in entries if entry.direction == 'CREDIT')
         assert credit.account_code == 'RD:' + obligation['obligation_id']
-        assert len(credit.account_code) <= Ledger.__table__.c.account_code.type.length == 64
+        assert len(credit.account_code) <= Ledger.__table__.c.account_code.type.length == LEDGER_ACCOUNT_WIDTH
         assert credit.account_code[3:] == obligation['obligation_id']
         assert sum(entry.amount_minor for entry in entries if entry.direction == 'DEBIT') == 4000
         assert sum(entry.amount_minor for entry in entries if entry.direction == 'CREDIT') == 4000
+    # Verify the storage boundary independently of the shorter RD identity limit.
+    # Roll back the probe so neither ledger truth nor idempotent replay is changed.
+    with engine.connect() as connection:
+        probe = connection.begin()
+        try:
+            boundary = 'x' * LEDGER_ACCOUNT_WIDTH
+            connection.execute(text('UPDATE omnichannel_ledger_entry SET account_code = :code'), {'code': boundary})
+            assert set(connection.execute(text('SELECT account_code FROM omnichannel_ledger_entry')).scalars()) == {boundary}
+        finally:
+            probe.rollback()
     # Prove the test database actually rejects a too-long SQL write.
     with pytest.raises(DBAPIError) as rejected:
         with engine.begin() as connection:
-            connection.execute(text('UPDATE omnichannel_ledger_entry SET account_code = :code'), {'code': 'x' * 65})
-    assert '64' in str(rejected.value) or 'too long' in str(rejected.value)
+            connection.execute(text('UPDATE omnichannel_ledger_entry SET account_code = :code'), {'code': 'x' * (LEDGER_ACCOUNT_WIDTH + 1)})
+    assert str(LEDGER_ACCOUNT_WIDTH) in str(rejected.value) or 'too long' in str(rejected.value)
     assert settle(obligation, decision) == result
 
 
