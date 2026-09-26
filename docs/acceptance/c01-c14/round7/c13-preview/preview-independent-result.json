@@ -1,0 +1,67 @@
+{
+  "source": "implementation-preview hash-bound only; not final candidate",
+  "fixture_scope": "ISOLATED_FIXTURE not commercial rights",
+  "probe": "approved-reserve-confirm-unfunded-cancel",
+  "http": {
+    "reserve": {
+      "status": 200,
+      "response": {
+        "data": {
+          "hosted_reservation_id": "hdr_922c621b46d84605b6e7215c26f9d216",
+          "hosted_offer_id": "hdo_74264d4b6630457e8c7f85889a8c4f8c",
+          "idempotency_key": "independent-unfunded",
+          "guest_name": "SYNTHETIC GUEST",
+          "guest_contact": "synthetic@example.invalid",
+          "check_in": "2026-09-28",
+          "check_out": "2026-09-29",
+          "amount_minor": 50000,
+          "currency": "CNY",
+          "reservation_state": "PENDING_HOTEL_CONFIRMATION",
+          "payment_state": "ALIPAY_APPLICATION_PENDING_NO_CHARGE",
+          "hotel_confirmation_reference": null,
+          "created_at": "2026-09-26T03:47:53.399901+00:00",
+          "updated_at": "2026-09-26T03:47:53.399902+00:00"
+        }
+      }
+    },
+    "confirm": {
+      "status": 200,
+      "response": {
+        "data": {
+          "hosted_reservation_id": "hdr_922c621b46d84605b6e7215c26f9d216",
+          "hosted_offer_id": "hdo_74264d4b6630457e8c7f85889a8c4f8c",
+          "idempotency_key": "independent-unfunded",
+          "guest_name": "***",
+          "guest_contact": "***",
+          "check_in": "2026-09-28",
+          "check_out": "2026-09-29",
+          "amount_minor": 50000,
+          "currency": "CNY",
+          "reservation_state": "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING",
+          "payment_state": "ALIPAY_APPLICATION_PENDING_NO_CHARGE",
+          "hotel_confirmation_reference": "hotel_confirm_f4996e784e1b4a47845ad66e6db75507",
+          "created_at": "2026-09-26T03:47:53.399901+00:00",
+          "updated_at": "2026-09-26T03:47:53.423265+00:00"
+        }
+      }
+    },
+    "cancel": {
+      "status": 409,
+      "response": {
+        "detail": "CONFIRMED_CANCELLATION_FARE_QUOTE_REQUIRED"
+      }
+    },
+    "quote": {
+      "status": 409,
+      "response": {
+        "detail": "KNOWN_FROZEN_FARE_AUTHORIZATION_REQUIRED"
+      }
+    }
+  },
+  "db": {
+    "reservation_state": "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING",
+    "payment_state": "ALIPAY_APPLICATION_PENDING_NO_CHARGE",
+    "operational_state": "CONFIRMED",
+    "fare_snapshot": true
+  }
+}
