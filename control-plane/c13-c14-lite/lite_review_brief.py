@@ -1,4 +1,32 @@
-"""The review brief: the task the candidate was answering, resolved read-only.
+"""The review brief: the associated pull request's declared delivery brief, read-only.
+
+REVIEW_BRIEF_V1
+---------------
+What this module resolves is:
+
+    the associated pull request's declared delivery brief.
+
+It provides task context for the C13/C14 review, but it is **not** an independent or
+immutable source of the original production-task authority. Concretely:
+
+* The question it answers is "what did this candidate's own pull request declare it would
+  deliver?", not "what was the production AI originally, immutably, told to do?".
+* A pull request body can be edited after it was opened, so the same candidate SHA can later
+  resolve to different brief bytes.
+* ``review_brief`` is one more facts key, so the existing ``input_sha256`` binds exactly the
+  brief the reviewer saw **in this round** - the bytes, and nothing about whether those
+  bytes are the original task. Binding and provenance are different questions, and this
+  round answers only the first one.
+
+Closing that provenance gap (an immutable original task spec, a task registry, a task
+digest, a second ledger, a signature) is deliberately **not** done here. Until it is
+decided, no reader of a record may describe this brief as the immutable original task.
+
+Provisional workaround, not a gate: a production AI that opens the candidate pull request is
+asked to carry the original task's objective, scope, out-of-scope, acceptance criteria and
+validation plan into the PR body verbatim, so the declared brief is as close to the task the
+candidate actually received as the current mechanism can get. That is a production
+convention, not something this module enforces.
 
 Why this module exists
 ----------------------
@@ -6,7 +34,7 @@ By the time of the first real Review E2E both cells could see WHAT changed - the
 change surface, the candidate's own first-parent diff, the authoritative rule text and the
 machine evidence - but neither could see WHAT WAS ASKED FOR. A reviewer that only knows the
 answer can only grade against its own idea of best practice, which is how an acceptable
-candidate gets sent back for findings the original task never asked about.
+candidate gets sent back for findings the declared brief never asked about.
 
 So the brief is the candidate's associated Pull Request, frozen as **GitHub's own raw
 facts** - number, title, body, base/head refs, head sha, merge commit sha, state, merged_at

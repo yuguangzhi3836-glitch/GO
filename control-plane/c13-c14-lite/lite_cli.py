@@ -242,13 +242,19 @@ def _machine_evidence(manifest_path, junit_path) -> dict:
 
 
 def _read_review_brief(path) -> dict:
-    """The task the candidate was answering, frozen from its own pull request.
+    """The delivery brief declared by the candidate's own pull request.
 
-    Without it the reviewer knows what changed but not what was asked for, so it can only
-    grade against its own idea of best practice - which is how an acceptable candidate is
-    sent back for findings the original task never mentioned. A brief that could not be
-    resolved is a hard stop, decided here before any AI call, and it is never replaced by a
-    guessed pull request, a branch name or a default.
+    This is ``REVIEW_BRIEF_V1``: the associated pull request's declared delivery brief. It
+    gives the reviewer task context, but it is **not** an immutable source of the original
+    production task - a pull request body can be edited after it was opened, and this record
+    only binds the brief the reviewer saw in this round. See ``lite_review_brief`` for the
+    full statement of what it is and what it is not.
+
+    Without a brief the reviewer knows what changed but not what was asked for, so it can only
+    grade against its own idea of best practice - which is how an acceptable candidate is sent
+    back for findings the declared brief never mentioned. A brief that could not be resolved is
+    a hard stop, decided here before any AI call, and it is never replaced by a guessed pull
+    request, a branch name or a default.
     """
     try:
         document = _read(path)
@@ -896,8 +902,10 @@ def main(argv=None) -> int:
                       help="the frozen candidate's own first-parent diff")
     # Required for the same reason one level up: the diff is the answer, the brief is the
     # question. Without it a reviewer can only grade against its own idea of best practice.
+    # It is the association's *declared* brief (REVIEW_BRIEF_V1), not an immutable original
+    # task - see lite_review_brief for what that does and does not establish.
     spec.add_argument("--review-brief", required=True,
-                      help="the review-brief record for this candidate (the task being graded)")
+                      help="the review-brief record for this candidate (the PR-declared delivery brief being graded)")
     spec.add_argument("--machine-manifest", help="c13 only: the machine-test manifest.json")
     spec.add_argument("--junit", help="c13 only: the machine-test junit.xml")
     spec.set_defaults(func=cmd_spec)

@@ -54,9 +54,10 @@ C14_RAW_ARTIFACT = "c13c14-lite-c14-raw-${{ inputs.candidate_sha }}"
 #: just the names of the files that changed.
 CANDIDATE_DIFF_REDIRECT = "candidate.diff"
 
-#: The resolved review brief - the task the candidate was answering. Read-only, from the
-#: candidate's own pull request: the reviewer needs the question as well as the answer, or it
-#: grades the candidate against its own idea of best practice.
+#: The resolved review brief - the delivery brief declared by the candidate's own pull request
+#: (``REVIEW_BRIEF_V1``; declared, not an immutable original task). Read-only, and matched
+#: uniquely or refused: the reviewer needs the question as well as the answer, or it grades
+#: the candidate against its own idea of best practice.
 REVIEW_BRIEF_REDIRECT = "review_brief.json"
 
 try:  # pragma: no cover - trivial import guard

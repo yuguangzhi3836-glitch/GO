@@ -205,9 +205,10 @@ def role_facts(role: str, *, candidate_sha=CANDIDATE_SHA, application_tree=APPLI
             "cell_id": cell_id or ("C14" if role == "c14" else "C13"),
             "task_id": task_id or (C14_TASK if role == "c14" else C13_TASK),
         },
-        # Both cells grade the same paper: the task the candidate was answering, frozen from its
-        # own pull request. Present for c13 and c14 alike, because "acceptable for the task" is
-        # not a question either cell can answer without it.
+        # Both cells grade the same paper: the delivery brief declared by the candidate's own
+        # pull request (REVIEW_BRIEF_V1 - declared, not an immutable original task). Present
+        # for c13 and c14 alike, because "acceptable for the declared task" is not a question
+        # either cell can answer without it.
         "review_brief": review_brief_record(candidate_sha)["pull_request"],
     }
     if role == "c14":
