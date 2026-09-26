@@ -1,0 +1,1484 @@
+{
+  "binding": {
+    "source_tree_sha256": "d34d42b902311d85071e624c7e058bbcb2d4516078bc72cd077041e2cf9ccdc8",
+    "candidate": "0f4ed7945de68a20db47a5d77acd238219166a12",
+    "application_tree": "7f10504d279d2dd63a137a97026c68a5bb738096",
+    "tracked_source_dirty": false
+  },
+  "mode": "ISOLATED_SQLITE_CHROMIUM",
+  "native_device": "NOT_RUN",
+  "acceptance": "LIMITED_SCENARIOS_ONLY",
+  "events": [
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/me",
+      "status": 401,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/auth/login",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/me",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/wallet",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/sources",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/consents",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports",
+      "status": 201,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports/pij_041228bb5a1a4492/items/pii_5e42fde3ffa44ce5/review",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports/pij_041228bb5a1a4492/items/pii_a2f33eb9a1c94c6e/review",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports/pij_041228bb5a1a4492/items/pii_f8f3ea2a6ac74e0e/review",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports/pij_041228bb5a1a4492/commit",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/consents",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/sources",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/me",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/wallet",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/search",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/consents",
+      "status": 201,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout/RENTAL/rent_ord_4ab63b06032447c3",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_4ab63b06032447c3",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_4ab63b06032447c3/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_4ab63b06032447c3/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_4ab63b06032447c3/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_4ab63b06032447c3/change-quotes",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_4ab63b06032447c3/changes/rent_chq_8bcf8ddb32554996",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_4ab63b06032447c3",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_4ab63b06032447c3/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_4ab63b06032447c3/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_4ab63b06032447c3/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_4ab63b06032447c3/refund-quote",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_4ab63b06032447c3/refund-confirmed",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_4ab63b06032447c3",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_4ab63b06032447c3/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_4ab63b06032447c3/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_4ab63b06032447c3/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/me",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/wallet",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/search",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/prebook",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout/ATTRACTION/attr_ord_52d12a8cc6804041",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders/attr_ord_52d12a8cc6804041",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders/attr_ord_52d12a8cc6804041/refund-quote",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders/attr_ord_52d12a8cc6804041/refund",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders/attr_ord_52d12a8cc6804041",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/me",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/wallet",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/search",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/consents",
+      "status": 201,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout/RENTAL/rent_ord_2890c7ec33bf4dd5",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_2890c7ec33bf4dd5",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_2890c7ec33bf4dd5/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_2890c7ec33bf4dd5/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_2890c7ec33bf4dd5/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_2890c7ec33bf4dd5/fulfillment",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_2890c7ec33bf4dd5",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_2890c7ec33bf4dd5/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_2890c7ec33bf4dd5/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_2890c7ec33bf4dd5/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_2890c7ec33bf4dd5/fulfillment",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_2890c7ec33bf4dd5",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_2890c7ec33bf4dd5/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_2890c7ec33bf4dd5/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_2890c7ec33bf4dd5/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/dashboard",
+      "status": 200,
+      "method": "GET"
+    }
+  ],
+  "steps": [
+    {
+      "name": "traveler",
+      "result": "PASS"
+    },
+    {
+      "name": "rental-search-book-pay",
+      "result": "PASS"
+    },
+    {
+      "name": "rental-reprice-change",
+      "result": "PASS"
+    },
+    {
+      "name": "rental-cancel-refund",
+      "result": "PASS"
+    },
+    {
+      "name": "attraction-search-book-pay",
+      "result": "PASS"
+    },
+    {
+      "name": "attraction-future-window-disables-redemption",
+      "result": "PASS"
+    },
+    {
+      "name": "attraction-refund",
+      "result": "PASS"
+    },
+    {
+      "name": "rental-second-book-for-supplier-claim",
+      "result": "PASS"
+    },
+    {
+      "name": "rental-normal-pickup-return",
+      "result": "PASS"
+    },
+    {
+      "name": "supplier-bound-rental-damage-claim",
+      "result": "FAIL",
+      "error": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByText('rent_ord_2890c7ec33bf4dd5', { exact: true })\n",
+      "visible": "GO 合作伙伴平台\n经营中心\n酒店退改规则\n订单与履约\n促销与权益\n经营数据\n财务\n官方直连价值\n直连经营分析\n业务管理\n异常中心\nacceptance-rental-supplier@example.test\nSUPPLIER_OWNER\n订单\n当前酒店\nSUPPLIER_USER\n退出\n供应商经营中心\n订单与售后状态，一眼看清\n结构化运营\n累计订单\n2\n以当前可验证事实为准\n退款记录\n1\n以当前可验证事实为准\n住宿额度\n0\n以当前可验证事实为准\n风险记录\n0\n以当前可验证事实为准\n技术信息 / 高级信息\n订单与售后\n\n以下为当前供应商的累计业务记录；空数据不会被视为今天已完成履约。\n\n查看订单与履约\n查看取消与退款\n查看财务\n订单 · 已完成\n1\n订单 · 已退款\n1\n退款 · 退款已完成\n1"
+    }
+  ],
+  "errors": [],
+  "facts": {
+    "rental_booked": {
+      "vertical": "RENTAL",
+      "order_id": "rent_ord_4ab63b06032447c3",
+      "status": "CONFIRMED",
+      "pickup_location": "哈尔滨机场",
+      "return_location": "哈尔滨机场",
+      "pickup_at": "2026-10-26T10:00",
+      "return_at": "2026-10-29T10:00",
+      "vehicle_class": "COMPACT",
+      "insurance": {
+        "type": "BASIC",
+        "excess_minor": 500000
+      },
+      "mileage": {
+        "type": "UNLIMITED"
+      },
+      "deposit_minor": 200000,
+      "total_amount_minor": 126000,
+      "currency": "CNY",
+      "drivers": [
+        {
+          "full_name": "INDEPENDENT RENTAL ADULT",
+          "driver_license_number": "TEST-ISOLATED-RENTAL"
+        }
+      ],
+      "supplier_reference": "SIM-rent_ord_4ab63b06032447c3",
+      "payment_deadline_ms": 1790448649724,
+      "unpaid_reservation_state": "PAYMENT_STARTED",
+      "external_live": false,
+      "pending_change": null,
+      "evidence": [
+        {
+          "sequence_no": 1,
+          "kind": "ORDER_CREATED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "c2b71eef9370bf515516e62a16c36dd47a22d30796af3cf625cc80e2f0d46ac8",
+          "previous_hash": "GENESIS",
+          "payload": {
+            "supplier_reference": null,
+            "offer_id": "rental_compact",
+            "deposit_minor": 200000,
+            "insurance": {
+              "type": "BASIC",
+              "excess_minor": 500000
+            },
+            "external_live": false
+          },
+          "created_at": "2026-09-26T18:35:49.726998"
+        },
+        {
+          "sequence_no": 2,
+          "kind": "VAULT_BOOKING_DATA_RELEASED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "82559dd007d0bed4d1839b5043ccd4e196bf640191dc0c1e78e27f1e038042bf",
+          "previous_hash": "c2b71eef9370bf515516e62a16c36dd47a22d30796af3cf625cc80e2f0d46ac8",
+          "payload": {
+            "release_ids": [
+              "pdr_f997e45b2c57454a"
+            ],
+            "minimum_necessary": true
+          },
+          "created_at": "2026-09-26T18:35:49.731130"
+        },
+        {
+          "sequence_no": 3,
+          "kind": "SUPPLIER_CONFIRMED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "4983b2384037b376ac9221e4884ca880a7a0c4a0d50406f9ef4bac4441426e7f",
+          "previous_hash": "82559dd007d0bed4d1839b5043ccd4e196bf640191dc0c1e78e27f1e038042bf",
+          "payload": {
+            "supplier_confirmation_reference": "SIM-rent_ord_4ab63b06032447c3",
+            "external_operation_id": "SIM-rent_ord_4ab63b06032447c3",
+            "evidence_reference": "contract-simulator://RENTAL/rent_ord_4ab63b06032447c3",
+            "actor_id": null
+          },
+          "created_at": "2026-09-26T18:35:49.908369"
+        }
+      ]
+    },
+    "rental_changed": {
+      "vertical": "RENTAL",
+      "order_id": "rent_ord_4ab63b06032447c3",
+      "status": "CONFIRMED",
+      "pickup_location": "哈尔滨机场",
+      "return_location": "哈尔滨机场",
+      "pickup_at": "2026-10-26T10:00",
+      "return_at": "2026-10-30T10:00",
+      "vehicle_class": "COMPACT",
+      "insurance": {
+        "type": "BASIC",
+        "excess_minor": 500000
+      },
+      "mileage": {
+        "type": "UNLIMITED"
+      },
+      "deposit_minor": 200000,
+      "total_amount_minor": 168000,
+      "currency": "CNY",
+      "drivers": [
+        {
+          "full_name": "INDEPENDENT RENTAL ADULT",
+          "driver_license_number": "TEST-ISOLATED-RENTAL"
+        }
+      ],
+      "supplier_reference": "SIM-rent_ord_4ab63b06032447c3",
+      "payment_deadline_ms": 1790448649724,
+      "unpaid_reservation_state": "PAYMENT_STARTED",
+      "external_live": false,
+      "pending_change": null,
+      "evidence": [
+        {
+          "sequence_no": 1,
+          "kind": "ORDER_CREATED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "c2b71eef9370bf515516e62a16c36dd47a22d30796af3cf625cc80e2f0d46ac8",
+          "previous_hash": "GENESIS",
+          "payload": {
+            "supplier_reference": null,
+            "offer_id": "rental_compact",
+            "deposit_minor": 200000,
+            "insurance": {
+              "type": "BASIC",
+              "excess_minor": 500000
+            },
+            "external_live": false
+          },
+          "created_at": "2026-09-26T18:35:49.726998"
+        },
+        {
+          "sequence_no": 2,
+          "kind": "VAULT_BOOKING_DATA_RELEASED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "82559dd007d0bed4d1839b5043ccd4e196bf640191dc0c1e78e27f1e038042bf",
+          "previous_hash": "c2b71eef9370bf515516e62a16c36dd47a22d30796af3cf625cc80e2f0d46ac8",
+          "payload": {
+            "release_ids": [
+              "pdr_f997e45b2c57454a"
+            ],
+            "minimum_necessary": true
+          },
+          "created_at": "2026-09-26T18:35:49.731130"
+        },
+        {
+          "sequence_no": 3,
+          "kind": "SUPPLIER_CONFIRMED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "4983b2384037b376ac9221e4884ca880a7a0c4a0d50406f9ef4bac4441426e7f",
+          "previous_hash": "82559dd007d0bed4d1839b5043ccd4e196bf640191dc0c1e78e27f1e038042bf",
+          "payload": {
+            "supplier_confirmation_reference": "SIM-rent_ord_4ab63b06032447c3",
+            "external_operation_id": "SIM-rent_ord_4ab63b06032447c3",
+            "evidence_reference": "contract-simulator://RENTAL/rent_ord_4ab63b06032447c3",
+            "actor_id": null
+          },
+          "created_at": "2026-09-26T18:35:49.908369"
+        },
+        {
+          "sequence_no": 4,
+          "kind": "CHANGE_CONFIRMED_BY_CUSTOMER",
+          "status": "CHANGE_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "22dda1a115206a007fc34883e5f91096e30420e041ff16114a991184bdf0e049",
+          "previous_hash": "4983b2384037b376ac9221e4884ca880a7a0c4a0d50406f9ef4bac4441426e7f",
+          "payload": {
+            "quote_id": "rent_chq_8bcf8ddb32554996",
+            "difference_minor": 42000,
+            "currency": "CNY",
+            "external_live": false
+          },
+          "created_at": "2026-09-26T18:35:50.303115"
+        },
+        {
+          "sequence_no": 5,
+          "kind": "CHANGE_EXECUTED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "0b1541400c7b648198c4e4f9c9373089fda598c61fd3dccc546901f914b3cea2",
+          "previous_hash": "22dda1a115206a007fc34883e5f91096e30420e041ff16114a991184bdf0e049",
+          "payload": {
+            "quote_id": "rent_chq_8bcf8ddb32554996",
+            "money_movement_ids": [
+              "omm_125a22cc37824a829c32837e27b04b88"
+            ],
+            "difference_minor": 42000,
+            "new_pickup_at": "2026-10-26T10:00",
+            "new_return_at": "2026-10-30T10:00",
+            "external_live": false
+          },
+          "created_at": "2026-09-26T18:35:50.327395"
+        }
+      ]
+    },
+    "rental_refund": {
+      "receipt": {
+        "refund_id": "mob_ref_9eafa674fe0747ae",
+        "order_id": "rent_ord_4ab63b06032447c3",
+        "status": "REFUND_COMPLETED",
+        "refund_amount_minor": 168000,
+        "currency": "CNY"
+      },
+      "order": {
+        "vertical": "RENTAL",
+        "order_id": "rent_ord_4ab63b06032447c3",
+        "status": "REFUNDED",
+        "pickup_location": "哈尔滨机场",
+        "return_location": "哈尔滨机场",
+        "pickup_at": "2026-10-26T10:00",
+        "return_at": "2026-10-30T10:00",
+        "vehicle_class": "COMPACT",
+        "insurance": {
+          "type": "BASIC",
+          "excess_minor": 500000
+        },
+        "mileage": {
+          "type": "UNLIMITED"
+        },
+        "deposit_minor": 200000,
+        "total_amount_minor": 168000,
+        "currency": "CNY",
+        "drivers": [
+          {
+            "full_name": "INDEPENDENT RENTAL ADULT",
+            "driver_license_number": "TEST-ISOLATED-RENTAL"
+          }
+        ],
+        "supplier_reference": null,
+        "payment_deadline_ms": 1790448649724,
+        "unpaid_reservation_state": "PAYMENT_STARTED",
+        "external_live": false,
+        "pending_change": null,
+        "evidence": [
+          {
+            "sequence_no": 1,
+            "kind": "ORDER_CREATED",
+            "status": "PAYMENT_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "c2b71eef9370bf515516e62a16c36dd47a22d30796af3cf625cc80e2f0d46ac8",
+            "previous_hash": "GENESIS",
+            "payload": {
+              "supplier_reference": null,
+              "offer_id": "rental_compact",
+              "deposit_minor": 200000,
+              "insurance": {
+                "type": "BASIC",
+                "excess_minor": 500000
+              },
+              "external_live": false
+            },
+            "created_at": "2026-09-26T18:35:49.726998"
+          },
+          {
+            "sequence_no": 2,
+            "kind": "VAULT_BOOKING_DATA_RELEASED",
+            "status": "PAYMENT_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "82559dd007d0bed4d1839b5043ccd4e196bf640191dc0c1e78e27f1e038042bf",
+            "previous_hash": "c2b71eef9370bf515516e62a16c36dd47a22d30796af3cf625cc80e2f0d46ac8",
+            "payload": {
+              "release_ids": [
+                "pdr_f997e45b2c57454a"
+              ],
+              "minimum_necessary": true
+            },
+            "created_at": "2026-09-26T18:35:49.731130"
+          },
+          {
+            "sequence_no": 3,
+            "kind": "SUPPLIER_CONFIRMED",
+            "status": "CONFIRMED",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "4983b2384037b376ac9221e4884ca880a7a0c4a0d50406f9ef4bac4441426e7f",
+            "previous_hash": "82559dd007d0bed4d1839b5043ccd4e196bf640191dc0c1e78e27f1e038042bf",
+            "payload": {
+              "supplier_confirmation_reference": "SIM-rent_ord_4ab63b06032447c3",
+              "external_operation_id": "SIM-rent_ord_4ab63b06032447c3",
+              "evidence_reference": "contract-simulator://RENTAL/rent_ord_4ab63b06032447c3",
+              "actor_id": null
+            },
+            "created_at": "2026-09-26T18:35:49.908369"
+          },
+          {
+            "sequence_no": 4,
+            "kind": "CHANGE_CONFIRMED_BY_CUSTOMER",
+            "status": "CHANGE_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "22dda1a115206a007fc34883e5f91096e30420e041ff16114a991184bdf0e049",
+            "previous_hash": "4983b2384037b376ac9221e4884ca880a7a0c4a0d50406f9ef4bac4441426e7f",
+            "payload": {
+              "quote_id": "rent_chq_8bcf8ddb32554996",
+              "difference_minor": 42000,
+              "currency": "CNY",
+              "external_live": false
+            },
+            "created_at": "2026-09-26T18:35:50.303115"
+          },
+          {
+            "sequence_no": 5,
+            "kind": "CHANGE_EXECUTED",
+            "status": "CONFIRMED",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "0b1541400c7b648198c4e4f9c9373089fda598c61fd3dccc546901f914b3cea2",
+            "previous_hash": "22dda1a115206a007fc34883e5f91096e30420e041ff16114a991184bdf0e049",
+            "payload": {
+              "quote_id": "rent_chq_8bcf8ddb32554996",
+              "money_movement_ids": [
+                "omm_125a22cc37824a829c32837e27b04b88"
+              ],
+              "difference_minor": 42000,
+              "new_pickup_at": "2026-10-26T10:00",
+              "new_return_at": "2026-10-30T10:00",
+              "external_live": false
+            },
+            "created_at": "2026-09-26T18:35:50.327395"
+          },
+          {
+            "sequence_no": 6,
+            "kind": "REFUND_CONSENT_FROZEN",
+            "status": "CONFIRMED",
+            "source": "COMMAND_CENTER",
+            "entry_hash": "11170677f2d693622653d679a4a995b8050bfa2e30c9c1bd879028f5bb5fe4f5",
+            "previous_hash": "0b1541400c7b648198c4e4f9c9373089fda598c61fd3dccc546901f914b3cea2",
+            "payload": {
+              "account_id": "usr_aee094d20ab44c4a",
+              "refund_id": "mob_ref_9eafa674fe0747ae",
+              "quote": {
+                "order_id": "rent_ord_4ab63b06032447c3",
+                "fee_minor": 0,
+                "refund_amount_minor": 168000,
+                "currency": "CNY",
+                "refund_to": "ORIGINAL_PAYMENT_METHOD",
+                "quote_hash": "17f050dd6ac0f6bb1800bdd1830e5454ed2ad7afa823eca7fa0cc5e6504ac34a"
+              },
+              "settlement_plan_hash": "ebd4b25bffb87d42ff4b6a5c546c826924e450ad2ed90d1dfab4ac70b9879515"
+            },
+            "created_at": "2026-09-26T18:35:50.590657"
+          },
+          {
+            "sequence_no": 7,
+            "kind": "REFUND_REQUESTED",
+            "status": "REFUND_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "5ce49b492f6be0fe7f8345bccd4a1c1cfca4aa454a114aa19e259d8345cd3c0a",
+            "previous_hash": "11170677f2d693622653d679a4a995b8050bfa2e30c9c1bd879028f5bb5fe4f5",
+            "payload": {
+              "refund_id": "mob_ref_9eafa674fe0747ae",
+              "refund_amount_minor": 168000,
+              "refund_to": "ORIGINAL_PAYMENT_METHOD"
+            },
+            "created_at": "2026-09-26T18:35:50.591432"
+          },
+          {
+            "sequence_no": 8,
+            "kind": "REFUND_COMPLETED",
+            "status": "REFUNDED",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "692246b5a7a70440d3a2169ffbe9d74f784564893c2f7a7136b0d9a02e704843",
+            "previous_hash": "5ce49b492f6be0fe7f8345bccd4a1c1cfca4aa454a114aa19e259d8345cd3c0a",
+            "payload": {
+              "refund_id": "mob_ref_9eafa674fe0747ae",
+              "refund_amount_minor": 168000,
+              "money_movement_ids": [
+                "omm_c6610dc7936347c09beac0c679736959",
+                "omm_9114bccd573a40958eb11334eae24fb0"
+              ]
+            },
+            "created_at": "2026-09-26T18:35:50.607266"
+          }
+        ]
+      }
+    },
+    "attraction_booked": {
+      "vertical": "ATTRACTION",
+      "order_id": "attr_ord_52d12a8cc6804041",
+      "status": "CONFIRMED",
+      "product_id": "tokyo_skytree",
+      "product_name": "东京晴空塔天望甲板",
+      "product_type": "ATTRACTION",
+      "destination": "东京",
+      "visit_date": "2026-10-26",
+      "session_time": "16:00",
+      "ticket_type": "成人票",
+      "quantity": 1,
+      "eligibility": {
+        "age": "12+ adult",
+        "id_required": false
+      },
+      "voucher_type": "QR_CODE",
+      "voucher_code": "SIM-attr_ord_52d12a8cc6804041",
+      "total_amount_minor": 18000,
+      "currency": "CNY",
+      "attendees": [
+        {
+          "full_name": "INDEPENDENT RENTAL ADULT"
+        }
+      ],
+      "supplier_reference": "SIM-attr_ord_52d12a8cc6804041",
+      "external_live": false,
+      "redemption_window": {
+        "state": "FROZEN_SUPPLIER_WINDOW",
+        "destination_timezone": "Asia/Tokyo",
+        "opens_at": "2026-10-26T06:30:00+00:00",
+        "closes_at": "2026-10-26T09:00:00+00:00",
+        "boundary": "[opens_at,closes_at)",
+        "policy": {
+          "closes_minutes_after_session": 120,
+          "destination_timezone": "Asia/Tokyo",
+          "opens_minutes_before_session": 30,
+          "policy_reference": "engineering-fixture://attraction/session-window/v1"
+        }
+      },
+      "payment_deadline_ms": 1790448651479,
+      "unpaid_reservation_state": "PAYMENT_STARTED",
+      "can_redeem": false,
+      "redemption_blocker": "ATTRACTION_OUTSIDE_SUPPLIER_VALIDITY_WINDOW",
+      "supplier_closed_refund": false,
+      "evidence": [
+        {
+          "sequence_no": 1,
+          "kind": "ORDER_CREATED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "18cd4b0013ee66845a87e600ed415242391305705a0f7eeed8f8f7eda9fea95d",
+          "previous_hash": "GENESIS",
+          "payload": {
+            "prebook_id": "attr_pre_a643065a167d46d5",
+            "terms_hash": "cbbeab8457a9ef2697684ac277a6fcd7725cd82c42f7fca3820574c74059afa0",
+            "external_live": false
+          },
+          "created_at": "2026-09-26T18:35:51.482976"
+        },
+        {
+          "sequence_no": 2,
+          "kind": "VAULT_BOOKING_DATA_RELEASED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "869f09335032409b2b4855557a1991e4acd0a6bd4fc67e6ad867c5225aa5732e",
+          "previous_hash": "18cd4b0013ee66845a87e600ed415242391305705a0f7eeed8f8f7eda9fea95d",
+          "payload": {
+            "release_ids": [
+              "pdr_d57cf488ebb54b16"
+            ],
+            "minimum_necessary": true
+          },
+          "created_at": "2026-09-26T18:35:51.488214"
+        },
+        {
+          "sequence_no": 3,
+          "kind": "SUPPLIER_CONFIRMED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "8af1aa6766e94037eed928fce1daa996e70b19c29428b9fc0e3f454de629c1e1",
+          "previous_hash": "869f09335032409b2b4855557a1991e4acd0a6bd4fc67e6ad867c5225aa5732e",
+          "payload": {
+            "supplier_confirmation_reference": "SIM-attr_ord_52d12a8cc6804041",
+            "external_operation_id": "SIM-attr_ord_52d12a8cc6804041",
+            "evidence_reference": "contract-simulator://ATTRACTION/attr_ord_52d12a8cc6804041",
+            "actor_id": null
+          },
+          "created_at": "2026-09-26T18:35:51.613161"
+        }
+      ]
+    },
+    "future_window_guard": "UI_DISABLED_WITH_SERVER_CAN_REDEEM_FALSE; backend bypass rejection is outside this UI probe",
+    "attraction_refund": {
+      "receipt": {
+        "refund_id": "attr_ref_40ec4591d853453b",
+        "order_id": "attr_ord_52d12a8cc6804041",
+        "status": "REFUND_COMPLETED",
+        "refund_fee_minor": 0,
+        "refund_amount_minor": 18000,
+        "currency": "CNY"
+      },
+      "order": {
+        "vertical": "ATTRACTION",
+        "order_id": "attr_ord_52d12a8cc6804041",
+        "status": "REFUNDED",
+        "product_id": "tokyo_skytree",
+        "product_name": "东京晴空塔天望甲板",
+        "product_type": "ATTRACTION",
+        "destination": "东京",
+        "visit_date": "2026-10-26",
+        "session_time": "16:00",
+        "ticket_type": "成人票",
+        "quantity": 1,
+        "eligibility": {
+          "age": "12+ adult",
+          "id_required": false
+        },
+        "voucher_type": "QR_CODE",
+        "voucher_code": null,
+        "total_amount_minor": 18000,
+        "currency": "CNY",
+        "attendees": [
+          {
+            "full_name": "INDEPENDENT RENTAL ADULT"
+          }
+        ],
+        "supplier_reference": null,
+        "external_live": false,
+        "redemption_window": {
+          "state": "FROZEN_SUPPLIER_WINDOW",
+          "destination_timezone": "Asia/Tokyo",
+          "opens_at": "2026-10-26T06:30:00+00:00",
+          "closes_at": "2026-10-26T09:00:00+00:00",
+          "boundary": "[opens_at,closes_at)",
+          "policy": {
+            "closes_minutes_after_session": 120,
+            "destination_timezone": "Asia/Tokyo",
+            "opens_minutes_before_session": 30,
+            "policy_reference": "engineering-fixture://attraction/session-window/v1"
+          }
+        },
+        "payment_deadline_ms": 1790448651479,
+        "unpaid_reservation_state": "PAYMENT_STARTED",
+        "can_redeem": false,
+        "redemption_blocker": "ATTRACTION_NOT_CONFIRMED",
+        "supplier_closed_refund": false,
+        "evidence": [
+          {
+            "sequence_no": 1,
+            "kind": "ORDER_CREATED",
+            "status": "PAYMENT_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "18cd4b0013ee66845a87e600ed415242391305705a0f7eeed8f8f7eda9fea95d",
+            "previous_hash": "GENESIS",
+            "payload": {
+              "prebook_id": "attr_pre_a643065a167d46d5",
+              "terms_hash": "cbbeab8457a9ef2697684ac277a6fcd7725cd82c42f7fca3820574c74059afa0",
+              "external_live": false
+            },
+            "created_at": "2026-09-26T18:35:51.482976"
+          },
+          {
+            "sequence_no": 2,
+            "kind": "VAULT_BOOKING_DATA_RELEASED",
+            "status": "PAYMENT_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "869f09335032409b2b4855557a1991e4acd0a6bd4fc67e6ad867c5225aa5732e",
+            "previous_hash": "18cd4b0013ee66845a87e600ed415242391305705a0f7eeed8f8f7eda9fea95d",
+            "payload": {
+              "release_ids": [
+                "pdr_d57cf488ebb54b16"
+              ],
+              "minimum_necessary": true
+            },
+            "created_at": "2026-09-26T18:35:51.488214"
+          },
+          {
+            "sequence_no": 3,
+            "kind": "SUPPLIER_CONFIRMED",
+            "status": "CONFIRMED",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "8af1aa6766e94037eed928fce1daa996e70b19c29428b9fc0e3f454de629c1e1",
+            "previous_hash": "869f09335032409b2b4855557a1991e4acd0a6bd4fc67e6ad867c5225aa5732e",
+            "payload": {
+              "supplier_confirmation_reference": "SIM-attr_ord_52d12a8cc6804041",
+              "external_operation_id": "SIM-attr_ord_52d12a8cc6804041",
+              "evidence_reference": "contract-simulator://ATTRACTION/attr_ord_52d12a8cc6804041",
+              "actor_id": null
+            },
+            "created_at": "2026-09-26T18:35:51.613161"
+          },
+          {
+            "sequence_no": 4,
+            "kind": "REFUND_REQUESTED",
+            "status": "REFUND_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "3e83e715d72e8e7c673e8e5eb2516add56a787c0294c0e3dd6a6abd5389913be",
+            "previous_hash": "8af1aa6766e94037eed928fce1daa996e70b19c29428b9fc0e3f454de629c1e1",
+            "payload": {
+              "amount_minor": 18000,
+              "request_hash": "025293f80a5600c73e4f131c370a1eb6d17efa925a8a46229a8cc78cb729cd66"
+            },
+            "created_at": "2026-09-26T18:35:51.871026"
+          },
+          {
+            "sequence_no": 5,
+            "kind": "REFUND_COMPLETED",
+            "status": "REFUNDED",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "99cef9d8e78e57df147fcf4029da5251aca595bbfa96b781712279c6c1a82e0d",
+            "previous_hash": "3e83e715d72e8e7c673e8e5eb2516add56a787c0294c0e3dd6a6abd5389913be",
+            "payload": {
+              "refund_id": "attr_ref_40ec4591d853453b",
+              "order_id": "attr_ord_52d12a8cc6804041",
+              "status": "REFUND_COMPLETED",
+              "refund_fee_minor": 0,
+              "refund_amount_minor": 18000,
+              "currency": "CNY",
+              "money_movement_ids": [
+                "omm_9f636ebf424d47caa632db13247224c8"
+              ],
+              "money_movement_id": "omm_9f636ebf424d47caa632db13247224c8"
+            },
+            "created_at": "2026-09-26T18:35:51.886404"
+          }
+        ]
+      }
+    },
+    "rental_claim_order": {
+      "vertical": "RENTAL",
+      "order_id": "rent_ord_2890c7ec33bf4dd5",
+      "status": "CONFIRMED",
+      "pickup_location": "哈尔滨机场",
+      "return_location": "哈尔滨机场",
+      "pickup_at": "2026-11-05T10:00",
+      "return_at": "2026-11-08T10:00",
+      "vehicle_class": "COMPACT",
+      "insurance": {
+        "type": "BASIC",
+        "excess_minor": 500000
+      },
+      "mileage": {
+        "type": "UNLIMITED"
+      },
+      "deposit_minor": 200000,
+      "total_amount_minor": 126000,
+      "currency": "CNY",
+      "drivers": [
+        {
+          "full_name": "INDEPENDENT RENTAL ADULT",
+          "driver_license_number": "TEST-ISOLATED-RENTAL"
+        }
+      ],
+      "supplier_reference": "SIM-rent_ord_2890c7ec33bf4dd5",
+      "payment_deadline_ms": 1790448652867,
+      "unpaid_reservation_state": "PAYMENT_STARTED",
+      "external_live": false,
+      "pending_change": null,
+      "evidence": [
+        {
+          "sequence_no": 1,
+          "kind": "ORDER_CREATED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "45a4e0f29849d082546712f26c987e1eabe30a336d7638663d1937d880537aba",
+          "previous_hash": "GENESIS",
+          "payload": {
+            "supplier_reference": null,
+            "offer_id": "rental_compact",
+            "deposit_minor": 200000,
+            "insurance": {
+              "type": "BASIC",
+              "excess_minor": 500000
+            },
+            "external_live": false
+          },
+          "created_at": "2026-09-26T18:35:52.869441"
+        },
+        {
+          "sequence_no": 2,
+          "kind": "VAULT_BOOKING_DATA_RELEASED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "00435095d816a9344d2db58c936bfec5fd4d3aa614841e5a6f168ae45d4d922f",
+          "previous_hash": "45a4e0f29849d082546712f26c987e1eabe30a336d7638663d1937d880537aba",
+          "payload": {
+            "release_ids": [
+              "pdr_4369a5339a1b4a60"
+            ],
+            "minimum_necessary": true
+          },
+          "created_at": "2026-09-26T18:35:52.873656"
+        },
+        {
+          "sequence_no": 3,
+          "kind": "SUPPLIER_CONFIRMED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "2abf87fd6e496cc2f64586431909b47f570c77272adc932dd00883db0e09b148",
+          "previous_hash": "00435095d816a9344d2db58c936bfec5fd4d3aa614841e5a6f168ae45d4d922f",
+          "payload": {
+            "supplier_confirmation_reference": "SIM-rent_ord_2890c7ec33bf4dd5",
+            "external_operation_id": "SIM-rent_ord_2890c7ec33bf4dd5",
+            "evidence_reference": "contract-simulator://RENTAL/rent_ord_2890c7ec33bf4dd5",
+            "actor_id": null
+          },
+          "created_at": "2026-09-26T18:35:53.042271"
+        }
+      ]
+    },
+    "rental_in_progress": {
+      "vertical": "RENTAL",
+      "order_id": "rent_ord_2890c7ec33bf4dd5",
+      "status": "IN_PROGRESS",
+      "pickup_location": "哈尔滨机场",
+      "return_location": "哈尔滨机场",
+      "pickup_at": "2026-11-05T10:00",
+      "return_at": "2026-11-08T10:00",
+      "vehicle_class": "COMPACT",
+      "insurance": {
+        "type": "BASIC",
+        "excess_minor": 500000
+      },
+      "mileage": {
+        "type": "UNLIMITED"
+      },
+      "deposit_minor": 200000,
+      "total_amount_minor": 126000,
+      "currency": "CNY",
+      "drivers": [
+        {
+          "full_name": "INDEPENDENT RENTAL ADULT",
+          "driver_license_number": "TEST-ISOLATED-RENTAL"
+        }
+      ],
+      "supplier_reference": "SIM-rent_ord_2890c7ec33bf4dd5",
+      "payment_deadline_ms": 1790448652867,
+      "unpaid_reservation_state": "PAYMENT_STARTED",
+      "external_live": false,
+      "pending_change": null,
+      "evidence": [
+        {
+          "sequence_no": 1,
+          "kind": "ORDER_CREATED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "45a4e0f29849d082546712f26c987e1eabe30a336d7638663d1937d880537aba",
+          "previous_hash": "GENESIS",
+          "payload": {
+            "supplier_reference": null,
+            "offer_id": "rental_compact",
+            "deposit_minor": 200000,
+            "insurance": {
+              "type": "BASIC",
+              "excess_minor": 500000
+            },
+            "external_live": false
+          },
+          "created_at": "2026-09-26T18:35:52.869441"
+        },
+        {
+          "sequence_no": 2,
+          "kind": "VAULT_BOOKING_DATA_RELEASED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "00435095d816a9344d2db58c936bfec5fd4d3aa614841e5a6f168ae45d4d922f",
+          "previous_hash": "45a4e0f29849d082546712f26c987e1eabe30a336d7638663d1937d880537aba",
+          "payload": {
+            "release_ids": [
+              "pdr_4369a5339a1b4a60"
+            ],
+            "minimum_necessary": true
+          },
+          "created_at": "2026-09-26T18:35:52.873656"
+        },
+        {
+          "sequence_no": 3,
+          "kind": "SUPPLIER_CONFIRMED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "2abf87fd6e496cc2f64586431909b47f570c77272adc932dd00883db0e09b148",
+          "previous_hash": "00435095d816a9344d2db58c936bfec5fd4d3aa614841e5a6f168ae45d4d922f",
+          "payload": {
+            "supplier_confirmation_reference": "SIM-rent_ord_2890c7ec33bf4dd5",
+            "external_operation_id": "SIM-rent_ord_2890c7ec33bf4dd5",
+            "evidence_reference": "contract-simulator://RENTAL/rent_ord_2890c7ec33bf4dd5",
+            "actor_id": null
+          },
+          "created_at": "2026-09-26T18:35:53.042271"
+        },
+        {
+          "sequence_no": 4,
+          "kind": "FULFILLMENT_PICKUP",
+          "status": "IN_PROGRESS",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "3d5479070b05f20f5ee674e31cb6b83048f34407d93d351961ec403a4c05174b",
+          "previous_hash": "2abf87fd6e496cc2f64586431909b47f570c77272adc932dd00883db0e09b148",
+          "payload": {
+            "evidence_reference": "CONSUMER_UI_PICKUP",
+            "supplier_reference": "SIM-rent_ord_2890c7ec33bf4dd5"
+          },
+          "created_at": "2026-09-26T18:35:53.216630"
+        }
+      ]
+    },
+    "rental_completed": {
+      "vertical": "RENTAL",
+      "order_id": "rent_ord_2890c7ec33bf4dd5",
+      "status": "COMPLETED",
+      "pickup_location": "哈尔滨机场",
+      "return_location": "哈尔滨机场",
+      "pickup_at": "2026-11-05T10:00",
+      "return_at": "2026-11-08T10:00",
+      "vehicle_class": "COMPACT",
+      "insurance": {
+        "type": "BASIC",
+        "excess_minor": 500000
+      },
+      "mileage": {
+        "type": "UNLIMITED"
+      },
+      "deposit_minor": 200000,
+      "total_amount_minor": 126000,
+      "currency": "CNY",
+      "drivers": [
+        {
+          "full_name": "INDEPENDENT RENTAL ADULT",
+          "driver_license_number": "TEST-ISOLATED-RENTAL"
+        }
+      ],
+      "supplier_reference": null,
+      "payment_deadline_ms": 1790448652867,
+      "unpaid_reservation_state": "PAYMENT_STARTED",
+      "external_live": false,
+      "pending_change": null,
+      "evidence": [
+        {
+          "sequence_no": 1,
+          "kind": "ORDER_CREATED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "45a4e0f29849d082546712f26c987e1eabe30a336d7638663d1937d880537aba",
+          "previous_hash": "GENESIS",
+          "payload": {
+            "supplier_reference": null,
+            "offer_id": "rental_compact",
+            "deposit_minor": 200000,
+            "insurance": {
+              "type": "BASIC",
+              "excess_minor": 500000
+            },
+            "external_live": false
+          },
+          "created_at": "2026-09-26T18:35:52.869441"
+        },
+        {
+          "sequence_no": 2,
+          "kind": "VAULT_BOOKING_DATA_RELEASED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "00435095d816a9344d2db58c936bfec5fd4d3aa614841e5a6f168ae45d4d922f",
+          "previous_hash": "45a4e0f29849d082546712f26c987e1eabe30a336d7638663d1937d880537aba",
+          "payload": {
+            "release_ids": [
+              "pdr_4369a5339a1b4a60"
+            ],
+            "minimum_necessary": true
+          },
+          "created_at": "2026-09-26T18:35:52.873656"
+        },
+        {
+          "sequence_no": 3,
+          "kind": "SUPPLIER_CONFIRMED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "2abf87fd6e496cc2f64586431909b47f570c77272adc932dd00883db0e09b148",
+          "previous_hash": "00435095d816a9344d2db58c936bfec5fd4d3aa614841e5a6f168ae45d4d922f",
+          "payload": {
+            "supplier_confirmation_reference": "SIM-rent_ord_2890c7ec33bf4dd5",
+            "external_operation_id": "SIM-rent_ord_2890c7ec33bf4dd5",
+            "evidence_reference": "contract-simulator://RENTAL/rent_ord_2890c7ec33bf4dd5",
+            "actor_id": null
+          },
+          "created_at": "2026-09-26T18:35:53.042271"
+        },
+        {
+          "sequence_no": 4,
+          "kind": "FULFILLMENT_PICKUP",
+          "status": "IN_PROGRESS",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "3d5479070b05f20f5ee674e31cb6b83048f34407d93d351961ec403a4c05174b",
+          "previous_hash": "2abf87fd6e496cc2f64586431909b47f570c77272adc932dd00883db0e09b148",
+          "payload": {
+            "evidence_reference": "CONSUMER_UI_PICKUP",
+            "supplier_reference": "SIM-rent_ord_2890c7ec33bf4dd5"
+          },
+          "created_at": "2026-09-26T18:35:53.216630"
+        },
+        {
+          "sequence_no": 5,
+          "kind": "FULFILLMENT_RETURN",
+          "status": "COMPLETED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "aa9492f7f29c739c7d93f9c0efe5485418e5f5d74e148274c1dca81a719e8581",
+          "previous_hash": "3d5479070b05f20f5ee674e31cb6b83048f34407d93d351961ec403a4c05174b",
+          "payload": {
+            "evidence_reference": "CONSUMER_UI_RETURN",
+            "supplier_reference": "SIM-rent_ord_2890c7ec33bf4dd5"
+          },
+          "created_at": "2026-09-26T18:35:53.334193"
+        }
+      ]
+    },
+    "fulfillment_boundary": "Synthetic consumer pickup/return clicks; not independently verified physical handover"
+  },
+  "not_verified": [
+    "FULL_C04_30_108",
+    "FULL_C06_14_44",
+    "PG_BROWSER_CONCURRENCY",
+    "NATIVE_INTERACTION",
+    "OPERATIONS_SLA_ESCALATION",
+    "REAL_SUPPLIER_POLICY"
+  ],
+  "browser": "140.0.7339.186",
+  "result": "FAIL",
+  "error": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByText('rent_ord_2890c7ec33bf4dd5', { exact: true })\n"
+}

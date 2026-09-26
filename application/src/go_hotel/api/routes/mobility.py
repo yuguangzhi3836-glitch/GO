@@ -5,7 +5,7 @@ from go_hotel.security.deps import consumer_principal,admin_principal,order_admi
 from go_hotel.security.service import Principal
 from go_hotel.mobility.service import mobility_service as m
 from go_hotel.api.idempotency import run_idempotent
-from go_hotel.api.refund_confirmation import RefundConfirmation
+from go_hotel.api.refund_confirmation import RefundConfirmation, revalidate_completed_receipt
 from go_hotel.services.booking_data_release import release_booking_data
 from go_hotel.db.session import SessionLocal
 from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence
@@ -71,10 +71,10 @@ def rq(order_id:str,p:Principal=Depends(consumer_principal)):return w(m.refund_q
 
 @router.post('/v1/mobility/orders/{order_id}/refund-confirmed')
 def refund_confirmed(order_id:str,b:RefundConfirmation,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
- return run_idempotent('MOBILITY_REFUND_CONFIRMED',idempotency_key,{'user_id':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(m.cancel,p.user_id,order_id,b.quote_hash))
+ return run_idempotent('MOBILITY_REFUND_CONFIRMED',idempotency_key,{'user_id':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(m.cancel,p.user_id,order_id,b.quote_hash),replay_fn=lambda old:revalidate_completed_receipt(lambda:m.get_order(p.user_id,order_id),lambda:{'data':m.cancel(p.user_id,order_id,b.quote_hash)},old,'RENTAL'))
 @router.post("/v1/mobility/orders/{order_id}/cancel")
 def cancel(order_id:str,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
- return run_idempotent('MOBILITY_CANCEL',idempotency_key,{'user_id':p.user_id,'order_id':order_id},lambda:w(m.cancel,p.user_id,order_id))
+ return run_idempotent('MOBILITY_CANCEL',idempotency_key,{'user_id':p.user_id,'order_id':order_id},lambda:w(m.cancel,p.user_id,order_id),replay_fn=lambda old:revalidate_completed_receipt(lambda:m.get_order(p.user_id,order_id),lambda:{'data':m.cancel(p.user_id,order_id)},old,'RENTAL'))
 @router.post("/v1/mobility/orders/{order_id}/fulfillment")
 def fulfill(order_id:str,b:Fulfillment,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
  return run_idempotent('MOBILITY_FULFILLMENT',idempotency_key,{'user_id':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(m.fulfill,p.user_id,order_id,b.action,b.evidence_reference))

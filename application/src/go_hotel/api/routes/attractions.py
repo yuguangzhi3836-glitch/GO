@@ -4,7 +4,7 @@ from go_hotel.security.deps import consumer_principal,admin_principal,optional_c
 from go_hotel.security.service import Principal
 from go_hotel.attractions.service import attraction_service as a
 from go_hotel.api.idempotency import run_idempotent
-from go_hotel.api.refund_confirmation import RefundConfirmation
+from go_hotel.api.refund_confirmation import RefundConfirmation, revalidate_completed_receipt
 from go_hotel.services.booking_data_release import release_booking_data
 from go_hotel.db.session import SessionLocal
 from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence
@@ -57,7 +57,7 @@ def ec(order_id:str,quote_id:str,p:Principal=Depends(consumer_principal),idempot
 def rq(order_id:str,p:Principal=Depends(consumer_principal)):return w(a.refund_quote,p.user_id,order_id)
 @router.post("/v1/attractions/orders/{order_id}/refund")
 def refund(order_id:str,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
- return run_idempotent('ATTRACTION_REFUND',idempotency_key,{'user_id':p.user_id,'order_id':order_id},lambda:w(a.refund,p.user_id,order_id))
+ return run_idempotent('ATTRACTION_REFUND',idempotency_key,{'user_id':p.user_id,'order_id':order_id},lambda:w(a.refund,p.user_id,order_id),replay_fn=lambda old:revalidate_completed_receipt(lambda:a.get(p.user_id,order_id),lambda:{'data':a.refund(p.user_id,order_id)},old,'ATTRACTION'))
 @router.post("/v1/attractions/orders/{order_id}/redeem")
 def redeem(order_id:str,b:Redeem,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
  return run_idempotent('ATTRACTION_REDEEM',idempotency_key,{'user_id':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(a.redeem,p.user_id,order_id,b.evidence_reference))
@@ -73,4 +73,4 @@ def cancel_unpaid(order_id:str,p:Principal=Depends(consumer_principal)):
 @router.post('/v1/attractions/orders/{order_id}/refund-confirmed')
 def refund_confirmed(order_id:str,b:RefundConfirmation,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
  return run_idempotent('ATTRACTION_REFUND_CONFIRMED',idempotency_key,
-  {'user_id':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(a.refund,p.user_id,order_id,b.quote_hash))
+  {'user_id':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(a.refund,p.user_id,order_id,b.quote_hash),replay_fn=lambda old:revalidate_completed_receipt(lambda:a.get(p.user_id,order_id),lambda:{'data':a.refund(p.user_id,order_id,b.quote_hash)},old,'ATTRACTION'))

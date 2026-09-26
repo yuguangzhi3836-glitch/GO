@@ -93,7 +93,7 @@ try{
  await step('attraction-refund',consumer,async()=>{
   const quoted=waitResponse(consumer,`/v1/attractions/orders/${attraction.order_id}/refund-quote`);await consumer.locator('#aref').click();const q=await data(await quoted);assert.equal(q.refund_amount_minor,attraction.total_amount_minor);
   const refunded=consumer.waitForResponse(r=>new URL(r.url()).pathname.startsWith(`/v1/attractions/orders/${attraction.order_id}/refund`)&&r.request().method()==='POST'),fresh=waitResponse(consumer,`/v1/attractions/orders/${attraction.order_id}`);
-  await consumer.locator('#uxConfirm').click();const receipt=await data(await refunded),order=await data(await fresh);assert.equal(receipt.status,'REFUND_COMPLETED');assert.equal(receipt.refund_amount_minor,q.refund_amount_minor);assert.equal(order.status,'REFUNDED');assert.equal(order.voucher_code,null);assert.equal(order.order_id,attraction.order_id);
+  await consumer.locator('#uxConfirm').click();const response=await refunded;assert.equal(new URL(response.url()).pathname,`/v1/attractions/orders/${attraction.order_id}/refund-confirmed`);assert.deepEqual(response.request().postDataJSON(),{quote_hash:q.quote_hash,confirmed:true});const receipt=await data(response),order=await data(await fresh);assert.equal(receipt.status,'REFUND_COMPLETED');assert.equal(receipt.refund_amount_minor,q.refund_amount_minor);assert.equal(order.status,'REFUNDED');assert.equal(order.voucher_code,null);assert.equal(order.order_id,attraction.order_id);
   await consumer.getByText('已退款',{exact:true}).first().waitFor();assert.equal(await consumer.locator('#ared').isDisabled(),true);report.facts.attraction_refund={receipt,order};
  });
  if(suppliers.RENTAL){

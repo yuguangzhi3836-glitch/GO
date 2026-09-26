@@ -74,7 +74,7 @@ def _require_key(key: str | None) -> None:
     if settings.app_env.strip().lower() in _PROD and not key:
         raise HTTPException(status_code=428, detail={"code":"IDEMPOTENCY_KEY_REQUIRED","message":"Idempotency-Key is required for production mutations"})
 
-def run_idempotent(operation: str, key: str | None, payload: dict, fn, resource_id_fn=None):
+def run_idempotent(operation: str, key: str | None, payload: dict, fn, resource_id_fn=None, replay_fn=None):
     _require_key(key)
     if not key:
         return fn()
@@ -85,7 +85,7 @@ def run_idempotent(operation: str, key: str | None, payload: dict, fn, resource_
             raise HTTPException(status_code=409, detail={"code":"IDEMPOTENCY_CONFLICT","message":"Idempotency key reused with different payload"})
         raise
     if state == "REPLAY":
-        return rec["response"]
+        return replay_fn(rec["response"]) if replay_fn else rec["response"]
     if state == "IN_PROGRESS":
         raise HTTPException(status_code=409, detail={"code":"IDEMPOTENCY_IN_PROGRESS","message":"Request with this idempotency key is still in progress"})
     try:

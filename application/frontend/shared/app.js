@@ -235,27 +235,31 @@ function jsonCard(title,obj){return `<details class="card tech-diagnostics"><sum
 function supplierObjectCard(title,obj){const entries=Object.entries(obj||{}).filter(([k])=>!/(secret|token|fingerprint|hash|raw_|payload|metadata)/i.test(k)).slice(0,12);if(!entries.length)return supplierStructuredEmpty(currentSupplierRoute,title);return `<section class="card"><h3>${esc(title)}</h3><div class="kv">${entries.map(([k,v])=>`<div>${esc(supplierFriendlyLabel(k))}</div><div>${esc(typeof v==='object'?'查看结构化子项':(/(?:amount|value|balance|refund)_minor$/.test(k)&&typeof v==='number'?money(v,obj.currency):supplierFriendlyValue(v)))}</div>`).join('')}</div></section>`}
 async function generic(item){$('#view').innerHTML='<div class="card">加载中...</div>';try{const r=unwrap(await api.request(item.endpoint));const rendered=item.kind==='dashboard'?metrics(r):table(r);$('#view').innerHTML=`<section class="productized-admin-head"><div><h2>${esc(item.label)}</h2><p>当前状态 → 核心指标 → 业务对象 → 待办异常 → 可执行动作 → 状态与审计</p></div><span class="status">运营工作台</span></section>${rendered}${adminOpsBar()}${jsonCard('技术信息 / 原始运行事实',r)}`;adminProductizeView(item.route,item.label);bindAdminOps()}catch(e){notice(e.message,true)}}
 async function supplierCommandCenter(){
+  const view=$('#view'),route=location.hash,token=Symbol('supplier-command');view.supplierRead=token;
+  const current=()=>view.isConnected&&$('#view')===view&&location.hash===route&&view.supplierRead===token;
   $('#view').innerHTML='<p role="status">正在读取经营数据…</p>';
   try{
     const d=unwrap(await api.request('/v1/supplier/dashboard'));
+    if(!current())return;
     const count=group=>Object.values(group||{}).reduce((n,v)=>n+(Number(v)||0),0);
     const body=`<section class="card"><h3>订单与售后</h3><p>以下为当前供应商的累计业务记录；空数据不会被视为今天已完成履约。</p><div class="actionbar"><a class="btn primary" href="#/orders">查看订单与履约</a><a class="btn" href="#/refunds">查看取消与退款</a><a class="btn" href="#/finance">查看财务</a></div></section>${metrics(Object.fromEntries([...Object.entries(d.orders||{}).map(([k,v])=>['订单 · '+supplierFriendlyValue(k),v]),...Object.entries(d.refunds||{}).map(([k,v])=>['退款 · '+supplierFriendlyValue(k),v])]))}`;
     $('#view').innerHTML=supplierStructuredShell('/command',body,{'累计订单':count(d.orders),'退款记录':count(d.refunds),'住宿额度':count(d.stay_credits),'风险记录':count(d.risk_cases)});
   }catch(e){
+    if(!current())return;
     $('#view').innerHTML='<section class="card"><h3>经营数据暂时无法读取</h3><p role="alert">请重试；读取失败不代表没有订单。</p><button class="btn primary" id="retryCommand">重试</button></section>';
     $('#retryCommand').onclick=supplierCommandCenter;
   }
 }
-async function supplierOrders(){const data=unwrap(await api.request('/v1/supplier/transaction-orders'));const arr=data.items||[];const body=table(arr,true,'订单');$('#view').innerHTML=supplierStructuredShell('/orders',body,{'待确认':arr.filter(x=>String(x.state||x.status).includes('PENDING')).length,'已确认':arr.filter(x=>String(x.state||x.status).includes('CONFIRMED')).length,'履约中':arr.filter(x=>String(x.state||x.status).includes('STAY')).length,'售后中':arr.filter(x=>/CANCEL|REFUND/.test(String(x.state||x.status))).length});bindRows(arr,r=>r.vertical==='HOTEL'?orderWorkbench(r.order_id):supplierTransactionWorkbench(r.vertical,r.order_id))}
+async function supplierOrders(){const view=$('#view'),route=location.hash,token=Symbol('supplier-orders');view.supplierRead=token;const data=unwrap(await api.request('/v1/supplier/transaction-orders'));if(!view.isConnected||$('#view')!==view||location.hash!==route||view.supplierRead!==token)return;const arr=data.items||[];const body=table(arr,true,'订单');$('#view').innerHTML=supplierStructuredShell('/orders',body,{'待确认':arr.filter(x=>String(x.state||x.status).includes('PENDING')).length,'已确认':arr.filter(x=>String(x.state||x.status).includes('CONFIRMED')).length,'履约中':arr.filter(x=>String(x.state||x.status).includes('STAY')).length,'售后中':arr.filter(x=>/CANCEL|REFUND/.test(String(x.state||x.status))).length});bindRows(arr,r=>r.vertical==='HOTEL'?orderWorkbench(r.order_id):supplierTransactionWorkbench(r.vertical,r.order_id))}
 async function supplierTransactionWorkbench(vertical,id){
- const view=$('#view'),route=location.hash;
+ const view=$('#view'),route=location.hash,token=Symbol('supplier-detail');view.supplierRead=token;
  const d=unwrap(await api.request(`/v1/supplier/transaction-orders/${encodeURIComponent(vertical)}/${encodeURIComponent(id)}`)),p=d.original_payment;
- if($('#view')!==view||location.hash!==route)return;
+ if(!view.isConnected||$('#view')!==view||location.hash!==route||view.supplierRead!==token)return;
  currentSupplierRoute='/orders';
  $('#view').innerHTML=`<button class="btn" id="back">← 返回订单</button><div class="section-head"><h2>订单详情</h2><span class="status">${esc(supplierFriendlyValue(d.order.status))}</span></div>${supplierObjectCard('订单事实',d.order)}<section class="card"><h3>原始付款与退款</h3><p>以下为本订单原始付款的处理记录；改期补款另行核对。</p><div class="kv"><div>已扣款</div><div>${esc(money(p.captured_minor,p.currency))}</div><div>已退款</div><div>${esc(money(p.refunded_minor,p.currency))}</div><div>净付款</div><div>${esc(money(p.net_minor,p.currency))}</div></div><p role="status">${p.binding_state==='BOUND'?'付款记录已关联': '付款记录待核对'}</p></section><h3>退款申请与进度</h3>${table(d.refunds,false,'退款记录')}`;
  $('#back').onclick=supplierOrders;
  if(vertical==='RENTAL'){const root=document.createElement('section');root.className='card';view.appendChild(root);await window.GORentalOperations.render({container:root,orderId:id,request:(path,options)=>api.request(path,options)});}
- if(['FLIGHT','RAIL'].includes(vertical)){const root=document.createElement('section');root.className='card';view.appendChild(root);await window.GOTicketOperations.mount(root,api,vertical,id,false,async()=>{if(!root.isConnected||location.hash!==route)return;view.innerHTML='<p role="status">正在刷新订单状态…</p>';try{await supplierTransactionWorkbench(vertical,id)}catch(e){if($('#view')===view&&location.hash===route){view.innerHTML='<p role="alert">订单刷新失败，请重试</p><button class="btn" data-ticket-retry>重新加载</button>';view.querySelector('[data-ticket-retry]').onclick=()=>supplierTransactionWorkbench(vertical,id).catch(error=>notice(error.message,true));}}});}
+ if(['FLIGHT','RAIL'].includes(vertical)){const root=document.createElement('section');root.className='card';view.appendChild(root);await window.GOTicketOperations.mount(root,api,vertical,id,false,async()=>{if(!root.isConnected||location.hash!==route)return;view.innerHTML='<p role="status">正在刷新订单状态…</p>';let refreshToken;try{const pending=supplierTransactionWorkbench(vertical,id);refreshToken=view.supplierRead;await pending}catch(e){if($('#view')===view&&location.hash===route&&view.supplierRead===refreshToken){view.innerHTML='<p role="alert">订单刷新失败，请重试</p><button class="btn" data-ticket-retry>重新加载</button>';view.querySelector('[data-ticket-retry]').onclick=()=>supplierTransactionWorkbench(vertical,id).catch(error=>notice(error.message,true));}}});}
 }
 function cashAfterSalesCard(c){
  if(!c)return '';
