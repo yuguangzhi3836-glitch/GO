@@ -1,0 +1,425 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_______ test_capture_ledger_corruption_cannot_verify[account_code-WRONG] _______
+
+workspace = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC05MGE4Zjg2MGFlMDE0NmQ4YjJkMzViZGYwMmE5YjllOSIsInZlciI6MX0.lxc-gYetghlL7RXqQL5X6T-Ms8MMzGrSVoDoo0DK8EY'}, ...}
+field = 'account_code', value = 'WRONG'
+
+    @pytest.mark.parametrize('field,value',[('account_code','WRONG'),('evidence_hash','0'*64)])
+    def test_capture_ledger_corruption_cannot_verify(workspace,field,value):
+        w=workspace;prepare(w);command(w,'APPLY')
+        with SessionLocal.begin() as s:
+            entry=s.scalar(select(OmnichannelLedgerEntryRow).where(OmnichannelLedgerEntryRow.entry_type=='CAPTURE'))
+            assert entry is not None
+            setattr(entry,field,value)
+>       before=money();command(w,'VERIFY','verifier',status=409);assert money()==before
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../independent-rental-attractions/test_attraction_operations_independent.py:16: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+w = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC05MGE4Zjg2MGFlMDE0NmQ4YjJkMzViZGYwMmE5YjllOSIsInZlciI6MX0.lxc-gYetghlL7RXqQL5X6T-Ms8MMzGrSVoDoo0DK8EY'}, ...}
+action = 'VERIFY', actor = 'verifier', receipt = None, status = 409
+body = {'action': 'VERIFY', 'command_id': '375ad3d00caa4ae38e6c2a5196c96feb', 'expected_revision': 4, 'note': 'isolated normal role operation'}
+
+    def command(w,action,actor='operator',receipt=None,status=200,body=None):
+        path=w['sp'] if actor in {'supplier','readonly','foreign'} else w['ap']
+        if body is None:
+            view=w['client'].get(w['ap'],headers=w['operator']);assert view.status_code==200,view.text
+            body={'action':action,'command_id':uuid4().hex,'expected_revision':view.json()['data']['workflow']['revision'],
+                  'note':'isolated normal role operation'}
+            if receipt is not None:body['receipt']=receipt
+        r=w['client'].post(path,headers=w[actor],json=body)
+>       assert r.status_code==status,r.text
+E       AssertionError: {"data":{"workflow":{"revision":5,"stage":"VERIFIED","assignee":"usr_7a815b86c24c4563af0ba91b6d26795b","receipt":{"state":"CONFIRMED","evidence_reference":"isolated://attraction-receipt","supplier_reference":"ATTR-OPS","voucher_code":"VOUCHER-OPS","quote_id":"attr_chg_337c6a9399d94903"},"receipt_actor":"usr_7a815b86c24c4563af0ba91b6d26795b","applied_by":"usr_cb3b623d26e74e0e83563221a516b49f","contributors":["usr_7a815b86c24c4563af0ba91b6d26795b","usr_cb3b623d26e74e0e83563221a516b49f"]},"idempotent_replay":false}}
+E       assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_attraction_operations_runtime.py:37: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-26T19:34:40.078775+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_6ba0829b113546718d6f1c14bd122a61","trace_id":"tr_98186923caaf46a2a6b541b597f03bb5","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e","method":"GET","status_code":200,"duration_ms":39.94}
+{"ts":"2026-09-26T19:34:40.079668+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:40.105579+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_8b32eef525624823b26fa53b61b64662","trace_id":"tr_0dfc5af878d3425d9a9a3b79ffbc97ba","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e","method":"POST","status_code":200,"duration_ms":24.67}
+{"ts":"2026-09-26T19:34:40.106155+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:40.130723+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_23dab5448baa402c966b5a39a3e2543f","trace_id":"tr_9382c9890334447d9574d86c158a8bbe","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e","method":"GET","status_code":200,"duration_ms":22.48}
+{"ts":"2026-09-26T19:34:40.131244+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:40.149220+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_c86cb3ec3b4f4d2fa9ddd61b2b6536a7","trace_id":"tr_66fefb9e86ce4b68927bc3b6eb2dd4ef","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e","method":"POST","status_code":200,"duration_ms":14.84}
+{"ts":"2026-09-26T19:34:40.149735+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:40.163092+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_83cecc8ed9074d37ae2d4887010c2444","trace_id":"tr_f417eb5972b84be188b51da5d7435ba2","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e","method":"GET","status_code":200,"duration_ms":12.7}
+{"ts":"2026-09-26T19:34:40.163745+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:40.188237+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_6ad6a3413ab842a3aeab36a95aeae138","trace_id":"tr_06b5344d58a549a4bf298a54cf251de8","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e","method":"POST","status_code":200,"duration_ms":22.11}
+{"ts":"2026-09-26T19:34:40.188732+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:40.200225+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_ecebfb984b514ec8a8f0132c6762c83a","trace_id":"tr_56653b698b5a47ba8e386d042a9c00dd","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e","method":"GET","status_code":200,"duration_ms":10.27}
+{"ts":"2026-09-26T19:34:40.200697+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:40.222637+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_86654277b5874bcea2565c98fdfb92b6","trace_id":"tr_7c3a0e3ad56e46c5ac329e92171aa1ad","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e","method":"POST","status_code":200,"duration_ms":20.8}
+{"ts":"2026-09-26T19:34:40.223158+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:40.240432+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_a802599db5454ebe88413e8624baa845","trace_id":"tr_7ab875747f754daab773edaeb6b90cb9","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e","method":"GET","status_code":200,"duration_ms":10.08}
+{"ts":"2026-09-26T19:34:40.241005+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:40.252802+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_b559ad67fc9d429ea19d22046bdf8e93","trace_id":"tr_53226bdd2bbc4f6c813e901e188a18de","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e","method":"POST","status_code":200,"duration_ms":11.06}
+{"ts":"2026-09-26T19:34:40.253291+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_226c1bf7b3fc4e7e "HTTP/1.1 200 OK"
+_ test_capture_ledger_corruption_cannot_verify[evidence_hash-0000000000000000000000000000000000000000000000000000000000000000] _
+
+workspace = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC0zNjU0ODE0MzRmYmU0MjEyYTkwZGE3YjFkYTM5M2I4YiIsInZlciI6MX0.mN362MsdotwBzgz6sT4ylYF97ZX6dH4rHdIy9N2r57A'}, ...}
+field = 'evidence_hash'
+value = '0000000000000000000000000000000000000000000000000000000000000000'
+
+    @pytest.mark.parametrize('field,value',[('account_code','WRONG'),('evidence_hash','0'*64)])
+    def test_capture_ledger_corruption_cannot_verify(workspace,field,value):
+        w=workspace;prepare(w);command(w,'APPLY')
+        with SessionLocal.begin() as s:
+            entry=s.scalar(select(OmnichannelLedgerEntryRow).where(OmnichannelLedgerEntryRow.entry_type=='CAPTURE'))
+            assert entry is not None
+            setattr(entry,field,value)
+>       before=money();command(w,'VERIFY','verifier',status=409);assert money()==before
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../independent-rental-attractions/test_attraction_operations_independent.py:16: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+w = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC0zNjU0ODE0MzRmYmU0MjEyYTkwZGE3YjFkYTM5M2I4YiIsInZlciI6MX0.mN362MsdotwBzgz6sT4ylYF97ZX6dH4rHdIy9N2r57A'}, ...}
+action = 'VERIFY', actor = 'verifier', receipt = None, status = 409
+body = {'action': 'VERIFY', 'command_id': '80f4ca9b6de2488983a2628b9c899d2c', 'expected_revision': 4, 'note': 'isolated normal role operation'}
+
+    def command(w,action,actor='operator',receipt=None,status=200,body=None):
+        path=w['sp'] if actor in {'supplier','readonly','foreign'} else w['ap']
+        if body is None:
+            view=w['client'].get(w['ap'],headers=w['operator']);assert view.status_code==200,view.text
+            body={'action':action,'command_id':uuid4().hex,'expected_revision':view.json()['data']['workflow']['revision'],
+                  'note':'isolated normal role operation'}
+            if receipt is not None:body['receipt']=receipt
+        r=w['client'].post(path,headers=w[actor],json=body)
+>       assert r.status_code==status,r.text
+E       AssertionError: {"data":{"workflow":{"revision":5,"stage":"VERIFIED","assignee":"usr_4145c6c1db1b4894bdb54529d26603f2","receipt":{"state":"CONFIRMED","evidence_reference":"isolated://attraction-receipt","supplier_reference":"ATTR-OPS","voucher_code":"VOUCHER-OPS","quote_id":"attr_chg_5bad07a4f1d14a3e"},"receipt_actor":"usr_4145c6c1db1b4894bdb54529d26603f2","applied_by":"usr_293d2e7f468b45ec847b69875a4632b4","contributors":["usr_293d2e7f468b45ec847b69875a4632b4","usr_4145c6c1db1b4894bdb54529d26603f2"]},"idempotent_replay":false}}
+E       assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_attraction_operations_runtime.py:37: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-26T19:34:41.064454+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_539b42aa413a4454a5097a533d1961cb","trace_id":"tr_dc8ef18422314db1ac89aac6ba68daf2","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd","method":"GET","status_code":200,"duration_ms":9.18}
+{"ts":"2026-09-26T19:34:41.064975+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.074176+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_a26626942f624b888873f18863b33282","trace_id":"tr_de31394a5e934996ab6b2f40548d336b","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd","method":"POST","status_code":200,"duration_ms":8.44}
+{"ts":"2026-09-26T19:34:41.074637+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.083437+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_646cb0cd4f1c45369a31c6fd110986d5","trace_id":"tr_b09db17fc5304b11a0d8a4865f864501","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd","method":"GET","status_code":200,"duration_ms":8.02}
+{"ts":"2026-09-26T19:34:41.083880+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.092520+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_0ad3da2c4fcd4fc3b74cc546317122ff","trace_id":"tr_70e12541a0d84a8caf3c12bdc0fac58e","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd","method":"POST","status_code":200,"duration_ms":7.95}
+{"ts":"2026-09-26T19:34:41.092955+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.100265+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_34f8cd6f20d14a99b40e5db634e808bb","trace_id":"tr_83c0b6de1de54b44818ef768c87bca0d","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd","method":"GET","status_code":200,"duration_ms":6.65}
+{"ts":"2026-09-26T19:34:41.100669+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.108410+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_c55ba88cea464a16b04954d2858f212f","trace_id":"tr_f36e33ce866a4330a0167ac171b244f2","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd","method":"POST","status_code":200,"duration_ms":7.1}
+{"ts":"2026-09-26T19:34:41.108836+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.116174+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_82353280d81744b68cbb972c70500134","trace_id":"tr_5111cfaea99d47cba94879f027d0c1f1","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd","method":"GET","status_code":200,"duration_ms":6.7}
+{"ts":"2026-09-26T19:34:41.116573+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.130447+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_ab17e7313a014af689e5e10568e5f028","trace_id":"tr_f578454029dd45c6800b89ca9a328c55","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd","method":"POST","status_code":200,"duration_ms":13.19}
+{"ts":"2026-09-26T19:34:41.130902+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.143805+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_85e49e50eed04c57845c7e5370068232","trace_id":"tr_798c656f5d944d13b1c9e7b2c69c07c6","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd","method":"GET","status_code":200,"duration_ms":10.49}
+{"ts":"2026-09-26T19:34:41.144671+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.155483+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_1d155f507c8549a9b88f0375244986c7","trace_id":"tr_6925c39357904718b7192f9ceef690b1","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd","method":"POST","status_code":200,"duration_ms":9.95}
+{"ts":"2026-09-26T19:34:41.155918+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_3328f6e0289641fd "HTTP/1.1 200 OK"
+________________ test_followup_cannot_close_new_pending_change _________________
+
+workspace = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC03YjRiZGI3Zjg5NTM0YmU1OTA5OTAwODMxYzA4M2IxMyIsInZlciI6MX0.0eq5dUd475Egw-xjy7EdydvFv-gTguayyHhFJRfG4X4'}, ...}
+
+    def test_followup_cannot_close_new_pending_change(workspace):
+        w=workspace;prepare(w);command(w,'APPLY');command(w,'VERIFY','verifier')
+        q=w['svc'].change_quote(w['owner'],w['oid'],'2026-09-17','16:00')
+        w['svc'].execute_change(w['owner'],w['oid'],q['quote_id'])
+        assert w['svc'].get(w['owner'],w['oid'])['status']=='UNKNOWN_EXTERNAL_STATE'
+>       before=money();command(w,'FOLLOW_UP',status=409);assert money()==before
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../independent-rental-attractions/test_attraction_operations_independent.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+w = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC03YjRiZGI3Zjg5NTM0YmU1OTA5OTAwODMxYzA4M2IxMyIsInZlciI6MX0.0eq5dUd475Egw-xjy7EdydvFv-gTguayyHhFJRfG4X4'}, ...}
+action = 'FOLLOW_UP', actor = 'operator', receipt = None, status = 409
+body = {'action': 'FOLLOW_UP', 'command_id': '4c56d8064d734212bd1e1254332fda8e', 'expected_revision': 5, 'note': 'isolated normal role operation'}
+
+    def command(w,action,actor='operator',receipt=None,status=200,body=None):
+        path=w['sp'] if actor in {'supplier','readonly','foreign'} else w['ap']
+        if body is None:
+            view=w['client'].get(w['ap'],headers=w['operator']);assert view.status_code==200,view.text
+            body={'action':action,'command_id':uuid4().hex,'expected_revision':view.json()['data']['workflow']['revision'],
+                  'note':'isolated normal role operation'}
+            if receipt is not None:body['receipt']=receipt
+        r=w['client'].post(path,headers=w[actor],json=body)
+>       assert r.status_code==status,r.text
+E       AssertionError: {"data":{"workflow":{"revision":6,"stage":"CLOSED","assignee":"usr_450822bbba604bc9822248de35d86e2b","receipt":{"state":"CONFIRMED","evidence_reference":"isolated://attraction-receipt","supplier_reference":"ATTR-OPS","voucher_code":"VOUCHER-OPS","quote_id":"attr_chg_de2c129572f741fe"},"receipt_actor":"usr_450822bbba604bc9822248de35d86e2b","applied_by":"usr_d0eb615ec4704fb483ea0a0a2020968f","contributors":["usr_450822bbba604bc9822248de35d86e2b","usr_d0eb615ec4704fb483ea0a0a2020968f"]},"idempotent_replay":false}}
+E       assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_attraction_operations_runtime.py:37: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-26T19:34:41.921081+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_80b1b80a7fca4787a2d1e232bfba6248","trace_id":"tr_601adb99deba48f8bce90057daf52910","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e","method":"GET","status_code":200,"duration_ms":9.69}
+{"ts":"2026-09-26T19:34:41.921650+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.934193+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_1b71532c15cc49ad938a7d3558b09471","trace_id":"tr_42f238a0948644e198b4de6df35f2e22","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e","method":"POST","status_code":200,"duration_ms":10.52}
+{"ts":"2026-09-26T19:34:41.934675+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.945237+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_433fbe4bd78546a5b113236e85cd4c4c","trace_id":"tr_7b045bd64e374c6c84778beaa452524c","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e","method":"GET","status_code":200,"duration_ms":9.47}
+{"ts":"2026-09-26T19:34:41.945792+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.957431+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_fc6da1620bdb48a989d3eefa8731abd8","trace_id":"tr_08f70f431382438587a8bd4203f36c48","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e","method":"POST","status_code":200,"duration_ms":10.58}
+{"ts":"2026-09-26T19:34:41.958478+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.970333+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_f1cd83b73f5a42e9a324058cb7a67c6d","trace_id":"tr_360605e73a1748d4a4e7cfe8a6257d24","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e","method":"GET","status_code":200,"duration_ms":10.83}
+{"ts":"2026-09-26T19:34:41.970787+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.981877+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_44e28cb1b9f64f2b8174e57434d1d894","trace_id":"tr_2c8085d5333b44948cd4b6cddf9665bf","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e","method":"POST","status_code":200,"duration_ms":10.0}
+{"ts":"2026-09-26T19:34:41.982428+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:41.991567+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_ba9ac753d7a34a0294cc55cd228bae65","trace_id":"tr_6419f0e37e0f4f38a2f2eaf6a599a24d","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e","method":"GET","status_code":200,"duration_ms":8.19}
+{"ts":"2026-09-26T19:34:41.992118+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.006414+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_527bfe4ca3014b098d451771c7673945","trace_id":"tr_c8b71fae96304e52aa0b01f980a5b869","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e","method":"POST","status_code":200,"duration_ms":13.6}
+{"ts":"2026-09-26T19:34:42.006853+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.017139+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_c2e1e4cf61f34ce28762e6f58bf7c618","trace_id":"tr_cffb68f6c8e34d348f96043ebe015797","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e","method":"GET","status_code":200,"duration_ms":9.69}
+{"ts":"2026-09-26T19:34:42.017653+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.027327+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_a81ef751f9744dd2bf489231168b997e","trace_id":"tr_51ee3073974f4631aec9b70389016e8a","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e","method":"POST","status_code":200,"duration_ms":8.55}
+{"ts":"2026-09-26T19:34:42.027697+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.056216+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_168cae259647450d8c525a100f34c924","trace_id":"tr_b1586b5500844aa0bfdde7a927754197","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e","method":"GET","status_code":200,"duration_ms":9.65}
+{"ts":"2026-09-26T19:34:42.056833+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.065577+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_512d92264c6148259790db6870deb85c","trace_id":"tr_7164ef05fbc141899fd4a01053de7604","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e","method":"POST","status_code":200,"duration_ms":8.12}
+{"ts":"2026-09-26T19:34:42.065971+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e7a3f537031d4b9e "HTTP/1.1 200 OK"
+________ test_closed_supplier_after_verify_cannot_close_without_refund _________
+
+workspace = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC05NTZkN2ZhNjBkYjg0ZWU2YWJkNzk4YzA3NjFjNmVkZiIsInZlciI6MX0.b81rSqBB7homNoPrSyE4TDAi1B2C5lQQaOOWeY5hgpM'}, ...}
+
+    def test_closed_supplier_after_verify_cannot_close_without_refund(workspace):
+        w=workspace;prepare(w);command(w,'APPLY');command(w,'VERIFY','verifier')
+        w['svc'].admin_external_state(w['oid'],'CLOSED_BY_SUPPLIER','isolated://later-close','independent-admin')
+>       before=money();command(w,'FOLLOW_UP',status=409);assert money()==before
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../independent-rental-attractions/test_attraction_operations_independent.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+w = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC05NTZkN2ZhNjBkYjg0ZWU2YWJkNzk4YzA3NjFjNmVkZiIsInZlciI6MX0.b81rSqBB7homNoPrSyE4TDAi1B2C5lQQaOOWeY5hgpM'}, ...}
+action = 'FOLLOW_UP', actor = 'operator', receipt = None, status = 409
+body = {'action': 'FOLLOW_UP', 'command_id': '35f4952bb08342f2b2d3b08643e17ef8', 'expected_revision': 5, 'note': 'isolated normal role operation'}
+
+    def command(w,action,actor='operator',receipt=None,status=200,body=None):
+        path=w['sp'] if actor in {'supplier','readonly','foreign'} else w['ap']
+        if body is None:
+            view=w['client'].get(w['ap'],headers=w['operator']);assert view.status_code==200,view.text
+            body={'action':action,'command_id':uuid4().hex,'expected_revision':view.json()['data']['workflow']['revision'],
+                  'note':'isolated normal role operation'}
+            if receipt is not None:body['receipt']=receipt
+        r=w['client'].post(path,headers=w[actor],json=body)
+>       assert r.status_code==status,r.text
+E       AssertionError: {"data":{"workflow":{"revision":6,"stage":"CLOSED","assignee":"usr_03ffe3b59d254c4dbd3e5feeb5977978","receipt":{"state":"CONFIRMED","evidence_reference":"isolated://attraction-receipt","supplier_reference":"ATTR-OPS","voucher_code":"VOUCHER-OPS","quote_id":"attr_chg_dda917ad04aa497a"},"receipt_actor":"usr_03ffe3b59d254c4dbd3e5feeb5977978","applied_by":"usr_fd3e812d631d4a39837011c0463ea21e","contributors":["usr_03ffe3b59d254c4dbd3e5feeb5977978","usr_fd3e812d631d4a39837011c0463ea21e"]},"idempotent_replay":false}}
+E       assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_attraction_operations_runtime.py:37: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-26T19:34:42.827181+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_f442c34aa23d41caa6b28266885026af","trace_id":"tr_5fcb58c9d27f4c94adc478bf2cb5be69","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d","method":"GET","status_code":200,"duration_ms":10.19}
+{"ts":"2026-09-26T19:34:42.827695+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.837044+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_509175fa0088492da473a1fb04e39288","trace_id":"tr_142d06a86ba64d85887262c0e309425c","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d","method":"POST","status_code":200,"duration_ms":8.47}
+{"ts":"2026-09-26T19:34:42.837798+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.849865+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_33ccf6ab24b845408f5f58b0a9163839","trace_id":"tr_197a9bd160c548439e0761eb80f49b09","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d","method":"GET","status_code":200,"duration_ms":10.3}
+{"ts":"2026-09-26T19:34:42.850352+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.859892+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_181e17eae3794feabc4e67cff4a2e6b6","trace_id":"tr_27d1963137914cb2802a3e1944e3a6ec","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d","method":"POST","status_code":200,"duration_ms":8.61}
+{"ts":"2026-09-26T19:34:42.860420+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.868016+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_cb4fa5d562bb4494b4cdda1013c5a262","trace_id":"tr_3128bd3b06e041449fe98568f1ce2e5b","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d","method":"GET","status_code":200,"duration_ms":6.96}
+{"ts":"2026-09-26T19:34:42.868515+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.880710+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_3b96cf17593747c69eaa742e7fe20bae","trace_id":"tr_5ec1bf06c99842609b43c9f17e4d8acd","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d","method":"POST","status_code":200,"duration_ms":11.48}
+{"ts":"2026-09-26T19:34:42.881189+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.890494+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_c5a07ef643414d6ba7f1ea5dd3b73084","trace_id":"tr_67fc813a890641a5909e0bdceeef92ad","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d","method":"GET","status_code":200,"duration_ms":8.68}
+{"ts":"2026-09-26T19:34:42.891084+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.905056+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_f4a1627063294c59b4bb20556f3f163b","trace_id":"tr_a971c7ca7fbe47a7998a148c382aabb6","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d","method":"POST","status_code":200,"duration_ms":13.18}
+{"ts":"2026-09-26T19:34:42.905543+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.914735+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_36fa06cca198456ebeb48c07038dd661","trace_id":"tr_671e70170adc494aa85574230948f2d8","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d","method":"GET","status_code":200,"duration_ms":8.56}
+{"ts":"2026-09-26T19:34:42.915338+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.925210+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_6f5641fbc9ef4e67b50e633c124ac202","trace_id":"tr_06adda52e96040e4a7c16abd460981f3","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d","method":"POST","status_code":200,"duration_ms":9.1}
+{"ts":"2026-09-26T19:34:42.925911+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.948118+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_edb00d679b0a44d8895f174af4bd7518","trace_id":"tr_ece4c65da2424b3cb9988b82bdfe7c75","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d","method":"GET","status_code":200,"duration_ms":10.16}
+{"ts":"2026-09-26T19:34:42.948566+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:42.962977+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_566b55a47c214b8e8ba18226e83affed","trace_id":"tr_9b31364ece5f4dde807e5cdb1570eac0","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d","method":"POST","status_code":200,"duration_ms":13.3}
+{"ts":"2026-09-26T19:34:42.963833+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_9138c27018954e0d "HTTP/1.1 200 OK"
+_______ test_replayed_followup_cannot_report_closed_with_corrupt_refund ________
+
+workspace = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC02NzVhOWVjYzI3ODg0OGZjOTc2M2Y2YWE4ZGMzMTdjZSIsInZlciI6MX0.4F-q1_WcId1c_yGY5KKrtTGQTJIHCp9lOllq693RTXY'}, ...}
+
+    def test_replayed_followup_cannot_report_closed_with_corrupt_refund(workspace):
+        w=workspace;prepare(w,'CLOSED_BY_SUPPLIER');command(w,'APPLY')
+        q=w['svc'].refund_quote(w['owner'],w['oid']);w['svc'].refund(w['owner'],w['oid'],q['quote_hash'])
+        command(w,'VERIFY','verifier');body,_=command(w,'FOLLOW_UP')
+        with SessionLocal.begin() as s:
+            entry=s.scalar(select(OmnichannelLedgerEntryRow).where(OmnichannelLedgerEntryRow.entry_type=='REFUND'))
+            entry.account_code='WRONG'
+>       before=money();command(w,'FOLLOW_UP',body=body,status=409);assert money()==before
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../independent-rental-attractions/test_attraction_operations_independent.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+w = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC02NzVhOWVjYzI3ODg0OGZjOTc2M2Y2YWE4ZGMzMTdjZSIsInZlciI6MX0.4F-q1_WcId1c_yGY5KKrtTGQTJIHCp9lOllq693RTXY'}, ...}
+action = 'FOLLOW_UP', actor = 'operator', receipt = None, status = 409
+body = {'action': 'FOLLOW_UP', 'command_id': '03ff8af6ea2f4e99a15e1b3307e85c53', 'expected_revision': 5, 'note': 'isolated normal role operation'}
+
+    def command(w,action,actor='operator',receipt=None,status=200,body=None):
+        path=w['sp'] if actor in {'supplier','readonly','foreign'} else w['ap']
+        if body is None:
+            view=w['client'].get(w['ap'],headers=w['operator']);assert view.status_code==200,view.text
+            body={'action':action,'command_id':uuid4().hex,'expected_revision':view.json()['data']['workflow']['revision'],
+                  'note':'isolated normal role operation'}
+            if receipt is not None:body['receipt']=receipt
+        r=w['client'].post(path,headers=w[actor],json=body)
+>       assert r.status_code==status,r.text
+E       AssertionError: {"data":{"workflow":{"revision":6,"stage":"CLOSED","assignee":"usr_897d3d423a8046129af87f9a6d2b62e0","receipt":{"state":"CLOSED_BY_SUPPLIER","evidence_reference":"isolated://attraction-receipt"},"receipt_actor":"usr_897d3d423a8046129af87f9a6d2b62e0","applied_by":"usr_c5f60e88f19b48008c20a8e8dce0aa39","contributors":["usr_897d3d423a8046129af87f9a6d2b62e0","usr_c5f60e88f19b48008c20a8e8dce0aa39"]},"idempotent_replay":true}}
+E       assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_attraction_operations_runtime.py:37: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-26T19:34:43.700537+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_31fb6d61d9dd4f80b07f7b1817dd59fd","trace_id":"tr_aa2a235e7d364d86b3f90520b0c31ae6","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d","method":"GET","status_code":200,"duration_ms":13.63}
+{"ts":"2026-09-26T19:34:43.701145+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:43.720011+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_265db5328b6f4db5907e7b998e0c3dcd","trace_id":"tr_26655b1fdc0d4b778011dc9323b2418e","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d","method":"POST","status_code":200,"duration_ms":16.03}
+{"ts":"2026-09-26T19:34:43.720570+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:43.730423+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_1b2757d8ad754ad6a4b409f9a46946fe","trace_id":"tr_a00cdb75aa904f6aa7aa807e986b0eb0","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d","method":"GET","status_code":200,"duration_ms":8.96}
+{"ts":"2026-09-26T19:34:43.732106+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:43.741326+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_2b447e9b53ce43e99e5b3a5e31df4e86","trace_id":"tr_b043812f0f7248b0921622c99d8bdf76","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d","method":"POST","status_code":200,"duration_ms":8.11}
+{"ts":"2026-09-26T19:34:43.741798+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:43.751987+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_7772837936bb48548a554135affad9a4","trace_id":"tr_38b65d703fd04babb9f82e666ae7e207","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d","method":"GET","status_code":200,"duration_ms":9.38}
+{"ts":"2026-09-26T19:34:43.752424+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:43.760164+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_6f2f8b86d74c44b59dde13b44eff5ada","trace_id":"tr_7a7d7c67e1314a0d975f0b30f00885fa","path":"/v1/supplier/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d","method":"POST","status_code":200,"duration_ms":7.07}
+{"ts":"2026-09-26T19:34:43.760601+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:43.770215+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_5b32eace38ce40f985b90c0f2e0ae571","trace_id":"tr_d1910f1a4bd3457fa540d55314cfd5b0","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d","method":"GET","status_code":200,"duration_ms":8.89}
+{"ts":"2026-09-26T19:34:43.770655+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:43.784985+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_7f8c02de75b0449796fece078ef64af3","trace_id":"tr_24676501b64b4a9d9af7b71c6a755e5c","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d","method":"POST","status_code":200,"duration_ms":13.6}
+{"ts":"2026-09-26T19:34:43.785465+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:43.827009+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_82324ff94a954b618e0ebbc18054bda9","trace_id":"tr_fe10b3e6692c4b429b1a4e973b9f1dfd","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d","method":"GET","status_code":200,"duration_ms":12.41}
+{"ts":"2026-09-26T19:34:43.827646+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:43.848104+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_853df2f65ce54c34a0b6da00891075e7","trace_id":"tr_7424ec3b90af4f7b8cfaefb2a3093773","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d","method":"POST","status_code":200,"duration_ms":17.9}
+{"ts":"2026-09-26T19:34:43.848586+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:43.863157+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_9973c3b665c94f9fac410e407326f0a9","trace_id":"tr_db61e78ec3c74cae82f1dab7a808531b","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d","method":"GET","status_code":200,"duration_ms":13.88}
+{"ts":"2026-09-26T19:34:43.863646+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:43.880394+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_d62c0161ecd94c71abd897b35805735f","trace_id":"tr_ab43fe39d17c41abb891a3e54c2d2aba","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d","method":"POST","status_code":200,"duration_ms":15.54}
+{"ts":"2026-09-26T19:34:43.880890+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-26T19:34:43.891859+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_719eaccbe6de443ab29e63aaf87b2382","trace_id":"tr_cbc48ad2323e4df593c1d1ec0b43881c","path":"/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d","method":"POST","status_code":200,"duration_ms":8.56}
+{"ts":"2026-09-26T19:34:43.892358+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/supplier/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:332 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_130a7326af5c483d "HTTP/1.1 200 OK"
+=============================== warnings summary ===============================
+tests/test_depth21_refund_recovery.py:183
+  /workspace/scratch/0c84e4859f82/GO-rental-attractions/application/tests/test_depth21_refund_recovery.py:183: PytestUnknownMarkWarning: Unknown pytest.mark.no_db - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.no_db
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../independent-rental-attractions/test_attraction_operations_independent.py::test_capture_ledger_corruption_cannot_verify[account_code-WRONG]
+FAILED ../../independent-rental-attractions/test_attraction_operations_independent.py::test_capture_ledger_corruption_cannot_verify[evidence_hash-0000000000000000000000000000000000000000000000000000000000000000]
+FAILED ../../independent-rental-attractions/test_attraction_operations_independent.py::test_followup_cannot_close_new_pending_change
+FAILED ../../independent-rental-attractions/test_attraction_operations_independent.py::test_closed_supplier_after_verify_cannot_close_without_refund
+FAILED ../../independent-rental-attractions/test_attraction_operations_independent.py::test_replayed_followup_cannot_report_closed_with_corrupt_refund
+5 failed, 1 warning in 11.62s

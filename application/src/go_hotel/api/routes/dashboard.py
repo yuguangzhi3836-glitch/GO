@@ -17,8 +17,9 @@ def transaction_snapshot(vertical, order_id, **scope):
         raise HTTPException(404, detail='ORDER_NOT_FOUND')
 
 @router.get('/v1/supplier/transaction-orders')
-def supplier_transaction_orders(limit:int=Query(50,ge=1,le=200),offset:int=Query(0,ge=0),p:Principal=Depends(supplier_principal)):
-    return {'data': transaction_order_view.supplier_orders(p.supplier_id, limit, offset)}
+def supplier_transaction_orders(limit:int=Query(50,ge=1,le=200),offset:int=Query(0,ge=0),
+    vertical:str|None=Query(default=None,pattern='^(HOTEL|FLIGHT|RAIL|RIDE|RENTAL|ATTRACTION)$'),p:Principal=Depends(supplier_principal)):
+    return {'data': transaction_order_view.supplier_orders(p.supplier_id, limit, offset, vertical)}
 
 @router.get('/v1/supplier/transaction-orders/{vertical}/{order_id}')
 def supplier_transaction_order(vertical:str,order_id:str,p:Principal=Depends(supplier_principal)):
@@ -78,10 +79,11 @@ from go_hotel.services import ticket_operations
 
 class TicketReceipt(BaseModel):
     model_config=ConfigDict(extra='forbid')
-    state:Literal['TICKETED','FAILED','UNKNOWN_EXTERNAL_STATE']
+    state:Literal['TICKETED','FAILED','UNKNOWN_EXTERNAL_STATE','CONFIRMED','CLOSED_BY_SUPPLIER']
     evidence_reference:str=Field(min_length=1,max_length=256)
     supplier_reference:str|None=Field(default=None,max_length=64)
     ticket_numbers:list[str]|None=Field(default=None,max_length=54)
+    voucher_code:str|None=Field(default=None,max_length=128)
     quote_id:str|None=Field(default=None,max_length=64)
 
 class TicketCommand(BaseModel):

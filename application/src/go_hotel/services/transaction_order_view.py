@@ -45,13 +45,14 @@ def summary(vertical, row):
             'updated_at': row.updated_at.isoformat()}
 
 
-def supplier_orders(supplier_id, limit=50, offset=0):
+def supplier_orders(supplier_id, limit=50, offset=0, vertical=None):
+    if vertical is not None and vertical not in ORDERS:raise ValueError('ORDER_VERTICAL_INVALID')
     if not supplier_id:
         return {'items': [], 'count': 0, 'limit': limit, 'offset': offset}
     # Filter tenant identity in SQL before global ordering/pagination.
     queries = [supplier_query(v, supplier_id).with_only_columns(
         literal(v).label('vertical'), model.order_id.label('order_id'),
-        model.updated_at.label('updated_at')) for v, model in ORDERS.items()]
+        model.updated_at.label('updated_at')) for v, model in ORDERS.items() if vertical is None or v==vertical]
     combined = union_all(*queries).subquery()
     with SessionLocal() as s:
         keys = s.execute(select(combined).order_by(combined.c.updated_at.desc(),

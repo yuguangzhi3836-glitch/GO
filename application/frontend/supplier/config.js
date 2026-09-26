@@ -2,6 +2,8 @@ window.GO_CONSOLE={title:'GO 合作伙伴平台',subtitle:'酒店、机票、铁
 {route:'/command',label:'经营中心',custom:'supplierCommandCenter'},
 {route:'/catalog-fare',label:'酒店退改规则',custom:'supplierCatalogFare'},
 {route:'/operations-hub',label:'订单与履约',custom:'supplierOperationsHub'},
+{route:'/rental-orders',label:'租车运营',custom:'supplierOrders'},
+{route:'/attraction-orders',label:'景点门票运营',custom:'supplierOrders'},
 {route:'/marketing-rights',label:'促销与权益',custom:'supplierMarketingRightsHub'},
 {route:'/analytics-hub',label:'经营数据',custom:'supplierAnalyticsHub'},
 {route:'/finance-hub',label:'财务',custom:'supplierFinanceHub'},
@@ -37,4 +39,3 @@ window.GO_CONSOLE={title:'GO 合作伙伴平台',subtitle:'酒店、机票、铁
 {route:'/help',label:'帮助与工单',custom:'supplierHelpTemplate'},
 {route:'/vertical-capabilities',label:'全品类能力',custom:'supplierVerticals'},
 {route:'/growth',label:'经营增长记录',custom:'supplierJudgments'}],principles:{recommendationValueSeparated:true,aiSupplierMutationRequiresApproval:true,goOfferDedicatedSupplyOnly:true,structuredOperationsRequired:true,noFakeGrowthMetrics:true,partnerHomeTaskOriented:true,partnerPrimaryNavMax:7,ownerStaffBenefitsInPromotion:true,goConsumerBenefitsNotSupplierBusinessModule:true}};
-
