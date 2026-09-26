@@ -25,6 +25,30 @@ jobs:
           python-version: "3.13"
       - run: python ci/ai_production_monitor/test_monitor.py
 
+  dry-run:
+    name: Read current C13/C14 evidence (no Issue write)
+    if: github.event_name == 'pull_request'
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Render metrics without updating Issue 260
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: >-
+          python ci/ai_production_monitor/monitor.py
+          --issue-number 260
+          --timezone Asia/Shanghai
+          --dry-run
+
   refresh:
     name: Refresh Issue 260 metrics
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
