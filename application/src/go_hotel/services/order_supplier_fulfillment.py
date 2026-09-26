@@ -93,6 +93,14 @@ class OrderSupplierFulfillmentService:
     tickets=rail_tickets(b.get('ticket_numbers'),len(order.passengers or []))
     if f.state=='SUPPLIER_CONFIRMED' and (f.supplier_confirmation_reference!=b.get('supplier_confirmation_reference') or tickets!=order.ticket_numbers or (b.get('external_operation_id') and b['external_operation_id']!=f.external_operation_id)):
      raise ValueError('RAIL_CONFIRMED_TICKET_IDENTITY_IMMUTABLE')
+   if vertical=='FLIGHT' and state=='SUPPLIER_CONFIRMED':
+    from go_hotel.services.flight_change_resolution import _tickets, _printable_token
+    count=len(order.passengers or [])*len(order.current_itinerary or [])
+    if not count:raise ValueError('FLIGHT_REISSUED_TICKETS_INVALID')
+    tickets=_tickets(b.get('ticket_numbers'),count)
+    _printable_token(b.get('supplier_confirmation_reference'),16,'FLIGHT_SUPPLIER_REFERENCE_INVALID')
+    if f.state=='SUPPLIER_CONFIRMED' and (f.supplier_confirmation_reference!=b.get('supplier_confirmation_reference') or tickets!=order.ticket_numbers or (b.get('external_operation_id') and b['external_operation_id']!=f.external_operation_id)):
+     raise ValueError('FLIGHT_CONFIRMED_TICKET_IDENTITY_IMMUTABLE')
    same_external=(not b.get('external_operation_id') or b.get('external_operation_id')==f.external_operation_id)
    same_confirmation=(state!='SUPPLIER_CONFIRMED' or b.get('supplier_confirmation_reference')==f.supplier_confirmation_reference)
    payment_state=_payment_state(s,f,order)
@@ -117,7 +125,7 @@ class OrderSupplierFulfillmentService:
     if hasattr(order,'ticket_numbers') and b.get('ticket_numbers'):order.ticket_numbers=list(b.get('ticket_numbers'))
     if hasattr(order,'supplier_reference'):order.supplier_reference=f.supplier_confirmation_reference
     if vertical=='ATTRACTION' and hasattr(order,'voucher_code') and not getattr(order,'voucher_code',None):order.voucher_code=b.get('voucher_code') or f.supplier_confirmation_reference
-    append_vertical_evidence(s,vertical,f.business_id,'SUPPLIER_CONFIRMED',order.status,{'supplier_confirmation_reference':f.supplier_confirmation_reference,'external_operation_id':f.external_operation_id,'evidence_reference':b['evidence_reference']})
+    append_vertical_evidence(s,vertical,f.business_id,'SUPPLIER_CONFIRMED',order.status,{'supplier_confirmation_reference':f.supplier_confirmation_reference,'external_operation_id':f.external_operation_id,'evidence_reference':b['evidence_reference'],'actor_id':b.get('actor_id')})
    elif state=='SUPPLIER_FAILED':
     if vertical in {'RAIL','ATTRACTION'}:capacity.release_all_in(s,vertical,f.business_id)
     order.status='FAILED';order.updated_at=now();append_vertical_evidence(s,vertical,f.business_id,'SUPPLIER_FAILED',order.status,{'external_operation_id':f.external_operation_id,'evidence_reference':b['evidence_reference']})

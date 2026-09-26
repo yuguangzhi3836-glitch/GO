@@ -120,8 +120,13 @@ class RailService:
             o.payment_method_id=payment_method_id; o.updated_at=now(); s.flush()
             order_id=o.order_id; account=o.account_id
         tx=vertical_transaction_bridge.checkout_contract('RAIL',order_id,account,'RAIL_OPERATOR',f'rail-order://{order_id}',payment_method_id)
-        with SessionLocal.begin() as s:
-            o=s.get(RailOrderRow,order_id); o.status=tx['state']; o.updated_at=now(); append_vertical_evidence(s,'RAIL',order_id,'PAYMENT_CAPTURED',o.status,{'payment_intent_id':tx['payment_intent_id'],'capture_id':tx['capture_id'],'external_live':False}); s.flush(); return self._order(o)
+        with transaction(SessionLocal) as s:
+            o=s.get(RailOrderRow,order_id,with_for_update=True)
+            if not o or o.account_id!=account:raise ValueError('RAIL_ORDER_NOT_FOUND')
+            if o.status not in {'PAYMENT_PENDING','PAYMENT_AUTHORIZED'}:return self._order(o)
+            o.status=tx['state'];o.updated_at=now()
+            append_vertical_evidence(s,'RAIL',order_id,'PAYMENT_CAPTURED',o.status,{'payment_intent_id':tx['payment_intent_id'],'capture_id':tx['capture_id'],'external_live':False})
+            s.flush();return self._order(o)
     def _order(self,o):
         return {"order_id":o.order_id,"account_id":o.account_id,"status":o.status,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"passengers":o.passengers,"passenger_count":len(o.passengers or []),"data_mode":"SIMULATION","external_live":False,"booking_reference":o.booking_reference if o.status=="TICKETED" else None,"ticket_numbers":o.ticket_numbers if o.status=="TICKETED" else [],"journey":o.current_journey,"created_at":_utc_iso(o.created_at),"updated_at":_utc_iso(o.updated_at)} | reservation_expiry.projection('RAIL',o)
     def order(self,account_id,order_id):

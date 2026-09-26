@@ -13,7 +13,7 @@ from go_hotel.core.production_truth_gate import production_truth_required
 from go_hotel.db.models import FlightOfferRow
 from go_hotel.db.session import SessionLocal
 from go_hotel.domain.models import new_id
-from go_hotel.flight.service import flight_service, now
+from go_hotel.flight.service import flight_service, now, utc_naive
 from go_hotel.flight.airports import resolve_airport
 
 
@@ -100,7 +100,7 @@ def compose_journey(request: JourneyCompose):
         raise ValueError("FLIGHT_JOURNEY_INVALID:DUPLICATE_OFFER")
     with SessionLocal.begin() as session:
         offers = [session.get(FlightOfferRow, oid) for oid in request.offer_ids]
-        if any(o is None or o.expires_at <= now() for o in offers):
+        if any(o is None or utc_naive(o.expires_at) <= now() for o in offers):
             raise ValueError("FLIGHT_JOURNEY_INVALID:OFFER_EXPIRED_OR_MISSING")
         if any(len(o.segments) != 1 or o.segments[0].get("source_offer_id") for o in offers):
             raise ValueError("FLIGHT_JOURNEY_INVALID:COMPOSITE_NESTING")

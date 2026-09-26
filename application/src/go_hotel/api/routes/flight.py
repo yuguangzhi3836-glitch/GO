@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Header, Body
 from pydantic import BaseModel, Field, ConfigDict
-from go_hotel.security.deps import consumer_principal, admin_principal
+from go_hotel.security.deps import consumer_principal, order_admin_principal
 from go_hotel.security.service import Principal
 from go_hotel.flight.service import flight_service
 from go_hotel.flight.journeys import JourneySearch, JourneyCompose, search_journey, compose_journey
@@ -37,8 +37,8 @@ class ChangeConfirmation(BaseModel):
     currency:str
     confirmed:bool=Field(strict=True)
 
-def wrap(fn,*args):
-    try:return {"data":fn(*args)}
+def wrap(fn,*args,**kwargs):
+    try:return {"data":fn(*args,**kwargs)}
     except ValueError as e:
         if str(e) in {'REFUND_QUOTE_CHANGED_RECONFIRM_REQUIRED','REFUND_HISTORICAL_CONSENT_UNAVAILABLE','REFUND_OPERATION_INTEGRITY_INVALID'}:
             raise HTTPException(409,detail=str(e))
@@ -62,7 +62,7 @@ def search(body:SearchBody):
         'origin': origin['iata'], 'destination': destination['iata'],
     }
     return {'data': {
-        'items': flight_service.search(**criteria),
+        'items': wrap(flight_service.search, **criteria)['data'],
         'resolved_airports': {'origin': origin, 'destination': destination},
         'comparison_basis': ['total_price', 'baggage', 'change_refund', 'total_travel_time'],
     }}
@@ -119,7 +119,7 @@ def refund(order_id:str,p:Principal=Depends(consumer_principal),idempotency_key:
     return run_idempotent('FLIGHT_REFUND',idempotency_key,payload,lambda:wrap(flight_service.refund,p.user_id,order_id))
 
 @router.post('/internal/v1/admin/flights/orders/{order_id}/external-state')
-def admin_external_state(order_id:str,body:ExternalStateBody,p:Principal=Depends(admin_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+def admin_external_state(order_id:str,body:ExternalStateBody,p:Principal=Depends(order_admin_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
     payload={'actor':p.user_id,'order_id':order_id,**body.model_dump()}
     return run_idempotent('FLIGHT_ADMIN_EXTERNAL_STATE',idempotency_key,payload,lambda:wrap(flight_service.admin_external_state,order_id,body.state,body.evidence_reference,p.user_id,body.supplier_reference,body.ticket_numbers,body.quote_id))
 

@@ -1,0 +1,93 @@
+name: Ticket preinventory isolated acceptance
+on:
+  pull_request:
+    paths:
+      - application/**
+      - .github/workflows/ticket-preinventory.yml
+      - docs/acceptance/ticket-preinventory/**
+permissions:
+  contents: read
+concurrency:
+  group: ticket-preinventory-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+          POSTGRES_DB: go_tickets_isolated
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd 'pg_isready -U go_ci -d go_tickets_isolated'
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      APP_ENV: test
+      GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_tickets_isolated
+      DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_tickets_isolated
+      SAGA_RETRY_SECONDS: '0'
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated application dependencies
+        run: python -m pip install -e './application[dev]'
+      - name: Bind actual source and isolated database
+        run: |
+          mkdir -p ticket-evidence
+          python - <<'PY'
+          import hashlib,json,os,subprocess
+          from pathlib import Path
+          import psycopg
+          head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert head==os.environ['EXPECTED_HEAD']
+          paths=subprocess.check_output(['git','ls-files','-z','application'],text=True).split('\0')
+          hashes={p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in paths if p}
+          with psycopg.connect(os.environ['DATABASE_URL'].replace('postgresql+psycopg:','postgresql:')) as c:
+              version,db=c.execute('select version(),current_database()').fetchone()
+          assert db=='go_tickets_isolated' and 'PostgreSQL 18.4' in version
+          binding={'head':head,'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),
+                   'database':db,'server_version':version,'source_files':len(hashes),
+                   'scope':'DEVELOPER_TICKET_BOUNDARY_AND_REGRESSION_ONLY','C13':'NOT_EXECUTED','real_supplier':'NOT_ACCESSED',
+                   'real_psp':'NOT_ACCESSED','deployment':'NOT_RUN'}
+          Path('ticket-evidence/source.json').write_text(json.dumps(hashes,indent=2)+'\n')
+          Path('ticket-evidence/binding.json').write_text(json.dumps(binding,indent=2)+'\n')
+          PY
+      - name: PostgreSQL ticket boundaries and complete existing core journeys
+        working-directory: application
+        run: |
+          set -o pipefail
+          python -m pytest \
+            tests/test_ticket_preinventory_boundaries.py \
+            tests/test_sprint3a_flight.py tests/test_sprint3b_rail.py \
+            tests/test_depth05_flight_parties.py tests/test_flight_journey_depth.py \
+            tests/test_depth48_flight_changes.py \
+            tests/test_next_depth_c03_payment_inventory_races.py \
+            tests/test_depth22_rail_resolution.py \
+            tests/payments/test_c11_flight_idempotency_recovery.py \
+            --junitxml=../ticket-evidence/junit.xml 2>&1 | tee ../ticket-evidence/pytest.log
+      - name: Hash raw evidence including failures
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('ticket-evidence');root.mkdir(exist_ok=True)
+          hashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir() if p.is_file()}
+          (root/'SHA256.json').write_text(json.dumps(hashes,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ticket-preinventory-${{ github.event.pull_request.head.sha }}
+          path: ticket-evidence/
+          retention-days: 90

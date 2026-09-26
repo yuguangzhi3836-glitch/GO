@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from sqlalchemy import select, text
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import FlightOfferRow, FlightPrebookRow, FlightOrderRow, FlightChangeQuoteRow, FlightRefundRow
@@ -10,13 +10,21 @@ from go_hotel.services.vertical_money_bridge import vertical_money_bridge
 from go_hotel.core.production_truth_gate import production_truth_required
 from go_hotel.services.vertical_transaction_bridge import vertical_transaction_bridge
 from go_hotel.services import refund_consent, flight_refund_consent
+from go_hotel.autonomy.durable import transaction
 
 def now(): return datetime.now(timezone.utc).replace(tzinfo=None)
+
+def utc_naive(value):
+    """Compare UTC timestamps identically on SQLite and PostgreSQL."""
+    return value.replace(tzinfo=timezone.utc).replace(tzinfo=None) if value.tzinfo is None else value.astimezone(timezone.utc).replace(tzinfo=None)
 
 class FlightService:
     def search(self, origin:str, destination:str, departure_date:str, cabin:str="ECONOMY", currency:str="CNY", adults:int=1):
         production_truth_required("FLIGHT", "SEARCH")
         if type(adults) is not int or not 1<=adults<=9:raise ValueError('FLIGHT_PASSENGER_COUNT_INVALID')
+        try:
+            if date.fromisoformat(departure_date).isoformat()!=departure_date:raise ValueError()
+        except (TypeError,ValueError):raise ValueError('FLIGHT_DATE_INVALID') from None
         templates=[
             ("GO","718","GO Flex",468000,68000,{"checked_bag_kg":23,"cabin_bag_kg":7},{"fee_minor":10000,"allowed":True},{"fee_minor":20000,"allowed":True},"09:20","13:15"),
             ("GO","726","GO Saver",398000,62000,{"checked_bag_kg":20,"cabin_bag_kg":7},{"fee_minor":18000,"allowed":True},{"fee_minor":35000,"allowed":True},"13:40","17:35"),
@@ -44,22 +52,28 @@ class FlightService:
         production_truth_required("FLIGHT", "PREBOOK")
         with SessionLocal.begin() as s:
             o=s.get(FlightOfferRow,offer_id)
-            if not o or o.expires_at < now(): raise ValueError("FLIGHT_OFFER_EXPIRED")
-            p=FlightPrebookRow(prebook_id=new_id("flt_pb"),offer_id=offer_id,total_amount_minor=o.total_amount_minor,currency=o.currency,status="CONFIRMED",price_locked=True,inventory_confirmed=True,expires_at=min(o.expires_at,now()+timedelta(minutes=15)),created_at=now())
+            if not o or utc_naive(o.expires_at) <= now(): raise ValueError("FLIGHT_OFFER_EXPIRED")
+            p=FlightPrebookRow(prebook_id=new_id("flt_pb"),offer_id=offer_id,total_amount_minor=o.total_amount_minor,currency=o.currency,status="CONFIRMED",price_locked=True,inventory_confirmed=True,expires_at=min(utc_naive(o.expires_at),now()+timedelta(minutes=15)),created_at=now())
             s.add(p); s.flush()
             return {"passenger_count":(o.segments[0].get("passenger_count",1) if o.segments else 1),"prebook_id":p.prebook_id,"offer_id":offer_id,"status":p.status,"total_amount_minor":p.total_amount_minor,"currency":p.currency,"price_locked":True,"inventory_confirmed":True,"expires_at":p.expires_at.isoformat()}
     def create_order(self,account_id,prebook_id,passengers):
         production_truth_required("FLIGHT", "CREATE_ORDER")
-        with SessionLocal.begin() as s:
-            p=s.get(FlightPrebookRow,prebook_id)
-            if not p or p.status!="CONFIRMED" or p.expires_at<now(): raise ValueError("FLIGHT_PREBOOK_INVALID")
+        with transaction(SessionLocal) as s:
+            p=s.get(FlightPrebookRow,prebook_id,with_for_update=True)
+            if not p:raise ValueError('FLIGHT_PREBOOK_INVALID')
+            existing=list(s.scalars(select(FlightOrderRow).where(FlightOrderRow.prebook_id==prebook_id)))
+            if existing:
+                if len(existing)!=1 or existing[0].account_id!=account_id or existing[0].passengers!=passengers:
+                    raise ValueError('FLIGHT_PREBOOK_CONSUMPTION_CONFLICT')
+                return self._order(existing[0])
+            if p.status!="CONFIRMED" or utc_naive(p.expires_at)<=now(): raise ValueError("FLIGHT_PREBOOK_INVALID")
             off=s.get(FlightOfferRow,p.offer_id)
             expected=off.segments[0].get('passenger_count',1) if off.segments else 1
             if len(passengers)!=expected:raise ValueError('FLIGHT_PASSENGER_COUNT_INVALID:REQUOTE_REQUIRED')
             if any(not isinstance(p,dict) or p.get('type','ADT')!='ADT' or not isinstance(p.get('full_name'),str) or not p['full_name'].strip() for p in passengers):
                 raise ValueError('FLIGHT_PASSENGER_INVALID:ADULT_NAME_REQUIRED')
             o=FlightOrderRow(order_id=new_id("flt_ord"),account_id=account_id,prebook_id=prebook_id,status="PAYMENT_PENDING",total_amount_minor=p.total_amount_minor,currency=p.currency,passengers=passengers,payment_method_id=None,pnr=None,ticket_numbers=[],current_itinerary=off.segments,created_at=now(),updated_at=now())
-            s.add(o); s.flush(); append_vertical_evidence(s,"FLIGHT",o.order_id,"ORDER_CREATED",o.status,{"prebook_id":prebook_id}); return self._order(o)
+            s.add(o);p.status='CONSUMED';s.flush(); append_vertical_evidence(s,"FLIGHT",o.order_id,"ORDER_CREATED",o.status,{"prebook_id":prebook_id}); return self._order(o)
     def recover_checkout(self,account_id,order_id,payment_method_id,boundary):
         if not boundary or not boundary.recovering:
             raise ValueError('FLIGHT_RECOVERY_CONTEXT_REQUIRED')
@@ -77,8 +91,15 @@ class FlightService:
             o.payment_method_id=payment_method_id; o.status="PAYMENT_AUTHORIZED"; o.updated_at=now(); s.flush()
             order_id=o.order_id; account=o.account_id; source_id=(s.get(FlightOfferRow,s.get(FlightPrebookRow,o.prebook_id).offer_id).carrier_code or 'AIRLINE')
         tx=vertical_transaction_bridge.checkout_contract('FLIGHT',order_id,account,source_id,f'flight-offer://{order_id}',payment_method_id)
-        with SessionLocal.begin() as s:
-            o=s.get(FlightOrderRow,order_id); o.status=tx['state']; o.updated_at=now(); append_vertical_evidence(s,'FLIGHT',order_id,'PAYMENT_CAPTURED',o.status,{'payment_intent_id':tx['payment_intent_id'],'capture_id':tx['capture_id'],'external_live':False}); s.flush(); return self._order(o)
+        with transaction(SessionLocal) as s:
+            o=s.get(FlightOrderRow,order_id,with_for_update=True)
+            if not o or o.account_id!=account:raise ValueError('FLIGHT_ORDER_NOT_FOUND')
+            # A supplier fact or another checkout may have committed while the
+            # money bridge ran. Never overwrite a newer native business state.
+            if o.status not in {'PAYMENT_PENDING','PAYMENT_AUTHORIZED'}:return self._order(o)
+            o.status=tx['state'];o.updated_at=now()
+            append_vertical_evidence(s,'FLIGHT',order_id,'PAYMENT_CAPTURED',o.status,{'payment_intent_id':tx['payment_intent_id'],'capture_id':tx['capture_id'],'external_live':False})
+            s.flush();return self._order(o)
     def _ticket_assignments(self,o):
         if o.status!='TICKETED' or len(o.ticket_numbers)!=len(o.passengers)*len(o.current_itinerary):return []
         return [{'leg_index':leg,'passenger_index':person,'passenger_name':p['full_name'],
@@ -132,7 +153,7 @@ class FlightService:
             if q.status=='EXECUTED':return self._order(o)|{'idempotent_replay':True}
             resuming=q.status=='AUTHORIZATION_PENDING' and o.status=='UNKNOWN_EXTERNAL_STATE'
             if not resuming:
-                if o.status!='TICKETED' or q.status!='QUOTED' or q.expires_at<now():raise ValueError('FLIGHT_CHANGE_QUOTE_INVALID')
+                if o.status!='TICKETED' or q.status!='QUOTED' or utc_naive(q.expires_at)<=now():raise ValueError('FLIGHT_CHANGE_QUOTE_INVALID')
                 q.status='AUTHORIZATION_PENDING';o.status='UNKNOWN_EXTERNAL_STATE';o.updated_at=now()
                 for other in s.scalars(select(FlightChangeQuoteRow).where(FlightChangeQuoteRow.order_id==order_id,
                     FlightChangeQuoteRow.quote_id!=quote_id,FlightChangeQuoteRow.status=='QUOTED')).all():other.status='SUPERSEDED'
