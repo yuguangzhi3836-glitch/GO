@@ -35,12 +35,21 @@ for(const [engine,type,width] of [['chromium',chromium,375],['webkit',webkit,430
    await p.goto(base+'/go-app/');let failed=false;
    await p.route('**/v1/consumer/auth/registration',r=>{if(!failed){failed=true;return r.abort()}return r.continue()});
    await p.locator('#consumerSignupEntry').click();await p.locator('#retryRegistrationRules:not([hidden])').waitFor();
-   await p.locator('#regName').fill('隔离手机验收');await p.locator('#regEmail').fill('mobile-'+engine+'-'+Date.now()+'@example.test');await p.locator('#regPwd').fill('Isolated-register-password');
+   const email='mobile-'+engine+'-'+Date.now()+'@example.test';
+   await p.locator('#regName').fill('隔离手机验收');await p.locator('#regEmail').fill(email);await p.locator('#regPwd').fill('Isolated-register-password');
    await p.locator('#retryRegistrationRules').click();await p.waitForFunction(()=>!document.querySelector('#doRegister').disabled);
    assert.equal(await p.locator('#regName').inputValue(),'隔离手机验收');await p.locator('#regTerms').check();
    // An auxiliary wallet failure cannot undo successful registration/session readback.
    await p.route('**/v1/consumer/wallet',r=>r.fulfill({status:503,contentType:'application/json',body:JSON.stringify({detail:'TEST_WALLET_UNAVAILABLE'})}));
-   await p.locator('#doRegister').click();await p.locator('#vaultBootstrapTop').waitFor();await p.getByText('我的 GO ID',{exact:true}).waitFor();
+   const [registered,session]=await Promise.all([
+    p.waitForResponse(r=>r.url()===base+'/v1/consumer/auth/register'&&r.request().method()==='POST'),
+    p.waitForResponse(r=>r.url()===base+'/v1/consumer/me'&&r.request().method()==='GET'),
+    p.locator('#doRegister').click(),
+   ]);
+   assert.equal(registered.status(),200);assert.equal((await registered.json()).data.authenticated,true);assert.equal(session.status(),200);
+   assert.equal((await session.json()).data.email,email);
+   await p.getByRole('heading',{name:'我的旅行资料',exact:true}).waitFor();
+   await p.locator('#vmLogout').waitFor();assert.equal(await p.locator('#consumerRegister').count(),0);
   });
   await step(engine+'-registration-draft-explicit-block',p,async()=>{
    await p.goto(draft+'/go-app/');await p.locator('#consumerSignupEntry').click();await p.getByText('注册尚未开放',{exact:true}).waitFor();
