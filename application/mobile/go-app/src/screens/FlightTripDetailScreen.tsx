@@ -29,10 +29,10 @@ export default function FlightTripDetail({route,navigation}:any) {
     <Btn title="刷新订单与值机信息" disabled={loading} onPress={()=>{void load()}}/>
     {order&&<>
       <View style={screen.card}><StatusPill text={order.status} tone="navy"/>
-        {(order.itinerary||[]).map((leg:any,i:number)=><Text key={i} style={screen.sub}>第 {i+1} 程 · {leg.carrier_code}{leg.flight_number} · {leg.departure_date} · {leg.origin} → {leg.destination}</Text>)}
+        {(order.itinerary||[]).map((leg:any,i:number)=><Text key={i} style={screen.sub}>第 {i+1} 程 · {leg.carrier_code}{leg.flight_number} · {leg.split_party?'各乘机人日期见下方票券':leg.departure_date} · {leg.origin} → {leg.destination}</Text>)}
         <Text style={screen.sub}>PNR：{order.pnr||'待核实'}</Text><Text style={screen.sub}>电子票号：{order.ticket_numbers?.join('、')||'待出票'}</Text>
-        <Text style={screen.sub}>累计实付</Text><Price minor={order.total_amount_minor} currency={order.currency}/>
-        {Number.isSafeInteger(order.refunded_amount_minor)&&<><Text style={screen.sub}>累计已退</Text><Price minor={order.refunded_amount_minor} currency={order.currency}/><Text style={screen.sub}>净实付</Text><Price minor={order.total_amount_minor-order.refunded_amount_minor} currency={order.currency}/></>}<OrderActions order={order} vertical="FLIGHT" navigation={navigation}/>
+        <Text style={screen.sub}>订单金额</Text><Price minor={order.total_amount_minor} currency={order.currency}/>
+        {order.money_summary?.verified?<><Text style={screen.sub}>累计实付</Text><Price minor={order.money_summary.captured_minor} currency={order.currency}/><Text style={screen.sub}>累计已退</Text><Price minor={order.money_summary.refunded_minor} currency={order.currency}/><Text style={screen.sub}>净实付</Text><Price minor={order.money_summary.net_minor} currency={order.currency}/></>:<Text style={screen.sub}>实付及退款金额待核对。</Text>}<OrderActions order={order} vertical="FLIGHT" navigation={navigation}/>
       </View>
       {(order.coupons||[]).map((c:any)=><View style={screen.card} key={c.coupon_id}>
         <Text style={screen.h2}>{c.passenger_name} · 第 {c.leg_index+1} 程</Text>

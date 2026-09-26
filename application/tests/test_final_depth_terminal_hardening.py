@@ -19,8 +19,16 @@ def test_flight_old_quote_cannot_execute_after_refund(client):
     h=flight_auth(client,'terminal-flight@example.com'); oid=create_ticketed(client,h)
     q=client.post(f'/v1/flights/orders/{oid}/change-quote',headers=h,json={'new_departure_date':(date.today()+timedelta(days=12)).isoformat()}).json()['data']
     assert client.post(f'/v1/flights/orders/{oid}/refund',headers=h).status_code==200
+    from go_hotel.db.models import OmnichannelMoneyMovementRow as Movement
+    before=client.get(f'/v1/flights/orders/{oid}',headers=h).json()['data']
+    with SessionLocal() as session:
+        money_before=list(session.execute(select(Movement.money_movement_id,Movement.state,Movement.amount_minor,Movement.currency).order_by(Movement.money_movement_id)))
     r=client.post(f"/v1/flights/orders/{oid}/execute-change/{q['quote_id']}",headers=h)
-    assert r.status_code in {404,422}
+    assert r.status_code==409,r.text
+    assert r.json()['detail']=='FLIGHT_CHANGE_COUPONS_CHANGED_REQUOTE_REQUIRED'
+    assert client.get(f'/v1/flights/orders/{oid}',headers=h).json()['data']==before
+    with SessionLocal() as session:
+        assert list(session.execute(select(Movement.money_movement_id,Movement.state,Movement.amount_minor,Movement.currency).order_by(Movement.money_movement_id)))==money_before
 
 
 def test_attraction_expired_quote_fails_closed(client):

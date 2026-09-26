@@ -1,0 +1,1176 @@
+{
+  "declared_candidate": "5d48a16b26453afc12169af0ffe86fde3532a929",
+  "scope_hash": "f120a868a71b242ee7f99a0076c694b137fbbe0a7d988154f3747e88d0b1145a",
+  "obligations": 28,
+  "cases": 88,
+  "purpose": "Test-source mapping only, not PASS adjudication; run outputs not yet received",
+  "blocking_new_ui_finding": "Order total incorrectly labeled paid on unpaid orders; latest candidate must not be fully accepted",
+  "items": [
+    {
+      "id": "C02-01",
+      "title": "航段票价展示",
+      "cases": [
+        {
+          "id": "C02-01.1",
+          "description": "返回每个航段、票价币种及票规",
+          "candidate_test_references": [
+            "tests/test_flight_journey_depth.py::test_search_selection_prebook_and_order_preserve_entire_journey"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-01.2",
+          "description": "无效航段时间拒绝且无预订写入",
+          "candidate_test_references": [
+            "tests/test_ticket_preinventory_boundaries.py::test_invalid_flight_search_date_writes_no_offers",
+            "tests/test_flight_journey_depth.py::test_invalid_journey_rejected_without_writing_quotes"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-01.3",
+          "description": "报价过期后不得按旧票价预订",
+          "candidate_test_references": [
+            "tests/test_ticket_preinventory_boundaries.py::test_exact_offer_expiry_rejects_prebook_without_writes",
+            "tests/test_flight_journey_depth.py::test_prebook_cannot_outlive_shortest_selected_quote"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        }
+      ]
+    },
+    {
+      "id": "C02-02",
+      "title": "乘机人与票联",
+      "cases": [
+        {
+          "id": "C02-02.1",
+          "description": "乘机人与每个航段票联一一绑定",
+          "candidate_test_references": [
+            "tests/test_depth05_flight_parties.py::test_three_adults_have_matching_prices_tickets_and_original_refund"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-02.2",
+          "description": "同键预订返回同订单",
+          "candidate_test_references": [
+            "tests/test_ticket_preinventory_boundaries.py::test_same_prebook_consumes_once_across_concurrent_retries"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-02.3",
+          "description": "出票UNKNOWN不生成虚假票号",
+          "candidate_test_references": [
+            "tests/test_ticket_preinventory_boundaries.py::test_flight_supplier_cannot_confirm_missing_extra_or_invalid_tickets",
+            "tests/test_ticket_preinventory_boundaries.py::test_admin_cannot_invent_initial_flight_tickets_from_unknown_supplier"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        }
+      ]
+    },
+    {
+      "id": "C02-03",
+      "title": "支付与出票",
+      "cases": [
+        {
+          "id": "C02-03.1",
+          "description": "成功捕获后仅有一次原支付",
+          "candidate_test_references": [
+            "tests/test_depth05_flight_parties.py::test_three_adults_have_matching_prices_tickets_and_original_refund"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。"
+          ]
+        },
+        {
+          "id": "C02-03.2",
+          "description": "出票失败/UNKNOWN与支付已捕获分开投影",
+          "candidate_test_references": [
+            "tests/test_c10_supplier_money_projection.py::test_supplier_unknown_preserves_independent_bound_money_fact",
+            "tests/independent_ticket/test_independent_coupon_readiness.py::test_nonchange_unknown_and_failed_do_not_publish_usable_tickets"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-03.3",
+          "description": "非所有人不得触发支付",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。"
+          ]
+        },
+        {
+          "id": "C02-03.4",
+          "description": "已出票订单按有效票联履约事实完成行程；未出票或无事实不得标记已完成",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C02-04",
+      "title": "部分改签",
+      "cases": [
+        {
+          "id": "C02-04.1",
+          "description": "仅选中乘机人和票联改签，其余不变",
+          "candidate_test_references": [
+            "tests/test_flight_partial_runtime.py::test_partial_person_change_uses_actual_coupons_and_preserves_every_other_coupon"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-04.2",
+          "description": "非法混合他单票联拒绝且无差价写入",
+          "candidate_test_references": [
+            "tests/test_flight_partial_runtime.py::test_selected_coupons_cannot_borrow_other_leg_or_duplicate_selection"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-04.3",
+          "description": "陈旧改签计划确认拒绝",
+          "candidate_test_references": [
+            "tests/test_depth48_flight_changes.py::test_changed_order_or_plan_cannot_borrow_prior_consent"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        }
+      ]
+    },
+    {
+      "id": "C02-05",
+      "title": "退款",
+      "cases": [
+        {
+          "id": "C02-05.1",
+          "description": "可退票联只退对应金额且币种不变",
+          "candidate_test_references": [
+            "tests/test_flight_partial_runtime.py::test_partial_refund_http_and_then_remaining_order_refund_conserve_money",
+            "tests/independent_ticket/test_independent_coupon_readiness.py::test_partial_refund_across_two_captures_recovers_after_first_money_commit"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-05.2",
+          "description": "已经退款票联重放不重复退款",
+          "candidate_test_references": [
+            "tests/test_flight_partial_runtime.py::test_partial_refund_http_and_then_remaining_order_refund_conserve_money",
+            "tests/independent_ticket/test_independent_completed_money.py::test_completed_refund_replay_rejects_changed_money_fact"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-05.3",
+          "description": "部分退款后未选票联仍可按原状态使用",
+          "candidate_test_references": [
+            "tests/test_flight_partial_runtime.py::test_partial_refund_http_and_then_remaining_order_refund_conserve_money"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        }
+      ]
+    },
+    {
+      "id": "C02-06",
+      "title": "未决处理",
+      "cases": [
+        {
+          "id": "C02-06.1",
+          "description": "管理员能定位未决出票或改签事件和当前票联",
+          "candidate_test_references": [
+            "tests/test_ticket_operations_runtime.py::test_real_roles_partial_change_cross_surface_workflow"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-06.2",
+          "description": "处理结果绑定当前事件，不应用到后续改签",
+          "candidate_test_references": [
+            "tests/test_depth48_flight_changes.py::test_old_resolution_replay_cannot_overwrite_next_change",
+            "tests/independent_ticket/test_independent_ticket_operations.py::test_late_old_apply_never_executes_new_receipt"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-06.3",
+          "description": "关闭事件保留处理人及原状态审计",
+          "candidate_test_references": [
+            "tests/test_ticket_operations_runtime.py::test_real_roles_partial_change_cross_surface_workflow"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C02-07",
+      "title": "消费者边界",
+      "cases": [
+        {
+          "id": "C02-07.1",
+          "description": "用户B GET用户A订单私有详情被拒绝",
+          "candidate_test_references": [
+            "tests/test_sprint3a_flight.py::test_cross_account_flight_order_isolation"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-07.2",
+          "description": "用户B POST用户A改签、退款、支付被拒绝且DB/ledger不变",
+          "candidate_test_references": [
+            "tests/test_flight_partial_runtime.py::test_stale_parallel_quote_and_other_owner_coupon_reject_without_money"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C02-08",
+      "title": "供应商租户边界",
+      "cases": [
+        {
+          "id": "C02-08.1",
+          "description": "供应商B不可读或处理供应商A订单",
+          "candidate_test_references": [
+            "tests/test_ticket_operations_runtime.py::test_real_roles_partial_change_cross_surface_workflow"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。"
+          ]
+        },
+        {
+          "id": "C02-08.2",
+          "description": "同供应商只读角色不可提交履约或资金动作",
+          "candidate_test_references": [
+            "tests/test_ticket_operations_runtime.py::test_real_roles_partial_change_cross_surface_workflow"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        }
+      ]
+    },
+    {
+      "id": "C02-09",
+      "title": "管理角色边界",
+      "cases": [
+        {
+          "id": "C02-09.1",
+          "description": "普通消费者及供应商不得访问admin运营入口",
+          "candidate_test_references": [
+            "tests/test_ticket_operations_runtime.py::test_real_roles_partial_change_cross_surface_workflow"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。"
+          ]
+        },
+        {
+          "id": "C02-09.2",
+          "description": "admin只读角色不得提交处理操作",
+          "candidate_test_references": [
+            "tests/test_ticket_preinventory_boundaries.py::test_admin_without_order_permission_cannot_resolve_ticket_money",
+            "tests/test_ticket_preinventory_boundaries.py::test_supplier_fact_write_rejects_readonly_admin"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        }
+      ]
+    },
+    {
+      "id": "C02-10",
+      "title": "并发竞争",
+      "cases": [
+        {
+          "id": "C02-10.1",
+          "description": "同订单两个并发支付最多一次捕获",
+          "candidate_test_references": [
+            "tests/test_ticket_preinventory_boundaries.py::test_delayed_checkout_writeback_does_not_regress_confirmed_tickets"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。",
+            "必须核对最终候选隔离PG原始记录；线程或SQLite不代替PG；进程退出测试使用强制租约到期。"
+          ]
+        },
+        {
+          "id": "C02-10.2",
+          "description": "同订单两个并发退款最多一次退款",
+          "candidate_test_references": [
+            "tests/test_depth05_flight_parties.py::test_simultaneous_flight_refund_requests_return_one_durable_refund",
+            "tests/test_flight_partial_runtime.py::test_partial_refund_concurrent_commands_are_fenced_before_money"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "必须核对最终候选隔离PG原始记录；线程或SQLite不代替PG；进程退出测试使用强制租约到期。"
+          ]
+        },
+        {
+          "id": "C02-10.3",
+          "description": "并发改签不能同时消费旧报价或泄漏库存",
+          "candidate_test_references": [
+            "tests/test_depth48_flight_changes.py::test_concurrent_opposite_resolution_cannot_change_money_decision"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。",
+            "必须核对最终候选隔离PG原始记录；线程或SQLite不代替PG；进程退出测试使用强制租约到期。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C02-11",
+      "title": "崩溃恢复",
+      "cases": [
+        {
+          "id": "C02-11.1",
+          "description": "本地提交前失败无半成订单/资金状态",
+          "candidate_test_references": [
+            "tests/test_depth05_flight_parties.py::test_change_authorization_failure_preserves_claim_and_can_resume"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。",
+            "必须核对最终候选隔离PG原始记录；线程或SQLite不代替PG；进程退出测试使用强制租约到期。"
+          ]
+        },
+        {
+          "id": "C02-11.2",
+          "description": "资金已提交业务回写前中断，重试恢复原操作不重复资金",
+          "candidate_test_references": [
+            "tests/test_flight_partial_runtime.py::test_partial_refund_real_process_death_recovers_without_second_money",
+            "tests/independent_ticket/test_independent_ticket_operations.py::test_apply_crash_after_native_commit_is_recoverable"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "必须核对最终候选隔离PG原始记录；线程或SQLite不代替PG；进程退出测试使用强制租约到期。"
+          ]
+        },
+        {
+          "id": "C02-11.3",
+          "description": "恢复失败保留UNKNOWN及可追溯事件，不假报完成",
+          "candidate_test_references": [
+            "tests/test_flight_partial_runtime.py::test_partial_refund_crash_after_money_recovers_same_allocation"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "必须核对最终候选隔离PG原始记录；线程或SQLite不代替PG；进程退出测试使用强制租约到期。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C02-12",
+      "title": "跨端事实",
+      "cases": [
+        {
+          "id": "C02-12.1",
+          "description": "消费者网页、native、admin和所属supplier对同一订单确认/未知/取消状态一致",
+          "candidate_test_references": [
+            "tests/test_ticket_operations_runtime.py::test_real_roles_partial_change_cross_surface_workflow"
+          ],
+          "candidate_browser_steps": [
+            "partial-change",
+            "supplier-receipt",
+            "operator-apply",
+            "consumer-partial-refund"
+          ],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "API不等于UI；当前浏览器只有机票部分正常旅程，无全部未知/取消/零退款/越权UI或真实native交互。"
+          ]
+        },
+        {
+          "id": "C02-12.2",
+          "description": "零退款与已退款到账使用不同显示且资金净额一致",
+          "candidate_test_references": [
+            "tests/test_flight_partial_runtime.py::test_partial_refund_http_and_then_remaining_order_refund_conserve_money"
+          ],
+          "candidate_browser_steps": [
+            "consumer-partial-refund"
+          ],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "API不等于UI；当前浏览器只有机票部分正常旅程，无全部未知/取消/零退款/越权UI或真实native交互。"
+          ]
+        },
+        {
+          "id": "C02-12.3",
+          "description": "消费者正常真实点击搜索→选择→接受适用条款→预订→支付→读取结果，绑定同一订单与实际DB事实",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [
+            "book-flight"
+          ],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "API不等于UI；当前浏览器只有机票部分正常旅程，无全部未知/取消/零退款/越权UI或真实native交互。"
+          ]
+        },
+        {
+          "id": "C02-12.4",
+          "description": "消费者从同一订单正常点击改签/改期及取消退款，确认当前条款，刷新后金额与状态匹配",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [
+            "partial-change",
+            "consumer-partial-refund"
+          ],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "API不等于UI；当前浏览器只有机票部分正常旅程，无全部未知/取消/零退款/越权UI或真实native交互。"
+          ]
+        },
+        {
+          "id": "C02-12.5",
+          "description": "所属供应商与授权管理员从正常菜单进入本模块未决/履约处理，真实提交并读取结果；无权限角色界面和API均拒绝写入",
+          "candidate_test_references": [
+            "tests/test_ticket_operations_runtime.py::test_real_roles_partial_change_cross_surface_workflow"
+          ],
+          "candidate_browser_steps": [
+            "supplier-receipt",
+            "operator-apply",
+            "independent-verify"
+          ],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "API不等于UI；当前浏览器只有机票部分正常旅程，无全部未知/取消/零退款/越权UI或真实native交互。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C02-13",
+      "title": "运营处理闭环",
+      "cases": [
+        {
+          "id": "C02-13.1",
+          "description": "未决记录显示原因、处理角色及责任人",
+          "candidate_test_references": [
+            "tests/test_ticket_operations_runtime.py::test_real_roles_partial_change_cross_surface_workflow"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。",
+            "仍须结构化原因、职责、SLA期限与升级、任务派发、资金复核和关闭后复查；note/claim不自动证明全义务。"
+          ]
+        },
+        {
+          "id": "C02-13.2",
+          "description": "超出既定期限记录显示待升级处理",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。",
+            "仍须结构化原因、职责、SLA期限与升级、任务派发、资金复核和关闭后复查；note/claim不自动证明全义务。"
+          ]
+        },
+        {
+          "id": "C02-13.3",
+          "description": "处理关闭后保留原输入、处理人、时间与结果，不删除未知历史",
+          "candidate_test_references": [
+            "tests/test_ticket_operations_runtime.py::test_real_roles_partial_change_cross_surface_workflow"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。",
+            "仍须结构化原因、职责、SLA期限与升级、任务派发、资金复核和关闭后复查；note/claim不自动证明全义务。"
+          ]
+        },
+        {
+          "id": "C02-13.4",
+          "description": "从本模块真实未决事件登记任务并派发给有权限责任人；登记、派发和执行三个状态不可混为完成",
+          "candidate_test_references": [
+            "tests/test_ticket_operations_runtime.py::test_real_roles_partial_change_cross_surface_workflow"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。",
+            "仍须结构化原因、职责、SLA期限与升级、任务派发、资金复核和关闭后复查；note/claim不自动证明全义务。"
+          ]
+        },
+        {
+          "id": "C02-13.5",
+          "description": "受权处理或人工接管后验证订单与资金结果再关闭任务；后续复查记录原事件与前次处理，不静默删除历史",
+          "candidate_test_references": [
+            "tests/independent_ticket/test_independent_ticket_operations.py::test_native_applier_cannot_verify_after_other_operator_resumes_audit",
+            "tests/independent_ticket/test_independent_ticket_operations.py::test_unknown_receipt_has_followup_resolution_path"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。",
+            "仍须结构化原因、职责、SLA期限与升级、任务派发、资金复核和关闭后复查；note/claim不自动证明全义务。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C02-14",
+      "title": "拒绝无副作用",
+      "cases": [
+        {
+          "id": "C02-14.1",
+          "description": "陈旧报价拒绝后订单版本、ledger余额、库存不变",
+          "candidate_test_references": [
+            "tests/test_flight_partial_runtime.py::test_stale_parallel_quote_and_other_owner_coupon_reject_without_money",
+            "tests/test_flight_partial_runtime.py::test_partial_quote_expiry_uses_database_clock_and_zero_money_effect"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-14.2",
+          "description": "撤销后延迟请求不能恢复终态",
+          "candidate_test_references": [
+            "tests/test_final_depth_terminal_hardening.py::test_flight_old_quote_cannot_execute_after_refund",
+            "tests/test_ticket_preinventory_boundaries.py::test_initial_supplier_replay_cannot_publish_success_over_pending_change"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C02-14.3",
+          "description": "错误提示指明待核验或重新确认而非声称操作成功",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C03-01",
+      "title": "车次席位展示",
+      "cases": [
+        {
+          "id": "C03-01.1",
+          "description": "返回车次日期席位价格和币种",
+          "candidate_test_references": [
+            "tests/test_sprint3b_rail.py::test_rail_search_to_ticket_and_trip"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C03-01.2",
+          "description": "无效日期不生成预订",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。"
+          ]
+        },
+        {
+          "id": "C03-01.3",
+          "description": "无库存车次不可直接确认出票",
+          "candidate_test_references": [
+            "tests/test_next_depth_c03_payment_inventory_races.py::test_full_target_capacity_rejects_before_supplemental_money_or_original_release"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C03-02",
+      "title": "实名与预订",
+      "cases": [
+        {
+          "id": "C03-02.1",
+          "description": "实名乘客绑定订单席位",
+          "candidate_test_references": [
+            "tests/test_depth20_api_fulfillment.py::test_rail_supplier_cannot_ticket_wrong_count_or_invalid_identities"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C03-02.2",
+          "description": "同请求重放不重复占座",
+          "candidate_test_references": [
+            "tests/test_depth20_api_fulfillment.py::test_confirmed_rail_tickets_replay_exactly_and_cannot_be_replaced"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。"
+          ]
+        },
+        {
+          "id": "C03-02.3",
+          "description": "未知出票显示待确认而非成功",
+          "candidate_test_references": [
+            "tests/test_sprint3b_rail.py::test_rail_change_reissues_ticket"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        }
+      ]
+    },
+    {
+      "id": "C03-03",
+      "title": "支付库存",
+      "cases": [
+        {
+          "id": "C03-03.1",
+          "description": "捕获金额币种绑定本订单",
+          "candidate_test_references": [
+            "tests/test_depth20_api_fulfillment.py::test_multi_person_change_refund_returns_to_original_and_adjustment_captures"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C03-03.2",
+          "description": "支付重放不再次占座或扣款",
+          "candidate_test_references": [
+            "tests/test_next_depth_c03_payment_inventory_races.py::test_committed_payment_root_blocks_cancel_and_expiry_during_capture_handoff"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。"
+          ]
+        },
+        {
+          "id": "C03-03.3",
+          "description": "出票失败按既定恢复状态保留资金真相",
+          "candidate_test_references": [
+            "tests/test_depth22_rail_resolution.py::test_fabricated_money_stays_pending",
+            "tests/test_c10_supplier_money_projection.py::test_supplier_unknown_preserves_independent_bound_money_fact"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。"
+          ]
+        },
+        {
+          "id": "C03-03.4",
+          "description": "已出票订单按有效乘车履约事实结束行程；不允许未确认订单直接完成",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C03-04",
+      "title": "连续改签",
+      "cases": [
+        {
+          "id": "C03-04.1",
+          "description": "当前改签确认更新车次席位",
+          "candidate_test_references": [
+            "tests/test_sprint3b_rail.py::test_rail_change_reissues_ticket"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C03-04.2",
+          "description": "第一份报价应用后同订单平行旧报价SUPERSEDED不可应用",
+          "candidate_test_references": [
+            "tests/test_depth22_rail_resolution.py::test_prior_replay_cannot_modify_next_change"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。"
+          ]
+        },
+        {
+          "id": "C03-04.3",
+          "description": "跨订单quote_id不能改签",
+          "candidate_test_references": [
+            "tests/test_depth22_rail_resolution.py::test_quote_id_from_other_order_cannot_dispatch_money"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        }
+      ]
+    },
+    {
+      "id": "C03-05",
+      "title": "退款释放",
+      "cases": [
+        {
+          "id": "C03-05.1",
+          "description": "成功退款后按规定释放当前席位一次",
+          "candidate_test_references": [
+            "tests/test_sprint3b_rail.py::test_rail_refund_tracks_fee_and_original_payment"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。"
+          ]
+        },
+        {
+          "id": "C03-05.2",
+          "description": "同退款重放不再退款或释放",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。",
+            "现有邻近出票/改签/容量测试不证明本退款或崩溃case，未映射为证据。"
+          ]
+        },
+        {
+          "id": "C03-05.3",
+          "description": "退款未知阶段不虚报已到账",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。",
+            "现有邻近出票/改签/容量测试不证明本退款或崩溃case，未映射为证据。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C03-06",
+      "title": "改签运营",
+      "cases": [
+        {
+          "id": "C03-06.1",
+          "description": "未决改签显示旧车次、目标车次及事件",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。"
+          ]
+        },
+        {
+          "id": "C03-06.2",
+          "description": "绑定当前事件的确认只推进当前改签",
+          "candidate_test_references": [
+            "tests/test_depth22_rail_resolution.py::test_prior_replay_cannot_modify_next_change",
+            "tests/test_depth22_rail_resolution.py::test_quote_id_required_when_delayed_response_is_ambiguous"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C03-06.3",
+          "description": "已关闭事件再次处理保持同一终态",
+          "candidate_test_references": [
+            "tests/test_depth22_rail_resolution.py::test_exact_replay_and_conflicting_decision"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        }
+      ]
+    },
+    {
+      "id": "C03-07",
+      "title": "消费者边界",
+      "cases": [
+        {
+          "id": "C03-07.1",
+          "description": "用户B GET用户A订单私有详情被拒绝",
+          "candidate_test_references": [
+            "tests/test_sprint3b_rail.py::test_cross_account_rail_order_isolation"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C03-07.2",
+          "description": "用户B POST用户A改签、退款、支付被拒绝且DB/ledger不变",
+          "candidate_test_references": [
+            "tests/test_depth20_api_fulfillment.py::test_signed_in_prebook_cannot_be_claimed_by_another_consumer",
+            "tests/test_depth22_rail_resolution.py::test_quote_id_from_other_order_cannot_dispatch_money"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C03-08",
+      "title": "供应商租户边界",
+      "cases": [
+        {
+          "id": "C03-08.1",
+          "description": "供应商B不可读或处理供应商A订单",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。"
+          ]
+        },
+        {
+          "id": "C03-08.2",
+          "description": "同供应商只读角色不可提交履约或资金动作",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C03-09",
+      "title": "管理角色边界",
+      "cases": [
+        {
+          "id": "C03-09.1",
+          "description": "普通消费者及供应商不得访问admin运营入口",
+          "candidate_test_references": [
+            "tests/test_depth22_rail_resolution.py::test_admin_route_requires_auth_and_conflicts_are_409"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C03-09.2",
+          "description": "admin只读角色不得提交处理操作",
+          "candidate_test_references": [
+            "tests/test_ticket_preinventory_boundaries.py::test_admin_without_order_permission_cannot_resolve_ticket_money"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        }
+      ]
+    },
+    {
+      "id": "C03-10",
+      "title": "并发竞争",
+      "cases": [
+        {
+          "id": "C03-10.1",
+          "description": "同订单两个并发支付最多一次捕获",
+          "candidate_test_references": [
+            "tests/test_next_depth_c03_payment_inventory_races.py::test_committed_payment_root_blocks_cancel_and_expiry_during_capture_handoff"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。",
+            "必须核对最终候选隔离PG原始记录；线程或SQLite不代替PG；进程退出测试使用强制租约到期。"
+          ]
+        },
+        {
+          "id": "C03-10.2",
+          "description": "同订单两个并发退款最多一次退款",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。",
+            "必须核对最终候选隔离PG原始记录；线程或SQLite不代替PG；进程退出测试使用强制租约到期。"
+          ]
+        },
+        {
+          "id": "C03-10.3",
+          "description": "并发改签不能同时消费旧报价或泄漏库存",
+          "candidate_test_references": [
+            "tests/test_depth22_rail_resolution.py::test_concurrent_opposite_decision_never_dispatches_money",
+            "tests/test_next_depth_c03_payment_inventory_races.py::test_full_target_capacity_rejects_before_supplemental_money_or_original_release"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。",
+            "必须核对最终候选隔离PG原始记录；线程或SQLite不代替PG；进程退出测试使用强制租约到期。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C03-11",
+      "title": "崩溃恢复",
+      "cases": [
+        {
+          "id": "C03-11.1",
+          "description": "本地提交前失败无半成订单/资金状态",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "列出的是邻近/部分断言，不能独自覆盖完整case；须补足对应金额、容量、状态或权限矩阵。",
+            "必须核对最终候选隔离PG原始记录；线程或SQLite不代替PG；进程退出测试使用强制租约到期。",
+            "现有邻近出票/改签/容量测试不证明本退款或崩溃case，未映射为证据。"
+          ]
+        },
+        {
+          "id": "C03-11.2",
+          "description": "资金已提交业务回写前中断，重试恢复原操作不重复资金",
+          "candidate_test_references": [
+            "tests/test_depth22_rail_resolution.py::test_process_exit_after_money_recovers",
+            "tests/test_depth22_rail_resolution.py::test_commit_failure_after_money_recovers"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "必须核对最终候选隔离PG原始记录；线程或SQLite不代替PG；进程退出测试使用强制租约到期。"
+          ]
+        },
+        {
+          "id": "C03-11.3",
+          "description": "恢复失败保留UNKNOWN及可追溯事件，不假报完成",
+          "candidate_test_references": [
+            "tests/test_depth22_rail_resolution.py::test_fabricated_money_stays_pending",
+            "tests/test_depth22_rail_resolution.py::test_stale_worker_cannot_commit"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "必须核对最终候选隔离PG原始记录；线程或SQLite不代替PG；进程退出测试使用强制租约到期。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C03-12",
+      "title": "跨端事实",
+      "cases": [
+        {
+          "id": "C03-12.1",
+          "description": "消费者网页、native、admin和所属supplier对同一订单确认/未知/取消状态一致",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。",
+            "API不等于UI；当前浏览器只有机票部分正常旅程，无全部未知/取消/零退款/越权UI或真实native交互。"
+          ]
+        },
+        {
+          "id": "C03-12.2",
+          "description": "零退款与已退款到账使用不同显示且资金净额一致",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。",
+            "API不等于UI；当前浏览器只有机票部分正常旅程，无全部未知/取消/零退款/越权UI或真实native交互。"
+          ]
+        },
+        {
+          "id": "C03-12.3",
+          "description": "消费者正常真实点击搜索→选择→接受适用条款→预订→支付→读取结果，绑定同一订单与实际DB事实",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。",
+            "API不等于UI；当前浏览器只有机票部分正常旅程，无全部未知/取消/零退款/越权UI或真实native交互。"
+          ]
+        },
+        {
+          "id": "C03-12.4",
+          "description": "消费者从同一订单正常点击改签/改期及取消退款，确认当前条款，刷新后金额与状态匹配",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。",
+            "API不等于UI；当前浏览器只有机票部分正常旅程，无全部未知/取消/零退款/越权UI或真实native交互。"
+          ]
+        },
+        {
+          "id": "C03-12.5",
+          "description": "所属供应商与授权管理员从正常菜单进入本模块未决/履约处理，真实提交并读取结果；无权限角色界面和API均拒绝写入",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。",
+            "API不等于UI；当前浏览器只有机票部分正常旅程，无全部未知/取消/零退款/越权UI或真实native交互。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C03-13",
+      "title": "运营处理闭环",
+      "cases": [
+        {
+          "id": "C03-13.1",
+          "description": "未决记录显示原因、处理角色及责任人",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。",
+            "仍须结构化原因、职责、SLA期限与升级、任务派发、资金复核和关闭后复查；note/claim不自动证明全义务。"
+          ]
+        },
+        {
+          "id": "C03-13.2",
+          "description": "超出既定期限记录显示待升级处理",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。",
+            "仍须结构化原因、职责、SLA期限与升级、任务派发、资金复核和关闭后复查；note/claim不自动证明全义务。"
+          ]
+        },
+        {
+          "id": "C03-13.3",
+          "description": "处理关闭后保留原输入、处理人、时间与结果，不删除未知历史",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。",
+            "仍须结构化原因、职责、SLA期限与升级、任务派发、资金复核和关闭后复查；note/claim不自动证明全义务。"
+          ]
+        },
+        {
+          "id": "C03-13.4",
+          "description": "从本模块真实未决事件登记任务并派发给有权限责任人；登记、派发和执行三个状态不可混为完成",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。",
+            "仍须结构化原因、职责、SLA期限与升级、任务派发、资金复核和关闭后复查；note/claim不自动证明全义务。"
+          ]
+        },
+        {
+          "id": "C03-13.5",
+          "description": "受权处理或人工接管后验证订单与资金结果再关闭任务；后续复查记录原事件与前次处理，不静默删除历史",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。",
+            "仍须结构化原因、职责、SLA期限与升级、任务派发、资金复核和关闭后复查；note/claim不自动证明全义务。"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C03-14",
+      "title": "拒绝无副作用",
+      "cases": [
+        {
+          "id": "C03-14.1",
+          "description": "陈旧报价拒绝后订单版本、ledger余额、库存不变",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。"
+          ]
+        },
+        {
+          "id": "C03-14.2",
+          "description": "撤销后延迟请求不能恢复终态",
+          "candidate_test_references": [
+            "tests/test_next_depth_c03_payment_inventory_races.py::test_closed_reservation_wins_after_checkout_guard_before_payment_root"
+          ],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": []
+        },
+        {
+          "id": "C03-14.3",
+          "description": "错误提示指明待核验或重新确认而非声称操作成功",
+          "candidate_test_references": [],
+          "candidate_browser_steps": [],
+          "status": "NOT_VERIFIED_PENDING_FINAL_RAW_EVIDENCE",
+          "limitations": [
+            "本次选择的测试集未识别到直接证明；保持NOT_VERIFIED。"
+          ]
+        }
+      ]
+    }
+  ]
+}

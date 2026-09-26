@@ -160,3 +160,19 @@ def test_completed_refund_receipt_tamper_is_not_replayed_as_success(client):
         op=s.get(m.FlightCouponRefundRow,q['refund_id']);op.result_json={**op.result_json,'refund_amount_minor':1}
     with pytest.raises(ValueError,match='INTEGRITY_INVALID'):refunds.execute(owner,oid,q['refund_id'],confirmation(q))
     assert amounts()==before
+
+
+def test_money_summary_distinguishes_unpaid_authorized_and_captured_then_refunded(client):
+    from tests.test_depth05_flight_parties import auth,create,pay
+    h=auth(client);o,_=create(client,h,2,'ROUND_TRIP');oid=o['order_id']
+    assert o['status']=='PAYMENT_PENDING' and o['money_summary']['captured_minor']==0
+    o=pay(client,h,o);owner=o['account_id'];assert o['money_summary']['captured_minor']==o['total_amount_minor']
+    q=flights.change_quote(owner,oid,changes=[{'leg_index':0,'coupon_ids':[o['coupons'][0]['coupon_id']],'new_departure_date':day(12)}])
+    flights.execute_change(owner,oid,q['quote_id'],consent(q))
+    assert flights.order(owner,oid)['money_summary']['captured_minor']==o['total_amount_minor']
+    flights.admin_external_state(oid,'TICKETED','isolated://money-summary','ops','SUMREF',['SUMMARY-ONE'],q['quote_id'])
+    fresh=flights.order(owner,oid);assert fresh['money_summary']['captured_minor']==o['total_amount_minor']+q['total_due_minor']
+    refund=refunds.quote(owner,oid,[o['coupons'][0]['coupon_id']]);refunds.execute(owner,oid,refund['refund_id'],confirmation(refund))
+    final=flights.order(owner,oid)['money_summary'];assert final['verified']
+    assert final['refunded_minor']==refund['refund_amount_minor']
+    assert final['net_minor']==final['captured_minor']-final['refunded_minor']
