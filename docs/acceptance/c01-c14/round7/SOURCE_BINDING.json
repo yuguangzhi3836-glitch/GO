@@ -1,9 +1,9 @@
 {
   "parent_gate": "3fc5b59e6c3703d94462f763bd22db2bf8315651",
-  "product_commit": "8f66ebfc2c54bd76de91d5062ccb444a7f43179f",
-  "application_git_tree": "85d01481aa5775f2f9e45673cd56786644c7b70f",
+  "product_commit": "afc142e16c050c0000da5a11a312620387be8f79",
+  "application_git_tree": "ac23b75a75325091c5a95434238473a5592468a7",
   "source_files": 1542,
-  "source_tree_sha256": "628dfe93c9c56b2c8f3d76c61399c3ee6ae6fd706237a008ad0f83bf9288c2a6",
+  "source_tree_sha256": "67dca501719f5985ebfcc668c635d051242df99063b8e40440fb39da55f85785",
   "changed_files": [
     {
       "path": ".github/workflows/v70-next-depth-postgres.yml",
@@ -223,9 +223,102 @@
     "errors": 0,
     "skipped": 0
   },
-  "c13": "RUNNING_FIXED_PRODUCT_REVIEW",
+  "c13": "FIXED_WIDTH_CANDIDATE_INDEPENDENT_REVIEW_PENDING",
   "ci": "PENDING_NEW_GATE",
   "deployment": "NOT_RUN",
   "production": "HOLD",
-  "historical_pass_transferred": false
+  "historical_pass_transferred": false,
+  "migration_repair": {
+    "previous_product": "8f66ebfc2c54bd76de91d5062ccb444a7f43179f",
+    "previous_application_tree": "85d01481aa5775f2f9e45673cd56786644c7b70f",
+    "paths": [
+      {
+        "path": "application/alembic/versions/0139_hosted_publication_review.py",
+        "sha": "4d34e7d120a0f48a960cd33b9dfe974c0b412642",
+        "sha256": "d164f43ccc97155a8763d23cb2d1b2714d8483dcb52d94af8fd549c563ac7bff",
+        "bytes": 3963,
+        "existing": true
+      },
+      {
+        "path": "application/tests/test_depth25_migration_history.py",
+        "sha": "667153da5a24a413bb810b212bf3bdd038cf1f7d",
+        "sha256": "67c3a4122f6c45b9de077d25095b7b8cc6ebe3c060ba927871487442bd3895f5",
+        "bytes": 14476,
+        "existing": true
+      }
+    ],
+    "developer_tests": 8,
+    "full_migration_chain": "PENDING_REMOTE_CI",
+    "postgresql_timezone": "Unit reflection-type check, not actual PostgreSQL execution"
+  },
+  "test_fixture_repair": {
+    "parent_product": "f8126454999e51d4eb1a68e5e638e804df4bbbfa",
+    "files": [
+      {
+        "path": "application/tests/test_depth10_disruption_api.py",
+        "git_blob": "a23da5a69ba2808b7001eb72b730cf0060de4602",
+        "sha256": "728bdfc6c1ab3aecd37c50ecd6ef05e0ad877aeb74faa616cca36262ed53a450"
+      },
+      {
+        "path": "application/tests/test_depth48_flight_migration.py",
+        "git_blob": "d785fec1169245f68968d6b9beaa600bba957ccf",
+        "sha256": "6f61d6ab84f59c6ee7ee9133824617f1cbd77d28ee87abc3639a8d87a058c1b3"
+      },
+      {
+        "path": "application/tests/test_parent_implementation_code_review_debt_closure.py",
+        "git_blob": "e6e88cba52c8058f500d9d06a910c063e3725188",
+        "sha256": "1b0c8b8370c69113c40cd8ea30d3528c30b49c439dc9ac39958cafdbc57cbec8"
+      },
+      {
+        "path": "application/tests/test_hosted_direct_inventory_matrix.py",
+        "git_blob": "a68d217d894a1fc348236dc622ce809085890c09",
+        "sha256": "48f268b4fc2167bb9c87205a3a2fa755d1eb98d48fbf1e30b3fbf7b4132fc640"
+      },
+      {
+        "path": "application/tests/test_rc15_aoluguya_supply_truth.py",
+        "git_blob": "3adb069f59a4501515c0d495b9bd07811fffe1a9",
+        "sha256": "0b74d513ae179467de1327db6e8dcf85a82579e942c006bb1ac792f2987c235d"
+      },
+      {
+        "path": "application/tests/test_v70_r4_c01_unknown_episode.py",
+        "git_blob": "6e4e0019c2cd36bfadd8b3012dcbfc1713c169ab",
+        "sha256": "4359c98bd5976afc4b9706592395f810e16173dfcf2607dedbc12ee2cd2c8c81"
+      },
+      {
+        "path": "application/tests/test_supplier_import_migration.py",
+        "git_blob": "a85c222fae9e16f78f3d149cbadeff8ed6a4149a",
+        "sha256": "2db9f2dbff2cd7770460204fb8c736de7f4f0de2f63b1180bd1c744601840696"
+      }
+    ],
+    "local_inventory_cases": 3
+  },
+  "c13_current_execution": {
+    "product": "49965321a151fe082cbc6381341a5beb6edc93e7",
+    "tests": 29,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "postgres_width_repair": {
+    "files": [
+      {
+        "path": "application/src/go_hotel/db/models.py",
+        "git_blob": "ce37274a682f01326644ffd19376033c01ce563b",
+        "sha256": "1f7641b661f7b4d003bb7c55bfbd2e16022972b32d449c7c633d5f295445adb9"
+      },
+      {
+        "path": "application/alembic/versions/0139_hosted_publication_review.py",
+        "git_blob": "ff72873c7d9d39122c254503091ccee7076268b5",
+        "sha256": "bdc4c2e8543f6a3a63b42fd31c92d48acd7880a290da05d0ce7be7605c692cec"
+      },
+      {
+        "path": "application/tests/test_depth25_migration_history.py",
+        "git_blob": "1b4c0e1d263b28fecbc507b046e5653a984fdcf1",
+        "sha256": "45560f57282bc72184de6ab5d87646e214f682a25b21655e28c33d767a70f531"
+      }
+    ],
+    "developer_local_migration_cases": 15,
+    "developer_local_journey_money_cases": 30,
+    "real_postgres": "PENDING_NEW_SHA"
+  }
 }
