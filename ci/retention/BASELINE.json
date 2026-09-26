@@ -636,7 +636,11 @@
       "git_blob": "277c40dcba9e5bfe352a1e4e8af69429d843b37b",
       "reason": "Unified candidate input; independent acceptance pending, no historical PASS transfer"
     },
-    "src/go_hotel/services/payment_sandbox_runtime.py": "5d0a26fc60360078477bb2337687527e3e5ebc08",
+    "src/go_hotel/services/payment_sandbox_runtime.py": {
+      "mode": "100644",
+      "git_blob": "5d0a26fc60360078477bb2337687527e3e5ebc08",
+      "reason": "Payment audit integrity and serial append repair; exact candidate CI and full review required"
+    },
     "src/go_hotel/services/personal_travel_vault.py": {
       "mode": "100644",
       "git_blob": "36f8564cc8b0ab6258676a78ba3bcdd28c347ef6",
@@ -1807,8 +1811,16 @@
       "git_blob": "f93292ab010372eefa15a22d48374af748205303",
       "reason": "Lossless account width migration after actual PostgreSQL full-day capture failures; 7-file repair authorized by user 2026-09-26"
     },
-    "src/go_hotel/services/payment_sandbox_cutover.py": "ab2783c66a0c949b4a2cb42f537b84b2719ce7be",
-    "tests/test_payment_sandbox_audit_integrity.py": "1a17d3824d163bef9fd8b7cbc89581974cd34830"
+    "src/go_hotel/services/payment_sandbox_cutover.py": {
+      "mode": "100644",
+      "git_blob": "ab2783c66a0c949b4a2cb42f537b84b2719ce7be",
+      "reason": "Payment audit integrity and serial append repair; exact candidate CI and full review required"
+    },
+    "tests/test_payment_sandbox_audit_integrity.py": {
+      "mode": "100644",
+      "git_blob": "1a17d3824d163bef9fd8b7cbc89581974cd34830",
+      "reason": "Payment audit integrity and serial append repair; exact candidate CI and full review required"
+    }
   },
   "migration_head": "0140_ledger_account_width",
   "verified_inherited_evidence": {
