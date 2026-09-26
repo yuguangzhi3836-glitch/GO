@@ -101,6 +101,14 @@ def _audit(s,order,op):
     matches=[e.evidence_json['payload'] for e in entries if e.evidence_json['payload'].get('refund_id')==op.refund_id]
     if len(matches)!=1 or matches[0].get('execution_hash')!=op.execution_hash:
         raise ValueError('FLIGHT_COUPON_REFUND_INTEGRITY_INVALID')
+    if op.state=='COMPLETED':
+        completed=list(s.scalars(select(Evidence).where(Evidence.execution_id=='rc20:FLIGHT:'+order.order_id,
+            Evidence.evidence_kind=='COUPON_REFUND_COMPLETED')))
+        receipts=[e.evidence_json['payload'] for e in completed if e.evidence_json['payload'].get('refund_id')==op.refund_id]
+        expected=dict(op.result_json or {})|{'actor_id':op.account_id,'execution_hash':op.execution_hash}
+        if len(receipts)!=1 or receipts[0]!=expected:
+            raise ValueError('FLIGHT_COUPON_REFUND_INTEGRITY_INVALID')
+        _money(s,op,op.result_json)
 
 
 def _money(s,op,result):

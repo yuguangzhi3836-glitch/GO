@@ -98,3 +98,65 @@ def test_selected_coupons_cannot_borrow_other_leg_or_duplicate_selection(client)
         r=client.post(f'/v1/flights/orders/{oid}/change-quote',headers=h,json={'changes':[{'leg_index':0,'coupon_ids':ids,'new_departure_date':day(12)}]})
         assert r.status_code==409,r.text
     assert amounts()==before
+
+
+def test_partial_refund_concurrent_commands_are_fenced_before_money(client,monkeypatch):
+    from threading import Event
+    owner,o,_=booked(client);oid=o['order_id']
+    q=refunds.quote(owner,oid,[o['coupons'][0]['coupon_id']])
+    other=refunds.quote(owner,oid,[o['coupons'][1]['coupon_id']])
+    entered,release=Event(),Event();execute=refunds.money.execute_refund_plan
+    def held(*args,**kwargs):
+        entered.set();assert release.wait(10);return execute(*args,**kwargs)
+    monkeypatch.setattr(refunds.money,'execute_refund_plan',held)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first=pool.submit(refunds.execute,owner,oid,q['refund_id'],confirmation(q))
+        try:
+            assert entered.wait(10)
+            with pytest.raises(ValueError,match='PROCESSING'):refunds.execute(owner,oid,q['refund_id'],confirmation(q))
+            with pytest.raises(ValueError,match='STATE_INVALID'):refunds.execute(owner,oid,other['refund_id'],confirmation(other))
+            assert amounts()['REFUND']==0
+        finally:release.set()
+        assert first.result(timeout=10)['status']=='REFUND_COMPLETED'
+    assert amounts()['REFUND']==q['refund_amount_minor']
+
+
+def test_partial_refund_real_process_death_recovers_without_second_money(client):
+    import os,subprocess,sys,json
+    from go_hotel.db.session import engine
+    owner,o,_=booked(client);oid=o['order_id'];q=refunds.quote(owner,oid,[o['coupons'][0]['coupon_id']])
+    env=os.environ.copy();env['DATABASE_URL']=engine.url.render_as_string(hide_password=False)
+    env['COUPON_RECOVERY_INPUT']=json.dumps([owner,oid,q['refund_id'],confirmation(q)])
+    script='''import os,json
+from go_hotel.flight import coupon_refunds as r
+execute=r.money.execute_refund_plan
+def crash(*args,**kwargs):
+    execute(*args,**kwargs)
+    os._exit(88)
+r.money.execute_refund_plan=crash
+r.execute(*json.loads(os.environ['COUPON_RECOVERY_INPUT']))
+'''
+    result=subprocess.run([sys.executable,'-c',script],env=env,capture_output=True,text=True,timeout=30)
+    assert result.returncode==88,result.stderr
+    before=amounts();assert before['REFUND']==q['refund_amount_minor']
+    assert flights.order(owner,oid)['status']=='REFUND_PENDING'
+    with SessionLocal.begin() as s:s.get(m.FlightCouponRefundRow,q['refund_id']).lease_until_ms=0
+    assert refunds.execute(owner,oid,q['refund_id'],confirmation(q))['status']=='REFUND_COMPLETED'
+    assert amounts()==before
+
+
+def test_partial_quote_expiry_uses_database_clock_and_zero_money_effect(client,monkeypatch):
+    owner,o,_=booked(client);q=refunds.quote(owner,o['order_id'],[o['coupons'][0]['coupon_id']]);before=amounts()
+    monkeypatch.setattr(refunds,'db_now_ms',lambda s:q['expires_ms']+1)
+    with pytest.raises(ValueError,match='EXPIRED'):refunds.execute(owner,o['order_id'],q['refund_id'],confirmation(q))
+    assert amounts()==before
+    assert flights.order(owner,o['order_id'])['status']=='TICKETED'
+
+
+def test_completed_refund_receipt_tamper_is_not_replayed_as_success(client):
+    owner,o,_=booked(client);oid=o['order_id'];q=refunds.quote(owner,oid,[o['coupons'][0]['coupon_id']])
+    refunds.execute(owner,oid,q['refund_id'],confirmation(q));before=amounts()
+    with SessionLocal.begin() as s:
+        op=s.get(m.FlightCouponRefundRow,q['refund_id']);op.result_json={**op.result_json,'refund_amount_minor':1}
+    with pytest.raises(ValueError,match='INTEGRITY_INVALID'):refunds.execute(owner,oid,q['refund_id'],confirmation(q))
+    assert amounts()==before
