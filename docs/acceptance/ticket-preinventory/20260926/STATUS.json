@@ -583,5 +583,20 @@
       ],
       "reason": "Current-candidate isolated PostgreSQL evidence and remaining crash windows pending; old candidate PASS not transferred."
     }
-  ]
+  ],
+  "development_candidate": {
+    "pr": 265,
+    "branch": "integration/tickets-preinventory-20260926",
+    "previous_product_commit": "549263ae86185dbed571c164026e484cd339ea33",
+    "sqlite": {
+      "tests": 217,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "independent": false
+    },
+    "postgres_status": "CURRENT_CANDIDATE_PENDING",
+    "superseded_postgres_run": 36242498675,
+    "failed_infrastructure_run": 36242406400
+  }
 }

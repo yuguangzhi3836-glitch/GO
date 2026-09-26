@@ -250,14 +250,17 @@ class FlightService:
             pending=s.scalar(select(FlightChangeQuoteRow).where(FlightChangeQuoteRow.order_id==order_id,FlightChangeQuoteRow.status=='PENDING_SUPPLIER').order_by(FlightChangeQuoteRow.created_at.desc()))
             if state=='TICKETED' and o.status=='UNKNOWN_EXTERNAL_STATE' and pending:
                 if not str(supplier_reference or '').strip() or not ticket_numbers: raise ValueError('FLIGHT_RECONCILIATION_SUPPLIER_REFERENCE_REQUIRED')
+                from go_hotel.services.flight_change_resolution import _tickets, _printable_token
+                _tickets(ticket_numbers,len(o.passengers)*len(o.current_itinerary))
+                _printable_token(supplier_reference,16,'FLIGHT_SUPPLIER_REFERENCE_INVALID')
                 due=pending.total_due_minor; qid=pending.quote_id
             elif state=='FAILED' and o.status=='UNKNOWN_EXTERNAL_STATE' and pending:
                 due=pending.total_due_minor; qid=pending.quote_id
             else: due=0;qid=None
         if qid and state=='TICKETED': vertical_money_bridge.capture_adjustment('FLIGHT',qid,due,evidence_reference)
         if qid and state=='FAILED': vertical_money_bridge.release_adjustment('FLIGHT',qid,due,evidence_reference)
-        with SessionLocal.begin() as sess:
-            o=sess.get(FlightOrderRow,order_id)
+        with transaction(SessionLocal) as sess:
+            o=sess.get(FlightOrderRow,order_id,with_for_update=True)
             if not o: raise ValueError("FLIGHT_ORDER_NOT_FOUND")
             pending=sess.scalar(select(FlightChangeQuoteRow).where(FlightChangeQuoteRow.order_id==order_id,FlightChangeQuoteRow.status=='PENDING_SUPPLIER').order_by(FlightChangeQuoteRow.created_at.desc()))
             if state=="UNKNOWN_EXTERNAL_STATE":
@@ -268,7 +271,10 @@ class FlightService:
                 if pending:
                     if not str(supplier_reference or '').strip() or not ticket_numbers: raise ValueError('FLIGHT_RECONCILIATION_SUPPLIER_REFERENCE_REQUIRED')
                     it=list(o.current_itinerary);it[0]={**it[0],"departure_date":pending.new_departure_date,"flight_number":pending.new_flight_number};o.current_itinerary=it;o.total_amount_minor+=pending.total_due_minor;pending.status='EXECUTED';o.pnr=supplier_reference;o.ticket_numbers=ticket_numbers;kind='CHANGE_RECONCILED_TO_TICKETED'
-                else: kind="RECONCILED_TO_TICKETED"
+                else:
+                    from go_hotel.services.flight_change_resolution import validate_existing_tickets
+                    validate_existing_tickets(o)
+                    kind="RECONCILED_TO_TICKETED"
                 o.status="TICKETED"
             elif state=="FAILED":
                 if o.status!="UNKNOWN_EXTERNAL_STATE": raise ValueError("FLIGHT_RECONCILIATION_NOT_REQUIRED")

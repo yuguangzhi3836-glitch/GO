@@ -58,6 +58,15 @@ def _tickets(values, count):
     return list(values)
 
 
+def validate_existing_tickets(order):
+    """Observation-only recovery cannot create an initial supplier issuance."""
+    count = len(order.passengers or []) * len(order.current_itinerary or [])
+    if not count:
+        raise ValueError('FLIGHT_EXISTING_TICKETS_INVALID')
+    _tickets(order.ticket_numbers, count)
+    _printable_token(order.pnr, 16, 'FLIGHT_SUPPLIER_REFERENCE_INVALID')
+
+
 def _identity(op):
     return {'quote_id': op.quote_id, 'order_id': op.order_id, 'account_id': op.account_id,
             'actor_id': op.actor_id, 'request': op.request_json, 'terms': op.terms_json}
@@ -175,6 +184,8 @@ def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ti
             else:
                 if o.status != 'UNKNOWN_EXTERNAL_STATE':
                     raise ValueError('FLIGHT_RECONCILIATION_NOT_REQUIRED')
+                if state == 'TICKETED':
+                    validate_existing_tickets(o)
                 o.status = state
                 kind = 'RECONCILED_TO_' + state
             _event(s, o, kind, evidence_reference, {'actor': actor, 'native_status': o.status})

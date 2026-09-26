@@ -174,3 +174,16 @@ def test_delayed_checkout_writeback_does_not_regress_confirmed_tickets(monkeypat
             finish.set()
         assert first.result(timeout=15)['status']=='TICKETED'
     assert svc.order('owner',oid)['ticket_numbers']==['ISOLATED-1']
+
+
+def test_admin_cannot_invent_initial_flight_tickets_from_unknown_supplier():
+    from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as fulfillment
+    svc, oid = pending_order('FLIGHT')
+    svc.checkout('owner',oid,'isolated')
+    fid, body = supplier_fact(oid,[])
+    body['state']='UNKNOWN_EXTERNAL_STATE'
+    fulfillment.record_supplier_fact(fid,body)
+    before=business_facts()
+    with pytest.raises(ValueError, match='FLIGHT_.*(TICKET|REFERENCE).*INVALID'):
+        svc.admin_external_state(oid,'TICKETED','isolated://admin-check','order-operator')
+    assert business_facts()==before
