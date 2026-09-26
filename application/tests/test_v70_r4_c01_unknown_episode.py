@@ -173,6 +173,14 @@ def test_only_go_admin_can_open_episode_through_internal_api(client, monkeypatch
     token = identity_service.login(
         'c01-ops-admin', 'C01-Ops-Admin-Password123!',
     )['access_token']
+    # Persistent admin permission alone does not grant another hotel's operations.
+    from tests.hosted_review_support import provision
+    from go_hotel.services.hosted_operation_authority import reservation_hotel
+    with SessionLocal() as session:
+        authorization=session.get(Authorization,authorization_id)
+        hotel=reservation_hotel(session,authorization.hosted_reservation_id)
+    assert client.post(path,headers={'Authorization':'Bearer '+token},json=body).status_code==403
+    provision(hotel,identity_service.authenticate(token))
     response = client.post(
         path, headers={'Authorization': 'Bearer ' + token}, json=body,
     )

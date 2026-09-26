@@ -19,7 +19,7 @@ def test_import_migration_roundtrip_protects_authorization_history(tmp_path, mon
     command.upgrade(cfg, 'head')
     with sqlite3.connect(path) as session:
         revision = session.execute('SELECT version_num FROM alembic_version').fetchone()[0]
-        assert revision == '0138_supplier_library_import' and len(revision) <= 32
+        assert revision == '0139_hosted_publication_review' and len(revision) <= 32
         session.execute("INSERT INTO hotel_partner_import_authorization "
                         "(authorization_id, property_id, supplier_id, provider, state_hash, status, requested_by, created_at, expires_at) "
                         "VALUES ('auth-1', 'property-1', 'supplier-1', 'CTRIP', 'opaque-test-hash', 'CONSUMED', 'owner', '2026-09-18', '2026-09-19')")
@@ -27,7 +27,8 @@ def test_import_migration_roundtrip_protects_authorization_history(tmp_path, mon
         command.downgrade(cfg, '0137_hosted_unknown_episode')
     with sqlite3.connect(path) as session:
         assert session.execute('SELECT authorization_id FROM hotel_partner_import_authorization').fetchone() == ('auth-1',)
-        assert session.execute('SELECT version_num FROM alembic_version').fetchone()[0] == revision
+        # Empty 0139 is rolled back; 0138 refuses losing the authorization row.
+        assert session.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0138_supplier_library_import'
         session.execute('DELETE FROM hotel_partner_import_authorization')
     command.downgrade(cfg, '0137_hosted_unknown_episode')
     with sqlite3.connect(path) as session:
