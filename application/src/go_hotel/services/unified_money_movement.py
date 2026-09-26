@@ -175,5 +175,5 @@ class UnifiedMoneyMovementService:
  def _post(self,s,i,m):
   tx=m.money_movement_id;reverse=m.movement_type in {'REFUND','COMPENSATION','PAYOUT','RELEASE'};pairs=[(f'PAYMENT_CLEARING:{i.selected_channel}','DEBIT'),(business_ledger_account_code(i.business_type,i.business_id),'CREDIT')]
   if reverse:pairs=[(a,'CREDIT' if d=='DEBIT' else 'DEBIT') for a,d in pairs]
-  for account,direction in pairs:s.add(Ledger(ledger_entry_id=ident('ole'),transaction_id=tx,payment_intent_id=i.payment_intent_id,account_code=account,direction=direction,amount_minor=m.amount_minor,currency=m.currency,entry_type=m.movement_type,evidence_hash=digest({'movement':m.money_movement_id}),created_at=now()))
+  for account,direction in pairs:s.add(Ledger(ledger_entry_id=ident('ole'),transaction_id=tx,payment_intent_id=i.payment_intent_id,account_code=account,direction=direction,amount_minor=m.amount_minor,currency=m.currency,entry_type=m.movement_type,evidence_hash=digest({'movement':m.money_movement_id}),created_at=m.created_at))
 unified_money_movement_service=UnifiedMoneyMovementService()

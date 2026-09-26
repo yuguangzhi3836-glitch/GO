@@ -58,7 +58,7 @@ def terms(rules,check_in,boundary,created_at,at,confirmed_at=None):
     elif anchor=='ORDER_CREATED':anchor_time=created_at
     else:raise ValueError('INVALID_COOLING_OFF_ANCHOR')
     end=anchor_time+timedelta(minutes=rules['cooling_off_minutes'])
-    cooling=at<min(end,boundary)
+    cooling=at<end if anchor=='HOTEL_CONFIRMED' else at<min(end,boundary)
     tiers=rules['cancellation_tiers']
     if 'min_hours' in tiers[0]:
         hours=max(0,(boundary-at).total_seconds()/3600)

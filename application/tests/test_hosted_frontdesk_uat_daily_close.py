@@ -31,6 +31,7 @@ def test_guest_data_is_masked_and_unmask_is_manager_audited():
  with SessionLocal() as s:assert s.query(HostedGuestAccessAuditRow).count()==2
 def test_phone_duplicate_requires_review_evidence_and_unifies_order():
  h,o=setup();roles(h);first=svc.phone_reserve('aoluguya-harbin',body(o),'p1',FRONTDESK)
+ assert svc.phone_reserve('aoluguya-harbin',body(o),'p1',FRONTDESK)['hosted_reservation_id']==first['hosted_reservation_id']
  with pytest.raises(ValueError,match='POSSIBLE_DUPLICATE_REQUIRES_REVIEW'):svc.phone_reserve('aoluguya-harbin',body(o),'p2',FRONTDESK)
  second=svc.phone_reserve('aoluguya-harbin',{**body(o),'duplicate_review_evidence':'hotel://verified-different-guest'},'p2',FRONTDESK);assert first['hosted_reservation_id']!=second['hosted_reservation_id']
 def test_reject_cancel_reschedule_require_manager_maker_checker():
@@ -39,8 +40,10 @@ def test_reject_cancel_reschedule_require_manager_maker_checker():
  done=svc.approve_action(a['action_approval_id'],{'evidence_reference':'manager://approved'},MANAGER);assert done['reservation']['reservation_state']=='HOTEL_REJECTED' and done['payment_live'] is False
 def test_sla_manager_alert_and_printable_arrival_voucher():
  h,o=setup();roles(h);r=ops.reserve('aoluguya-harbin',body(o),'r1');e=svc.escalate(h,FRONTDESK);v=svc.voucher(r['hosted_reservation_id'],FRONTDESK);assert e['escalations_created']==1 and e['manager_alert_state']=='QUEUED_NOT_SENT' and v['printable'] and v['payment_captured'] is False
-def test_daily_close_is_idempotent_and_contains_zero_payment_truth():
- h,o=setup();roles(h);ops.reserve('aoluguya-harbin',body(o),'r1');a=svc.daily_close(h,{'business_date':'2026-09-01'},MANAGER);b=svc.daily_close(h,{'business_date':'2026-09-01'},MANAGER);assert a['daily_close_id']==b['daily_close_id'] and a['exception_summary_json']['payment_transactions']==0 and len(a['evidence_hash'])==64
+def test_historical_close_without_inventory_checkpoint_is_held_not_false_zero_pass():
+ h,o=setup();roles(h);ops.reserve('aoluguya-harbin',body(o),'r1');a=svc.daily_close(h,{'business_date':'2026-09-01'},MANAGER);b=svc.daily_close(h,{'business_date':'2026-09-01'},MANAGER);assert a['daily_close_id'] is None and b['daily_close_id'] is None and a['exception_summary_json']['payment_transactions']==0 and len(a['evidence_hash'])==64
+ assert a['exception_summary_json']['state']=='BLOCKED'
+ assert any(x.startswith('HOLD_HISTORICAL_INVENTORY_UNPROVABLE:') for x in a['exception_summary_json']['blockers'])
 def test_uat_requires_manager_evidence_and_all_scenarios():
  h,_=setup();roles(h)
  with pytest.raises(ValueError,match='VALID_UAT_PASS_EVIDENCE_REQUIRED'):svc.uat(h,{'scenario_key':'CONFIRM','result':'FAIL'},MANAGER)

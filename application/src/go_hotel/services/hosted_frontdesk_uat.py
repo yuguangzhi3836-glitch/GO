@@ -44,11 +44,13 @@ class Service:
    offer=s.get(HostedDirectRoomOfferRow,r.hosted_offer_id);role=self._role(s,offer.hosted_hotel_id,actor,ROLES);unmask=bool(b.get('unmask')) and role=='DUTY_MANAGER'
    s.add(HostedGuestAccessAuditRow(guest_access_audit_id=ident('hgaa'),hosted_reservation_id=reservation_id,staff_id=actor,access_mode='UNMASKED' if unmask else 'MASKED',reason=b['reason'],occurred_at=now()));s.commit();return {'guest_name':r.guest_name if unmask else masked(r.guest_name),'guest_contact':r.guest_contact if unmask else masked(r.guest_contact),'access_mode':'UNMASKED' if unmask else 'MASKED'}
  def phone_reserve(self,slug,b,key,actor):
-  with SessionLocal() as s:
-   h=s.scalar(select(HostedDirectHotelRow).where(HostedDirectHotelRow.page_slug==slug));self._role(s,h.hosted_hotel_id,actor,{'FRONT_DESK','RESERVATIONS'})
+  with managed_session() as s:
+   h=s.scalar(select(HostedDirectHotelRow).where(HostedDirectHotelRow.page_slug==slug).with_for_update());self._role(s,h.hosted_hotel_id,actor,{'FRONT_DESK','RESERVATIONS'})
+   old=s.scalar(select(HostedDirectReservationRow).where(HostedDirectReservationRow.idempotency_key==key))
+   if old:return ops.reserve(slug,b,key,'PHONE',actor,_session=s)
    duplicate=s.scalar(select(HostedDirectReservationRow).where(HostedDirectReservationRow.hosted_offer_id==b['hosted_offer_id'],HostedDirectReservationRow.guest_contact==b['guest_contact'],HostedDirectReservationRow.check_in==b['check_in'],HostedDirectReservationRow.check_out==b['check_out']))
    if duplicate and not b.get('duplicate_review_evidence'):raise ValueError('POSSIBLE_DUPLICATE_REQUIRES_REVIEW')
-  return ops.reserve(slug,b,key,'PHONE',actor)
+   result=ops.reserve(slug,b,key,'PHONE',actor,_session=s);s.commit();return result
  def request_action(self,reservation_id,b,actor):
   if b.get('action_type') not in ('REJECT','CANCEL','RESCHEDULE'):raise ValueError('GOVERNED_ACTION_REQUIRED')
   from copy import deepcopy
@@ -117,11 +119,8 @@ class Service:
   with SessionLocal() as s:
    r=s.get(HostedDirectReservationRow,reservation_id);offer=s.get(HostedDirectRoomOfferRow,r.hosted_offer_id);self._role(s,offer.hosted_hotel_id,actor,ROLES);nights=s.query(HostedReservationNightRow).filter_by(hosted_reservation_id=reservation_id).count();return {'voucher_type':'ARRIVAL_CONFIRMATION','printable':True,'reservation_id':reservation_id,'guest_name':masked(r.guest_name),'room_name':offer.room_name,'check_in':r.check_in,'check_out':r.check_out,'nights':nights,'amount_minor':r.amount_minor,'payment_state':r.payment_state,'payment_captured':False}
  def daily_close(self,hotel_id,b,actor):
-  business_date=b.get('business_date') or date.today().isoformat()
-  with SessionLocal() as s:
-   self._role(s,hotel_id,actor,{'DUTY_MANAGER'});old=s.scalar(select(HostedDailyCloseRow).where(HostedDailyCloseRow.hosted_hotel_id==hotel_id,HostedDailyCloseRow.business_date==business_date))
-   if old:return out(old)
-   pool_ids=list(s.scalars(select(HostedDirectInventoryPoolRow.inventory_pool_id).where(HostedDirectInventoryPoolRow.hosted_hotel_id==hotel_id)).all());days=s.scalars(select(HostedInventoryDayRow).where(HostedInventoryDayRow.inventory_pool_id.in_(pool_ids),HostedInventoryDayRow.stay_date==business_date)).all() if pool_ids else [];offer_ids=list(s.scalars(select(HostedDirectRoomOfferRow.hosted_offer_id).where(HostedDirectRoomOfferRow.hosted_hotel_id==hotel_id)).all());rows=s.scalars(select(HostedDirectReservationRow).where(HostedDirectReservationRow.hosted_offer_id.in_(offer_ids))).all() if offer_ids else [];states={k:sum(x.reservation_state==k for x in rows) for k in sorted({x.reservation_state for x in rows})};inv={'total':sum(x.capacity_total for x in days),'available':sum(x.capacity_available for x in days)};exc={'pending':states.get('PENDING_HOTEL_CONFIRMATION',0),'payment_transactions':0,'refund_transactions':0};payload={'inventory':inv,'reservations':states,'exceptions':exc};digest=hashlib.sha256(json.dumps(payload,sort_keys=True).encode()).hexdigest();r=HostedDailyCloseRow(daily_close_id=ident('hdc'),hosted_hotel_id=hotel_id,business_date=business_date,inventory_snapshot_json=inv,reservation_summary_json=states,exception_summary_json=exc,closed_by=actor,evidence_hash=digest,closed_at=now());s.add(r);s.commit();return out(r)
+  from go_hotel.services.hosted_business_day import close
+  return close(hotel_id,b,actor,self._role)
  def uat(self,hotel_id,b,actor):
   if b.get('scenario_key') not in UAT or b.get('result')!='PASS' or not b.get('evidence_reference'):raise ValueError('VALID_UAT_PASS_EVIDENCE_REQUIRED')
   with SessionLocal() as s:

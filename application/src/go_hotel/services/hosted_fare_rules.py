@@ -143,7 +143,7 @@ def calculate(s,r,stay,guest,a,snap,action):
     value=basis(s,r)
     fee=value['current_room_value_minor']*fee_bps//10000
     expiry=min(t+timedelta(minutes=10),deadline) if action=='CANCEL_FOR_REFUND' else t+timedelta(minutes=10)
-    if cooling:expiry=min(expiry,clock['cooling_end'],boundary)
+    if cooling:expiry=min(expiry,clock['cooling_end']) if clock['anchor']=='HOTEL_CONFIRMED' else min(expiry,clock['cooling_end'],boundary)
     if action=='CANCEL_FOR_REFUND':
         for edge in clock['edges']:
             if edge>t:expiry=min(expiry,edge)
