@@ -23,7 +23,7 @@ jobs:
           POSTGRES_DB: go_tickets_isolated
         ports: ['5432:5432']
         options: >-
-          --health-cmd 'pg_isready -U go_ci -d go_tickets_isolated'
+          --health-cmd "pg_isready -U go_ci -d go_tickets_isolated"
           --health-interval 5s --health-timeout 5s --health-retries 12
     env:
       APP_ENV: test
