@@ -1,3 +1,4 @@
+from tests.hosted_review_support import legacy_publication,fare_hash
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date,datetime,timedelta,timezone
 import pytest
@@ -18,12 +19,13 @@ from tests.test_sprint3a_flight import auth
 def reservation(client):
     headers=auth(client);hotel=booking.create_hotel({'supplier_name':'哈尔滨敖麓谷雅酒店'},'isolated-admin')
     configure_official_hotel();seed_demo_inventory(hotel['hosted_hotel_id'],days=8)
+    legacy_publication(hotel['hosted_hotel_id'])
     cin=(date.today()+timedelta(days=1)).isoformat();cout=(date.today()+timedelta(days=3)).isoformat()
     available=ops.availability('aoluguya-harbin',{'check_in':cin,'check_out':cout,'adults':1})
     offer=available['items'][0]
     r=client.post('/v1/direct/aoluguya-harbin/reservations',headers={**headers,'Idempotency-Key':'direct-reserve'},
         json={'hosted_offer_id':offer['hosted_offer_id'],'check_in':cin,'check_out':cout,'guest_name':'TEST GUEST',
-        'guest_contact':'13800000000','expected_total_minor':offer['total_amount_minor']})
+        'guest_contact':'13800000000','expected_total_minor':offer['total_amount_minor'],'expected_fare_rule_hash':fare_hash(offer['hosted_offer_id'])})
     assert r.status_code==200,r.text
     row=r.json()['data']
     with SessionLocal() as s:account=s.get(Stay,row['hosted_reservation_id']).created_by

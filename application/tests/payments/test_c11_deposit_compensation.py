@@ -104,7 +104,7 @@ def test_increase_after_compensation_is_hold(obligation,settled):
     case=damage.appeal(OWNER,'deposit-order',first['case_id'],'new-appeal',first['case_version'],'Review',ev('e'))
     damage.review_appeal(principal('another-checker'),'deposit-order',case['case_id'],'upward',case['version'],2000,'New evidence',ev('f'))
     decision=authority.decision_preview(CHECKER,'deposit-order',obligation['obligation_id'],case['case_id'])
-    with pytest.raises(ValueError,match='REDUCTION_REQUIRED'):execute(obligation,decision)
+    with pytest.raises(ValueError,match='COMPENSATION_INCREASE_FORBIDDEN'):execute(obligation,decision)
     assert service.status(OWNER,*args(obligation))['net_captured_minor']==1000
 
 

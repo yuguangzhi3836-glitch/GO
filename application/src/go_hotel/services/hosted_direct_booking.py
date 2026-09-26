@@ -17,8 +17,14 @@ class HostedDirectBookingService:
    r=HostedDirectHotelRow(hosted_hotel_id=ident('hdh'),supplier_name=b['supplier_name'],page_slug=b.get('page_slug','aoluguya-harbin'),city='哈尔滨',contact_json=b.get('contact',{}),state='DRAFT',updated_at=now());s.add(r);s.flush();s.add(HostedDirectPaymentReadinessRow(hosted_hotel_id=r.hosted_hotel_id,provider='ALIPAY',merchant_account_name='哈尔滨敖麓谷雅酒店',application_state='SANDBOX_APPLICATION_NOT_CREATED',sandbox_app_id_reference=None,kms_reference=None,blockers_json=['ALIPAY_OPEN_PLATFORM_APPLICATION_REQUIRED','SANDBOX_APP_ID_REQUIRED','KMS_REFERENCE_REQUIRED'],updated_at=now()));s.commit();return out(r)
  def publish(self,hotel_id,actor):
   with SessionLocal() as s:
-   h=s.get(HostedDirectHotelRow,hotel_id)
+   h=s.get(HostedDirectHotelRow,hotel_id,with_for_update=True)
    if not h:raise ValueError('HOSTED_HOTEL_NOT_FOUND')
+   from go_hotel.services.hosted_publication import require_publication
+   require_publication(s,hotel_id)
+   from go_hotel.security.service import Principal
+   if isinstance(actor,Principal):
+    from go_hotel.services.hosted_operation_authority import scoped
+    scoped(s,actor,hotel_id,'admin:rules')
    count=s.scalar(select(func.count()).select_from(HostedDirectRoomOfferRow).where(HostedDirectRoomOfferRow.hosted_hotel_id==hotel_id,HostedDirectRoomOfferRow.state=='ACTIVE'))
    if not count:raise ValueError('ACTIVE_ROOM_OFFER_REQUIRED')
    h.state='PUBLISHED_REQUEST_ONLY';h.updated_at=now();s.commit();return out(h)
@@ -31,8 +37,10 @@ class HostedDirectBookingService:
   with SessionLocal() as s:
    h=s.scalar(select(HostedDirectHotelRow).where(HostedDirectHotelRow.page_slug==slug,HostedDirectHotelRow.state=='PUBLISHED_REQUEST_ONLY'))
    if not h:raise ValueError('DIRECT_PAGE_NOT_PUBLISHED')
+   from go_hotel.services.hosted_publication import require_publication
+   publication=require_publication(s,h.hosted_hotel_id)
    offers=s.scalars(select(HostedDirectRoomOfferRow).where(HostedDirectRoomOfferRow.hosted_hotel_id==h.hosted_hotel_id,HostedDirectRoomOfferRow.state=='ACTIVE')).all();pay=s.get(HostedDirectPaymentReadinessRow,h.hosted_hotel_id)
-   return {'hotel':out(h),'offers':[out(x) for x in offers],'booking_mode':'RESERVATION_REQUEST_ONLY','payment':out(pay),'payment_available':False}
+   return {'hotel':out(h),'offers':[out(x) for x in offers],'media':[{'media_asset_id':x['media_asset_id'],'role':x['role'],'room':x['room'],'url':f"/v1/direct/{slug}/media/{x['media_asset_id']}"} for x in publication.manifest_json['media']],'publication_hash':publication.manifest_hash,'booking_mode':'RESERVATION_REQUEST_ONLY','payment':out(pay),'payment_available':False}
  def reserve(self,slug,b,key):
   if not key:raise ValueError('IDEMPOTENCY_KEY_REQUIRED')
   try:cin=date.fromisoformat(b['check_in']);cout=date.fromisoformat(b['check_out'])
@@ -43,6 +51,8 @@ class HostedDirectBookingService:
    if old:return out(old)
    h=s.scalar(select(HostedDirectHotelRow).where(HostedDirectHotelRow.page_slug==slug,HostedDirectHotelRow.state=='PUBLISHED_REQUEST_ONLY'));o=s.get(HostedDirectRoomOfferRow,b['hosted_offer_id'])
    if not h or not o or o.hosted_hotel_id!=h.hosted_hotel_id or o.state!='ACTIVE':raise ValueError('ACTIVE_HOSTED_OFFER_REQUIRED')
+   from go_hotel.services.hosted_publication import require_publication
+   require_publication(s,h.hosted_hotel_id)
    v=s.scalar(select(HostedDirectRateVariantRow).where(HostedDirectRateVariantRow.hosted_offer_id==o.hosted_offer_id))
    if v:
     changed=s.execute(update(HostedDirectInventoryPoolRow).where(HostedDirectInventoryPoolRow.inventory_pool_id==v.inventory_pool_id,HostedDirectInventoryPoolRow.capacity_available>0).values(capacity_available=HostedDirectInventoryPoolRow.capacity_available-1,updated_at=now())).rowcount

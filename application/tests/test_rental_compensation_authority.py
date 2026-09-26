@@ -98,10 +98,12 @@ def test_historical_compensation_authority_survives_later_pending_and_upward_rev
     with SessionLocal.begin() as s,pytest.raises(ValueError,match='DECISION_HELD'):
         authority.resolve_compensation(s,oid,a['obligation_id'],cid,5,reduced['decision_hash'])
     damage.review_appeal(principal('reviewer3'),oid,cid,'review2',6,5000,'Upward reconsideration',ev('b'))
+    current=authority.compensation_preview(CHECKER,oid,a['obligation_id'],cid)
+    # Current 5000 remains below the original 8000 decision. C11 separately
+    # refuses any target above the actual post-refund net captured amount.
+    assert current['awarded_minor']==5000 and current['case_version']==7
     with SessionLocal.begin() as s:
-        assert authority.resolve_compensation_history(s,oid,a['obligation_id'])==[reduced]
-    with pytest.raises(ValueError,match='REDUCTION_REQUIRED'):
-        authority.compensation_preview(CHECKER,oid,a['obligation_id'],cid)
+        assert authority.resolve_compensation_history(s,oid,a['obligation_id'])==[reduced,current]
 
 
 def test_multiple_historical_reductions_preserve_exact_current_hash_at_each_revision(case):

@@ -38,6 +38,7 @@ def approval_body(snapshot,decision='APPROVE'):
 def setup_authority(hotel,monkeypatch):
  monkeypatch.setenv('GO_HOSTED_CONTENT_AUTHORITY_MODE','ISOLATED_FIXTURE')
  maker,_=authenticated('content-maker');checker,_=authenticated('content-checker')
+ provision(hotel,maker)
  binding=provision(hotel,checker)
  return maker,checker,binding
 
@@ -91,7 +92,6 @@ def test_unbound_wrong_hotel_and_maker_cannot_approve(context):
  other=booking.create_hotel({'supplier_name':'哈尔滨敖麓谷雅酒店','page_slug':'other'},'fixture')['hosted_hotel_id']
  provision(other,unbound)
  with pytest.raises(PermissionError,match='SCOPED_AUTHORITY'):svc.approve(snap['content_snapshot_id'],approval_body(snap),unbound)
- provision(hotel,maker)
  with pytest.raises(PermissionError,match='MAKER_CHECKER'):svc.approve(snap['content_snapshot_id'],approval_body(snap),maker)
 
 

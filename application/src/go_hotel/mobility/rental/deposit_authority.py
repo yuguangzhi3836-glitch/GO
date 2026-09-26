@@ -340,7 +340,11 @@ def _compensation_fact(fact, events, *, require_reduction=True):
             prior_facts.append({'case_version': case['version'], 'decision_hash': historical_hash,
                                 'awarded_minor': case['awarded_minor'], 'reviewer_id': reviewer})
         prior_reviewers.add(reviewer); previous_version = case['version']
-    if fact['awarded_minor'] >= history[-2]['award_minor']:
+    # A subsequent appeal may maintain a reduction before C11 has paid it.
+    # Authority follows the latest valid target and the entire decision lineage;
+    # C11 separately proves the actual capture and subtracts confirmed refunds.
+    # Comparing only the adjacent decision would erase an outstanding liability.
+    if not any(fact['awarded_minor'] < prior['award_minor'] for prior in history[:-1]):
         if not require_reduction: return None
         raise ValueError('DEPOSIT_COMPENSATION_REDUCTION_REQUIRED')
     return {**fact, 'prior_decisions': prior_facts, 'reviewer_id': history[-1]['reviewer_id'],

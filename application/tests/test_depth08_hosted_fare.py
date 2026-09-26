@@ -1,3 +1,4 @@
+from tests.hosted_review_support import legacy_publication
 """Supplier snapshots, time boundaries and real money/inventory atomicity."""
 from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor
@@ -24,6 +25,9 @@ def booked(client,monkeypatch,*,rules=None,cooling=False):
     ops.action(old['hosted_reservation_id'],{'action':'CANCEL'},account,account,True,True)
     body={k:old[k] for k in ['hosted_offer_id','check_in','check_out','guest_name','guest_contact']}
     body['expected_fare_rule_hash']=published['rule_hash']
+    from go_hotel.db.models import HostedDirectRoomOfferRow
+    with SessionLocal() as session:hid=session.get(HostedDirectRoomOfferRow,old['hosted_offer_id']).hosted_hotel_id
+    legacy_publication(hid,add_rules=False)
     r=ops.reserve('aoluguya-harbin',body,'fare-reserve','GO_PAGE',account)
     a=freeze(r,account)['authorization'];rid=r['hosted_reservation_id']
     ops.action(rid,{'action':'CONFIRM'},'hotel')
@@ -47,11 +51,11 @@ def test_rule_publication_is_versioned_order_snapshot_is_not_retroactive(client,
     r,account,h,a,p=booked(client,monkeypatch)
     q=quote(r,account);assert q['fee_minor']==81000
     newer=fare.publish(r['hosted_offer_id'],{**RULES,'cancellation_tiers':[{'min_hours':0,'fee_basis_points':10000}]},'test://new-policy','hotel')
-    assert newer['version']==2 and quote(r,account)['fee_minor']==81000
-    assert fare.publish(r['hosted_offer_id'],{**RULES,'cancellation_tiers':[{'min_hours':0,'fee_basis_points':10000}]},'test://new-policy','hotel')['version']==2
+    assert newer['version']==p['version']+1 and quote(r,account)['fee_minor']==81000
+    assert fare.publish(r['hosted_offer_id'],{**RULES,'cancellation_tiers':[{'min_hours':0,'fee_basis_points':10000}]},'test://new-policy','hotel')['version']==p['version']+1
     with SessionLocal() as s:assert s.get(Snapshot,r['hosted_reservation_id']).rule_version_id==p['rule_version_id']
     body={k:r[k] for k in ['hosted_offer_id','check_in','check_out','guest_name','guest_contact']}
-    with pytest.raises(ValueError,match='FARE_RULE_CHANGED'):ops.reserve('aoluguya-harbin',{**body,'expected_fare_rule_hash':p['rule_hash']},'old-policy','GO_PAGE',account)
+    with pytest.raises(ValueError,match='HOSTED_PUBLICATION_BLOCKED'):ops.reserve('aoluguya-harbin',{**body,'expected_fare_rule_hash':p['rule_hash']},'old-policy','GO_PAGE',account)
 
 
 @pytest.mark.parametrize('cooling,fee',[(True,0),(False,81000)])
@@ -100,7 +104,10 @@ def test_cooling_and_tier_boundaries_force_fresh_quote(client,monkeypatch):
 
 
 def test_unconfigured_old_order_never_inherits_new_fee_rule(client,monkeypatch):
-    r,account,h=reservation(client);fare.publish(r['hosted_offer_id'],RULES,'test://policy','hotel');freeze(r,account);ops.action(r['hosted_reservation_id'],{'action':'CONFIRM'},'hotel')
+    r,account,h=reservation(client)
+    # Explicit historical fixture: pre-snapshot orders remain unconfigured.
+    with SessionLocal.begin() as s:s.delete(s.get(Snapshot,r['hosted_reservation_id']))
+    fare.publish(r['hosted_offer_id'],RULES,'test://policy','hotel');freeze(r,account);ops.action(r['hosted_reservation_id'],{'action':'CONFIRM'},'hotel')
     with pytest.raises(ValueError,match='SNAPSHOT_REQUIRED'):quote(r,account)
     with SessionLocal() as s:assert fare.options(s,s.get(Reservation,r['hosted_reservation_id']),s.get(Stay,r['hosted_reservation_id']))['configured'] is False
 

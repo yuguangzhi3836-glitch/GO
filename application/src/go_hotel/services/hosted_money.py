@@ -196,11 +196,12 @@ def project(s,r,event):
     if guest and guest.state in {'CHECKED_OUT','NO_SHOW'}:state='COMPLETED'
     funds=summary(s,r)
     payment_state='UNKNOWN_EXTERNAL_STATE' if funds and funds['reconciliation_required'] else 'PAID' if funds and funds['capture_minor'] else 'PREPAID' if funds and funds.get('prepaid_credit_minor') and not funds['held_minor'] else 'AUTHORIZED' if funds and funds['held_minor'] else 'RELEASED' if funds and funds['release_minor'] else 'PENDING'
+    from go_hotel.services.hosted_reservation_operations import unfunded_request_cancellable
     return lifecycle.project_in_session(s,{'account_id':stay.created_by,'vertical':'HOTEL','order_id':r.hosted_reservation_id,
         'supplier_id':hotel.hosted_hotel_id,'title':hotel.supplier_name+' · '+offer.room_name,
         'lifecycle_state':state,'payment_state':payment_state,'refund_state':funds['refund_state'] if funds else 'NOT_REQUESTED',
         'change_allowed':state in {'PENDING','CONFIRMED'} and not (funds and (funds['held_minor'] or funds['capture_minor'])),
-        'cancel_allowed':native=='PENDING_HOTEL_CONFIRMATION','evidence_reference':'hosted://'+r.hosted_reservation_id+'/'+event,
+        'cancel_allowed':native=='PENDING_HOTEL_CONFIRMATION' or unfunded_request_cancellable(s,r,stay),'evidence_reference':'hosted://'+r.hosted_reservation_id+'/'+event,
         'source_updated_at':now(),'event_type':event,'facts':{'native_status':r.reservation_state,
             'check_in':r.check_in,'check_out':r.check_out,'total_amount_minor':r.amount_minor,'currency':r.currency,
             'detail_url':'/go-app/direct.html?reservation='+r.hosted_reservation_id,'funds':funds,'refund_cycle_count':funds['refund_cycle_count'] if funds else 0,

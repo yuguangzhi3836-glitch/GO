@@ -46,8 +46,8 @@ def main():
     migration_path = APP/current['migration_file']
     migration = migration_path.read_text()
     assert re.search(r"^revision\s*=\s*['\"]" + re.escape(current['migration_head']) + r"['\"]", migration, re.M), 'WRONG_MIGRATION_HEAD'
-    assert current['migration_head'] == '0138_supplier_library_import'
-    assert re.search(r"^down_revision\s*=\s*['\"]0137_hosted_unknown_episode['\"]", migration, re.M)
+    assert current['migration_head'] == '0139_hosted_publication_review'
+    assert re.search(r"^down_revision\s*=\s*['\"]0138_supplier_library_import['\"]", migration, re.M)
     model=(APP/'src/go_hotel/db/models.py').read_text()
     assert 'status: Mapped[str] = mapped_column(String(64), nullable=False, index=True)' in model
     tree = hashlib.sha256(''.join(f'{p}\0{h}\n' for p,h in sorted(fingerprint.items())).encode()).hexdigest()

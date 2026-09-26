@@ -6385,6 +6385,8 @@ class HostedContentApprovalRow(Base):
     decided_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
 class HostedMediaAssetRow(Base):
     __tablename__='hosted_media_asset'
+    submitted_by: Mapped[str|None]=mapped_column(String(64))
+    submitter_binding_hash: Mapped[str|None]=mapped_column(String(64))
     media_asset_id: Mapped[str]=mapped_column(String(64),primary_key=True)
     hosted_hotel_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     asset_role: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
@@ -8082,3 +8084,16 @@ class HostedMoneyUnknownEpisodeAuditRow(Base):
     event_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
+
+
+class HostedPublicationReviewRow(Base):
+    __tablename__ = 'hosted_publication_review'
+    publication_review_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    hosted_hotel_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    manifest_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    manifest_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    reviewer_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    binding_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    decision: Mapped[str] = mapped_column(String(24), nullable=False)
+    evidence_reference: Mapped[str] = mapped_column(String(512), nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

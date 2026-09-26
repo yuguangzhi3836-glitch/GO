@@ -1,3 +1,4 @@
+from tests.hosted_review_support import legacy_publication,fare_hash
 from datetime import datetime,timedelta,timezone,date
 import pytest
 from sqlalchemy import select
@@ -12,9 +13,10 @@ def setup():
  with SessionLocal() as s:
   hotel=s.scalar(select(HostedDirectHotelRow).where(HostedDirectHotelRow.page_slug=='aoluguya-harbin'));variant=s.scalar(select(HostedDirectRateVariantRow));offer_id=variant.hosted_offer_id;pool_id=variant.inventory_pool_id;variant_id=variant.rate_variant_id
  svc.bootstrap_calendar(hotel.hosted_hotel_id,{'start_date':'2026-08-25','end_date':'2026-09-10'})
+ legacy_publication(hotel.hosted_hotel_id)
  return hotel.hosted_hotel_id,offer_id,pool_id,variant_id
 def body(offer_id,check_in='2026-09-01',check_out='2026-09-03'):
- return {'hosted_offer_id':offer_id,'guest_name':'测试住客','guest_contact':'0451-88800808','check_in':check_in,'check_out':check_out,'adults':2,'children':0,'extra_beds':0}
+ return {'hosted_offer_id':offer_id,'expected_fare_rule_hash':fare_hash(offer_id),'guest_name':'测试住客','guest_contact':'0451-88800808','check_in':check_in,'check_out':check_out,'adults':2,'children':0,'extra_beds':0}
 
 def test_dated_calendar_bootstrap_is_idempotent_and_shared_by_rate_variants():
  hotel_id,_,pool_id,_=setup();again=svc.bootstrap_calendar(hotel_id,{'start_date':'2026-09-01','end_date':'2026-09-02'})

@@ -3,10 +3,10 @@
 The only enabled approval source is explicit isolated engineering provisioning.
 No public staff-role assignment can grant the reserved content approval role.
 Media registration preserves unverified claims only. A legacy RIGHTS_VERIFIED
-label is not independently verified rights evidence. This module does not gate
-all publication paths.
+label is not independently verified rights evidence. Publication consumers also require a version-bound isolated review.
 """
 import hashlib,json,uuid,os
+from contextlib import nullcontext
 from copy import deepcopy
 from datetime import datetime,timezone,timedelta
 from sqlalchemy import select,func
@@ -98,6 +98,7 @@ class Service:
    actor=principal_checked(s,principal,'admin:rules')
    h=s.get(HostedDirectHotelRow,hotel_id,with_for_update=True)
    if not h:raise ValueError('HOSTED_HOTEL_NOT_FOUND')
+   binding_checked(s,hotel_id,actor)
    version=(s.scalar(select(func.max(HostedContentSnapshotRow.version)).where(HostedContentSnapshotRow.hosted_hotel_id==hotel_id)) or 0)+1
    body={'schema':SCHEMA,'hosted_hotel_id':hotel_id,'version':version,'created_by':actor,'payload':deepcopy(h.contact_json)}
    r=HostedContentSnapshotRow(content_snapshot_id=ident('hcs'),hosted_hotel_id=hotel_id,version=version,content_json=body,content_hash=digest(body),source_status=h.contact_json.get('content_status','UNVERIFIED'),created_at=now())
@@ -132,7 +133,7 @@ class Service:
    if not s.get(HostedDirectHotelRow,hotel_id,with_for_update=True):raise ValueError('HOSTED_HOTEL_NOT_FOUND')
    # Existing explicit engineering provisioning permits a scoped draft only;
    # it does not establish hotel delegation or grant media rights.
-   binding_checked(s,hotel_id,actor)
+   binding=binding_checked(s,hotel_id,actor)
    if not isinstance(b,dict) or set(b)-{'asset_role','physical_room_key','storage_reference','rights_owner','rights_evidence_reference'}:raise ValueError('MEDIA_CLAIM_FIELDS_INVALID')
    fields={}
    for name,maximum in [('storage_reference',512),('rights_owner',256),('rights_evidence_reference',512)]:
@@ -147,10 +148,10 @@ class Service:
     room=room.strip()
     if not s.scalar(select(HostedDirectInventoryPoolRow).where(HostedDirectInventoryPoolRow.hosted_hotel_id==hotel_id,HostedDirectInventoryPoolRow.physical_room_key==room)):raise ValueError('PHYSICAL_ROOM_POOL_NOT_FOUND')
    elif room is not None:raise ValueError('HERO_PHYSICAL_ROOM_KEY_NOT_ALLOWED')
-   r=HostedMediaAssetRow(media_asset_id=ident('hma'),hosted_hotel_id=hotel_id,asset_role=b['asset_role'],physical_room_key=room,**fields,state='PENDING_RIGHTS_REVIEW',created_at=now())
+   r=HostedMediaAssetRow(submitted_by=actor,submitter_binding_hash=binding_hash(binding),media_asset_id=ident('hma'),hosted_hotel_id=hotel_id,asset_role=b['asset_role'],physical_room_key=room,**fields,state='PENDING_RIGHTS_REVIEW',created_at=now())
    s.add(r);s.flush();return out(r)
- def gate(self,hotel_id):
-  with SessionLocal() as s:
+ def gate(self,hotel_id,_session=None,_content_only=False):
+  with (nullcontext(_session) if _session is not None else SessionLocal()) as s:
    if not s.get(HostedDirectHotelRow,hotel_id):raise ValueError('HOSTED_HOTEL_NOT_FOUND')
    snap=s.scalar(select(HostedContentSnapshotRow).where(HostedContentSnapshotRow.hosted_hotel_id==hotel_id).order_by(HostedContentSnapshotRow.version.desc(),HostedContentSnapshotRow.content_snapshot_id.desc()))
    approval=latest_decision(s,snap.content_snapshot_id) if snap else None
@@ -173,10 +174,20 @@ class Service:
    rooms=set(s.scalars(select(HostedDirectInventoryPoolRow.physical_room_key).where(HostedDirectInventoryPoolRow.hosted_hotel_id==hotel_id)))
    block.extend(['HOTEL_MEDIA_RIGHTS_AUTHORITY_UNVERIFIED','HOTEL_OWNED_HERO_IMAGE_REQUIRED'])
    if rooms:block.append('HOTEL_OWNED_ROOM_IMAGES_REQUIRED')
-   return {'state':'BLOCKED_PENDING_CONTENT_AND_MEDIA','blockers':block,
+   result={'state':'BLOCKED_PENDING_CONTENT_AND_MEDIA','blockers':block,
     'content_approval_verified':content_ok,'authority_mode':'ISOLATED_FIXTURE' if content_ok else 'HOLD',
     'media_rights_verified':False,'media_rights_state':'HOLD_UNVERIFIED',
     'real_hotel_authority_state':'HOLD_UNVERIFIED','snapshot_id':snap.content_snapshot_id if snap else None,
     'latest_content_decision':approval.decision if approval else None,'missing_room_images':sorted(rooms),
     'payment_live':False,'production_live':False}
+   if not _content_only:
+    from go_hotel.services.hosted_publication import accepted
+    try:
+     publication=accepted(s,hotel_id)
+     result.update(state='ISOLATED_OPERATIONS_ACCEPTED',blockers=[],isolated_media_verified=True,
+      publication_approved=True,publication_hash=publication.manifest_hash,missing_room_images=[])
+    except (ValueError,PermissionError) as exc:
+     result.update(publication_approved=False,isolated_media_verified=False)
+     result['blockers']=sorted(set(result['blockers']+[str(exc)]))
+   return result
 hosted_content_acceptance_service=Service()

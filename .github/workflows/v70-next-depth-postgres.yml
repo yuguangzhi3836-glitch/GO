@@ -147,6 +147,8 @@ jobs:
             tests/test_hosted_content_operations_acceptance.py \
             tests/test_c01_hosted_content_authority.py \
             tests/test_c01_hosted_media_authority.py \
+            tests/test_c01_hosted_operating_journey.py \
+            tests/payments/test_c11_deposit_maintained_award.py \
             --junitxml="$RUNNER_TEMP/next-depth-pg/cell-depth-increment-junit.xml" \
             2>&1 | tee "$RUNNER_TEMP/next-depth-pg/cell-depth-increment.log"
           python - <<'PY'
