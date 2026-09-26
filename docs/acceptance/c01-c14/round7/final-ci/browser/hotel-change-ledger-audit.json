@@ -1,0 +1,61 @@
+{
+  "schema": "go.hotel-adjustment-ledger.v1",
+  "result": "PASS",
+  "orders": [
+    {
+      "order_id": "ord_206b6c21107a443f",
+      "result": "PASS",
+      "payment_roots": [
+        {
+          "business_type": "HOTEL_ORDER",
+          "business_id": "ord_206b6c21107a443f",
+          "payment_intent_id": "opi_4eadf1d91a4d43d7877ab8b1e006124f",
+          "capture_id": "omm_623df245f19e401697d250b5c5d2724e",
+          "refund_parent_id": "omm_623df245f19e401697d250b5c5d2724e",
+          "amount_minor": 1443200,
+          "refunded_minor": 1400000,
+          "currency": "CNY",
+          "ledger_pairs": 2,
+          "result": "PASS"
+        },
+        {
+          "business_type": "HOTEL_CHANGE",
+          "business_id": "chgq_7415d30d4a224e00bdfc7d4c52e566ff",
+          "payment_intent_id": "opi_61b29c7f84a140399e65dc0c83056d23",
+          "capture_id": "omm_81e14ce573fc420cb76972c147672565",
+          "refund_parent_id": null,
+          "amount_minor": 80000,
+          "refunded_minor": 0,
+          "currency": "CNY",
+          "ledger_pairs": 1,
+          "result": "PASS"
+        },
+        {
+          "business_type": "HOTEL_CHANGE",
+          "business_id": "chgq_f967d31a499b4193a30e53172adebdb7",
+          "payment_intent_id": "opi_0789f5d6580d44e287c42a950c41c9ec",
+          "capture_id": "omm_eacb54de2ef845e9b7e7d04c5ad07a88",
+          "refund_parent_id": null,
+          "amount_minor": 40000,
+          "refunded_minor": 0,
+          "currency": "CNY",
+          "ledger_pairs": 1,
+          "result": "PASS"
+        }
+      ],
+      "capture_count": 3,
+      "refund_count": 1,
+      "gross_paid_minor": 1563200,
+      "refunded_minor": 1400000,
+      "net_paid_minor": 163200,
+      "forfeited_change_value_minor": 163200,
+      "confirmed_changes": 4,
+      "cash_operations": 5
+    }
+  ],
+  "commit": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+  "source_tree_sha256": "67dca501719f5985ebfcc668c635d051242df99063b8e40440fb39da55f85785",
+  "scope": "ONE_HOTEL_FREE_CHANGES_ORIGINAL_PLUS_POSITIVE_DIFFERENCES",
+  "mode": "SYNTHETIC_READ_ONLY_SQL",
+  "bank_settlement_verified": false
+}

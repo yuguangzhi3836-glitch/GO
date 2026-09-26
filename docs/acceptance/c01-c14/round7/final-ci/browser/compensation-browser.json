@@ -1,0 +1,642 @@
+{
+  "schema": "go.rental-compensation-browser.v1",
+  "commit": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+  "source_tree_sha256": "67dca501719f5985ebfcc668c635d051242df99063b8e40440fb39da55f85785",
+  "scope": "ISOLATED_HTTP_SYNTHETIC",
+  "complete": true,
+  "unknown_recovery": "NOT_IMPLEMENTED_NO_TRUSTED_RECEIPT",
+  "negative_api_checks": [
+    {
+      "kind": "EXACT_REPLAY",
+      "status": 200
+    },
+    {
+      "kind": "STALE_VERSION",
+      "status": 409
+    },
+    {
+      "kind": "READONLY_ACTOR",
+      "status": 403
+    }
+  ],
+  "order_id": "rent_ord_3f2e196442504c7d",
+  "obligation_id": "rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+  "before": {
+    "order_id": "rent_ord_3f2e196442504c7d",
+    "order_status": "COMPLETED",
+    "read_only": true,
+    "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+    "external_live": false,
+    "source": {
+      "obligation_id": "rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+      "revision": 2,
+      "source_hash": "3e0f9a8915a23365aec77586582829b9b18cc419b06c60f4d17f05c0f9eca098",
+      "state": "ACTIVATED",
+      "currency": "CNY",
+      "amount_minor": 200000,
+      "expires_at": "2026-09-27T04:45:26.780496",
+      "consent": {
+        "actor_id": "usr_f569cf7114d142a8",
+        "accepted": true,
+        "source_hash": "3e0f9a8915a23365aec77586582829b9b18cc419b06c60f4d17f05c0f9eca098",
+        "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+        "accepted_at": "2026-09-26T04:45:26.947597"
+      }
+    },
+    "money": {
+      "payment_intent_id": "opi_24a3c9521fd04b1493d4ce71e2116123",
+      "obligation_id": "rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+      "currency": "CNY",
+      "authorized_minor": 200000,
+      "captured_minor": 4000,
+      "released_minor": 196000,
+      "compensated_minor": 0,
+      "net_captured_minor": 4000,
+      "remaining_minor": 0,
+      "movement_ids": [
+        "omm_7c1777f3d95641ce8bba88dd1e3925f1",
+        "omm_edf2dc20b1e648a3906fe987cebe9a44",
+        "omm_c2fd7b32e01a4fa78455fa0f5c4f0801"
+      ],
+      "state": "SETTLED",
+      "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+      "external_live": false
+    },
+    "movements": [
+      {
+        "movement_id": "omm_7c1777f3d95641ce8bba88dd1e3925f1",
+        "type": "AUTHORIZATION",
+        "state": "CONFIRMED",
+        "recorded_amount_minor": 200000,
+        "currency": "CNY",
+        "operation_key": "rental-deposit-auth:rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+        "parent_movement_id": null
+      },
+      {
+        "movement_id": "omm_edf2dc20b1e648a3906fe987cebe9a44",
+        "type": "CAPTURE",
+        "state": "CONFIRMED",
+        "recorded_amount_minor": 4000,
+        "currency": "CNY",
+        "operation_key": "rental-deposit:9116af546901e47b10f4874395adcaa28b4c9fbafe97a6e18253c375ccc8806b:capture",
+        "parent_movement_id": "omm_7c1777f3d95641ce8bba88dd1e3925f1"
+      },
+      {
+        "movement_id": "omm_c2fd7b32e01a4fa78455fa0f5c4f0801",
+        "type": "RELEASE",
+        "state": "CONFIRMED",
+        "recorded_amount_minor": 196000,
+        "currency": "CNY",
+        "operation_key": "rental-deposit:9116af546901e47b10f4874395adcaa28b4c9fbafe97a6e18253c375ccc8806b:release",
+        "parent_movement_id": "omm_7c1777f3d95641ce8bba88dd1e3925f1"
+      }
+    ],
+    "decisions": [
+      {
+        "case_id": "rent_damage_1f81fc30daeb4847",
+        "case_version": 3,
+        "case_status": "ADJUDICATED",
+        "can_settle": false,
+        "decision": {
+          "case_id": "rent_damage_1f81fc30daeb4847",
+          "order_id": "rent_ord_3f2e196442504c7d",
+          "obligation_id": "rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+          "case_version": 3,
+          "awarded_minor": 4000,
+          "owner_id": "usr_f569cf7114d142a8",
+          "currency": "CNY",
+          "source_hash": "3e0f9a8915a23365aec77586582829b9b18cc419b06c60f4d17f05c0f9eca098",
+          "obligation_revision": 2,
+          "decision_history": [
+            {
+              "version": 3,
+              "reviewer_id": "usr_428cdf9e381547d4b166218e7eb77057",
+              "award_minor": 4000,
+              "reason": "隔离初审：核对双方陈述，裁决40元。",
+              "evidence": [
+                {
+                  "reference": "rental-statement://02cff898553787a3bc5d098ddf9ec45e2c1cd133b95c6507336641012c19d74d",
+                  "sha256": "02cff898553787a3bc5d098ddf9ec45e2c1cd133b95c6507336641012c19d74d",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_428cdf9e381547d4b166218e7eb77057",
+                    "actor_type": "GO_ADMIN",
+                    "order_id": "rent_ord_3f2e196442504c7d",
+                    "case_id": "rent_damage_1f81fc30daeb4847",
+                    "action": "DECISION",
+                    "text": "隔离初审：核对双方陈述，裁决40元。"
+                  }
+                }
+              ]
+            }
+          ],
+          "status": "ADJUDICATED",
+          "held": false,
+          "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+          "external_live": false,
+          "decision_hash": "f796c74dfd37fdaa4bd17afc754e89bc7d32f6e65c42f112053fb08385c35307"
+        },
+        "blocker": "SETTLED_MONEY_REQUIRES_SEPARATE_COMPENSATION_REVIEW",
+        "compensation_blocker": "DEPOSIT_COMPENSATION_APPEAL_REQUIRED"
+      }
+    ],
+    "release": null,
+    "can_authorize": false,
+    "blockers": []
+  },
+  "during_appeal": {
+    "order_id": "rent_ord_3f2e196442504c7d",
+    "order_status": "COMPLETED",
+    "read_only": true,
+    "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+    "external_live": false,
+    "source": {
+      "obligation_id": "rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+      "revision": 2,
+      "source_hash": "3e0f9a8915a23365aec77586582829b9b18cc419b06c60f4d17f05c0f9eca098",
+      "state": "ACTIVATED",
+      "currency": "CNY",
+      "amount_minor": 200000,
+      "expires_at": "2026-09-27T04:45:26.780496",
+      "consent": {
+        "actor_id": "usr_f569cf7114d142a8",
+        "accepted": true,
+        "source_hash": "3e0f9a8915a23365aec77586582829b9b18cc419b06c60f4d17f05c0f9eca098",
+        "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+        "accepted_at": "2026-09-26T04:45:26.947597"
+      }
+    },
+    "money": {
+      "payment_intent_id": "opi_24a3c9521fd04b1493d4ce71e2116123",
+      "obligation_id": "rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+      "currency": "CNY",
+      "authorized_minor": 200000,
+      "captured_minor": 4000,
+      "released_minor": 196000,
+      "compensated_minor": 0,
+      "net_captured_minor": 4000,
+      "remaining_minor": 0,
+      "movement_ids": [
+        "omm_7c1777f3d95641ce8bba88dd1e3925f1",
+        "omm_edf2dc20b1e648a3906fe987cebe9a44",
+        "omm_c2fd7b32e01a4fa78455fa0f5c4f0801"
+      ],
+      "state": "SETTLED",
+      "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+      "external_live": false
+    },
+    "movements": [
+      {
+        "movement_id": "omm_7c1777f3d95641ce8bba88dd1e3925f1",
+        "type": "AUTHORIZATION",
+        "state": "CONFIRMED",
+        "recorded_amount_minor": 200000,
+        "currency": "CNY",
+        "operation_key": "rental-deposit-auth:rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+        "parent_movement_id": null
+      },
+      {
+        "movement_id": "omm_edf2dc20b1e648a3906fe987cebe9a44",
+        "type": "CAPTURE",
+        "state": "CONFIRMED",
+        "recorded_amount_minor": 4000,
+        "currency": "CNY",
+        "operation_key": "rental-deposit:9116af546901e47b10f4874395adcaa28b4c9fbafe97a6e18253c375ccc8806b:capture",
+        "parent_movement_id": "omm_7c1777f3d95641ce8bba88dd1e3925f1"
+      },
+      {
+        "movement_id": "omm_c2fd7b32e01a4fa78455fa0f5c4f0801",
+        "type": "RELEASE",
+        "state": "CONFIRMED",
+        "recorded_amount_minor": 196000,
+        "currency": "CNY",
+        "operation_key": "rental-deposit:9116af546901e47b10f4874395adcaa28b4c9fbafe97a6e18253c375ccc8806b:release",
+        "parent_movement_id": "omm_7c1777f3d95641ce8bba88dd1e3925f1"
+      }
+    ],
+    "decisions": [
+      {
+        "case_id": "rent_damage_1f81fc30daeb4847",
+        "case_version": 4,
+        "case_status": "APPEAL_REVIEW_REQUIRED",
+        "can_settle": false,
+        "decision": null,
+        "blocker": "DEPOSIT_DECISION_HELD",
+        "compensation_blocker": "DEPOSIT_DECISION_HELD"
+      }
+    ],
+    "release": null,
+    "can_authorize": false,
+    "blockers": []
+  },
+  "reviewed_case": {
+    "order_id": "rent_ord_3f2e196442504c7d",
+    "order_status": "COMPLETED",
+    "currency": "CNY",
+    "actor_type": "GO_ADMIN",
+    "actor_id": "usr_d2da9de10966493288aa068be7e34d58",
+    "writes_enabled": true,
+    "cases": [
+      {
+        "case": {
+          "case_id": "rent_damage_1f81fc30daeb4847",
+          "order_id": "rent_ord_3f2e196442504c7d",
+          "deposit_obligation": {
+            "obligation_id": "rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+            "revision": 2,
+            "source_hash": "3e0f9a8915a23365aec77586582829b9b18cc419b06c60f4d17f05c0f9eca098",
+            "vehicle_id": "fixture-vehicle-5f5e22f294743b4709d01eb2",
+            "owner_id": "usr_f569cf7114d142a8",
+            "payee_id": "fixture-rental-merchant-v1",
+            "currency": "CNY"
+          },
+          "owner_id": "usr_f569cf7114d142a8",
+          "opened_by": "usr_264862da424a4e4d8d8b7a3213942b4b",
+          "status": "ADJUDICATED",
+          "version": 5,
+          "claimed_minor": 10000,
+          "currency": "CNY",
+          "contract_snapshot": {
+            "deposit_minor": 200000,
+            "insurance": {
+              "type": "BASIC",
+              "excess_minor": 500000
+            },
+            "maximum_award_minor": 200000
+          },
+          "pickup_evidence": [
+            {
+              "reference": "rental-statement://0097ee7242e7af256907d29b0fe866dbcf742a9b43f3dc4b9ea0a8ee842fd2a7",
+              "sha256": "0097ee7242e7af256907d29b0fe866dbcf742a9b43f3dc4b9ea0a8ee842fd2a7",
+              "statement": {
+                "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                "actor_id": "usr_264862da424a4e4d8d8b7a3213942b4b",
+                "actor_type": "GO_ADMIN",
+                "order_id": "rent_ord_3f2e196442504c7d",
+                "case_id": null,
+                "action": "PICKUP_OBSERVATION",
+                "text": "补偿隔离演练：取车时无本项痕迹"
+              }
+            }
+          ],
+          "return_evidence": [
+            {
+              "reference": "rental-statement://3a268a9e5a24aa151d3006378544a17f02ed35338cf0f10656fe9b33f24d1acf",
+              "sha256": "3a268a9e5a24aa151d3006378544a17f02ed35338cf0f10656fe9b33f24d1acf",
+              "statement": {
+                "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                "actor_id": "usr_264862da424a4e4d8d8b7a3213942b4b",
+                "actor_type": "GO_ADMIN",
+                "order_id": "rent_ord_3f2e196442504c7d",
+                "case_id": null,
+                "action": "RETURN_OBSERVATION",
+                "text": "补偿隔离演练：申报痕迹待客人回应"
+              }
+            }
+          ],
+          "supplier_evidence_status": "ADMIN_RECORDED_UNVERIFIED",
+          "customer_evidence": [
+            {
+              "reference": "rental-statement://08774153af37f6658cf65c254f912f433d30d9105e0116bf397ab7a97a959581",
+              "sha256": "08774153af37f6658cf65c254f912f433d30d9105e0116bf397ab7a97a959581",
+              "statement": {
+                "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                "actor_id": "usr_f569cf7114d142a8",
+                "actor_type": "CONSUMER",
+                "order_id": "rent_ord_3f2e196442504c7d",
+                "case_id": "rent_damage_1f81fc30daeb4847",
+                "action": "RESPONSE",
+                "text": "补偿隔离演练：不同意申报，要求独立审核。"
+              }
+            }
+          ],
+          "customer_response": "DISPUTE",
+          "awarded_minor": 1000,
+          "actionable_award_minor": 1000,
+          "decision_history": [
+            {
+              "version": 3,
+              "reviewer_id": "usr_428cdf9e381547d4b166218e7eb77057",
+              "award_minor": 4000,
+              "reason": "隔离初审：核对双方陈述，裁决40元。",
+              "evidence": [
+                {
+                  "reference": "rental-statement://02cff898553787a3bc5d098ddf9ec45e2c1cd133b95c6507336641012c19d74d",
+                  "sha256": "02cff898553787a3bc5d098ddf9ec45e2c1cd133b95c6507336641012c19d74d",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_428cdf9e381547d4b166218e7eb77057",
+                    "actor_type": "GO_ADMIN",
+                    "order_id": "rent_ord_3f2e196442504c7d",
+                    "case_id": "rent_damage_1f81fc30daeb4847",
+                    "action": "DECISION",
+                    "text": "隔离初审：核对双方陈述，裁决40元。"
+                  }
+                }
+              ]
+            },
+            {
+              "version": 5,
+              "reviewer_id": "usr_d2da9de10966493288aa068be7e34d58",
+              "award_minor": 1000,
+              "reason": "隔离独立复核：根据补充陈述将应收减为10元；该裁决本身不代表资金已补偿。",
+              "evidence": [
+                {
+                  "reference": "rental-statement://d99c46ca413bc3618e03f7caac4a60706cbbee105686a01aef6d9bafef420b50",
+                  "sha256": "d99c46ca413bc3618e03f7caac4a60706cbbee105686a01aef6d9bafef420b50",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_d2da9de10966493288aa068be7e34d58",
+                    "actor_type": "GO_ADMIN",
+                    "order_id": "rent_ord_3f2e196442504c7d",
+                    "case_id": "rent_damage_1f81fc30daeb4847",
+                    "action": "APPEAL_DECISION",
+                    "text": "隔离独立复核：根据补充陈述将应收减为10元；该裁决本身不代表资金已补偿。"
+                  }
+                }
+              ],
+              "supersedes_decision_version": 3
+            }
+          ],
+          "appeals": [
+            {
+              "actor_id": "usr_f569cf7114d142a8",
+              "reason": "已经结算后发现新陈述，申请另一审核人复核并减少费用。",
+              "evidence": [
+                {
+                  "reference": "rental-statement://a36ae62031a425d0b46a871ab47188dba4ccef5134d8f018b1149e190686a664",
+                  "sha256": "a36ae62031a425d0b46a871ab47188dba4ccef5134d8f018b1149e190686a664",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_f569cf7114d142a8",
+                    "actor_type": "CONSUMER",
+                    "order_id": "rent_ord_3f2e196442504c7d",
+                    "case_id": "rent_damage_1f81fc30daeb4847",
+                    "action": "APPEAL",
+                    "text": "已经结算后发现新陈述，申请另一审核人复核并减少费用。"
+                  }
+                }
+              ],
+              "decision_version": 3
+            }
+          ],
+          "money_instruction_state": "AWAITING_C11_REVIEW",
+          "money_status": "C11_MONEY_REVIEW_REQUIRED",
+          "money_movement_ids": [],
+          "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+          "external_live": false,
+          "responded_by": "usr_f569cf7114d142a8",
+          "reviewer_id": "usr_d2da9de10966493288aa068be7e34d58",
+          "decision_reason": "隔离独立复核：根据补充陈述将应收减为10元；该裁决本身不代表资金已补偿。",
+          "decision_evidence": [
+            {
+              "reference": "rental-statement://d99c46ca413bc3618e03f7caac4a60706cbbee105686a01aef6d9bafef420b50",
+              "sha256": "d99c46ca413bc3618e03f7caac4a60706cbbee105686a01aef6d9bafef420b50",
+              "statement": {
+                "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                "actor_id": "usr_d2da9de10966493288aa068be7e34d58",
+                "actor_type": "GO_ADMIN",
+                "order_id": "rent_ord_3f2e196442504c7d",
+                "case_id": "rent_damage_1f81fc30daeb4847",
+                "action": "APPEAL_DECISION",
+                "text": "隔离独立复核：根据补充陈述将应收减为10元；该裁决本身不代表资金已补偿。"
+              }
+            }
+          ]
+        },
+        "actions": []
+      }
+    ],
+    "actions": [],
+    "obligation": {
+      "obligation_id": "rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+      "revision": 2,
+      "state": "ACTIVATED",
+      "source": {
+        "order_id": "rent_ord_3f2e196442504c7d",
+        "owner_id": "usr_f569cf7114d142a8",
+        "vehicle_id": "fixture-vehicle-5f5e22f294743b4709d01eb2",
+        "payee_id": "fixture-rental-merchant-v1",
+        "payee_verification": {
+          "status": "VERIFIED_SYNTHETIC_FIXTURE",
+          "version": "rental-deposit-isolated-v1",
+          "real_payee_verified": false
+        },
+        "currency": "CNY",
+        "amount_minor": 200000,
+        "contract_snapshot": {
+          "fixture_version": "rental-deposit-isolated-v1",
+          "vehicle_class": "COMPACT",
+          "maximum_authorization_minor": 200000,
+          "maximum_damage_award_minor": 200000,
+          "currency": "CNY",
+          "insurance": {
+            "type": "BASIC",
+            "excess_minor": 500000
+          },
+          "consent_scope": "DEPOSIT_OBLIGATION_ONLY_NOT_DAMAGE_ACCEPTANCE",
+          "damage_requires_independent_decision": true,
+          "silence_is_not_acceptance": true,
+          "fixture_validity_seconds": 86400,
+          "real_contract_approved": false
+        },
+        "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+        "issued_at": "2026-09-26T04:45:26.780496",
+        "expires_at": "2026-09-27T04:45:26.780496",
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false
+      },
+      "source_hash": "3e0f9a8915a23365aec77586582829b9b18cc419b06c60f4d17f05c0f9eca098",
+      "consent": {
+        "actor_id": "usr_f569cf7114d142a8",
+        "accepted": true,
+        "source_hash": "3e0f9a8915a23365aec77586582829b9b18cc419b06c60f4d17f05c0f9eca098",
+        "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+        "accepted_at": "2026-09-26T04:45:26.947597"
+      },
+      "financial_state": "NO_FINANCIAL_FACT_ASSERTED"
+    },
+    "receipts": [
+      {
+        "key": "33369bc2-450b-4c39-bc34-dbf731174768",
+        "case_id": "rent_damage_1f81fc30daeb4847",
+        "version": 5
+      }
+    ],
+    "release": null,
+    "financial_authority": "C11",
+    "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+    "external_live": false
+  },
+  "after": {
+    "order_id": "rent_ord_3f2e196442504c7d",
+    "order_status": "COMPLETED",
+    "read_only": true,
+    "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+    "external_live": false,
+    "source": {
+      "obligation_id": "rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+      "revision": 2,
+      "source_hash": "3e0f9a8915a23365aec77586582829b9b18cc419b06c60f4d17f05c0f9eca098",
+      "state": "ACTIVATED",
+      "currency": "CNY",
+      "amount_minor": 200000,
+      "expires_at": "2026-09-27T04:45:26.780496",
+      "consent": {
+        "actor_id": "usr_f569cf7114d142a8",
+        "accepted": true,
+        "source_hash": "3e0f9a8915a23365aec77586582829b9b18cc419b06c60f4d17f05c0f9eca098",
+        "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+        "accepted_at": "2026-09-26T04:45:26.947597"
+      }
+    },
+    "money": {
+      "payment_intent_id": "opi_24a3c9521fd04b1493d4ce71e2116123",
+      "obligation_id": "rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+      "currency": "CNY",
+      "authorized_minor": 200000,
+      "captured_minor": 4000,
+      "released_minor": 196000,
+      "compensated_minor": 3000,
+      "net_captured_minor": 1000,
+      "remaining_minor": 0,
+      "movement_ids": [
+        "omm_7c1777f3d95641ce8bba88dd1e3925f1",
+        "omm_edf2dc20b1e648a3906fe987cebe9a44",
+        "omm_c2fd7b32e01a4fa78455fa0f5c4f0801",
+        "omm_8820e502f36a4d8da4a0e67e0f0bb29b"
+      ],
+      "state": "SETTLED",
+      "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+      "external_live": false
+    },
+    "movements": [
+      {
+        "movement_id": "omm_7c1777f3d95641ce8bba88dd1e3925f1",
+        "type": "AUTHORIZATION",
+        "state": "CONFIRMED",
+        "recorded_amount_minor": 200000,
+        "currency": "CNY",
+        "operation_key": "rental-deposit-auth:rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+        "parent_movement_id": null
+      },
+      {
+        "movement_id": "omm_edf2dc20b1e648a3906fe987cebe9a44",
+        "type": "CAPTURE",
+        "state": "CONFIRMED",
+        "recorded_amount_minor": 4000,
+        "currency": "CNY",
+        "operation_key": "rental-deposit:9116af546901e47b10f4874395adcaa28b4c9fbafe97a6e18253c375ccc8806b:capture",
+        "parent_movement_id": "omm_7c1777f3d95641ce8bba88dd1e3925f1"
+      },
+      {
+        "movement_id": "omm_c2fd7b32e01a4fa78455fa0f5c4f0801",
+        "type": "RELEASE",
+        "state": "CONFIRMED",
+        "recorded_amount_minor": 196000,
+        "currency": "CNY",
+        "operation_key": "rental-deposit:9116af546901e47b10f4874395adcaa28b4c9fbafe97a6e18253c375ccc8806b:release",
+        "parent_movement_id": "omm_7c1777f3d95641ce8bba88dd1e3925f1"
+      },
+      {
+        "movement_id": "omm_8820e502f36a4d8da4a0e67e0f0bb29b",
+        "type": "COMPENSATION",
+        "state": "CONFIRMED",
+        "recorded_amount_minor": 3000,
+        "currency": "CNY",
+        "operation_key": "rental-deposit-comp:c38a19b05b87d919df55d466c2d9cff6d9879f0aad2b8c2bb6c55084add2b781",
+        "parent_movement_id": "omm_edf2dc20b1e648a3906fe987cebe9a44"
+      }
+    ],
+    "decisions": [
+      {
+        "case_id": "rent_damage_1f81fc30daeb4847",
+        "case_version": 5,
+        "case_status": "ADJUDICATED",
+        "can_settle": false,
+        "decision": {
+          "case_id": "rent_damage_1f81fc30daeb4847",
+          "order_id": "rent_ord_3f2e196442504c7d",
+          "obligation_id": "rent_dep_2482d6a4c7fb053d844f0e7e00ee8f736a71ebea",
+          "case_version": 5,
+          "awarded_minor": 1000,
+          "owner_id": "usr_f569cf7114d142a8",
+          "currency": "CNY",
+          "source_hash": "3e0f9a8915a23365aec77586582829b9b18cc419b06c60f4d17f05c0f9eca098",
+          "obligation_revision": 2,
+          "decision_history": [
+            {
+              "version": 3,
+              "reviewer_id": "usr_428cdf9e381547d4b166218e7eb77057",
+              "award_minor": 4000,
+              "reason": "隔离初审：核对双方陈述，裁决40元。",
+              "evidence": [
+                {
+                  "reference": "rental-statement://02cff898553787a3bc5d098ddf9ec45e2c1cd133b95c6507336641012c19d74d",
+                  "sha256": "02cff898553787a3bc5d098ddf9ec45e2c1cd133b95c6507336641012c19d74d",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_428cdf9e381547d4b166218e7eb77057",
+                    "actor_type": "GO_ADMIN",
+                    "order_id": "rent_ord_3f2e196442504c7d",
+                    "case_id": "rent_damage_1f81fc30daeb4847",
+                    "action": "DECISION",
+                    "text": "隔离初审：核对双方陈述，裁决40元。"
+                  }
+                }
+              ]
+            },
+            {
+              "version": 5,
+              "reviewer_id": "usr_d2da9de10966493288aa068be7e34d58",
+              "award_minor": 1000,
+              "reason": "隔离独立复核：根据补充陈述将应收减为10元；该裁决本身不代表资金已补偿。",
+              "evidence": [
+                {
+                  "reference": "rental-statement://d99c46ca413bc3618e03f7caac4a60706cbbee105686a01aef6d9bafef420b50",
+                  "sha256": "d99c46ca413bc3618e03f7caac4a60706cbbee105686a01aef6d9bafef420b50",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_d2da9de10966493288aa068be7e34d58",
+                    "actor_type": "GO_ADMIN",
+                    "order_id": "rent_ord_3f2e196442504c7d",
+                    "case_id": "rent_damage_1f81fc30daeb4847",
+                    "action": "APPEAL_DECISION",
+                    "text": "隔离独立复核：根据补充陈述将应收减为10元；该裁决本身不代表资金已补偿。"
+                  }
+                }
+              ],
+              "supersedes_decision_version": 3
+            }
+          ],
+          "status": "ADJUDICATED",
+          "held": false,
+          "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+          "external_live": false,
+          "decision_hash": "a6fbff2dfeced1f5edfb2039e61b8d61c66bbc4354d2410ee22015ea020cd155"
+        },
+        "blocker": null,
+        "compensation": {
+          "amount_minor": 0,
+          "target_net_captured_minor": 1000,
+          "operation_key": "rental-deposit-comp:c38a19b05b87d919df55d466c2d9cff6d9879f0aad2b8c2bb6c55084add2b781",
+          "original_capture_id": "omm_edf2dc20b1e648a3906fe987cebe9a44",
+          "case_id": "rent_damage_1f81fc30daeb4847",
+          "case_version": 5,
+          "decision_hash": "a6fbff2dfeced1f5edfb2039e61b8d61c66bbc4354d2410ee22015ea020cd155",
+          "already_applied": true
+        },
+        "can_compensate": false
+      }
+    ],
+    "release": null,
+    "can_authorize": false,
+    "blockers": []
+  },
+  "consumer_display": {
+    "compensated": "¥30.00",
+    "net_captured": "¥10.00"
+  },
+  "ui_flow_complete": true,
+  "no_duplicate_effects": true
+}

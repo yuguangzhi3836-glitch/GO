@@ -1,0 +1,226 @@
+{
+  "tested_gate": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+  "collected_shards": 4,
+  "metrics": {
+    "tests": 3233,
+    "passed": 3226,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 7
+  },
+  "old_failure_status": {
+    "tests/test_depth10_disruption_api.py::test_api_bank_mandate_and_recovery_reject_unscoped_users_and_noninteger_money": "PASS",
+    "tests/test_depth10_disruption_api.py::test_api_scope_independent_evidence_snapshot_and_customer_retry": "PASS",
+    "tests/test_depth25_migration_history.py::test_fresh_database_can_apply_entire_chain_without_stamp": "PASS",
+    "tests/test_depth25_migration_history.py::test_rail_width_upgrade_preserves_history_and_refuses_lossy_downgrade": "PASS",
+    "tests/test_depth48_flight_migration.py::test_flight_plan_upgrade_preserves_parent_and_refuses_data_loss": "PASS",
+    "tests/test_hosted_direct_inventory_matrix.py::test_breakfast_variants_share_atomic_physical_inventory_and_restore": "PASS",
+    "tests/test_parent_implementation_code_review_debt_closure.py::test_current_source_head_and_upgrade_downgrade_roundtrip": "PASS",
+    "tests/test_rc15_aoluguya_supply_truth.py::test_aoluguya_official_truth_gate_and_projection_replaces_test_truth": "PASS",
+    "tests/test_supplier_import_migration.py::test_import_migration_roundtrip_protects_authorization_history": "PASS",
+    "tests/test_v70_r4_c01_unknown_episode.py::test_only_go_admin_can_open_episode_through_internal_api": "PASS"
+  },
+  "skipped_nodes": [
+    {
+      "node": "tests/test_p0_0101_postgres_race_matrix.py::test_0101_order_payment_root_exactly_once_postgres",
+      "reason": "POSTGRES_TEST_DATABASE_URL not configured",
+      "artifact": 10898975243
+    },
+    {
+      "node": "tests/test_p0_0101_postgres_race_matrix.py::test_0101_webhook_delivery_replay_unique_postgres",
+      "reason": "POSTGRES_TEST_DATABASE_URL not configured",
+      "artifact": 10898975243
+    },
+    {
+      "node": "tests/test_p0_0101_postgres_race_matrix.py::test_0101_capture_refund_serialization_postgres",
+      "reason": "POSTGRES_TEST_DATABASE_URL not configured",
+      "artifact": 10898975243
+    },
+    {
+      "node": "tests/test_p0_0101_postgres_race_matrix.py::test_0101_finance_close_approval_race_postgres",
+      "reason": "POSTGRES_TEST_DATABASE_URL not configured",
+      "artifact": 10898975243
+    },
+    {
+      "node": "tests/test_p0_0101_postgres_race_matrix.py::test_0101_postgres_server_is_real_postgres",
+      "reason": "POSTGRES_TEST_DATABASE_URL not configured",
+      "artifact": 10898975243
+    },
+    {
+      "node": "tests/test_outbox_resilience.py::test_postgresql_two_workers_claim_one_row_once",
+      "reason": "requires PostgreSQL row-lock semantics",
+      "artifact": 10898925349
+    },
+    {
+      "node": "tests/test_p0_0100_postgres_concurrency.py::test_order_payment_root_unique_under_postgres_race",
+      "reason": "POSTGRES_TEST_DATABASE_URL not configured",
+      "artifact": 10898506173
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact": {
+        "id": 10899005872,
+        "name": "canonical-retention-shard-0-b2d9f9744dd7d994636caa805e4dc954e278aab9",
+        "size_in_bytes": 106978,
+        "url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/actions/artifacts/10899005872",
+        "archive_download_url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/actions/artifacts/10899005872/zip",
+        "expired": false,
+        "created_at": "2026-09-26T04:55:44Z",
+        "expires_at": "2026-12-25T04:42:49Z",
+        "updated_at": "2026-09-26T04:55:44Z",
+        "digest": "sha256:8a6ccbafecb3c225b23dea72b788d7aba04e39cc4eb354677ea9f6fab1bd16e0",
+        "workflow_run": {
+          "id": 36218642925,
+          "repository_id": 1355081753,
+          "head_repository_id": 1355081753,
+          "head_branch": "integration/depth9-20260925",
+          "head_sha": "b2d9f9744dd7d994636caa805e4dc954e278aab9"
+        }
+      },
+      "result": {
+        "exit_code": 0,
+        "selected_files": 87,
+        "shard": 0,
+        "real_providers": "NOT_RUN",
+        "hong_kong": "NOT_ACCESSED",
+        "tests": 841,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 841
+      },
+      "selected_files_sha256": {
+        "source/ALIGNMENT_RESULT.json": "8696731fe4fd4b6b7f395728549cb4e2b22bad64d6f3fbee78bc61aa4dc3ce57",
+        "source/RETENTION_RESULT.json": "ea2f94b8de6c8f1963525ffb56600ff8fa1ab7740fcd21ee47f9abd55e764a61",
+        "tests/RESULT.json": "64b6c790a7645624e0bb156a1680d7ea9d3b42e2930ea41c21f4db223593fb1a",
+        "tests/TEST_FILE_INVENTORY.json": "3f47f013077dc6b66a0047339d3dea5d66200e62b19365067a7431e1002698c2",
+        "tests/junit.xml": "7ea5195e3dc0d5e79d41c6338b2243f463c21fce44ef70288069ed87a1df5e66",
+        "tests/pytest.log": "d7cac7b972d8e455b8b20719ccd17328c8c54356f6611e786c4a45c36c2f015e"
+      }
+    },
+    {
+      "artifact": {
+        "id": 10898975243,
+        "name": "canonical-retention-shard-1-b2d9f9744dd7d994636caa805e4dc954e278aab9",
+        "size_in_bytes": 106725,
+        "url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/actions/artifacts/10898975243",
+        "archive_download_url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/actions/artifacts/10898975243/zip",
+        "expired": false,
+        "created_at": "2026-09-26T04:54:30Z",
+        "expires_at": "2026-12-25T04:42:49Z",
+        "updated_at": "2026-09-26T04:54:30Z",
+        "digest": "sha256:ae6a9f5b14d26cb0f28cbb1ee19a4d4d739211327dc758fdaecc0c098f4d7c28",
+        "workflow_run": {
+          "id": 36218642925,
+          "repository_id": 1355081753,
+          "head_repository_id": 1355081753,
+          "head_branch": "integration/depth9-20260925",
+          "head_sha": "b2d9f9744dd7d994636caa805e4dc954e278aab9"
+        }
+      },
+      "result": {
+        "exit_code": 0,
+        "selected_files": 87,
+        "shard": 1,
+        "real_providers": "NOT_RUN",
+        "hong_kong": "NOT_ACCESSED",
+        "tests": 804,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 5,
+        "passed": 799
+      },
+      "selected_files_sha256": {
+        "source/ALIGNMENT_RESULT.json": "8696731fe4fd4b6b7f395728549cb4e2b22bad64d6f3fbee78bc61aa4dc3ce57",
+        "source/RETENTION_RESULT.json": "ea2f94b8de6c8f1963525ffb56600ff8fa1ab7740fcd21ee47f9abd55e764a61",
+        "tests/RESULT.json": "f6009007f39e8b7978d5264ec5951e999c7b2bf24590c872aff4e7cabde97fa7",
+        "tests/TEST_FILE_INVENTORY.json": "2e3a2a00c21cbdeb97c60a67856f50d697489f004673455e6cf5356f5ce7893c",
+        "tests/junit.xml": "7a217d2bb17217dada06d285b28d4100169db0160329a5836c782a5d26349474",
+        "tests/pytest.log": "8fc7339e020e5e32cce82ae7c249b79bc63cabd73742361e7ec2514b851813ce"
+      }
+    },
+    {
+      "artifact": {
+        "id": 10898925349,
+        "name": "canonical-retention-shard-3-b2d9f9744dd7d994636caa805e4dc954e278aab9",
+        "size_in_bytes": 107707,
+        "url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/actions/artifacts/10898925349",
+        "archive_download_url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/actions/artifacts/10898925349/zip",
+        "expired": false,
+        "created_at": "2026-09-26T04:54:27Z",
+        "expires_at": "2026-12-25T04:42:49Z",
+        "updated_at": "2026-09-26T04:54:27Z",
+        "digest": "sha256:58f8abc406ce099ff9bda6a74d073f1c9e1511e72e2d5163e3f8aa206443c5f6",
+        "workflow_run": {
+          "id": 36218642925,
+          "repository_id": 1355081753,
+          "head_repository_id": 1355081753,
+          "head_branch": "integration/depth9-20260925",
+          "head_sha": "b2d9f9744dd7d994636caa805e4dc954e278aab9"
+        }
+      },
+      "result": {
+        "exit_code": 0,
+        "selected_files": 87,
+        "shard": 3,
+        "real_providers": "NOT_RUN",
+        "hong_kong": "NOT_ACCESSED",
+        "tests": 803,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1,
+        "passed": 802
+      },
+      "selected_files_sha256": {
+        "source/ALIGNMENT_RESULT.json": "8696731fe4fd4b6b7f395728549cb4e2b22bad64d6f3fbee78bc61aa4dc3ce57",
+        "source/RETENTION_RESULT.json": "ea2f94b8de6c8f1963525ffb56600ff8fa1ab7740fcd21ee47f9abd55e764a61",
+        "tests/RESULT.json": "26edcb57b9c87a62c88a91ee919b0a3a962ee258d25ec001cbdcf3ebac215397",
+        "tests/TEST_FILE_INVENTORY.json": "90bd7a138059140d1571fd61efe3a64798f20ee809682d907911a7e96c6c4a26",
+        "tests/junit.xml": "b5837347e10aa98a41ccb387281aeae682db48286f7f68ade209da1e667a985e",
+        "tests/pytest.log": "ace94ddd83559daa5eca4eec70d784da66467321fe408d564016d101e9584b39"
+      }
+    },
+    {
+      "artifact": {
+        "id": 10898506173,
+        "name": "canonical-retention-shard-2-b2d9f9744dd7d994636caa805e4dc954e278aab9",
+        "size_in_bytes": 107453,
+        "url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/actions/artifacts/10898506173",
+        "archive_download_url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/actions/artifacts/10898506173/zip",
+        "expired": false,
+        "created_at": "2026-09-26T05:03:07Z",
+        "expires_at": "2026-12-25T04:42:49Z",
+        "updated_at": "2026-09-26T05:03:07Z",
+        "digest": "sha256:ce763c8ed55d112c1f84716f74c833ca3006c607ddff3873323609db0472105d",
+        "workflow_run": {
+          "id": 36218642925,
+          "repository_id": 1355081753,
+          "head_repository_id": 1355081753,
+          "head_branch": "integration/depth9-20260925",
+          "head_sha": "b2d9f9744dd7d994636caa805e4dc954e278aab9"
+        }
+      },
+      "result": {
+        "exit_code": 0,
+        "selected_files": 87,
+        "shard": 2,
+        "real_providers": "NOT_RUN",
+        "hong_kong": "NOT_ACCESSED",
+        "tests": 785,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1,
+        "passed": 784
+      },
+      "selected_files_sha256": {
+        "source/ALIGNMENT_RESULT.json": "8696731fe4fd4b6b7f395728549cb4e2b22bad64d6f3fbee78bc61aa4dc3ce57",
+        "source/RETENTION_RESULT.json": "ea2f94b8de6c8f1963525ffb56600ff8fa1ab7740fcd21ee47f9abd55e764a61",
+        "tests/RESULT.json": "0b2fe969f229a0d7c66368db736b952ae35d06066f12986d5c4997760270888c",
+        "tests/TEST_FILE_INVENTORY.json": "7602611f1963c7be72c5e3dfaeaa7e976adc2fbcf735d45dd88e1ce593acf257",
+        "tests/junit.xml": "eb30d8623698139e00b17285cd6237bda79837730f1ce72705b5cb180cc84935",
+        "tests/pytest.log": "6f950cd25dad912882635b96eb680e111a92e48506fc3736e995d57160187712"
+      }
+    }
+  ]
+}

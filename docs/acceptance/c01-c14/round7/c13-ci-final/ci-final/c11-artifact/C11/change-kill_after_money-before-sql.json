@@ -1,0 +1,58 @@
+{
+  "root_ids": [
+    "opi_945366009f2840a18f1a0acb83ed7261"
+  ],
+  "money": [
+    {
+      "id": "omm_fabffbaca30740b2a80546962b5322f5",
+      "root": "opi_945366009f2840a18f1a0acb83ed7261",
+      "type": "AUTHORIZATION",
+      "state": "CONFIRMED",
+      "amount": 40000,
+      "currency": "CNY",
+      "key": "flight-change-auth:flt_chq_a16011a76b2d48ea",
+      "parent": null
+    }
+  ],
+  "attempt_ids": [],
+  "claims": [
+    {
+      "operation": "RESOURCE:FLIGHT_EXECUTE_CHANGE",
+      "key": "flt_chq_a16011a76b2d48ea",
+      "resource": "flt_chq_a16011a76b2d48ea",
+      "code": 102,
+      "body": {
+        "status": "RUNNING",
+        "execution_token": "95c31cac3dde4aa78a671abd8925d072",
+        "lease_until_ms": 1790397989637,
+        "heartbeat_ms": 1790397974637,
+        "payload": {
+          "user_id": "c11-process-owner",
+          "order_id": "c11o_83c93f2d7c544459a67b41143b5c37a9",
+          "quote_id": "flt_chq_a16011a76b2d48ea",
+          "confirmation": null
+        }
+      }
+    },
+    {
+      "operation": "FLIGHT_EXECUTE_CHANGE",
+      "key": "request-change-kill_after_money",
+      "resource": "flt_chq_a16011a76b2d48ea",
+      "code": 102,
+      "body": {
+        "status": "RUNNING",
+        "execution_token": "95c31cac3dde4aa78a671abd8925d072",
+        "lease_until_ms": 1790397989637,
+        "heartbeat_ms": 1790397974637,
+        "payload": {
+          "user_id": "c11-process-owner",
+          "order_id": "c11o_83c93f2d7c544459a67b41143b5c37a9",
+          "quote_id": "flt_chq_a16011a76b2d48ea",
+          "confirmation": null
+        }
+      }
+    }
+  ],
+  "order_status": "UNKNOWN_EXTERNAL_STATE",
+  "quote_status": "AUTHORIZATION_PENDING"
+}

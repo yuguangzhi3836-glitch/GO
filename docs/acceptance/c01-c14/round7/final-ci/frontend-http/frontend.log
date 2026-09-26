@@ -1,0 +1,2262 @@
+TAP version 13
+# Subtest: HTTP helper retains CSRF together with idempotency header
+ok 1 - HTTP helper retains CSRF together with idempotency header
+  ---
+  duration_ms: 3.667872
+  type: 'test'
+  ...
+# Subtest: Escape cancels traveler selection without authorizing or creating an order
+ok 2 - Escape cancels traveler selection without authorizing or creating an order
+  ---
+  duration_ms: 10.40531
+  type: 'test'
+  ...
+# Subtest: rental consent is bound to the selected traveler, field and purpose
+ok 3 - rental consent is bound to the selected traveler, field and purpose
+  ---
+  duration_ms: 2.205714
+  type: 'test'
+  ...
+# Subtest: payment is cancelled without any checkout mutation
+ok 4 - payment is cancelled without any checkout mutation
+  ---
+  duration_ms: 1.707404
+  type: 'test'
+  ...
+# Subtest: a failed confirmed payment stays visible and can be retried
+ok 5 - a failed confirmed payment stays visible and can be retried
+  ---
+  duration_ms: 1.953965
+  type: 'test'
+  ...
+# Subtest: cancelling a party selection creates no order or grant
+ok 6 - cancelling a party selection creates no order or grant
+  ---
+  duration_ms: 2.184532
+  type: 'test'
+  ...
+# Subtest: a party must contain the exact number of different travelers
+ok 7 - a party must contain the exact number of different travelers
+  ---
+  duration_ms: 3.636953
+  type: 'test'
+  ...
+# Subtest: party confirmation returns only the explicitly selected traveler references
+ok 8 - party confirmation returns only the explicitly selected traveler references
+  ---
+  duration_ms: 1.944166
+  type: 'test'
+  ...
+# Subtest: party selection cannot submit without confirming adult travelers and purpose
+ok 9 - party selection cannot submit without confirming adult travelers and purpose
+  ---
+  duration_ms: 3.628688
+  type: 'test'
+  ...
+# Subtest: RIDE browser policy cannot be accepted without a fresh checked consent
+ok 10 - RIDE browser policy cannot be accepted without a fresh checked consent
+  ---
+  duration_ms: 2.437797
+  type: 'test'
+  ...
+# Subtest: RIDE missing policy and cancelled consent create no orders
+ok 11 - RIDE missing policy and cancelled consent create no orders
+  ---
+  duration_ms: 2.982623
+  type: 'test'
+  ...
+# Subtest: consumer uses locked V14 main and compact artwork with responsive selection
+ok 12 - consumer uses locked V14 main and compact artwork with responsive selection
+  ---
+  duration_ms: 2.270234
+  type: 'test'
+  ...
+# Subtest: supplier and admin share the locked reverse V14 compact lockup
+ok 13 - supplier and admin share the locked reverse V14 compact lockup
+  ---
+  duration_ms: 1.335821
+  type: 'test'
+  ...
+# Subtest: all three entry documents advance cache tokens together
+ok 14 - all three entry documents advance cache tokens together
+  ---
+  duration_ms: 0.289249
+  type: 'test'
+  ...
+# Subtest: GO subbrands use V14 geometry with a deliberately recessive GO tier
+ok 15 - GO subbrands use V14 geometry with a deliberately recessive GO tier
+  ---
+  duration_ms: 0.245979
+  type: 'test'
+  ...
+# Subtest: legacy runtime asset names also resolve to locked V14 geometry
+ok 16 - legacy runtime asset names also resolve to locked V14 geometry
+  ---
+  duration_ms: 0.503619
+  type: 'test'
+  ...
+# (node:2279) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/tripFacts.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: web trip keeps original and requested dates separate while supplement is pending
+ok 17 - web trip keeps original and requested dates separate while supplement is pending
+  ---
+  duration_ms: 3.805248
+  type: 'test'
+  ...
+# Subtest: native trip shows pending money honestly and completed refund total
+ok 18 - native trip shows pending money honestly and completed refund total
+  ---
+  duration_ms: 1.192444
+  type: 'test'
+  ...
+# Subtest: supplier workbench displays the same cumulative payment summary
+ok 19 - supplier workbench displays the same cumulative payment summary
+  ---
+  duration_ms: 2.83639
+  type: 'test'
+  ...
+# Subtest: cancel review shows every cash component and exact fee basis before submission
+ok 20 - cancel review shows every cash component and exact fee basis before submission
+  ---
+  duration_ms: 18.18031
+  type: 'test'
+  ...
+# Subtest: closing cancel review never sends cancellation or reloads as completed
+ok 21 - closing cancel review never sends cancellation or reloads as completed
+  ---
+  duration_ms: 0.942939
+  type: 'test'
+  ...
+# Subtest: unchecked money confirmation cannot submit a cash action
+ok 22 - unchecked money confirmation cannot submit a cash action
+  ---
+  duration_ms: 1.270419
+  type: 'test'
+  ...
+# Subtest: change confirmation shows positive difference, free change and fixed original deadline
+ok 23 - change confirmation shows positive difference, free change and fixed original deadline
+  ---
+  duration_ms: 1.102477
+  type: 'test'
+  ...
+# Subtest: cancelled date selection does not request new inventory or a payment
+ok 24 - cancelled date selection does not request new inventory or a payment
+  ---
+  duration_ms: 0.835618
+  type: 'test'
+  ...
+# Subtest: displayed quote hash stays bound across asynchronous source mutation
+ok 25 - displayed quote hash stays bound across asynchronous source mutation
+  ---
+  duration_ms: 0.833755
+  type: 'test'
+  ...
+# Subtest: unknown supplier progress offers query only and binds the saved operation
+ok 26 - unknown supplier progress offers query only and binds the saved operation
+  ---
+  duration_ms: 1.057953
+  type: 'test'
+  ...
+# Subtest: cancel confirmed and refund pending remain distinct in the customer progress card
+ok 27 - cancel confirmed and refund pending remain distinct in the customer progress card
+  ---
+  duration_ms: 0.679648
+  type: 'test'
+  ...
+# Subtest: credit conversion waits for explicit quoted consent and does not claim an unknown cancellation succeeded
+ok 28 - credit conversion waits for explicit quoted consent and does not claim an unknown cancellation succeeded
+  ---
+  duration_ms: 4.577668
+  type: 'test'
+  ...
+# Subtest: canceling traveler selection sends no redemption or automatic identity
+ok 29 - canceling traveler selection sends no redemption or automatic identity
+  ---
+  duration_ms: 1.149955
+  type: 'test'
+  ...
+# Subtest: redemption network retry binds the same quote and explicitly selected traveler
+ok 30 - redemption network retry binds the same quote and explicitly selected traveler
+  ---
+  duration_ms: 2.125615
+  type: 'test'
+  ...
+# Subtest: unknown booking and pending refund remain distinct from completed credit restoration
+ok 31 - unknown booking and pending refund remain distinct from completed credit restoration
+  ---
+  duration_ms: 0.880572
+  type: 'test'
+  ...
+# Subtest: canceling a supplementary payment dialog re-enables the action
+ok 32 - canceling a supplementary payment dialog re-enables the action
+  ---
+  duration_ms: 15.5049
+  type: 'test'
+  ...
+# Subtest: conversion separates prior cash refunds and forfeiture from retained credit
+ok 33 - conversion separates prior cash refunds and forfeiture from retained credit
+  ---
+  duration_ms: 2.07481
+  type: 'test'
+  ...
+# Subtest: forfeiture conversion confirmation stays bound to the displayed quote after source object changes
+ok 34 - forfeiture conversion confirmation stays bound to the displayed quote after source object changes
+  ---
+  duration_ms: 0.966312
+  type: 'test'
+  ...
+# Subtest: credit detail keeps original excluded value visible after redemption changes
+ok 35 - credit detail keeps original excluded value visible after redemption changes
+  ---
+  duration_ms: 0.91118
+  type: 'test'
+  ...
+# Subtest: historical credit without a forfeiture breakdown never renders invalid amounts
+ok 36 - historical credit without a forfeiture breakdown never renders invalid amounts
+  ---
+  duration_ms: 1.294294
+  type: 'test'
+  ...
+# Subtest: conversion displays the fixed credit deadline instead of promising a fresh year
+ok 37 - conversion displays the fixed credit deadline instead of promising a fresh year
+  ---
+  duration_ms: 1.151588
+  type: 'test'
+  ...
+# Subtest: fare confirmation separates fee tiers, cooling, change and property credit terms
+ok 38 - fare confirmation separates fee tiers, cooling, change and property credit terms
+  ---
+  duration_ms: 2.319356
+  type: 'test'
+  ...
+# Subtest: cancelling fare confirmation has no accepted contract
+ok 39 - cancelling fare confirmation has no accepted contract
+  ---
+  duration_ms: 1.810557
+  type: 'test'
+  ...
+# Subtest: accepted hash remains bound to the rules displayed before asynchronous state changes
+ok 40 - accepted hash remains bound to the rules displayed before asynchronous state changes
+  ---
+  duration_ms: 0.795964
+  type: 'test'
+  ...
+# Subtest: declining hotel rules never selects or authorizes a traveler or creates an order
+ok 41 - declining hotel rules never selects or authorizes a traveler or creates an order
+  ---
+  duration_ms: 1.614712
+  type: 'test'
+  ...
+# Subtest: accepted hotel contract is included with selected traveler and stable booking request identity
+ok 42 - accepted hotel contract is included with selected traveler and stable booking request identity
+  ---
+  duration_ms: 1.100232
+  type: 'test'
+  ...
+# Subtest: supplier money and percentage inputs use exact minor units
+ok 43 - supplier money and percentage inputs use exact minor units
+  ---
+  duration_ms: 1.090494
+  type: 'test'
+  ...
+# Subtest: supplier lost-response retry keeps request identity and sends only the claimed cause
+ok 44 - supplier lost-response retry keeps request identity and sends only the claimed cause
+  ---
+  duration_ms: 4.028464
+  type: 'test'
+  ...
+# Subtest: supplier duplicate clicks while a request is pending cannot create another request
+ok 45 - supplier duplicate clicks while a request is pending cannot create another request
+  ---
+  duration_ms: 1.099972
+  type: 'test'
+  ...
+# Subtest: unknown supplier cancellation shows approved refund waiting for confirmation, without a resend button
+ok 46 - unknown supplier cancellation shows approved refund waiting for confirmation, without a resend button
+  ---
+  duration_ms: 14.11669
+  type: 'test'
+  ...
+# Subtest: cross-month range stays in one two-step selection
+ok 47 - cross-month range stays in one two-step selection
+  ---
+  duration_ms: 1.063884
+  type: 'test'
+  ...
+# Subtest: reverse second choice becomes the new start and still requires an end
+ok 48 - reverse second choice becomes the new start and still requires an end
+  ---
+  duration_ms: 0.20915
+  type: 'test'
+  ...
+# Subtest: hotel same-day is incomplete while rental same-day is allowed
+ok 49 - hotel same-day is incomplete while rental same-day is allowed
+  ---
+  duration_ms: 0.953247
+  type: 'test'
+  ...
+# Subtest: single-date verticals remain native business exceptions
+ok 50 - single-date verticals remain native business exceptions
+  ---
+  duration_ms: 0.699654
+  type: 'test'
+  ...
+# Subtest: mobile picker is a full-width bottom sheet with touch-size controls
+ok 51 - mobile picker is a full-width bottom sheet with touch-size controls
+  ---
+  duration_ms: 0.541941
+  type: 'test'
+  ...
+# Subtest: range day clicks never close the dialog and confirmation starts disabled
+ok 52 - range day clicks never close the dialog and confirmation starts disabled
+  ---
+  duration_ms: 0.339353
+  type: 'test'
+  ...
+# Subtest: hotel funds distinguish frozen, charged, released and refunded cent amounts
+ok 53 - hotel funds distinguish frozen, charged, released and refunded cent amounts
+  ---
+  duration_ms: 23.869481
+  type: 'test'
+  ...
+# Subtest: only approved pending refunds expose retry and all server labels are escaped
+ok 54 - only approved pending refunds expose retry and all server labels are escaped
+  ---
+  duration_ms: 0.554414
+  type: 'test'
+  ...
+# Subtest: unknown funding shows reconciliation instead of a false payment claim
+ok 55 - unknown funding shows reconciliation instead of a false payment claim
+  ---
+  duration_ms: 0.459778
+  type: 'test'
+  ...
+# Subtest: trip links only open the exact canonical owned direct-reservation path
+ok 56 - trip links only open the exact canonical owned direct-reservation path
+  ---
+  duration_ms: 0.419873
+  type: 'test'
+  ...
+# Subtest: closing a stay complaint form makes no request
+ok 57 - closing a stay complaint form makes no request
+  ---
+  duration_ms: 1.068644
+  type: 'test'
+  ...
+# Subtest: complaint retries reuse the same request identity and have no refund approval fields
+ok 58 - complaint retries reuse the same request identity and have no refund approval fields
+  ---
+  duration_ms: 1.547586
+  type: 'test'
+  ...
+# Subtest: blank complaints and duplicate submission clicks cannot send extra requests
+ok 59 - blank complaints and duplicate submission clicks cannot send extra requests
+  ---
+  duration_ms: 0.883328
+  type: 'test'
+  ...
+# Subtest: closing hotel authorization leaves funds untouched
+ok 60 - closing hotel authorization leaves funds untouched
+  ---
+  duration_ms: 2.018935
+  type: 'test'
+  ...
+# Subtest: hotel checkout requires confirmation and binds the complete stay amount
+ok 61 - hotel checkout requires confirmation and binds the complete stay amount
+  ---
+  duration_ms: 2.272468
+  type: 'test'
+  ...
+# Subtest: a second click cannot create another hotel authorization while the first is pending
+ok 62 - a second click cannot create another hotel authorization while the first is pending
+  ---
+  duration_ms: 0.876264
+  type: 'test'
+  ...
+# Subtest: a failed hotel authorization remains visible and can be retried
+ok 63 - a failed hotel authorization remains visible and can be retried
+  ---
+  duration_ms: 0.817014
+  type: 'test'
+  ...
+# Subtest: conversion clearly shows capture and value and closing does not convert
+ok 64 - conversion clearly shows capture and value and closing does not convert
+  ---
+  duration_ms: 20.857373
+  type: 'test'
+  ...
+# Subtest: conversion retry keeps original quote, amount and original expiry
+ok 65 - conversion retry keeps original quote, amount and original expiry
+  ---
+  duration_ms: 2.828466
+  type: 'test'
+  ...
+# Subtest: redemption uses server quote policy and displays forfeiture before consent
+ok 66 - redemption uses server quote policy and displays forfeiture before consent
+  ---
+  duration_ms: 1.510598
+  type: 'test'
+  ...
+# Subtest: redemption confirms a fresh traveler and only releases hotel fields
+ok 67 - redemption confirms a fresh traveler and only releases hotel fields
+  ---
+  duration_ms: 1.602829
+  type: 'test'
+  ...
+# Subtest: double click and Escape cannot duplicate or dismiss pending redemption
+ok 68 - double click and Escape cannot duplicate or dismiss pending redemption
+  ---
+  duration_ms: 11.128326
+  type: 'test'
+  ...
+# Subtest: credit list filters property and disables frozen, expired or reconciliation credits
+ok 69 - credit list filters property and disables frozen, expired or reconciliation credits
+  ---
+  duration_ms: 1.307188
+  type: 'test'
+  ...
+# Subtest: a cancellation quote never cancels a booking and closing preserves it
+ok 70 - a cancellation quote never cancels a booking and closing preserves it
+  ---
+  duration_ms: 21.541208
+  type: 'test'
+  ...
+# Subtest: fee consent binds the server quote and keeps frozen release separate from cash refund
+ok 71 - fee consent binds the server quote and keeps frozen release separate from cash refund
+  ---
+  duration_ms: 2.876666
+  type: 'test'
+  ...
+# Subtest: interrupted cancellation retry uses exactly the same quote and fee
+ok 72 - interrupted cancellation retry uses exactly the same quote and fee
+  ---
+  duration_ms: 1.571571
+  type: 'test'
+  ...
+# Subtest: double clicks cannot settle twice while a cancellation is pending
+ok 73 - double clicks cannot settle twice while a cancellation is pending
+  ---
+  duration_ms: 1.255061
+  type: 'test'
+  ...
+# Subtest: unavailable fare actions have no executable buttons and rule text is escaped
+ok 74 - unavailable fare actions have no executable buttons and rule text is escaped
+  ---
+  duration_ms: 1.001928
+  type: 'test'
+  ...
+# Subtest: date changes quote first and require fresh consent after editing dates
+ok 75 - date changes quote first and require fresh consent after editing dates
+  ---
+  duration_ms: 2.379007
+  type: 'test'
+  ...
+# Subtest: extension keeps check-in fixed and explains replacement authorization
+ok 76 - extension keeps check-in fixed and explains replacement authorization
+  ---
+  duration_ms: 2.209301
+  type: 'test'
+  ...
+# Subtest: selected return leg has separate quote and exact confirmation, then reloads original order
+ok 77 - selected return leg has separate quote and exact confirmation, then reloads original order
+  ---
+  duration_ms: 18.289253
+  type: 'test'
+  ...
+# Subtest: closing dialog 1 never executes a change
+ok 78 - closing dialog 1 never executes a change
+  ---
+  duration_ms: 0.846279
+  type: 'test'
+  ...
+# Subtest: closing dialog 2 never executes a change
+ok 79 - closing dialog 2 never executes a change
+  ---
+  duration_ms: 1.012048
+  type: 'test'
+  ...
+# Subtest: mismatched or invalid quote cannot execute {"order_id":"other"}
+ok 80 - mismatched or invalid quote cannot execute {"order_id":"other"}
+  ---
+  duration_ms: 0.921979
+  type: 'test'
+  ...
+# Subtest: mismatched or invalid quote cannot execute {"changes":[{"leg_index":0,"new_departure_date":"2099-10-12"}]}
+ok 81 - mismatched or invalid quote cannot execute {"changes":[{"leg_index":0,"new_departure_date":"2099-10-12"}]}
+  ---
+  duration_ms: 0.758284
+  type: 'test'
+  ...
+# Subtest: mismatched or invalid quote cannot execute {"quote_hash":"bad"}
+ok 82 - mismatched or invalid quote cannot execute {"quote_hash":"bad"}
+  ---
+  duration_ms: 0.797437
+  type: 'test'
+  ...
+# Subtest: mismatched or invalid quote cannot execute {"total_due_minor":1.5}
+ok 83 - mismatched or invalid quote cannot execute {"total_due_minor":1.5}
+  ---
+  duration_ms: 0.840648
+  type: 'test'
+  ...
+# Subtest: mismatched or invalid quote cannot execute {"currency":"USD"}
+ok 84 - mismatched or invalid quote cannot execute {"currency":"USD"}
+  ---
+  duration_ms: 2.473393
+  type: 'test'
+  ...
+# Subtest: unknown result reloads and does not repeat the financial request
+ok 85 - unknown result reloads and does not repeat the financial request
+  ---
+  duration_ms: 1.851825
+  type: 'test'
+  ...
+# Subtest: no date changes cannot request a quote
+ok 86 - no date changes cannot request a quote
+  ---
+  duration_ms: 1.041273
+  type: 'test'
+  ...
+# Subtest: GO Trip shows all states, searches owned rows, opens the filtered order and restores all
+ok 87 - GO Trip shows all states, searches owned rows, opens the filtered order and restores all
+  ---
+  duration_ms: 3.357572
+  type: 'test'
+  ...
+# Subtest: legacy hotel return opens the same all-order GO Trip
+ok 88 - legacy hotel return opens the same all-order GO Trip
+  ---
+  duration_ms: 1.193245
+  type: 'test'
+  ...
+# Subtest: independent review requires an explicit checked attestation and chosen proof
+ok 89 - independent review requires an explicit checked attestation and chosen proof
+  ---
+  duration_ms: 2.189184
+  type: 'test'
+  ...
+# Subtest: review submits the exact evidence snapshot and no caller-selected money
+ok 90 - review submits the exact evidence snapshot and no caller-selected money
+  ---
+  duration_ms: 0.824378
+  type: 'test'
+  ...
+# Subtest: customer sees completed original refund separately from pending extra payment
+ok 91 - customer sees completed original refund separately from pending extra payment
+  ---
+  duration_ms: 13.78942
+  type: 'test'
+  ...
+# Subtest: unapproved guest liability is a review hold without a refund promise or pay button
+ok 92 - unapproved guest liability is a review hold without a refund promise or pay button
+  ---
+  duration_ms: 0.264484
+  type: 'test'
+  ...
+# Subtest: zero captured payment explains authorization release and completed case has no retry
+ok 93 - zero captured payment explains authorization release and completed case has no retry
+  ---
+  duration_ms: 0.343902
+  type: 'test'
+  ...
+# Subtest: finance entry converts decimal currency without fractional cents or silent rounding
+ok 94 - finance entry converts decimal currency without fractional cents or silent rounding
+  ---
+  duration_ms: 0.483061
+  type: 'test'
+  ...
+# Subtest: restricted form accepts updated valid public facts without whole-file hash
+ok 95 - restricted form accepts updated valid public facts without whole-file hash
+  ---
+  duration_ms: 3.828461
+  type: 'test'
+  ...
+# Subtest: wrong hotel, types, URL and phone/email are rejected
+ok 96 - wrong hotel, types, URL and phone/email are rejected
+  ---
+  duration_ms: 2.032744
+  type: 'test'
+  ...
+# Subtest: readonly principal sends no writes
+ok 97 - readonly principal sends no writes
+  ---
+  duration_ms: 1.668913
+  type: 'test'
+  ...
+# Subtest: normal form writes two truthful sources and events-only email
+ok 98 - normal form writes two truthful sources and events-only email
+  ---
+  duration_ms: 17.662702
+  type: 'test'
+  ...
+# Subtest: higher official address is retained and supplementary source snapshot recorded
+ok 99 - higher official address is retained and supplementary source snapshot recorded
+  ---
+  duration_ms: 4.457744
+  type: 'test'
+  ...
+# Subtest: higher-ranked same phone is reused without source downgrade
+ok 100 - higher-ranked same phone is reused without source downgrade
+  ---
+  duration_ms: 3.192614
+  type: 'test'
+  ...
+# Subtest: suppression or incompatible stronger purpose prevents write
+ok 101 - suppression or incompatible stronger purpose prevents write
+  ---
+  duration_ms: 2.03162
+  type: 'test'
+  ...
+# Subtest: changed profile after preview requires re-review before writes
+ok 102 - changed profile after preview requires re-review before writes
+  ---
+  duration_ms: 4.106349
+  type: 'test'
+  ...
+# Subtest: repeat unchanged form keeps stable source identity and no duplicate contacts
+ok 103 - repeat unchanged form keeps stable source identity and no duplicate contacts
+  ---
+  duration_ms: 5.437132
+  type: 'test'
+  ...
+# Subtest: general-reservations misclassification fails final verification
+ok 104 - general-reservations misclassification fails final verification
+  ---
+  duration_ms: 4.580714
+  type: 'test'
+  ...
+# Subtest: same-grade higher confidence phone is not downgraded
+ok 105 - same-grade higher confidence phone is not downgraded
+  ---
+  duration_ms: 3.65076
+  type: 'test'
+  ...
+# Subtest: user supplied Ctrip mailbox has separate attributed snapshot and GENERAL purpose
+ok 106 - user supplied Ctrip mailbox has separate attributed snapshot and GENERAL purpose
+  ---
+  duration_ms: 8.473254
+  type: 'test'
+  ...
+# Subtest: updated attributed email remains configurable without new release
+ok 107 - updated attributed email remains configurable without new release
+  ---
+  duration_ms: 3.201031
+  type: 'test'
+  ...
+# Subtest: tampered attribution snapshot stops before remaining source writes
+ok 108 - tampered attribution snapshot stops before remaining source writes
+  ---
+  duration_ms: 4.484948
+  type: 'test'
+  ...
+# Subtest: public email cannot masquerade as the weddings email or inject markup
+ok 109 - public email cannot masquerade as the weddings email or inject markup
+  ---
+  duration_ms: 1.124317
+  type: 'test'
+  ...
+# Subtest: email local parts reject terminal dot and more than 64 characters
+ok 110 - email local parts reject terminal dot and more than 64 characters
+  ---
+  duration_ms: 0.882176
+  type: 'test'
+  ...
+# Subtest: exact Hyatt plan admitted; changes, wrong hotel and invented kwargs rejected
+ok 111 - exact Hyatt plan admitted; changes, wrong hotel and invented kwargs rejected
+  ---
+  duration_ms: 34.903579
+  type: 'test'
+  ...
+# Subtest: readonly user and unreviewed plans never write
+ok 112 - readonly user and unreviewed plans never write
+  ---
+  duration_ms: 6.412661
+  type: 'test'
+  ...
+# Subtest: 40 images including hero are metadata-checked without rights/publication/room writes
+ok 113 - 40 images including hero are metadata-checked without rights/publication/room writes
+  ---
+  duration_ms: 12.035959
+  type: 'test'
+  ...
+# Subtest: existing reviewed gallery assets are reused without POST
+ok 114 - existing reviewed gallery assets are reused without POST
+  ---
+  duration_ms: 9.135962
+  type: 'test'
+  ...
+# Subtest: lost harvest response resumes by querying index instead of duplicating
+ok 115 - lost harvest response resumes by querying index instead of duplicating
+  ---
+  duration_ms: 12.92107
+  type: 'test'
+  ...
+# Subtest: harvest mismatch stops immediately and does not pretend indexed row rolled back
+ok 116 - harvest mismatch stops immediately and does not pretend indexed row rolled back
+  ---
+  duration_ms: 7.4628
+  type: 'test'
+  ...
+# Subtest: wrong existing hash or duplicate source records stop before write
+ok 117 - wrong existing hash or duplicate source records stop before write
+  ---
+  duration_ms: 14.549458
+  type: 'test'
+  ...
+# Subtest: missing index readback stops after first image
+ok 118 - missing index readback stops after first image
+  ---
+  duration_ms: 5.979182
+  type: 'test'
+  ...
+# Subtest: public or room-bound asset is never silently reused
+ok 119 - public or room-bound asset is never silently reused
+  ---
+  duration_ms: 6.328614
+  type: 'test'
+  ...
+# Subtest: fixed WebP content negotiation is sent on every actual harvest
+ok 120 - fixed WebP content negotiation is sent on every actual harvest
+  ---
+  duration_ms: 10.734963
+  type: 'test'
+  ...
+# Subtest: actual HK first WebP is reused and only remaining thirty-nine are harvested
+ok 121 - actual HK first WebP is reused and only remaining thirty-nine are harvested
+  ---
+  duration_ms: 12.034707
+  type: 'test'
+  ...
+# Subtest: arbitrary or omitted request headers and wrong expected hash reject before API calls
+ok 122 - arbitrary or omitted request headers and wrong expected hash reject before API calls
+  ---
+  duration_ms: 32.560001
+  type: 'test'
+  ...
+# Subtest: legacy JPEG reviewed plan is rejected without network writes
+ok 123 - legacy JPEG reviewed plan is rejected without network writes
+  ---
+  duration_ms: 3.732472
+  type: 'test'
+  ...
+# Subtest: hero role is preserved and gallery substitution cannot be reused
+ok 124 - hero role is preserved and gallery substitution cannot be reused
+  ---
+  duration_ms: 11.5164
+  type: 'test'
+  ...
+# Subtest: previous reviewed 21-image plan remains preserved but cannot execute as expanded 40
+ok 125 - previous reviewed 21-image plan remains preserved but cannot execute as expanded 40
+  ---
+  duration_ms: 9.133606
+  type: 'test'
+  ...
+# Subtest: only exact reviewed JSON is accepted, IDs and media boundaries retained
+ok 126 - only exact reviewed JSON is accepted, IDs and media boundaries retained
+  ---
+  duration_ms: 12.24572
+  type: 'test'
+  ...
+# Subtest: readonly account never sends a write
+ok 127 - readonly account never sends a write
+  ---
+  duration_ms: 2.788101
+  type: 'test'
+  ...
+# Subtest: scope and higher-priority conflicts stop before UNPUBLISH or ingest
+ok 128 - scope and higher-priority conflicts stop before UNPUBLISH or ingest
+  ---
+  duration_ms: 4.064441
+  type: 'test'
+  ...
+# Subtest: unreviewed objects cannot call the import runner
+ok 129 - unreviewed objects cannot call the import runner
+  ---
+  duration_ms: 0.963067
+  type: 'test'
+  ...
+# Subtest: approved flow uses only unpublish + three existing ingest APIs, then readback
+ok 130 - approved flow uses only unpublish + three existing ingest APIs, then readback
+  ---
+  duration_ms: 4.429411
+  type: 'test'
+  ...
+# Subtest: partial failures stop subsequent imports and do not report success
+ok 131 - partial failures stop subsequent imports and do not report success
+  ---
+  duration_ms: 4.220341
+  type: 'test'
+  ...
+# Subtest: incorrect merged facts fail final readback
+ok 132 - incorrect merged facts fail final readback
+  ---
+  duration_ms: 2.413952
+  type: 'test'
+  ...
+# Subtest: scope preview is readonly and activation verifies all 112 archived records
+ok 133 - scope preview is readonly and activation verifies all 112 archived records
+  ---
+  duration_ms: 5.207052
+  type: 'test'
+  ...
+# Subtest: readonly or running-job scope does not write
+ok 134 - readonly or running-job scope does not write
+  ---
+  duration_ms: 1.846934
+  type: 'test'
+  ...
+# Subtest: scope fingerprint drift refuses activation without writing
+ok 135 - scope fingerprint drift refuses activation without writing
+  ---
+  duration_ms: 1.69934
+  type: 'test'
+  ...
+# Subtest: scope readback leak is not reported as success
+ok 136 - scope readback leak is not reported as success
+  ---
+  duration_ms: 2.414743
+  type: 'test'
+  ...
+# Subtest: known anomaly codes are translated and unknown codes are not displayed
+ok 137 - known anomaly codes are translated and unknown codes are not displayed
+  ---
+  duration_ms: 0.734991
+  type: 'test'
+  ...
+# Subtest: hotel detail requests the chosen stay and currency and excludes mixed historical quotes
+ok 138 - hotel detail requests the chosen stay and currency and excludes mixed historical quotes
+  ---
+  duration_ms: 2.67507
+  type: 'test'
+  ...
+# Subtest: a stale selection cannot start prebooking for another date or currency
+ok 139 - a stale selection cannot start prebooking for another date or currency
+  ---
+  duration_ms: 1.644177
+  type: 'test'
+  ...
+# Subtest: the accepted same-stay offer supplies the prebooking currency and review data
+ok 140 - the accepted same-stay offer supplies the prebooking currency and review data
+  ---
+  duration_ms: 0.797387
+  type: 'test'
+  ...
+# Subtest: a late hotel response cannot overwrite the next search
+ok 141 - a late hotel response cannot overwrite the next search
+  ---
+  duration_ms: 0.781608
+  type: 'test'
+  ...
+# Subtest: missing dates or a mismatched hotel response cannot show bookable offers
+ok 142 - missing dates or a mismatched hotel response cannot show bookable offers
+  ---
+  duration_ms: 1.339479
+  type: 'test'
+  ...
+# Subtest: local build preserves development API and unrelated Expo config
+ok 143 - local build preserves development API and unrelated Expo config
+  ---
+  duration_ms: 1.156186
+  type: 'test'
+  ...
+# Subtest: preview and production require an explicit API binding
+ok 144 - preview and production require an explicit API binding
+  ---
+  duration_ms: 0.686681
+  type: 'test'
+  ...
+# Subtest: external builds reject loopback, placeholder, plaintext and credential URLs
+ok 145 - external builds reject loopback, placeholder, plaintext and credential URLs
+  ---
+  duration_ms: 1.374013
+  type: 'test'
+  ...
+# Subtest: explicit HTTPS build API reaches the same extra field consumed by client.ts
+ok 146 - explicit HTTPS build API reaches the same extra field consumed by client.ts
+  ---
+  duration_ms: 0.278189
+  type: 'test'
+  ...
+# Subtest: existing environment names and release metadata remain compatible
+ok 147 - existing environment names and release metadata remain compatible
+  ---
+  duration_ms: 0.916679
+  type: 'test'
+  ...
+# (node:2418) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/changeActions.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: HOTEL: explicit confirmation consumes one quote and reads original order
+ok 148 - HOTEL: explicit confirmation consumes one quote and reads original order
+  ---
+  duration_ms: 31.939559
+  type: 'test'
+  ...
+# Subtest: HOTEL: expiry, edit and session changes prevent submission
+ok 149 - HOTEL: expiry, edit and session changes prevent submission
+  ---
+  duration_ms: 1.294475
+  type: 'test'
+  ...
+# Subtest: HOTEL: wrong identity or unavailable isolated channel cannot execute
+ok 150 - HOTEL: wrong identity or unavailable isolated channel cannot execute
+  ---
+  duration_ms: 0.751743
+  type: 'test'
+  ...
+# Subtest: HOTEL: timeout is unknown and never auto-retried
+ok 151 - HOTEL: timeout is unknown and never auto-retried
+  ---
+  duration_ms: 0.697721
+  type: 'test'
+  ...
+# Subtest: FLIGHT: explicit confirmation consumes one quote and reads original order
+ok 152 - FLIGHT: explicit confirmation consumes one quote and reads original order
+  ---
+  duration_ms: 0.740601
+  type: 'test'
+  ...
+# Subtest: FLIGHT: expiry, edit and session changes prevent submission
+ok 153 - FLIGHT: expiry, edit and session changes prevent submission
+  ---
+  duration_ms: 0.826742
+  type: 'test'
+  ...
+# Subtest: FLIGHT: wrong identity or unavailable isolated channel cannot execute
+ok 154 - FLIGHT: wrong identity or unavailable isolated channel cannot execute
+  ---
+  duration_ms: 0.346517
+  type: 'test'
+  ...
+# Subtest: FLIGHT: timeout is unknown and never auto-retried
+ok 155 - FLIGHT: timeout is unknown and never auto-retried
+  ---
+  duration_ms: 0.353249
+  type: 'test'
+  ...
+# Subtest: RAIL: explicit confirmation consumes one quote and reads original order
+ok 156 - RAIL: explicit confirmation consumes one quote and reads original order
+  ---
+  duration_ms: 0.656835
+  type: 'test'
+  ...
+# Subtest: RAIL: expiry, edit and session changes prevent submission
+ok 157 - RAIL: expiry, edit and session changes prevent submission
+  ---
+  duration_ms: 0.85231
+  type: 'test'
+  ...
+# Subtest: RAIL: wrong identity or unavailable isolated channel cannot execute
+ok 158 - RAIL: wrong identity or unavailable isolated channel cannot execute
+  ---
+  duration_ms: 0.512786
+  type: 'test'
+  ...
+# Subtest: RAIL: timeout is unknown and never auto-retried
+ok 159 - RAIL: timeout is unknown and never auto-retried
+  ---
+  duration_ms: 1.252085
+  type: 'test'
+  ...
+# Subtest: ATTRACTION: explicit confirmation consumes one quote and reads original order
+ok 160 - ATTRACTION: explicit confirmation consumes one quote and reads original order
+  ---
+  duration_ms: 0.429752
+  type: 'test'
+  ...
+# Subtest: ATTRACTION: expiry, edit and session changes prevent submission
+ok 161 - ATTRACTION: expiry, edit and session changes prevent submission
+  ---
+  duration_ms: 0.443307
+  type: 'test'
+  ...
+# Subtest: ATTRACTION: wrong identity or unavailable isolated channel cannot execute
+ok 162 - ATTRACTION: wrong identity or unavailable isolated channel cannot execute
+  ---
+  duration_ms: 0.522855
+  type: 'test'
+  ...
+# Subtest: ATTRACTION: timeout is unknown and never auto-retried
+ok 163 - ATTRACTION: timeout is unknown and never auto-retried
+  ---
+  duration_ms: 0.317773
+  type: 'test'
+  ...
+# Subtest: RENTAL: explicit confirmation consumes one quote and reads original order
+ok 164 - RENTAL: explicit confirmation consumes one quote and reads original order
+  ---
+  duration_ms: 0.581746
+  type: 'test'
+  ...
+# Subtest: RENTAL: expiry, edit and session changes prevent submission
+ok 165 - RENTAL: expiry, edit and session changes prevent submission
+  ---
+  duration_ms: 0.49338
+  type: 'test'
+  ...
+# Subtest: RENTAL: wrong identity or unavailable isolated channel cannot execute
+ok 166 - RENTAL: wrong identity or unavailable isolated channel cannot execute
+  ---
+  duration_ms: 0.360243
+  type: 'test'
+  ...
+# Subtest: RENTAL: timeout is unknown and never auto-retried
+ok 167 - RENTAL: timeout is unknown and never auto-retried
+  ---
+  duration_ms: 0.256588
+  type: 'test'
+  ...
+# Subtest: invalid replacement quote destroys old consent; dates are canonical
+ok 168 - invalid replacement quote destroys old consent; dates are canonical
+  ---
+  duration_ms: 0.622742
+  type: 'test'
+  ...
+# Subtest: double submit makes only one mutation
+ok 169 - double submit makes only one mutation
+  ---
+  duration_ms: 0.399645
+  type: 'test'
+  ...
+# Subtest: multi-leg flight requires selection and binds the selected leg
+ok 170 - multi-leg flight requires selection and binds the selected leg
+  ---
+  duration_ms: 0.862859
+  type: 'test'
+  ...
+# (node:2425) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/changeTerms.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: hotel lower price discloses loss, no fee and original fixed deadline
+ok 171 - hotel lower price discloses loss, no fee and original fixed deadline
+  ---
+  duration_ms: 23.715649
+  type: 'test'
+  ...
+# Subtest: missing or inconsistent hotel financial terms are not confirmable
+ok 172 - missing or inconsistent hotel financial terms are not confirmable
+  ---
+  duration_ms: 0.945434
+  type: 'test'
+  ...
+# Subtest: flight and rail disclose transport identity and reject inconsistent fee sums
+ok 173 - flight and rail disclose transport identity and reject inconsistent fee sums
+  ---
+  duration_ms: 0.422589
+  type: 'test'
+  ...
+# Subtest: rental lower cost specifies original payment and validates the rate calculation
+ok 174 - rental lower cost specifies original payment and validates the rate calculation
+  ---
+  duration_ms: 0.349942
+  type: 'test'
+  ...
+# Subtest: attraction free change never silently accepts a newly introduced charge
+ok 175 - attraction free change never silently accepts a newly introduced charge
+  ---
+  duration_ms: 0.393244
+  type: 'test'
+  ...
+# (node:2432) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/tripFacts.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: Direct navigation preserves the owned reservation identity
+ok 176 - Direct navigation preserves the owned reservation identity
+  ---
+  duration_ms: 1.991565
+  type: 'test'
+  ...
+# Subtest: Direct details read only the canonical reservation and matching events
+ok 177 - Direct details read only the canonical reservation and matching events
+  ---
+  duration_ms: 0.516043
+  type: 'test'
+  ...
+# Subtest: Direct mismatched or missing records cannot display confirmation
+ok 178 - Direct mismatched or missing records cannot display confirmation
+  ---
+  duration_ms: 0.791818
+  type: 'test'
+  ...
+# (node:2439) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/orderActions.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: hotel cancellation sends the displayed quote identity without silently creating another quote
+ok 179 - hotel cancellation sends the displayed quote identity without silently creating another quote
+  ---
+  duration_ms: 4.069694
+  type: 'test'
+  ...
+# Subtest: hotel server rejects a stale accepted quote without replacing it or retrying cancellation
+ok 180 - hotel server rejects a stale accepted quote without replacing it or retrying cancellation
+  ---
+  duration_ms: 2.420957
+  type: 'test'
+  ...
+# Subtest: hotel malformed, expired or foreign accepted quote cannot send cancellation
+ok 181 - hotel malformed, expired or foreign accepted quote cannot send cancellation
+  ---
+  duration_ms: 1.346102
+  type: 'test'
+  ...
+# (node:2446) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/mobilitySearchInput.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: defaults move with now, cross midnight, and leave places editable
+ok 182 - defaults move with now, cross midnight, and leave places editable
+  ---
+  duration_ms: 2.269735
+  type: 'test'
+  ...
+# Subtest: ride sends selected trimmed places and UTC timestamp
+ok 183 - ride sends selected trimmed places and UTC timestamp
+  ---
+  duration_ms: 1.220006
+  type: 'test'
+  ...
+# Subtest: editable +09 and -04 zones map the same wall time to different UTC instants
+ok 184 - editable +09 and -04 zones map the same wall time to different UTC instants
+  ---
+  duration_ms: 0.265886
+  type: 'test'
+  ...
+# Subtest: reject invalid calendar/time 2026-02-29 10:00
+ok 185 - reject invalid calendar/time 2026-02-29 10:00
+  ---
+  duration_ms: 0.378376
+  type: 'test'
+  ...
+# Subtest: reject invalid calendar/time 2026-04-31 10:00
+ok 186 - reject invalid calendar/time 2026-04-31 10:00
+  ---
+  duration_ms: 0.170508
+  type: 'test'
+  ...
+# Subtest: reject invalid calendar/time 2026-13-01 10:00
+ok 187 - reject invalid calendar/time 2026-13-01 10:00
+  ---
+  duration_ms: 0.156151
+  type: 'test'
+  ...
+# Subtest: reject invalid calendar/time 2026-09-00 10:00
+ok 188 - reject invalid calendar/time 2026-09-00 10:00
+  ---
+  duration_ms: 0.142296
+  type: 'test'
+  ...
+# Subtest: reject invalid calendar/time 2026-09-26 24:00
+ok 189 - reject invalid calendar/time 2026-09-26 24:00
+  ---
+  duration_ms: 0.156932
+  type: 'test'
+  ...
+# Subtest: reject invalid calendar/time 2026-09-26 10:60
+ok 190 - reject invalid calendar/time 2026-09-26 10:60
+  ---
+  duration_ms: 0.432006
+  type: 'test'
+  ...
+# Subtest: reject invalid calendar/time 2026/09/26 10:00
+ok 191 - reject invalid calendar/time 2026/09/26 10:00
+  ---
+  duration_ms: 2.989248
+  type: 'test'
+  ...
+# Subtest: reject invalid calendar/time 2026-09-26 9:30
+ok 192 - reject invalid calendar/time 2026-09-26 9:30
+  ---
+  duration_ms: 0.272378
+  type: 'test'
+  ...
+# Subtest: leap date accepted and offset crosses UTC day
+ok 193 - leap date accepted and offset crosses UTC day
+  ---
+  duration_ms: 0.227334
+  type: 'test'
+  ...
+# Subtest: reject invalid offset UTC+8
+ok 194 - reject invalid offset UTC+8
+  ---
+  duration_ms: 0.26802
+  type: 'test'
+  ...
+# Subtest: reject invalid offset +8:00
+ok 195 - reject invalid offset +8:00
+  ---
+  duration_ms: 0.134541
+  type: 'test'
+  ...
+# Subtest: reject invalid offset +14:01
+ok 196 - reject invalid offset +14:01
+  ---
+  duration_ms: 0.200875
+  type: 'test'
+  ...
+# Subtest: reject invalid offset -12:01
+ok 197 - reject invalid offset -12:01
+  ---
+  duration_ms: 0.104425
+  type: 'test'
+  ...
+# Subtest: reject invalid offset +08:60
+ok 198 - reject invalid offset +08:60
+  ---
+  duration_ms: 0.107751
+  type: 'test'
+  ...
+# Subtest: reject invalid offset NaN
+ok 199 - reject invalid offset NaN
+  ---
+  duration_ms: 0.123109
+  type: 'test'
+  ...
+# Subtest: stale form rejects past or current pickup at submission
+ok 200 - stale form rejects past or current pickup at submission
+  ---
+  duration_ms: 0.325076
+  type: 'test'
+  ...
+# Subtest: rental earlier local return date may be later in UTC
+ok 201 - rental earlier local return date may be later in UTC
+  ---
+  duration_ms: 0.304247
+  type: 'test'
+  ...
+# Subtest: later local clock rejected when earlier in UTC
+ok 202 - later local clock rejected when earlier in UTC
+  ---
+  duration_ms: 0.38626
+  type: 'test'
+  ...
+# Subtest: equal instants with different offsets rejected
+ok 203 - equal instants with different offsets rejected
+  ---
+  duration_ms: 0.175387
+  type: 'test'
+  ...
+# Subtest: locations required and bounded without demo fallback
+ok 204 - locations required and bounded without demo fallback
+  ---
+  duration_ms: 0.345154
+  type: 'test'
+  ...
+# (node:2453) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/orderActions.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: HOTEL: payment binds fresh amount and re-reads the same order after lost response
+ok 205 - HOTEL: payment binds fresh amount and re-reads the same order after lost response
+  ---
+  duration_ms: 3.808176
+  type: 'test'
+  ...
+# Subtest: HOTEL: changed amount and unavailable channel cannot execute payment
+ok 206 - HOTEL: changed amount and unavailable channel cannot execute payment
+  ---
+  duration_ms: 0.884861
+  type: 'test'
+  ...
+# Subtest: HOTEL: refund confirms quoted amount, submits once and does not invent refunded state
+ok 207 - HOTEL: refund confirms quoted amount, submits once and does not invent refunded state
+  ---
+  duration_ms: 1.793396
+  type: 'test'
+  ...
+# Subtest: HOTEL: changed refund terms need reconfirmation before any cancellation
+ok 208 - HOTEL: changed refund terms need reconfirmation before any cancellation
+  ---
+  duration_ms: 1.480041
+  type: 'test'
+  ...
+# Subtest: FLIGHT: payment binds fresh amount and re-reads the same order after lost response
+ok 209 - FLIGHT: payment binds fresh amount and re-reads the same order after lost response
+  ---
+  duration_ms: 0.290241
+  type: 'test'
+  ...
+# Subtest: FLIGHT: changed amount and unavailable channel cannot execute payment
+ok 210 - FLIGHT: changed amount and unavailable channel cannot execute payment
+  ---
+  duration_ms: 0.318935
+  type: 'test'
+  ...
+# Subtest: FLIGHT: refund confirms quoted amount, submits once and does not invent refunded state
+ok 211 - FLIGHT: refund confirms quoted amount, submits once and does not invent refunded state
+  ---
+  duration_ms: 0.611721
+  type: 'test'
+  ...
+# Subtest: FLIGHT: changed refund terms need reconfirmation before any cancellation
+ok 212 - FLIGHT: changed refund terms need reconfirmation before any cancellation
+  ---
+  duration_ms: 0.274172
+  type: 'test'
+  ...
+# Subtest: RAIL: payment binds fresh amount and re-reads the same order after lost response
+ok 213 - RAIL: payment binds fresh amount and re-reads the same order after lost response
+  ---
+  duration_ms: 0.54661
+  type: 'test'
+  ...
+# Subtest: RAIL: changed amount and unavailable channel cannot execute payment
+ok 214 - RAIL: changed amount and unavailable channel cannot execute payment
+  ---
+  duration_ms: 0.700748
+  type: 'test'
+  ...
+# Subtest: RAIL: refund confirms quoted amount, submits once and does not invent refunded state
+ok 215 - RAIL: refund confirms quoted amount, submits once and does not invent refunded state
+  ---
+  duration_ms: 0.683465
+  type: 'test'
+  ...
+# Subtest: RAIL: changed refund terms need reconfirmation before any cancellation
+ok 216 - RAIL: changed refund terms need reconfirmation before any cancellation
+  ---
+  duration_ms: 0.41801
+  type: 'test'
+  ...
+# Subtest: RENTAL: payment binds fresh amount and re-reads the same order after lost response
+ok 217 - RENTAL: payment binds fresh amount and re-reads the same order after lost response
+  ---
+  duration_ms: 0.30021
+  type: 'test'
+  ...
+# Subtest: RENTAL: changed amount and unavailable channel cannot execute payment
+ok 218 - RENTAL: changed amount and unavailable channel cannot execute payment
+  ---
+  duration_ms: 0.44972
+  type: 'test'
+  ...
+# Subtest: RENTAL: refund confirms quoted amount, submits once and does not invent refunded state
+ok 219 - RENTAL: refund confirms quoted amount, submits once and does not invent refunded state
+  ---
+  duration_ms: 0.46608
+  type: 'test'
+  ...
+# Subtest: RENTAL: changed refund terms need reconfirmation before any cancellation
+ok 220 - RENTAL: changed refund terms need reconfirmation before any cancellation
+  ---
+  duration_ms: 0.211645
+  type: 'test'
+  ...
+# Subtest: RIDE: payment binds fresh amount and re-reads the same order after lost response
+ok 221 - RIDE: payment binds fresh amount and re-reads the same order after lost response
+  ---
+  duration_ms: 0.328142
+  type: 'test'
+  ...
+# Subtest: RIDE: changed amount and unavailable channel cannot execute payment
+ok 222 - RIDE: changed amount and unavailable channel cannot execute payment
+  ---
+  duration_ms: 0.335806
+  type: 'test'
+  ...
+# Subtest: RIDE: refund confirms quoted amount, submits once and does not invent refunded state
+ok 223 - RIDE: refund confirms quoted amount, submits once and does not invent refunded state
+  ---
+  duration_ms: 0.465859
+  type: 'test'
+  ...
+# Subtest: RIDE: changed refund terms need reconfirmation before any cancellation
+ok 224 - RIDE: changed refund terms need reconfirmation before any cancellation
+  ---
+  duration_ms: 0.321791
+  type: 'test'
+  ...
+# Subtest: ATTRACTION: payment binds fresh amount and re-reads the same order after lost response
+ok 225 - ATTRACTION: payment binds fresh amount and re-reads the same order after lost response
+  ---
+  duration_ms: 0.201035
+  type: 'test'
+  ...
+# Subtest: ATTRACTION: changed amount and unavailable channel cannot execute payment
+ok 226 - ATTRACTION: changed amount and unavailable channel cannot execute payment
+  ---
+  duration_ms: 0.282377
+  type: 'test'
+  ...
+# Subtest: ATTRACTION: refund confirms quoted amount, submits once and does not invent refunded state
+ok 227 - ATTRACTION: refund confirms quoted amount, submits once and does not invent refunded state
+  ---
+  duration_ms: 0.380229
+  type: 'test'
+  ...
+# Subtest: ATTRACTION: changed refund terms need reconfirmation before any cancellation
+ok 228 - ATTRACTION: changed refund terms need reconfirmation before any cancellation
+  ---
+  duration_ms: 0.199242
+  type: 'test'
+  ...
+# Subtest: identity substitution and concurrent payment submission are blocked
+ok 229 - identity substitution and concurrent payment submission are blocked
+  ---
+  duration_ms: 0.685679
+  type: 'test'
+  ...
+# Subtest: screen/session change prevents a mutation after read-only preflight
+ok 230 - screen/session change prevents a mutation after read-only preflight
+  ---
+  duration_ms: 0.346727
+  type: 'test'
+  ...
+# Subtest: all six booking intents use explicit vault identities with stable keys and no fabricated people
+ok 231 - all six booking intents use explicit vault identities with stable keys and no fabricated people
+  ---
+  duration_ms: 6.047554
+  type: 'test'
+  ...
+# Subtest: portable request fingerprint matches standard SHA-256 for Unicode and block boundaries
+ok 232 - portable request fingerprint matches standard SHA-256 for Unicode and block boundaries
+  ---
+  duration_ms: 2.592166
+  type: 'test'
+  ...
+# Subtest: RIDE native intent requires a separately accepted current policy and preserves its hash
+ok 233 - RIDE native intent requires a separately accepted current policy and preserves its hash
+  ---
+  duration_ms: 0.626558
+  type: 'test'
+  ...
+# Subtest: RIDE legacy pending order cannot enter native checkout without a booking policy
+ok 234 - RIDE legacy pending order cannot enter native checkout without a booking policy
+  ---
+  duration_ms: 0.316961
+  type: 'test'
+  ...
+# (node:2461) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/api/transport.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: logout immediately invalidates old UI and blocks orders while remote revocation is pending
+ok 235 - logout immediately invalidates old UI and blocks orders while remote revocation is pending
+  ---
+  duration_ms: 32.239104
+  type: 'test'
+  ...
+# Subtest: read started before logout cannot return old account data
+ok 236 - read started before logout cannot return old account data
+  ---
+  duration_ms: 1.505569
+  type: 'test'
+  ...
+# Subtest: clear blocks stale stored credentials before slow deletion completes
+ok 237 - clear blocks stale stored credentials before slow deletion completes
+  ---
+  duration_ms: 8.889987
+  type: 'test'
+  ...
+# Subtest: logout supersedes a login waiting for secure storage without dispatching login
+ok 238 - logout supersedes a login waiting for secure storage without dispatching login
+  ---
+  duration_ms: 1.272033
+  type: 'test'
+  ...
+# Subtest: late failed logout cannot clear a later successful account login
+ok 239 - late failed logout cannot clear a later successful account login
+  ---
+  duration_ms: 2.376545
+  type: 'test'
+  ...
+# Subtest: missing refresh token after 401 invalidates the authenticated UI
+ok 240 - missing refresh token after 401 invalidates the authenticated UI
+  ---
+  duration_ms: 1.450026
+  type: 'test'
+  ...
+# Subtest: 401 after successful refresh invalidates the session without a third request
+ok 241 - 401 after successful refresh invalidates the session without a third request
+  ---
+  duration_ms: 3.087902
+  type: 'test'
+  ...
+# Subtest: a permission denial does not clear an otherwise valid account
+ok 242 - a permission denial does not clear an otherwise valid account
+  ---
+  duration_ms: 0.867329
+  type: 'test'
+  ...
+# Subtest: a broken UI subscriber cannot prevent token clearing or other subscribers
+ok 243 - a broken UI subscriber cannot prevent token clearing or other subscribers
+  ---
+  duration_ms: 0.643171
+  type: 'test'
+  ...
+# Subtest: failed token persistence cannot expose a partially saved login to requests
+ok 244 - failed token persistence cannot expose a partially saved login to requests
+  ---
+  duration_ms: 1.348136
+  type: 'test'
+  ...
+# Subtest: temporary refresh outage preserves the session and never retries the business mutation
+ok 245 - temporary refresh outage preserves the session and never retries the business mutation
+  ---
+  duration_ms: 1.125871
+  type: 'test'
+  ...
+# Subtest: a successful HTTP response without revocation evidence is not remote logout success
+ok 246 - a successful HTTP response without revocation evidence is not remote logout success
+  ---
+  duration_ms: 0.570684
+  type: 'test'
+  ...
+# (node:2468) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/stayCreditActions.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: native conversion sends exactly the displayed quote and explicit consent
+ok 247 - native conversion sends exactly the displayed quote and explicit consent
+  ---
+  duration_ms: 4.086395
+  type: 'test'
+  ...
+# Subtest: native lost conversion response reads original order without resending cancellation
+ok 248 - native lost conversion response reads original order without resending cancellation
+  ---
+  duration_ms: 0.680199
+  type: 'test'
+  ...
+# Subtest: native stale quote remains rejected and is never silently replaced
+ok 249 - native stale quote remains rejected and is never silently replaced
+  ---
+  duration_ms: 0.643952
+  type: 'test'
+  ...
+# Subtest: native expired, cross-order, wrong-currency or renewed-year quote cannot submit
+ok 250 - native expired, cross-order, wrong-currency or renewed-year quote cannot submit
+  ---
+  duration_ms: 0.537453
+  type: 'test'
+  ...
+# (node:2475) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/api/transport.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: concurrent expired mutations share one refresh and retain each original idempotency key/body
+ok 251 - concurrent expired mutations share one refresh and retain each original idempotency key/body
+  ---
+  duration_ms: 36.99737
+  type: 'test'
+  ...
+# Subtest: a mutation with lost response is uncertain and is never automatically retried
+ok 252 - a mutation with lost response is uncertain and is never automatically retried
+  ---
+  duration_ms: 1.144265
+  type: 'test'
+  ...
+# Subtest: account change discards pending reads and refresh tokens from the old account
+ok 253 - account change discards pending reads and refresh tokens from the old account
+  ---
+  duration_ms: 2.04734
+  type: 'test'
+  ...
+# Subtest: refresh rejection invalidates current session and notifies the UI
+ok 254 - refresh rejection invalidates current session and notifies the UI
+  ---
+  duration_ms: 2.079129
+  type: 'test'
+  ...
+# Subtest: logout revokes remotely and still clears locally after a transport failure
+ok 255 - logout revokes remotely and still clears locally after a transport failure
+  ---
+  duration_ms: 0.699976
+  type: 'test'
+  ...
+# Subtest: a previous logout cannot clear a newly logged-in account
+ok 256 - a previous logout cannot clear a newly logged-in account
+  ---
+  duration_ms: 1.545173
+  type: 'test'
+  ...
+# Subtest: only chosen API-relative paths are requested and caller auth cannot override the session
+ok 257 - only chosen API-relative paths are requested and caller auth cannot override the session
+  ---
+  duration_ms: 1.418297
+  type: 'test'
+  ...
+# Subtest: aborted mutations before dispatch are known not sent; malformed successful responses are uncertain
+ok 258 - aborted mutations before dispatch are known not sent; malformed successful responses are uncertain
+  ---
+  duration_ms: 1.1949
+  type: 'test'
+  ...
+# (node:2482) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/runner/work/GO/GO/application/mobile/go-app/src/domain/tripFacts.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /home/runner/work/GO/GO/application/mobile/go-app/package.json.
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: native navigation binds all six verticals to an owned canonical identity
+ok 259 - native navigation binds all six verticals to an owned canonical identity
+  ---
+  duration_ms: 3.372512
+  type: 'test'
+  ...
+# Subtest: native check-in renders each passenger and leg independently
+ok 260 - native check-in renders each passenger and leg independently
+  ---
+  duration_ms: 0.924625
+  type: 'test'
+  ...
+# Subtest: missing, stale, duplicate, future or wrong-order check-in evidence is unverified
+ok 261 - missing, stale, duplicate, future or wrong-order check-in evidence is unverified
+  ---
+  duration_ms: 0.599208
+  type: 'test'
+  ...
+# Subtest: only safe HTTPS links are offered by native travel facts
+ok 262 - only safe HTTPS links are offered by native travel facts
+  ---
+  duration_ms: 0.275133
+  type: 'test'
+  ...
+# Subtest: native rental details never request ride tracking
+ok 263 - native rental details never request ride tracking
+  ---
+  duration_ms: 0.410075
+  type: 'test'
+  ...
+# Subtest: ride tracking failure cannot hide the existing ride order
+ok 264 - ride tracking failure cannot hide the existing ride order
+  ---
+  duration_ms: 0.302475
+  type: 'test'
+  ...
+# Subtest: tracking and order identity mismatches cannot render another order
+ok 265 - tracking and order identity mismatches cannot render another order
+  ---
+  duration_ms: 0.794823
+  type: 'test'
+  ...
+# Subtest: rail order preserves party, immutable prebook and original total through payment cancellation
+ok 266 - rail order preserves party, immutable prebook and original total through payment cancellation
+  ---
+  duration_ms: 3.830918
+  type: 'test'
+  ...
+# Subtest: attraction order uses the quoted slot, quantity and prebook and shows eligibility
+ok 267 - attraction order uses the quoted slot, quantity and prebook and shows eligibility
+  ---
+  duration_ms: 0.538715
+  type: 'test'
+  ...
+# Subtest: cancelling confirmation step 1 never creates an order or payment
+ok 268 - cancelling confirmation step 1 never creates an order or payment
+  ---
+  duration_ms: 0.229809
+  type: 'test'
+  ...
+# Subtest: cancelling confirmation step 2 never creates an order or payment
+ok 269 - cancelling confirmation step 2 never creates an order or payment
+  ---
+  duration_ms: 0.363558
+  type: 'test'
+  ...
+# Subtest: cancelled party selection cannot reach order creation
+ok 270 - cancelled party selection cannot reach order creation
+  ---
+  duration_ms: 0.350474
+  type: 'test'
+  ...
+# Subtest: quote that expires during traveler selection cannot create or pay an order
+ok 271 - quote that expires during traveler selection cannot create or pay an order
+  ---
+  duration_ms: 0.79871
+  type: 'test'
+  ...
+# Subtest: missing final consent never creates an order
+ok 272 - missing final consent never creates an order
+  ---
+  duration_ms: 0.451663
+  type: 'test'
+  ...
+# Subtest: different people are required for every quoted place
+ok 273 - different people are required for every quoted place
+  ---
+  duration_ms: 0.413422
+  type: 'test'
+  ...
+# Subtest: an uncertain payment still opens the existing order for recovery
+ok 274 - an uncertain payment still opens the existing order for recovery
+  ---
+  duration_ms: 0.694095
+  type: 'test'
+  ...
+# Subtest: repeated clicks cannot start a second booking while confirmation is open
+ok 275 - repeated clicks cannot start a second booking while confirmation is open
+  ---
+  duration_ms: 1.381097
+  type: 'test'
+  ...
+# Subtest: mismatched total, journey or slot is refused before any traveler consent
+ok 276 - mismatched total, journey or slot is refused before any traveler consent
+  ---
+  duration_ms: 0.360403
+  type: 'test'
+  ...
+# Subtest: cancelling date selection never requests a quote or payment
+ok 277 - cancelling date selection never requests a quote or payment
+  ---
+  duration_ms: 2.134943
+  type: 'test'
+  ...
+# Subtest: ride changes continue to use their separate workflow
+ok 278 - ride changes continue to use their separate workflow
+  ---
+  duration_ms: 1.550583
+  type: 'test'
+  ...
+# Subtest: viewing a rental quote does not execute the change
+ok 279 - viewing a rental quote does not execute the change
+  ---
+  duration_ms: 0.865385
+  type: 'test'
+  ...
+# Subtest: confirmed refund difference retains its sign and server quote identity
+ok 280 - confirmed refund difference retains its sign and server quote identity
+  ---
+  duration_ms: 1.647233
+  type: 'test'
+  ...
+# Subtest: unchecked amount consent blocks executing a displayed quote
+ok 281 - unchecked amount consent blocks executing a displayed quote
+  ---
+  duration_ms: 1.153172
+  type: 'test'
+  ...
+# Subtest: the shared amount formatter preserves cents on confirmation screens
+ok 282 - the shared amount formatter preserves cents on confirmation screens
+  ---
+  duration_ms: 14.713874
+  type: 'test'
+  ...
+# Subtest: administrator must explicitly confirm server-derived source; no editable amount or hash
+ok 283 - administrator must explicitly confirm server-derived source; no editable amount or hash
+  ---
+  duration_ms: 20.297102
+  type: 'test'
+  ...
+# Subtest: lost response is read back; retry preserves exact source version and body
+ok 284 - lost response is read back; retry preserves exact source version and body
+  ---
+  duration_ms: 4.680104
+  type: 'test'
+  ...
+# Subtest: unknown readback prohibits retry and all new financial actions
+ok 285 - unknown readback prohibits retry and all new financial actions
+  ---
+  duration_ms: 2.477783
+  type: 'test'
+  ...
+# Subtest: changed source never silently upgrades a pending retry
+ok 286 - changed source never silently upgrades a pending retry
+  ---
+  duration_ms: 2.61504
+  type: 'test'
+  ...
+# Subtest: double submit while in flight cannot dispatch twice
+ok 287 - double submit while in flight cannot dispatch twice
+  ---
+  duration_ms: 2.513771
+  type: 'test'
+  ...
+# Subtest: read failure removes mutation choices even if last snapshot was actionable
+ok 288 - read failure removes mutation choices even if last snapshot was actionable
+  ---
+  duration_ms: 1.84896
+  type: 'test'
+  ...
+# Subtest: settlement sends server decision hash without caller money fields
+ok 289 - settlement sends server decision hash without caller money fields
+  ---
+  duration_ms: 2.635487
+  type: 'test'
+  ...
+# Subtest: return release uses independent closure version and excludes claim and amount
+ok 290 - return release uses independent closure version and excludes claim and amount
+  ---
+  duration_ms: 2.541903
+  type: 'test'
+  ...
+# Subtest: settled appeal is presented as separate review, never another capture button
+ok 291 - settled appeal is presented as separate review, never another capture button
+  ---
+  duration_ms: 1.38271
+  type: 'test'
+  ...
+# Subtest: compensation posts bound version and reads confirmed net amount
+ok 292 - compensation posts bound version and reads confirmed net amount
+  ---
+  duration_ms: 2.88864
+  type: 'test'
+  ...
+# Subtest: settled alone cannot confirm a lost compensation response
+ok 293 - settled alone cannot confirm a lost compensation response
+  ---
+  duration_ms: 4.33059
+  type: 'test'
+  ...
+# Subtest: consumer sees compensation and net capture from verified money only
+ok 294 - consumer sees compensation and net capture from verified money only
+  ---
+  duration_ms: 22.233525
+  type: 'test'
+  ...
+# Subtest: consumer adapter serializes shared object exactly once and keeps headers
+ok 295 - consumer adapter serializes shared object exactly once and keeps headers
+  ---
+  duration_ms: 2.464478
+  type: 'test'
+  ...
+# Subtest: consumer adapter leaves reads bodyless and does not replace other vertical views
+ok 296 - consumer adapter leaves reads bodyless and does not replace other vertical views
+  ---
+  duration_ms: 0.650033
+  type: 'test'
+  ...
+# Subtest: shared widget follows admin ApiClient object-body contract
+ok 297 - shared widget follows admin ApiClient object-body contract
+  ---
+  duration_ms: 1.10964
+  type: 'test'
+  ...
+# Subtest: policy activation requires explicit confirmation and sends only server revision
+ok 298 - policy activation requires explicit confirmation and sends only server revision
+  ---
+  duration_ms: 4.964754
+  type: 'test'
+  ...
+# Subtest: pending double click does not duplicate policy mutation
+ok 299 - pending double click does not duplicate policy mutation
+  ---
+  duration_ms: 1.215138
+  type: 'test'
+  ...
+# Subtest: revision conflict re-reads without automatically confirming updated policy
+ok 300 - revision conflict re-reads without automatically confirming updated policy
+  ---
+  duration_ms: 1.503475
+  type: 'test'
+  ...
+# Subtest: unknown mutation response never claims success and failed read removes writes
+ok 301 - unknown mutation response never claims success and failed read removes writes
+  ---
+  duration_ms: 1.231267
+  type: 'test'
+  ...
+# Subtest: server capabilities prevent maker self approval and read-only writes
+ok 302 - server capabilities prevent maker self approval and read-only writes
+  ---
+  duration_ms: 1.836527
+  type: 'test'
+  ...
+# Subtest: untrusted policy content is escaped and meaningful conditions remain readable
+ok 303 - untrusted policy content is escaped and meaningful conditions remain readable
+  ---
+  duration_ms: 0.814169
+  type: 'test'
+  ...
+# Subtest: navigation detach prevents mutation and late read cannot redraw another page
+ok 304 - navigation detach prevents mutation and late read cannot redraw another page
+  ---
+  duration_ms: 0.995367
+  type: 'test'
+  ...
+# Subtest: consumer: concurrent expired reads refresh once and preserve namespace
+ok 305 - consumer: concurrent expired reads refresh once and preserve namespace
+  ---
+  duration_ms: 9.520584
+  type: 'test'
+  ...
+# Subtest: consumer: a mutation without idempotency is never replayed after renewal
+ok 306 - consumer: a mutation without idempotency is never replayed after renewal
+  ---
+  duration_ms: 1.303662
+  type: 'test'
+  ...
+# Subtest: consumer: an idempotent retry retains the original key and body
+ok 307 - consumer: an idempotent retry retains the original key and body
+  ---
+  duration_ms: 0.906882
+  type: 'test'
+  ...
+# Subtest: consumer: failed refresh stops without retrying the operation
+ok 308 - consumer: failed refresh stops without retrying the operation
+  ---
+  duration_ms: 0.919696
+  type: 'test'
+  ...
+# Subtest: console: concurrent expired reads refresh once and preserve namespace
+ok 309 - console: concurrent expired reads refresh once and preserve namespace
+  ---
+  duration_ms: 5.172772
+  type: 'test'
+  ...
+# Subtest: console: a mutation without idempotency is never replayed after renewal
+ok 310 - console: a mutation without idempotency is never replayed after renewal
+  ---
+  duration_ms: 1.1576
+  type: 'test'
+  ...
+# Subtest: console: an idempotent retry retains the original key and body
+ok 311 - console: an idempotent retry retains the original key and body
+  ---
+  duration_ms: 0.772842
+  type: 'test'
+  ...
+# Subtest: console: failed refresh stops without retrying the operation
+ok 312 - console: failed refresh stops without retrying the operation
+  ---
+  duration_ms: 0.720905
+  type: 'test'
+  ...
+# Subtest: consumer logout failure preserves account and current page; success clears all private state
+ok 313 - consumer logout failure preserves account and current page; success clears all private state
+  ---
+  duration_ms: 1.249752
+  type: 'test'
+  ...
+# Subtest: console logout failure is surfaced instead of silently reporting success
+ok 314 - console logout failure is surfaced instead of silently reporting success
+  ---
+  duration_ms: 1.697758
+  type: 'test'
+  ...
+# Subtest: console requests work when randomUUID is unavailable in an HTTP preview
+ok 315 - console requests work when randomUUID is unavailable in an HTTP preview
+  ---
+  duration_ms: 0.978506
+  type: 'test'
+  ...
+# Subtest: console login binds the requested account type before establishing a session
+ok 316 - console login binds the requested account type before establishing a session
+  ---
+  duration_ms: 0.83047
+  type: 'test'
+  ...
+# Subtest: a changed console actor clears the stale UI and never refreshes or retries
+ok 317 - a changed console actor clears the stale UI and never refreshes or retries
+  ---
+  duration_ms: 0.773183
+  type: 'test'
+  ...
+# Subtest: consumer: expired access can renew once to revoke its own session
+ok 318 - consumer: expired access can renew once to revoke its own session
+  ---
+  duration_ms: 1.374485
+  type: 'test'
+  ...
+# Subtest: console: expired access can renew once to revoke its own session
+ok 319 - console: expired access can renew once to revoke its own session
+  ---
+  duration_ms: 0.757803
+  type: 'test'
+  ...
+# Subtest: unverified check-in never exposes links or boarding passes
+ok 320 - unverified check-in never exposes links or boarding passes
+  ---
+  duration_ms: 3.228795
+  type: 'test'
+  ...
+# Subtest: per-traveler boarding pass appears only for the verified pass state
+ok 321 - per-traveler boarding pass appears only for the verified pass state
+  ---
+  duration_ms: 0.950493
+  type: 'test'
+  ...
+# Subtest: invalid URL schemes and credentials do not become customer links
+ok 322 - invalid URL schemes and credentials do not become customer links
+  ---
+  duration_ms: 0.873871
+  type: 'test'
+  ...
+# Subtest: unknown fleet outcome clearly separates confirmed and proposed times
+ok 323 - unknown fleet outcome clearly separates confirmed and proposed times
+  ---
+  duration_ms: 0.919413
+  type: 'test'
+  ...
+# Subtest: cancelled tracking confirmation sends no binding mutation
+ok 324 - cancelled tracking confirmation sends no binding mutation
+  ---
+  duration_ms: 1.03431
+  type: 'test'
+  ...
+# Subtest: checked consent sends exact displayed revision and server authority, never wait overrides
+ok 325 - checked consent sends exact displayed revision and server authority, never wait overrides
+  ---
+  duration_ms: 0.924786
+  type: 'test'
+  ...
+# Subtest: missing consent prevents any tracking write
+ok 326 - missing consent prevents any tracking write
+  ---
+  duration_ms: 1.459113
+  type: 'test'
+  ...
+# Subtest: no authorized source does not open an unusable confirmation dialog
+ok 327 - no authorized source does not open an unusable confirmation dialog
+  ---
+  duration_ms: 0.773072
+  type: 'test'
+  ...
+# Subtest: waiting protection is conditional and shows the actual event allowance
+ok 328 - waiting protection is conditional and shows the actual event allowance
+  ---
+  duration_ms: 0.989346
+  type: 'test'
+  ...
+# Subtest: late check-in response cannot populate a detached screen
+ok 329 - late check-in response cannot populate a detached screen
+  ---
+  duration_ms: 14.266883
+  type: 'test'
+  ...
+# Subtest: HOTEL_CATALOG: reopen the existing order without a new order or payment
+ok 330 - HOTEL_CATALOG: reopen the existing order without a new order or payment
+  ---
+  duration_ms: 3.349139
+  type: 'test'
+  ...
+# Subtest: HOTEL_DIRECT: reopen the existing order without a new order or payment
+ok 331 - HOTEL_DIRECT: reopen the existing order without a new order or payment
+  ---
+  duration_ms: 1.406364
+  type: 'test'
+  ...
+# Subtest: FLIGHT: reopen the existing order without a new order or payment
+ok 332 - FLIGHT: reopen the existing order without a new order or payment
+  ---
+  duration_ms: 0.646366
+  type: 'test'
+  ...
+# Subtest: RAIL: reopen the existing order without a new order or payment
+ok 333 - RAIL: reopen the existing order without a new order or payment
+  ---
+  duration_ms: 0.728479
+  type: 'test'
+  ...
+# Subtest: RIDE: reopen the existing order without a new order or payment
+ok 334 - RIDE: reopen the existing order without a new order or payment
+  ---
+  duration_ms: 0.678036
+  type: 'test'
+  ...
+# Subtest: RENTAL: reopen the existing order without a new order or payment
+ok 335 - RENTAL: reopen the existing order without a new order or payment
+  ---
+  duration_ms: 0.647148
+  type: 'test'
+  ...
+# Subtest: ATTRACTION: reopen the existing order without a new order or payment
+ok 336 - ATTRACTION: reopen the existing order without a new order or payment
+  ---
+  duration_ms: 0.683796
+  type: 'test'
+  ...
+# Subtest: untrusted evidence URLs and unsupported identities never select an endpoint
+ok 337 - untrusted evidence URLs and unsupported identities never select an endpoint
+  ---
+  duration_ms: 1.012039
+  type: 'test'
+  ...
+# Subtest: card output escapes content and uses current canonical status
+ok 338 - card output escapes content and uses current canonical status
+  ---
+  duration_ms: 1.023008
+  type: 'test'
+  ...
+# Subtest: an order response cannot populate a different order or vertical
+ok 339 - an order response cannot populate a different order or vertical
+  ---
+  duration_ms: 2.274323
+  type: 'test'
+  ...
+# Subtest: late order response cannot overwrite a new screen
+ok 340 - late order response cannot overwrite a new screen
+  ---
+  duration_ms: 0.771399
+  type: 'test'
+  ...
+# Subtest: continuing payment re-reads amount and uses the original order only
+ok 341 - continuing payment re-reads amount and uses the original order only
+  ---
+  duration_ms: 0.894028
+  type: 'test'
+  ...
+# Subtest: already paid or expired orders cannot invoke payment from a stale card
+ok 342 - already paid or expired orders cannot invoke payment from a stale card
+  ---
+  duration_ms: 1.608892
+  type: 'test'
+  ...
+# Subtest: payment timeout reads the same order and never silently resends
+ok 343 - payment timeout reads the same order and never silently resends
+  ---
+  duration_ms: 0.77683
+  type: 'test'
+  ...
+# Subtest: leaving before the fresh order read prevents a payment dialog
+ok 344 - leaving before the fresh order read prevents a payment dialog
+  ---
+  duration_ms: 0.649162
+  type: 'test'
+  ...
+# Subtest: real app dispatch uses every existing enriched order renderer
+ok 345 - real app dispatch uses every existing enriched order renderer
+  ---
+  duration_ms: 3.548752
+  type: 'test'
+  ...
+# Subtest: closing permission confirmation sends no permission mutation
+ok 346 - closing permission confirmation sends no permission mutation
+  ---
+  duration_ms: 4.185169
+  type: 'test'
+  ...
+# Subtest: source disconnect remains explicit and retains server-directed semantics
+ok 347 - source disconnect remains explicit and retains server-directed semantics
+  ---
+  duration_ms: 2.290864
+  type: 'test'
+  ...
+# Subtest: person edit binds the displayed revision and leaves a blank birth date untouched
+ok 348 - person edit binds the displayed revision and leaves a blank birth date untouched
+  ---
+  duration_ms: 1.049348
+  type: 'test'
+  ...
+# Subtest: sensitive import inspection happens only after explicit confirmation, with no implicit acceptance
+ok 349 - sensitive import inspection happens only after explicit confirmation, with no implicit acceptance
+  ---
+  duration_ms: 13.945069
+  type: 'test'
+  ...
+# Subtest: untrusted imported content is escaped before display
+ok 350 - untrusted imported content is escaped before display
+  ---
+  duration_ms: 2.944093
+  type: 'test'
+  ...
+# Subtest: duplicate submits during a pending mutation call the server once
+ok 351 - duplicate submits during a pending mutation call the server once
+  ---
+  duration_ms: 1.970758
+  type: 'test'
+  ...
+# Subtest: import reassignment binds traveler and item revision and does not accept content
+ok 352 - import reassignment binds traveler and item revision and does not accept content
+  ---
+  duration_ms: 1.654107
+  type: 'test'
+  ...
+# Subtest: RAIL cancellation requires explicit confirmation
+ok 353 - RAIL cancellation requires explicit confirmation
+  ---
+  duration_ms: 2.148148
+  type: 'test'
+  ...
+# Subtest: RAIL response loss still reloads persisted order
+ok 354 - RAIL response loss still reloads persisted order
+  ---
+  duration_ms: 1.99332
+  type: 'test'
+  ...
+# Subtest: RAIL paid or uncertain orders cannot open unpaid cancellation
+ok 355 - RAIL paid or uncertain orders cannot open unpaid cancellation
+  ---
+  duration_ms: 2.560808
+  type: 'test'
+  ...
+# Subtest: ATTRACTION cancellation requires explicit confirmation
+ok 356 - ATTRACTION cancellation requires explicit confirmation
+  ---
+  duration_ms: 0.693073
+  type: 'test'
+  ...
+# Subtest: ATTRACTION response loss still reloads persisted order
+ok 357 - ATTRACTION response loss still reloads persisted order
+  ---
+  duration_ms: 0.784985
+  type: 'test'
+  ...
+# Subtest: ATTRACTION paid or uncertain orders cannot open unpaid cancellation
+ok 358 - ATTRACTION paid or uncertain orders cannot open unpaid cancellation
+  ---
+  duration_ms: 2.389679
+  type: 'test'
+  ...
+# Subtest: new unpaid reservation displays its frozen UTC deadline
+ok 359 - new unpaid reservation displays its frozen UTC deadline
+  ---
+  duration_ms: 1.19526
+  type: 'test'
+  ...
+# Subtest: legacy orders never receive a fabricated deadline
+ok 360 - legacy orders never receive a fabricated deadline
+  ---
+  duration_ms: 0.268251
+  type: 'test'
+  ...
+# Subtest: expiry display relies on persisted server state instead of browser clock
+ok 361 - expiry display relies on persisted server state instead of browser clock
+  ---
+  duration_ms: 0.163696
+  type: 'test'
+  ...
+# Subtest: started and uncertain payment keeps its reservation message
+ok 362 - started and uncertain payment keeps its reservation message
+  ---
+  duration_ms: 0.947828
+  type: 'test'
+  ...
+# Subtest: RAIL: opening recovery does not send a refund until confirmed
+ok 363 - RAIL: opening recovery does not send a refund until confirmed
+  ---
+  duration_ms: 2.133641
+  type: 'test'
+  ...
+# Subtest: RAIL: failed response still reloads persisted order state
+ok 364 - RAIL: failed response still reloads persisted order state
+  ---
+  duration_ms: 1.948145
+  type: 'test'
+  ...
+# Subtest: ATTRACTION: opening recovery does not send a refund until confirmed
+ok 365 - ATTRACTION: opening recovery does not send a refund until confirmed
+  ---
+  duration_ms: 0.847321
+  type: 'test'
+  ...
+# Subtest: ATTRACTION: failed response still reloads persisted order state
+ok 366 - ATTRACTION: failed response still reloads persisted order state
+  ---
+  duration_ms: 0.71809
+  type: 'test'
+  ...
+# Subtest: busy recovery gives a customer message and refreshes the existing order
+ok 367 - busy recovery gives a customer message and refreshes the existing order
+  ---
+  duration_ms: 0.767422
+  type: 'test'
+  ...
+# Subtest: rail interrupted change confirms the original quote instead of creating another
+ok 368 - rail interrupted change confirms the original quote instead of creating another
+  ---
+  duration_ms: 1.032958
+  type: 'test'
+  ...
+1..368
+# tests 368
+# suites 0
+# pass 368
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4341.223702

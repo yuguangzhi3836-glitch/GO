@@ -1,0 +1,34 @@
+{
+  "schema": "go.operations-sql-audit.v1",
+  "commit": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+  "source_tree_sha256": "67dca501719f5985ebfcc668c635d051242df99063b8e40440fb39da55f85785",
+  "mode": "SYNTHETIC_READ_ONLY_SQL",
+  "real_psp": false,
+  "result": "PASS",
+  "orders": [
+    {
+      "order_id": "rent_ord_a1eecd7eef504faa",
+      "obligation_id": "rent_dep_438bf77fff39b9fea4b03d25cd279ff6352f6d24",
+      "payment_intent_id": "opi_31b4aab799cb4005a7c00d3bd9910cda",
+      "captured_minor": 5000,
+      "released_minor": 195000,
+      "currency": "CNY",
+      "movement_count": 3,
+      "ledger_entries": 2,
+      "evidence_chain_entries": 12,
+      "result": "PASS"
+    },
+    {
+      "order_id": "rent_ord_5865f8081a1c4f2e",
+      "obligation_id": "rent_dep_591ce25d339396549907ee76e5d406f711ba474e",
+      "payment_intent_id": "opi_295ee796e99a4f44883071b200a9ef01",
+      "captured_minor": 0,
+      "released_minor": 200000,
+      "currency": "CNY",
+      "movement_count": 2,
+      "ledger_entries": 0,
+      "evidence_chain_entries": 8,
+      "result": "PASS"
+    }
+  ]
+}

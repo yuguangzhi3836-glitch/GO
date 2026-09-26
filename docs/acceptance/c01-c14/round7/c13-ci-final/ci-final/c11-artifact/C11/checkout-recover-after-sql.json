@@ -1,0 +1,124 @@
+{
+  "root_ids": [
+    "opi_42a0a34437364aa19228e88f3d79a2a6"
+  ],
+  "money": [
+    {
+      "id": "omm_20a884a09cd448ed9c7e2fd718527f2a",
+      "root": "opi_42a0a34437364aa19228e88f3d79a2a6",
+      "type": "AUTHORIZATION",
+      "state": "CONFIRMED",
+      "amount": 468000,
+      "currency": "CNY",
+      "key": "flight-auth:c11o_8e5b83bf94564d5dbb0556790a243a1f",
+      "parent": null
+    },
+    {
+      "id": "omm_de4fc9fd65034df9837ef60f883a9e6a",
+      "root": "opi_42a0a34437364aa19228e88f3d79a2a6",
+      "type": "CAPTURE",
+      "state": "CONFIRMED",
+      "amount": 468000,
+      "currency": "CNY",
+      "key": "flight-cap:c11o_8e5b83bf94564d5dbb0556790a243a1f",
+      "parent": "omm_20a884a09cd448ed9c7e2fd718527f2a"
+    }
+  ],
+  "attempt_ids": [
+    "opa_fd516739fd814aea91a46ccecfa91226"
+  ],
+  "claims": [
+    {
+      "operation": "FLIGHT_CHECKOUT",
+      "key": "request-checkout-recover",
+      "resource": "c11o_8e5b83bf94564d5dbb0556790a243a1f",
+      "code": 200,
+      "body": {
+        "data": {
+          "passenger_count": 1,
+          "ticket_assignments": [],
+          "trip_type": "ONE_WAY",
+          "data_mode": "SIMULATION",
+          "external_live": false,
+          "order_id": "c11o_8e5b83bf94564d5dbb0556790a243a1f",
+          "account_id": "c11-process-owner",
+          "status": "PAYMENT_CONFIRMED_AWAITING_SUPPLIER",
+          "total_amount_minor": 468000,
+          "currency": "CNY",
+          "passengers": [
+            {
+              "full_name": "C11 PROCESS",
+              "type": "ADT"
+            }
+          ],
+          "pnr": null,
+          "ticket_numbers": [],
+          "itinerary": [
+            {
+              "origin": "PVG",
+              "destination": "NRT",
+              "departure_date": "2026-10-06",
+              "departure_time": "09:20",
+              "arrival_time": "13:15",
+              "carrier_code": "GO",
+              "flight_number": "718",
+              "duration_minutes": 235,
+              "passenger_count": 1,
+              "unit_total_amount_minor": 468000,
+              "unit_tax_amount_minor": 68000
+            }
+          ],
+          "created_at": "2026-09-26T04:44:11.868243+00:00",
+          "updated_at": "2026-09-26T04:44:18.816796"
+        }
+      }
+    },
+    {
+      "operation": "RESOURCE:FLIGHT_CHECKOUT",
+      "key": "c11o_8e5b83bf94564d5dbb0556790a243a1f",
+      "resource": "c11o_8e5b83bf94564d5dbb0556790a243a1f",
+      "code": 200,
+      "body": {
+        "data": {
+          "passenger_count": 1,
+          "ticket_assignments": [],
+          "trip_type": "ONE_WAY",
+          "data_mode": "SIMULATION",
+          "external_live": false,
+          "order_id": "c11o_8e5b83bf94564d5dbb0556790a243a1f",
+          "account_id": "c11-process-owner",
+          "status": "PAYMENT_CONFIRMED_AWAITING_SUPPLIER",
+          "total_amount_minor": 468000,
+          "currency": "CNY",
+          "passengers": [
+            {
+              "full_name": "C11 PROCESS",
+              "type": "ADT"
+            }
+          ],
+          "pnr": null,
+          "ticket_numbers": [],
+          "itinerary": [
+            {
+              "origin": "PVG",
+              "destination": "NRT",
+              "departure_date": "2026-10-06",
+              "departure_time": "09:20",
+              "arrival_time": "13:15",
+              "carrier_code": "GO",
+              "flight_number": "718",
+              "duration_minutes": 235,
+              "passenger_count": 1,
+              "unit_total_amount_minor": 468000,
+              "unit_tax_amount_minor": 68000
+            }
+          ],
+          "created_at": "2026-09-26T04:44:11.868243+00:00",
+          "updated_at": "2026-09-26T04:44:18.816796"
+        }
+      }
+    }
+  ],
+  "order_status": "PAYMENT_CONFIRMED_AWAITING_SUPPLIER",
+  "quote_status": null
+}

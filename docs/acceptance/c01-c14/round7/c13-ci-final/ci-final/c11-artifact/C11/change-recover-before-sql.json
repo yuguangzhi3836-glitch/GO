@@ -1,0 +1,40 @@
+{
+  "root_ids": [
+    "opi_15ae47da27424a42a40b38128e60be74"
+  ],
+  "money": [
+    {
+      "id": "omm_80110584c8fd46adbbc03c77300ed281",
+      "root": "opi_15ae47da27424a42a40b38128e60be74",
+      "type": "AUTHORIZATION",
+      "state": "CONFIRMED",
+      "amount": 40000,
+      "currency": "CNY",
+      "key": "flight-change-auth:flt_chq_8bd6b79b505b4643",
+      "parent": null
+    }
+  ],
+  "attempt_ids": [],
+  "claims": [
+    {
+      "operation": "RESOURCE:FLIGHT_EXECUTE_CHANGE",
+      "key": "flt_chq_8bd6b79b505b4643",
+      "resource": "flt_chq_8bd6b79b505b4643",
+      "code": 102,
+      "body": {
+        "status": "RECOVERY_REQUIRED"
+      }
+    },
+    {
+      "operation": "FLIGHT_EXECUTE_CHANGE",
+      "key": "request-change-recover",
+      "resource": "flt_chq_8bd6b79b505b4643",
+      "code": 102,
+      "body": {
+        "status": "RECOVERY_REQUIRED"
+      }
+    }
+  ],
+  "order_status": "UNKNOWN_EXTERNAL_STATE",
+  "quote_status": "AUTHORIZATION_PENDING"
+}

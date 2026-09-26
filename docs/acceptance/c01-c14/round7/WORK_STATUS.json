@@ -4,73 +4,73 @@
   "cells": [
     {
       "cell": "C01",
-      "status": "IMPLEMENTED_PENDING_C13_CI",
+      "status": "ROUND7_REPAIR_SCOPED_PASS",
       "work": "酒店范围授权、媒体提交主体、版本化发布门禁、未付款确认申请取消"
     },
     {
       "cell": "C02",
-      "status": "NOT_REASSESSED_THIS_ROUND",
-      "work": "保留既有实现，未冒充当前执行中"
+      "status": "SCOPED_REGRESSION_PASS_NO_NEW_FUNCTION_THIS_ROUND",
+      "work": "本轮专项回归通过，未新增功能；不等同该模块全部业务验收"
     },
     {
       "cell": "C03",
-      "status": "NOT_REASSESSED_THIS_ROUND",
-      "work": "同上"
+      "status": "SCOPED_REGRESSION_PASS_NO_NEW_FUNCTION_THIS_ROUND",
+      "work": "本轮专项回归通过，未新增功能；不等同该模块全部业务验收"
     },
     {
       "cell": "C04",
-      "status": "IMPLEMENTED_PENDING_C13_CI",
+      "status": "ROUND7_REPAIR_SCOPED_PASS",
       "work": "最新裁决相对历史原扣款的差额资格"
     },
     {
       "cell": "C05",
-      "status": "NOT_REASSESSED_THIS_ROUND",
-      "work": "保留既有实现"
+      "status": "SCOPED_REGRESSION_PASS_NO_NEW_FUNCTION_THIS_ROUND",
+      "work": "本轮专项回归通过，未新增功能；不等同该模块全部业务验收"
     },
     {
       "cell": "C06",
-      "status": "NOT_REASSESSED_THIS_ROUND",
-      "work": "保留既有实现"
+      "status": "SCOPED_REGRESSION_PASS_NO_NEW_FUNCTION_THIS_ROUND",
+      "work": "本轮专项回归通过，未新增功能；不等同该模块全部业务验收"
     },
     {
       "cell": "C07",
-      "status": "SHARED_AUTHORITY_CHANGED_PENDING_CI",
+      "status": "ROUND7_REPAIR_SCOPED_PASS",
       "work": "具体权限、有效身份会话和酒店范围"
     },
     {
       "cell": "C08",
-      "status": "NOT_REASSESSED_THIS_ROUND",
-      "work": "保留既有实现"
+      "status": "SCOPED_REGRESSION_PASS_NO_NEW_FUNCTION_THIS_ROUND",
+      "work": "本轮专项回归通过，未新增功能；不等同该模块全部业务验收"
     },
     {
       "cell": "C09",
-      "status": "RECOVERY_CHANGED_PENDING_CI",
+      "status": "ROUND7_REPAIR_SCOPED_PASS",
       "work": "审批授权/执行状态分离，失败恢复与重放"
     },
     {
       "cell": "C10",
-      "status": "PROJECTION_CHANGED_PENDING_CI",
+      "status": "ROUND7_REPAIR_SCOPED_PASS",
       "work": "Trips未付款确认申请可取消；终态关闭"
     },
     {
       "cell": "C11",
-      "status": "MONEY_GUARDS_PENDING_C13_CI",
+      "status": "ROUND7_REPAIR_SCOPED_PASS",
       "work": "只按当前净扣款和最新裁决补差额，UNKNOWN不放行"
     },
     {
       "cell": "C12",
-      "status": "CI_CONFIG_UPDATED_PENDING_RUN",
-      "work": "新增酒店旅程和补偿回归加入真实PostgreSQL门禁"
+      "status": "ISOLATED_PG_GATES_PASS",
+      "work": "真实PG324业务增量、7状态迁移与52次受限事务检查通过；不代表千人/万人压力测试"
     },
     {
       "cell": "C13",
-      "status": "FIXED_WIDTH_CANDIDATE_REVIEW_PENDING",
-      "work": "既有29项保留历史证据，新增5列PG状态宽度修复按新SHA独立复验"
+      "status": "ROUND7_INDEPENDENT_SCOPED_PASS",
+      "work": "新SHA37独立实跑通过；真实PG原证据独立复核通过，旧7失败/7环境skip逐节点核对闭合；无本轮剩余FAIL"
     },
     {
       "cell": "C14",
       "status": "RULES_REVIEW_NOT_DISPATCHED",
-      "work": "未授商业条款、真实酒店授权或媒体权利通过"
+      "work": "证据准入程序回归通过；商业规则与真实酒店/媒体权利的独立审核本轮未执行"
     }
   ],
   "frozen_checklist": {
@@ -79,5 +79,35 @@
     "changed": false,
     "new_global_pass_claim": false
   },
-  "deployment": "NOT_RUN"
+  "deployment": "NOT_RUN",
+  "tested_gate": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+  "commercial_scope": {
+    "real_hotel_agency": "HOLD",
+    "media_rights": "HOLD",
+    "real_psp": "NOT_INVOKED",
+    "c14_dedicated_review": "NOT_RUN",
+    "extra_bed_priced_product": "NOT_IMPLEMENTED_POSITIVE_REQUESTS_REJECTED"
+  },
+  "observed_at": "2026-09-26",
+  "all_five_ci": "PASS",
+  "global_305_obligation_acceptance": "NOT_CLAIMED",
+  "parent_python": {
+    "passed": 3226,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 7
+  },
+  "postgres_increment": {
+    "passed": 324,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "c13_independent_new_sha": {
+    "passed": 37,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "c13_verdict": "PASS_SCOPED_HTTP_SQLITE_AND_REVIEWED_REAL_POSTGRES_CI"
 }

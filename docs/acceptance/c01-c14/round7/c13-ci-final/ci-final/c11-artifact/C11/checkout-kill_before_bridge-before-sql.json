@@ -1,0 +1,43 @@
+{
+  "root_ids": [],
+  "money": [],
+  "attempt_ids": [],
+  "claims": [
+    {
+      "operation": "RESOURCE:FLIGHT_CHECKOUT",
+      "key": "c11o_581bc580d13a4829b113bfab950675a6",
+      "resource": "c11o_581bc580d13a4829b113bfab950675a6",
+      "code": 102,
+      "body": {
+        "status": "RUNNING",
+        "execution_token": "3b8fc2b0247f4162b3dc177a893e866e",
+        "lease_until_ms": 1790397877564,
+        "heartbeat_ms": 1790397862564,
+        "payload": {
+          "user_id": "c11-process-owner",
+          "order_id": "c11o_581bc580d13a4829b113bfab950675a6",
+          "payment_method_id": "c11-process-method"
+        }
+      }
+    },
+    {
+      "operation": "FLIGHT_CHECKOUT",
+      "key": "request-checkout-kill_before_bridge",
+      "resource": "c11o_581bc580d13a4829b113bfab950675a6",
+      "code": 102,
+      "body": {
+        "status": "RUNNING",
+        "execution_token": "3b8fc2b0247f4162b3dc177a893e866e",
+        "lease_until_ms": 1790397877564,
+        "heartbeat_ms": 1790397862564,
+        "payload": {
+          "user_id": "c11-process-owner",
+          "order_id": "c11o_581bc580d13a4829b113bfab950675a6",
+          "payment_method_id": "c11-process-method"
+        }
+      }
+    }
+  ],
+  "order_status": "PAYMENT_AUTHORIZED",
+  "quote_status": null
+}

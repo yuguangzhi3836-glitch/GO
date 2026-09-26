@@ -1,0 +1,41 @@
+{
+  "product_commit": "afc142e16c050c0000da5a11a312620387be8f79",
+  "application_git_tree": "ac23b75a75325091c5a95434238473a5592468a7",
+  "scoped_verdict": "PASS_HTTP_SQLITE_AND_MIGRATION_37",
+  "global_c13_verdict": "NOT_ISSUED_TRUE_PG_AND_FULL_CI_PENDING",
+  "counts": {
+    "width-afc142e1-junit.xml": {
+      "tests": 36,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "width-constraint-afc142e1-junit.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "breakdown": {
+    "independent_http": 18,
+    "migration_sqlite_ddl": 13,
+    "postgres_type_without_server": 2,
+    "inventory": 3,
+    "independent_named_unique_constraint": 1
+  },
+  "fixed_source_files": 136,
+  "post_test_source_mismatches": [],
+  "state_columns_fixed": 5,
+  "source_literal_scan": {
+    "python_files": 90,
+    "checks": 322,
+    "remaining_static_width_violations": 0,
+    "full_repository_coverage": false
+  },
+  "real_pg_executed_by_c13": false,
+  "fixed_obligations": 305,
+  "fixed_scenarios": 1009,
+  "gate_commit": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+  "remote_ci_state": "STARTED_NOT_COMPLETION_VERIFIED"
+}

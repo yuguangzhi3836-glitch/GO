@@ -1,0 +1,468 @@
+{
+  "schema": "go.depth41.current-journey.v2",
+  "candidate_commit": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+  "application_git_tree": "ac23b75a75325091c5a95434238473a5592468a7",
+  "parent_commit": "2d15536d2b65484e5a1c00067871387cefdfb235",
+  "source_tree_sha256": "67dca501719f5985ebfcc668c635d051242df99063b8e40440fb39da55f85785",
+  "source_files": 1542,
+  "test_source": "CURRENT_CHECKOUT_ONLY",
+  "tool_sha256": {
+    "browser.mjs": "6b2c48e476e13b92df5ed3fa0fbb2fba1b93e235ea56f52945d2e62e6f0978dc",
+    "test_ledger_independence.py": "307e12e2308c4797ba30717e02311410d08bedf7f341678b361fb1a687c8c2ac",
+    "hotel-ledger.py": "28a28b6ea0c81069ceeb97881e7edb5305d93b5241f4b915f118c0244f034c87",
+    "operations-depth.mjs": "2dea2ede4166c10a2053c990ba1a573e464f52c9a5c7fb86b6439570499a9994",
+    "prepare.py": "c7b3a1829f9023c05267f9d19bae9d464396c43c6d3a8aa0e7af941b12375cfb",
+    "operations-ledger.py": "1bea0dd50c1bfc7cba6754164a871885ed50d3c272d1f7709af85535a9ab3f76",
+    "compensation-depth.mjs": "192f426c6c7efdb3d3c5cb34eccc8682a776411935529e6d13297e54a6e8c0cb",
+    "hotel-depth.mjs": "0fffc7105dde83cf6b6b2b269e52de0061f73615d66225b9e143d3092c5133af",
+    "run.py": "b8a18d056f44c9cf91dc2967afd36221477e001e523efb039116909f7daa4f6f",
+    "rental-operations-host.mjs": "ea44f0cc9c7e61acc3f50f64721223c4167ede8d41ef20d8c90c6e24dde4763f",
+    "ACCEPTANCE_PATCH.json": "112887829de016f632d1c95fe3d6de40d48f2fada48c26660b6bfe6222b12f4b",
+    "same_order_api.py": "47e3ade1381f090e0a62b7e069e0b5fdbf2ffc07fccfc6cc898beeb2a909459d",
+    "ledger.py": "270f021779f3cab078457154d09793a6c2e4e5f11309b306ed9b4e867d942dc4",
+    "capacity.py": "8461b442c51995567baf6ad9f2e20366f14cdee508085f03397383760e64bc82",
+    "compensation-ledger.py": "c30da1764e3a864d452566d57f132cdde484d3f737c591467f1d6a109f7ed9c8",
+    "date-range.mjs": "fcf08359e7c25f10f6e8d753f8256b5a6c2a5163f3e5dc4c5e2f45799c724600",
+    "rental-operations-widget.mjs": "8d94400195ce03621da391345bfaf8adc01df3f9183796aa0f145982750076b8"
+  },
+  "historical_results_transferred": false,
+  "hong_kong": "NOT_ACCESSED",
+  "production": "HOLD",
+  "commit": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+  "input_kind": "API_TESTCLIENT_NOT_BROWSER",
+  "order_checks": [
+    {
+      "vertical": "HOTEL",
+      "order_id": "ord_cd86f2142ee743be",
+      "quoted_refund_minor": 1443200,
+      "final": {
+        "order": {
+          "order_id": "ord_cd86f2142ee743be",
+          "vertical": "HOTEL",
+          "status": "CANCELLED",
+          "total_amount_minor": 1443200,
+          "currency": "CNY",
+          "updated_at": "2026-09-26T04:44:10.968611"
+        },
+        "refunds": [
+          {
+            "refund_id": "ref_1f5b1a7f1d6b4686bf190e7ff848bfc0",
+            "order_id": "ord_cd86f2142ee743be",
+            "amount_minor": 1443200,
+            "currency": "CNY",
+            "status": "COMPLETED"
+          }
+        ],
+        "cash_after_sales": {
+          "operation_id": "cfo_2fa6c7d29be149e99437a1136aa9a511",
+          "action": "CANCEL",
+          "state": "COMPLETED",
+          "currency": "CNY",
+          "check_in": "2026-10-26",
+          "check_out": "2026-10-31",
+          "requested_check_in": null,
+          "requested_check_out": null,
+          "amount_due_minor": 0,
+          "amount_paid_minor": 0,
+          "current_room_value_minor": 1443200,
+          "gross_paid_minor": 1443200,
+          "refunded_minor": 1443200,
+          "net_paid_minor": 0,
+          "paid_change_fees_minor": 0,
+          "forfeited_change_value_minor": 0,
+          "scope": "ACCEPTED_CASH_FARE_OPERATION_FACTS",
+          "bank_settlement_verified": false
+        },
+        "original_payment": {
+          "payment_intent_id": "opi_6749c866f2854182a3a191b43407f863",
+          "binding_state": "BOUND",
+          "state": "SUCCEEDED",
+          "captured_minor": 1443200,
+          "refunded_minor": 1443200,
+          "net_minor": 0,
+          "currency": "CNY",
+          "capture_count": 1,
+          "refund_count": 1,
+          "ledger_debit_minor": 2886400,
+          "ledger_credit_minor": 2886400,
+          "ledger_entries": 4,
+          "ledger_balanced": true,
+          "reconciliation_required": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_0d0d00271cde4a0e9f7171966f514b13",
+            "parent_movement_id": null,
+            "type": "AUTHORIZATION",
+            "amount_minor": 1443200,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_23f0608ce7424b558440a3826cd2cae9",
+            "parent_movement_id": "omm_0d0d00271cde4a0e9f7171966f514b13",
+            "type": "CAPTURE",
+            "amount_minor": 1443200,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_50057376ba2c4fa5977f4b121e832351",
+            "parent_movement_id": "omm_23f0608ce7424b558440a3826cd2cae9",
+            "type": "REFUND",
+            "amount_minor": 1443200,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          }
+        ],
+        "scope": "ORIGINAL_PAYMENT_ROOT",
+        "bank_settlement_verified": false
+      }
+    },
+    {
+      "vertical": "FLIGHT",
+      "order_id": "flt_ord_975e1c1ca73e4162",
+      "quoted_refund_minor": 1792000,
+      "final": {
+        "order": {
+          "order_id": "flt_ord_975e1c1ca73e4162",
+          "vertical": "FLIGHT",
+          "status": "REFUNDED",
+          "total_amount_minor": 1872000,
+          "currency": "CNY",
+          "updated_at": "2026-09-26T04:44:11.372651"
+        },
+        "refunds": [
+          {
+            "refund_id": "flt_ref_41c7f88112fc4b2e",
+            "order_id": "flt_ord_975e1c1ca73e4162",
+            "amount_minor": 1792000,
+            "currency": "CNY",
+            "status": "REFUND_COMPLETED"
+          }
+        ],
+        "cash_after_sales": null,
+        "original_payment": {
+          "payment_intent_id": "opi_e35c13f51def411590794ba33918ed46",
+          "binding_state": "BOUND",
+          "state": "SUCCEEDED",
+          "captured_minor": 1872000,
+          "refunded_minor": 1792000,
+          "net_minor": 80000,
+          "currency": "CNY",
+          "capture_count": 1,
+          "refund_count": 1,
+          "ledger_debit_minor": 3664000,
+          "ledger_credit_minor": 3664000,
+          "ledger_entries": 4,
+          "ledger_balanced": true,
+          "reconciliation_required": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_d78700ea1835452a857c5bb0f202fffc",
+            "parent_movement_id": null,
+            "type": "AUTHORIZATION",
+            "amount_minor": 1872000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_67c7e6b098d24cfaae140e9cf6b3b3dc",
+            "parent_movement_id": "omm_d78700ea1835452a857c5bb0f202fffc",
+            "type": "CAPTURE",
+            "amount_minor": 1872000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_1f0fa847d0944da483a06d66956f055e",
+            "parent_movement_id": "omm_67c7e6b098d24cfaae140e9cf6b3b3dc",
+            "type": "REFUND",
+            "amount_minor": 1792000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          }
+        ],
+        "scope": "ORIGINAL_PAYMENT_ROOT",
+        "bank_settlement_verified": false
+      }
+    },
+    {
+      "vertical": "RAIL",
+      "order_id": "rail_ord_0377aa66a9ba44d7",
+      "quoted_refund_minor": 13100,
+      "final": {
+        "order": {
+          "order_id": "rail_ord_0377aa66a9ba44d7",
+          "vertical": "RAIL",
+          "status": "REFUNDED",
+          "total_amount_minor": 14700,
+          "currency": "CNY",
+          "updated_at": "2026-09-26T04:44:11.772580"
+        },
+        "refunds": [
+          {
+            "refund_id": "rail_ref_99f60bf1bdca43ba",
+            "order_id": "rail_ord_0377aa66a9ba44d7",
+            "amount_minor": 13100,
+            "currency": "CNY",
+            "status": "REFUND_COMPLETED"
+          }
+        ],
+        "cash_after_sales": null,
+        "original_payment": {
+          "payment_intent_id": "opi_f4038e6b15764414a6291339d9e85a56",
+          "binding_state": "BOUND",
+          "state": "SUCCEEDED",
+          "captured_minor": 14700,
+          "refunded_minor": 13100,
+          "net_minor": 1600,
+          "currency": "CNY",
+          "capture_count": 1,
+          "refund_count": 1,
+          "ledger_debit_minor": 27800,
+          "ledger_credit_minor": 27800,
+          "ledger_entries": 4,
+          "ledger_balanced": true,
+          "reconciliation_required": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_55034104fa5a4e70a003a0c10b857163",
+            "parent_movement_id": null,
+            "type": "AUTHORIZATION",
+            "amount_minor": 14700,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_afe7493f2b344e06b243ca6e657f0946",
+            "parent_movement_id": "omm_55034104fa5a4e70a003a0c10b857163",
+            "type": "CAPTURE",
+            "amount_minor": 14700,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_af179ccdb37240c098f0c4319fac0923",
+            "parent_movement_id": "omm_afe7493f2b344e06b243ca6e657f0946",
+            "type": "REFUND",
+            "amount_minor": 13100,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          }
+        ],
+        "scope": "ORIGINAL_PAYMENT_ROOT",
+        "bank_settlement_verified": false
+      }
+    },
+    {
+      "vertical": "RIDE",
+      "order_id": "ride_ord_7f2e3fb5680f41e7",
+      "quoted_refund_minor": 16800,
+      "final": {
+        "order": {
+          "order_id": "ride_ord_7f2e3fb5680f41e7",
+          "vertical": "RIDE",
+          "status": "REFUNDED",
+          "total_amount_minor": 16800,
+          "currency": "CNY",
+          "updated_at": "2026-09-26T04:44:12.152404"
+        },
+        "refunds": [
+          {
+            "refund_id": "mob_ref_5adea895736b48a5",
+            "order_id": "ride_ord_7f2e3fb5680f41e7",
+            "amount_minor": 16800,
+            "currency": "CNY",
+            "status": "REFUND_COMPLETED"
+          }
+        ],
+        "cash_after_sales": null,
+        "original_payment": {
+          "payment_intent_id": "opi_a702c81a4b6d41bab7795da855b9465f",
+          "binding_state": "BOUND",
+          "state": "SUCCEEDED",
+          "captured_minor": 16800,
+          "refunded_minor": 16800,
+          "net_minor": 0,
+          "currency": "CNY",
+          "capture_count": 1,
+          "refund_count": 1,
+          "ledger_debit_minor": 33600,
+          "ledger_credit_minor": 33600,
+          "ledger_entries": 4,
+          "ledger_balanced": true,
+          "reconciliation_required": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_e75802da22954951825ca7f072ad946a",
+            "parent_movement_id": null,
+            "type": "AUTHORIZATION",
+            "amount_minor": 16800,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_f07e83ac9f6244298f02669094ccddea",
+            "parent_movement_id": "omm_e75802da22954951825ca7f072ad946a",
+            "type": "CAPTURE",
+            "amount_minor": 16800,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_9aeee6db732f4412a2a73d738a2ecc0d",
+            "parent_movement_id": "omm_f07e83ac9f6244298f02669094ccddea",
+            "type": "REFUND",
+            "amount_minor": 16800,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          }
+        ],
+        "scope": "ORIGINAL_PAYMENT_ROOT",
+        "bank_settlement_verified": false
+      }
+    },
+    {
+      "vertical": "RENTAL",
+      "order_id": "rent_ord_0915ec973e6646f5",
+      "quoted_refund_minor": 210000,
+      "final": {
+        "order": {
+          "order_id": "rent_ord_0915ec973e6646f5",
+          "vertical": "RENTAL",
+          "status": "REFUNDED",
+          "total_amount_minor": 210000,
+          "currency": "CNY",
+          "updated_at": "2026-09-26T04:44:12.532237"
+        },
+        "refunds": [
+          {
+            "refund_id": "mob_ref_2f7869af61fb4ffa",
+            "order_id": "rent_ord_0915ec973e6646f5",
+            "amount_minor": 210000,
+            "currency": "CNY",
+            "status": "REFUND_COMPLETED"
+          }
+        ],
+        "cash_after_sales": null,
+        "original_payment": {
+          "payment_intent_id": "opi_2cb711869c304c47a4884c58159e4147",
+          "binding_state": "BOUND",
+          "state": "SUCCEEDED",
+          "captured_minor": 210000,
+          "refunded_minor": 210000,
+          "net_minor": 0,
+          "currency": "CNY",
+          "capture_count": 1,
+          "refund_count": 1,
+          "ledger_debit_minor": 420000,
+          "ledger_credit_minor": 420000,
+          "ledger_entries": 4,
+          "ledger_balanced": true,
+          "reconciliation_required": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_307f14a48fdf45b2a171e328baef3f99",
+            "parent_movement_id": null,
+            "type": "AUTHORIZATION",
+            "amount_minor": 210000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_bd6e2d6af6d842e0be7d643dc15c86c9",
+            "parent_movement_id": "omm_307f14a48fdf45b2a171e328baef3f99",
+            "type": "CAPTURE",
+            "amount_minor": 210000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_ff6dfb2ffa964b9388924b173611050e",
+            "parent_movement_id": "omm_bd6e2d6af6d842e0be7d643dc15c86c9",
+            "type": "REFUND",
+            "amount_minor": 210000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          }
+        ],
+        "scope": "ORIGINAL_PAYMENT_ROOT",
+        "bank_settlement_verified": false
+      }
+    },
+    {
+      "vertical": "ATTRACTION",
+      "order_id": "attr_ord_59b94e6014cc4512",
+      "quoted_refund_minor": 36000,
+      "final": {
+        "order": {
+          "order_id": "attr_ord_59b94e6014cc4512",
+          "vertical": "ATTRACTION",
+          "status": "REFUNDED",
+          "total_amount_minor": 36000,
+          "currency": "CNY",
+          "updated_at": "2026-09-26T04:44:12.907480"
+        },
+        "refunds": [
+          {
+            "refund_id": "attr_ref_2197f53be3dc4bd0",
+            "order_id": "attr_ord_59b94e6014cc4512",
+            "amount_minor": 36000,
+            "currency": "CNY",
+            "status": "REFUND_COMPLETED"
+          }
+        ],
+        "cash_after_sales": null,
+        "original_payment": {
+          "payment_intent_id": "opi_a1bd225cc3634f2a9e0e36b4e2dd8233",
+          "binding_state": "BOUND",
+          "state": "SUCCEEDED",
+          "captured_minor": 36000,
+          "refunded_minor": 36000,
+          "net_minor": 0,
+          "currency": "CNY",
+          "capture_count": 1,
+          "refund_count": 1,
+          "ledger_debit_minor": 72000,
+          "ledger_credit_minor": 72000,
+          "ledger_entries": 4,
+          "ledger_balanced": true,
+          "reconciliation_required": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_a1ae5c5b364e49f3abeaebdf4a0e1386",
+            "parent_movement_id": null,
+            "type": "AUTHORIZATION",
+            "amount_minor": 36000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_b62b742bc97740d088e6e76cc084e842",
+            "parent_movement_id": "omm_a1ae5c5b364e49f3abeaebdf4a0e1386",
+            "type": "CAPTURE",
+            "amount_minor": 36000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          },
+          {
+            "movement_id": "omm_cd834d1e27484440bd5af5b4d63fc636",
+            "parent_movement_id": "omm_b62b742bc97740d088e6e76cc084e842",
+            "type": "REFUND",
+            "amount_minor": 36000,
+            "currency": "CNY",
+            "state": "CONFIRMED"
+          }
+        ],
+        "scope": "ORIGINAL_PAYMENT_ROOT",
+        "bank_settlement_verified": false
+      }
+    }
+  ]
+}

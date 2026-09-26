@@ -1,0 +1,98 @@
+{
+  "original_parent_skips_retained": 7,
+  "separate_pg_nodes_passed": 7,
+  "same_source_assertions": true,
+  "rows": [
+    {
+      "shard": 1,
+      "classname": "tests.test_p0_0101_postgres_race_matrix",
+      "name": "test_0101_order_payment_root_exactly_once_postgres",
+      "skip_reason": "POSTGRES_TEST_DATABASE_URL not configured",
+      "skip_text": "/home/runner/work/GO/GO/application/tests/test_p0_0101_postgres_race_matrix.py:24: POSTGRES_TEST_DATABASE_URL not configured",
+      "pg_status": "PASS",
+      "pg_junit": "depth48-artifact/junit.xml",
+      "pg_job_id": 108339566528,
+      "comparison": "EXACT_CLASSNAME_AND_NAME",
+      "assertion_source_sha256": "cc748dcc1bfebeb0d805a7996823c59d5a9d992ebe7ab4848456260643a9ac24",
+      "test_source_equal_to_pg_artifact": true
+    },
+    {
+      "shard": 1,
+      "classname": "tests.test_p0_0101_postgres_race_matrix",
+      "name": "test_0101_webhook_delivery_replay_unique_postgres",
+      "skip_reason": "POSTGRES_TEST_DATABASE_URL not configured",
+      "skip_text": "/home/runner/work/GO/GO/application/tests/test_p0_0101_postgres_race_matrix.py:35: POSTGRES_TEST_DATABASE_URL not configured",
+      "pg_status": "PASS",
+      "pg_junit": "depth48-artifact/junit.xml",
+      "pg_job_id": 108339566528,
+      "comparison": "EXACT_CLASSNAME_AND_NAME",
+      "assertion_source_sha256": "cc748dcc1bfebeb0d805a7996823c59d5a9d992ebe7ab4848456260643a9ac24",
+      "test_source_equal_to_pg_artifact": true
+    },
+    {
+      "shard": 1,
+      "classname": "tests.test_p0_0101_postgres_race_matrix",
+      "name": "test_0101_capture_refund_serialization_postgres",
+      "skip_reason": "POSTGRES_TEST_DATABASE_URL not configured",
+      "skip_text": "/home/runner/work/GO/GO/application/tests/test_p0_0101_postgres_race_matrix.py:46: POSTGRES_TEST_DATABASE_URL not configured",
+      "pg_status": "PASS",
+      "pg_junit": "depth48-artifact/junit.xml",
+      "pg_job_id": 108339566528,
+      "comparison": "EXACT_CLASSNAME_AND_NAME",
+      "assertion_source_sha256": "cc748dcc1bfebeb0d805a7996823c59d5a9d992ebe7ab4848456260643a9ac24",
+      "test_source_equal_to_pg_artifact": true
+    },
+    {
+      "shard": 1,
+      "classname": "tests.test_p0_0101_postgres_race_matrix",
+      "name": "test_0101_finance_close_approval_race_postgres",
+      "skip_reason": "POSTGRES_TEST_DATABASE_URL not configured",
+      "skip_text": "/home/runner/work/GO/GO/application/tests/test_p0_0101_postgres_race_matrix.py:75: POSTGRES_TEST_DATABASE_URL not configured",
+      "pg_status": "PASS",
+      "pg_junit": "depth48-artifact/junit.xml",
+      "pg_job_id": 108339566528,
+      "comparison": "EXACT_CLASSNAME_AND_NAME",
+      "assertion_source_sha256": "cc748dcc1bfebeb0d805a7996823c59d5a9d992ebe7ab4848456260643a9ac24",
+      "test_source_equal_to_pg_artifact": true
+    },
+    {
+      "shard": 1,
+      "classname": "tests.test_p0_0101_postgres_race_matrix",
+      "name": "test_0101_postgres_server_is_real_postgres",
+      "skip_reason": "POSTGRES_TEST_DATABASE_URL not configured",
+      "skip_text": "/home/runner/work/GO/GO/application/tests/test_p0_0101_postgres_race_matrix.py:89: POSTGRES_TEST_DATABASE_URL not configured",
+      "pg_status": "PASS",
+      "pg_junit": "depth48-artifact/junit.xml",
+      "pg_job_id": 108339566528,
+      "comparison": "EXACT_CLASSNAME_AND_NAME",
+      "assertion_source_sha256": "cc748dcc1bfebeb0d805a7996823c59d5a9d992ebe7ab4848456260643a9ac24",
+      "test_source_equal_to_pg_artifact": true
+    },
+    {
+      "shard": 3,
+      "classname": "tests.test_outbox_resilience",
+      "name": "test_postgresql_two_workers_claim_one_row_once",
+      "skip_reason": "requires PostgreSQL row-lock semantics",
+      "skip_text": "/home/runner/work/GO/GO/application/tests/test_outbox_resilience.py:84: requires PostgreSQL row-lock semantics",
+      "pg_status": "PASS",
+      "assertion_source_sha256": "c4d9cd9d9d6305fbe07dc87dc96c5dbb4a8987649acef77ad2225d4d76a67c16",
+      "test_source_equal_to_pg_artifact": true,
+      "pg_junit": "c11-artifact/outbox-junit.xml",
+      "pg_job_id": 108339566594,
+      "comparison": "EXACT_CLASSNAME_AND_NAME"
+    },
+    {
+      "shard": 2,
+      "classname": "tests.test_p0_0100_postgres_concurrency",
+      "name": "test_order_payment_root_unique_under_postgres_race",
+      "skip_reason": "POSTGRES_TEST_DATABASE_URL not configured",
+      "skip_text": "/home/runner/work/GO/GO/application/tests/test_p0_0100_postgres_concurrency.py:10: POSTGRES_TEST_DATABASE_URL not configured",
+      "pg_status": "PASS",
+      "pg_junit": "depth48-artifact/junit.xml",
+      "pg_job_id": 108339566528,
+      "comparison": "EXACT_CLASSNAME_AND_NAME",
+      "test_source_equal_to_pg_artifact": true,
+      "assertion_source_sha256": "9e47bb484db7e30145a360641c233a6d39d8db82748aa35de0380323d2cfe8ae"
+    }
+  ]
+}

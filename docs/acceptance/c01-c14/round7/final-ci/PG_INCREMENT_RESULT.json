@@ -1,0 +1,80 @@
+{
+  "job": 108339566594,
+  "tested_gate": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+  "counts": {
+    "C11/junit.xml": {
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "C12-capacity/junit.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "cell-depth-increment-junit.xml": {
+      "tests": 324,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "hosted-state-widths-junit.xml": {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "outbox-junit.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "payment-junit.xml": {
+      "tests": 47,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "seven_original_failures": [
+    {
+      "classname": "tests.test_c01_hosted_operating_journey",
+      "name": "test_gate_blocks_every_sale_entry_then_independent_review_opens_full_journey",
+      "new_result": "PASS"
+    },
+    {
+      "classname": "tests.test_c01_hosted_operating_journey",
+      "name": "test_approval_failure_and_retry_are_truthful_atomic_and_idempotent[missing_ari]",
+      "new_result": "PASS"
+    },
+    {
+      "classname": "tests.test_c01_hosted_operating_journey",
+      "name": "test_approval_failure_and_retry_are_truthful_atomic_and_idempotent[after_approval]",
+      "new_result": "PASS"
+    },
+    {
+      "classname": "tests.test_c01_hosted_operating_journey",
+      "name": "test_approval_failure_and_retry_are_truthful_atomic_and_idempotent[before_commit]",
+      "new_result": "PASS"
+    },
+    {
+      "classname": "tests.test_c01_hosted_operating_journey",
+      "name": "test_confirmed_uncharged_request_can_withdraw_and_updates_trips",
+      "new_result": "PASS"
+    },
+    {
+      "classname": "tests.test_c01_hosted_operating_journey",
+      "name": "test_uncharged_exit_does_not_bypass_unknown_or_fulfilled_stay[UNKNOWN_EXTERNAL_STATE]",
+      "new_result": "PASS"
+    },
+    {
+      "classname": "tests.test_c01_hosted_operating_journey",
+      "name": "test_uncharged_exit_does_not_bypass_unknown_or_fulfilled_stay[IN_HOUSE]",
+      "new_result": "PASS"
+    }
+  ],
+  "source": "Original EVIDENCE_FILE content in GitHub job log; C13 separately verifies downloaded artifact"
+}

@@ -1,0 +1,52 @@
+{
+  "source_commit": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+  "application_git_tree": "ac23b75a75325091c5a95434238473a5592468a7",
+  "postgres_version": "PostgreSQL 16.4 (Debian 16.4-1.pgdg120+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit",
+  "migration_heads": [
+    "0139_hosted_publication_review"
+  ],
+  "metrics": {
+    "tests": 6,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "race_proofs": [
+    {
+      "scenario_key": "ORDER_PAYMENT_ROOT_EXACTLY_ONCE",
+      "worker_count": 8,
+      "commit_count": 1,
+      "reject_count": 7,
+      "assertion_state": "PASS",
+      "evidence_hash": "fcc5a9ca18f27d633756c974868dd1db5e84056b840beec00d71a4ff5a649fe4"
+    },
+    {
+      "scenario_key": "WEBHOOK_REPLAY_UNIQUE",
+      "worker_count": 8,
+      "commit_count": 1,
+      "reject_count": 7,
+      "assertion_state": "PASS",
+      "evidence_hash": "a6eb6c6afb3c29fb7a06adceb59d92c6115362c25431e1b18429f12a75bfe18c"
+    },
+    {
+      "scenario_key": "CAPTURE_REFUND_SERIALIZATION",
+      "worker_count": 2,
+      "commit_count": 1,
+      "reject_count": 1,
+      "assertion_state": "PASS",
+      "evidence_hash": "e26ddc50717c14cb3f57518079e916d5dc70628129c4475e87c53a8ca4bdad5a"
+    },
+    {
+      "scenario_key": "FINANCE_CLOSE_APPROVAL_RACE",
+      "worker_count": 4,
+      "commit_count": 1,
+      "reject_count": 3,
+      "assertion_state": "PASS",
+      "evidence_hash": "67a2dbab68fe5a28ac57b99b17bf51da08460d0a98c601492709a7fe53330a6e"
+    }
+  ],
+  "migration": "PASS",
+  "database": "DISPOSABLE_GITHUB_ACTIONS_SERVICE",
+  "external_providers": "NOT_RUN",
+  "deployment": "NOT_RUN"
+}

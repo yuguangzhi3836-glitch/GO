@@ -1,0 +1,217 @@
+{
+  "reviewer": "C13 independent AI review",
+  "gate": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+  "product": "afc142e16c050c0000da5a11a312620387be8f79",
+  "application_tree": "ac23b75a75325091c5a95434238473a5592468a7",
+  "verdict": "PASS_SCOPED_HTTP_SQLITE_AND_REVIEWED_REAL_POSTGRES_CI",
+  "new_findings": [],
+  "remaining_failures_in_reviewed_scope": 0,
+  "c13_independently_executed_tests": {
+    "tests": 37,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "database": "SQLite; includes 2 PostgreSQL reflection type checks without a PG connection",
+    "prior_round_counts_added": false
+  },
+  "c13_executed_postgresql_tests": false,
+  "remote_ci_results_reviewed": [
+    {
+      "scope": "depth48",
+      "junit": [
+        {
+          "path": "ci-final/depth48-artifact/junit.xml",
+          "totals": {
+            "tests": 6,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          }
+        }
+      ]
+    },
+    {
+      "scope": "c09",
+      "junit": [
+        {
+          "path": "ci-final/c09-artifact/C09/junit.xml",
+          "totals": {
+            "tests": 12,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          }
+        }
+      ]
+    },
+    {
+      "scope": "c11",
+      "junit": [
+        {
+          "path": "ci-final/c11-artifact/C11/junit.xml",
+          "totals": {
+            "tests": 12,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "ci-final/c11-artifact/C12-capacity/junit.xml",
+          "totals": {
+            "tests": 1,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "ci-final/c11-artifact/cell-depth-increment-junit.xml",
+          "totals": {
+            "tests": 324,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "ci-final/c11-artifact/hosted-state-widths-junit.xml",
+          "totals": {
+            "tests": 7,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "ci-final/c11-artifact/outbox-junit.xml",
+          "totals": {
+            "tests": 1,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          }
+        },
+        {
+          "path": "ci-final/c11-artifact/payment-junit.xml",
+          "totals": {
+            "tests": 47,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          }
+        }
+      ]
+    }
+  ],
+  "migration_chain": {
+    "database": "PostgreSQL 16.4 disposable service",
+    "from": "empty database / 0001",
+    "head": "0139_hosted_publication_review",
+    "status": "PASS"
+  },
+  "old_seven_pg_failures": {
+    "matched_by": "exact classname and test name",
+    "new_status": "all 7 PASS",
+    "test_source_unchanged": {
+      "file": "tests/test_c01_hosted_operating_journey.py",
+      "sha256": "dd82a5e249fd9b8207f86c75d71caa8074a7739a9e3d2efe5238e2e5d427198d"
+    },
+    "node_set_324_unchanged": true,
+    "mapping": "ci-final/OLD_FAILURE_NODE_MAPPING.json"
+  },
+  "parent_environment_skips": {
+    "original_parent_skips": 7,
+    "kept_as_skips_in_original_parent_result": true,
+    "same_node_and_source_verified_pg_pass": 7,
+    "mapping": "ci-final/PG_SKIPPED_NODE_MAPPING.json"
+  },
+  "process_observations": {
+    "cases": [
+      {
+        "case": "checkout-same_key",
+        "original_observations_verified": true
+      },
+      {
+        "case": "checkout-different_key",
+        "original_observations_verified": true
+      },
+      {
+        "case": "checkout-recover",
+        "original_observations_verified": true
+      },
+      {
+        "case": "checkout-kill_before_bridge",
+        "original_observations_verified": true
+      },
+      {
+        "case": "checkout-kill_after_money",
+        "original_observations_verified": true
+      },
+      {
+        "case": "checkout-live_past_lease",
+        "original_observations_verified": true
+      },
+      {
+        "case": "change-same_key",
+        "original_observations_verified": true
+      },
+      {
+        "case": "change-different_key",
+        "original_observations_verified": true
+      },
+      {
+        "case": "change-recover",
+        "original_observations_verified": true
+      },
+      {
+        "case": "change-kill_before_bridge",
+        "original_observations_verified": true
+      },
+      {
+        "case": "change-kill_after_money",
+        "original_observations_verified": true
+      },
+      {
+        "case": "change-live_past_lease",
+        "original_observations_verified": true
+      }
+    ],
+    "scope": "Remote CI process observations; C13 did not execute PG",
+    "hard_death": "SIGKILL exit=-9; persisted lease deliberately expired before real recovery worker",
+    "transport": "Direct route calls with engineering Principal; no HTTP/JWT auth in this harness"
+  },
+  "capacity": {
+    "original_transactions": 52,
+    "failures": 0,
+    "sql_consistency": "PASS",
+    "concurrency_tiers": [
+      1,
+      4,
+      8
+    ],
+    "transaction_counts": [
+      4,
+      16,
+      32
+    ],
+    "production_sla": "NOT_ESTABLISHED"
+  },
+  "bounds": [
+    "C13 local 37 and remote CI observations are distinct; do not sum old rounds or overlapping suites.",
+    "C09 SystemExit is injected transaction rollback, not an OS hard-kill.",
+    "C11 direct route calls use engineering Principal; HTTP/JWT auth is not exercised by that harness.",
+    "C11 uses real SIGKILL then deliberately expires the persisted lease before the real recovery worker; natural recovery timing is not established.",
+    "Capacity uses RIDE CONTRACT_SIMULATOR and synthetic supplier facts; no real PSP/supplier or HTTP auth.",
+    "Fixture engineering permission is not real hotel or media rights.",
+    "No full 305 obligations / 1009 scenarios, production, deployment, merge, C14 commercial conclusion, or physical device acceptance is granted."
+  ],
+  "archive_manifest": "CI_FINAL_SHA256.json",
+  "source_binding": "ci-final/CI_SOURCE_BINDING.json",
+  "local_independent_report": "WIDTH_afc142e1_REVIEW.md",
+  "full_release": "HOLD",
+  "c14_business_authorization": "NOT_REVIEWED_HERE",
+  "deployment": "NOT_RUN",
+  "merge": "NOT_RUN",
+  "reviewed_at_utc": "2026-09-26T05:14:36.217288+00:00"
+}

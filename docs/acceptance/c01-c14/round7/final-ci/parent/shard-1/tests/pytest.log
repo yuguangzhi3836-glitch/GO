@@ -1,0 +1,25 @@
+........................................................................ [  8%]
+........................................................................ [ 17%]
+........................................................................ [ 26%]
+........................................................................ [ 35%]
+........................................................................ [ 44%]
+........................................................................ [ 53%]
+........................................................................ [ 62%]
+........................................................................ [ 71%]
+.....sssss.............................................................. [ 80%]
+........................................................................ [ 89%]
+........................................................................ [ 98%]
+............                                                             [100%]
+=============================== warnings summary ===============================
+tests/test_depth08_api_and_migration.py: 5 warnings
+tests/test_depth21_refund_recovery.py: 5 warnings
+tests/test_depth25_migration_history.py: 19 warnings
+  /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/config.py:598: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+tests/test_depth18_media_durability.py: 33 warnings
+  /home/runner/work/GO/GO/application/src/go_hotel/services/media_harvester.py:79: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    px=list(g.getdata())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+799 passed, 5 skipped, 62 warnings in 647.18s (0:10:47)

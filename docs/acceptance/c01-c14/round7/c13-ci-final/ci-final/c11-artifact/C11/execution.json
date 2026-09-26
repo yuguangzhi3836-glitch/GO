@@ -1,0 +1,60 @@
+{
+  "task_id": "V70-R2-C11-03",
+  "source_anchor": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
+  "source_commit": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+  "started_at": "2026-09-26T04:43:44.745957+00:00",
+  "python": "3.13.5 (main, Jun 12 2025, 03:51:07) [GCC 13.3.0]",
+  "status": "EVIDENCE_READY",
+  "workers": "normal subprocesses",
+  "C14": "PENDING",
+  "C13": "PENDING",
+  "source_files": [
+    {
+      "path": "src/go_hotel/api/idempotency.py",
+      "sha256": "0ca9e1e93909eb6f5970141c53cf5a0c97da7447126f7194d807ef9e80e9837f"
+    },
+    {
+      "path": "src/go_hotel/repositories/sql.py",
+      "sha256": "1bde9d5d7ec774150d371fbf1c48ac080249c15d7d8fc184e7bdc6b7b37b99db"
+    },
+    {
+      "path": "src/go_hotel/api/routes/flight.py",
+      "sha256": "cb523d4ba5d8be772090fc19fee77547d212fd9894500469099dcd5450c9c78a"
+    },
+    {
+      "path": "src/go_hotel/flight/service.py",
+      "sha256": "b70d4e40aa33610c68a050ac50038236aa3c0fa6ffc2cbbe87d28678fbaf9369"
+    },
+    {
+      "path": "src/go_hotel/flight/payment_recovery.py",
+      "sha256": "60034e9a1722b8a396bf6d4d757a287ea418bbd331282fe0468799887d2817ca"
+    },
+    {
+      "path": "src/go_hotel/services/mutation_boundary.py",
+      "sha256": "611d9bbd6170c87d5c221c8d16eb897fc3dd8e4a6a89b160247ce92098e555d3"
+    },
+    {
+      "path": "src/go_hotel/services/recovery.py",
+      "sha256": "9f8e481386138e036940f11da19e9d915cf5943820d241c7009ca5a3dc3a4a64"
+    },
+    {
+      "path": "src/go_hotel/services/flight_command_lease.py",
+      "sha256": "f59f34c3edf604453e7cbb4d888bb9c92a60b3bc89791ad7feeb1c14b7f74c49"
+    },
+    {
+      "path": "ci/next_depth/c11_postgres.py",
+      "sha256": "beb159088cbf2e7434b8e0fcc1bf9a48efdb26bcf29aea192535d3ed4aefe741"
+    },
+    {
+      "path": "ci/next_depth/c11_process_actor.py",
+      "sha256": "481e4e057723ab89e17c2c6f07c2ea23267b579c3ca2c662089349269a6e458b"
+    }
+  ],
+  "postgres_server_version": "18.4 (Debian 18.4-1.pgdg13+1)",
+  "database_backend": "postgresql",
+  "isolated_schema": "c11_ee92d79930484d3aad6f384686f812e7",
+  "finished_at": "2026-09-26T04:46:58.048056+00:00",
+  "tests": 12,
+  "failures": 0,
+  "hard_death_auto_recovery": "PASS"
+}
