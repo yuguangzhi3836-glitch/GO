@@ -102,8 +102,51 @@ class GitHubAPI:
         ]
 
     def download_artifact(self, artifact_id: int) -> bytes:
+        """Download an Actions artifact without leaking the GitHub bearer token to storage.
+
+        GitHub answers the artifact ZIP endpoint with a redirect to a signed object-store
+        URL. urllib's default redirect handler can carry request headers across that hop;
+        the object store must receive only its signed URL, not the GitHub Authorization
+        header.
+        """
         encoded_repo = "/".join(urllib.parse.quote(part, safe="") for part in self.repository.split("/"))
-        return self.get_bytes(f"/repos/{encoded_repo}/actions/artifacts/{artifact_id}/zip")
+        url = f"{self.api_base}/repos/{encoded_repo}/actions/artifacts/{artifact_id}/zip"
+
+        class NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, req, fp, code, msg, headers, newurl):
+                return None
+
+        request = urllib.request.Request(
+            url,
+            method="GET",
+            headers={
+                "Authorization": f"Bearer {self.token}",
+                "Accept": "application/vnd.github+json",
+                "X-GitHub-Api-Version": "2022-11-28",
+                "User-Agent": "go-ai-production-quality-monitor",
+            },
+        )
+        opener = urllib.request.build_opener(NoRedirect)
+        try:
+            with opener.open(request, timeout=60) as response:
+                return response.read()
+        except urllib.error.HTTPError as error:
+            if error.code not in (301, 302, 303, 307, 308):
+                detail = error.read().decode("utf-8", "replace")[:500]
+                raise RuntimeError(
+                    f"GitHub artifact download failed: HTTP {error.code}: {detail}"
+                ) from error
+            location = error.headers.get("Location")
+            if not location:
+                raise RuntimeError("GitHub artifact redirect did not provide Location") from error
+
+        storage_request = urllib.request.Request(
+            location,
+            method="GET",
+            headers={"User-Agent": "go-ai-production-quality-monitor"},
+        )
+        with urllib.request.urlopen(storage_request, timeout=60) as response:
+            return response.read()
 
     def get_issue(self, issue_number: int) -> dict:
         encoded_repo = "/".join(urllib.parse.quote(part, safe="") for part in self.repository.split("/"))
@@ -288,6 +331,10 @@ def main(argv: list[str] | None = None) -> int:
     records, warnings = collect_records(api, cutoff)
     summary = summarize(records, now, args.timezone)
     live = render_live_metrics(summary, now, args.timezone, warnings)
+
+    if warnings:
+        for warning in warnings:
+            print(f"WARNING: {warning}", file=sys.stderr)
 
     if args.dry_run:
         print(live)
