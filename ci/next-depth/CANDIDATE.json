@@ -1,12 +1,12 @@
 {
   "schema": "go.v70.next-depth.candidate.rebind.v3",
   "source_anchor": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
-  "product_candidate_commit": "d838f05d0d180a621f8e4cbd7b23074c9cd71e4d",
-  "application_git_tree": "8a5b54d10a7df6b8ca04d27076b80a3f2ea09024",
+  "product_candidate_commit": "55ea39cd41d39e50abc221e73812ab01fec1c5ce",
+  "application_git_tree": "c98e58256d29062a1026bc5ff64f22c99dbac92b",
   "preintegration_candidate_commit": "9950bde1def11b27ed137d7db02a3047befda4fa",
   "preintegration_application_git_tree": "9c83d92434301356228c1b79294fcd829d675ebf",
   "parent_candidate_commit": "0c3da07bc32009dee16c69125111f8e4ea9d546b",
-  "source_files": 1552,
+  "source_files": 1556,
   "inherited_candidate_manifest": {
     "path": "ci/next-depth/CANDIDATE_INHERITED_85FB.json",
     "git_blob": "d616e629a1d05f5955a04b60cb60d34bdf571917"
@@ -1741,6 +1741,36 @@
       "mode": "100644",
       "git_blob": "d45504fa8fe996b9dc56e9154f3afaefa1b126a5",
       "reason": "Preexternal isolated room ownership and full operating-day closure; current-source independent CI required"
+    },
+    "application/src/go_hotel/services/hosted_reservation_operations.py": {
+      "mode": "100644",
+      "git_blob": "ce2bc54bed3889df17bf3947c2323cf75684e2d8",
+      "reason": "Exact 18-group internal preexternal acceptance; CNY sale boundary and real HTTP authority/idempotency/time/currency assertions"
+    },
+    "application/src/go_hotel/services/hosted_direct_booking.py": {
+      "mode": "100644",
+      "git_blob": "8d9e9835b4b67441fdb93507892e87898bea6884",
+      "reason": "Exact 18-group internal preexternal acceptance; CNY sale boundary and real HTTP authority/idempotency/time/currency assertions"
+    },
+    "application/tests/test_c01_money_authority_matrix.py": {
+      "mode": "100644",
+      "git_blob": "c60d58aa311f8a69e99e6187e13b75ec187b51b7",
+      "reason": "Exact 18-group internal preexternal acceptance; CNY sale boundary and real HTTP authority/idempotency/time/currency assertions"
+    },
+    "application/tests/test_c13_currency_day_scope.py": {
+      "mode": "100644",
+      "git_blob": "242a63b33aee2445c332372ba96fb741ebab6466",
+      "reason": "Exact 18-group internal preexternal acceptance; CNY sale boundary and real HTTP authority/idempotency/time/currency assertions"
+    },
+    "application/tests/test_c01_cancellation_second_boundary.py": {
+      "mode": "100644",
+      "git_blob": "aca5fe0b81107571a0c66ae4398b553cbc04b840",
+      "reason": "Exact 18-group internal preexternal acceptance; CNY sale boundary and real HTTP authority/idempotency/time/currency assertions"
+    },
+    "application/tests/test_c01_booking_replay_matrix.py": {
+      "mode": "100644",
+      "git_blob": "a82fe41c3f6fec7f909a73ce111507682b5d8a05",
+      "reason": "Exact 18-group internal preexternal acceptance; CNY sale boundary and real HTTP authority/idempotency/time/currency assertions"
     }
   },
   "source_tree_sha256_status": "BOUND",
@@ -1761,7 +1791,7 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "febb925eeb781223f17002b91479f2eac9b71acc",
-  "source_tree_sha256": "30b78e8f1f8020388103a494e06a698d5fce69f5f0366cf9964fe6b89fe73511",
+  "source_tree_sha256": "6c831b961244dca91a8f68bd1f916cc16d65b4871fd454660992d9766eb155f8",
   "historical_pass_transferred": false,
   "migration_head": "0140_ledger_account_width",
   "migration_file": "application/alembic/versions/0140_ledger_account_width.py",
@@ -2080,5 +2110,27 @@
     "full_scope": "PENDING_CURRENT_EVIDENCE",
     "external_payment": "NOT_CONNECTED",
     "real_room_registry": "HOLD_HOTEL_CONFIRMATION_REQUIRED"
+  },
+  "preexternal_scope_closure": {
+    "parent_gate": "c7c3bfd24821f8fe9d5b1da7b74f6c6949dc4610",
+    "product_candidate_commit": "55ea39cd41d39e50abc221e73812ab01fec1c5ce",
+    "source_files": {
+      "src/go_hotel/services/hosted_reservation_operations.py": "ce2bc54bed3889df17bf3947c2323cf75684e2d8",
+      "src/go_hotel/services/hosted_direct_booking.py": "8d9e9835b4b67441fdb93507892e87898bea6884",
+      "tests/test_c01_money_authority_matrix.py": "c60d58aa311f8a69e99e6187e13b75ec187b51b7",
+      "tests/test_c13_currency_day_scope.py": "242a63b33aee2445c332372ba96fb741ebab6466",
+      "tests/test_c01_cancellation_second_boundary.py": "aca5fe0b81107571a0c66ae4398b553cbc04b840",
+      "tests/test_c01_booking_replay_matrix.py": "a82fe41c3f6fec7f909a73ce111507682b5d8a05"
+    },
+    "scope_groups": 18,
+    "local_tests": 121,
+    "local_failures": 0,
+    "local_errors": 0,
+    "local_skips": 0,
+    "postgres": "PENDING_CURRENT_CANDIDATE",
+    "full_scope": "PENDING_CURRENT_CI_AND_INDEPENDENT_REVIEW",
+    "customer_currency": "CNY_ONLY",
+    "multicurrency_day_test": "INTERNAL_HISTORY_GRAPH_FIXTURE_NOT_CUSTOMER_USD_CHECKOUT",
+    "external_payment": "NOT_CONNECTED"
   }
 }
