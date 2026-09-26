@@ -51,6 +51,7 @@ class HostedDirectBookingService:
    if old:return out(old)
    h=s.scalar(select(HostedDirectHotelRow).where(HostedDirectHotelRow.page_slug==slug,HostedDirectHotelRow.state=='PUBLISHED_REQUEST_ONLY'));o=s.get(HostedDirectRoomOfferRow,b['hosted_offer_id'])
    if not h or not o or o.hosted_hotel_id!=h.hosted_hotel_id or o.state!='ACTIVE':raise ValueError('ACTIVE_HOSTED_OFFER_REQUIRED')
+   if o.currency!='CNY':raise ValueError('HOSTED_CHECKOUT_CURRENCY_UNSUPPORTED')
    from go_hotel.services.hosted_publication import require_publication
    require_publication(s,h.hosted_hotel_id)
    v=s.scalar(select(HostedDirectRateVariantRow).where(HostedDirectRateVariantRow.hosted_offer_id==o.hosted_offer_id))

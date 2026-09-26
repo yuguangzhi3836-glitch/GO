@@ -65,6 +65,7 @@ class HostedReservationOperationsService:
     if not variant:continue
     pool=s.get(HostedDirectInventoryPoolRow,variant.inventory_pool_id)
     prices=[];available=[];reasons=list(publication_reasons)
+    if offer.currency!='CNY':reasons.append('HOSTED_CHECKOUT_CURRENCY_UNSUPPORTED')
     if extra_beds:reasons.append('STRUCTURED_EXTRA_BED_PRICE_REQUIRED')
     for day in dates(cin,cout):
      ds=day.isoformat()
@@ -78,7 +79,8 @@ class HostedReservationOperationsService:
     from go_hotel.db.models import HostedFareRuleVersionRow
     fare=s.scalar(select(HostedFareRuleVersionRow).where(HostedFareRuleVersionRow.hosted_offer_id==offer.hosted_offer_id).order_by(HostedFareRuleVersionRow.version.desc()))
     items.append({**out(offer),'fare_rule':{'rule_hash':fare.rule_hash,'rules':fare.rules_json} if fare else None,'room_code':pool.physical_room_key,'room':pool.room_details_json,'nights':prices,'total_amount_minor':sum(p['price_minor'] for p in prices) if len(prices)==(cout-cin).days else None,'inventory_available':min(available) if available else 0,'bookable':not reasons,'unavailable_reasons':sorted(set(reasons))})
-   return {'check_in':b['check_in'],'check_out':b['check_out'],'adults':adults,'children':children,'items':items,'data_mode':hotel.contact_json.get('inventory_data_mode','SUPPLIER_MANAGED'),'currency':'CNY'}
+   currencies=sorted({item['currency'] for item in items})
+   return {'check_in':b['check_in'],'check_out':b['check_out'],'adults':adults,'children':children,'items':items,'data_mode':hotel.contact_json.get('inventory_data_mode','SUPPLIER_MANAGED'),'currency':currencies[0] if len(currencies)==1 else None,'currencies':currencies}
  def bootstrap_calendar(self,hotel_id,b,principal=None):
   try:start=date.fromisoformat(b['start_date']);end=date.fromisoformat(b['end_date'])
   except Exception:raise ValueError('VALID_CALENDAR_DATE_RANGE_REQUIRED')
@@ -141,6 +143,7 @@ class HostedReservationOperationsService:
     return out(old)
    h=s.scalar(select(HostedDirectHotelRow).where(HostedDirectHotelRow.page_slug==slug,HostedDirectHotelRow.state=='PUBLISHED_REQUEST_ONLY'));offer=s.get(HostedDirectRoomOfferRow,b['hosted_offer_id'],with_for_update=True)
    if not h or not offer or offer.hosted_hotel_id!=h.hosted_hotel_id or offer.state!='ACTIVE':raise ValueError('ACTIVE_HOSTED_OFFER_REQUIRED')
+   if offer.currency!='CNY':raise ValueError('HOSTED_CHECKOUT_CURRENCY_UNSUPPORTED')
    s.refresh(h,with_for_update=True)
    from go_hotel.services.hosted_publication import require_publication
    publication=require_publication(s,h.hosted_hotel_id)
