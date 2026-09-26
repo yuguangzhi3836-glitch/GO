@@ -1,7 +1,7 @@
 from fastapi import APIRouter,Depends,HTTPException,Header
 from pydantic import BaseModel,Field,ConfigDict
 from typing import Literal
-from go_hotel.security.deps import consumer_principal,admin_principal
+from go_hotel.security.deps import consumer_principal,admin_principal,order_admin_principal
 from go_hotel.security.service import Principal
 from go_hotel.mobility.service import mobility_service as m
 from go_hotel.api.idempotency import run_idempotent
@@ -79,7 +79,7 @@ def cancel(order_id:str,p:Principal=Depends(consumer_principal),idempotency_key:
 def fulfill(order_id:str,b:Fulfillment,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
  return run_idempotent('MOBILITY_FULFILLMENT',idempotency_key,{'user_id':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(m.fulfill,p.user_id,order_id,b.action,b.evidence_reference))
 @router.post("/internal/v1/admin/mobility/orders/{order_id}/external-state")
-def external_state(order_id:str,b:ExternalState,p:Principal=Depends(admin_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+def external_state(order_id:str,b:ExternalState,p:Principal=Depends(order_admin_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
  return run_idempotent('MOBILITY_ADMIN_EXTERNAL_STATE',idempotency_key,{'actor':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(m.admin_external_state,order_id,b.state,b.evidence_reference,p.user_id,b.confirmation_episode_reference))
 
 class RentalChangeDates(BaseModel):

@@ -93,7 +93,8 @@ def test_invalid_supplier_policy_never_issues_a_quote(monkeypatch, bad):
         svc.prebook('tokyo_skytree', '2026-09-15', 1)
 
 
-def test_missing_supplier_policy_is_explicitly_legacy_unverified():
+def test_missing_supplier_policy_is_explicitly_legacy_unverified(monkeypatch):
+    monkeypatch.delitem(CATALOG['tokyo_skytree'], 'supplier_validity_policy')
     quote = svc.prebook('tokyo_skytree', '2026-09-15', 1)
     assert quote['redemption_window'] == {'state': 'LEGACY_UNVERIFIED'}
 

@@ -18,7 +18,7 @@ export async function readOrder(ref: OrderRef, request: Request) {
   return {data,order};
 }
 export function payable(order: any) { return ['PAYMENT_PENDING','PAYMENT_AUTHORIZED'].includes(order?.status)&&(order?.vertical!=='RIDE'||order?.cancellation?.state==='BOOKING_ACCEPTED'); }
-export function refundable(order: any) { return ['CONFIRMED','TICKETED'].includes(order?.status); }
+export function refundable(order: any) { return ['CONFIRMED','TICKETED'].includes(order?.status)||(order?.vertical==='ATTRACTION'&&['CLOSED_BY_SUPPLIER','REFUND_PENDING'].includes(order?.status)); }
 function amount(order: any) {
   if(!Number.isSafeInteger(order?.total_amount_minor)||order.total_amount_minor<=0||order.currency!=='CNY')throw Error('ORDER_AMOUNT_UNAVAILABLE');
   return {amount:order.total_amount_minor,currency:order.currency};

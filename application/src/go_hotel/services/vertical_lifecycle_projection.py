@@ -32,6 +32,13 @@ def project_vertical_lifecycle(session, vertical: str, order, evidence_reference
     payment_state='UNKNOWN_EXTERNAL_STATE' if native=='UNKNOWN_EXTERNAL_STATE' else 'PAID' if paid else 'PENDING'
     refund_state='REFUND_COMPLETED' if native=='REFUNDED' else 'REFUND_PROCESSING' if native=='REFUND_PENDING' else 'NOT_REQUESTED'
     projected_facts=dict(facts or {'native_status':native})
+    if vertical=='ATTRACTION' and native=='REFUND_PENDING':
+        from go_hotel.services import vertical_refund_recovery
+        operation=vertical_refund_recovery._operation(session,vertical,order.order_id)
+        if operation and operation.quote_json.get('reason')=='SUPPLIER_CLOSED':
+            vertical_refund_recovery._verify(operation,order.account_id)
+            life='CANCELLED'  # Refund processing must not resurrect a closed visit.
+            projected_facts.update(native_status=native,cancellation_reason='SUPPLIER_CLOSED')
     coupon_cycle=False
     if vertical=='FLIGHT':
         from go_hotel.db.models import FlightCouponRow, FlightRefundRow

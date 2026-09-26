@@ -1,0 +1,97 @@
+name: Rental and attraction isolated acceptance
+on:
+  pull_request:
+    paths:
+      - application/**
+      - .github/workflows/rental-attraction-preinventory.yml
+      - docs/acceptance/rental-attractions/**
+permissions:
+  contents: read
+concurrency:
+  group: rental-attraction-preinventory-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  postgres:
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [rental, attraction, independent]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+          POSTGRES_DB: go_rental_attractions_isolated
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_rental_attractions_isolated"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      APP_ENV: test
+      GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_rental_attractions_isolated
+      DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_rental_attractions_isolated
+      SAGA_RETRY_SECONDS: '0'
+      TEST_SUITE: ${{ matrix.suite }}
+      PYTHONPATH: src:.:tests:tests/independent_rental_attractions
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated application dependencies
+        run: python -m pip install -e './application[dev]'
+      - name: Bind actual source and isolated database
+        run: |
+          mkdir -p rental-attraction-evidence
+          python - <<'PY'
+          import hashlib,json,os,subprocess
+          from pathlib import Path
+          import psycopg
+          head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert head==os.environ['EXPECTED_HEAD']
+          paths=subprocess.check_output(['git','ls-files','-z','application'],text=True).split('\0')
+          hashes={p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in paths if p}
+          with psycopg.connect(os.environ['DATABASE_URL'].replace('postgresql+psycopg:','postgresql:')) as c:
+              version,db=c.execute('select version(),current_database()').fetchone()
+          assert db=='go_rental_attractions_isolated' and 'PostgreSQL 18.4' in version
+          binding={'head':head,'suite':os.environ['TEST_SUITE'],'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),
+                   'database':db,'server_version':version,'source_files':len(hashes),
+                   'scope':'RENTAL_ATTRACTION_BOUNDARIES_NOT_FULL_44_152','C13':'NOT_EXECUTED','real_supplier':'NOT_ACCESSED',
+                   'real_psp':'NOT_ACCESSED','deployment':'NOT_RUN'}
+          Path('rental-attraction-evidence/source.json').write_text(json.dumps(hashes,indent=2)+'\n')
+          Path('rental-attraction-evidence/binding.json').write_text(json.dumps(binding,indent=2)+'\n')
+          PY
+      - name: PostgreSQL rental and attraction regression
+        working-directory: application
+        run: |
+          set -o pipefail
+          case "$TEST_SUITE" in
+            rental) suites=(tests/test_rental_supplier_claim.py tests/test_rental_operations.py tests/test_rental_deposit_authority.py tests/test_rental_compensation_authority.py tests/test_rental_damage_disputes.py tests/payments/test_c11_rental_deposit_money.py tests/test_c04_refund_terminal_integrity.py tests/test_depth06_rental_settlement.py) ;;
+            attraction) suites=(tests/test_rental_attraction_preinventory.py tests/test_sprint3d_attractions.py tests/test_depth20_attraction_contract.py tests/test_depth26_attraction_terms.py tests/test_c03_c06_change_quote_fencing.py tests/test_next_depth_c06_supplier_validity.py tests/test_depth21_refund_recovery.py tests/test_depth23_capacity.py tests/test_final_depth_terminal_hardening.py) ;;
+            independent) suites=(tests/independent_rental_attractions) ;;
+            *) exit 1 ;;
+          esac
+          python -m pytest "${suites[@]}" --junitxml=../rental-attraction-evidence/junit.xml 2>&1 | tee ../rental-attraction-evidence/pytest.log
+      - name: Hash raw evidence including failures
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('rental-attraction-evidence');root.mkdir(exist_ok=True)
+          hashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir() if p.is_file()}
+          (root/'SHA256.json').write_text(json.dumps(hashes,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rental-attraction-preinventory-${{ github.event.pull_request.head.sha }}-${{ matrix.suite }}
+          path: rental-attraction-evidence/
+          retention-days: 90

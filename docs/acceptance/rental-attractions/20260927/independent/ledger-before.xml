@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="10.774" timestamp="2026-09-26T21:09:27.674224+03:00" hostname="2421f535f56f"><testcase classname="independent-rental-attractions.test_completed_ledger" name="test_completed_replay_requires_correct_double_entry_ledger[ATTRACTION]" time="6.495"><failure message="AssertionError: {'data': {'currency': 'CNY', 'order_id': 'attr_ord_a46dffe063634cce', 'refund_amount_minor': 18000, 'refund_fee_minor': 0, ...}}&#10;assert 200 &gt;= 400&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7fd267e89af0&gt;
+vertical = 'ATTRACTION'
+
+    @pytest.mark.parametrize('vertical',['ATTRACTION','RENTAL'])
+    def test_completed_replay_requires_correct_double_entry_ledger(client,vertical):
+        if vertical=='ATTRACTION':
+            headers,oid=booked(client);path=f'/v1/attractions/orders/{oid}/refund'
+        else:
+            _,oid,headers=paid(client);path=f'/v1/mobility/orders/{oid}/cancel'
+        first=client.post(path,headers=headers)
+        assert first.status_code==200,first.text
+        with SessionLocal.begin() as s:
+            refund=s.scalar(select(Movement).where(Movement.movement_type=='REFUND'))
+            entry=s.scalar(select(Ledger).where(Ledger.transaction_id==refund.money_movement_id))
+            assert entry is not None
+            entry.amount_minor=1
+        before=money_snapshot()
+        response=client.post(path,headers=headers)
+        assert money_snapshot()==before
+&gt;       assert response.status_code&gt;=400,response.json()
+E       AssertionError: {'data': {'currency': 'CNY', 'order_id': 'attr_ord_a46dffe063634cce', 'refund_amount_minor': 18000, 'refund_fee_minor': 0, ...}}
+E       assert 200 &gt;= 400
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+../../independent-rental-attractions/test_completed_ledger.py:30: AssertionError</failure></testcase><testcase classname="independent-rental-attractions.test_completed_ledger" name="test_completed_replay_requires_correct_double_entry_ledger[RENTAL]" time="0.371"><failure message="AssertionError: {'data': {'currency': 'CNY', 'order_id': 'rent_ord_2a3f65c45eb746b5', 'refund_amount_minor': 126000, 'refund_id': 'mob_ref_76eae4dc20194fe7', ...}}&#10;assert 200 &gt;= 400&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7fd26109f350&gt;
+vertical = 'RENTAL'
+
+    @pytest.mark.parametrize('vertical',['ATTRACTION','RENTAL'])
+    def test_completed_replay_requires_correct_double_entry_ledger(client,vertical):
+        if vertical=='ATTRACTION':
+            headers,oid=booked(client);path=f'/v1/attractions/orders/{oid}/refund'
+        else:
+            _,oid,headers=paid(client);path=f'/v1/mobility/orders/{oid}/cancel'
+        first=client.post(path,headers=headers)
+        assert first.status_code==200,first.text
+        with SessionLocal.begin() as s:
+            refund=s.scalar(select(Movement).where(Movement.movement_type=='REFUND'))
+            entry=s.scalar(select(Ledger).where(Ledger.transaction_id==refund.money_movement_id))
+            assert entry is not None
+            entry.amount_minor=1
+        before=money_snapshot()
+        response=client.post(path,headers=headers)
+        assert money_snapshot()==before
+&gt;       assert response.status_code&gt;=400,response.json()
+E       AssertionError: {'data': {'currency': 'CNY', 'order_id': 'rent_ord_2a3f65c45eb746b5', 'refund_amount_minor': 126000, 'refund_id': 'mob_ref_76eae4dc20194fe7', ...}}
+E       assert 200 &gt;= 400
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+../../independent-rental-attractions/test_completed_ledger.py:30: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,6 +1,6 @@
 from fastapi import APIRouter,Depends,HTTPException,Header
 from pydantic import BaseModel,Field
-from go_hotel.security.deps import consumer_principal,admin_principal,optional_consumer_principal
+from go_hotel.security.deps import consumer_principal,admin_principal,optional_consumer_principal,order_admin_principal
 from go_hotel.security.service import Principal
 from go_hotel.attractions.service import attraction_service as a
 from go_hotel.api.idempotency import run_idempotent
@@ -14,6 +14,7 @@ def w(fn,*x):
  except ValueError as e:
   msg=str(e)
   if msg in {'ATTRACTION_RESOLUTION_QUOTE_ID_REQUIRED','ATTRACTION_RESOLUTION_QUOTE_INVALID'}:raise HTTPException(409,detail=msg)
+  if msg in {'ATTRACTION_CHANGE_QUOTE_STALE_REQUOTE_REQUIRED','ATTRACTION_VALIDITY_REVIEW_REQUIRED','ATTRACTION_OUTSIDE_SUPPLIER_VALIDITY_WINDOW'}:raise HTTPException(409,detail=msg)
   if msg=='REFUND_QUOTE_CHANGED_RECONFIRM_REQUIRED':raise HTTPException(409,detail=msg)
   if msg in {'REFUND_ALREADY_PROCESSING','REFUND_LEASE_LOST','UNPAID_CANCELLATION_NOT_ALLOWED','PAYMENT_ALREADY_STARTED_RECONCILIATION_REQUIRED'}:raise HTTPException(409,detail=msg)
   code=503 if "PROVIDER_TRUTH_REQUIRED" in msg else (422 if any(k in msg for k in ("ILLEGAL_STATE","CHANGEABLE","REFUNDABLE","INVALID","RECONCILIATION","INVENTORY_CHANGED")) else (400 if "NON_REFUNDABLE" in msg else 404))
@@ -61,7 +62,7 @@ def refund(order_id:str,p:Principal=Depends(consumer_principal),idempotency_key:
 def redeem(order_id:str,b:Redeem,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
  return run_idempotent('ATTRACTION_REDEEM',idempotency_key,{'user_id':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(a.redeem,p.user_id,order_id,b.evidence_reference))
 @router.post("/internal/v1/admin/attractions/orders/{order_id}/external-state")
-def external_state(order_id:str,b:ExternalState,p:Principal=Depends(admin_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+def external_state(order_id:str,b:ExternalState,p:Principal=Depends(order_admin_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
  return run_idempotent('ATTRACTION_ADMIN_EXTERNAL_STATE',idempotency_key,{'actor':p.user_id,'order_id':order_id,**b.model_dump()},lambda:w(a.admin_external_state,order_id,b.state,b.evidence_reference,p.user_id,b.supplier_reference,b.voucher_code,b.quote_id))
 
 @router.post('/v1/attractions/orders/{order_id}/cancel-unpaid')

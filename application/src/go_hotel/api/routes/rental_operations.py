@@ -11,7 +11,7 @@ from go_hotel.api.routes.rental_damage import StrictBody, invoke
 from go_hotel.core.config import settings
 from go_hotel.mobility.rental import damage, deposit_authority
 from go_hotel.mobility.rental.changes import transaction
-from go_hotel.security.deps import current_principal, consumer_principal, admin_principal
+from go_hotel.security.deps import current_principal, consumer_principal, admin_principal, supplier_principal
 from go_hotel.security.service import Principal
 from go_hotel.services.omnichannel_payment import digest
 
@@ -62,7 +62,7 @@ def statement_evidence(p, order_id, case_id, action, text):
 
 def workspace(p, order_id):
     with transaction() as s:
-        o = damage._order(s, p, order_id)
+        o = damage._order(s, p, order_id, allow_supplier=True)
         cases = {}
         history = damage._history(s, order_id)
         for event in history:
@@ -72,6 +72,9 @@ def workspace(p, order_id):
         release = deposit_authority._release_event(s, o)
         enabled = settings.app_env.lower() in {'local', 'test', 'demo'}
         actions = []
+        if (enabled and p.actor_type == 'SUPPLIER_USER' and 'supplier:orders' in p.permissions
+                and not cases and not release and o.status == 'COMPLETED'):
+            actions.append('OPEN')
         if enabled and p.actor_type == 'GO_ADMIN' and 'admin:approve' in p.permissions:
             if not cases and not release and o.status == 'COMPLETED': actions.append('OPEN')
             if (not cases and not release and obligation and obligation['state'] == 'ACTIVATED'
@@ -124,6 +127,14 @@ def appeal(order_id: str, case_id: str, b: Appeal, p: Principal = Depends(consum
 @router.post('/internal/v1/admin/mobility/rentals/orders/{order_id}/operations/cases')
 def open_case(order_id: str, b: Claim, p: Principal = Depends(admin_principal),
               key: str = Header(alias='Idempotency-Key', min_length=1, max_length=128)):
+    return invoke(lambda: damage.open_case(p, order_id, key, b.amount_minor, b.currency,
+        statement_evidence(p, order_id, None, 'PICKUP_OBSERVATION', b.pickup_statement),
+        statement_evidence(p, order_id, None, 'RETURN_OBSERVATION', b.return_statement)))
+
+
+@router.post('/v1/supplier/mobility/rentals/orders/{order_id}/operations/cases')
+def supplier_open_case(order_id: str, b: Claim, p: Principal = Depends(supplier_principal),
+                      key: str = Header(alias='Idempotency-Key', min_length=1, max_length=128)):
     return invoke(lambda: damage.open_case(p, order_id, key, b.amount_minor, b.currency,
         statement_evidence(p, order_id, None, 'PICKUP_OBSERVATION', b.pickup_statement),
         statement_evidence(p, order_id, None, 'RETURN_OBSERVATION', b.return_statement)))

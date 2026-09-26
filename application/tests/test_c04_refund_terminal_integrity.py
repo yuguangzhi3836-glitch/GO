@@ -71,15 +71,13 @@ def test_completed_rental_refund_rejects_nonrefunded_order(monkeypatch, order_st
     assert snapshot(order_id, refund_id) == before
 
 
-def test_consistent_completed_rental_refund_replays_without_money_or_mutation(monkeypatch):
+def test_completed_rental_refund_without_money_evidence_is_rejected(monkeypatch):
     order_id, refund_id, accepted_hash = seed_refund("REFUNDED")
     before = snapshot(order_id, refund_id)
     monkeypatch.setattr(money, "execute_refund_plan", no_money)
 
-    first = rental_service.cancel(OWNER, order_id, accepted_hash)
-    assert first["status"] == "REFUND_COMPLETED"
-    assert first["refund_id"] == refund_id
-    assert rental_service.cancel(OWNER, order_id, accepted_hash) == first
+    with pytest.raises(ValueError, match='^REFUND_COMPLETION_EVIDENCE_INVALID$'):
+        rental_service.cancel(OWNER, order_id, accepted_hash)
     assert snapshot(order_id, refund_id) == before
 
 
@@ -99,7 +97,8 @@ def test_rental_refund_rechecks_concurrent_completion_terminal_pair(monkeypatch,
 
     monkeypatch.setattr(money, "execute_refund_plan", concurrent_completion)
     if final_order_status == "REFUNDED":
-        assert rental_service.cancel(OWNER, order_id, accepted_hash)["refund_id"] == refund_id
+        with pytest.raises(ValueError, match='^REFUND_COMPLETION_EVIDENCE_INVALID$'):
+            rental_service.cancel(OWNER, order_id, accepted_hash)
     else:
         with pytest.raises(ValueError, match="^RENTAL_REFUND_RECONCILIATION_REQUIRED$"):
             rental_service.cancel(OWNER, order_id, accepted_hash)

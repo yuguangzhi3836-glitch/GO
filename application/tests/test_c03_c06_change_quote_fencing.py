@@ -63,7 +63,7 @@ def test_attraction_api_carries_quote_identity_and_replays_bound_request(client)
     from go_hotel.security.deps import admin_principal
     from go_hotel.main import app
     svc, owner, oid, first, second = attraction_second_change()
-    app.dependency_overrides[admin_principal] = lambda: SimpleNamespace(user_id='ops')
+    app.dependency_overrides[admin_principal] = lambda: SimpleNamespace(user_id='ops',permissions={'admin:orders'})
     try:
         endpoint = f'/internal/v1/admin/attractions/orders/{oid}/external-state'
         body = {'state': 'CONFIRMED', 'evidence_reference': 'isolated://second',

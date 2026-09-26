@@ -1,0 +1,662 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="252" time="48.670" timestamp="2026-09-26T21:08:42.682174+03:00" hostname="2421f535f56f"><testcase classname="tests.test_sprint3d_attractions" name="test_attraction_golden_path" time="6.551" /><testcase classname="tests.test_sprint3d_attractions" name="test_non_refundable_experience" time="0.485" /><testcase classname="tests.test_depth20_attraction_contract" name="test_persisted_quote_binds_session_party_and_locked_total" time="0.094" /><testcase classname="tests.test_depth20_attraction_contract" name="test_unquoted_order_and_unlisted_session_are_rejected" time="0.073" /><testcase classname="tests.test_depth20_attraction_contract" name="test_client_cannot_change_quote_terms[quantity-1]" time="0.067" /><testcase classname="tests.test_depth20_attraction_contract" name="test_client_cannot_change_quote_terms[currency-USD]" time="0.074" /><testcase classname="tests.test_depth20_attraction_contract" name="test_client_cannot_change_quote_terms[visit_date-2030-01-01]" time="0.079" /><testcase classname="tests.test_depth20_attraction_contract" name="test_client_cannot_change_quote_terms[session_time-03:17]" time="0.071" /><testcase classname="tests.test_depth20_attraction_contract" name="test_client_cannot_change_quote_terms[offer_id-teamlab_planets]" time="0.076" /><testcase classname="tests.test_depth20_attraction_contract" name="test_quantity_and_attendees_must_match" time="0.066" /><testcase classname="tests.test_depth20_attraction_contract" name="test_cross_account_and_changed_person_cannot_reuse_consumed_quote" time="0.075" /><testcase classname="tests.test_depth20_attraction_contract" name="test_current_inventory_is_rechecked_before_order_creation" time="0.073" /><testcase classname="tests.test_depth20_attraction_contract" name="test_locked_price_and_refund_terms_do_not_change_with_catalog" time="0.087" /><testcase classname="tests.test_depth20_attraction_contract" name="test_expired_quote_cannot_be_consumed" time="0.075" /><testcase classname="tests.test_depth20_attraction_contract" name="test_parallel_consumption_makes_one_order" time="0.256" /><testcase classname="tests.test_depth20_attraction_contract" name="test_failed_evidence_rolls_back_contract_and_order" time="0.116" /><testcase classname="tests.test_depth20_attraction_contract" name="test_declared_child_cannot_use_an_adult_product_quote" time="0.066" /><testcase classname="tests.test_depth26_attraction_terms" name="test_contract_binding_rejects_refund_before_any_money[owner_id-another-owner]" time="0.102" /><testcase classname="tests.test_depth26_attraction_terms" name="test_contract_binding_rejects_refund_before_any_money[state-QUOTED]" time="0.110" /><testcase classname="tests.test_depth26_attraction_terms" name="test_contract_binding_rejects_refund_before_any_money[consumed_hash-None]" time="0.099" /><testcase classname="tests.test_depth26_attraction_terms" name="test_contract_binding_rejects_refund_before_any_money[consumed_ms-None]" time="0.107" /><testcase classname="tests.test_depth26_attraction_terms" name="test_order_terms_mismatch_blocks_change_and_refund[quantity-3]" time="0.104" /><testcase classname="tests.test_depth26_attraction_terms" name="test_order_terms_mismatch_blocks_change_and_refund[attendees-value1]" time="0.103" /><testcase classname="tests.test_depth26_attraction_terms" name="test_order_terms_mismatch_blocks_change_and_refund[product_id-tokyo_concert]" time="0.116" /><testcase classname="tests.test_depth26_attraction_terms" name="test_order_terms_mismatch_blocks_change_and_refund[currency-USD]" time="0.102" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_rail_old_fare_quote_cannot_execute_after_another_change" time="0.176" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_delayed_unbound_confirmation_cannot_confirm_next_change" time="0.143" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_current_change_submission_is_replay_safe" time="0.120" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_old_quote_cannot_resolve_current_episode[CONFIRMED]" time="0.147" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_old_quote_cannot_resolve_current_episode[CLOSED_BY_SUPPLIER]" time="0.146" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_api_carries_quote_identity_and_replays_bound_request" time="0.213"><failure message="AttributeError: 'types.SimpleNamespace' object has no attribute 'permissions'">+ Exception Group Traceback (most recent call last):
+  |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 79, in collapse_excgroups
+  |     yield
+  |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 192, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 799, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/runner.py", line 353, in from_call
+    |     result: TResult | None = func()
+    |                              ^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/runner.py", line 245, in &lt;lambda&gt;
+    |     lambda: runtest_hook(item=item, **kwds),
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+    |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+    |     raise exception
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/logging.py", line 850, in pytest_runtest_call
+    |     yield
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/capture.py", line 900, in pytest_runtest_call
+    |     return (yield)
+    |             ^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/skipping.py", line 268, in pytest_runtest_call
+    |     return (yield)
+    |             ^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+    |     res = hook_impl.function(*args)
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/runner.py", line 179, in pytest_runtest_call
+    |     item.runtest()
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/python.py", line 1720, in runtest
+    |     self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+    |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+    |     raise exception
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 53, in run_old_style_hookwrapper
+    |     return result.get_result()
+    |            ^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_result.py", line 103, in get_result
+    |     raise exc.with_traceback(tb)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 38, in run_old_style_hookwrapper
+    |     res = yield
+    |           ^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+    |     res = hook_impl.function(*args)
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
+    |     result = testfunction(**testargs)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/tests/test_c03_c06_change_quote_fencing.py", line 71, in test_attraction_api_carries_quote_identity_and_replays_bound_request
+    |     denied = client.post(endpoint, json=body)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 546, in post
+    |     return super().post(
+    |            ^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 1144, in post
+    |     return self.request(
+    |            ^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 445, in request
+    |     return super().request(
+    |            ^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 825, in request
+    |     return self.send(request, auth=auth, follow_redirects=follow_redirects)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 914, in send
+    |     response = self._send_handling_auth(
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    |     response = self._send_handling_redirects(
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    |     response = self._send_single_request(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    |     response = transport.handle_request(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 348, in handle_request
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 345, in handle_request
+    |     portal.call(self.app, scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/from_thread.py", line 334, in call
+    |     return cast(T_Retval, self.start_task_soon(func, *args).result())
+    |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    |     return self.__get_result()
+    |            ^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    |     raise self._exception
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/from_thread.py", line 259, in _call_func
+    |     retval = await retval_or_awaitable
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/applications.py", line 1138, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/applications.py", line 107, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |                                    ^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 313, in dispatch
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |                                    ^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 267, in dispatch
+    |     response=await call_next(request)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |                                    ^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 221, in dispatch
+    |     response=await call_next(request)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 716, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 736, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 290, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 115, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 101, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 345, in app
+    |     solved_result = await solve_dependencies(
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 655, in solve_dependencies
+    |     solved = await run_in_threadpool(call, **solved_result.values)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    |     return await anyio.to_thread.run_sync(func)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/to_thread.py", line 63, in run_sync
+    |     return await get_async_backend().run_sync_in_worker_thread(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2518, in run_sync_in_worker_thread
+    |     return await future
+    |            ^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1002, in run
+    |     result = context.run(func, *args)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/security/deps.py", line 43, in order_admin_principal
+    |     if 'admin:orders' not in p.permissions:
+    |                              ^^^^^^^^^^^^^
+    | AttributeError: 'types.SimpleNamespace' object has no attribute 'permissions'
+    +------------------------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/tests/test_c03_c06_change_quote_fencing.py", line 71, in test_attraction_api_carries_quote_identity_and_replays_bound_request
+    denied = client.post(endpoint, json=body)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 546, in post
+    return super().post(
+           ^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 1144, in post
+    return self.request(
+           ^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 445, in request
+    return super().request(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 348, in handle_request
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 345, in handle_request
+    portal.call(self.app, scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/from_thread.py", line 334, in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/from_thread.py", line 259, in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/applications.py", line 1138, in __call__
+    await super().__call__(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 313, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 267, in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 221, in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 345, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 655, in solve_dependencies
+    solved = await run_in_threadpool(call, **solved_result.values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2518, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1002, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/security/deps.py", line 43, in order_admin_principal
+    if 'admin:orders' not in p.permissions:
+                             ^^^^^^^^^^^^^
+AttributeError: 'types.SimpleNamespace' object has no attribute 'permissions'
+
+The above exception was the direct cause of the following exception:
+
+client = &lt;starlette.testclient.TestClient object at 0x7f6a4823b1d0&gt;
+
+    def test_attraction_api_carries_quote_identity_and_replays_bound_request(client):
+        from types import SimpleNamespace
+        from go_hotel.security.deps import admin_principal
+        from go_hotel.main import app
+        svc, owner, oid, first, second = attraction_second_change()
+        app.dependency_overrides[admin_principal] = lambda: SimpleNamespace(user_id='ops')
+        try:
+            endpoint = f'/internal/v1/admin/attractions/orders/{oid}/external-state'
+            body = {'state': 'CONFIRMED', 'evidence_reference': 'isolated://second',
+                    'supplier_reference': 'SUP-SECOND', 'voucher_code': 'V-SECOND'}
+&gt;           denied = client.post(endpoint, json=body)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_c03_c06_change_quote_fencing.py:71: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/applications.py:1138: in __call__
+    await super().__call__(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/applications.py:107: in __call__
+    await self.middleware_stack(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:191: in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:158: in __exit__
+    self.gen.throw(value)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py:85: in collapse_excgroups
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:313: in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:191: in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:158: in __exit__
+    self.gen.throw(value)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py:85: in collapse_excgroups
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:267: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:191: in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:158: in __exit__
+    self.gen.throw(value)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py:85: in collapse_excgroups
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:221: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py:716: in __call__
+    await self.middleware_stack(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py:736: in app
+    await route.handle(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py:290: in handle
+    await self.app(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py:115: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py:101: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py:345: in app
+    solved_result = await solve_dependencies(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py:655: in solve_dependencies
+    solved = await run_in_threadpool(call, **solved_result.values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/concurrency.py:32: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/to_thread.py:63: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:2518: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:1002: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+p = namespace(user_id='ops')
+
+    def order_admin_principal(p:Principal=Depends(admin_principal)):
+&gt;       if 'admin:orders' not in p.permissions:
+                                 ^^^^^^^^^^^^^
+E       AttributeError: 'types.SimpleNamespace' object has no attribute 'permissions'
+
+src/go_hotel/security/deps.py:43: AttributeError</failure></testcase><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_prechange_reconciliation_cannot_resolve_first_change" time="0.147" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_prebook_freezes_server_policy_and_utc_boundary" time="0.069" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T06:29:59.999+00:00-False]" time="0.117" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T06:30:00+00:00-True]" time="0.100" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T08:59:59.999+00:00-True]" time="0.103" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_respects_exact_half_open_window[2026-09-15T09:00:00+00:00-False]" time="0.108" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_later_catalog_policy_cannot_rewrite_consumed_contract" time="0.105" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_nonexistent_or_ambiguous_supplier_local_session_requires_review[2026-03-08-02:30]" time="0.068" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_nonexistent_or_ambiguous_supplier_local_session_requires_review[2026-11-01-01:30]" time="0.062" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_cross_midnight_window_uses_supplier_timezone_not_server_date" time="0.060" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad0]" time="0.053" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad1]" time="0.055" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad2]" time="0.057" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_invalid_supplier_policy_never_issues_a_quote[bad3]" time="0.046" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_supplier_policy_is_explicitly_legacy_unverified" time="0.071"><failure message="AssertionError: assert {'boundary': ...0+00:00', ...} == {'state': 'LEGACY_UNVERIFIED'}&#10;  &#10;  Differing items:&#10;  {'state': 'FROZEN_SUPPLIER_WINDOW'} != {'state': 'LEGACY_UNVERIFIED'}&#10;  Left contains 5 more items:&#10;  {'boundary': '[opens_at,closes_at)',&#10;   'closes_at': '2026-09-15T09:00:00+00:00',&#10;   'destination_timezone': 'Asia/Tokyo',...&#10;  &#10;  ...Full output truncated (6 lines hidden), use '-vv' to show">def test_missing_supplier_policy_is_explicitly_legacy_unverified():
+        quote = svc.prebook('tokyo_skytree', '2026-09-15', 1)
+&gt;       assert quote['redemption_window'] == {'state': 'LEGACY_UNVERIFIED'}
+E       AssertionError: assert {'boundary': ...0+00:00', ...} == {'state': 'LEGACY_UNVERIFIED'}
+E         
+E         Differing items:
+E         {'state': 'FROZEN_SUPPLIER_WINDOW'} != {'state': 'LEGACY_UNVERIFIED'}
+E         Left contains 5 more items:
+E         {'boundary': '[opens_at,closes_at)',
+E          'closes_at': '2026-09-15T09:00:00+00:00',
+E          'destination_timezone': 'Asia/Tokyo',...
+E         
+E         ...Full output truncated (6 lines hidden), use '-vv' to show
+
+tests/test_next_depth_c06_supplier_validity.py:98: AssertionError</failure></testcase><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_client_cannot_supply_a_validity_policy" time="0.070" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_deleting_frozen_window_without_resealing_cannot_downgrade_to_legacy" time="0.106" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_contract_cannot_downgrade_a_confirmed_order_to_legacy" time="0.097" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_supplier_confirmed_date_change_uses_frozen_policy_on_new_session" time="0.257" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_valid_window_does_not_bypass_inflight_refund_exclusion" time="0.127" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[supplier_id]" time="0.047" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[product_id]" time="0.050" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[go_offer_id]" time="0.053" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[version]" time="0.053" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[state]" time="0.051" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[destination_timezone]" time="0.052" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[effective_from]" time="0.052" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[opens_minutes_before_session]" time="0.052" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[closes_minutes_after_session]" time="0.050" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[allow_open_ended]" time="0.045" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[amendment_allowed]" time="0.048" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[cancellation_allowed]" time="0.046" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[raw_payload_ref]" time="0.049" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[raw_payload_sha256]" time="0.054" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[source_uri]" time="0.051" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_missing_required_rejected[observed_at]" time="0.049" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad0]" time="0.050" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad1]" time="0.047" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad2]" time="0.050" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad3]" time="0.045" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad4]" time="0.046" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad5]" time="0.045" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad6]" time="0.049" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad7]" time="0.055" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_malformed_rejected[bad8]" time="0.052" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_open_ended_requires_flag" time="0.049" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_import_replay_and_conflict" time="0.051" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_version_order_and_supersedes_chain" time="0.049" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_batch_is_atomic_on_partial_failure" time="0.049" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_boundaries[2026-06-01T08:59:59+08:00-TOO_EARLY]" time="0.045" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_boundaries[2026-06-01T09:00:00+08:00-ELIGIBLE]" time="0.044" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_boundaries[2026-06-01T10:30:00+08:00-ELIGIBLE]" time="0.046" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_redemption_boundaries[2026-06-01T10:30:01+08:00-TOO_LATE]" time="0.042" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_state_precedence[EXPIRED-EXPIRED]" time="0.055" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_state_precedence[WITHDRAWN-WITHDRAWN]" time="0.045" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_unknown_fails_safe" time="0.048" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_expiry_and_not_yet_effective" time="0.046" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_dst_destination_timezone_is_absolute_and_deterministic" time="0.046" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_change_refund_flags_and_audit_reason" time="0.050" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_exact_raw_payload_digest_is_admitted_and_replay_is_idempotent" time="0.046" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_raw_payload_hash_mismatch_rejects_without_policy_or_audit_mutation" time="0.045" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_raw_import_requires_policy_and_immutable_bytes[None]" time="0.044" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_raw_import_requires_policy_and_immutable_bytes[entry1]" time="0.044" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_raw_import_requires_policy_and_immutable_bytes[entry2]" time="0.056" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_raw_import_requires_policy_and_immutable_bytes[entry3]" time="0.051" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_raw_import_requires_policy_and_immutable_bytes[entry4]" time="0.054" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_bound_batch_is_atomic_when_later_payload_mismatches" time="0.047" /><testcase classname="tests.test_next_depth_c06_supplier_validity" name="test_non_batch_container_fails_closed" time="0.052" /><testcase classname="tests.test_depth21_refund_recovery" name="test_refund_retry_returns_same_receipt_and_one_money_movement[RAIL]" time="0.141" /><testcase classname="tests.test_depth21_refund_recovery" name="test_refund_retry_returns_same_receipt_and_one_money_movement[ATTRACTION]" time="0.115" /><testcase classname="tests.test_depth21_refund_recovery" name="test_money_confirmed_then_order_commit_failure_recovers_without_refund_resend[RAIL]" time="0.150" /><testcase classname="tests.test_depth21_refund_recovery" name="test_money_confirmed_then_order_commit_failure_recovers_without_refund_resend[ATTRACTION]" time="0.133" /><testcase classname="tests.test_depth21_refund_recovery" name="test_concurrent_refund_has_one_executor_and_blocks_change_or_redeem[RAIL]" time="0.136" /><testcase classname="tests.test_depth21_refund_recovery" name="test_concurrent_refund_has_one_executor_and_blocks_change_or_redeem[ATTRACTION]" time="0.133" /><testcase classname="tests.test_depth21_refund_recovery" name="test_unknown_money_remains_pending_and_cannot_change[RAIL]" time="0.125" /><testcase classname="tests.test_depth21_refund_recovery" name="test_unknown_money_remains_pending_and_cannot_change[ATTRACTION]" time="0.121" /><testcase classname="tests.test_depth21_refund_recovery" name="test_fabricated_confirmation_cannot_complete_refund[RAIL]" time="0.121" /><testcase classname="tests.test_depth21_refund_recovery" name="test_fabricated_confirmation_cannot_complete_refund[ATTRACTION]" time="0.104" /><testcase classname="tests.test_depth21_refund_recovery" name="test_refund_receipt_for_another_order_cannot_complete_this_order[RAIL]" time="0.193" /><testcase classname="tests.test_depth21_refund_recovery" name="test_refund_receipt_for_another_order_cannot_complete_this_order[ATTRACTION]" time="0.163" /><testcase classname="tests.test_depth21_refund_recovery" name="test_process_exit_after_money_can_resume_only_after_lease_expiry[RAIL]" time="2.555" /><testcase classname="tests.test_depth21_refund_recovery" name="test_process_exit_after_money_can_resume_only_after_lease_expiry[ATTRACTION]" time="2.499" /><testcase classname="tests.test_depth21_refund_recovery" name="test_rail_change_reserves_order_before_authorization_and_resumes_after_crash" time="0.146" /><testcase classname="tests.test_depth21_refund_recovery" name="test_mutated_frozen_quote_is_rejected_before_more_money_moves" time="0.124" /><testcase classname="tests.test_depth21_refund_recovery" name="test_migration_roundtrip_preserves_prior_history_and_blocks_journal_loss" time="0.583" /><testcase classname="tests.test_depth23_capacity" name="test_concurrent_distinct_quotes_share_one_capacity[RAIL-9-2]" time="0.168" /><testcase classname="tests.test_depth23_capacity" name="test_concurrent_distinct_quotes_share_one_capacity[ATTRACTION-12-2]" time="0.157" /><testcase classname="tests.test_depth23_capacity" name="test_cancel_unpaid_releases_once_and_blocks_later_payment[RAIL]" time="0.104" /><testcase classname="tests.test_depth23_capacity" name="test_cancel_unpaid_releases_once_and_blocks_later_payment[ATTRACTION]" time="0.110" /><testcase classname="tests.test_depth23_capacity" name="test_payment_started_cannot_release_capacity[RAIL]" time="0.106" /><testcase classname="tests.test_depth23_capacity" name="test_payment_started_cannot_release_capacity[ATTRACTION]" time="0.091" /><testcase classname="tests.test_depth23_capacity" name="test_refund_only_releases_after_confirmed_money[RAIL]" time="0.139" /><testcase classname="tests.test_depth23_capacity" name="test_refund_only_releases_after_confirmed_money[ATTRACTION]" time="0.137" /><testcase classname="tests.test_depth23_capacity" name="test_rail_change_holds_both_dates_until_result_then_releases_correct_pool[TICKETED]" time="0.178" /><testcase classname="tests.test_depth23_capacity" name="test_rail_change_holds_both_dates_until_result_then_releases_correct_pool[FAILED]" time="0.183" /><testcase classname="tests.test_depth23_capacity" name="test_attraction_change_and_redemption_retain_current_session_capacity" time="0.156"><failure message="ValueError: ATTRACTION_OUTSIDE_SUPPLIER_VALIDITY_WINDOW">def test_attraction_change_and_redemption_retain_current_session_capacity():
+        svc,owner,oid=booked('ATTRACTION')
+        q=svc.change_quote(owner,oid,'2026-09-16','17:00');svc.execute_change(owner,oid,q['quote_id'])
+        assert ledger()==4
+        svc.admin_external_state(oid,'CONFIRMED','isolated://change','ops','NEW','V-NEW',q['quote_id'])
+        assert ledger()==2
+        assert attr.search('东京','2026-09-15')[0]['inventory_by_session']['16:00']==24
+        assert attr.search('东京','2026-09-16')[0]['inventory_by_session']['17:00']==22
+&gt;       svc.redeem(owner,oid,'isolated://entry');assert ledger()==2
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_depth23_capacity.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/attractions/service.py:190: in redeem
+    window=validity.for_order(self._order_terms(s,order_id),o.visit_date,o.session_time);validity.guard(window,db_now_ms(s))
+                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+window = {'boundary': '[opens_at,closes_at)', 'closes_at': '2026-09-16T10:00:00+00:00', 'destination_timezone': 'Asia/Tokyo', 'opens_at': '2026-09-16T07:30:00+00:00', ...}
+current_ms = 1790446151113
+
+    def guard(window, current_ms):
+        if window['state'] == 'LEGACY_UNVERIFIED':
+            raise ValueError('ATTRACTION_VALIDITY_REVIEW_REQUIRED')
+        opened = datetime.fromisoformat(window['opens_at'])
+        closed = datetime.fromisoformat(window['closes_at'])
+        current = datetime.fromtimestamp(current_ms / 1000, UTC)
+        if not opened &lt;= current &lt; closed:
+&gt;           raise ValueError('ATTRACTION_OUTSIDE_SUPPLIER_VALIDITY_WINDOW')
+E           ValueError: ATTRACTION_OUTSIDE_SUPPLIER_VALIDITY_WINDOW
+
+src/go_hotel/attractions/validity.py:69: ValueError</failure></testcase><testcase classname="tests.test_depth23_capacity" name="test_attraction_same_session_change_does_not_double_reserve" time="0.242" /><testcase classname="tests.test_depth23_capacity" name="test_date_and_session_pools_are_isolated" time="0.229" /><testcase classname="tests.test_depth23_capacity" name="test_same_prebook_replay_does_not_allocate_twice" time="0.188" /><testcase classname="tests.test_depth23_capacity" name="test_train_capacity_is_shared_across_overlapping_station_queries" time="0.170" /><testcase classname="tests.test_depth23_capacity" name="test_migration_blocks_allocated_history_loss" time="0.254" /><testcase classname="tests.test_depth23_capacity" name="test_legacy_orders_are_not_silently_ignored[RAIL]" time="0.088" /><testcase classname="tests.test_depth23_capacity" name="test_legacy_orders_are_not_silently_ignored[ATTRACTION]" time="0.085" /><testcase classname="tests.test_depth23_capacity" name="test_order_commit_failure_rolls_back_capacity" time="0.094" /><testcase classname="tests.test_depth23_capacity" name="test_capacity_survives_process_exit" time="2.444" /><testcase classname="tests.test_depth23_capacity" name="test_started_payment_wins_race_against_unpaid_cancellation" time="0.115" /><testcase classname="tests.test_depth23_capacity" name="test_attraction_change_cannot_reserve_full_target" time="0.135" /><testcase classname="tests.test_depth23_capacity" name="test_rail_change_target_full_rejects_before_supplemental_authorization" time="0.178" /><testcase classname="tests.test_final_depth_terminal_hardening" name="test_flight_old_quote_cannot_execute_after_refund" time="0.447" /><testcase classname="tests.test_final_depth_terminal_hardening" name="test_attraction_expired_quote_fails_closed" time="0.506" /><testcase classname="tests.test_final_depth_terminal_hardening" name="test_ride_unknown_from_in_progress_restores_in_progress" time="0.488" /><testcase classname="tests.test_final_depth_terminal_hardening" name="test_late_supplier_fact_cannot_resurrect_completed_ride" time="0.481" /><testcase classname="tests.test_final_depth_terminal_hardening" name="test_ride_unknown_can_converge_to_failed" time="0.496" /><testcase classname="tests.test_final_depth_terminal_hardening" name="test_attraction_redeem_evidence_keeps_consumed_credential" time="0.693"><failure message="AssertionError: assert 404 == 200&#10; +  where 404 = &lt;Response [404 Not Found]&gt;.status_code&#10; +    where &lt;Response [404 Not Found]&gt; = post('/v1/attractions/orders/attr_ord_87f7cc01576e481b/redeem', headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiQ09OU1VNRVIiLCJleHAiOjE3OTA0NDcwNTg...XBwbGllcl9pZCI6bnVsbCwidXNlcm5hbWUiOiJhdHRyQGV4YW1wbGUuY29tIiwidmVyIjoxfQ.b_RmOYtssib1JvCQpoB8Mj1Y3ZxB1dhpQEnMnrrZKb8'}, json={'evidence_reference': 'gate-scan'})&#10; +      where post = &lt;starlette.testclient.TestClient object at 0x7f6a41eac920&gt;.post">client = &lt;starlette.testclient.TestClient object at 0x7f6a41eac920&gt;
+
+    def test_attraction_redeem_evidence_keeps_consumed_credential(client):
+        from go_hotel.services.rc20_vertical_evidence import list_vertical_evidence
+        h=attr_auth(client)
+        off=client.post('/v1/attractions/search',json={'destination':'东京','visit_date':'2026-09-03'}).json()['data']['items'][0]
+        o=client.post('/v1/attractions/orders',headers=h,json=quoted_attraction(client,{'offer_id':off['offer_id'],'visit_date':'2026-09-03','quantity':1})).json()['data']
+        pay_and_confirm(client,h,'ATTRACTION_ORDER',o['order_id'],'ATTR-'+o['order_id'][-6:],voucher_code='VOUCH-'+o['order_id'][-6:])
+&gt;       assert client.post(f"/v1/attractions/orders/{o['order_id']}/redeem",headers=h,json={'evidence_reference':'gate-scan'}).status_code==200
+E       AssertionError: assert 404 == 200
+E        +  where 404 = &lt;Response [404 Not Found]&gt;.status_code
+E        +    where &lt;Response [404 Not Found]&gt; = post('/v1/attractions/orders/attr_ord_87f7cc01576e481b/redeem', headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiQ09OU1VNRVIiLCJleHAiOjE3OTA0NDcwNTg...XBwbGllcl9pZCI6bnVsbCwidXNlcm5hbWUiOiJhdHRyQGV4YW1wbGUuY29tIiwidmVyIjoxfQ.b_RmOYtssib1JvCQpoB8Mj1Y3ZxB1dhpQEnMnrrZKb8'}, json={'evidence_reference': 'gate-scan'})
+E        +      where post = &lt;starlette.testclient.TestClient object at 0x7f6a41eac920&gt;.post
+
+tests/test_final_depth_terminal_hardening.py:96: AssertionError</failure></testcase><testcase classname="tests.test_final_depth_terminal_hardening" name="test_same_supplier_fact_replay_does_not_append_events" time="0.485" /><testcase classname="tests.test_rental_operations" name="test_owner_response_statement_persists_atomically_and_exact_retry" time="0.114" /><testcase classname="tests.test_rental_operations" name="test_denied_role_stale_and_spoofed_actor_leave_no_statement" time="0.106" /><testcase classname="tests.test_rental_operations" name="test_admin_open_independent_decision_and_appeal_ui_journey" time="0.139" /><testcase classname="tests.test_rental_operations" name="test_admin_return_statement_creates_source_not_financial_release" time="0.116" /><testcase classname="tests.test_rental_operations" name="test_statement_action_audit_failure_rolls_back" time="0.086" /><testcase classname="tests.test_rental_operations" name="test_statement_blank_and_raw_evidence_injection_rejected" time="0.098" /><testcase classname="tests.test_rental_deposit_authority" name="test_server_fixture_full_source_and_explicit_consent" time="0.077" /><testcase classname="tests.test_rental_deposit_authority" name="test_consent_cannot_be_inferred[False]" time="0.069" /><testcase classname="tests.test_rental_deposit_authority" name="test_consent_cannot_be_inferred[None]" time="0.070" /><testcase classname="tests.test_rental_deposit_authority" name="test_consent_cannot_be_inferred[1]" time="0.081" /><testcase classname="tests.test_rental_deposit_authority" name="test_consent_cannot_be_inferred[true]" time="0.187" /><testcase classname="tests.test_rental_deposit_authority" name="test_replay_stale_and_forged_source_conflicts" time="0.126" /><testcase classname="tests.test_rental_deposit_authority" name="test_arbitrary_order_values_do_not_approve_fixture[deposit_minor-1]" time="0.097" /><testcase classname="tests.test_rental_deposit_authority" name="test_arbitrary_order_values_do_not_approve_fixture[currency-USD]" time="0.077" /><testcase classname="tests.test_rental_deposit_authority" name="test_arbitrary_order_values_do_not_approve_fixture[vehicle_class-UNREGISTERED]" time="0.070" /><testcase classname="tests.test_rental_deposit_authority" name="test_arbitrary_order_values_do_not_approve_fixture[insurance-value3]" time="0.072" /><testcase classname="tests.test_rental_deposit_authority" name="test_tenant_admin_supplier_denied_consumer_consent" time="0.085" /><testcase classname="tests.test_rental_deposit_authority" name="test_expiry_and_source_drift_fail_closed" time="0.082" /><testcase classname="tests.test_rental_deposit_authority" name="test_consumer_must_reconfirm_before_expiry" time="0.072" /><testcase classname="tests.test_rental_deposit_authority" name="test_unique_anchor_concurrency_and_replay" time="0.091" /><testcase classname="tests.test_rental_deposit_authority" name="test_consent_flush_crash_rolls_back_retry" time="0.073" /><testcase classname="tests.test_rental_deposit_authority" name="test_tamper_or_wrong_anchor_cannot_resolve" time="0.074" /><testcase classname="tests.test_rental_deposit_authority" name="test_damage_decision_bound_before_open_and_appeal_holds_c11" time="0.105" /><testcase classname="tests.test_rental_deposit_authority" name="test_returned_order_cannot_manufacture_prior_deposit_consent" time="0.081" /><testcase classname="tests.test_rental_deposit_authority" name="test_http_server_fields_rejected_owner_discovery" time="0.118" /><testcase classname="tests.test_rental_deposit_authority" name="test_expired_unaccepted_proposal_renewal_requires_new_hash_consent" time="0.092" /><testcase classname="tests.test_rental_deposit_authority" name="test_concurrent_renewals_cannot_fork_proposal" time="0.098" /><testcase classname="tests.test_rental_deposit_authority" name="test_normal_return_admin_fact_releases_source_without_fake_case" time="0.155" /><testcase classname="tests.test_rental_deposit_authority" name="test_consumer_or_pending_case_cannot_finalize_return" time="0.242" /><testcase classname="tests.test_rental_deposit_authority" name="test_unproven_cancel_state_is_not_release_authority" time="0.209" /><testcase classname="tests.test_rental_deposit_authority" name="test_release_fact_after_expiry_and_wrong_version_rejected" time="0.219" /><testcase classname="tests.test_rental_deposit_authority" name="test_return_finalize_crash_and_competing_claim_are_atomic" time="0.259" /><testcase classname="tests.test_rental_deposit_authority" name="test_proven_original_rental_cancel_allows_release_source" time="0.346" /><testcase classname="tests.test_rental_deposit_authority" name="test_http_renew_and_admin_return_review" time="0.168" /><testcase classname="tests.test_rental_compensation_authority" name="test_reduction_reproduces_old_hash_and_preserves_history[3000]" time="0.131" /><testcase classname="tests.test_rental_compensation_authority" name="test_reduction_reproduces_old_hash_and_preserves_history[0]" time="0.120" /><testcase classname="tests.test_rental_compensation_authority" name="test_no_initial_equal_or_upward_reduction_authority[8000]" time="0.118" /><testcase classname="tests.test_rental_compensation_authority" name="test_no_initial_equal_or_upward_reduction_authority[9000]" time="0.128" /><testcase classname="tests.test_rental_compensation_authority" name="test_new_appeal_invalidates_prior_compensation_version" time="0.282" /><testcase classname="tests.test_rental_compensation_authority" name="test_preview_permissions_and_conflicting_review_replay" time="0.111" /><testcase classname="tests.test_rental_compensation_authority" name="test_competing_reductions_have_one_current_authority" time="0.123" /><testcase classname="tests.test_rental_compensation_authority" name="test_semantic_history_rewrite_rejected" time="0.121" /><testcase classname="tests.test_rental_compensation_authority" name="test_historical_compensation_authority_survives_later_pending_and_upward_review" time="0.392" /><testcase classname="tests.test_rental_compensation_authority" name="test_multiple_historical_reductions_preserve_exact_current_hash_at_each_revision" time="0.125" /><testcase classname="tests.test_rental_damage_disputes" name="test_dispute_to_independent_decision_never_moves_money" time="0.072" /><testcase classname="tests.test_rental_damage_disputes" name="test_replays_are_exact_and_changed_payload_conflicts[ACCEPT]" time="0.082" /><testcase classname="tests.test_rental_damage_disputes" name="test_replays_are_exact_and_changed_payload_conflicts[DISPUTE]" time="0.084" /><testcase classname="tests.test_rental_damage_disputes" name="test_tenant_and_supplier_isolation" time="0.067" /><testcase classname="tests.test_rental_damage_disputes" name="test_independent_reviewer_and_customer_response_required" time="0.078" /><testcase classname="tests.test_rental_damage_disputes" name="test_amount_limits[True]" time="0.064" /><testcase classname="tests.test_rental_damage_disputes" name="test_amount_limits[-1]" time="0.076" /><testcase classname="tests.test_rental_damage_disputes" name="test_amount_limits[0]" time="0.065" /><testcase classname="tests.test_rental_damage_disputes" name="test_amount_limits[200001]" time="0.070" /><testcase classname="tests.test_rental_damage_disputes" name="test_amount_limits[1.5]" time="0.074" /><testcase classname="tests.test_rental_damage_disputes" name="test_full_insurance_and_invalid_evidence_rejected" time="0.088" /><testcase classname="tests.test_rental_damage_disputes" name="test_competing_responses_serialize_and_stale_version_rejects" time="0.105" /><testcase classname="tests.test_rental_damage_disputes" name="test_writes_forbidden_outside_isolation" time="0.074" /><testcase classname="tests.test_rental_damage_disputes" name="test_api_principal_is_not_body_controlled_and_permissions_enforced" time="0.095" /><testcase classname="tests.test_rental_damage_disputes" name="test_failed_append_rolls_back_and_retry_creates_single_case" time="0.080" /><testcase classname="tests.test_rental_damage_disputes" name="test_concurrent_case_retries_and_contract_snapshot_freeze" time="0.096" /><testcase classname="tests.test_rental_damage_disputes" name="test_corrupted_case_history_cannot_progress_or_append[execution_item]" time="0.073" /><testcase classname="tests.test_rental_damage_disputes" name="test_corrupted_case_history_cannot_progress_or_append[embedded_order]" time="0.073" /><testcase classname="tests.test_rental_damage_disputes" name="test_corrupted_case_history_cannot_progress_or_append[owner]" time="0.089" /><testcase classname="tests.test_rental_damage_disputes" name="test_corrupted_case_history_cannot_progress_or_append[payload]" time="0.092" /><testcase classname="tests.test_rental_damage_disputes" name="test_corrupted_case_history_cannot_progress_or_append[chain]" time="0.080" /><testcase classname="tests.test_rental_damage_disputes" name="test_appeal_holds_decision_then_independent_review_preserves_history" time="0.090" /><testcase classname="tests.test_rental_damage_disputes" name="test_appeal_retries_conflicts_wrong_owner_and_stale_review" time="0.083" /><testcase classname="tests.test_rental_damage_disputes" name="test_competing_appeal_review_and_crash_recovery" time="0.109" /><testcase classname="tests.test_rental_damage_disputes" name="test_no_appeal_before_decision_or_timeout_default" time="0.070" /><testcase classname="tests.test_rental_damage_disputes" name="test_authenticated_http_appeal_and_review_endpoints" time="0.102" /><testcase classname="tests.test_c04_refund_terminal_integrity" name="test_completed_rental_refund_rejects_nonrefunded_order[CONFIRMED]" time="0.084" /><testcase classname="tests.test_c04_refund_terminal_integrity" name="test_completed_rental_refund_rejects_nonrefunded_order[REFUND_PENDING]" time="0.074" /><testcase classname="tests.test_c04_refund_terminal_integrity" name="test_completed_rental_refund_rejects_nonrefunded_order[IN_PROGRESS]" time="0.081" /><testcase classname="tests.test_c04_refund_terminal_integrity" name="test_completed_rental_refund_rejects_nonrefunded_order[UNKNOWN_EXTERNAL_STATE]" time="0.087" /><testcase classname="tests.test_c04_refund_terminal_integrity" name="test_consistent_completed_rental_refund_replays_without_money_or_mutation" time="0.086"><failure message="ValueError: REFUND_COMPLETION_EVIDENCE_INVALID">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6a42129eb0&gt;
+
+    def test_consistent_completed_rental_refund_replays_without_money_or_mutation(monkeypatch):
+        order_id, refund_id, accepted_hash = seed_refund("REFUNDED")
+        before = snapshot(order_id, refund_id)
+        monkeypatch.setattr(money, "execute_refund_plan", no_money)
+    
+&gt;       first = rental_service.cancel(OWNER, order_id, accepted_hash)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_c04_refund_terminal_integrity.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/mobility/rental/service.py:154: in cancel
+    return completed(s,o,r)
+           ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+s = &lt;sqlalchemy.orm.session.Session object at 0x7f6a42203560&gt;
+o = &lt;go_hotel.db.models.MobilityRentalOrderRow object at 0x7f6a422564b0&gt;
+r = &lt;go_hotel.db.models.MobilityRefundRow object at 0x7f6a42256780&gt;
+
+    def completed(s,o,r):
+        if o.status!='REFUNDED':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
+        from go_hotel.services.ticket_operations import _events
+        _events(s,'RENTAL',order_id)
+        evidence=[x['payload'] for x in list_vertical_evidence(s,'RENTAL',order_id)
+            if x['kind']=='REFUND_COMPLETED' and x['payload'].get('refund_id')==r.refund_id]
+        if len(evidence)!=1 or evidence[0].get('refund_amount_minor')!=r.refund_amount_minor:
+&gt;           raise ValueError('REFUND_COMPLETION_EVIDENCE_INVALID')
+E           ValueError: REFUND_COMPLETION_EVIDENCE_INVALID
+
+src/go_hotel/mobility/rental/service.py:145: ValueError</failure></testcase><testcase classname="tests.test_c04_refund_terminal_integrity" name="test_rental_refund_rechecks_concurrent_completion_terminal_pair[CONFIRMED]" time="0.084" /><testcase classname="tests.test_c04_refund_terminal_integrity" name="test_rental_refund_rechecks_concurrent_completion_terminal_pair[REFUNDED]" time="0.085"><failure message="ValueError: REFUND_COMPLETION_EVIDENCE_INVALID">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6a423d0fb0&gt;
+final_order_status = 'REFUNDED'
+
+    @pytest.mark.parametrize("final_order_status", ["CONFIRMED", "REFUNDED"])
+    def test_rental_refund_rechecks_concurrent_completion_terminal_pair(monkeypatch, final_order_status):
+        order_id, refund_id, accepted_hash = seed_refund("REFUND_PENDING", "REFUND_PENDING")
+        calls = []
+        after_concurrent = []
+    
+        def concurrent_completion(plan, evidence):
+            calls.append((plan, evidence))
+            with SessionLocal.begin() as s:
+                s.get(MobilityRefundRow, refund_id).status = "REFUND_COMPLETED"
+                s.get(MobilityRentalOrderRow, order_id).status = final_order_status
+            after_concurrent.append(snapshot(order_id, refund_id))
+            return {"state": "CONFIRMED", "money_movement_ids": []}
+    
+        monkeypatch.setattr(money, "execute_refund_plan", concurrent_completion)
+        if final_order_status == "REFUNDED":
+&gt;           assert rental_service.cancel(OWNER, order_id, accepted_hash)["refund_id"] == refund_id
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_c04_refund_terminal_integrity.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/mobility/rental/service.py:180: in cancel
+    return completed(s,o,r)
+           ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+s = &lt;sqlalchemy.orm.session.Session object at 0x7f6a42203bf0&gt;
+o = &lt;go_hotel.db.models.MobilityRentalOrderRow object at 0x7f6a42200500&gt;
+r = &lt;go_hotel.db.models.MobilityRefundRow object at 0x7f6a42202f00&gt;
+
+    def completed(s,o,r):
+        if o.status!='REFUNDED':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
+        from go_hotel.services.ticket_operations import _events
+        _events(s,'RENTAL',order_id)
+        evidence=[x['payload'] for x in list_vertical_evidence(s,'RENTAL',order_id)
+            if x['kind']=='REFUND_COMPLETED' and x['payload'].get('refund_id')==r.refund_id]
+        if len(evidence)!=1 or evidence[0].get('refund_amount_minor')!=r.refund_amount_minor:
+&gt;           raise ValueError('REFUND_COMPLETION_EVIDENCE_INVALID')
+E           ValueError: REFUND_COMPLETION_EVIDENCE_INVALID
+
+src/go_hotel/mobility/rental/service.py:145: ValueError</failure></testcase><testcase classname="tests.test_c04_refund_terminal_integrity" name="test_rental_refund_terminal_guard_preserves_owner_check" time="0.087" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_agreement_is_not_money_and_authorization_has_own_root" time="0.248" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_award_capture_and_remainder_release_are_atomic_idempotent[0]" time="0.116" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_award_capture_and_remainder_release_are_atomic_idempotent[4000]" time="0.116" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_award_capture_and_remainder_release_are_atomic_idempotent[10000]" time="0.119" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_generic_movement_route_cannot_bypass_decision" time="0.087" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_only_authorized_admin_can_move_isolated_deposit[actor0]" time="0.072" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_only_authorized_admin_can_move_isolated_deposit[actor1]" time="0.071" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_only_authorized_admin_can_move_isolated_deposit[actor2]" time="0.079" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_wrong_owner_cannot_read_balance" time="0.079" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_unknown_or_corrupt_money_never_reauthorizes_or_claims_success[intent]" time="0.081" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_unknown_or_corrupt_money_never_reauthorizes_or_claims_success[movement]" time="0.093" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_unknown_or_corrupt_money_never_reauthorizes_or_claims_success[missing_receipt]" time="0.088" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_unknown_or_corrupt_money_never_reauthorizes_or_claims_success[binding]" time="0.083" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_unknown_or_corrupt_money_never_reauthorizes_or_claims_success[missing_root]" time="0.091" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_wrong_source_or_decision_revision_never_moves_money" time="0.136" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_failure_between_capture_and_release_rolls_back_both_and_retry_once" time="0.125" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_concurrent_authorization_and_settlement_retries_share_one_graph" time="0.197" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_expiry_allows_only_release_of_existing_authorization" time="0.102" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_production_cannot_use_simulated_money" time="0.065" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_missing_capture_ledger_cannot_claim_settled_or_repeat_money" time="0.186" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_expired_source_cannot_capture_existing_authorization" time="0.179" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_money_http_owner_read_and_amount_override_denial" time="0.104" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_no_damage_release_is_independent_of_damage_claim_and_idempotent" time="0.104" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_expired_authorization_no_damage_release_and_concurrent_retries" time="0.414" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_ordinary_release_cannot_bypass_open_dispute" time="0.093" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_release_without_authorization_does_not_manufacture_funds" time="0.086" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_appeal_holds_old_decision_without_money_and_cannot_plain_release" time="0.106" /><testcase classname="tests.payments.test_c11_rental_deposit_money" name="test_original_rent_refund_and_deposit_release_remain_separate_roots" time="0.332" /></testsuite></testsuites>

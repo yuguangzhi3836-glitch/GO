@@ -1,0 +1,890 @@
+..............................F..............F.......................... [ 28%]
+......................................................F................. [ 57%]
+F....................................................................... [ 85%]
+....F.F.............................                                     [100%]
+=================================== FAILURES ===================================
+_____ test_attraction_api_carries_quote_identity_and_replays_bound_request _____
+  + Exception Group Traceback (most recent call last):
+  |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 79, in collapse_excgroups
+  |     yield
+  |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 192, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 799, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/runner.py", line 353, in from_call
+    |     result: TResult | None = func()
+    |                              ^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/runner.py", line 245, in <lambda>
+    |     lambda: runtest_hook(item=item, **kwds),
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+    |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+    |     raise exception
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/logging.py", line 850, in pytest_runtest_call
+    |     yield
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/capture.py", line 900, in pytest_runtest_call
+    |     return (yield)
+    |             ^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/skipping.py", line 268, in pytest_runtest_call
+    |     return (yield)
+    |             ^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+    |     res = hook_impl.function(*args)
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/runner.py", line 179, in pytest_runtest_call
+    |     item.runtest()
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/python.py", line 1720, in runtest
+    |     self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+    |     return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    |     return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+    |     raise exception
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+    |     teardown.throw(exception)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 53, in run_old_style_hookwrapper
+    |     return result.get_result()
+    |            ^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_result.py", line 103, in get_result
+    |     raise exc.with_traceback(tb)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 38, in run_old_style_hookwrapper
+    |     res = yield
+    |           ^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+    |     res = hook_impl.function(*args)
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/_pytest/python.py", line 166, in pytest_pyfunc_call
+    |     result = testfunction(**testargs)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/tests/test_c03_c06_change_quote_fencing.py", line 71, in test_attraction_api_carries_quote_identity_and_replays_bound_request
+    |     denied = client.post(endpoint, json=body)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 546, in post
+    |     return super().post(
+    |            ^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 1144, in post
+    |     return self.request(
+    |            ^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 445, in request
+    |     return super().request(
+    |            ^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 825, in request
+    |     return self.send(request, auth=auth, follow_redirects=follow_redirects)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 914, in send
+    |     response = self._send_handling_auth(
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    |     response = self._send_handling_redirects(
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    |     response = self._send_single_request(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    |     response = transport.handle_request(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 348, in handle_request
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 345, in handle_request
+    |     portal.call(self.app, scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/from_thread.py", line 334, in call
+    |     return cast(T_Retval, self.start_task_soon(func, *args).result())
+    |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    |     return self.__get_result()
+    |            ^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    |     raise self._exception
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/from_thread.py", line 259, in _call_func
+    |     retval = await retval_or_awaitable
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/applications.py", line 1138, in __call__
+    |     await super().__call__(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/applications.py", line 107, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    |     await self.app(scope, receive, _send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |                                    ^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 313, in dispatch
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |                                    ^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 267, in dispatch
+    |     response=await call_next(request)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |                                    ^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 221, in dispatch
+    |     response=await call_next(request)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 716, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 736, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 290, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 115, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 101, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 345, in app
+    |     solved_result = await solve_dependencies(
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 655, in solve_dependencies
+    |     solved = await run_in_threadpool(call, **solved_result.values)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    |     return await anyio.to_thread.run_sync(func)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/to_thread.py", line 63, in run_sync
+    |     return await get_async_backend().run_sync_in_worker_thread(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2518, in run_sync_in_worker_thread
+    |     return await future
+    |            ^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1002, in run
+    |     result = context.run(func, *args)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/security/deps.py", line 43, in order_admin_principal
+    |     if 'admin:orders' not in p.permissions:
+    |                              ^^^^^^^^^^^^^
+    | AttributeError: 'types.SimpleNamespace' object has no attribute 'permissions'
+    +------------------------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/tests/test_c03_c06_change_quote_fencing.py", line 71, in test_attraction_api_carries_quote_identity_and_replays_bound_request
+    denied = client.post(endpoint, json=body)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 546, in post
+    return super().post(
+           ^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 1144, in post
+    return self.request(
+           ^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 445, in request
+    return super().request(
+           ^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 348, in handle_request
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py", line 345, in handle_request
+    portal.call(self.app, scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/from_thread.py", line 334, in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/from_thread.py", line 259, in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/applications.py", line 1138, in __call__
+    await super().__call__(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 313, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 267, in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 221, in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 345, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 655, in solve_dependencies
+    solved = await run_in_threadpool(call, **solved_result.values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2518, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1002, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/security/deps.py", line 43, in order_admin_principal
+    if 'admin:orders' not in p.permissions:
+                             ^^^^^^^^^^^^^
+AttributeError: 'types.SimpleNamespace' object has no attribute 'permissions'
+
+The above exception was the direct cause of the following exception:
+
+client = <starlette.testclient.TestClient object at 0x7f6a4823b1d0>
+
+    def test_attraction_api_carries_quote_identity_and_replays_bound_request(client):
+        from types import SimpleNamespace
+        from go_hotel.security.deps import admin_principal
+        from go_hotel.main import app
+        svc, owner, oid, first, second = attraction_second_change()
+        app.dependency_overrides[admin_principal] = lambda: SimpleNamespace(user_id='ops')
+        try:
+            endpoint = f'/internal/v1/admin/attractions/orders/{oid}/external-state'
+            body = {'state': 'CONFIRMED', 'evidence_reference': 'isolated://second',
+                    'supplier_reference': 'SUP-SECOND', 'voucher_code': 'V-SECOND'}
+>           denied = client.post(endpoint, json=body)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_c03_c06_change_quote_fencing.py:71: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/applications.py:1138: in __call__
+    await super().__call__(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/applications.py:107: in __call__
+    await self.middleware_stack(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:191: in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:158: in __exit__
+    self.gen.throw(value)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py:85: in collapse_excgroups
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:313: in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:191: in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:158: in __exit__
+    self.gen.throw(value)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py:85: in collapse_excgroups
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:267: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:191: in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:158: in __exit__
+    self.gen.throw(value)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py:85: in collapse_excgroups
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:193: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/main.py:221: in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:168: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py:144: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py:716: in __call__
+    await self.middleware_stack(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py:736: in app
+    await route.handle(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py:290: in handle
+    await self.app(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py:115: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py:101: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py:345: in app
+    solved_result = await solve_dependencies(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py:655: in solve_dependencies
+    solved = await run_in_threadpool(call, **solved_result.values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/concurrency.py:32: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/to_thread.py:63: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:2518: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+../../../1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:1002: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+p = namespace(user_id='ops')
+
+    def order_admin_principal(p:Principal=Depends(admin_principal)):
+>       if 'admin:orders' not in p.permissions:
+                                 ^^^^^^^^^^^^^
+E       AttributeError: 'types.SimpleNamespace' object has no attribute 'permissions'
+
+src/go_hotel/security/deps.py:43: AttributeError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-26T18:08:56.920333+00:00","level":"ERROR","logger":"go.runtime","message":"request_failed","request_id":"req_79e59d114c7147b380e44e971453a446","trace_id":"tr_cc3dc2a933c94769b498f2035b86ef16","path":"/internal/v1/admin/attractions/orders/attr_ord_11598bf109214ead/external-state","method":"POST","duration_ms":4.1,"exception":"  + Exception Group Traceback (most recent call last):\n  |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py\", line 79, in collapse_excgroups\n  |     yield\n  |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 192, in __call__\n  |     async with anyio.create_task_group() as task_group:\n  |                ^^^^^^^^^^^^^^^^^^^^^^^^^\n  |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 799, in __aexit__\n  |     raise BaseExceptionGroup(\n  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)\n  +-+---------------- 1 ----------------\n    | Traceback (most recent call last):\n    |   File \"/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py\", line 313, in dispatch\n    |     response = await call_next(request)\n    |                ^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 168, in call_next\n    |     raise app_exc from app_exc.__cause__ or app_exc.__context__\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 144, in coro\n    |     await self.app(scope, receive_or_disconnect, send_no_error)\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 191, in __call__\n    |     with recv_stream, send_stream, collapse_excgroups():\n    |                                    ^^^^^^^^^^^^^^^^^^^^\n    |   File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py\", line 158, in __exit__\n    |     self.gen.throw(value)\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py\", line 85, in collapse_excgroups\n    |     raise exc\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 193, in __call__\n    |     response = await self.dispatch_func(request, call_next)\n    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py\", line 267, in dispatch\n    |     response=await call_next(request)\n    |              ^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 168, in call_next\n    |     raise app_exc from app_exc.__cause__ or app_exc.__context__\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 144, in coro\n    |     await self.app(scope, receive_or_disconnect, send_no_error)\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 191, in __call__\n    |     with recv_stream, send_stream, collapse_excgroups():\n    |                                    ^^^^^^^^^^^^^^^^^^^^\n    |   File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py\", line 158, in __exit__\n    |     self.gen.throw(value)\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py\", line 85, in collapse_excgroups\n    |     raise exc\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 193, in __call__\n    |     response = await self.dispatch_func(request, call_next)\n    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py\", line 221, in dispatch\n    |     response=await call_next(request)\n    |              ^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 168, in call_next\n    |     raise app_exc from app_exc.__cause__ or app_exc.__context__\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 144, in coro\n    |     await self.app(scope, receive_or_disconnect, send_no_error)\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py\", line 63, in __call__\n    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    |     raise exc\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    |     await app(scope, receive, sender)\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py\", line 18, in __call__\n    |     await self.app(scope, receive, send)\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py\", line 716, in __call__\n    |     await self.middleware_stack(scope, receive, send)\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py\", line 736, in app\n    |     await route.handle(scope, receive, send)\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py\", line 290, in handle\n    |     await self.app(scope, receive, send)\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py\", line 115, in app\n    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    |     raise exc\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    |     await app(scope, receive, sender)\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py\", line 101, in app\n    |     response = await f(request)\n    |                ^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py\", line 345, in app\n    |     solved_result = await solve_dependencies(\n    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py\", line 655, in solve_dependencies\n    |     solved = await run_in_threadpool(call, **solved_result.values)\n    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/concurrency.py\", line 32, in run_in_threadpool\n    |     return await anyio.to_thread.run_sync(func)\n    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/to_thread.py\", line 63, in run_sync\n    |     return await get_async_backend().run_sync_in_worker_thread(\n    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 2518, in run_sync_in_worker_thread\n    |     return await future\n    |            ^^^^^^^^^^^^\n    |   File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 1002, in run\n    |     result = context.run(func, *args)\n    |              ^^^^^^^^^^^^^^^^^^^^^^^^\n    |   File \"/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/security/deps.py\", line 43, in order_admin_principal\n    |     if 'admin:orders' not in p.permissions:\n    |                              ^^^^^^^^^^^^^\n    | AttributeError: 'types.SimpleNamespace' object has no attribute 'permissions'\n    +------------------------------------\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py\", line 313, in dispatch\n    response = await call_next(request)\n               ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 168, in call_next\n    raise app_exc from app_exc.__cause__ or app_exc.__context__\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 144, in coro\n    await self.app(scope, receive_or_disconnect, send_no_error)\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 191, in __call__\n    with recv_stream, send_stream, collapse_excgroups():\n                                   ^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py\", line 158, in __exit__\n    self.gen.throw(value)\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py\", line 85, in collapse_excgroups\n    raise exc\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 193, in __call__\n    response = await self.dispatch_func(request, call_next)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py\", line 267, in dispatch\n    response=await call_next(request)\n             ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 168, in call_next\n    raise app_exc from app_exc.__cause__ or app_exc.__context__\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 144, in coro\n    await self.app(scope, receive_or_disconnect, send_no_error)\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 191, in __call__\n    with recv_stream, send_stream, collapse_excgroups():\n                                   ^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py\", line 158, in __exit__\n    self.gen.throw(value)\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py\", line 85, in collapse_excgroups\n    raise exc\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 193, in __call__\n    response = await self.dispatch_func(request, call_next)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py\", line 221, in dispatch\n    response=await call_next(request)\n             ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 168, in call_next\n    raise app_exc from app_exc.__cause__ or app_exc.__context__\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py\", line 144, in coro\n    await self.app(scope, receive_or_disconnect, send_no_error)\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py\", line 716, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py\", line 736, in app\n    await route.handle(scope, receive, send)\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py\", line 290, in handle\n    await self.app(scope, receive, send)\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py\", line 115, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py\", line 101, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py\", line 345, in app\n    solved_result = await solve_dependencies(\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py\", line 655, in solve_dependencies\n    solved = await run_in_threadpool(call, **solved_result.values)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/concurrency.py\", line 32, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/to_thread.py\", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 1002, in run\n    result = context.run(func, *args)\n             ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/security/deps.py\", line 43, in order_admin_principal\n    if 'admin:orders' not in p.permissions:\n                             ^^^^^^^^^^^^^\nAttributeError: 'types.SimpleNamespace' object has no attribute 'permissions'"}
+------------------------------ Captured log call -------------------------------
+ERROR    go.runtime:main.py:319 request_failed
+  + Exception Group Traceback (most recent call last):
+  |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 79, in collapse_excgroups
+  |     yield
+  |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 192, in __call__
+  |     async with anyio.create_task_group() as task_group:
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 799, in __aexit__
+  |     raise BaseExceptionGroup(
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 313, in dispatch
+    |     response = await call_next(request)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |                                    ^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 267, in dispatch
+    |     response=await call_next(request)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    |     with recv_stream, send_stream, collapse_excgroups():
+    |                                    ^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    |     self.gen.throw(value)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    |     response = await self.dispatch_func(request, call_next)
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 221, in dispatch
+    |     response=await call_next(request)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    |     await self.app(scope, receive_or_disconnect, send_no_error)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    |     await self.app(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 716, in __call__
+    |     await self.middleware_stack(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 736, in app
+    |     await route.handle(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 290, in handle
+    |     await self.app(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 115, in app
+    |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    |     raise exc
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    |     await app(scope, receive, sender)
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 101, in app
+    |     response = await f(request)
+    |                ^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 345, in app
+    |     solved_result = await solve_dependencies(
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 655, in solve_dependencies
+    |     solved = await run_in_threadpool(call, **solved_result.values)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    |     return await anyio.to_thread.run_sync(func)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/to_thread.py", line 63, in run_sync
+    |     return await get_async_backend().run_sync_in_worker_thread(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2518, in run_sync_in_worker_thread
+    |     return await future
+    |            ^^^^^^^^^^^^
+    |   File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1002, in run
+    |     result = context.run(func, *args)
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/security/deps.py", line 43, in order_admin_principal
+    |     if 'admin:orders' not in p.permissions:
+    |                              ^^^^^^^^^^^^^
+    | AttributeError: 'types.SimpleNamespace' object has no attribute 'permissions'
+    +------------------------------------
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 313, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 267, in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/main.py", line 221, in dispatch
+    response=await call_next(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 115, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 101, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/routing.py", line 345, in app
+    solved_result = await solve_dependencies(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/fastapi/dependencies/utils.py", line 655, in solve_dependencies
+    solved = await run_in_threadpool(call, **solved_result.values)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2518, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1002, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/0c84e4859f82/GO-rental-attractions/application/src/go_hotel/security/deps.py", line 43, in order_admin_principal
+    if 'admin:orders' not in p.permissions:
+                             ^^^^^^^^^^^^^
+AttributeError: 'types.SimpleNamespace' object has no attribute 'permissions'
+_________ test_missing_supplier_policy_is_explicitly_legacy_unverified _________
+
+    def test_missing_supplier_policy_is_explicitly_legacy_unverified():
+        quote = svc.prebook('tokyo_skytree', '2026-09-15', 1)
+>       assert quote['redemption_window'] == {'state': 'LEGACY_UNVERIFIED'}
+E       AssertionError: assert {'boundary': ...0+00:00', ...} == {'state': 'LEGACY_UNVERIFIED'}
+E         
+E         Differing items:
+E         {'state': 'FROZEN_SUPPLIER_WINDOW'} != {'state': 'LEGACY_UNVERIFIED'}
+E         Left contains 5 more items:
+E         {'boundary': '[opens_at,closes_at)',
+E          'closes_at': '2026-09-15T09:00:00+00:00',
+E          'destination_timezone': 'Asia/Tokyo',...
+E         
+E         ...Full output truncated (6 lines hidden), use '-vv' to show
+
+tests/test_next_depth_c06_supplier_validity.py:98: AssertionError
+____ test_attraction_change_and_redemption_retain_current_session_capacity _____
+
+    def test_attraction_change_and_redemption_retain_current_session_capacity():
+        svc,owner,oid=booked('ATTRACTION')
+        q=svc.change_quote(owner,oid,'2026-09-16','17:00');svc.execute_change(owner,oid,q['quote_id'])
+        assert ledger()==4
+        svc.admin_external_state(oid,'CONFIRMED','isolated://change','ops','NEW','V-NEW',q['quote_id'])
+        assert ledger()==2
+        assert attr.search('东京','2026-09-15')[0]['inventory_by_session']['16:00']==24
+        assert attr.search('东京','2026-09-16')[0]['inventory_by_session']['17:00']==22
+>       svc.redeem(owner,oid,'isolated://entry');assert ledger()==2
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_depth23_capacity.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/attractions/service.py:190: in redeem
+    window=validity.for_order(self._order_terms(s,order_id),o.visit_date,o.session_time);validity.guard(window,db_now_ms(s))
+                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+window = {'boundary': '[opens_at,closes_at)', 'closes_at': '2026-09-16T10:00:00+00:00', 'destination_timezone': 'Asia/Tokyo', 'opens_at': '2026-09-16T07:30:00+00:00', ...}
+current_ms = 1790446151113
+
+    def guard(window, current_ms):
+        if window['state'] == 'LEGACY_UNVERIFIED':
+            raise ValueError('ATTRACTION_VALIDITY_REVIEW_REQUIRED')
+        opened = datetime.fromisoformat(window['opens_at'])
+        closed = datetime.fromisoformat(window['closes_at'])
+        current = datetime.fromtimestamp(current_ms / 1000, UTC)
+        if not opened <= current < closed:
+>           raise ValueError('ATTRACTION_OUTSIDE_SUPPLIER_VALIDITY_WINDOW')
+E           ValueError: ATTRACTION_OUTSIDE_SUPPLIER_VALIDITY_WINDOW
+
+src/go_hotel/attractions/validity.py:69: ValueError
+__________ test_attraction_redeem_evidence_keeps_consumed_credential ___________
+
+client = <starlette.testclient.TestClient object at 0x7f6a41eac920>
+
+    def test_attraction_redeem_evidence_keeps_consumed_credential(client):
+        from go_hotel.services.rc20_vertical_evidence import list_vertical_evidence
+        h=attr_auth(client)
+        off=client.post('/v1/attractions/search',json={'destination':'东京','visit_date':'2026-09-03'}).json()['data']['items'][0]
+        o=client.post('/v1/attractions/orders',headers=h,json=quoted_attraction(client,{'offer_id':off['offer_id'],'visit_date':'2026-09-03','quantity':1})).json()['data']
+        pay_and_confirm(client,h,'ATTRACTION_ORDER',o['order_id'],'ATTR-'+o['order_id'][-6:],voucher_code='VOUCH-'+o['order_id'][-6:])
+>       assert client.post(f"/v1/attractions/orders/{o['order_id']}/redeem",headers=h,json={'evidence_reference':'gate-scan'}).status_code==200
+E       AssertionError: assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E        +    where <Response [404 Not Found]> = post('/v1/attractions/orders/attr_ord_87f7cc01576e481b/redeem', headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiQ09OU1VNRVIiLCJleHAiOjE3OTA0NDcwNTg...XBwbGllcl9pZCI6bnVsbCwidXNlcm5hbWUiOiJhdHRyQGV4YW1wbGUuY29tIiwidmVyIjoxfQ.b_RmOYtssib1JvCQpoB8Mj1Y3ZxB1dhpQEnMnrrZKb8'}, json={'evidence_reference': 'gate-scan'})
+E        +      where post = <starlette.testclient.TestClient object at 0x7f6a41eac920>.post
+
+tests/test_final_depth_terminal_hardening.py:96: AssertionError
+__ test_consistent_completed_rental_refund_replays_without_money_or_mutation ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f6a42129eb0>
+
+    def test_consistent_completed_rental_refund_replays_without_money_or_mutation(monkeypatch):
+        order_id, refund_id, accepted_hash = seed_refund("REFUNDED")
+        before = snapshot(order_id, refund_id)
+        monkeypatch.setattr(money, "execute_refund_plan", no_money)
+    
+>       first = rental_service.cancel(OWNER, order_id, accepted_hash)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_c04_refund_terminal_integrity.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/mobility/rental/service.py:154: in cancel
+    return completed(s,o,r)
+           ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+s = <sqlalchemy.orm.session.Session object at 0x7f6a42203560>
+o = <go_hotel.db.models.MobilityRentalOrderRow object at 0x7f6a422564b0>
+r = <go_hotel.db.models.MobilityRefundRow object at 0x7f6a42256780>
+
+    def completed(s,o,r):
+        if o.status!='REFUNDED':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
+        from go_hotel.services.ticket_operations import _events
+        _events(s,'RENTAL',order_id)
+        evidence=[x['payload'] for x in list_vertical_evidence(s,'RENTAL',order_id)
+            if x['kind']=='REFUND_COMPLETED' and x['payload'].get('refund_id')==r.refund_id]
+        if len(evidence)!=1 or evidence[0].get('refund_amount_minor')!=r.refund_amount_minor:
+>           raise ValueError('REFUND_COMPLETION_EVIDENCE_INVALID')
+E           ValueError: REFUND_COMPLETION_EVIDENCE_INVALID
+
+src/go_hotel/mobility/rental/service.py:145: ValueError
+__ test_rental_refund_rechecks_concurrent_completion_terminal_pair[REFUNDED] ___
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f6a423d0fb0>
+final_order_status = 'REFUNDED'
+
+    @pytest.mark.parametrize("final_order_status", ["CONFIRMED", "REFUNDED"])
+    def test_rental_refund_rechecks_concurrent_completion_terminal_pair(monkeypatch, final_order_status):
+        order_id, refund_id, accepted_hash = seed_refund("REFUND_PENDING", "REFUND_PENDING")
+        calls = []
+        after_concurrent = []
+    
+        def concurrent_completion(plan, evidence):
+            calls.append((plan, evidence))
+            with SessionLocal.begin() as s:
+                s.get(MobilityRefundRow, refund_id).status = "REFUND_COMPLETED"
+                s.get(MobilityRentalOrderRow, order_id).status = final_order_status
+            after_concurrent.append(snapshot(order_id, refund_id))
+            return {"state": "CONFIRMED", "money_movement_ids": []}
+    
+        monkeypatch.setattr(money, "execute_refund_plan", concurrent_completion)
+        if final_order_status == "REFUNDED":
+>           assert rental_service.cancel(OWNER, order_id, accepted_hash)["refund_id"] == refund_id
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_c04_refund_terminal_integrity.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/mobility/rental/service.py:180: in cancel
+    return completed(s,o,r)
+           ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+s = <sqlalchemy.orm.session.Session object at 0x7f6a42203bf0>
+o = <go_hotel.db.models.MobilityRentalOrderRow object at 0x7f6a42200500>
+r = <go_hotel.db.models.MobilityRefundRow object at 0x7f6a42202f00>
+
+    def completed(s,o,r):
+        if o.status!='REFUNDED':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
+        from go_hotel.services.ticket_operations import _events
+        _events(s,'RENTAL',order_id)
+        evidence=[x['payload'] for x in list_vertical_evidence(s,'RENTAL',order_id)
+            if x['kind']=='REFUND_COMPLETED' and x['payload'].get('refund_id')==r.refund_id]
+        if len(evidence)!=1 or evidence[0].get('refund_amount_minor')!=r.refund_amount_minor:
+>           raise ValueError('REFUND_COMPLETION_EVIDENCE_INVALID')
+E           ValueError: REFUND_COMPLETION_EVIDENCE_INVALID
+
+src/go_hotel/mobility/rental/service.py:145: ValueError
+=============================== warnings summary ===============================
+tests/test_depth21_refund_recovery.py: 5 warnings
+tests/test_depth23_capacity.py: 5 warnings
+  /workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/alembic/config.py:598: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_c03_c06_change_quote_fencing.py::test_attraction_api_carries_quote_identity_and_replays_bound_request
+FAILED tests/test_next_depth_c06_supplier_validity.py::test_missing_supplier_policy_is_explicitly_legacy_unverified
+FAILED tests/test_depth23_capacity.py::test_attraction_change_and_redemption_retain_current_session_capacity
+FAILED tests/test_final_depth_terminal_hardening.py::test_attraction_redeem_evidence_keeps_consumed_credential
+FAILED tests/test_c04_refund_terminal_integrity.py::test_consistent_completed_rental_refund_replays_without_money_or_mutation
+FAILED tests/test_c04_refund_terminal_integrity.py::test_rental_refund_rechecks_concurrent_completion_terminal_pair[REFUNDED]
+6 failed, 246 passed, 10 warnings in 48.67s

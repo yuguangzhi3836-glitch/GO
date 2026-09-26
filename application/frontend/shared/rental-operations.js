@@ -88,7 +88,7 @@
       if(!f.elements.namedItem('confirmed')?.checked){error.textContent='请先明确确认本次操作。';return;}
       let path,body;
       if(action==='OPEN'){
-        body={amount_minor:Number(value('amount_minor')),currency:view.currency,pickup_statement:value('pickup_statement'),return_statement:value('return_statement')};path=`${admin}/cases`;
+        body={amount_minor:Number(value('amount_minor')),currency:view.currency,pickup_statement:value('pickup_statement'),return_statement:value('return_statement')};path=view.actor_type==='SUPPLIER_USER'?`/v1/supplier/mobility/rentals/orders/${encodeURIComponent(orderId)}/operations/cases`:`${admin}/cases`;
         if(!Number.isSafeInteger(body.amount_minor)||body.amount_minor<=0||!body.pickup_statement.trim()||!body.return_statement.trim()){error.textContent='请填写有效金额和取还车陈述。';return;}
       }else{
         body={statement:value('statement')};if(!body.statement.trim()){error.textContent='请填写明确的陈述和理由。';return;}

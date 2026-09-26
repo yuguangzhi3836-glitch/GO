@@ -1,7 +1,7 @@
 """Isolated damage-case adjudication; never asserts or executes a money movement.
 
-Existing order locks serialize the append-only case history. Supplier access is
-closed until rental orders carry a verified supplier tenant binding. Evidence
+Existing order locks serialize the append-only case history. Supplier claim access
+requires the payment root, fact binding and source decision to agree. Evidence
 references are submissions, not proof of authenticity or a payment authorization.
 """
 import re
@@ -19,7 +19,12 @@ def _admin(p):
         raise PermissionError('DAMAGE_REVIEW_PERMISSION_REQUIRED')
 
 
-def _order(s, p, order_id):
+def _order(s, p, order_id, allow_supplier=False):
+    if allow_supplier and p.actor_type == 'SUPPLIER_USER' and p.supplier_id and 'supplier:orders' in p.permissions:
+        from go_hotel.services.transaction_order_view import supplier_query
+        order = s.scalar(supplier_query('RENTAL', p.supplier_id).where(Order.order_id == order_id).with_for_update())
+        if order is None: raise ValueError('MOBILITY_ORDER_NOT_FOUND')
+        return order
     order = s.get(Order, order_id, with_for_update=True)
     if not order or not (p.actor_type == 'GO_ADMIN' and 'admin:approve' in p.permissions
                          or p.actor_type == 'CONSUMER' and order.account_id == p.user_id):
@@ -105,7 +110,8 @@ def _append(s, order, p, key, request, case):
 
 
 def open_case(p, order_id, key, amount_minor, currency, pickup_evidence, return_evidence):
-    isolated(); _admin(p)
+    isolated()
+    if p.actor_type != 'SUPPLIER_USER' or 'supplier:orders' not in p.permissions: _admin(p)
     pickup, returned = _evidence(pickup_evidence), _evidence(return_evidence)
     if {x['sha256'] for x in pickup} & {x['sha256'] for x in returned}:
         raise ValueError('DAMAGE_DISTINCT_INSPECTIONS_REQUIRED')
@@ -113,7 +119,7 @@ def open_case(p, order_id, key, amount_minor, currency, pickup_evidence, return_
         raise ValueError('DAMAGE_AMOUNT_INVALID')
     request = ['OPEN', order_id, amount_minor, currency, pickup, returned]
     with transaction() as s:
-        o = _order(s, p, order_id); events = _history(s, order_id)
+        o = _order(s, p, order_id, allow_supplier=True); events = _history(s, order_id)
         old = _replay(events, p, key, request)
         if old is not None: return old
         if o.status != 'COMPLETED': raise ValueError('DAMAGE_RETURN_REQUIRED')
@@ -136,7 +142,7 @@ def open_case(p, order_id, key, amount_minor, currency, pickup_evidence, return_
             'contract_snapshot': {'deposit_minor': o.deposit_minor, 'insurance': o.insurance,
                                   'maximum_award_minor': cap},
             'pickup_evidence': pickup, 'return_evidence': returned,
-            'supplier_evidence_status': 'ADMIN_RECORDED_UNVERIFIED',
+            'supplier_evidence_status': 'SUPPLIER_STATEMENT_UNVERIFIED' if p.actor_type == 'SUPPLIER_USER' else 'ADMIN_RECORDED_UNVERIFIED',
             'customer_evidence': [], 'customer_response': None, 'awarded_minor': None,
             'actionable_award_minor': None, 'decision_history': [], 'appeals': [],
             'money_instruction_state': 'BLOCKED_PENDING_DECISION',

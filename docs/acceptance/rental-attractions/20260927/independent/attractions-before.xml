@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="4" time="9.220" timestamp="2026-09-26T21:04:30.002542+03:00" hostname="2421f535f56f"><testcase classname="independent-rental-attractions.test_attraction_independent" name="test_past_session_cannot_redeem_without_verified_window" time="5.367"><failure message="AssertionError: {'before': {'attendees': [{'full_name': 'ISOLATED ADULT 1'}], 'currency': 'CNY', 'destination': '东京', 'eligibility': {...D ADULT 1'}], 'currency': 'CNY', 'destination': '东京', 'eligibility': {'age': '12+ adult', 'id_required': False}, ...}}}&#10;assert 200 &gt;= 400&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f02d0c85eb0&gt;
+
+    def test_past_session_cannot_redeem_without_verified_window(client):
+        h,oid=booked(client)
+        before=client.get(f'/v1/attractions/orders/{oid}',headers=h).json()['data']
+        r=client.post(f'/v1/attractions/orders/{oid}/redeem',headers=h,json={'evidence_reference':'customer-unverified-claim'})
+&gt;       assert r.status_code&gt;=400,{'before':before,'response':r.json()}
+E       AssertionError: {'before': {'attendees': [{'full_name': 'ISOLATED ADULT 1'}], 'currency': 'CNY', 'destination': '东京', 'eligibility': {...D ADULT 1'}], 'currency': 'CNY', 'destination': '东京', 'eligibility': {'age': '12+ adult', 'id_required': False}, ...}}}
+E       assert 200 &gt;= 400
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+../../independent-rental-attractions/test_attraction_independent.py:24: AssertionError</failure></testcase><testcase classname="independent-rental-attractions.test_attraction_independent" name="test_completed_refund_replay_checks_real_money[amount_minor-1]" time="0.539"><failure message="AssertionError: {'field': 'amount_minor', 'first': {'data': {'currency': 'CNY', 'order_id': 'attr_ord_b74a7e0cc82642ad', 'refund_amoun...'currency': 'CNY', 'order_id': 'attr_ord_b74a7e0cc82642ad', 'refund_amount_minor': 18000, 'refund_fee_minor': 0, ...}}}&#10;assert 200 &gt;= 400&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f02cb7c4f80&gt;
+field = 'amount_minor', value = 1
+
+    @pytest.mark.parametrize('field,value',[('amount_minor',1),('currency','USD'),('state','UNKNOWN')])
+    def test_completed_refund_replay_checks_real_money(client,field,value):
+        h,oid=booked(client)
+        first=client.post(f'/v1/attractions/orders/{oid}/refund',headers=h)
+        assert first.status_code==200,first.text
+        with SessionLocal.begin() as s:
+            refunds=list(s.scalars(select(Movement).where(Movement.movement_type=='REFUND')))
+            assert len(refunds)==1
+            setattr(refunds[0],field,value)
+        replay=client.post(f'/v1/attractions/orders/{oid}/refund',headers=h)
+&gt;       assert replay.status_code&gt;=400,{'field':field,'first':first.json(),'replay':replay.json()}
+E       AssertionError: {'field': 'amount_minor', 'first': {'data': {'currency': 'CNY', 'order_id': 'attr_ord_b74a7e0cc82642ad', 'refund_amoun...'currency': 'CNY', 'order_id': 'attr_ord_b74a7e0cc82642ad', 'refund_amount_minor': 18000, 'refund_fee_minor': 0, ...}}}
+E       assert 200 &gt;= 400
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+../../independent-rental-attractions/test_attraction_independent.py:39: AssertionError</failure></testcase><testcase classname="independent-rental-attractions.test_attraction_independent" name="test_completed_refund_replay_checks_real_money[currency-USD]" time="0.482"><failure message="AssertionError: {'field': 'currency', 'first': {'data': {'currency': 'CNY', 'order_id': 'attr_ord_192a058272d2409a', 'refund_amount_mi...'currency': 'CNY', 'order_id': 'attr_ord_192a058272d2409a', 'refund_amount_minor': 18000, 'refund_fee_minor': 0, ...}}}&#10;assert 200 &gt;= 400&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f02cba04bc0&gt;
+field = 'currency', value = 'USD'
+
+    @pytest.mark.parametrize('field,value',[('amount_minor',1),('currency','USD'),('state','UNKNOWN')])
+    def test_completed_refund_replay_checks_real_money(client,field,value):
+        h,oid=booked(client)
+        first=client.post(f'/v1/attractions/orders/{oid}/refund',headers=h)
+        assert first.status_code==200,first.text
+        with SessionLocal.begin() as s:
+            refunds=list(s.scalars(select(Movement).where(Movement.movement_type=='REFUND')))
+            assert len(refunds)==1
+            setattr(refunds[0],field,value)
+        replay=client.post(f'/v1/attractions/orders/{oid}/refund',headers=h)
+&gt;       assert replay.status_code&gt;=400,{'field':field,'first':first.json(),'replay':replay.json()}
+E       AssertionError: {'field': 'currency', 'first': {'data': {'currency': 'CNY', 'order_id': 'attr_ord_192a058272d2409a', 'refund_amount_mi...'currency': 'CNY', 'order_id': 'attr_ord_192a058272d2409a', 'refund_amount_minor': 18000, 'refund_fee_minor': 0, ...}}}
+E       assert 200 &gt;= 400
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+../../independent-rental-attractions/test_attraction_independent.py:39: AssertionError</failure></testcase><testcase classname="independent-rental-attractions.test_attraction_independent" name="test_completed_refund_replay_checks_real_money[state-UNKNOWN]" time="0.550"><failure message="AssertionError: {'field': 'state', 'first': {'data': {'currency': 'CNY', 'order_id': 'attr_ord_4761b137ae2e43e3', 'refund_amount_minor...'currency': 'CNY', 'order_id': 'attr_ord_4761b137ae2e43e3', 'refund_amount_minor': 18000, 'refund_fee_minor': 0, ...}}}&#10;assert 200 &gt;= 400&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f02c99aa750&gt;
+field = 'state', value = 'UNKNOWN'
+
+    @pytest.mark.parametrize('field,value',[('amount_minor',1),('currency','USD'),('state','UNKNOWN')])
+    def test_completed_refund_replay_checks_real_money(client,field,value):
+        h,oid=booked(client)
+        first=client.post(f'/v1/attractions/orders/{oid}/refund',headers=h)
+        assert first.status_code==200,first.text
+        with SessionLocal.begin() as s:
+            refunds=list(s.scalars(select(Movement).where(Movement.movement_type=='REFUND')))
+            assert len(refunds)==1
+            setattr(refunds[0],field,value)
+        replay=client.post(f'/v1/attractions/orders/{oid}/refund',headers=h)
+&gt;       assert replay.status_code&gt;=400,{'field':field,'first':first.json(),'replay':replay.json()}
+E       AssertionError: {'field': 'state', 'first': {'data': {'currency': 'CNY', 'order_id': 'attr_ord_4761b137ae2e43e3', 'refund_amount_minor...'currency': 'CNY', 'order_id': 'attr_ord_4761b137ae2e43e3', 'refund_amount_minor': 18000, 'refund_fee_minor': 0, ...}}}
+E       assert 200 &gt;= 400
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+../../independent-rental-attractions/test_attraction_independent.py:39: AssertionError</failure></testcase></testsuite></testsuites>

@@ -109,7 +109,7 @@ def test_rail_change_holds_both_dates_until_result_then_releases_correct_pool(de
     svc.refund(owner,oid);assert ledger()==0
 
 
-def test_attraction_change_and_redemption_retain_current_session_capacity():
+def test_attraction_change_and_redemption_retain_current_session_capacity(monkeypatch):
     svc,owner,oid=booked('ATTRACTION')
     q=svc.change_quote(owner,oid,'2026-09-16','17:00');svc.execute_change(owner,oid,q['quote_id'])
     assert ledger()==4
@@ -117,6 +117,9 @@ def test_attraction_change_and_redemption_retain_current_session_capacity():
     assert ledger()==2
     assert attr.search('东京','2026-09-15')[0]['inventory_by_session']['16:00']==24
     assert attr.search('东京','2026-09-16')[0]['inventory_by_session']['17:00']==22
+    from datetime import datetime
+    from go_hotel.attractions import service
+    monkeypatch.setattr(service,'db_now_ms',lambda s:int(datetime.fromisoformat('2026-09-16T08:00:00+00:00').timestamp()*1000))
     svc.redeem(owner,oid,'isolated://entry');assert ledger()==2
 
 

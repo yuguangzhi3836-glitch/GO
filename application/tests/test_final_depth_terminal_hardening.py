@@ -87,12 +87,15 @@ def test_ride_unknown_can_converge_to_failed(client):
     assert mobility_service.admin_external_state(o['order_id'],'FAILED','supplier-failed-proof','ops',episode)['status']=='FAILED'
 
 
-def test_attraction_redeem_evidence_keeps_consumed_credential(client):
+def test_attraction_redeem_evidence_keeps_consumed_credential(client,monkeypatch):
     from go_hotel.services.rc20_vertical_evidence import list_vertical_evidence
     h=attr_auth(client)
     off=client.post('/v1/attractions/search',json={'destination':'东京','visit_date':'2026-09-03'}).json()['data']['items'][0]
     o=client.post('/v1/attractions/orders',headers=h,json=quoted_attraction(client,{'offer_id':off['offer_id'],'visit_date':'2026-09-03','quantity':1})).json()['data']
     pay_and_confirm(client,h,'ATTRACTION_ORDER',o['order_id'],'ATTR-'+o['order_id'][-6:],voucher_code='VOUCH-'+o['order_id'][-6:])
+    from datetime import datetime
+    from go_hotel.attractions import service
+    monkeypatch.setattr(service,'db_now_ms',lambda s:int(datetime.fromisoformat('2026-09-03T07:00:00+00:00').timestamp()*1000))
     assert client.post(f"/v1/attractions/orders/{o['order_id']}/redeem",headers=h,json={'evidence_reference':'gate-scan'}).status_code==200
     with SessionLocal() as s:
         evidence=list_vertical_evidence(s,'ATTRACTION',o['order_id'])
