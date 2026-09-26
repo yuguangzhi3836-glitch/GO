@@ -13,7 +13,9 @@ async function pick(p,start,end){
   for(let n=0;n<15&&!(await cal.locator(`[data-day="${value}"]`).count());n++)await cal.locator('[data-next]').click();
   await cal.locator(`[data-day="${value}"]`).click();assert.equal(await p.locator('.go-date-range').count(),1);
  }
- assert.equal(await cal.locator('[data-confirm]').isEnabled(),true);await cal.locator('[data-confirm]').click();await cal.waitFor({state:'detached'});
+ assert.equal(await cal.locator('[data-confirm]').isEnabled(),true);
+ await cal.screenshot({path:out+'/calendar-'+(report.steps.length+1)+'.png'});
+ await cal.locator('[data-confirm]').click();await cal.waitFor({state:'detached'});
 }
 for(const [engine,type,width] of [['chromium',chromium,375],['webkit',webkit,430]]){
  const browser=await type.launch({headless:true});
@@ -84,10 +86,11 @@ for(const [engine,type,width] of [['chromium',chromium,375],['webkit',webkit,430
    await p.locator('#view a[href="#/refunds"]').click();await p.locator('[data-retry]').click();await p.getByText('当前没有取消或退款记录。',{exact:true}).waitFor();
   });
   await step(engine+'-hotel-association-readable-next-action',p,async()=>{
-   await p.locator('#supplierMobileMore').click();await p.locator('[data-mobile-menu-route="/hotel-webpage"]').click();await p.getByText('酒店网页尚未关联',{exact:true}).waitFor();
+   await p.locator('#supplierMobileMore').click();await p.locator('[data-mobile-menu-route="/business-management"]').click();
+   await p.locator('#view a[href="#/hotel-webpage"]').click();await p.getByText('酒店网页尚未关联',{exact:true}).waitFor();
    assert.ok(!(await p.locator('#view').innerText()).includes('NOT_REGISTERED'));await p.getByText('核对酒店与关联状态',{exact:true}).waitFor();
   });
- }catch(e){report.result='FAIL';report.error=e.message;process.exitCode=1;break}
+ }catch(e){report.result='FAIL';report.error=e.message;process.exitCode=1}
  finally{await browser.close()}
 }
 report.result ||= report.errors.length?'FAIL':'PASS';if(report.result==='FAIL')process.exitCode=1;
