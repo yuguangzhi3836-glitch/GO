@@ -129,6 +129,9 @@ class OrderSupplierFulfillmentService:
     if hasattr(order,'ticket_numbers') and b.get('ticket_numbers'):order.ticket_numbers=list(b.get('ticket_numbers'))
     if hasattr(order,'supplier_reference'):order.supplier_reference=f.supplier_confirmation_reference
     if vertical=='ATTRACTION' and hasattr(order,'voucher_code') and not getattr(order,'voucher_code',None):order.voucher_code=b.get('voucher_code') or f.supplier_confirmation_reference
+    if vertical=='FLIGHT':
+     from go_hotel.flight.coupons import issue_in
+     issue_in(s,order)
     append_vertical_evidence(s,vertical,f.business_id,'SUPPLIER_CONFIRMED',order.status,{'supplier_confirmation_reference':f.supplier_confirmation_reference,'external_operation_id':f.external_operation_id,'evidence_reference':b['evidence_reference'],'actor_id':b.get('actor_id')})
    elif state=='SUPPLIER_FAILED':
     if vertical in {'RAIL','ATTRACTION'}:capacity.release_all_in(s,vertical,f.business_id)

@@ -19,6 +19,9 @@ def current_principal(request:Request, cred:HTTPAuthorizationCredentials|None=De
         raise HTTPException(400, detail='INVALID_ACTOR_CONTEXT')
     if expected_actor and expected_actor != p.actor_type:
         raise HTTPException(403, detail='ACTOR_CONTEXT_CHANGED')
+    expected_user = request.headers.get('X-GO-User')
+    if expected_user and expected_user != p.user_id:
+        raise HTTPException(403, detail='ACTOR_CONTEXT_CHANGED')
     request.state.principal=p
     return p
 

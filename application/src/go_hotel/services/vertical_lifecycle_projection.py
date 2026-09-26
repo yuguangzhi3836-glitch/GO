@@ -29,6 +29,24 @@ def project_vertical_lifecycle(session, vertical: str, order, evidence_reference
             Intent.business_type == Root.business_type, Intent.business_id == Root.business_id,
             Intent.payer_id == order.account_id, Intent.payee_id == Fulfillment.supplier_id,
             Fulfillment.business_type == Root.business_type, Fulfillment.business_id == Root.business_id))
+    payment_state='UNKNOWN_EXTERNAL_STATE' if native=='UNKNOWN_EXTERNAL_STATE' else 'PAID' if paid else 'PENDING'
+    refund_state='REFUND_COMPLETED' if native=='REFUNDED' else 'REFUND_PROCESSING' if native=='REFUND_PENDING' else 'NOT_REQUESTED'
+    projected_facts=dict(facts or {'native_status':native})
+    coupon_cycle=False
+    if vertical=='FLIGHT':
+        from go_hotel.db.models import FlightCouponRow, FlightRefundRow
+        session.flush()
+        coupons=list(session.scalars(select(FlightCouponRow).where(FlightCouponRow.order_id==order.order_id)))
+        if coupons:
+            refunds=list(session.scalars(select(FlightRefundRow).where(FlightRefundRow.order_id==order.order_id)))
+            refunded=sum(c.refunded_amount_minor for c in coupons)
+            refunded_count=sum(c.state=='REFUNDED' for c in coupons)
+            if native!='UNKNOWN_EXTERNAL_STATE' and refunded:
+                payment_state='REFUNDED' if refunded==order.total_amount_minor else 'PARTIALLY_REFUNDED'
+            if native!='REFUND_PENDING' and refunded_count:refund_state='REFUND_COMPLETED'
+            coupon_cycle=native=='REFUND_PENDING' and bool(refunds)
+            projected_facts.update(refund_cycle_count=len(refunds),refunded_amount_minor=refunded,
+                refunded_coupon_count=refunded_count,total_coupon_count=len(coupons),native_status=native)
     return consumer_unified_lifecycle_service.project_in_session(session,{
         'account_id':order.account_id,
         'vertical':vertical,
@@ -37,12 +55,12 @@ def project_vertical_lifecycle(session, vertical: str, order, evidence_reference
         'title':f'{vertical} {order.order_id}',
         'lifecycle_state':life,
         # An unresolved external outcome is not evidence of payment success.
-        'payment_state':'UNKNOWN_EXTERNAL_STATE' if native=='UNKNOWN_EXTERNAL_STATE' else 'PAID' if paid else 'PENDING',
-        'refund_state':'REFUND_COMPLETED' if native=='REFUNDED' else 'REFUND_PROCESSING' if native=='REFUND_PENDING' else 'NOT_REQUESTED',
+        'payment_state':payment_state,
+        'refund_state':refund_state,
         'change_allowed':life=='CONFIRMED' and native not in {'REFUND_PENDING','CHANGE_PENDING'},
         'cancel_allowed':life in {'CONFIRMED','IN_PROGRESS'} and native not in {'REFUND_PENDING','CHANGE_PENDING'},
-        'facts':facts or {'native_status':native},
+        'facts':projected_facts,
         'evidence_reference':evidence_reference,
         'source_updated_at':datetime.now(timezone.utc),
         'event_type':event_type,
-    })
+    },allow_new_refund_cycle=coupon_cycle)

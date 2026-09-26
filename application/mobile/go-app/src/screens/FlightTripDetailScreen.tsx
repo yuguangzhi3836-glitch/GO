@@ -33,6 +33,15 @@ export default function FlightTripDetail({route,navigation}:any) {
         <Text style={screen.sub}>PNR：{order.pnr||'待核实'}</Text><Text style={screen.sub}>电子票号：{order.ticket_numbers?.join('、')||'待出票'}</Text>
         <Price minor={order.total_amount_minor} currency={order.currency}/><OrderActions order={order} vertical="FLIGHT" navigation={navigation}/>
       </View>
+      {(order.coupons||[]).map((c:any)=><View style={screen.card} key={c.coupon_id}>
+        <Text style={screen.h2}>{c.passenger_name} · 第 {c.leg_index+1} 程</Text>
+        <Text style={screen.sub}>{c.leg.origin} → {c.leg.destination} · {c.leg.departure_date} · {c.state}</Text>
+        <Text style={screen.sub}>票号 {c.ticket_number||'等待出票'} · 预订编号 {c.supplier_reference||'待核实'}</Text>
+      </View>)}
+      {!!order.coupons?.length&&<View style={screen.card}>
+        <Btn title="选择乘客与航段改签" disabled={order.status!=='TICKETED'} onPress={()=>navigation.navigate('FlightCouponActions',{orderId:id,mode:'CHANGE'})}/>
+        <Btn title="选择乘客退票 / 继续原退款" disabled={!['TICKETED','REFUND_PENDING'].includes(order.status)} onPress={()=>navigation.navigate('FlightCouponActions',{orderId:id,mode:'REFUND'})}/>
+      </View>}
       <Text style={screen.h2}>每位乘机人的每一程</Text>
       {flightCells(order,checkin).map((cell:any)=><View style={screen.card} key={`${cell.legIndex}:${cell.passengerIndex}`}>
         <Text style={screen.h2}>第 {cell.legIndex+1} 程 · {cell.person.full_name||`乘机人 ${cell.passengerIndex+1}`}</Text>

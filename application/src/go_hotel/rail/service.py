@@ -210,8 +210,8 @@ class RailService:
     def refund(self,account_id,order_id,accepted_hash=None):
         production_truth_required('RAIL','REFUND')
         return vertical_refund_recovery.refund('RAIL',account_id,order_id,self._refund_quote_in,accepted_hash)
-    def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,ticket_numbers=None,quote_id=None):
+    def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,ticket_numbers=None,quote_id=None,operation_id=None):
         from go_hotel.services.rail_change_resolution import reconcile
-        return reconcile(order_id,state,evidence_reference,actor,supplier_reference,ticket_numbers,quote_id,self._order)
+        return reconcile(order_id,state,evidence_reference,actor,supplier_reference,ticket_numbers,quote_id,self._order,operation_id=operation_id)
 
 rail_service=RailService()

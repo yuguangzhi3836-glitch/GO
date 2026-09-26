@@ -99,6 +99,13 @@ def checkin_subject(order, leg_index, passenger_index):
     integer(leg_index, 0, len(legs)-1, 'FLIGHT_LEG_INVALID')
     integer(passenger_index, 0, len(people)-1, 'FLIGHT_PASSENGER_INVALID')
     leg = legs[leg_index]
+    from go_hotel.flight import coupons
+    current_coupons = coupons.public(order)
+    coupon = next((c for c in current_coupons if c['leg_index'] == leg_index and c['passenger_index'] == passenger_index), None)
+    if current_coupons:
+        if not coupon or not coupon['usable']:
+            raise ValueError('CURRENT_TICKET_ASSIGNMENT_REQUIRED')
+        leg = coupon['leg']
     identity = flight_from_leg(leg)
     origin = leg.get('origin')
     if not isinstance(origin, str) or not re.fullmatch('[A-Z]{3}', origin):
@@ -106,7 +113,7 @@ def checkin_subject(order, leg_index, passenger_index):
     # Full current itinerary and current traveler record bind later amendments.
     return {'order_id': order.order_id, 'leg_index': leg_index, 'passenger_index': passenger_index,
         'ticket_number': tickets[leg_index*len(people)+passenger_index],
-        'itinerary_hash': digest(legs), 'traveler_hash': digest(people[passenger_index])}, identity
+        'itinerary_hash': digest([coupon['coupon_id'], coupon['version'], leg]) if coupon else digest(legs), 'traveler_hash': digest(people[passenger_index])}, identity
 
 
 class TravelFacts:

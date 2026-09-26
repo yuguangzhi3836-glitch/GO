@@ -69,3 +69,48 @@ def admin_judgments(status:str|None=None,limit:int=Query(50,ge=1,le=200),offset:
 def admin_connectors(p:Principal=Depends(require_permission('admin:connector'))): return {'data':svc.admin_connectors()}
 @router.get('/internal/v1/admin/settlement')
 def admin_settlement(p:Principal=Depends(require_permission('admin:finance'))): return {'data':svc.admin_settlement()}
+
+# Shared workflow; supplier scope is resolved by the same verified transaction binding.
+from typing import Literal
+from pydantic import BaseModel, ConfigDict, Field
+from go_hotel.security.deps import admin_principal
+from go_hotel.services import ticket_operations
+
+class TicketReceipt(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    state:Literal['TICKETED','FAILED','UNKNOWN_EXTERNAL_STATE']
+    evidence_reference:str=Field(min_length=1,max_length=256)
+    supplier_reference:str|None=Field(default=None,max_length=64)
+    ticket_numbers:list[str]|None=Field(default=None,max_length=54)
+    quote_id:str|None=Field(default=None,max_length=64)
+
+class TicketCommand(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    command_id:str=Field(pattern=r'^[A-Za-z0-9_-]{1,64}$')
+    expected_revision:int=Field(strict=True,ge=0)
+    action:Literal['REGISTER','CLAIM','RECEIPT','APPLY','VERIFY','FOLLOW_UP']
+    note:str=Field(min_length=1,max_length=1000)
+    receipt:TicketReceipt|None=None
+
+
+def ticket_call(fn,*args):
+    try:return {'data':fn(*args)}
+    except ValueError as e:
+        code=str(e)
+        raise HTTPException(404 if code=='TICKET_ORDER_NOT_FOUND' else 403 if 'DENIED' in code else 409,detail=code)
+
+@router.get('/v1/supplier/ticket-operations/{vertical}/{order_id}')
+def supplier_ticket_operations(vertical:str,order_id:str,p:Principal=Depends(supplier_principal)):
+    return ticket_call(ticket_operations.view,vertical,order_id,p)
+
+@router.post('/v1/supplier/ticket-operations/{vertical}/{order_id}')
+def supplier_ticket_command(vertical:str,order_id:str,b:TicketCommand,p:Principal=Depends(supplier_principal)):
+    return ticket_call(ticket_operations.command,vertical,order_id,p,b.model_dump(exclude_none=True))
+
+@router.get('/internal/v1/admin/ticket-operations/{vertical}/{order_id}')
+def admin_ticket_operations(vertical:str,order_id:str,p:Principal=Depends(admin_principal)):
+    return ticket_call(ticket_operations.view,vertical,order_id,p)
+
+@router.post('/internal/v1/admin/ticket-operations/{vertical}/{order_id}')
+def admin_ticket_command(vertical:str,order_id:str,b:TicketCommand,p:Principal=Depends(admin_principal)):
+    return ticket_call(ticket_operations.apply if b.action=='APPLY' else ticket_operations.command,vertical,order_id,p,b.model_dump(exclude_none=True))

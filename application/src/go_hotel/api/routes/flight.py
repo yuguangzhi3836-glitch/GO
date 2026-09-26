@@ -25,11 +25,12 @@ class LegChange(BaseModel):
     model_config = ConfigDict(extra='forbid')
     leg_index:int=Field(strict=True,ge=0,le=5)
     new_departure_date:str
+    coupon_ids:list[str]|None=Field(default=None,min_length=1,max_length=9)
 class ChangeQuoteBody(BaseModel):
     model_config = ConfigDict(extra='forbid')
     new_departure_date:str|None=None
     leg_index:int|None=Field(default=None,strict=True,ge=0,le=5)
-    changes:list[LegChange]|None=Field(default=None,min_length=1,max_length=6)
+    changes:list[LegChange]|None=Field(default=None,min_length=1,max_length=54)
 class ChangeConfirmation(BaseModel):
     model_config = ConfigDict(extra='forbid')
     quote_hash:str=Field(pattern=r'^[0-9a-f]{64}$')
@@ -37,9 +38,22 @@ class ChangeConfirmation(BaseModel):
     currency:str
     confirmed:bool=Field(strict=True)
 
+class CouponRefundSelection(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    coupon_ids:list[str]=Field(min_length=1,max_length=54)
+
+class CouponRefundConfirmation(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    quote_hash:str=Field(pattern=r'^[0-9a-f]{64}$')
+    expected_refund_amount_minor:int=Field(strict=True,ge=0)
+    currency:str
+    confirmed:bool=Field(strict=True)
+
 def wrap(fn,*args,**kwargs):
     try:return {"data":fn(*args,**kwargs)}
     except ValueError as e:
+        if str(e).startswith('FLIGHT_COUPON_'):
+            raise HTTPException(409,detail=str(e))
         if str(e) in {'REFUND_QUOTE_CHANGED_RECONFIRM_REQUIRED','REFUND_HISTORICAL_CONSENT_UNAVAILABLE','REFUND_OPERATION_INTEGRITY_INVALID'}:
             raise HTTPException(409,detail=str(e))
         if str(e).startswith('FLIGHT_CHANGE_') and ('REQUIRED' in str(e) or 'REQUOTE' in str(e)) or str(e).startswith('FLIGHT_RESOLUTION_'):
@@ -99,7 +113,7 @@ def order(order_id:str,p:Principal=Depends(consumer_principal)): return wrap(fli
 def trips(p:Principal=Depends(consumer_principal)): return {"data":{"items":flight_service.trips(p.user_id)}}
 @router.post('/v1/flights/orders/{order_id}/change-quote')
 def change_quote(order_id:str,body:ChangeQuoteBody,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
-    changes=[x.model_dump() for x in body.changes] if body.changes is not None else None
+    changes=[x.model_dump(exclude_none=True) for x in body.changes] if body.changes is not None else None
     payload={'user_id':p.user_id,'order_id':order_id,'new_departure_date':body.new_departure_date,
              'leg_index':body.leg_index,'changes':changes}
     return run_idempotent('FLIGHT_CHANGE_QUOTE',idempotency_key,payload,
@@ -113,6 +127,17 @@ def execute_change(order_id:str,quote_id:str,p:Principal=Depends(consumer_princi
         lambda boundary:wrap(flight_service.recover_execute_change,p.user_id,order_id,quote_id,confirmation,boundary))
 @router.get('/v1/flights/orders/{order_id}/refund-quote')
 def refund_quote(order_id:str,p:Principal=Depends(consumer_principal)): return wrap(flight_service.refund_quote,p.user_id,order_id)
+
+@router.post('/v1/flights/orders/{order_id}/coupon-refund-quotes')
+def coupon_refund_quote(order_id:str,body:CouponRefundSelection,p:Principal=Depends(consumer_principal)):
+    from go_hotel.flight.coupon_refunds import quote
+    return wrap(quote,p.user_id,order_id,body.coupon_ids)
+
+@router.post('/v1/flights/orders/{order_id}/coupon-refunds/{refund_id}')
+def coupon_refund(order_id:str,refund_id:str,body:CouponRefundConfirmation,p:Principal=Depends(consumer_principal)):
+    # The immutable refund_id is the durable operation identity across keys/devices.
+    from go_hotel.flight.coupon_refunds import execute
+    return wrap(execute,p.user_id,order_id,refund_id,body.model_dump())
 @router.post('/v1/flights/orders/{order_id}/refund')
 def refund(order_id:str,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
     payload={'user_id':p.user_id,'order_id':order_id}

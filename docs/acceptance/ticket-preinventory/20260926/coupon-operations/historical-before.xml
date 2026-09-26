@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="5.794" timestamp="2026-09-26T21:46:15.662507+08:00" hostname="81f9726e8d4f"><testcase classname="independent-ticket-review.test_independent_coupon_readiness" name="test_historical_order_leg_change_http_remains_available" time="4.104"><failure message="AssertionError: {&quot;detail&quot;:&quot;FLIGHT_CHANGE_INPUT_INVALID&quot;}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code">../../independent-ticket-review/test_independent_coupon_readiness.py:78: in test_historical_order_leg_change_http_remains_available
+    assert response.status_code == 200, response.text
+E   AssertionError: {"detail":"FLIGHT_CHANGE_INPUT_INVALID"}
+E   assert 422 == 200
+E    +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code</failure></testcase></testsuite></testsuites>

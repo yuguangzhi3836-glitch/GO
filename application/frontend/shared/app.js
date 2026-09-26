@@ -252,6 +252,7 @@ async function supplierTransactionWorkbench(vertical,id){
  currentSupplierRoute='/orders';
  $('#view').innerHTML=`<button class="btn" id="back">← 返回订单</button><div class="section-head"><h2>订单详情</h2><span class="status">${esc(supplierFriendlyValue(d.order.status))}</span></div>${supplierObjectCard('订单事实',d.order)}<section class="card"><h3>原始付款与退款</h3><p>以下为本订单原始付款的处理记录；改期补款另行核对。</p><div class="kv"><div>已扣款</div><div>${esc(money(p.captured_minor,p.currency))}</div><div>已退款</div><div>${esc(money(p.refunded_minor,p.currency))}</div><div>净付款</div><div>${esc(money(p.net_minor,p.currency))}</div></div><p role="status">${p.binding_state==='BOUND'?'付款记录已关联': '付款记录待核对'}</p></section><h3>退款申请与进度</h3>${table(d.refunds,false,'退款记录')}`;
  $('#back').onclick=supplierOrders;
+ if(['FLIGHT','RAIL'].includes(vertical)){const root=document.createElement('section');root.className='card';$('#view').appendChild(root);await window.GOTicketOperations.mount(root,api,vertical,id,false);}
 }
 function cashAfterSalesCard(c){
  if(!c)return '';
@@ -380,6 +381,7 @@ async function adminVertical(v,title){
     // A new query invalidates the previous order immediately, including while
     // the replacement query is still in flight or ultimately fails.
     view.querySelector('#rentalOperationsWorkspace')?.remove();
+    view.querySelector('#ticketOperationsWorkspace')?.remove();
     const disabledBefore=[...view.querySelectorAll('#adminOrderSearch button,[data-page-kind]')].map(b=>[b,b.disabled]);
     disabledBefore.forEach(([b])=>b.disabled=true);
     try{
@@ -401,6 +403,12 @@ async function adminVertical(v,title){
         const field=button.dataset.pageKind==='orders'?'page':'refund_page';
         load({...state,[field]:state[field]+Number(button.dataset.direction)});
       });
+      if(['FLIGHT','RAIL'].includes(v)){
+        const work=document.createElement('section');work.id='ticketOperationsWorkspace';work.className='card';view.appendChild(work);
+        work.innerHTML='<h2>选择订单处理票务</h2><div data-ticket-links></div><section data-ticket-detail></section>';
+        x.orders.forEach(order=>{const b=document.createElement('button');b.className='btn';b.textContent=order.order_id;
+          b.onclick=()=>{const root=document.createElement('section');work.querySelector('[data-ticket-detail]').replaceChildren(root);window.GOTicketOperations.mount(root,api,v,order.order_id,true);};work.querySelector('[data-ticket-links]').appendChild(b);});
+      }
       if(v==='RIDE')view.insertAdjacentHTML('beforeend','<section class="card"><a class="btn" href="#/ride-policy-operations">管理用车取消政策</a></section>');
       if(v==='RENTAL'){
         const section=document.createElement('section');section.id='rentalOperationsWorkspace';

@@ -51,6 +51,50 @@ class VerticalCapacityClaimRow(Base):
         CheckConstraint('quantity > 0', name='ck_capacity_claim_quantity'),
     )
 
+class FlightCouponRow(Base):
+    __tablename__ = 'flight_coupon'
+    coupon_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    order_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    account_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    leg_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    passenger_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    state: Mapped[str] = mapped_column(String(24), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    ticket_number: Mapped[str | None] = mapped_column(String(64))
+    supplier_reference: Mapped[str | None] = mapped_column(String(16))
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    paid_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    refunded_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    leg_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    change_policy: Mapped[dict] = mapped_column(JSON, nullable=False)
+    refund_policy: Mapped[dict] = mapped_column(JSON, nullable=False)
+    __table_args__ = (
+        UniqueConstraint('order_id', 'leg_index', 'passenger_index', name='uq_flight_coupon_position'),
+        CheckConstraint("state IN ('UNISSUED','ISSUED','REFUND_PENDING','REFUNDED')", name='ck_flight_coupon_state'),
+        CheckConstraint('leg_index >= 0 AND passenger_index >= 0 AND version >= 0', name='ck_flight_coupon_position'),
+        CheckConstraint('paid_amount_minor >= 0 AND refunded_amount_minor >= 0 AND refunded_amount_minor <= paid_amount_minor', name='ck_flight_coupon_money'),
+    )
+
+class FlightCouponRefundRow(Base):
+    __tablename__ = 'flight_coupon_refund'
+    refund_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    order_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    account_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    state: Mapped[str] = mapped_column(String(16), nullable=False)
+    quote_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    quote_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    money_plan_json: Mapped[list | None] = mapped_column(JSON)
+    execution_hash: Mapped[str | None] = mapped_column(String(64))
+    result_json: Mapped[dict | None] = mapped_column(JSON)
+    lease_token: Mapped[str | None] = mapped_column(String(64))
+    lease_until_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    expires_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    __table_args__ = (
+        CheckConstraint("state IN ('QUOTED','PREPARED','COMPLETED')", name='ck_flight_coupon_refund_state'),
+        CheckConstraint('lease_until_ms >= 0 AND expires_ms > created_ms', name='ck_flight_coupon_refund_time'),
+    )
+
 class FlightChangePlanRow(Base):
     __tablename__ = 'flight_change_plan'
     quote_id: Mapped[str] = mapped_column(String(64), primary_key=True)

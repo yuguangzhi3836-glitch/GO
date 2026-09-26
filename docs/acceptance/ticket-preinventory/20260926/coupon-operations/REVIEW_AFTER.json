@@ -1,0 +1,38 @@
+{
+  "status": "FIVE_INDEPENDENT_PROBES_PASS_NOT_FULL_ACCEPTANCE",
+  "candidate_commit": null,
+  "immutable_candidate_frozen": false,
+  "environment": "SQLite isolated TestClient/service probes",
+  "executed_at_utc": "2026-09-26T13:48:26.716988+00:00",
+  "counts": {
+    "passed": 5,
+    "failed": 0
+  },
+  "closed_findings_local": [
+    "IR-01",
+    "IR-02",
+    "IR-03"
+  ],
+  "full_scope_status": "NOT_VERIFIED_28_OBLIGATIONS_88_CASES",
+  "source_sha256": {
+    "src/go_hotel/flight/coupons.py": "46f0af2f58b588215d57a3b783b9aba6678b68ea1a3b18fe85e1f539a7202d59",
+    "src/go_hotel/flight/coupon_refunds.py": "67dc27b866d0c58f156652e4f1a19d98f85bb4cf10a538d9142503d93cf3b76e",
+    "src/go_hotel/flight/changes.py": "b68ac7f43814c41de9cbc365f55d173d8faaf899407d4529ba176182f6e3f07e",
+    "src/go_hotel/flight/service.py": "9eff0345368169590be1da5727a0c5a170a16321c90e210fce3c264c299f4b0c",
+    "src/go_hotel/services/flight_change_resolution.py": "1265551f94bc1e7a2886bbb008c865f66c06d42649e79df44f03bcdc61bbcff1",
+    "src/go_hotel/api/routes/flight.py": "1f91c93255e560cbfe870e9376ce4600f290dce0d70f9fb3dc2fdc3b5c276d16",
+    "src/go_hotel/db/models.py": "7775a102bb83635c418d8deb3894d9610b6569dacbfadf1caa70e22c97b9dacc",
+    "src/go_hotel/services/order_supplier_fulfillment.py": "9339b7acd8abd4f803ef80149551ff6bbcb0a62c79a4467483030f823309e1d2",
+    "src/go_hotel/services/vertical_lifecycle_projection.py": "3f6595d56e3e5c5075997a878654a301520e5b63ebe6d8a65400c7da6ceb8ca0",
+    "alembic/versions/0141_flight_coupons.py": "eddc09b348aae112a70fba5cf054d306ec76792d3acab22a646ad7609f6e8c1a"
+  },
+  "evidence_sha256": {
+    "readiness-before.xml": "ebb50a143b315a319fff8208abd602ffa84ae136ad2e3471c9e4635aa8fc2c99",
+    "historical-before.xml": "81ba40e7e98cff6c154ed8352687eef1a60b8d807b248cabec605ee6b0dd9cf8",
+    "review-after.xml": "a6117f79df096bed355d724db049fe5d657b85a69187a85ed3259a4547d46f39",
+    "recovery-review.xml": "8d83cacf8f4750075ee41f5766c36318799ee449edba481eb21bd931e88a3bd2",
+    "readiness-fixed.xml": "daeb11c1cee2bdddb9d1178ad500b15b782556284c71b30f20441557b0f8261c",
+    "test_independent_coupon_readiness.py": "69394ad2852d5d5ec542aa15aad364e57da7cd15b95de3fde229fceb7b01cb08",
+    "PRELIMINARY_REVIEW.json": "fb0b7d39485ffb58987cd9e3a952c8a977d1e7bcf3d0fea4615a20f1524cdf54"
+  }
+}
