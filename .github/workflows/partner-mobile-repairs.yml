@@ -1,0 +1,85 @@
+name: Partner and consumer mobile defect regression
+on:
+  pull_request:
+    paths:
+      - application/frontend/**
+      - application/tests/test_partner_mobile_repairs.py
+      - application/scripts/partner-mobile-acceptance/**
+      - application/src/go_hotel/services/go_identity_entitlements.py
+      - .github/workflows/partner-mobile-repairs.yml
+permissions:
+  contents: read
+concurrency:
+  group: partner-mobile-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  mobile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated test dependencies
+        run: |
+          python -m pip install -e './application[dev]'
+          npm install --prefix "$RUNNER_TEMP/mobile-deps" playwright@1.55.1
+          node "$RUNNER_TEMP/mobile-deps/node_modules/playwright/cli.js" install --with-deps chromium webkit
+      - name: Bind candidate source
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p mobile-evidence
+          python - <<'PY'
+          import hashlib,json,os,subprocess
+          from pathlib import Path
+          head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert head==os.environ['EXPECTED_HEAD']
+          files=subprocess.check_output(['git','ls-files','-z','application'],text=True).split('\0')
+          hashes={p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in files if p}
+          Path('mobile-evidence/source.json').write_text(json.dumps(hashes,indent=2))
+          Path('mobile-evidence/binding.json').write_text(json.dumps({'head':head,'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'database':'ISOLATED_SQLITE','legal_policy':'DRAFT_AND_SYNTHETIC_APPROVED_TEST_PROCESS','C13':'NOT_RUN','C14':'NOT_RUN','deployment':'NOT_RUN','native_device':'NOT_RUN'},indent=2))
+          PY
+      - name: API and UI regression
+        working-directory: application
+        run: |
+          set -o pipefail
+          python -m pytest tests/test_partner_mobile_repairs.py tests/test_go_identity_entitlements.py tests/test_depth41_transaction_views.py tests/test_consumer_registration_open.py tests/test_registration_terms_admission.py --junitxml=../mobile-evidence/junit.xml 2>&1 | tee ../mobile-evidence/pytest.log
+          node --test tests/test_consumer_registration_ui.cjs tests/test_registration_terms_reader.cjs tests/test_mobile_date_range.cjs 2>&1 | tee ../mobile-evidence/node.log
+      - name: Full app mobile browser journeys
+        run: |
+          set -euo pipefail
+          OUT="$GITHUB_WORKSPACE/mobile-evidence"
+          cd application
+          PYTHONPATH=src:. python scripts/partner-mobile-acceptance/server.py "$RUNNER_TEMP/mobile-approved" 4288 --approved-test-policy > "$OUT/approved-server.log" 2>&1 &
+          APPROVED_PID=$!
+          PYTHONPATH=src:. python scripts/partner-mobile-acceptance/server.py "$RUNNER_TEMP/mobile-draft" 4289 > "$OUT/draft-server.log" 2>&1 &
+          DRAFT_PID=$!
+          trap 'kill "$APPROVED_PID" "$DRAFT_PID" || true' EXIT
+          for attempt in $(seq 1 50); do
+            if curl -fsS http://127.0.0.1:4288/health && curl -fsS http://127.0.0.1:4289/health; then break; fi
+            sleep 1
+          done
+          MOBILE_EVIDENCE_DIR="$OUT/browser" PLAYWRIGHT_MODULE="$RUNNER_TEMP/mobile-deps/node_modules/playwright" node scripts/partner-mobile-acceptance/browser.mjs
+      - name: Hash raw evidence
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('mobile-evidence');root.mkdir(exist_ok=True)
+          (root/'SHA256.json').write_text(json.dumps({str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in root.rglob('*') if p.is_file()},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: partner-mobile-${{ github.event.pull_request.head.sha }}
+          path: mobile-evidence/
+          retention-days: 30

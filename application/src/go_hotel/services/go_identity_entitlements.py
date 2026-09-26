@@ -14,6 +14,44 @@ def sha(x):return hashlib.sha256(json.dumps(x,sort_keys=True,default=str,separat
 def out(x):return {k:v for k,v in x.__dict__.items() if not k.startswith('_')}
 
 class GoIdentityEntitlementService:
+ def configuration(self,supplier_id):
+  from go_hotel.db.models import HotelPartnerPropertyRow as Hotel,HotelPartnerRoomTypeRow as Room
+  with SessionLocal() as s:
+   programs=[out(x) for x in s.scalars(select(P).where(P.supplier_id==supplier_id).order_by(P.program_type)).all()]
+   rooms=[{'room_type_id':r.room_type_id,'name':r.name_zh,'property_name':h.name_zh} for r,h in s.execute(select(Room,Hotel).join(Hotel,Hotel.property_id==Room.property_id).where(Hotel.supplier_id==supplier_id,Room.state=='ACTIVE').order_by(Hotel.name_zh,Room.name_zh)).all()]
+   return {'programs':programs,'rooms':rooms,'revision':sha(programs)}
+ def configure_programs(self,supplier_id,programs,revision,actor):
+  """Atomically save named room selections; tenancy and authority are server facts."""
+  from go_hotel.db.models import HotelPartnerPropertyRow as Hotel,HotelPartnerRoomTypeRow as Room
+  types={'STAFF_RATE','OWNER_RATE','OWNER_BENEFITS','FRIENDS_FAMILY'}
+  if len(programs)!=len({x['program_type'] for x in programs}) or any(x['program_type'] not in types for x in programs):raise ValueError('INVALID_PROGRAM_TYPE')
+  with SessionLocal() as s:
+   # Lock the supplier's properties even on the first configuration.
+   s.scalars(select(Hotel).where(Hotel.supplier_id==supplier_id).order_by(Hotel.property_id).with_for_update()).all()
+   current=s.scalars(select(P).where(P.supplier_id==supplier_id).order_by(P.program_type).with_for_update()).all()
+   if sha([out(x) for x in current])!=revision:raise ValueError('PROGRAM_CONFIGURATION_CHANGED')
+   room_ids=set(s.scalars(select(Room.room_type_id).join(Hotel,Hotel.property_id==Room.property_id).where(Hotel.supplier_id==supplier_id,Room.state=='ACTIVE')).all())
+   existing={x.program_type:x for x in current}
+   for item in programs:
+    chosen=item['eligible_room_ids']
+    if item['enabled'] and not chosen:raise ValueError('PROGRAM_ROOMS_REQUIRED')
+    if not set(chosen)<=room_ids:raise ValueError('PROGRAM_ROOM_NOT_AVAILABLE')
+    previous=existing.get(item['program_type'])
+    prior_benefits=previous.benefits_json if previous else []
+    benefits=item.get('benefits')
+    if benefits is not None and not set(benefits)<=set(prior_benefits)|{'UPGRADE_PRIORITY','BREAKFAST','LATE_CHECKOUT'}:raise ValueError('INVALID_PROGRAM_BENEFIT')
+    if item['program_type']=='OWNER_BENEFITS' and item['enabled'] and not (prior_benefits if benefits is None else benefits):raise ValueError('PROGRAM_BENEFITS_REQUIRED')
+   t=now()
+   for item in programs:
+    typ=item['program_type'];row=existing.get(typ)
+    if not row:
+     row=P(supplier_program_id=new_id('gisp'),supplier_id=supplier_id,program_type=typ,open_date_ranges_json=[],benefits_json=[],rule_version=RULE)
+     s.add(row)
+    row.enabled=item['enabled'];row.eligible_room_ids_json=list(dict.fromkeys(item['eligible_room_ids']))
+    if item.get('benefits') is not None:row.benefits_json=list(dict.fromkeys(item['benefits']))
+    row.authorization_reference='SUPPLIER_CONSOLE:'+actor;row.updated_at=t
+   s.commit()
+  return self.configuration(supplier_id)
  def _event(self,s,c,event,actor,payload):
   h=sha({'credential_id':c.credential_id,'event':event,'state':c.state,'payload':payload})
   s.add(V(event_id=new_id('gievt'),credential_id=c.credential_id,event_type=event,previous_state=payload.get('previous_state'),current_state=c.state,actor_id=actor,evidence_hash=h,payload_json=payload,occurred_at=now()))

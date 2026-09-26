@@ -3,7 +3,7 @@ const fixture=require('./registration_terms_fixture.cjs');
 const source=fs.readFileSync('frontend/consumer/app.js','utf8');
 const start=source.indexOf('async function showConsumerRegister()');const end=source.indexOf('\nasync function bootstrapConsumer',start);
 function harness(api,document=fixture.document){
- const nodes={};for(const id of ['app','consumerRegister','doRegister','consumerRegisterError','backLogin','regName','regEmail','regPwd','regPhone','regTerms','registrationDocuments'])nodes['#'+id]={...fixture.element(),value:'',isConnected:true,disabled:false,textContent:'',reportValidity:()=>true};
+ const nodes={};for(const id of ['app','consumerRegister','doRegister','consumerRegisterError','backLogin','regName','regEmail','regPwd','regPhone','regTerms','registrationDocuments','registrationStatus','retryRegistrationRules'])nodes['#'+id]={...fixture.element(),value:'',isConnected:true,disabled:false,textContent:'',reportValidity:()=>true,addEventListener(){}};
  nodes['#doRegister'].disabled=true;nodes['#regName'].value='Test';nodes['#regEmail'].value=' traveler@example.test ';nodes['#regPwd'].value='strong-password';nodes['#regTerms'].checked=true;
  const calls=[];const ctx={document:{querySelector:key=>nodes[key]},$:key=>nodes[key],setVerticalVIMode(){},shell:s=>s,bindNav(){},showAuth(){},showAccount:()=>calls.push('account'),state:{me:null},api:async(path,opts)=>path.startsWith('/v1/registration-terms/')?document:api(path,opts),bootstrapConsumer:async()=>{ctx.state.me={user_id:'consumer'}}};
  vm.createContext(ctx);fixture.install(ctx);vm.runInContext(source.slice(start,end),ctx);return {ctx,nodes,calls};

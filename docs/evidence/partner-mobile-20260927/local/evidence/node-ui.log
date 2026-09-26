@@ -1,0 +1,30 @@
+✔ register requires fetched server terms and posts exactly those terms (5.609593ms)
+✔ double submit creates one request while first request pending (1.731275ms)
+✔ terms metadata failure leaves registration disabled (1.699101ms)
+✔ unchecked consent cannot create account (1.172186ms)
+✔ navigation during signup does not overwrite current page (1.99159ms)
+✔ failed session readback never claims registration is signed in (1.500497ms)
+✔ draft consumer terms render but cannot create account even with checked consent (1.383442ms)
+✔ consumer term mismatch locks consent until full terms are reloaded (3.337406ms)
+✔ hotel stay is selected as one range across a month and year boundary (2.104161ms)
+✔ hotel rejects a zero-night stay and accepts the next checkout (0.314129ms)
+✔ editing a stay and selecting an earlier day starts a new valid range (0.149637ms)
+✔ mobile binding preserves both dates and avoids two native pickers (0.663642ms)
+✔ approved terms render full body as text, never interpreted markup (2.767997ms)
+✔ draft documents remain readable but never enable consent even if policy enabled (1.930388ms)
+✔ policy closed overrides all approved documents (0.841053ms)
+✔ changed document hash fails closed (5.351553ms)
+✔ changed document version fails closed (0.945982ms)
+✔ missing and duplicate documents never enable consent (3.444912ms)
+✔ body load failure never returns enabled consent (2.121582ms)
+✔ unexpected content URL is never fetched (0.982892ms)
+✔ navigation during document load cannot write detached container (1.707313ms)
+✔ unlisted terms or blank content fail closed (5.17023ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 263.516285
