@@ -1,4 +1,4 @@
-from tests.hosted_review_support import legacy_publication,fare_hash
+from tests.hosted_review_support import legacy_publication,fare_hash,register_isolated_rooms
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date,datetime,timedelta,timezone
 import pytest
@@ -23,6 +23,8 @@ def reservation(client):
     cin=(date.today()+timedelta(days=1)).isoformat();cout=(date.today()+timedelta(days=3)).isoformat()
     available=ops.availability('aoluguya-harbin',{'check_in':cin,'check_out':cout,'adults':1})
     offer=available['items'][0]
+    register_isolated_rooms(hotel['hosted_hotel_id'],offer['hosted_offer_id'],['SIM-101'])
+    legacy_publication(hotel['hosted_hotel_id'])
     r=client.post('/v1/direct/aoluguya-harbin/reservations',headers={**headers,'Idempotency-Key':'direct-reserve'},
         json={'hosted_offer_id':offer['hosted_offer_id'],'check_in':cin,'check_out':cout,'guest_name':'TEST GUEST',
         'guest_contact':'13800000000','expected_total_minor':offer['total_amount_minor'],'expected_fare_rule_hash':fare_hash(offer['hosted_offer_id'])})

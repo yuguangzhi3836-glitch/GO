@@ -144,7 +144,7 @@ def resource_hotels(session, route, params):
 
 
 RULE_ACTIONS = {'configure', 'hotel', 'offer', 'publish', 'content_snapshot', 'media_asset',
-                'calendar_bootstrap', 'inventory_day', 'rate_day', 'staff_role', 'publish_fare_rule',
+                'calendar_bootstrap', 'inventory_day', 'room_registry', 'rate_day', 'staff_role', 'publish_fare_rule',
                 'publication_preview'}
 APPROVE_ACTIONS = {'content_approve', 'action_approve', 'uat_scenario', 'alipay_adjustment_approve',
                    'dispute_decision_approve', 'review_supplier_disruption', 'publication_review'}

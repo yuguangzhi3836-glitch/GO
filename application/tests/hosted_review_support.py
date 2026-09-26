@@ -134,3 +134,22 @@ def fare_hash(offer_id):
     with SessionLocal() as s:
         row=s.scalar(select(m.HostedFareRuleVersionRow).where(m.HostedFareRuleVersionRow.hosted_offer_id==offer_id).order_by(m.HostedFareRuleVersionRow.version.desc()))
         return row.rule_hash if row else None
+
+
+def register_isolated_rooms(hotel_id, offer_id, references):
+    """Explicit synthetic room ownership; never a runtime registration bypass."""
+    from go_hotel.core.config import settings
+    assert settings.app_env.lower() in {'local', 'test', 'demo'}
+    with SessionLocal.begin() as s:
+        hotel=s.get(m.HostedDirectHotelRow,hotel_id)
+        hotel.contact_json={**(hotel.contact_json or {}),'inventory_data_mode':'SIMULATION'}
+        variant=s.scalar(select(m.HostedDirectRateVariantRow).where(m.HostedDirectRateVariantRow.hosted_offer_id==offer_id))
+        pool=s.get(m.HostedDirectInventoryPoolRow,variant.inventory_pool_id) if variant else s.scalar(
+            select(m.HostedDirectInventoryPoolRow).where(m.HostedDirectInventoryPoolRow.hosted_hotel_id==hotel_id))
+        assert pool and pool.hosted_hotel_id==hotel_id
+        if variant is None:
+            s.add(m.HostedDirectRateVariantRow(rate_variant_id=ident('fixture-rate'),inventory_pool_id=pool.inventory_pool_id,
+                hosted_offer_id=offer_id,breakfast_count=0,benefits_json=[],payment_mode='CONTRACT_SIMULATOR',state='ACTIVE'))
+        pool.room_details_json={**(pool.room_details_json or {}),'room_registry':{
+            'version':1,'source_state':'ISOLATED_FIXTURE','source_reference':'isolated://explicit-room-registry',
+            'rooms':[{'room_reference':ref,'state':'ACTIVE'} for ref in references]}}

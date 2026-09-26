@@ -1,10 +1,10 @@
-from tests.hosted_review_support import legacy_publication
+from tests.hosted_review_support import legacy_publication,register_isolated_rooms
 import hashlib,pytest
 from go_hotel.services.hosted_direct_booking import hosted_direct_booking_service as booking
 from go_hotel.services.alipay_safeguarded_settlement import alipay_safeguarded_settlement_service as pay
 from go_hotel.services.guest_stay_fulfillment import guest_stay_fulfillment_service as svc
 def setup():
- h=booking.create_hotel({'supplier_name':'哈尔滨敖麓谷雅酒店','page_slug':'aoluguya-harbin'},'admin');o=booking.upsert_offer(h['hosted_hotel_id'],{'room_name':'测试房','rate_name':'测试价','price_minor':10000,'inventory':5,'cancellation_policy':'30分钟免费取消'},'hotel');legacy_publication(h['hosted_hotel_id']);r=booking.reserve('aoluguya-harbin',{'hosted_offer_id':o['hosted_offer_id'],'guest_name':'测试','guest_contact':'13800000000','check_in':'2026-09-01','check_out':'2026-09-03'},'r1');x=svc.create(r['hosted_reservation_id'],'frontdesk');return r,x
+ h=booking.create_hotel({'supplier_name':'哈尔滨敖麓谷雅酒店','page_slug':'aoluguya-harbin'},'admin');o=booking.upsert_offer(h['hosted_hotel_id'],{'room_name':'测试房','rate_name':'测试价','price_minor':10000,'inventory':5,'cancellation_policy':'30分钟免费取消'},'hotel');legacy_publication(h['hosted_hotel_id']);r=booking.reserve('aoluguya-harbin',{'hosted_offer_id':o['hosted_offer_id'],'guest_name':'测试','guest_contact':'13800000000','check_in':'2026-09-01','check_out':'2026-09-03'},'r1');register_isolated_rooms(h['hosted_hotel_id'],o['hosted_offer_id'],['room://2401','room://2501']);x=svc.create(r['hosted_reservation_id'],'frontdesk');return r,x
 def checkin():
  r,x=setup();svc.identity(x['stay_lifecycle_id'],{'identity_evidence_hash':hashlib.sha256(b'id-ref').hexdigest(),'verification_method':'HOTEL_DESK_DOCUMENT_CHECK'},'frontdesk');svc.arrive(x['stay_lifecycle_id'],'frontdesk');svc.assign_room(x['stay_lifecycle_id'],{'room_reference':'room://2401'},'frontdesk');svc.check_in(x['stay_lifecycle_id'],{'registration_evidence_reference':'hotel://registration'},'frontdesk');return r,x
 def test_pre_arrival_is_idempotent_and_incomplete_stay_cannot_settle():

@@ -488,3 +488,8 @@ def hosted_original(slug:str,media_id:str):
   raw,mime=public_original(slug,media_id)
   return Response(raw,media_type=mime,headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'})
  except (ValueError,PermissionError):raise HTTPException(404,detail='HOSTED_MEDIA_NOT_FOUND') from None
+
+@router.put('/internal/v1/hosted-direct/inventory-pools/{pool_id}/room-registry')
+def room_registry(pool_id:str,b:Payload,p:Principal=Depends(hosted_admin)):
+ from go_hotel.services.hosted_room_registry import configure_isolated_registry
+ return call_admin(configure_isolated_registry,pool_id,b.model_dump(exclude_none=True),p)

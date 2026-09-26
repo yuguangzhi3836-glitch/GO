@@ -8,7 +8,7 @@ import sys
 import pytest
 from sqlalchemy import select
 from tests.test_c01_hosted_operating_journey import http
-from tests.hosted_review_support import hotel_fixture, prepare_publication, identity, RULES
+from tests.hosted_review_support import hotel_fixture, prepare_publication, identity, RULES, register_isolated_rooms
 from go_hotel.services.hosted_direct_booking import ident, now
 from go_hotel.services.hosted_reservation_operations import hosted_reservation_operations_service as ops
 from go_hotel.db import models as m
@@ -43,6 +43,7 @@ def business(monkeypatch,tmp_path):
     ops.bootstrap_calendar(h['hotel'],{'start_date':h['day'].isoformat(),'end_date':(h['end']+timedelta(days=1)).isoformat()})
     rules={**RULES,'fare_family':'ISOLATED CONFIRMED 30MIN ONLY','cooling_off_anchor':'HOTEL_CONFIRMED'}
     for offer in offer_ids:fare.publish(offer,rules,'isolated://confirmed-30min-other-terms-not-hotel-authority',h['maker'].user_id)
+    register_isolated_rooms(h['hotel'],h['offer'],['ISOLATED-ROUND-DREAM-101','ISOLATED-OVERNIGHT-102','SYNTHETIC-201','C13-SYNTHETIC-101'])
     prepare_publication(h['hotel'],h['maker'],h['checker'],tmp_path,add_rules=False)
     booking.publish(h['hotel'],h['maker'])
     manager,headers=identity('day-manager')
