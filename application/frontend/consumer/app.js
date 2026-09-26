@@ -315,7 +315,7 @@ function cancelUnpaidVertical(vertical){
 
 function paymentDeadlineText(o){
  if(o?.unpaid_reservation_state==='EXPIRED')return '付款期限已到，未支付订单已取消，占位已释放。需要出行可重新选择。';
- if(o?.unpaid_reservation_state==='PAYMENT_STARTED')return '支付已开始，占位继续保留；处理结果未明时，请继续核对原支付。';
+ if(o?.unpaid_reservation_state==='PAYMENT_STARTED'&&o.status==='PAYMENT_PENDING')return '支付已开始，占位继续保留；处理结果未明时，请继续核对原支付。';
  if(o?.unpaid_reservation_state!=='OPEN'||o.status!=='PAYMENT_PENDING'||!Number.isSafeInteger(o.payment_deadline_ms)||o.payment_deadline_ms<=0||o.payment_deadline_ms>8640000000000000)return '';
  return `请在 ${new Date(o.payment_deadline_ms).toISOString().replace('T',' ').replace('.000Z',' UTC')} 前开始支付。逾期且未开始支付的订单将取消并释放占位。`;
 }

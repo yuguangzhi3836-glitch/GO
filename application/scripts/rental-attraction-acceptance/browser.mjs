@@ -94,7 +94,7 @@ try{
   const quoted=waitResponse(consumer,`/v1/attractions/orders/${attraction.order_id}/refund-quote`);await consumer.locator('#aref').click();const q=await data(await quoted);assert.equal(q.refund_amount_minor,attraction.total_amount_minor);
   const refunded=consumer.waitForResponse(r=>new URL(r.url()).pathname.startsWith(`/v1/attractions/orders/${attraction.order_id}/refund`)&&r.request().method()==='POST'),fresh=waitResponse(consumer,`/v1/attractions/orders/${attraction.order_id}`);
   await consumer.locator('#uxConfirm').click();const response=await refunded;assert.equal(new URL(response.url()).pathname,`/v1/attractions/orders/${attraction.order_id}/refund-confirmed`);assert.deepEqual(response.request().postDataJSON(),{quote_hash:q.quote_hash,confirmed:true});const receipt=await data(response),order=await data(await fresh);assert.equal(receipt.status,'REFUND_COMPLETED');assert.equal(receipt.refund_amount_minor,q.refund_amount_minor);assert.equal(order.status,'REFUNDED');assert.equal(order.voucher_code,null);assert.equal(order.order_id,attraction.order_id);
-  await consumer.getByText('已退款',{exact:true}).first().waitFor();assert.equal(await consumer.locator('#ared').isDisabled(),true);report.facts.attraction_refund={receipt,order};
+  await consumer.getByText('已退款',{exact:true}).first().waitFor();assert.equal(await consumer.locator('#ared').isDisabled(),true);assert.ok(!(await consumer.locator('body').innerText()).includes('占位继续保留'));report.facts.attraction_refund={receipt,order};
  });
  if(suppliers.RENTAL){
   await step('rental-second-book-for-supplier-claim',consumer,async()=>{claimOrder=await bookRental(consumer,day(40),day(43));report.facts.rental_claim_order=claimOrder;});
@@ -110,7 +110,7 @@ try{
    await form.locator('[name=amount_minor]').fill('10000');await form.locator('[name=pickup_statement]').fill('隔离验收：取车时观察陈述');await form.locator('[name=return_statement]').fill('隔离验收：还车时观察陈述');await form.locator('[name=confirmed]').check();
    const posted=waitResponse(supplier,`/v1/supplier/mobility/rentals/orders/${claimOrder.order_id}/operations/cases`,'POST'),fresh=waitResponse(supplier,`/v1/mobility/rentals/orders/${claimOrder.order_id}/operations`);await form.locator('[type=submit]').click();const claim=await data(await posted),workspace=await data(await fresh);
    assert.equal(claim.order_id,claimOrder.order_id);assert.equal(claim.supplier_evidence_status,'SUPPLIER_STATEMENT_UNVERIFIED');assert.equal(claim.status,'AWAITING_CUSTOMER');assert.equal(workspace.actor_type,'SUPPLIER_USER');assert.equal(workspace.cases.length,1);assert.deepEqual(workspace.cases[0].actions,[]);
-   await supplier.getByText('车损记录',{exact:true}).waitFor();assert.equal(await supplier.locator('[data-rental-command="DECISION"]').count(),0);report.facts.supplier_claim={claim,workspace};
+   await supplier.getByText('车损记录',{exact:true}).waitFor();await supplier.getByText('等待消费者回应 · 版本 1',{exact:true}).waitFor();assert.equal(await supplier.locator('[data-rental-command="DECISION"]').count(),0);report.facts.supplier_claim={claim,workspace};
   });
  }else report.not_verified.push('SUPPLIER_CLAIM_NO_RENTAL_CREDENTIAL_FIXTURE');
  assert.deepEqual(report.errors,[]);report.result='PASS';
