@@ -79,6 +79,7 @@ for(const [engine,type,width] of [['chromium',chromium,375],['webkit',webkit,430
     await p.locator('#supplierMobileMore').click();await p.locator('[data-mobile-menu-route="/business-management"]').click();
     await p.locator(`#view a[href="#/business-${type}"]`).click();await p.getByText('当前没有'+label+'订单。',{exact:true}).waitFor();
     assert.equal(await p.locator('[data-vertical-filter]').inputValue(),type.toUpperCase());
+    assert.equal(await p.locator('#supplierPropertySelect').isVisible(),false);
    }
   });
   await step(engine+'-refund-read-failure-retry',p,async()=>{
@@ -88,6 +89,7 @@ for(const [engine,type,width] of [['chromium',chromium,375],['webkit',webkit,430
   await step(engine+'-hotel-association-readable-next-action',p,async()=>{
    await p.locator('#supplierMobileMore').click();await p.locator('[data-mobile-menu-route="/business-management"]').click();
    await p.locator('#view a[href="#/hotel-webpage"]').click();await p.getByText('酒店网页尚未关联',{exact:true}).waitFor();
+   assert.equal(await p.locator('#supplierPropertySelect').isVisible(),true);
    assert.ok(!(await p.locator('#view').innerText()).includes('NOT_REGISTERED'));await p.getByText('核对酒店与关联状态',{exact:true}).waitFor();
   });
  }catch(e){report.result='FAIL';report.error=e.message;process.exitCode=1}

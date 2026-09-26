@@ -829,6 +829,10 @@ route=async function(){supplierCaptureImportDraft?.();supplierCaptureImportDraft
 const partnerDispatch=route;
 route=async function(){
  const path=location.hash;
+ const propertyScope=$('#supplierPropertySelect')?.closest('label');
+ // These workspaces read the supplier's records across properties. A hotel
+ // selector here would falsely imply that it filters non-hotel transactions.
+ if(propertyScope)propertyScope.hidden=path.startsWith('#/business-')||['#/refunds','#/fulfillment','#/vertical-capabilities','#/go-identity'].includes(path);
  try{
   if(config.actorType==='SUPPLIER_USER'&&path.startsWith('#/business-')){
    const vertical=path.slice('#/business-'.length).toUpperCase();
