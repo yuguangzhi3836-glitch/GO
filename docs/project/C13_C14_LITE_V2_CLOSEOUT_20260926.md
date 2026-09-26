@@ -19,8 +19,10 @@
 | Status | `IMPLEMENTATION_MERGED / POST_FIX_PRODUCTION_E2E_PENDING` |
 
 Companion navigation: [`GO_CURRENT_STATE.md`](GO_CURRENT_STATE.md) — this closeout is reachable
-from that file's section 5. Where the two disagree, `GO_CURRENT_STATE.md` and the more direct
-sources named above win.
+from that file's section 5. `GO_CURRENT_STATE.md` is itself a checkpoint-bound historical state
+snapshot, and this closeout is also only a navigation document. Neither overrides more direct
+current facts. If they disagree with current main/code, formal Policy, the actual GitHub state,
+runtime evidence or explicit Human Authorization, those more direct sources win.
 
 ## 0. 中文摘要（给中文读者）
 
