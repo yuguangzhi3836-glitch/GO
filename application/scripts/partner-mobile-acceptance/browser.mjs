@@ -41,6 +41,8 @@ for(const [engine,type,width] of [['chromium',chromium,375],['webkit',webkit,430
    await p.locator('#regName').fill('隔离手机验收');await p.locator('#regEmail').fill(email);await p.locator('#regPwd').fill('Isolated-register-password');
    await p.locator('#retryRegistrationRules').click();await p.waitForFunction(()=>!document.querySelector('#doRegister').disabled);
    assert.equal(await p.locator('#regName').inputValue(),'隔离手机验收');await p.locator('#regTerms').check();
+   await p.locator('#sendRegistrationCode').click();await p.getByText(/验证码已发送/).waitFor();
+   const mailbox=JSON.parse(await fs.readFile(process.env.REGISTRATION_TEST_MAILBOX,'utf8'));await p.locator('#registrationCode').fill(mailbox[email]);
    // An auxiliary wallet failure cannot undo successful registration/session readback.
    await p.route('**/v1/consumer/wallet',r=>r.fulfill({status:503,contentType:'application/json',body:JSON.stringify({detail:'TEST_WALLET_UNAVAILABLE'})}));
    const [registered,session]=await Promise.all([
@@ -56,6 +58,18 @@ for(const [engine,type,width] of [['chromium',chromium,375],['webkit',webkit,430
   await step(engine+'-registration-draft-explicit-block',p,async()=>{
    await p.goto(draft+'/go-app/');await p.locator('#consumerSignupEntry').click();await p.getByText('注册尚未开放',{exact:true}).waitFor();
    assert.equal(await p.locator('#doRegister').isDisabled(),true);assert.match(await p.locator('#registrationStatus').innerText(),/条款仍待确认/);
+  });
+  await step(engine+'-supplier-email-verified-registration',p,async()=>{
+   await p.goto(base+'/supplier-console/');await p.locator('#supplierRegisterStart').click();
+   const email='supplier-'+engine+'-'+Date.now()+'@example.test';
+   await p.locator('#org').fill('隔离注册企业');await p.locator('#hotelName').fill('隔离注册酒店');await p.locator('#contact').fill('测试联系人');
+   await p.locator('#regEmail').fill(email);await p.locator('#regPass').fill('Isolated-register-password');await p.locator('#acceptTerms').check();
+   await p.locator('#sendRegistrationCode').click();await p.getByText(/验证码已发送/).waitFor();
+   const mailbox=JSON.parse(await fs.readFile(process.env.REGISTRATION_TEST_MAILBOX,'utf8'));await p.locator('#registrationCode').fill(mailbox[email]);
+   const [result]=await Promise.all([p.waitForResponse(r=>r.url()===base+'/bff/auth/supplier/register'),p.locator('#supplierRegisterSubmit').click()]);
+   assert.equal(result.status(),201);assert.equal((await result.json()).data.publication_state,'DRAFT');await p.locator('.supplier-shell').waitFor();
+   // Clear only this isolated browser context's cookies before testing the fixture owner.
+   await context.clearCookies();
   });
   await step(engine+'-supplier-real-login-and-refunds',p,async()=>{
    await p.goto(base+'/supplier-console/');await p.locator('#user').fill('mobile-owner@example.test');await p.locator('#pass').fill('Isolated-mobile-password');await p.locator('#login button').first().click();await p.locator('.supplier-shell').waitFor();

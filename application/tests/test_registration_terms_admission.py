@@ -7,7 +7,7 @@ from test_hotel_direct_submission_full_app import full_application
 from test_hotel_direct_submission_publication import publishing
 from test_hotel_direct_submission_review import ready
 from test_hotel_direct_submission_verification import setup
-from registration_terms_test_support import approved_terms_fixture
+from registration_terms_test_support import approved_terms_fixture, synthetic_mail_runtime, with_verification
 
 @pytest.mark.parametrize('audience',['consumer','supplier'])
 def test_shipped_unapproved_bodies_cannot_register(full_application,audience):
@@ -48,7 +48,7 @@ def test_real_registry_synthetic_approved_text_binds_persisted_consent(full_appl
     approve_fixture(registry_copy)
     from go_hotel.core.config import settings
     # This test models a verified synthetic delivery runtime; the shipped gate stays disabled.
-    monkeypatch.setattr(settings, 'registration_verification_enabled', True)
+    synthetic_mail_runtime(monkeypatch)
     client,data=full_application;factory=data[4]
     route='/v1/consumer/auth/registration' if audience=='consumer' else '/bff/auth/supplier/registration-terms'
     policy=client.get(route).json()['data']
@@ -61,6 +61,7 @@ def test_real_registry_synthetic_approved_text_binds_persisted_consent(full_appl
              'term_versions':policy['versions'],'term_hashes':policy['term_hashes']}
     if audience=='supplier':payload.update(organization_name='测试主体',contact_name='测试联系人')
     endpoint='/v1/consumer/auth/register' if audience=='consumer' else '/bff/auth/supplier/register'
+    payload=with_verification(payload,audience)
     response=client.post(endpoint,json=payload)
     assert response.status_code in {200,201},response.text
     action='CONSUMER_REGISTRATION_TERMS_ACCEPTED' if audience=='consumer' else 'SUPPLIER_REGISTRATION_TERMS_ACCEPTED'

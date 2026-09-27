@@ -3,16 +3,17 @@ const fixture=require('./registration_terms_fixture.cjs');
 const source=fs.readFileSync('frontend/consumer/app.js','utf8');
 const start=source.indexOf('async function showConsumerRegister()');const end=source.indexOf('\nasync function bootstrapConsumer',start);
 function harness(api,document=fixture.document){
- const nodes={};for(const id of ['app','consumerRegister','doRegister','consumerRegisterError','backLogin','regName','regEmail','regPwd','regPhone','regTerms','registrationDocuments','registrationStatus','retryRegistrationRules'])nodes['#'+id]={...fixture.element(),value:'',isConnected:true,disabled:false,textContent:'',reportValidity:()=>true,addEventListener(){}};
+ const nodes={};for(const id of ['app','consumerRegister','doRegister','consumerRegisterError','backLogin','regName','regEmail','regPwd','regPhone','regTerms','registrationDocuments','registrationStatus','retryRegistrationRules','registrationCode','sendRegistrationCode','registrationCodeStatus'])nodes['#'+id]={...fixture.element(),value:'',isConnected:true,disabled:false,textContent:'',reportValidity:()=>true,addEventListener(event,handler){this[event]=handler},focus(){}};
  nodes['#doRegister'].disabled=true;nodes['#regName'].value='Test';nodes['#regEmail'].value=' traveler@example.test ';nodes['#regPwd'].value='strong-password';nodes['#regTerms'].checked=true;
- const calls=[];const ctx={document:{querySelector:key=>nodes[key]},$:key=>nodes[key],setVerticalVIMode(){},shell:s=>s,bindNav(){},showAuth(){},showAccount:()=>calls.push('account'),state:{me:null},api:async(path,opts)=>path.startsWith('/v1/registration-terms/')?document:api(path,opts),bootstrapConsumer:async()=>{ctx.state.me={user_id:'consumer'}}};
- vm.createContext(ctx);fixture.install(ctx);vm.runInContext(source.slice(start,end),ctx);return {ctx,nodes,calls};
+ nodes['#consumerRegister'].querySelector=id=>nodes[id];
+ const calls=[];const ctx={setTimeout:()=>0,clearTimeout(){},document:{querySelector:key=>nodes[key]},$:key=>nodes[key],setVerticalVIMode(){},shell:s=>s,bindNav(){},showAuth(){},showAccount:()=>calls.push('account'),state:{me:null},api:async(path,opts)=>path==='/v1/registration/challenges'?{challenge_id:'test-challenge',resend_after:60}:path.startsWith('/v1/registration-terms/')?document:api(path,opts),bootstrapConsumer:async()=>{ctx.state.me={user_id:'consumer'}}};
+ vm.createContext(ctx);fixture.install(ctx);vm.runInContext(fs.readFileSync('frontend/shared/registration-verification.js','utf8'),ctx);vm.runInContext(source.slice(start,end),ctx);return {ctx,nodes,calls};
 }
 const terms=fixture.policy.terms;
-async function open(h){await h.ctx.showConsumerRegister();h.nodes['#regTerms'].checked=true}
+async function open(h){await h.ctx.showConsumerRegister();h.nodes['#regTerms'].checked=true;h.nodes['#regTerms'].change();if(!h.nodes['#sendRegistrationCode'].disabled){await h.nodes['#sendRegistrationCode'].onclick();h.nodes['#registrationCode'].value='123456'}}
 test('register requires fetched server terms and posts exactly those terms',async()=>{
  const requests=[];const h=harness(async(path,options)=>{requests.push({path,options});return fixture.policy});await open(h);await h.nodes['#consumerRegister'].onsubmit({preventDefault(){}});
- assert.deepEqual(JSON.parse(requests[1].options.body),{email:'traveler@example.test',password:'strong-password',display_name:'Test',phone:null,accepted_terms:true,term_versions:terms,term_hashes:fixture.policy.term_hashes});assert.deepEqual(h.calls,['account']);
+ assert.deepEqual(JSON.parse(requests[1].options.body),{challenge_id:'test-challenge',verification_code:'123456',email:'traveler@example.test',password:'strong-password',display_name:'Test',phone:null,accepted_terms:true,term_versions:terms,term_hashes:fixture.policy.term_hashes});assert.deepEqual(h.calls,['account']);
 });
 test('double submit creates one request while first request pending',async()=>{
  let finish,count=0;const h=harness(async(path)=>{if(path.endsWith('/registration'))return fixture.policy;count++;return new Promise(resolve=>finish=resolve)});await open(h);const first=h.nodes['#consumerRegister'].onsubmit({preventDefault(){}});await h.nodes['#consumerRegister'].onsubmit({preventDefault(){}});assert.equal(count,1);finish({});await first;

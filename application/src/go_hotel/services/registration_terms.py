@@ -4,6 +4,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
+import re
+from go_hotel.core.config import settings
 from pathlib import Path
 
 _REGISTRY_ROOT = Path(__file__).resolve().parents[1] / 'legal' / 'registration'
@@ -18,7 +20,10 @@ _REQUIRED_RELEASE_FIELDS = ('operator', 'contact_channels', 'retention_schedule'
 
 
 def _load_registry() -> dict:
-    return json.loads((_REGISTRY_ROOT / _DRAFT_VERSION / 'registry.json').read_text(encoding='utf-8'))
+    version = settings.registration_terms_version
+    if not re.fullmatch(r'[a-zA-Z0-9-]{1,80}', version):
+        raise ValueError('REGISTRATION_TERMS_INTEGRITY_ERROR')
+    return json.loads((_REGISTRY_ROOT / version / 'registry.json').read_text(encoding='utf-8'))
 
 
 def _document(registry: dict, term_id: str, version: str) -> dict:
@@ -60,6 +65,10 @@ def registration_terms_status(audience: str) -> dict:
     documents = []
     ready = registry.get('release_status') == 'APPROVED' and not registry.get('unresolved')
     ready = ready and all(registry.get(key) for key in _REQUIRED_RELEASE_FIELDS)
+    operator = registry.get('operator') or {}
+    contact = registry.get('contact_channels') or {}
+    ready = ready and all(operator.get(k) for k in ('legal_name', 'registration_address', 'unified_social_credit_code'))
+    ready = ready and contact.get('delivery_verified') is True
     for ident in _REQUIRED[audience]:
         if ident not in entries:
             raise ValueError('REGISTRATION_TERMS_INTEGRITY_ERROR')

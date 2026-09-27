@@ -52,7 +52,7 @@ jobs:
         run: |
           set -o pipefail
           python -m pytest tests/test_partner_mobile_repairs.py tests/test_go_identity_entitlements.py tests/test_depth41_transaction_views.py tests/test_consumer_registration_open.py tests/test_registration_terms_admission.py --junitxml=../mobile-evidence/junit.xml 2>&1 | tee ../mobile-evidence/pytest.log
-          node --test tests/test_consumer_registration_ui.cjs tests/test_registration_terms_reader.cjs tests/test_mobile_date_range.cjs 2>&1 | tee ../mobile-evidence/node.log
+          node --test tests/test_consumer_registration_ui.cjs tests/test_registration_terms_reader.cjs tests/test_mobile_date_range.cjs tests/test_supplier_registration_ui.cjs tests/test_registration_verification_ui.cjs 2>&1 | tee ../mobile-evidence/node.log
       - name: Full app mobile browser journeys
         run: |
           set -euo pipefail
@@ -67,7 +67,7 @@ jobs:
             if curl -fsS http://127.0.0.1:4288/health && curl -fsS http://127.0.0.1:4289/health; then break; fi
             sleep 1
           done
-          MOBILE_EVIDENCE_DIR="$OUT/browser" PLAYWRIGHT_MODULE="$RUNNER_TEMP/mobile-deps/node_modules/playwright" node scripts/partner-mobile-acceptance/browser.mjs
+          REGISTRATION_TEST_MAILBOX="$RUNNER_TEMP/mobile-approved/mailbox.json" MOBILE_EVIDENCE_DIR="$OUT/browser" PLAYWRIGHT_MODULE="$RUNNER_TEMP/mobile-deps/node_modules/playwright" node scripts/partner-mobile-acceptance/browser.mjs
       - name: Hash raw evidence
         if: always()
         run: |

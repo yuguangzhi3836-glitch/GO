@@ -63,24 +63,24 @@ async function logoutConsumer(){try{await api('/v1/consumer/auth/logout',{method
 
 async function showConsumerRegister(){
  setVerticalVIMode(false);
- document.querySelector('#app').innerHTML=shell(`<h1 class="screen-title">注册 GO ID</h1><p class="sub">注册面向全国用户；条款正式确认后可提交。使用邮箱和密码登录，手机号选填。</p><form class="card" id="consumerRegister"><div class="field"><label for="regName">姓名</label><input id="regName" autocomplete="name" maxlength="100" required></div><div class="field"><label for="regEmail">邮箱</label><input id="regEmail" type="email" autocomplete="email" maxlength="254" required></div><div class="field"><label for="regPhone">手机号（选填，不作为已验证身份）</label><input id="regPhone" type="tel" autocomplete="tel" maxlength="32"></div><div class="field"><label for="regPwd">设置密码（至少 10 位）</label><input id="regPwd" type="password" minlength="10" maxlength="128" autocomplete="new-password" required></div><p id="registrationStatus" role="status" aria-live="polite">正在读取注册规则…</p><section id="registrationDocuments" aria-label="注册条款全文"></section><label><input id="regTerms" type="checkbox" required disabled>我同意 GO 用户服务条款、隐私政策及个人旅行信息库规则。旅行资料仅在我授权的旅行用途下释放。</label><p id="consumerRegisterError" role="alert"></p><button class="btn primary" id="doRegister" type="submit" disabled>正在获取注册规则…</button><button class="btn ghost" id="retryRegistrationRules" type="button" hidden>重新加载注册规则</button><button class="btn ghost" id="backLogin" type="button">返回登录</button></form>`,'home');
+ document.querySelector('#app').innerHTML=shell(`<h1 class="screen-title">注册 GO ID</h1><p class="sub">注册面向全国用户；条款正式确认后可提交。使用邮箱和密码登录，手机号选填。</p><form class="card" id="consumerRegister"><div class="field"><label for="regName">姓名</label><input id="regName" autocomplete="name" maxlength="100" required></div><div class="field"><label for="regEmail">邮箱</label><input id="regEmail" type="email" autocomplete="email" maxlength="254" required></div><div class="field"><label for="regPhone">手机号（选填，不作为已验证身份）</label><input id="regPhone" type="tel" autocomplete="tel" maxlength="32"></div><div class="field"><label for="regPwd">设置密码（至少 10 位）</label><input id="regPwd" type="password" minlength="10" maxlength="128" autocomplete="new-password" required></div>${GORegistrationVerification.markup()}<p id="registrationStatus" role="status" aria-live="polite">正在读取注册规则…</p><section id="registrationDocuments" aria-label="注册条款全文"></section><label><input id="regTerms" type="checkbox" required disabled>我同意 GO 用户服务条款、隐私政策及个人旅行信息库规则。旅行资料仅在我授权的旅行用途下释放。</label><p id="consumerRegisterError" role="alert"></p><button class="btn primary" id="doRegister" type="submit" disabled>正在获取注册规则…</button><button class="btn ghost" id="retryRegistrationRules" type="button" hidden>重新加载注册规则</button><button class="btn ghost" id="backLogin" type="button">返回登录</button></form>`,'home');
  bindNav();const form=$('#consumerRegister'),button=$('#doRegister'),errorBox=$('#consumerRegisterError');
  $('#backLogin').onclick=showAuth;
- let terms;const status=$('#registrationStatus'),retry=$('#retryRegistrationRules');
+ let terms;const verification=GORegistrationVerification.mount({form,email:$('#regEmail'),accepted:$('#regTerms'),policy:()=>terms,request:api,audience:'consumer'});const status=$('#registrationStatus'),retry=$('#retryRegistrationRules');
  form.addEventListener('invalid',event=>{errorBox.textContent='请检查'+(event.target.labels?.[0]?.textContent||'必填信息')+'，并确认同意注册条款。'},true);
  form.onsubmit=async event=>{
   event.preventDefault();if(button.disabled||!terms?.enabled||!form.isConnected||!form.reportValidity())return;
   if(!$('#regTerms').checked){errorBox.textContent='请先阅读并同意注册条款';return}
   button.disabled=true;button.textContent='正在注册…';errorBox.textContent='';
   try{
-   await api('/v1/consumer/auth/register',{method:'POST',body:JSON.stringify({email:$('#regEmail').value.trim(),password:$('#regPwd').value,display_name:$('#regName').value.trim(),phone:$('#regPhone').value.trim()||null,accepted_terms:true,term_versions:terms.versions,term_hashes:terms.hashes})});
+   await api('/v1/consumer/auth/register',{method:'POST',body:JSON.stringify({...verification.payload(),email:$('#regEmail').value.trim(),password:$('#regPwd').value,display_name:$('#regName').value.trim(),phone:$('#regPhone').value.trim()||null,accepted_terms:true,term_versions:terms.versions,term_hashes:terms.hashes})});
    if(!form.isConnected)return;await bootstrapConsumer();if(!form.isConnected)return;
    if(!state.me)throw new Error('账号已创建，但登录状态未确认，请返回登录。');
    showAccount(true);
   }catch(error){
    if(!form.isConnected)return;
    const mismatch=/TERMS|REGISTRATION_DISABLED/.test(error.message),exists=error.message==='EMAIL_ALREADY_REGISTERED';
-   errorBox.textContent=exists?'此邮箱已注册，请返回登录。':mismatch?'注册规则已更新或尚未开放，请重新加载后核对。':error.message;
+   errorBox.textContent=exists?'此邮箱已注册，请返回登录。':mismatch?'注册规则已更新或尚未开放，请重新加载后核对。':GORegistrationVerification.message(error);
    if(error.uncertain)errorBox.textContent+=' 如账号已创建，可直接返回登录，请勿连续重复提交。';
    button.disabled=mismatch||exists||Boolean(error.uncertain);button.textContent=exists?'请返回登录':error.uncertain?'请先返回登录核对':mismatch?'请重新加载规则':'重试注册';
    if(mismatch){terms=null;$('#regTerms').checked=false;$('#regTerms').disabled=true;retry.hidden=false}
@@ -92,7 +92,7 @@ async function showConsumerRegister(){
   try{
    const options=await api('/v1/consumer/auth/registration');if(!form.isConnected)return;
    terms=await GORegistrationTerms.mount({container:$('#registrationDocuments'),policy:options,request:api,isCurrent:()=>form.isConnected});if(!form.isConnected||!terms)return;
-   $('#regTerms').disabled=!terms.enabled;button.disabled=!terms.enabled;
+   $('#regTerms').disabled=!terms.enabled;button.disabled=!terms.enabled;verification.update();
    button.textContent=terms.enabled?'注册 GO ID':'注册尚未开放';
    status.textContent=terms.enabled?'请核对信息、阅读条款并勾选同意。':options.acceptance_enabled?'当前注册服务尚未开放：账号验证服务仍待完成。已有账号可返回登录。':'当前注册服务尚未开放：注册条款仍待确认。已有账号可返回登录。';
    retry.hidden=terms.enabled;

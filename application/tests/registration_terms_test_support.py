@@ -15,7 +15,7 @@ def approved_terms_fixture(monkeypatch):
     # Synthetic fixture models an approved verification runtime only for local
     # identity-flow tests. It never approves the shipped legal drafts.
     from go_hotel.core.config import settings
-    monkeypatch.setattr(settings, 'registration_verification_enabled', True)
+    synthetic_mail_runtime(monkeypatch)
     def policy(audience):
         versions=CONSUMER_REGISTRATION_TERMS if audience=='consumer' else SUPPLIER_REGISTRATION_TERMS
         digest=hashes(versions)
@@ -38,4 +38,24 @@ def register_synthetic_consumer(client, *, json):
         payload = {**json, 'accepted_terms': True,
                    'term_versions': dict(CONSUMER_REGISTRATION_TERMS),
                    'term_hashes': hashes(CONSUMER_REGISTRATION_TERMS)}
+        payload = with_verification(payload, 'consumer')
         return client.post('/v1/consumer/auth/register', json=payload)
+
+
+def synthetic_mail_runtime(monkeypatch):
+    """Synthetic mail transport only; durable challenge checks still run."""
+    from go_hotel.core.config import settings
+    from go_hotel.services import registration_email
+    monkeypatch.setattr(settings, 'registration_verification_enabled', True)
+    monkeypatch.setattr(settings, 'jwt_signing_key', 'isolated-registration-test-key-32bytes-only')
+    monkeypatch.setattr(registration_email, 'configuration', lambda: ({'test_only': True}, 'not-a-real-password'))
+
+
+def with_verification(payload, audience):
+    import pytest
+    from go_hotel.services import registration_verification as verification, registration_email
+    sent=[]
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(registration_email, 'send_code', lambda email,code: sent.append(code))
+        result=verification.issue(audience,payload['email'],'fixture-only',{'versions':payload['term_versions'],'term_hashes':payload['term_hashes']})
+    return {**payload,'challenge_id':result['challenge_id'],'verification_code':sent[-1]}

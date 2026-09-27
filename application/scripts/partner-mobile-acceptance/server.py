@@ -30,11 +30,20 @@ if '--approved-test-policy' in sys.argv:
  from go_hotel.services import registration_terms as terms
  from go_hotel.api.routes import registration_terms as routes
  settings.registration_verification_enabled=True
+ settings.jwt_signing_key='isolated-mobile-registration-key-32bytes'
+ from go_hotel.services import registration_email
+ registration_email.configuration=lambda: ({'TEST_ONLY':True},'not-real')
+ def capture_test_mail(address,code):
+  mailbox=state/'mailbox.json'
+  entries=json.loads(mailbox.read_text()) if mailbox.exists() else {}
+  entries[address]=code
+  mailbox.write_text(json.dumps(entries));mailbox.chmod(0o600)
+ registration_email.send_code=capture_test_mail
  def document(term_id,version):
   content='SYNTHETIC ISOLATED TEST TERMS: '+term_id
   return {'id':term_id,'version':version,'title':'隔离验收条款','sha256':hashlib.sha256(content.encode()).hexdigest(),'status':'APPROVED','content':content,'content_url':'/v1/registration-terms/'+term_id+'/'+version}
  def policy(audience):
-  docs=[document(k,'isolated-ui-v1') for k in ['consumer_service_terms','privacy_policy','personal_vault_terms']]
+  docs=[document(k,'isolated-ui-v1') for k in terms._REQUIRED[audience]]
   return {'enabled':True,'acceptance_enabled':True,'versions':{d['id']:d['version'] for d in docs},'term_hashes':{d['id']:d['sha256'] for d in docs},'documents':docs}
  terms.registration_terms_status=policy;terms.require_registration_terms_ready=policy;routes.read_registration_term=document
 print(json.dumps({'mode':'ISOLATED_SQLITE_FULL_APP','synthetic_policy':'--approved-test-policy' in sys.argv,'port':int(sys.argv[2])}),flush=True)
