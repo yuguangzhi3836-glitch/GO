@@ -86,8 +86,10 @@ def issue(audience, email, client_ip, policy):
             raise ValueError('REGISTRATION_CODE_RATE_LIMITED')
         values = dict(subject_key=key, challenge_id=challenge_id, code_digest=digest(challenge_id + '\0' + code), policy_digest=policy_digest(policy), state='SENDING', attempts=0, expires_ms=t + TTL_MS, created_ms=t, consumed_by=None)
         stmt = insert_for(s, Challenge).values(**values)
-        result = s.execute(stmt.on_conflict_do_update(index_elements=['subject_key'], set_=values, where=Challenge.created_ms <= t - 60_000))
-        if result.rowcount != 1:
+        # INSERT rowcount is not portable across drivers. RETURNING also yields
+        # no row when the concurrent resend predicate rejects the update.
+        written = s.scalar(stmt.on_conflict_do_update(index_elements=['subject_key'], set_=values, where=Challenge.created_ms <= t - 60_000).returning(Challenge.challenge_id))
+        if written != challenge_id:
             raise ValueError('REGISTRATION_CODE_RATE_LIMITED')
     try:
         registration_email.send_code(email, code)

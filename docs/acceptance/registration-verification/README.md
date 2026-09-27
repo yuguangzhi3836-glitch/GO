@@ -38,6 +38,8 @@
 
 ## 验收与未完成现场项
 
+PostgreSQL CI 修复：`fcc7faae` 的手机旅程通过，但注册、票务和租车/景点工作流中的5个任务失败；回溯定位到验证码 upsert 后依赖 INSERT rowcount，导致有效请求误报限流。改为 `RETURNING challenge_id` 验证实际写入结果，保留条件更新与事务；本地17项验证码测试通过（`upsert-junit.xml`），PostgreSQL 修复效果以新 head CI 为准，不能用 SQLite 结果替代。
+
 2026-09-27 追加整合前修复：旧 `PUT /v1/supplier/go-identity/programs/{program_type}` 现在与批量配置入口一致要求 `supplier:fare-rules`，关闭独立预检复现的 READ_ONLY 写入漏洞。真实登录与 CSRF 回归覆盖只读拒绝且无写入、有权限供应商正常保存；手机业务与权益服务合计18项本地通过，证据为 `permissions-junit.xml`。此追加修复在 #268 中，#267 固定提交未改变；不是正式 C13 通过结论。
 
 本地隔离 SQLite/API：74项通过；Node逻辑31项通过。覆盖邮箱/用途/条款绑定、错码锁定、重放、过期、重发、并发发送/消费、限流、账号失败回滚、C/B租户边界、既有秘密适配/TLS、草稿阻断、资料同步与迁移降级保护。
