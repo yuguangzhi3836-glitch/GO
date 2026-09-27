@@ -29,6 +29,8 @@ C14_ARTIFACT = re.compile(r"^c13c14-lite-c14-([0-9a-f]{40})$")
 C13_ARTIFACT = re.compile(r"^c13c14-lite-c13-([0-9a-f]{40})$")
 PASSLIKE_C14 = {"PASS_SCOPED", "NOT_APPLICABLE"}
 PASSLIKE_C13 = {"PASS_SCOPED"}
+PRODUCTION_REVIEW_BRANCH = "main"
+PRODUCTION_REVIEW_EVENT = "workflow_dispatch"
 
 
 class NonProductionArtifact(ValueError):
@@ -152,6 +154,10 @@ class GitHubAPI:
         with urllib.request.urlopen(storage_request, timeout=60) as response:
             return response.read()
 
+    def get_workflow_run(self, run_id: int) -> dict:
+        encoded_repo = "/".join(urllib.parse.quote(part, safe="") for part in self.repository.split("/"))
+        return self.get_json(f"/repos/{encoded_repo}/actions/runs/{run_id}")
+
     def get_issue(self, issue_number: int) -> dict:
         encoded_repo = "/".join(urllib.parse.quote(part, safe="") for part in self.repository.split("/"))
         return self.get_json(f"/repos/{encoded_repo}/issues/{issue_number}")
@@ -198,7 +204,20 @@ def collect_records(api: GitHubAPI, cutoff: datetime) -> tuple[list[ReviewRecord
             continue
         expected_sha = match.group(1)
         artifact_id = artifact.get("id")
+        workflow_run = artifact.get("workflow_run") or {}
+        run_id = workflow_run.get("id")
+        if run_id is None:
+            warnings.append(
+                f"artifact {artifact_id} ({name}): workflow run identity missing; excluded"
+            )
+            continue
         try:
+            run = api.get_workflow_run(int(run_id))
+            if (
+                run.get("head_branch") != PRODUCTION_REVIEW_BRANCH
+                or run.get("event") != PRODUCTION_REVIEW_EVENT
+            ):
+                continue
             bundle = _bundle_from_zip(api.download_artifact(int(artifact_id)), role)
             candidate_sha = str(bundle.get("candidate_sha") or "")
             if candidate_sha != expected_sha:

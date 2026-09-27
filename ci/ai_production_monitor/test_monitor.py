@@ -98,5 +98,109 @@ class MonitorTests(unittest.TestCase):
             monitor._bundle_from_zip(buf.getvalue(), "c14")
 
 
+    def _sealed_artifact_zip(self, role, sha, verdict, run_id):
+        payload = {
+            "cell_id": role.upper(),
+            "candidate_sha": sha,
+            "verdict": verdict,
+            "issued_at": "2026-09-26T00:00:00Z",
+            "github_run_id": run_id,
+        }
+        buf = BytesIO()
+        with zipfile.ZipFile(buf, "w") as archive:
+            archive.writestr(f"{role}_bundle.json", json.dumps(payload))
+        return buf.getvalue()
+
+    def test_collect_records_includes_only_main_workflow_dispatch_runs(self):
+        formal_run = 101
+        test_push_run = 102
+        test_dispatch_run = 103
+        artifacts = [
+            {
+                "id": 201,
+                "name": f"c13c14-lite-c14-{self.sha1}",
+                "created_at": "2026-09-26T00:00:00Z",
+                "workflow_run": {"id": formal_run},
+            },
+            {
+                "id": 202,
+                "name": f"c13c14-lite-c14-{self.sha2}",
+                "created_at": "2026-09-26T00:00:00Z",
+                "workflow_run": {"id": test_push_run},
+            },
+            {
+                "id": 203,
+                "name": f"c13c14-lite-c14-{'c' * 40}",
+                "created_at": "2026-09-26T00:00:00Z",
+                "workflow_run": {"id": test_dispatch_run},
+            },
+        ]
+        bundles = {
+            201: self._sealed_artifact_zip("c14", self.sha1, "PASS_SCOPED", formal_run),
+            202: self._sealed_artifact_zip("c14", self.sha2, "PASS_SCOPED", test_push_run),
+            203: self._sealed_artifact_zip("c14", "c" * 40, "PASS_SCOPED", test_dispatch_run),
+        }
+
+        class FakeAPI:
+            def __init__(self):
+                self.downloaded = []
+                self.runs = {
+                    formal_run: {"head_branch": "main", "event": "workflow_dispatch"},
+                    test_push_run: {
+                        "head_branch": "test/c14-r1-replay-20260927",
+                        "event": "push",
+                    },
+                    test_dispatch_run: {
+                        "head_branch": "test/c14-r1-replay-20260927",
+                        "event": "workflow_dispatch",
+                    },
+                }
+
+            def list_recent_artifacts(self, cutoff):
+                return artifacts
+
+            def get_workflow_run(self, run_id):
+                return self.runs[run_id]
+
+            def download_artifact(self, artifact_id):
+                self.downloaded.append(artifact_id)
+                return bundles[artifact_id]
+
+        api = FakeAPI()
+        records, warnings = monitor.collect_records(
+            api, datetime(2026, 9, 25, 0, 0, tzinfo=timezone.utc)
+        )
+        self.assertEqual(warnings, [])
+        self.assertEqual([(r.role, r.candidate_sha, r.verdict) for r in records], [
+            ("c14", self.sha1, "PASS_SCOPED"),
+        ])
+        self.assertEqual(api.downloaded, [201])
+
+    def test_collect_records_fails_closed_when_artifact_has_no_run_identity(self):
+        artifact = {
+            "id": 301,
+            "name": f"c13c14-lite-c14-{self.sha1}",
+            "created_at": "2026-09-26T00:00:00Z",
+        }
+
+        class FakeAPI:
+            def list_recent_artifacts(self, cutoff):
+                return [artifact]
+
+            def get_workflow_run(self, run_id):
+                raise AssertionError("run lookup must not happen without a run id")
+
+            def download_artifact(self, artifact_id):
+                raise AssertionError("unattributed artifact must not be downloaded")
+
+        records, warnings = monitor.collect_records(
+            FakeAPI(), datetime(2026, 9, 25, 0, 0, tzinfo=timezone.utc)
+        )
+        self.assertEqual(records, [])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("workflow run identity missing; excluded", warnings[0])
+
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
