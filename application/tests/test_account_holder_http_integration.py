@@ -58,7 +58,7 @@ def test_external_order_http_roundtrip_preserves_owner_and_connector_authority(c
 
 def test_supplier_bff_registration_keeps_terms_and_creates_owned_draft(client, monkeypatch):
     from go_hotel.api.routes.bff import SUPPLIER_REGISTRATION_TERMS
-    from registration_terms_test_support import approved_terms_fixture, hashes
+    from registration_terms_test_support import approved_terms_fixture, hashes, with_verification
     approved_terms_fixture(monkeypatch)
     body = {'email': 'http-supplier@example.test', 'password': 'isolated-pass-123',
             'organization_name': 'HTTP Test Hotel', 'contact_name': 'Test Owner',
@@ -68,7 +68,7 @@ def test_supplier_bff_registration_keeps_terms_and_creates_owned_draft(client, m
     assert rejected.status_code == 422, rejected.text
     with SessionLocal() as session:
         assert session.scalar(select(IdentityUserRow).where(IdentityUserRow.username == body['email'])) is None
-    response = client.post('/bff/auth/supplier/register', json=body | {'accepted_terms': True})
+    response = client.post('/bff/auth/supplier/register', json=with_verification(body | {'accepted_terms': True}, 'supplier'))
     assert response.status_code == 201, response.text
     data = response.json()['data']
     with SessionLocal() as session:

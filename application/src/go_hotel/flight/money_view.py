@@ -1,24 +1,25 @@
-"""Confirmed capture/refund facts across the original flight and its changes."""
+"""Confirmed capture/refund facts across flight or attraction orders and changes."""
 from sqlalchemy import select,or_,and_
 from sqlalchemy.orm import object_session
 from go_hotel.db.models import (PaymentOrderRootRow as Root,PaymentOrderFactBindingRow as Binding,
     OmnichannelPaymentIntentRow as Intent,OmnichannelMoneyMovementRow as Movement,
-    OmnichannelLedgerEntryRow as Entry,FlightChangeQuoteRow as Quote)
+    OmnichannelLedgerEntryRow as Entry,FlightChangeQuoteRow,AttractionChangeQuoteRow)
 
 
-def read(order):
+def read(order, *, vertical='FLIGHT'):
+    Quote={'FLIGHT':FlightChangeQuoteRow,'ATTRACTION':AttractionChangeQuoteRow}[vertical]
     unknown={'verified':False,'currency':order.currency,'captured_minor':None,'refunded_minor':None,'net_minor':None}
     s=object_session(order)
     if s is None:return unknown
     qids=select(Quote.quote_id).where(Quote.order_id==order.order_id)
-    roots=list(s.scalars(select(Root).where(or_(and_(Root.business_type=='FLIGHT_ORDER',Root.business_id==order.order_id),
-        and_(Root.business_type=='FLIGHT_CHANGE',Root.business_id.in_(qids))))))
+    roots=list(s.scalars(select(Root).where(or_(and_(Root.business_type==vertical+'_ORDER',Root.business_id==order.order_id),
+        and_(Root.business_type==vertical+'_CHANGE',Root.business_id.in_(qids))))))
     if not roots:
         return {'verified':True,'currency':order.currency,'captured_minor':0,'refunded_minor':0,'net_minor':0,'has_pending':False} if order.status=='PAYMENT_PENDING' else unknown
-    base=[r for r in roots if r.business_type=='FLIGHT_ORDER']
+    base=[r for r in roots if r.business_type==vertical+'_ORDER']
     if len(base)!=1:return unknown
     quotes=list(s.scalars(select(Quote).where(Quote.order_id==order.order_id)))
-    root_quotes={r.business_id for r in roots if r.business_type=='FLIGHT_CHANGE'}
+    root_quotes={r.business_id for r in roots if r.business_type==vertical+'_CHANGE'}
     if any(q.total_due_minor>0 and q.status not in {'QUOTED','EXPIRED'} and q.quote_id not in root_quotes for q in quotes):return unknown
     captured=refunded=0;pending=False
     for root in roots:
@@ -37,6 +38,10 @@ def read(order):
             entries=list(s.scalars(select(Entry).where(Entry.transaction_id==m.money_movement_id)))
             if len(entries)!=2 or {e.direction for e in entries}!={'DEBIT','CREDIT'} or any(
                 (e.payment_intent_id,e.amount_minor,e.currency,e.entry_type)!=(i.payment_intent_id,m.amount_minor,order.currency,m.movement_type) for e in entries):return unknown
+            from go_hotel.services.unified_money_movement import business_ledger_account_code, digest
+            accounts={(f'PAYMENT_CLEARING:{i.selected_channel}','CREDIT' if m.movement_type=='REFUND' else 'DEBIT'),
+                (business_ledger_account_code(i.business_type,i.business_id),'DEBIT' if m.movement_type=='REFUND' else 'CREDIT')}
+            if {(e.account_code,e.direction) for e in entries}!=accounts or any(e.evidence_hash!=digest({'movement':m.money_movement_id}) for e in entries):return unknown
             if m.movement_type=='REFUND' and m.parent_movement_id not in {c.money_movement_id for c in caps}:return unknown
             if m.movement_type=='CAPTURE' and m.parent_movement_id:
                 auth=byid.get(m.parent_movement_id)

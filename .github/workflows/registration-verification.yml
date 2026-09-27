@@ -1,0 +1,58 @@
+name: Registration verification isolated PostgreSQL
+on:
+  pull_request:
+    paths:
+      - 'application/**registration**'
+      - 'application/src/go_hotel/consumer/service.py'
+      - 'application/src/go_hotel/services/supplier_onboarding.py'
+      - 'application/src/go_hotel/api/routes/bff.py'
+      - '.github/workflows/registration-verification.yml'
+permissions:
+  contents: read
+jobs:
+  registration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_PASSWORD: isolated-registration-only
+          POSTGRES_DB: registration_test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install './application[dev]'
+      - name: Bind source
+        run: |
+          mkdir -p registration-evidence
+          python - <<'PY'
+          import subprocess,json,hashlib
+          from pathlib import Path
+          head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert head=='${{ github.event.pull_request.head.sha }}'
+          paths=subprocess.check_output(['git','ls-files','application'],text=True).splitlines()
+          Path('registration-evidence/source.json').write_text(json.dumps({p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in paths},indent=2))
+          Path('registration-evidence/binding.json').write_text(json.dumps({'head':head,'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'database':'isolated PostgreSQL 18.4; some legacy fixture suites use SQLite','mail':'synthetic SMTP transport, no outbound mail','live_registration':'NOT_ENABLED','deployment':'NOT_RUN'},indent=2))
+          PY
+      - name: Registration evidence
+        working-directory: application
+        env:
+          GO_TEST_DATABASE_URL: postgresql+psycopg://postgres:isolated-registration-only@localhost:5432/registration_test
+        run: |
+          set -o pipefail
+          python -m pytest tests/test_registration_privacy.py tests/test_registration_privacy_admin.py tests/test_registration_verification.py tests/test_registration_profile_sync.py tests/test_registration_migration.py tests/test_registration_terms_registry.py tests/test_consumer_registration_open.py tests/test_registration_terms_admission.py tests/test_nationwide_registration_full_app.py tests/test_supplier_registration_nationwide.py tests/test_account_holder_http_integration.py --junitxml=../registration-evidence/junit.xml 2>&1 | tee ../registration-evidence/pytest.log
+          node --test tests/test_consumer_registration_ui.cjs tests/test_supplier_registration_ui.cjs tests/test_registration_verification_ui.cjs tests/test_registration_terms_reader.cjs 2>&1 | tee ../registration-evidence/node.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: registration-${{ github.event.pull_request.head.sha }}
+          path: registration-evidence/
+          retention-days: 30

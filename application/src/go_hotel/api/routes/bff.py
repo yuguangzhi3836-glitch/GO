@@ -1,7 +1,9 @@
 from __future__ import annotations
+from go_hotel.services import registration_privacy
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from go_hotel.core.config import settings
+from go_hotel.services import registration_verification as registration_verification_service
 from go_hotel.security.service import identity_service, Principal, uid, now
 from go_hotel.security.deps import current_principal
 from go_hotel.db.session import SessionLocal
@@ -32,9 +34,12 @@ class SupplierRegisterBody(BaseModel):
     organization_name:str=Field(min_length=2,max_length=160)
     contact_name:str=Field(min_length=1,max_length=80)
     phone:str|None=None
-    accepted_terms:bool=False
+    accepted_terms:bool=Field(default=False,strict=True)
     term_versions:dict[str,str]=Field(default_factory=dict)
     term_hashes:dict[str,str]=Field(default_factory=dict)
+    registration_decisions: dict[str, str] = Field(default_factory=dict)
+    challenge_id: str = Field(default="", max_length=64)
+    verification_code: str = Field(default="", max_length=6)
     hotel_name:str|None=Field(default=None,min_length=2,max_length=160)
     province:str=Field(default='',max_length=80)
     city:str=Field(default='',max_length=80)
@@ -79,7 +84,7 @@ def supplier_registration_terms():
         policy=registration_terms_service.registration_terms_status('supplier')
     except (ValueError, OSError, KeyError) as exc:
         raise HTTPException(503,detail='REGISTRATION_TERMS_UNAVAILABLE') from exc
-    verification_ready=bool(settings.registration_verification_enabled)
+    verification_ready=registration_verification_service.ready()
     return {'data':{**policy,'required':True,'enabled':bool(policy['acceptance_enabled'] and verification_ready),
         'registration_scope':'NATIONWIDE','publication_requires_verification':True,
         'release_gate':{'registration_verification':{'required':True,'implemented':verification_ready,'status':'READY' if verification_ready else 'BLOCKED','reason':None if verification_ready else 'LIVE_EMAIL_OR_PHONE_VERIFICATION_EVIDENCE_REQUIRED'},
@@ -96,7 +101,7 @@ def supplier_register(body:SupplierRegisterBody,request:Request,response:Respons
         policy=registration_terms_service.require_registration_terms_ready('supplier')
     except (ValueError, OSError, KeyError) as exc:
         raise HTTPException(503,detail='REGISTRATION_TERMS_NOT_READY') from exc
-    if not settings.registration_verification_enabled:
+    if not registration_verification_service.ready():
         raise HTTPException(503,detail='REGISTRATION_VERIFICATION_NOT_READY')
     if body.term_versions != policy['versions']:
         raise HTTPException(409,detail='SUPPLIER_TERMS_VERSION_MISMATCH')
@@ -109,15 +114,18 @@ def supplier_register(body:SupplierRegisterBody,request:Request,response:Respons
             action='SUPPLIER_REGISTRATION_TERMS_ACCEPTED',resource_type='SUPPLIER_REGISTRATION',resource_id=supplier_id,request_id=getattr(request.state,'request_id',None),
             client_ip=request.client.host if request.client else None,http_method='POST',path='/bff/auth/supplier/register',before_state=None,
             after_state={'registration_state':'ACCOUNT_CREATED_TERMS_ACCEPTED'},decision_id=None,evidence_id=None,approval_id=None,
-            metadata_json={'organization_name':body.organization_name,'contact_name':body.contact_name,'phone_provided':bool(body.phone),'term_versions':policy['versions'],'term_hashes':policy['term_hashes'],'accepted_once':True},created_at=t,
+            metadata_json={'organization_name':body.organization_name,'contact_name':body.contact_name,'phone_provided':bool(body.phone),'term_versions':policy['versions'],'term_hashes':policy['term_hashes'],'accepted_once':True,'email_verified':True,'verification_challenge_id':body.challenge_id},created_at=t,
         )
     try:
+        registration_privacy.validate_decisions(policy,body.registration_decisions)
+        proof = registration_verification_service.check("supplier", email, body.challenge_id, body.verification_code, policy)
+        proof.update(audience="supplier",policy=policy,registration_decisions=body.registration_decisions)
         registration=supplier_onboarding_service.register({'username':email,'password':body.password,'hotel':{
             'name_zh':body.hotel_name or body.organization_name,'property_type':'HOTEL',
             'address':{'country_code':'CN','province':body.province.strip(),'city':body.city.strip(),'street':body.street_address.strip()},
             'legal':{'declared_organization_name':body.organization_name},
             'contacts':{'contact_name':body.contact_name,'phone':body.phone,'email':email},
-        }}, audit_factory=registration_audit)
+        }}, audit_factory=registration_audit, verification_proof=proof)
     except ValueError as exc:
         raise HTTPException(409,detail=str(exc)) from exc
     supplier_id=registration['supplier_id'];user_id=registration['user_id'];property_id=registration['property_id']

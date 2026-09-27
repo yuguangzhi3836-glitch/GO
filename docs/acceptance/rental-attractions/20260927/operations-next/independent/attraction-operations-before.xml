@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="5" time="11.622" timestamp="2026-09-26T22:34:32.286997+03:00" hostname="2421f535f56f"><testcase classname="independent-rental-attractions.test_attraction_operations_independent" name="test_capture_ledger_corruption_cannot_verify[account_code-WRONG]" time="5.738"><failure message="AssertionError: {&quot;data&quot;:{&quot;workflow&quot;:{&quot;revision&quot;:5,&quot;stage&quot;:&quot;VERIFIED&quot;,&quot;assignee&quot;:&quot;usr_7a815b86c24c4563af0ba91b6d26795b&quot;,&quot;receipt&quot;:{&quot;state&quot;:&quot;CONFIRMED&quot;,&quot;evidence_reference&quot;:&quot;isolated://attraction-receipt&quot;,&quot;supplier_reference&quot;:&quot;ATTR-OPS&quot;,&quot;voucher_code&quot;:&quot;VOUCHER-OPS&quot;,&quot;quote_id&quot;:&quot;attr_chg_337c6a9399d94903&quot;},&quot;receipt_actor&quot;:&quot;usr_7a815b86c24c4563af0ba91b6d26795b&quot;,&quot;applied_by&quot;:&quot;usr_cb3b623d26e74e0e83563221a516b49f&quot;,&quot;contributors&quot;:[&quot;usr_7a815b86c24c4563af0ba91b6d26795b&quot;,&quot;usr_cb3b623d26e74e0e83563221a516b49f&quot;]},&quot;idempotent_replay&quot;:false}}&#10;assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">workspace = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC05MGE4Zjg2MGFlMDE0NmQ4YjJkMzViZGYwMmE5YjllOSIsInZlciI6MX0.lxc-gYetghlL7RXqQL5X6T-Ms8MMzGrSVoDoo0DK8EY'}, ...}
+field = 'account_code', value = 'WRONG'
+
+    @pytest.mark.parametrize('field,value',[('account_code','WRONG'),('evidence_hash','0'*64)])
+    def test_capture_ledger_corruption_cannot_verify(workspace,field,value):
+        w=workspace;prepare(w);command(w,'APPLY')
+        with SessionLocal.begin() as s:
+            entry=s.scalar(select(OmnichannelLedgerEntryRow).where(OmnichannelLedgerEntryRow.entry_type=='CAPTURE'))
+            assert entry is not None
+            setattr(entry,field,value)
+&gt;       before=money();command(w,'VERIFY','verifier',status=409);assert money()==before
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../independent-rental-attractions/test_attraction_operations_independent.py:16: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+w = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC05MGE4Zjg2MGFlMDE0NmQ4YjJkMzViZGYwMmE5YjllOSIsInZlciI6MX0.lxc-gYetghlL7RXqQL5X6T-Ms8MMzGrSVoDoo0DK8EY'}, ...}
+action = 'VERIFY', actor = 'verifier', receipt = None, status = 409
+body = {'action': 'VERIFY', 'command_id': '375ad3d00caa4ae38e6c2a5196c96feb', 'expected_revision': 4, 'note': 'isolated normal role operation'}
+
+    def command(w,action,actor='operator',receipt=None,status=200,body=None):
+        path=w['sp'] if actor in {'supplier','readonly','foreign'} else w['ap']
+        if body is None:
+            view=w['client'].get(w['ap'],headers=w['operator']);assert view.status_code==200,view.text
+            body={'action':action,'command_id':uuid4().hex,'expected_revision':view.json()['data']['workflow']['revision'],
+                  'note':'isolated normal role operation'}
+            if receipt is not None:body['receipt']=receipt
+        r=w['client'].post(path,headers=w[actor],json=body)
+&gt;       assert r.status_code==status,r.text
+E       AssertionError: {"data":{"workflow":{"revision":5,"stage":"VERIFIED","assignee":"usr_7a815b86c24c4563af0ba91b6d26795b","receipt":{"state":"CONFIRMED","evidence_reference":"isolated://attraction-receipt","supplier_reference":"ATTR-OPS","voucher_code":"VOUCHER-OPS","quote_id":"attr_chg_337c6a9399d94903"},"receipt_actor":"usr_7a815b86c24c4563af0ba91b6d26795b","applied_by":"usr_cb3b623d26e74e0e83563221a516b49f","contributors":["usr_7a815b86c24c4563af0ba91b6d26795b","usr_cb3b623d26e74e0e83563221a516b49f"]},"idempotent_replay":false}}
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_attraction_operations_runtime.py:37: AssertionError</failure></testcase><testcase classname="independent-rental-attractions.test_attraction_operations_independent" name="test_capture_ledger_corruption_cannot_verify[evidence_hash-0000000000000000000000000000000000000000000000000000000000000000]" time="0.853"><failure message="AssertionError: {&quot;data&quot;:{&quot;workflow&quot;:{&quot;revision&quot;:5,&quot;stage&quot;:&quot;VERIFIED&quot;,&quot;assignee&quot;:&quot;usr_4145c6c1db1b4894bdb54529d26603f2&quot;,&quot;receipt&quot;:{&quot;state&quot;:&quot;CONFIRMED&quot;,&quot;evidence_reference&quot;:&quot;isolated://attraction-receipt&quot;,&quot;supplier_reference&quot;:&quot;ATTR-OPS&quot;,&quot;voucher_code&quot;:&quot;VOUCHER-OPS&quot;,&quot;quote_id&quot;:&quot;attr_chg_5bad07a4f1d14a3e&quot;},&quot;receipt_actor&quot;:&quot;usr_4145c6c1db1b4894bdb54529d26603f2&quot;,&quot;applied_by&quot;:&quot;usr_293d2e7f468b45ec847b69875a4632b4&quot;,&quot;contributors&quot;:[&quot;usr_293d2e7f468b45ec847b69875a4632b4&quot;,&quot;usr_4145c6c1db1b4894bdb54529d26603f2&quot;]},&quot;idempotent_replay&quot;:false}}&#10;assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">workspace = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC0zNjU0ODE0MzRmYmU0MjEyYTkwZGE3YjFkYTM5M2I4YiIsInZlciI6MX0.mN362MsdotwBzgz6sT4ylYF97ZX6dH4rHdIy9N2r57A'}, ...}
+field = 'evidence_hash'
+value = '0000000000000000000000000000000000000000000000000000000000000000'
+
+    @pytest.mark.parametrize('field,value',[('account_code','WRONG'),('evidence_hash','0'*64)])
+    def test_capture_ledger_corruption_cannot_verify(workspace,field,value):
+        w=workspace;prepare(w);command(w,'APPLY')
+        with SessionLocal.begin() as s:
+            entry=s.scalar(select(OmnichannelLedgerEntryRow).where(OmnichannelLedgerEntryRow.entry_type=='CAPTURE'))
+            assert entry is not None
+            setattr(entry,field,value)
+&gt;       before=money();command(w,'VERIFY','verifier',status=409);assert money()==before
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../independent-rental-attractions/test_attraction_operations_independent.py:16: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+w = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC0zNjU0ODE0MzRmYmU0MjEyYTkwZGE3YjFkYTM5M2I4YiIsInZlciI6MX0.mN362MsdotwBzgz6sT4ylYF97ZX6dH4rHdIy9N2r57A'}, ...}
+action = 'VERIFY', actor = 'verifier', receipt = None, status = 409
+body = {'action': 'VERIFY', 'command_id': '80f4ca9b6de2488983a2628b9c899d2c', 'expected_revision': 4, 'note': 'isolated normal role operation'}
+
+    def command(w,action,actor='operator',receipt=None,status=200,body=None):
+        path=w['sp'] if actor in {'supplier','readonly','foreign'} else w['ap']
+        if body is None:
+            view=w['client'].get(w['ap'],headers=w['operator']);assert view.status_code==200,view.text
+            body={'action':action,'command_id':uuid4().hex,'expected_revision':view.json()['data']['workflow']['revision'],
+                  'note':'isolated normal role operation'}
+            if receipt is not None:body['receipt']=receipt
+        r=w['client'].post(path,headers=w[actor],json=body)
+&gt;       assert r.status_code==status,r.text
+E       AssertionError: {"data":{"workflow":{"revision":5,"stage":"VERIFIED","assignee":"usr_4145c6c1db1b4894bdb54529d26603f2","receipt":{"state":"CONFIRMED","evidence_reference":"isolated://attraction-receipt","supplier_reference":"ATTR-OPS","voucher_code":"VOUCHER-OPS","quote_id":"attr_chg_5bad07a4f1d14a3e"},"receipt_actor":"usr_4145c6c1db1b4894bdb54529d26603f2","applied_by":"usr_293d2e7f468b45ec847b69875a4632b4","contributors":["usr_293d2e7f468b45ec847b69875a4632b4","usr_4145c6c1db1b4894bdb54529d26603f2"]},"idempotent_replay":false}}
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_attraction_operations_runtime.py:37: AssertionError</failure></testcase><testcase classname="independent-rental-attractions.test_attraction_operations_independent" name="test_followup_cannot_close_new_pending_change" time="0.903"><failure message="AssertionError: {&quot;data&quot;:{&quot;workflow&quot;:{&quot;revision&quot;:6,&quot;stage&quot;:&quot;CLOSED&quot;,&quot;assignee&quot;:&quot;usr_450822bbba604bc9822248de35d86e2b&quot;,&quot;receipt&quot;:{&quot;state&quot;:&quot;CONFIRMED&quot;,&quot;evidence_reference&quot;:&quot;isolated://attraction-receipt&quot;,&quot;supplier_reference&quot;:&quot;ATTR-OPS&quot;,&quot;voucher_code&quot;:&quot;VOUCHER-OPS&quot;,&quot;quote_id&quot;:&quot;attr_chg_de2c129572f741fe&quot;},&quot;receipt_actor&quot;:&quot;usr_450822bbba604bc9822248de35d86e2b&quot;,&quot;applied_by&quot;:&quot;usr_d0eb615ec4704fb483ea0a0a2020968f&quot;,&quot;contributors&quot;:[&quot;usr_450822bbba604bc9822248de35d86e2b&quot;,&quot;usr_d0eb615ec4704fb483ea0a0a2020968f&quot;]},&quot;idempotent_replay&quot;:false}}&#10;assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">workspace = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC03YjRiZGI3Zjg5NTM0YmU1OTA5OTAwODMxYzA4M2IxMyIsInZlciI6MX0.0eq5dUd475Egw-xjy7EdydvFv-gTguayyHhFJRfG4X4'}, ...}
+
+    def test_followup_cannot_close_new_pending_change(workspace):
+        w=workspace;prepare(w);command(w,'APPLY');command(w,'VERIFY','verifier')
+        q=w['svc'].change_quote(w['owner'],w['oid'],'2026-09-17','16:00')
+        w['svc'].execute_change(w['owner'],w['oid'],q['quote_id'])
+        assert w['svc'].get(w['owner'],w['oid'])['status']=='UNKNOWN_EXTERNAL_STATE'
+&gt;       before=money();command(w,'FOLLOW_UP',status=409);assert money()==before
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../independent-rental-attractions/test_attraction_operations_independent.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+w = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC03YjRiZGI3Zjg5NTM0YmU1OTA5OTAwODMxYzA4M2IxMyIsInZlciI6MX0.0eq5dUd475Egw-xjy7EdydvFv-gTguayyHhFJRfG4X4'}, ...}
+action = 'FOLLOW_UP', actor = 'operator', receipt = None, status = 409
+body = {'action': 'FOLLOW_UP', 'command_id': '4c56d8064d734212bd1e1254332fda8e', 'expected_revision': 5, 'note': 'isolated normal role operation'}
+
+    def command(w,action,actor='operator',receipt=None,status=200,body=None):
+        path=w['sp'] if actor in {'supplier','readonly','foreign'} else w['ap']
+        if body is None:
+            view=w['client'].get(w['ap'],headers=w['operator']);assert view.status_code==200,view.text
+            body={'action':action,'command_id':uuid4().hex,'expected_revision':view.json()['data']['workflow']['revision'],
+                  'note':'isolated normal role operation'}
+            if receipt is not None:body['receipt']=receipt
+        r=w['client'].post(path,headers=w[actor],json=body)
+&gt;       assert r.status_code==status,r.text
+E       AssertionError: {"data":{"workflow":{"revision":6,"stage":"CLOSED","assignee":"usr_450822bbba604bc9822248de35d86e2b","receipt":{"state":"CONFIRMED","evidence_reference":"isolated://attraction-receipt","supplier_reference":"ATTR-OPS","voucher_code":"VOUCHER-OPS","quote_id":"attr_chg_de2c129572f741fe"},"receipt_actor":"usr_450822bbba604bc9822248de35d86e2b","applied_by":"usr_d0eb615ec4704fb483ea0a0a2020968f","contributors":["usr_450822bbba604bc9822248de35d86e2b","usr_d0eb615ec4704fb483ea0a0a2020968f"]},"idempotent_replay":false}}
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_attraction_operations_runtime.py:37: AssertionError</failure></testcase><testcase classname="independent-rental-attractions.test_attraction_operations_independent" name="test_closed_supplier_after_verify_cannot_close_without_refund" time="0.890"><failure message="AssertionError: {&quot;data&quot;:{&quot;workflow&quot;:{&quot;revision&quot;:6,&quot;stage&quot;:&quot;CLOSED&quot;,&quot;assignee&quot;:&quot;usr_03ffe3b59d254c4dbd3e5feeb5977978&quot;,&quot;receipt&quot;:{&quot;state&quot;:&quot;CONFIRMED&quot;,&quot;evidence_reference&quot;:&quot;isolated://attraction-receipt&quot;,&quot;supplier_reference&quot;:&quot;ATTR-OPS&quot;,&quot;voucher_code&quot;:&quot;VOUCHER-OPS&quot;,&quot;quote_id&quot;:&quot;attr_chg_dda917ad04aa497a&quot;},&quot;receipt_actor&quot;:&quot;usr_03ffe3b59d254c4dbd3e5feeb5977978&quot;,&quot;applied_by&quot;:&quot;usr_fd3e812d631d4a39837011c0463ea21e&quot;,&quot;contributors&quot;:[&quot;usr_03ffe3b59d254c4dbd3e5feeb5977978&quot;,&quot;usr_fd3e812d631d4a39837011c0463ea21e&quot;]},&quot;idempotent_replay&quot;:false}}&#10;assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">workspace = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC05NTZkN2ZhNjBkYjg0ZWU2YWJkNzk4YzA3NjFjNmVkZiIsInZlciI6MX0.b81rSqBB7homNoPrSyE4TDAi1B2C5lQQaOOWeY5hgpM'}, ...}
+
+    def test_closed_supplier_after_verify_cannot_close_without_refund(workspace):
+        w=workspace;prepare(w);command(w,'APPLY');command(w,'VERIFY','verifier')
+        w['svc'].admin_external_state(w['oid'],'CLOSED_BY_SUPPLIER','isolated://later-close','independent-admin')
+&gt;       before=money();command(w,'FOLLOW_UP',status=409);assert money()==before
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../independent-rental-attractions/test_attraction_operations_independent.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+w = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC05NTZkN2ZhNjBkYjg0ZWU2YWJkNzk4YzA3NjFjNmVkZiIsInZlciI6MX0.b81rSqBB7homNoPrSyE4TDAi1B2C5lQQaOOWeY5hgpM'}, ...}
+action = 'FOLLOW_UP', actor = 'operator', receipt = None, status = 409
+body = {'action': 'FOLLOW_UP', 'command_id': '35f4952bb08342f2b2d3b08643e17ef8', 'expected_revision': 5, 'note': 'isolated normal role operation'}
+
+    def command(w,action,actor='operator',receipt=None,status=200,body=None):
+        path=w['sp'] if actor in {'supplier','readonly','foreign'} else w['ap']
+        if body is None:
+            view=w['client'].get(w['ap'],headers=w['operator']);assert view.status_code==200,view.text
+            body={'action':action,'command_id':uuid4().hex,'expected_revision':view.json()['data']['workflow']['revision'],
+                  'note':'isolated normal role operation'}
+            if receipt is not None:body['receipt']=receipt
+        r=w['client'].post(path,headers=w[actor],json=body)
+&gt;       assert r.status_code==status,r.text
+E       AssertionError: {"data":{"workflow":{"revision":6,"stage":"CLOSED","assignee":"usr_03ffe3b59d254c4dbd3e5feeb5977978","receipt":{"state":"CONFIRMED","evidence_reference":"isolated://attraction-receipt","supplier_reference":"ATTR-OPS","voucher_code":"VOUCHER-OPS","quote_id":"attr_chg_dda917ad04aa497a"},"receipt_actor":"usr_03ffe3b59d254c4dbd3e5feeb5977978","applied_by":"usr_fd3e812d631d4a39837011c0463ea21e","contributors":["usr_03ffe3b59d254c4dbd3e5feeb5977978","usr_fd3e812d631d4a39837011c0463ea21e"]},"idempotent_replay":false}}
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_attraction_operations_runtime.py:37: AssertionError</failure></testcase><testcase classname="independent-rental-attractions.test_attraction_operations_independent" name="test_replayed_followup_cannot_report_closed_with_corrupt_refund" time="0.922"><failure message="AssertionError: {&quot;data&quot;:{&quot;workflow&quot;:{&quot;revision&quot;:6,&quot;stage&quot;:&quot;CLOSED&quot;,&quot;assignee&quot;:&quot;usr_897d3d423a8046129af87f9a6d2b62e0&quot;,&quot;receipt&quot;:{&quot;state&quot;:&quot;CLOSED_BY_SUPPLIER&quot;,&quot;evidence_reference&quot;:&quot;isolated://attraction-receipt&quot;},&quot;receipt_actor&quot;:&quot;usr_897d3d423a8046129af87f9a6d2b62e0&quot;,&quot;applied_by&quot;:&quot;usr_c5f60e88f19b48008c20a8e8dce0aa39&quot;,&quot;contributors&quot;:[&quot;usr_897d3d423a8046129af87f9a6d2b62e0&quot;,&quot;usr_c5f60e88f19b48008c20a8e8dce0aa39&quot;]},&quot;idempotent_replay&quot;:true}}&#10;assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">workspace = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC02NzVhOWVjYzI3ODg0OGZjOTc2M2Y2YWE4ZGMzMTdjZSIsInZlciI6MX0.4F-q1_WcId1c_yGY5KKrtTGQTJIHCp9lOllq693RTXY'}, ...}
+
+    def test_replayed_followup_cannot_report_closed_with_corrupt_refund(workspace):
+        w=workspace;prepare(w,'CLOSED_BY_SUPPLIER');command(w,'APPLY')
+        q=w['svc'].refund_quote(w['owner'],w['oid']);w['svc'].refund(w['owner'],w['oid'],q['quote_hash'])
+        command(w,'VERIFY','verifier');body,_=command(w,'FOLLOW_UP')
+        with SessionLocal.begin() as s:
+            entry=s.scalar(select(OmnichannelLedgerEntryRow).where(OmnichannelLedgerEntryRow.entry_type=='REFUND'))
+            entry.account_code='WRONG'
+&gt;       before=money();command(w,'FOLLOW_UP',body=body,status=409);assert money()==before
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../independent-rental-attractions/test_attraction_operations_independent.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+w = {'admin_readonly': {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiR09fQURNSU4iLCJl...InRpY2tldC02NzVhOWVjYzI3ODg0OGZjOTc2M2Y2YWE4ZGMzMTdjZSIsInZlciI6MX0.4F-q1_WcId1c_yGY5KKrtTGQTJIHCp9lOllq693RTXY'}, ...}
+action = 'FOLLOW_UP', actor = 'operator', receipt = None, status = 409
+body = {'action': 'FOLLOW_UP', 'command_id': '03ff8af6ea2f4e99a15e1b3307e85c53', 'expected_revision': 5, 'note': 'isolated normal role operation'}
+
+    def command(w,action,actor='operator',receipt=None,status=200,body=None):
+        path=w['sp'] if actor in {'supplier','readonly','foreign'} else w['ap']
+        if body is None:
+            view=w['client'].get(w['ap'],headers=w['operator']);assert view.status_code==200,view.text
+            body={'action':action,'command_id':uuid4().hex,'expected_revision':view.json()['data']['workflow']['revision'],
+                  'note':'isolated normal role operation'}
+            if receipt is not None:body['receipt']=receipt
+        r=w['client'].post(path,headers=w[actor],json=body)
+&gt;       assert r.status_code==status,r.text
+E       AssertionError: {"data":{"workflow":{"revision":6,"stage":"CLOSED","assignee":"usr_897d3d423a8046129af87f9a6d2b62e0","receipt":{"state":"CLOSED_BY_SUPPLIER","evidence_reference":"isolated://attraction-receipt"},"receipt_actor":"usr_897d3d423a8046129af87f9a6d2b62e0","applied_by":"usr_c5f60e88f19b48008c20a8e8dce0aa39","contributors":["usr_897d3d423a8046129af87f9a6d2b62e0","usr_c5f60e88f19b48008c20a8e8dce0aa39"]},"idempotent_replay":true}}
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_attraction_operations_runtime.py:37: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,11 @@
+{
+  "candidate": "0d5595f88fb354026af7c08dc7e37d08ec6485e5",
+  "application_tree": "3047463d3ceabcb76674c31885a6b5e2e87e2073",
+  "run": 36270718254,
+  "job": 108484067526,
+  "artifact": 10915945221,
+  "zip_sha256": "76d3660092ceca4cd5aa342e5ac347797f8118fb36d80afe5ac24620cbd0235e",
+  "verdict": "26_PASS_27_FAIL_28_29_NOT_RUN",
+  "cause": "Same-route goto does not trigger initial list GET; script waited for nonexistent response before submitting query. No step27 administrator request was sent.",
+  "fix": "On current route use normal search form; retain exact order_id response, unique row, filter, workbench and all money assertions."
+}

@@ -1,0 +1,55 @@
+{
+  "scope": "R3 integration + privacy administration evidence",
+  "implementation_parent": "a2f1f5e58ab0cf44affe5441ddd430ce64a182ed",
+  "integration_parent": "95c1c56e5ab92947ecd38366d9930ddcb14ac56f",
+  "common_base": "1960b51e86acefa45d0eacfce22e2b6a6245adcf",
+  "local_backend": {
+    "tests": 47,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "database": "SQLite"
+  },
+  "ui_tests": {
+    "tests": 31,
+    "passed": 31
+  },
+  "environment_failure": "First run: 2 subprocess dependency import failures. Preserved failure log/JUnit. Re-run in isolated venv: all 47 passed.",
+  "browser": "NOT_RUN_LOCALLY; fresh isolated CI required",
+  "C14": "PENDING_NEW_FIXED_CANDIDATE",
+  "C13": "WAITING_C14",
+  "deployment": "NOT_RUN",
+  "unresolved": [
+    "approved legal/operator/processing evidence",
+    "actual retention, backups, SMTP, rights operations",
+    "age eligibility business decision"
+  ],
+  "source_sha256": {
+    ".github/workflows/registration-verification.yml": "b3a33ea2e0e6725fcc096c9ca572963afba9cdb810b2d1b8f013b6069f02ff30",
+    ".github/workflows/rental-attraction-preinventory.yml": "26a2e47f607de9a5d02f46a305b0813c8e94fede69d1622a2fb5b9bb1032aa90",
+    "application/frontend/consumer/app.js": "b1eb60131989d94c4ab43b84aafb98a65fd0cbc28c4533d17b8397fb9a0a607e",
+    "application/frontend/shared/app.js": "7a7e07f30bc351a92582fe4fa00bbbc86294f55c53dae9874fc3204daeddefb7",
+    "application/frontend/shared/ticket-operations.js": "7625a5cc2b2945d215d7b5bfb859a060798b13e736ac04660ae6cb031deddbe9",
+    "application/frontend/supplier/config.js": "046157745a5656945f3730994bfa0835f9d3e05c855e72d76e9e1981c28019b5",
+    "application/scripts/rental-attraction-acceptance/browser.mjs": "79817780bb6ee850d1752ea3d0fc70a830c788813aa60b105eed71281a26e221",
+    "application/scripts/rental-attraction-acceptance/nested-consent-sheet.test.mjs": "ab8e28dcc5810cd4f3f61859c12324a5cfecbb372e08ded9b8b8dcd9b03b3795",
+    "application/scripts/rental-attraction-acceptance/supplier-read-race.test.mjs": "737f262d370569d27b627400c5ae966d97fd476873aa8aaedebba82cdfcc7c3c",
+    "application/scripts/rental-attraction-acceptance/supplier-refresh-failure.test.mjs": "67b566283434bfcbdfd070b14854d95c2560fa134b94dbaac488687cdb1d61c2",
+    "application/src/go_hotel/api/routes/dashboard.py": "c26c57a4b4891341beea0a50c87ca16538b5d370ca36e937f2978728e156550d",
+    "application/src/go_hotel/api/routes/operations_console.py": "7bb2317127b0145a928d892d8922f2a9da5560c966df9267d6ec2ab58294f0e5",
+    "application/src/go_hotel/attractions/service.py": "64cae3517fad713c5d27fbe827e44d90ba5a6e4c6fe33d7c50b7e1006b3a43b9",
+    "application/src/go_hotel/flight/money_view.py": "a2c960b476d954bdadb47464e43bf42a25230804e6494605e0d9adaac114d3eb",
+    "application/src/go_hotel/services/ticket_operations.py": "15de661651154f705641e30677ef6c640c2da8e7607aace396cab35ce6a15e75",
+    "application/tests/independent_rental_attractions/test_attraction_operations_independent.py": "b4d4093b7860cd353da71a92d1a0c5551d3e22709de0f02e33a3ca888fb943d1",
+    "application/tests/independent_rental_attractions/test_attraction_voucher_projection.py": "eef95560114af17e4904c41afeed4f79f41e9cf3afbbdeb6be0c5ed0dc028dfb",
+    "application/tests/test_attraction_operations_runtime.py": "f1b605bacefb0deeb3b262054ebb9f6cc06610ef5b25ef0fff5a147539530f6a",
+    "application/tests/test_registration_privacy_admin.py": "d06cf0ee055851fd7bc8ac1decc42426a54c8077198264ba97955076c7f54f78",
+    "docs/acceptance/registration-privacy-20260927/R3_REVIEW.md": "b182cf126bda01b863c24fbe837af573aac45093b1849c369b64dfabb83edd53",
+    "docs/acceptance/registration-privacy-20260927/r3/local-environment-failure.log": "4c3af2c81ba85e15bce09e5561b9d7e05e6a4f01d7bb2e9fba65bbbf23eee5b2",
+    "docs/acceptance/registration-privacy-20260927/r3/local-environment-failure.xml": "1730bd680b5ced3b67a0f4794ba2710fdab190427d451d34396c1148cd026d4b",
+    "docs/acceptance/registration-privacy-20260927/r3/local-junit.xml": "c70210dcf05933a34ddb8505c169bcd39c904c2d49cf73e84749f44269cb4661",
+    "docs/acceptance/registration-privacy-20260927/r3/local-tests.log": "325b7cf7b0d6ead544ebb7e833a08009fa10cf90ce29b8f9021e2ede461488f5",
+    "docs/acceptance/registration-privacy-20260927/r3/ui-tests.log": "f98289a50b8ef9fb9422663836dd4eef05cde81fd41a1d42100202d6aca96f71",
+    "docs/acceptance/registration-verification/README.md": "9b02fc68a5cf56c8f87feb060a283131541e078480976e78d79fb7dea42bbb0a"
+  }
+}

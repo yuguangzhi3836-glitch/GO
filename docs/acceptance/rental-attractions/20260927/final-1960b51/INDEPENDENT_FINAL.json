@@ -1,0 +1,3601 @@
+{
+  "candidate": "1960b51e86acefa45d0eacfce22e2b6a6245adcf",
+  "application_tree": "b8881e3bb869f4666eadffa8328e0df83d4a763e",
+  "status": "LIMITED_SCENARIOS_ACCEPTED",
+  "full_scope_status": "FULL_44_152_NOT_COMPLETE",
+  "runs": [
+    36265390297,
+    36265389905
+  ],
+  "artifacts": [
+    {
+      "id": 10913621453,
+      "name": "ticket-native-source-1960b51e86acefa45d0eacfce22e2b6a6245adcf",
+      "sha256": "36c4a5d023deb5562d32303d61f7c954d1b9ee358d0d188173ebc8a29661a683",
+      "run": 36265389905,
+      "zip_digest_verified": true
+    },
+    {
+      "id": 10913496679,
+      "name": "rental-attraction-browser-1960b51e86acefa45d0eacfce22e2b6a6245adcf",
+      "sha256": "dfd6496ecd0aa75ade258ff1b03f3381ce684b8fd8275ac37373ca4b9cbc937d",
+      "run": 36265390297,
+      "zip_digest_verified": true
+    },
+    {
+      "id": 10914041002,
+      "name": "ticket-browser-1960b51e86acefa45d0eacfce22e2b6a6245adcf",
+      "sha256": "8d2ac3dfabfd4da2da65b7c6aae57aaaf0441a37f959fc4ffc3481700392781f",
+      "run": 36265389905,
+      "zip_digest_verified": true
+    },
+    {
+      "id": 10914311477,
+      "name": "rental-attraction-preinventory-1960b51e86acefa45d0eacfce22e2b6a6245adcf-independent",
+      "sha256": "40ecd043a11333b1d32fedf32a0445ffe7d0c51d696e054e611c47d8b3cf3cde",
+      "run": 36265390297,
+      "zip_digest_verified": true
+    },
+    {
+      "id": 10914275943,
+      "name": "ticket-preinventory-1960b51e86acefa45d0eacfce22e2b6a6245adcf-coupons",
+      "sha256": "0ab9ccdd710569919f222c39285002b0e69d12f3058242bb61c3a520439ae1e6",
+      "run": 36265389905,
+      "zip_digest_verified": true
+    },
+    {
+      "id": 10913767252,
+      "name": "ticket-preinventory-1960b51e86acefa45d0eacfce22e2b6a6245adcf-shared",
+      "sha256": "6f6736c4cf9fb8a26cb87787b4b7332b2324a4b6e9f761b9198febc40d42ec60",
+      "run": 36265389905,
+      "zip_digest_verified": true
+    },
+    {
+      "id": 10914465814,
+      "name": "rental-attraction-preinventory-1960b51e86acefa45d0eacfce22e2b6a6245adcf-recovery",
+      "sha256": "cd127303a57dcd49ff36a246fc0d4819bbaf1c1ef4eea90faad53abd02d3195f",
+      "run": 36265390297,
+      "zip_digest_verified": true
+    },
+    {
+      "id": 10913388883,
+      "name": "rental-attraction-preinventory-1960b51e86acefa45d0eacfce22e2b6a6245adcf-attraction",
+      "sha256": "8bb88837ca504b1446a84be8afbcd92d7d415f4faf3f4af2ae0a3a4121c8d974",
+      "run": 36265390297,
+      "zip_digest_verified": true
+    },
+    {
+      "id": 10913932442,
+      "name": "ticket-preinventory-1960b51e86acefa45d0eacfce22e2b6a6245adcf-resolution",
+      "sha256": "886c6c0648ec63e910f537d88ca65c49a35aff86d247a5f7aa6684744cfab569",
+      "run": 36265389905,
+      "zip_digest_verified": true
+    },
+    {
+      "id": 10913339080,
+      "name": "ticket-preinventory-1960b51e86acefa45d0eacfce22e2b6a6245adcf-core",
+      "sha256": "f756115e1aa0eb39ce47e6173a301f7609918461f859f43d700d05afd4e0e5e1",
+      "run": 36265389905,
+      "zip_digest_verified": true
+    },
+    {
+      "id": 10914375967,
+      "name": "rental-attraction-preinventory-1960b51e86acefa45d0eacfce22e2b6a6245adcf-rental",
+      "sha256": "10f9c216c6bedd83762fc630e04a729d98be0a14b84317ecdc403dc9c00bdbf1",
+      "run": 36265390297,
+      "zip_digest_verified": true
+    }
+  ],
+  "groups": [
+    {
+      "group": "rental-attraction",
+      "passed": 156,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "database": "go_rental_attractions_isolated",
+      "server_version": "PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "raw_sha256_verified": true,
+      "source_matches_browser": true,
+      "cases": [
+        {
+          "classname": "tests.test_refund_http_replay_truth",
+          "name": "test_same_http_key_revalidates_financial_receipt[movement-False-RENTAL]",
+          "time": "4.341"
+        },
+        {
+          "classname": "tests.test_refund_http_replay_truth",
+          "name": "test_same_http_key_revalidates_financial_receipt[movement-False-ATTRACTION]",
+          "time": "5.435"
+        },
+        {
+          "classname": "tests.test_refund_http_replay_truth",
+          "name": "test_same_http_key_revalidates_financial_receipt[movement-True-RENTAL]",
+          "time": "2.942"
+        },
+        {
+          "classname": "tests.test_refund_http_replay_truth",
+          "name": "test_same_http_key_revalidates_financial_receipt[movement-True-ATTRACTION]",
+          "time": "2.687"
+        },
+        {
+          "classname": "tests.test_refund_http_replay_truth",
+          "name": "test_same_http_key_revalidates_financial_receipt[ledger-False-RENTAL]",
+          "time": "2.562"
+        },
+        {
+          "classname": "tests.test_refund_http_replay_truth",
+          "name": "test_same_http_key_revalidates_financial_receipt[ledger-False-ATTRACTION]",
+          "time": "2.744"
+        },
+        {
+          "classname": "tests.test_refund_http_replay_truth",
+          "name": "test_same_http_key_revalidates_financial_receipt[ledger-True-RENTAL]",
+          "time": "2.676"
+        },
+        {
+          "classname": "tests.test_refund_http_replay_truth",
+          "name": "test_same_http_key_revalidates_financial_receipt[ledger-True-ATTRACTION]",
+          "time": "2.612"
+        },
+        {
+          "classname": "tests.test_idempotency",
+          "name": "test_create_order_idempotent",
+          "time": "2.490"
+        },
+        {
+          "classname": "tests.test_idempotency",
+          "name": "test_idempotency_conflict",
+          "time": "3.275"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_successful_mutation_keeps_claim_if_result_recording_fails[sync-completion_storage]",
+          "time": "0.001"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_successful_mutation_keeps_claim_if_result_recording_fails[sync-resource_id]",
+          "time": "0.001"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_successful_mutation_keeps_claim_if_result_recording_fails[async-completion_storage]",
+          "time": "0.001"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_successful_mutation_keeps_claim_if_result_recording_fails[async-resource_id]",
+          "time": "0.001"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_completed_result_is_replayed_without_second_mutation[sync]",
+          "time": "0.000"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_completed_result_is_replayed_without_second_mutation[async]",
+          "time": "0.001"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_callback_failure_preserves_existing_release_contract[sync]",
+          "time": "0.001"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_callback_failure_preserves_existing_release_contract[async]",
+          "time": "0.001"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_existing_in_progress_claim_blocks_callback[sync]",
+          "time": "0.000"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_existing_in_progress_claim_blocks_callback[async]",
+          "time": "0.001"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_changed_payload_cannot_reuse_claim[sync]",
+          "time": "0.000"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_changed_payload_cannot_reuse_claim[async]",
+          "time": "0.001"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_production_key_requirement_is_retained[sync]",
+          "time": "0.000"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_production_key_requirement_is_retained[async]",
+          "time": "0.000"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_real_sql_claim_survives_failure_and_replays_after_reconciliation[sync]",
+          "time": "0.006"
+        },
+        {
+          "classname": "tests.test_c11_idempotency_completion_guard",
+          "name": "test_real_sql_claim_survives_failure_and_replays_after_reconciliation[async]",
+          "time": "0.005"
+        },
+        {
+          "classname": "tests.test_depth31_refund_consent",
+          "name": "test_confirmed_refund_binds_owner_order_terms_and_replay[RAIL]",
+          "time": "2.537"
+        },
+        {
+          "classname": "tests.test_depth31_refund_consent",
+          "name": "test_confirmed_refund_binds_owner_order_terms_and_replay[ATTRACTION]",
+          "time": "2.716"
+        },
+        {
+          "classname": "tests.test_depth31_refund_consent",
+          "name": "test_quote_is_rechecked_inside_order_lock_before_money[RAIL]",
+          "time": "2.532"
+        },
+        {
+          "classname": "tests.test_depth31_refund_consent",
+          "name": "test_quote_is_rechecked_inside_order_lock_before_money[ATTRACTION]",
+          "time": "2.691"
+        },
+        {
+          "classname": "tests.test_depth31_refund_consent",
+          "name": "test_confirmed_endpoint_body_is_strict[body0]",
+          "time": "2.400"
+        },
+        {
+          "classname": "tests.test_depth31_refund_consent",
+          "name": "test_confirmed_endpoint_body_is_strict[body1]",
+          "time": "2.642"
+        },
+        {
+          "classname": "tests.test_depth31_refund_consent",
+          "name": "test_confirmed_endpoint_body_is_strict[body2]",
+          "time": "2.491"
+        },
+        {
+          "classname": "tests.test_depth31_refund_consent",
+          "name": "test_confirmed_endpoint_body_is_strict[body3]",
+          "time": "2.576"
+        },
+        {
+          "classname": "tests.test_depth31_refund_consent",
+          "name": "test_confirmed_endpoint_body_is_strict[body4]",
+          "time": "2.431"
+        },
+        {
+          "classname": "tests.test_depth33_mobility_refund_consent",
+          "name": "test_mobility_exact_consent_replay_and_owner_binding[RIDE]",
+          "time": "2.762"
+        },
+        {
+          "classname": "tests.test_depth33_mobility_refund_consent",
+          "name": "test_mobility_exact_consent_replay_and_owner_binding[RENTAL]",
+          "time": "2.583"
+        },
+        {
+          "classname": "tests.test_depth33_mobility_refund_consent",
+          "name": "test_mobility_order_change_requires_new_refund_consent[RIDE]",
+          "time": "2.656"
+        },
+        {
+          "classname": "tests.test_depth33_mobility_refund_consent",
+          "name": "test_mobility_order_change_requires_new_refund_consent[RENTAL]",
+          "time": "2.747"
+        },
+        {
+          "classname": "tests.test_depth33_mobility_refund_consent",
+          "name": "test_mobility_crash_after_money_keeps_pending_and_recovers_once[RIDE]",
+          "time": "2.722"
+        },
+        {
+          "classname": "tests.test_depth33_mobility_refund_consent",
+          "name": "test_mobility_crash_after_money_keeps_pending_and_recovers_once[RENTAL]",
+          "time": "2.699"
+        },
+        {
+          "classname": "tests.test_depth33_mobility_refund_consent",
+          "name": "test_ride_pending_refund_blocks_fulfillment_and_modification",
+          "time": "2.770"
+        },
+        {
+          "classname": "tests.test_depth33_mobility_refund_consent",
+          "name": "test_ride_fabricated_money_receipt_does_not_complete_order",
+          "time": "2.543"
+        },
+        {
+          "classname": "tests.test_depth33_mobility_refund_consent",
+          "name": "test_rental_changed_settlement_plan_cannot_resume",
+          "time": "2.820"
+        },
+        {
+          "classname": "tests.test_rental_attraction_preinventory",
+          "name": "test_supplier_closure_refunds_even_customer_nonrefundable_policy",
+          "time": "2.613"
+        },
+        {
+          "classname": "tests.test_rental_attraction_preinventory",
+          "name": "test_older_attraction_quote_cannot_override_completed_change",
+          "time": "2.787"
+        },
+        {
+          "classname": "tests.test_rental_attraction_preinventory",
+          "name": "test_quote_target_tampering_cannot_change_capacity_or_order",
+          "time": "2.509"
+        },
+        {
+          "classname": "tests.test_rental_attraction_preinventory",
+          "name": "test_readonly_admin_cannot_submit_external_state[attractions]",
+          "time": "2.893"
+        },
+        {
+          "classname": "tests.test_rental_attraction_preinventory",
+          "name": "test_readonly_admin_cannot_submit_external_state[mobility]",
+          "time": "2.749"
+        },
+        {
+          "classname": "tests.test_rental_attraction_preinventory",
+          "name": "test_confirmation_requires_actual_voucher_identity",
+          "time": "2.602"
+        },
+        {
+          "classname": "tests.test_sprint3d_attractions",
+          "name": "test_attraction_golden_path",
+          "time": "2.903"
+        },
+        {
+          "classname": "tests.test_sprint3d_attractions",
+          "name": "test_non_refundable_experience",
+          "time": "3.211"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_persisted_quote_binds_session_party_and_locked_total",
+          "time": "2.666"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_unquoted_order_and_unlisted_session_are_rejected",
+          "time": "2.711"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_client_cannot_change_quote_terms[quantity-1]",
+          "time": "2.388"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_client_cannot_change_quote_terms[currency-USD]",
+          "time": "2.818"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_client_cannot_change_quote_terms[visit_date-2030-01-01]",
+          "time": "2.874"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_client_cannot_change_quote_terms[session_time-03:17]",
+          "time": "3.362"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_client_cannot_change_quote_terms[offer_id-teamlab_planets]",
+          "time": "2.360"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_quantity_and_attendees_must_match",
+          "time": "2.297"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_cross_account_and_changed_person_cannot_reuse_consumed_quote",
+          "time": "2.332"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_current_inventory_is_rechecked_before_order_creation",
+          "time": "2.358"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_locked_price_and_refund_terms_do_not_change_with_catalog",
+          "time": "2.353"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_expired_quote_cannot_be_consumed",
+          "time": "2.348"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_parallel_consumption_makes_one_order",
+          "time": "2.394"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_failed_evidence_rolls_back_contract_and_order",
+          "time": "2.386"
+        },
+        {
+          "classname": "tests.test_depth20_attraction_contract",
+          "name": "test_declared_child_cannot_use_an_adult_product_quote",
+          "time": "2.359"
+        },
+        {
+          "classname": "tests.test_depth26_attraction_terms",
+          "name": "test_contract_binding_rejects_refund_before_any_money[owner_id-another-owner]",
+          "time": "2.455"
+        },
+        {
+          "classname": "tests.test_depth26_attraction_terms",
+          "name": "test_contract_binding_rejects_refund_before_any_money[state-QUOTED]",
+          "time": "2.474"
+        },
+        {
+          "classname": "tests.test_depth26_attraction_terms",
+          "name": "test_contract_binding_rejects_refund_before_any_money[consumed_hash-None]",
+          "time": "2.494"
+        },
+        {
+          "classname": "tests.test_depth26_attraction_terms",
+          "name": "test_contract_binding_rejects_refund_before_any_money[consumed_ms-None]",
+          "time": "2.554"
+        },
+        {
+          "classname": "tests.test_depth26_attraction_terms",
+          "name": "test_order_terms_mismatch_blocks_change_and_refund[quantity-3]",
+          "time": "2.491"
+        },
+        {
+          "classname": "tests.test_depth26_attraction_terms",
+          "name": "test_order_terms_mismatch_blocks_change_and_refund[attendees-value1]",
+          "time": "2.405"
+        },
+        {
+          "classname": "tests.test_depth26_attraction_terms",
+          "name": "test_order_terms_mismatch_blocks_change_and_refund[product_id-tokyo_concert]",
+          "time": "2.445"
+        },
+        {
+          "classname": "tests.test_depth26_attraction_terms",
+          "name": "test_order_terms_mismatch_blocks_change_and_refund[currency-USD]",
+          "time": "2.413"
+        },
+        {
+          "classname": "tests.test_c03_c06_change_quote_fencing",
+          "name": "test_rail_old_fare_quote_cannot_execute_after_another_change",
+          "time": "2.483"
+        },
+        {
+          "classname": "tests.test_c03_c06_change_quote_fencing",
+          "name": "test_attraction_delayed_unbound_confirmation_cannot_confirm_next_change",
+          "time": "2.525"
+        },
+        {
+          "classname": "tests.test_c03_c06_change_quote_fencing",
+          "name": "test_attraction_current_change_submission_is_replay_safe",
+          "time": "2.918"
+        },
+        {
+          "classname": "tests.test_c03_c06_change_quote_fencing",
+          "name": "test_attraction_old_quote_cannot_resolve_current_episode[CONFIRMED]",
+          "time": "3.730"
+        },
+        {
+          "classname": "tests.test_c03_c06_change_quote_fencing",
+          "name": "test_attraction_old_quote_cannot_resolve_current_episode[CLOSED_BY_SUPPLIER]",
+          "time": "2.528"
+        },
+        {
+          "classname": "tests.test_c03_c06_change_quote_fencing",
+          "name": "test_attraction_api_carries_quote_identity_and_replays_bound_request",
+          "time": "2.501"
+        },
+        {
+          "classname": "tests.test_c03_c06_change_quote_fencing",
+          "name": "test_prechange_reconciliation_cannot_resolve_first_change",
+          "time": "2.361"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_prebook_freezes_server_policy_and_utc_boundary",
+          "time": "2.331"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_redemption_respects_exact_half_open_window[2026-09-15T06:29:59.999+00:00-False]",
+          "time": "2.458"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_redemption_respects_exact_half_open_window[2026-09-15T06:30:00+00:00-True]",
+          "time": "2.404"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_redemption_respects_exact_half_open_window[2026-09-15T08:59:59.999+00:00-True]",
+          "time": "2.460"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_redemption_respects_exact_half_open_window[2026-09-15T09:00:00+00:00-False]",
+          "time": "2.410"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_later_catalog_policy_cannot_rewrite_consumed_contract",
+          "time": "2.472"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_nonexistent_or_ambiguous_supplier_local_session_requires_review[2026-03-08-02:30]",
+          "time": "2.472"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_nonexistent_or_ambiguous_supplier_local_session_requires_review[2026-11-01-01:30]",
+          "time": "2.405"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_cross_midnight_window_uses_supplier_timezone_not_server_date",
+          "time": "2.366"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_invalid_supplier_policy_never_issues_a_quote[bad0]",
+          "time": "2.554"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_invalid_supplier_policy_never_issues_a_quote[bad1]",
+          "time": "2.402"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_invalid_supplier_policy_never_issues_a_quote[bad2]",
+          "time": "2.398"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_invalid_supplier_policy_never_issues_a_quote[bad3]",
+          "time": "2.379"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_supplier_policy_is_explicitly_legacy_unverified",
+          "time": "2.437"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_client_cannot_supply_a_validity_policy",
+          "time": "2.409"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_deleting_frozen_window_without_resealing_cannot_downgrade_to_legacy",
+          "time": "3.042"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_contract_cannot_downgrade_a_confirmed_order_to_legacy",
+          "time": "3.571"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_supplier_confirmed_date_change_uses_frozen_policy_on_new_session",
+          "time": "2.558"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_valid_window_does_not_bypass_inflight_refund_exclusion",
+          "time": "2.600"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[supplier_id]",
+          "time": "2.471"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[product_id]",
+          "time": "2.494"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[go_offer_id]",
+          "time": "2.433"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[version]",
+          "time": "2.342"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[state]",
+          "time": "2.421"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[destination_timezone]",
+          "time": "2.379"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[effective_from]",
+          "time": "2.367"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[opens_minutes_before_session]",
+          "time": "2.355"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[closes_minutes_after_session]",
+          "time": "2.367"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[allow_open_ended]",
+          "time": "2.472"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[amendment_allowed]",
+          "time": "2.478"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[cancellation_allowed]",
+          "time": "2.347"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[raw_payload_ref]",
+          "time": "2.487"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[raw_payload_sha256]",
+          "time": "2.874"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[source_uri]",
+          "time": "3.688"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_missing_required_rejected[observed_at]",
+          "time": "2.517"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_malformed_rejected[bad0]",
+          "time": "2.319"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_malformed_rejected[bad1]",
+          "time": "2.282"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_malformed_rejected[bad2]",
+          "time": "2.324"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_malformed_rejected[bad3]",
+          "time": "2.339"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_malformed_rejected[bad4]",
+          "time": "2.398"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_malformed_rejected[bad5]",
+          "time": "2.315"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_malformed_rejected[bad6]",
+          "time": "2.362"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_malformed_rejected[bad7]",
+          "time": "2.382"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_malformed_rejected[bad8]",
+          "time": "2.456"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_open_ended_requires_flag",
+          "time": "2.392"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_import_replay_and_conflict",
+          "time": "2.486"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_version_order_and_supersedes_chain",
+          "time": "2.421"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_batch_is_atomic_on_partial_failure",
+          "time": "2.528"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_redemption_boundaries[2026-06-01T08:59:59+08:00-TOO_EARLY]",
+          "time": "2.551"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_redemption_boundaries[2026-06-01T09:00:00+08:00-ELIGIBLE]",
+          "time": "2.424"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_redemption_boundaries[2026-06-01T10:30:00+08:00-ELIGIBLE]",
+          "time": "3.004"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_redemption_boundaries[2026-06-01T10:30:01+08:00-TOO_LATE]",
+          "time": "2.646"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_state_precedence[EXPIRED-EXPIRED]",
+          "time": "2.377"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_state_precedence[WITHDRAWN-WITHDRAWN]",
+          "time": "2.373"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_unknown_fails_safe",
+          "time": "2.299"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_expiry_and_not_yet_effective",
+          "time": "2.348"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_dst_destination_timezone_is_absolute_and_deterministic",
+          "time": "2.268"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_change_refund_flags_and_audit_reason",
+          "time": "2.320"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_exact_raw_payload_digest_is_admitted_and_replay_is_idempotent",
+          "time": "2.282"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_raw_payload_hash_mismatch_rejects_without_policy_or_audit_mutation",
+          "time": "2.289"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_raw_import_requires_policy_and_immutable_bytes[None]",
+          "time": "2.291"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_raw_import_requires_policy_and_immutable_bytes[entry1]",
+          "time": "2.346"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_raw_import_requires_policy_and_immutable_bytes[entry2]",
+          "time": "2.336"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_raw_import_requires_policy_and_immutable_bytes[entry3]",
+          "time": "2.317"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_raw_import_requires_policy_and_immutable_bytes[entry4]",
+          "time": "2.460"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_bound_batch_is_atomic_when_later_payload_mismatches",
+          "time": "2.587"
+        },
+        {
+          "classname": "tests.test_next_depth_c06_supplier_validity",
+          "name": "test_non_batch_container_fails_closed",
+          "time": "2.353"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_flight_old_quote_cannot_execute_after_refund",
+          "time": "2.840"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_attraction_expired_quote_fails_closed",
+          "time": "2.912"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_ride_unknown_from_in_progress_restores_in_progress",
+          "time": "3.469"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_late_supplier_fact_cannot_resurrect_completed_ride",
+          "time": "4.150"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_ride_unknown_can_converge_to_failed",
+          "time": "3.096"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_attraction_redeem_evidence_keeps_consumed_credential",
+          "time": "2.850"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_same_supplier_fact_replay_does_not_append_events",
+          "time": "2.759"
+        }
+      ]
+    },
+    {
+      "group": "rental-independent",
+      "passed": 37,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "database": "go_rental_attractions_isolated",
+      "server_version": "PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "raw_sha256_verified": true,
+      "source_matches_browser": true,
+      "cases": [
+        {
+          "classname": "tests.independent_rental_attractions.test_attraction_independent",
+          "name": "test_past_session_cannot_redeem_without_verified_window[False]",
+          "time": "6.733"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_attraction_independent",
+          "name": "test_past_session_cannot_redeem_without_verified_window[True]",
+          "time": "4.248"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_attraction_independent",
+          "name": "test_completed_refund_replay_checks_real_money[amount_minor-1]",
+          "time": "4.054"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_attraction_independent",
+          "name": "test_completed_refund_replay_checks_real_money[currency-USD]",
+          "time": "4.976"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_attraction_independent",
+          "name": "test_completed_refund_replay_checks_real_money[state-UNKNOWN]",
+          "time": "4.041"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_completed_ledger",
+          "name": "test_completed_replay_requires_correct_double_entry_ledger[amount_minor-1-ATTRACTION]",
+          "time": "4.311"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_completed_ledger",
+          "name": "test_completed_replay_requires_correct_double_entry_ledger[amount_minor-1-RENTAL]",
+          "time": "4.131"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_completed_ledger",
+          "name": "test_completed_replay_requires_correct_double_entry_ledger[currency-USD-ATTRACTION]",
+          "time": "4.218"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_completed_ledger",
+          "name": "test_completed_replay_requires_correct_double_entry_ledger[currency-USD-RENTAL]",
+          "time": "3.778"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_completed_ledger",
+          "name": "test_completed_replay_requires_correct_double_entry_ledger[account_code-WRONG:ACCOUNT-ATTRACTION]",
+          "time": "4.366"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_completed_ledger",
+          "name": "test_completed_replay_requires_correct_double_entry_ledger[account_code-WRONG:ACCOUNT-RENTAL]",
+          "time": "3.776"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_completed_ledger",
+          "name": "test_completed_replay_requires_correct_double_entry_ledger[evidence_hash-0000000000000000000000000000000000000000000000000000000000000000-ATTRACTION]",
+          "time": "4.398"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_completed_ledger",
+          "name": "test_completed_replay_requires_correct_double_entry_ledger[evidence_hash-0000000000000000000000000000000000000000000000000000000000000000-RENTAL]",
+          "time": "3.774"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_http_cached_refund",
+          "name": "test_http_same_key_rechecks_money_and_exact_cached_receipt[movement-False-ATTRACTION]",
+          "time": "4.373"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_http_cached_refund",
+          "name": "test_http_same_key_rechecks_money_and_exact_cached_receipt[movement-False-RENTAL]",
+          "time": "3.816"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_http_cached_refund",
+          "name": "test_http_same_key_rechecks_money_and_exact_cached_receipt[movement-True-ATTRACTION]",
+          "time": "4.441"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_http_cached_refund",
+          "name": "test_http_same_key_rechecks_money_and_exact_cached_receipt[movement-True-RENTAL]",
+          "time": "3.890"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_http_cached_refund",
+          "name": "test_http_same_key_rechecks_money_and_exact_cached_receipt[ledger-False-ATTRACTION]",
+          "time": "4.380"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_http_cached_refund",
+          "name": "test_http_same_key_rechecks_money_and_exact_cached_receipt[ledger-False-RENTAL]",
+          "time": "4.004"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_http_cached_refund",
+          "name": "test_http_same_key_rechecks_money_and_exact_cached_receipt[ledger-True-ATTRACTION]",
+          "time": "4.551"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_http_cached_refund",
+          "name": "test_http_same_key_rechecks_money_and_exact_cached_receipt[ledger-True-RENTAL]",
+          "time": "4.100"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_http_cached_refund",
+          "name": "test_http_same_key_rechecks_money_and_exact_cached_receipt[cached_receipt-False-ATTRACTION]",
+          "time": "4.548"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_http_cached_refund",
+          "name": "test_http_same_key_rechecks_money_and_exact_cached_receipt[cached_receipt-False-RENTAL]",
+          "time": "4.110"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_http_cached_refund",
+          "name": "test_http_same_key_rechecks_money_and_exact_cached_receipt[cached_receipt-True-ATTRACTION]",
+          "time": "4.371"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_http_cached_refund",
+          "name": "test_http_same_key_rechecks_money_and_exact_cached_receipt[cached_receipt-True-RENTAL]",
+          "time": "4.106"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_recovery_positive",
+          "name": "test_closed_nonrefundable_refund_preserves_cancelled_and_frozen_quote",
+          "time": "3.609"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_recovery_positive",
+          "name": "test_attraction_stale_quote_preserves_order_capacity_and_money",
+          "time": "3.881"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_recovery_positive",
+          "name": "test_rental_multiple_capture_refunds_remain_replayable",
+          "time": "4.307"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_rental_independent",
+          "name": "test_completed_rental_cancel_replay_checks_real_money[amount_minor-1]",
+          "time": "3.820"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_rental_independent",
+          "name": "test_completed_rental_cancel_replay_checks_real_money[currency-USD]",
+          "time": "3.932"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_rental_independent",
+          "name": "test_completed_rental_cancel_replay_checks_real_money[state-UNKNOWN]",
+          "time": "3.811"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_supplier_authority",
+          "name": "test_supplier_http_claim_rejects_bad_authority_without_effect[foreign_tenant]",
+          "time": "4.114"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_supplier_authority",
+          "name": "test_supplier_http_claim_rejects_bad_authority_without_effect[readonly]",
+          "time": "3.926"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_supplier_authority",
+          "name": "test_supplier_http_claim_rejects_bad_authority_without_effect[binding_payee]",
+          "time": "4.198"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_supplier_authority",
+          "name": "test_supplier_http_claim_rejects_bad_authority_without_effect[binding_currency]",
+          "time": "3.971"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_supplier_authority",
+          "name": "test_supplier_http_claim_rejects_bad_authority_without_effect[source_tenant]",
+          "time": "4.218"
+        },
+        {
+          "classname": "tests.independent_rental_attractions.test_supplier_authority",
+          "name": "test_supplier_http_can_claim_only_not_adjudicate_or_expand_default_order_access",
+          "time": "4.320"
+        }
+      ]
+    },
+    {
+      "group": "rental-recovery",
+      "passed": 70,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "database": "go_rental_attractions_isolated",
+      "server_version": "PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "raw_sha256_verified": true,
+      "source_matches_browser": true,
+      "cases": [
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_refund_retry_returns_same_receipt_and_one_money_movement[RAIL]",
+          "time": "5.261"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_refund_retry_returns_same_receipt_and_one_money_movement[ATTRACTION]",
+          "time": "3.558"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_money_confirmed_then_order_commit_failure_recovers_without_refund_resend[RAIL]",
+          "time": "3.258"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_money_confirmed_then_order_commit_failure_recovers_without_refund_resend[ATTRACTION]",
+          "time": "3.322"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_concurrent_refund_has_one_executor_and_blocks_change_or_redeem[RAIL]",
+          "time": "3.269"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_concurrent_refund_has_one_executor_and_blocks_change_or_redeem[ATTRACTION]",
+          "time": "3.224"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_unknown_money_remains_pending_and_cannot_change[RAIL]",
+          "time": "3.235"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_unknown_money_remains_pending_and_cannot_change[ATTRACTION]",
+          "time": "3.673"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_fabricated_confirmation_cannot_complete_refund[RAIL]",
+          "time": "3.074"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_fabricated_confirmation_cannot_complete_refund[ATTRACTION]",
+          "time": "4.060"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_refund_receipt_for_another_order_cannot_complete_this_order[RAIL]",
+          "time": "3.297"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_refund_receipt_for_another_order_cannot_complete_this_order[ATTRACTION]",
+          "time": "3.332"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_process_exit_after_money_can_resume_only_after_lease_expiry[RAIL]",
+          "time": "5.505"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_process_exit_after_money_can_resume_only_after_lease_expiry[ATTRACTION]",
+          "time": "5.631"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_rail_change_reserves_order_before_authorization_and_resumes_after_crash",
+          "time": "3.395"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_mutated_frozen_quote_is_rejected_before_more_money_moves",
+          "time": "3.533"
+        },
+        {
+          "classname": "tests.test_depth21_refund_recovery",
+          "name": "test_migration_roundtrip_preserves_prior_history_and_blocks_journal_loss",
+          "time": "0.338"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_concurrent_distinct_quotes_share_one_capacity[RAIL-9-2]",
+          "time": "3.186"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_concurrent_distinct_quotes_share_one_capacity[ATTRACTION-12-2]",
+          "time": "3.329"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_cancel_unpaid_releases_once_and_blocks_later_payment[RAIL]",
+          "time": "3.208"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_cancel_unpaid_releases_once_and_blocks_later_payment[ATTRACTION]",
+          "time": "3.384"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_payment_started_cannot_release_capacity[RAIL]",
+          "time": "3.290"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_payment_started_cannot_release_capacity[ATTRACTION]",
+          "time": "3.348"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_refund_only_releases_after_confirmed_money[RAIL]",
+          "time": "3.270"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_refund_only_releases_after_confirmed_money[ATTRACTION]",
+          "time": "3.479"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_rail_change_holds_both_dates_until_result_then_releases_correct_pool[TICKETED]",
+          "time": "3.385"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_rail_change_holds_both_dates_until_result_then_releases_correct_pool[FAILED]",
+          "time": "3.710"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_attraction_change_and_redemption_retain_current_session_capacity",
+          "time": "3.805"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_attraction_same_session_change_does_not_double_reserve",
+          "time": "4.352"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_date_and_session_pools_are_isolated",
+          "time": "3.346"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_same_prebook_replay_does_not_allocate_twice",
+          "time": "3.184"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_train_capacity_is_shared_across_overlapping_station_queries",
+          "time": "3.402"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_migration_blocks_allocated_history_loss",
+          "time": "0.170"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_legacy_orders_are_not_silently_ignored[RAIL]",
+          "time": "3.150"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_legacy_orders_are_not_silently_ignored[ATTRACTION]",
+          "time": "3.432"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_order_commit_failure_rolls_back_capacity",
+          "time": "3.195"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_capacity_survives_process_exit",
+          "time": "5.716"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_started_payment_wins_race_against_unpaid_cancellation",
+          "time": "3.225"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_attraction_change_cannot_reserve_full_target",
+          "time": "3.454"
+        },
+        {
+          "classname": "tests.test_depth23_capacity",
+          "name": "test_rail_change_target_full_rejects_before_supplemental_authorization",
+          "time": "3.492"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_new_deadline_is_frozen_and_legacy_has_none[RAIL]",
+          "time": "3.634"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_new_deadline_is_frozen_and_legacy_has_none[ATTRACTION]",
+          "time": "4.743"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_expiration_releases_once_with_native_evidence[RAIL]",
+          "time": "3.184"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_expiration_releases_once_with_native_evidence[ATTRACTION]",
+          "time": "3.126"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_due_payment_rejected_before_worker_runs[RAIL]",
+          "time": "3.155"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_due_payment_rejected_before_worker_runs[ATTRACTION]",
+          "time": "3.205"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_exact_deadline_uses_database_time",
+          "time": "3.437"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_any_started_payment_retains_capacity[REQUIRES_CHANNEL_SELECTION-RAIL]",
+          "time": "3.214"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_any_started_payment_retains_capacity[REQUIRES_CHANNEL_SELECTION-ATTRACTION]",
+          "time": "3.170"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_any_started_payment_retains_capacity[UNKNOWN_EXTERNAL_STATE-RAIL]",
+          "time": "3.177"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_any_started_payment_retains_capacity[UNKNOWN_EXTERNAL_STATE-ATTRACTION]",
+          "time": "3.164"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_any_started_payment_retains_capacity[FAILED-RAIL]",
+          "time": "3.106"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_any_started_payment_retains_capacity[FAILED-ATTRACTION]",
+          "time": "3.300"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_manual_cancel_finalizes_deadline[RAIL]",
+          "time": "3.114"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_manual_cancel_finalizes_deadline[ATTRACTION]",
+          "time": "3.144"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_two_expiry_workers_release_once[RAIL]",
+          "time": "3.161"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_two_expiry_workers_release_once[ATTRACTION]",
+          "time": "3.188"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_payment_root_wins_before_sweep_and_capture_resumes",
+          "time": "3.203"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_expiry_wins_order_lock_against_payment",
+          "time": "3.156"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_expiry_recovers_from_actual_process_exit[False]",
+          "time": "6.324"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_expiry_recovers_from_actual_process_exit[True]",
+          "time": "5.623"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_broken_deadline_is_quarantined_without_starving_good_order",
+          "time": "3.161"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_missing_claim_is_not_reported_as_successful_release",
+          "time": "3.165"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_rail_checkout_does_not_fabricate_authorized_state_on_pre_root_failure",
+          "time": "3.363"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_one_shot_worker_runs_against_durable_database",
+          "time": "5.848"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_worker_rechecks_existing_intent_even_if_deadline_is_open",
+          "time": "3.144"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_failed_expiry_rolls_back_and_does_not_block_next_candidate",
+          "time": "3.134"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_worker_batch_is_bounded_and_restarts_from_unfinished_orders",
+          "time": "3.149"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_application_lifespan_starts_expiry_worker",
+          "time": "5.601"
+        },
+        {
+          "classname": "tests.test_depth24_expiry",
+          "name": "test_migration_preserves_all_deadline_history",
+          "time": "0.170"
+        }
+      ]
+    },
+    {
+      "group": "rental-rental",
+      "passed": 120,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "database": "go_rental_attractions_isolated",
+      "server_version": "PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "raw_sha256_verified": true,
+      "source_matches_browser": true,
+      "cases": [
+        {
+          "classname": "tests.test_rental_supplier_claim",
+          "name": "test_bound_supplier_claim_consumer_dispute_independent_adjudication",
+          "time": "7.104"
+        },
+        {
+          "classname": "tests.test_rental_supplier_claim",
+          "name": "test_supplier_claim_requires_current_tenant_binding[foreign_tenant]",
+          "time": "4.061"
+        },
+        {
+          "classname": "tests.test_rental_supplier_claim",
+          "name": "test_supplier_claim_requires_current_tenant_binding[no_permission]",
+          "time": "4.000"
+        },
+        {
+          "classname": "tests.test_rental_supplier_claim",
+          "name": "test_supplier_claim_requires_current_tenant_binding[broken_binding]",
+          "time": "4.052"
+        },
+        {
+          "classname": "tests.test_rental_operations",
+          "name": "test_owner_response_statement_persists_atomically_and_exact_retry",
+          "time": "3.771"
+        },
+        {
+          "classname": "tests.test_rental_operations",
+          "name": "test_denied_role_stale_and_spoofed_actor_leave_no_statement",
+          "time": "3.782"
+        },
+        {
+          "classname": "tests.test_rental_operations",
+          "name": "test_admin_open_independent_decision_and_appeal_ui_journey",
+          "time": "3.750"
+        },
+        {
+          "classname": "tests.test_rental_operations",
+          "name": "test_admin_return_statement_creates_source_not_financial_release",
+          "time": "3.989"
+        },
+        {
+          "classname": "tests.test_rental_operations",
+          "name": "test_statement_action_audit_failure_rolls_back",
+          "time": "3.758"
+        },
+        {
+          "classname": "tests.test_rental_operations",
+          "name": "test_statement_blank_and_raw_evidence_injection_rejected",
+          "time": "3.793"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_server_fixture_full_source_and_explicit_consent",
+          "time": "3.687"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_consent_cannot_be_inferred[False]",
+          "time": "3.737"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_consent_cannot_be_inferred[None]",
+          "time": "3.779"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_consent_cannot_be_inferred[1]",
+          "time": "3.807"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_consent_cannot_be_inferred[true]",
+          "time": "3.730"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_replay_stale_and_forged_source_conflicts",
+          "time": "3.809"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_arbitrary_order_values_do_not_approve_fixture[deposit_minor-1]",
+          "time": "3.728"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_arbitrary_order_values_do_not_approve_fixture[currency-USD]",
+          "time": "3.677"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_arbitrary_order_values_do_not_approve_fixture[vehicle_class-UNREGISTERED]",
+          "time": "3.732"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_arbitrary_order_values_do_not_approve_fixture[insurance-value3]",
+          "time": "3.697"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_tenant_admin_supplier_denied_consumer_consent",
+          "time": "3.736"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_expiry_and_source_drift_fail_closed",
+          "time": "3.738"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_consumer_must_reconfirm_before_expiry",
+          "time": "3.779"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_unique_anchor_concurrency_and_replay",
+          "time": "3.855"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_consent_flush_crash_rolls_back_retry",
+          "time": "3.821"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_tamper_or_wrong_anchor_cannot_resolve",
+          "time": "3.805"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_damage_decision_bound_before_open_and_appeal_holds_c11",
+          "time": "4.015"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_returned_order_cannot_manufacture_prior_deposit_consent",
+          "time": "3.711"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_http_server_fields_rejected_owner_discovery",
+          "time": "3.764"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_expired_unaccepted_proposal_renewal_requires_new_hash_consent",
+          "time": "3.707"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_concurrent_renewals_cannot_fork_proposal",
+          "time": "3.738"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_normal_return_admin_fact_releases_source_without_fake_case",
+          "time": "3.763"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_consumer_or_pending_case_cannot_finalize_return",
+          "time": "3.782"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_unproven_cancel_state_is_not_release_authority",
+          "time": "3.680"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_release_fact_after_expiry_and_wrong_version_rejected",
+          "time": "3.758"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_return_finalize_crash_and_competing_claim_are_atomic",
+          "time": "3.775"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_proven_original_rental_cancel_allows_release_source",
+          "time": "4.213"
+        },
+        {
+          "classname": "tests.test_rental_deposit_authority",
+          "name": "test_http_renew_and_admin_return_review",
+          "time": "3.738"
+        },
+        {
+          "classname": "tests.test_rental_compensation_authority",
+          "name": "test_reduction_reproduces_old_hash_and_preserves_history[3000]",
+          "time": "4.046"
+        },
+        {
+          "classname": "tests.test_rental_compensation_authority",
+          "name": "test_reduction_reproduces_old_hash_and_preserves_history[0]",
+          "time": "5.283"
+        },
+        {
+          "classname": "tests.test_rental_compensation_authority",
+          "name": "test_no_initial_equal_or_upward_reduction_authority[8000]",
+          "time": "3.712"
+        },
+        {
+          "classname": "tests.test_rental_compensation_authority",
+          "name": "test_no_initial_equal_or_upward_reduction_authority[9000]",
+          "time": "3.788"
+        },
+        {
+          "classname": "tests.test_rental_compensation_authority",
+          "name": "test_new_appeal_invalidates_prior_compensation_version",
+          "time": "3.733"
+        },
+        {
+          "classname": "tests.test_rental_compensation_authority",
+          "name": "test_preview_permissions_and_conflicting_review_replay",
+          "time": "3.673"
+        },
+        {
+          "classname": "tests.test_rental_compensation_authority",
+          "name": "test_competing_reductions_have_one_current_authority",
+          "time": "3.673"
+        },
+        {
+          "classname": "tests.test_rental_compensation_authority",
+          "name": "test_semantic_history_rewrite_rejected",
+          "time": "3.636"
+        },
+        {
+          "classname": "tests.test_rental_compensation_authority",
+          "name": "test_historical_compensation_authority_survives_later_pending_and_upward_review",
+          "time": "3.727"
+        },
+        {
+          "classname": "tests.test_rental_compensation_authority",
+          "name": "test_multiple_historical_reductions_preserve_exact_current_hash_at_each_revision",
+          "time": "3.696"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_dispute_to_independent_decision_never_moves_money",
+          "time": "3.679"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_replays_are_exact_and_changed_payload_conflicts[ACCEPT]",
+          "time": "3.606"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_replays_are_exact_and_changed_payload_conflicts[DISPUTE]",
+          "time": "3.672"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_tenant_and_supplier_isolation",
+          "time": "3.674"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_independent_reviewer_and_customer_response_required",
+          "time": "3.619"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_amount_limits[True]",
+          "time": "3.645"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_amount_limits[-1]",
+          "time": "3.640"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_amount_limits[0]",
+          "time": "3.703"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_amount_limits[200001]",
+          "time": "3.633"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_amount_limits[1.5]",
+          "time": "3.770"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_full_insurance_and_invalid_evidence_rejected",
+          "time": "4.700"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_competing_responses_serialize_and_stale_version_rejects",
+          "time": "3.636"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_writes_forbidden_outside_isolation",
+          "time": "3.542"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_api_principal_is_not_body_controlled_and_permissions_enforced",
+          "time": "3.622"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_failed_append_rolls_back_and_retry_creates_single_case",
+          "time": "3.602"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_concurrent_case_retries_and_contract_snapshot_freeze",
+          "time": "3.632"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_corrupted_case_history_cannot_progress_or_append[execution_item]",
+          "time": "3.598"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_corrupted_case_history_cannot_progress_or_append[embedded_order]",
+          "time": "3.632"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_corrupted_case_history_cannot_progress_or_append[owner]",
+          "time": "3.663"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_corrupted_case_history_cannot_progress_or_append[payload]",
+          "time": "3.623"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_corrupted_case_history_cannot_progress_or_append[chain]",
+          "time": "3.668"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_appeal_holds_decision_then_independent_review_preserves_history",
+          "time": "3.688"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_appeal_retries_conflicts_wrong_owner_and_stale_review",
+          "time": "3.679"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_competing_appeal_review_and_crash_recovery",
+          "time": "3.705"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_no_appeal_before_decision_or_timeout_default",
+          "time": "3.661"
+        },
+        {
+          "classname": "tests.test_rental_damage_disputes",
+          "name": "test_authenticated_http_appeal_and_review_endpoints",
+          "time": "3.796"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_agreement_is_not_money_and_authorization_has_own_root",
+          "time": "3.775"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_award_capture_and_remainder_release_are_atomic_idempotent[0]",
+          "time": "3.784"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_award_capture_and_remainder_release_are_atomic_idempotent[4000]",
+          "time": "3.788"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_award_capture_and_remainder_release_are_atomic_idempotent[10000]",
+          "time": "3.806"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_generic_movement_route_cannot_bypass_decision",
+          "time": "3.667"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_only_authorized_admin_can_move_isolated_deposit[actor0]",
+          "time": "4.525"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_only_authorized_admin_can_move_isolated_deposit[actor1]",
+          "time": "3.961"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_only_authorized_admin_can_move_isolated_deposit[actor2]",
+          "time": "3.602"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_wrong_owner_cannot_read_balance",
+          "time": "3.615"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_unknown_or_corrupt_money_never_reauthorizes_or_claims_success[intent]",
+          "time": "3.688"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_unknown_or_corrupt_money_never_reauthorizes_or_claims_success[movement]",
+          "time": "3.656"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_unknown_or_corrupt_money_never_reauthorizes_or_claims_success[missing_receipt]",
+          "time": "3.637"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_unknown_or_corrupt_money_never_reauthorizes_or_claims_success[binding]",
+          "time": "3.619"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_unknown_or_corrupt_money_never_reauthorizes_or_claims_success[missing_root]",
+          "time": "3.698"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_wrong_source_or_decision_revision_never_moves_money",
+          "time": "3.730"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_failure_between_capture_and_release_rolls_back_both_and_retry_once",
+          "time": "3.892"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_concurrent_authorization_and_settlement_retries_share_one_graph",
+          "time": "3.893"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_expiry_allows_only_release_of_existing_authorization",
+          "time": "3.773"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_production_cannot_use_simulated_money",
+          "time": "3.699"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_missing_capture_ledger_cannot_claim_settled_or_repeat_money",
+          "time": "3.759"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_expired_source_cannot_capture_existing_authorization",
+          "time": "3.680"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_money_http_owner_read_and_amount_override_denial",
+          "time": "3.990"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_no_damage_release_is_independent_of_damage_claim_and_idempotent",
+          "time": "3.762"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_expired_authorization_no_damage_release_and_concurrent_retries",
+          "time": "3.768"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_ordinary_release_cannot_bypass_open_dispute",
+          "time": "3.814"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_release_without_authorization_does_not_manufacture_funds",
+          "time": "4.730"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_appeal_holds_old_decision_without_money_and_cannot_plain_release",
+          "time": "3.844"
+        },
+        {
+          "classname": "tests.payments.test_c11_rental_deposit_money",
+          "name": "test_original_rent_refund_and_deposit_release_remain_separate_roots",
+          "time": "4.139"
+        },
+        {
+          "classname": "tests.test_c04_refund_terminal_integrity",
+          "name": "test_completed_rental_refund_rejects_nonrefunded_order[CONFIRMED]",
+          "time": "3.694"
+        },
+        {
+          "classname": "tests.test_c04_refund_terminal_integrity",
+          "name": "test_completed_rental_refund_rejects_nonrefunded_order[REFUND_PENDING]",
+          "time": "3.810"
+        },
+        {
+          "classname": "tests.test_c04_refund_terminal_integrity",
+          "name": "test_completed_rental_refund_rejects_nonrefunded_order[IN_PROGRESS]",
+          "time": "3.746"
+        },
+        {
+          "classname": "tests.test_c04_refund_terminal_integrity",
+          "name": "test_completed_rental_refund_rejects_nonrefunded_order[UNKNOWN_EXTERNAL_STATE]",
+          "time": "3.928"
+        },
+        {
+          "classname": "tests.test_c04_refund_terminal_integrity",
+          "name": "test_completed_rental_refund_without_money_evidence_is_rejected",
+          "time": "3.847"
+        },
+        {
+          "classname": "tests.test_c04_refund_terminal_integrity",
+          "name": "test_rental_refund_rechecks_concurrent_completion_terminal_pair[CONFIRMED]",
+          "time": "3.845"
+        },
+        {
+          "classname": "tests.test_c04_refund_terminal_integrity",
+          "name": "test_rental_refund_rechecks_concurrent_completion_terminal_pair[REFUNDED]",
+          "time": "3.808"
+        },
+        {
+          "classname": "tests.test_c04_refund_terminal_integrity",
+          "name": "test_rental_refund_terminal_guard_preserves_owner_check",
+          "time": "3.796"
+        },
+        {
+          "classname": "tests.test_depth06_rental_settlement",
+          "name": "test_longer_shorter_longer_then_cancel_returns_every_capture_once",
+          "time": "4.344"
+        },
+        {
+          "classname": "tests.test_depth06_rental_settlement",
+          "name": "test_quote_is_explicit_bound_to_amount_owner_and_dates",
+          "time": "4.118"
+        },
+        {
+          "classname": "tests.test_depth06_rental_settlement",
+          "name": "test_expired_quote_and_mismatched_order_do_not_move_money",
+          "time": "4.109"
+        },
+        {
+          "classname": "tests.test_depth06_rental_settlement",
+          "name": "test_topup_failure_is_recoverable_and_blocks_competing_actions",
+          "time": "4.193"
+        },
+        {
+          "classname": "tests.test_depth06_rental_settlement",
+          "name": "test_partial_refund_worker_restart_reuses_frozen_allocations[shorten]",
+          "time": "4.265"
+        },
+        {
+          "classname": "tests.test_depth06_rental_settlement",
+          "name": "test_partial_refund_worker_restart_reuses_frozen_allocations[cancel]",
+          "time": "4.257"
+        },
+        {
+          "classname": "tests.test_depth06_rental_settlement",
+          "name": "test_competing_quotes_only_one_can_change_order",
+          "time": "4.169"
+        },
+        {
+          "classname": "tests.test_depth06_rental_settlement",
+          "name": "test_same_quote_concurrent_retries_charge_once",
+          "time": "4.250"
+        },
+        {
+          "classname": "tests.test_depth06_rental_settlement",
+          "name": "test_equal_price_change_does_not_add_money_movements",
+          "time": "5.065"
+        },
+        {
+          "classname": "tests.test_depth06_rental_settlement",
+          "name": "test_staging_cannot_run_rental_simulator",
+          "time": "4.233"
+        }
+      ]
+    },
+    {
+      "group": "ticket-core",
+      "passed": 74,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "database": "go_tickets_isolated",
+      "server_version": "PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "raw_sha256_verified": true,
+      "source_matches_browser": true,
+      "cases": [
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_admin_without_order_permission_cannot_resolve_ticket_money[GO_READ_ONLY-FLIGHT]",
+          "time": "8.816"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_admin_without_order_permission_cannot_resolve_ticket_money[GO_READ_ONLY-RAIL]",
+          "time": "5.484"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_admin_without_order_permission_cannot_resolve_ticket_money[GO_FINANCE-FLIGHT]",
+          "time": "5.244"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_admin_without_order_permission_cannot_resolve_ticket_money[GO_FINANCE-RAIL]",
+          "time": "5.456"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_admin_without_order_permission_cannot_resolve_ticket_money[GO_TRUST-FLIGHT]",
+          "time": "5.215"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_admin_without_order_permission_cannot_resolve_ticket_money[GO_TRUST-RAIL]",
+          "time": "5.145"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_same_prebook_consumes_once_across_concurrent_retries",
+          "time": "4.437"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_consumed_prebook_cannot_be_rebound_to_another_owner_or_party[owner]",
+          "time": "4.378"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_consumed_prebook_cannot_be_rebound_to_another_owner_or_party[party]",
+          "time": "4.639"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_invalid_flight_search_date_writes_no_offers[2026-02-30]",
+          "time": "4.353"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_invalid_flight_search_date_writes_no_offers[2026-2-3]",
+          "time": "4.402"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_invalid_flight_search_date_writes_no_offers[not-a-date]",
+          "time": "4.594"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_exact_offer_expiry_rejects_prebook_without_writes",
+          "time": "4.246"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_supplier_fact_write_rejects_readonly_admin[FLIGHT]",
+          "time": "4.688"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_supplier_fact_write_rejects_readonly_admin[RAIL]",
+          "time": "4.850"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_flight_supplier_cannot_confirm_missing_extra_or_invalid_tickets[tickets0]",
+          "time": "4.324"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_flight_supplier_cannot_confirm_missing_extra_or_invalid_tickets[tickets1]",
+          "time": "4.392"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_flight_supplier_cannot_confirm_missing_extra_or_invalid_tickets[tickets2]",
+          "time": "4.513"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_flight_supplier_cannot_confirm_missing_extra_or_invalid_tickets[tickets3]",
+          "time": "4.738"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_delayed_checkout_writeback_does_not_regress_confirmed_tickets[FLIGHT]",
+          "time": "4.737"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_delayed_checkout_writeback_does_not_regress_confirmed_tickets[RAIL]",
+          "time": "4.378"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_admin_cannot_invent_initial_flight_tickets_from_unknown_supplier",
+          "time": "4.780"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_initial_supplier_replay_cannot_publish_success_over_pending_change[FLIGHT]",
+          "time": "4.563"
+        },
+        {
+          "classname": "tests.test_ticket_preinventory_boundaries",
+          "name": "test_initial_supplier_replay_cannot_publish_success_over_pending_change[RAIL]",
+          "time": "4.376"
+        },
+        {
+          "classname": "tests.test_sprint3a_flight",
+          "name": "test_flight_search_to_ticket_and_trip",
+          "time": "4.934"
+        },
+        {
+          "classname": "tests.test_sprint3a_flight",
+          "name": "test_flight_change_reissues_ticket",
+          "time": "4.888"
+        },
+        {
+          "classname": "tests.test_sprint3a_flight",
+          "name": "test_flight_refund_tracks_fee_and_original_payment",
+          "time": "4.815"
+        },
+        {
+          "classname": "tests.test_sprint3a_flight",
+          "name": "test_cross_account_flight_order_isolation",
+          "time": "5.149"
+        },
+        {
+          "classname": "tests.test_sprint3b_rail",
+          "name": "test_rail_search_to_ticket_and_trip",
+          "time": "4.781"
+        },
+        {
+          "classname": "tests.test_sprint3b_rail",
+          "name": "test_rail_change_reissues_ticket",
+          "time": "5.068"
+        },
+        {
+          "classname": "tests.test_sprint3b_rail",
+          "name": "test_rail_refund_tracks_fee_and_original_payment",
+          "time": "5.163"
+        },
+        {
+          "classname": "tests.test_sprint3b_rail",
+          "name": "test_cross_account_rail_order_isolation",
+          "time": "5.100"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_three_adults_have_matching_prices_tickets_and_original_refund[ONE_WAY-1]",
+          "time": "4.897"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_three_adults_have_matching_prices_tickets_and_original_refund[ROUND_TRIP-2]",
+          "time": "4.722"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_three_adults_have_matching_prices_tickets_and_original_refund[MULTI_CITY-3]",
+          "time": "4.719"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_bad_party_counts_rejected_before_quotes_are_written[0]",
+          "time": "4.201"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_bad_party_counts_rejected_before_quotes_are_written[10]",
+          "time": "4.118"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_bad_party_counts_rejected_before_quotes_are_written[True]",
+          "time": "4.109"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_bad_party_counts_rejected_before_quotes_are_written[2]",
+          "time": "4.166"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_bad_party_counts_rejected_before_quotes_are_written[1.5]",
+          "time": "4.121"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_composition_rejects_different_party_sizes",
+          "time": "4.994"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_missing_phantom_and_unsupported_passengers_never_create_order[passengers0]",
+          "time": "5.219"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_missing_phantom_and_unsupported_passengers_never_create_order[passengers1]",
+          "time": "4.250"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_missing_phantom_and_unsupported_passengers_never_create_order[passengers2]",
+          "time": "4.240"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_nine_adult_boundary_and_server_count_cannot_be_changed_at_order_time",
+          "time": "4.492"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_vault_party_rejects_duplicate_and_revoked_travelers",
+          "time": "4.552"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_change_surcharge_refund_survives_partial_failure_and_process_restart",
+          "time": "4.799"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_change_authorization_failure_preserves_claim_and_can_resume",
+          "time": "4.746"
+        },
+        {
+          "classname": "tests.test_depth05_flight_parties",
+          "name": "test_simultaneous_flight_refund_requests_return_one_durable_refund",
+          "time": "4.507"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_search_selection_prebook_and_order_preserve_entire_journey[ONE_WAY-1]",
+          "time": "4.525"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_search_selection_prebook_and_order_preserve_entire_journey[ROUND_TRIP-2]",
+          "time": "4.299"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_search_selection_prebook_and_order_preserve_entire_journey[MULTI_CITY-3]",
+          "time": "4.488"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_invalid_journey_rejected_without_writing_quotes[same_airport]",
+          "time": "4.040"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_invalid_journey_rejected_without_writing_quotes[reverse_date]",
+          "time": "4.070"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_invalid_journey_rejected_without_writing_quotes[same_day]",
+          "time": "3.916"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_invalid_journey_rejected_without_writing_quotes[wrong_return]",
+          "time": "4.111"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_invalid_journey_rejected_without_writing_quotes[missing_leg]",
+          "time": "4.025"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_invalid_journey_rejected_without_writing_quotes[too_many]",
+          "time": "4.332"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_invalid_journey_rejected_without_writing_quotes[past]",
+          "time": "4.210"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_invalid_journey_rejected_without_writing_quotes[extra_price]",
+          "time": "4.012"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_invalid_journey_rejected_without_writing_quotes[unknown_kind]",
+          "time": "5.193"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_open_jaw_and_six_leg_search_supported",
+          "time": "4.792"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_compose_rejects_unusable_or_mismatched_quotes[duplicate]",
+          "time": "4.050"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_compose_rejects_unusable_or_mismatched_quotes[expired]",
+          "time": "3.905"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_compose_rejects_unusable_or_mismatched_quotes[currency]",
+          "time": "4.002"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_compose_rejects_unusable_or_mismatched_quotes[missing]",
+          "time": "4.133"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_compose_rejects_unusable_or_mismatched_quotes[nested]",
+          "time": "4.227"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_compose_rejects_unusable_or_mismatched_quotes[route]",
+          "time": "4.508"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_no_silent_return_fields_on_legacy_single_leg_search",
+          "time": "4.061"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_round_trip_refund_uses_selected_leg_rules",
+          "time": "4.669"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_nonrefundable_leg_cannot_be_refunded_and_multi_change_is_not_silently_first_leg",
+          "time": "4.976"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_wrong_passenger_count_rejected_before_order_creation",
+          "time": "4.316"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_new_journey_paths_do_not_enable_production_fixtures",
+          "time": "3.988"
+        },
+        {
+          "classname": "tests.test_flight_journey_depth",
+          "name": "test_prebook_cannot_outlive_shortest_selected_quote",
+          "time": "4.050"
+        }
+      ]
+    },
+    {
+      "group": "ticket-coupons",
+      "passed": 54,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "database": "go_tickets_isolated",
+      "server_version": "PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "raw_sha256_verified": true,
+      "source_matches_browser": true,
+      "cases": [
+        {
+          "classname": "tests.test_flight_partial_runtime",
+          "name": "test_partial_person_change_uses_actual_coupons_and_preserves_every_other_coupon",
+          "time": "7.532"
+        },
+        {
+          "classname": "tests.test_flight_partial_runtime",
+          "name": "test_partial_refund_http_and_then_remaining_order_refund_conserve_money",
+          "time": "4.455"
+        },
+        {
+          "classname": "tests.test_flight_partial_runtime",
+          "name": "test_stale_parallel_quote_and_other_owner_coupon_reject_without_money",
+          "time": "4.273"
+        },
+        {
+          "classname": "tests.test_flight_partial_runtime",
+          "name": "test_partial_refund_crash_after_money_recovers_same_allocation",
+          "time": "4.313"
+        },
+        {
+          "classname": "tests.test_flight_partial_runtime",
+          "name": "test_refund_expiry_and_tampered_operation_reject_before_money",
+          "time": "4.291"
+        },
+        {
+          "classname": "tests.test_flight_partial_runtime",
+          "name": "test_selected_coupons_cannot_borrow_other_leg_or_duplicate_selection",
+          "time": "4.278"
+        },
+        {
+          "classname": "tests.test_flight_partial_runtime",
+          "name": "test_partial_refund_concurrent_commands_are_fenced_before_money",
+          "time": "4.260"
+        },
+        {
+          "classname": "tests.test_flight_partial_runtime",
+          "name": "test_partial_refund_real_process_death_recovers_without_second_money",
+          "time": "7.087"
+        },
+        {
+          "classname": "tests.test_flight_partial_runtime",
+          "name": "test_partial_quote_expiry_uses_database_clock_and_zero_money_effect",
+          "time": "4.229"
+        },
+        {
+          "classname": "tests.test_flight_partial_runtime",
+          "name": "test_completed_refund_receipt_tamper_is_not_replayed_as_success",
+          "time": "4.434"
+        },
+        {
+          "classname": "tests.test_flight_partial_runtime",
+          "name": "test_money_summary_distinguishes_unpaid_authorized_and_captured_then_refunded",
+          "time": "4.476"
+        },
+        {
+          "classname": "tests.test_ticket_operations_runtime",
+          "name": "test_real_roles_partial_change_cross_surface_workflow",
+          "time": "5.529"
+        },
+        {
+          "classname": "tests.test_flight_coupon_migration",
+          "name": "test_coupon_migration_upgrade_and_empty_downgrade",
+          "time": "3.919"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_read_is_owner_scoped_and_does_not_invent_or_write_fact",
+          "time": "3.823"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_four_cells_and_official_correction_use_source_order_not_state_rank",
+          "time": "3.944"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_unsigned_legacy_source_string_is_not_authority",
+          "time": "3.827"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_signature_binds_exact_body_and_event_identity",
+          "time": "3.926"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_untrusted_links_cannot_become_official[javascript:alert(1)]",
+          "time": "3.870"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_untrusted_links_cannot_become_official[http://airline.example/pass]",
+          "time": "3.885"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_untrusted_links_cannot_become_official[https://airline.example.evil.test/pass]",
+          "time": "3.884"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_untrusted_links_cannot_become_official[https://user@airline.example/pass]",
+          "time": "3.893"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_untrusted_links_cannot_become_official[https://airline.example:8080/pass]",
+          "time": "3.863"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_untrusted_links_cannot_become_official[https://airline.example/\\npass]",
+          "time": "3.904"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_untrusted_links_cannot_become_official[https://evil.example/pass]",
+          "time": "4.050"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_independent_review_revision_and_revocation_remove_pass_on_read",
+          "time": "3.865"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_maker_cannot_approve_and_registered_key_cannot_silently_change",
+          "time": "3.842"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_changed_order_never_reuses_prior_pass[ticket]",
+          "time": "3.856"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_changed_order_never_reuses_prior_pass[itinerary]",
+          "time": "3.881"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_changed_order_never_reuses_prior_pass[traveler]",
+          "time": "3.915"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_changed_order_never_reuses_prior_pass[refund]",
+          "time": "3.889"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_fact_validity_window[expired]",
+          "time": "3.831"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_fact_validity_window[future]",
+          "time": "3.879"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_fact_validity_window[too_old]",
+          "time": "3.867"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_fact_validity_window[beyond_authority]",
+          "time": "3.925"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_no_fallback_to_older_fact_when_newest_is_expired_or_corrupt",
+          "time": "3.876"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_sequence_and_provider_switch_are_explicit",
+          "time": "3.901"
+        },
+        {
+          "classname": "tests.test_depth19_travel_facts",
+          "name": "test_carrier_scope_and_production_gate",
+          "time": "3.878"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_coupon_readiness",
+          "name": "test_nonchange_unknown_and_failed_do_not_publish_usable_tickets[False]",
+          "time": "4.337"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_coupon_readiness",
+          "name": "test_nonchange_unknown_and_failed_do_not_publish_usable_tickets[True]",
+          "time": "4.508"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_coupon_readiness",
+          "name": "test_partial_refund_across_two_captures_recovers_after_first_money_commit",
+          "time": "6.116"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_coupon_readiness",
+          "name": "test_historical_order_leg_change_http_remains_available",
+          "time": "4.113"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_coupon_readiness",
+          "name": "test_old_whole_order_refund_pending_does_not_publish_usable_tickets",
+          "time": "4.164"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_ticket_operations",
+          "name": "test_apply_crash_after_native_commit_is_recoverable",
+          "time": "4.495"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_ticket_operations",
+          "name": "test_unknown_receipt_has_followup_resolution_path",
+          "time": "4.447"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_ticket_operations",
+          "name": "test_native_applier_cannot_verify_after_other_operator_resumes_audit",
+          "time": "4.929"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_ticket_operations",
+          "name": "test_late_old_apply_never_executes_new_receipt",
+          "time": "4.743"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_completed_money",
+          "name": "test_completed_refund_replay_rejects_changed_money_fact[amount_minor-1]",
+          "time": "4.254"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_completed_money",
+          "name": "test_completed_refund_replay_rejects_changed_money_fact[currency-USD]",
+          "time": "4.511"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_completed_money",
+          "name": "test_completed_refund_replay_rejects_changed_money_fact[state-FAILED]",
+          "time": "4.231"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_money_view",
+          "name": "test_unpaid_and_change_authorization_do_not_invent_captured_money",
+          "time": "4.178"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_money_view",
+          "name": "test_money_summary_reads_committed_refund_before_coupon_finalize",
+          "time": "4.257"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_money_view",
+          "name": "test_foreign_root_pointer_fails_closed",
+          "time": "4.573"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_money_view",
+          "name": "test_missing_payment_root_does_not_certify_partial_money_graph[FLIGHT_ORDER]",
+          "time": "4.297"
+        },
+        {
+          "classname": "tests.independent_ticket.test_independent_money_view",
+          "name": "test_missing_payment_root_does_not_certify_partial_money_graph[FLIGHT_CHANGE]",
+          "time": "4.269"
+        }
+      ]
+    },
+    {
+      "group": "ticket-resolution",
+      "passed": 96,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "database": "go_tickets_isolated",
+      "server_version": "PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "raw_sha256_verified": true,
+      "source_matches_browser": true,
+      "cases": [
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_selected_legs_replace_only_their_passenger_tickets_then_refund[ROUND_TRIP-changes0]",
+          "time": "7.409"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_selected_legs_replace_only_their_passenger_tickets_then_refund[ROUND_TRIP-changes1]",
+          "time": "3.498"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_selected_legs_replace_only_their_passenger_tickets_then_refund[MULTI_CITY-changes2]",
+          "time": "3.788"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_selected_legs_replace_only_their_passenger_tickets_then_refund[MULTI_CITY-changes3]",
+          "time": "3.670"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_unaccepted_multi_leg_quote_never_authorizes_money[missing]",
+          "time": "3.360"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_unaccepted_multi_leg_quote_never_authorizes_money[wrong_hash]",
+          "time": "3.362"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_unaccepted_multi_leg_quote_never_authorizes_money[wrong_amount]",
+          "time": "3.227"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_unaccepted_multi_leg_quote_never_authorizes_money[currency]",
+          "time": "4.505"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_unaccepted_multi_leg_quote_never_authorizes_money[false_consent]",
+          "time": "3.257"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_invalid_selection_or_date_order_cannot_create_plan[changes0]",
+          "time": "3.505"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_invalid_selection_or_date_order_cannot_create_plan[changes1]",
+          "time": "3.232"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_invalid_selection_or_date_order_cannot_create_plan[changes2]",
+          "time": "3.612"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_invalid_selection_or_date_order_cannot_create_plan[changes3]",
+          "time": "3.324"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_invalid_selection_or_date_order_cannot_create_plan[changes4]",
+          "time": "3.581"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_changed_order_or_plan_cannot_borrow_prior_consent",
+          "time": "3.398"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_crash_after_money_recovers_once_and_rejects_opposite_decision[TICKETED]",
+          "time": "3.643"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_crash_after_money_recovers_once_and_rejects_opposite_decision[FAILED]",
+          "time": "3.414"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_concurrent_opposite_resolution_cannot_change_money_decision",
+          "time": "3.684"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_wrong_coupon_count_and_foreign_receipt_never_complete_order",
+          "time": "3.345"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_old_resolution_replay_cannot_overwrite_next_change",
+          "time": "3.706"
+        },
+        {
+          "classname": "tests.test_depth48_flight_changes",
+          "name": "test_http_requires_selection_and_binds_exact_confirmed_quote",
+          "time": "3.443"
+        },
+        {
+          "classname": "tests.test_next_depth_c03_payment_inventory_races",
+          "name": "test_closed_reservation_wins_after_checkout_guard_before_payment_root[expiry]",
+          "time": "3.263"
+        },
+        {
+          "classname": "tests.test_next_depth_c03_payment_inventory_races",
+          "name": "test_closed_reservation_wins_after_checkout_guard_before_payment_root[cancel]",
+          "time": "3.055"
+        },
+        {
+          "classname": "tests.test_next_depth_c03_payment_inventory_races",
+          "name": "test_committed_payment_root_blocks_cancel_and_expiry_during_capture_handoff",
+          "time": "3.102"
+        },
+        {
+          "classname": "tests.test_next_depth_c03_payment_inventory_races",
+          "name": "test_full_target_capacity_rejects_before_supplemental_money_or_original_release",
+          "time": "3.212"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_exact_replay_and_conflicting_decision[TICKETED]",
+          "time": "3.515"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_exact_replay_and_conflicting_decision[FAILED]",
+          "time": "3.237"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_commit_failure_after_money_recovers[TICKETED]",
+          "time": "3.956"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_commit_failure_after_money_recovers[FAILED]",
+          "time": "4.222"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_concurrent_opposite_decision_never_dispatches_money[TICKETED]",
+          "time": "3.916"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_concurrent_opposite_decision_never_dispatches_money[FAILED]",
+          "time": "3.176"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_process_exit_after_money_recovers[TICKETED]",
+          "time": "5.530"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_process_exit_after_money_recovers[FAILED]",
+          "time": "5.488"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_prior_replay_cannot_modify_next_change",
+          "time": "3.253"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_frozen_identity_cannot_be_replaced[ticket]",
+          "time": "3.327"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_frozen_identity_cannot_be_replaced[quote]",
+          "time": "3.349"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_frozen_identity_cannot_be_replaced[owner]",
+          "time": "3.342"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_frozen_identity_cannot_be_replaced[hash]",
+          "time": "3.167"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_fabricated_money_stays_pending[TICKETED]",
+          "time": "3.743"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_fabricated_money_stays_pending[FAILED]",
+          "time": "4.354"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_stale_worker_cannot_commit",
+          "time": "3.108"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_migration_retains_nonempty_journal",
+          "time": "0.372"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_quote_id_required_when_delayed_response_is_ambiguous",
+          "time": "3.263"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_money_receipt_from_other_order_rejected",
+          "time": "3.195"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_quote_id_from_other_order_cannot_dispatch_money",
+          "time": "3.150"
+        },
+        {
+          "classname": "tests.test_depth22_rail_resolution",
+          "name": "test_admin_route_requires_auth_and_conflicts_are_409",
+          "time": "3.281"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_after_committed_money_failure_retains_resource_and_recovers_same_root[FLIGHT_CHECKOUT]",
+          "time": "3.135"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_after_committed_money_failure_retains_resource_and_recovers_same_root[FLIGHT_EXECUTE_CHANGE]",
+          "time": "3.091"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_checkout_resumes_each_committed_boundary[before_bridge]",
+          "time": "3.133"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_checkout_resumes_each_committed_boundary[create_intent]",
+          "time": "3.095"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_checkout_resumes_each_committed_boundary[execute]",
+          "time": "3.021"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_checkout_resumes_each_committed_boundary[simulate_result]",
+          "time": "3.100"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_checkout_resumes_each_committed_boundary[AUTHORIZATION]",
+          "time": "2.993"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_checkout_resumes_each_committed_boundary[CAPTURE]",
+          "time": "3.019"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_explicit_absent_or_foreign_validation_releases_claim[missing-owner]",
+          "time": "2.905"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_explicit_absent_or_foreign_validation_releases_claim[c11-flight-owner]",
+          "time": "2.884"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_change_expiry_validation_is_safely_retryable",
+          "time": "2.959"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_binding_failure_never_invokes_business[False]",
+          "time": "2.942"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_binding_failure_never_invokes_business[True]",
+          "time": "3.533"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_legacy_completed_unbound_claim_replays_without_execution[FLIGHT_CHECKOUT]",
+          "time": "3.915"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_legacy_completed_unbound_claim_replays_without_execution[FLIGHT_EXECUTE_CHANGE]",
+          "time": "2.891"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_legacy_unprovable_response_is_held",
+          "time": "3.002"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[intent_unknown]",
+          "time": "3.083"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[payer]",
+          "time": "2.980"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[currency]",
+          "time": "3.173"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[amount]",
+          "time": "3.618"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[binding]",
+          "time": "3.249"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[movement_unknown]",
+          "time": "3.121"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[movement_key]",
+          "time": "2.990"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[parent]",
+          "time": "2.964"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_recovery_rejects_unknown_or_mismatched_money_without_bridge[attempt_external]",
+          "time": "2.930"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_released_change_cannot_revive_under_same_or_new_key",
+          "time": "3.149"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_stale_execution_token_cannot_write_request_or_resource[COMPLETE]",
+          "time": "2.870"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_stale_execution_token_cannot_write_request_or_resource[RELEASE]",
+          "time": "2.876"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_stale_execution_token_cannot_write_request_or_resource[RECOVERY_REQUIRED]",
+          "time": "2.843"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_active_resource_blocks_concurrent_callback_then_replays[False]",
+          "time": "2.938"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_active_resource_blocks_concurrent_callback_then_replays[True]",
+          "time": "3.738"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_completion_failure_replays_without_repeating_money[False]",
+          "time": "3.381"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_completion_failure_replays_without_repeating_money[True]",
+          "time": "3.049"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_failure_recording_unavailable_keeps_running_fence",
+          "time": "2.897"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_resource_guard_refuses_changed_payload_on_different_key[user_id]",
+          "time": "2.815"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_resource_guard_refuses_changed_payload_on_different_key[payment_method_id]",
+          "time": "2.938"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_resource_guard_refuses_changed_payload_on_different_key[order_id]",
+          "time": "2.815"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_different_key_can_only_acquire_quiescent_recovery_and_fences_old_request",
+          "time": "2.783"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_unknown_durable_response_code_is_never_replayed[request]",
+          "time": "3.084"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_unknown_durable_response_code_is_never_replayed[resource]",
+          "time": "2.931"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_supplier_resolution_money_commit_interruption_reuses_same_movement[TICKETED]",
+          "time": "3.081"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_supplier_resolution_money_commit_interruption_reuses_same_movement[FAILED]",
+          "time": "2.924"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_supplier_resolution_rejects_non_printable_tokens_before_money[PNR\\nINJECT-tickets0]",
+          "time": "2.954"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_supplier_resolution_rejects_non_printable_tokens_before_money[VALIDPNR-tickets1]",
+          "time": "2.893"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_callback_inventory_rejects_unprintable_metadata_before_money[evidence_reference-isolated://ok\\nforged]",
+          "time": "2.953"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_callback_inventory_rejects_unprintable_metadata_before_money[evidence_reference-isolated://ok\\x00forged]",
+          "time": "3.079"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_callback_inventory_rejects_unprintable_metadata_before_money[actor-admin\\nforged]",
+          "time": "2.957"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_callback_inventory_rejects_unprintable_metadata_before_money[actor-admin\\x00forged]",
+          "time": "2.933"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_failed_callback_forbids_ticket_tokens_before_release",
+          "time": "3.295"
+        },
+        {
+          "classname": "tests.payments.test_c11_flight_idempotency_recovery",
+          "name": "test_callback_risk_inventory_is_complete_for_admitted_states",
+          "time": "4.017"
+        }
+      ]
+    },
+    {
+      "group": "ticket-shared",
+      "passed": 49,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "database": "go_tickets_isolated",
+      "server_version": "PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "raw_sha256_verified": true,
+      "source_matches_browser": true,
+      "cases": [
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_rail_supplier_cannot_ticket_wrong_count_or_invalid_identities[tickets0]",
+          "time": "7.246"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_rail_supplier_cannot_ticket_wrong_count_or_invalid_identities[tickets1]",
+          "time": "3.980"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_rail_supplier_cannot_ticket_wrong_count_or_invalid_identities[tickets2]",
+          "time": "3.437"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_rail_supplier_cannot_ticket_wrong_count_or_invalid_identities[tickets3]",
+          "time": "3.561"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_rail_supplier_cannot_ticket_wrong_count_or_invalid_identities[tickets4]",
+          "time": "3.248"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_confirmed_rail_tickets_replay_exactly_and_cannot_be_replaced",
+          "time": "3.521"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_multi_person_change_refund_returns_to_original_and_adjustment_captures",
+          "time": "3.567"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_business_class_change_uses_quoted_zero_fee",
+          "time": "3.822"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_wrong_reissued_party_cannot_capture_adjustment",
+          "time": "3.734"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_missing_confirmed_adjustment_cannot_mark_change_executed",
+          "time": "4.066"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_signed_in_prebook_cannot_be_claimed_by_another_consumer",
+          "time": "3.541"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_rail_http_rejects_ambiguous_or_unsupported_quantities[True]",
+          "time": "3.227"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_rail_http_rejects_ambiguous_or_unsupported_quantities[1.2]",
+          "time": "3.195"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_rail_http_rejects_ambiguous_or_unsupported_quantities[2]",
+          "time": "3.333"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_rail_http_rejects_ambiguous_or_unsupported_quantities[0]",
+          "time": "3.133"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_rail_http_rejects_ambiguous_or_unsupported_quantities[10]",
+          "time": "7.667"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_invalid_authentication_never_falls_back_to_anonymous_quote",
+          "time": "3.258"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_changed_vault_identity_with_same_name_cannot_reuse_prebook",
+          "time": "3.411"
+        },
+        {
+          "classname": "tests.test_depth20_api_fulfillment",
+          "name": "test_migration_roundtrip_preserves_history_and_refuses_prebook_evidence_loss",
+          "time": "0.800"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_supplier_outcome_without_bound_capture_cannot_assert_paid[missing_capture-UNKNOWN_EXTERNAL_STATE]",
+          "time": "3.679"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_supplier_outcome_without_bound_capture_cannot_assert_paid[missing_capture-SUPPLIER_FAILED]",
+          "time": "4.118"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_currency-UNKNOWN_EXTERNAL_STATE]",
+          "time": "3.828"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_currency-SUPPLIER_FAILED]",
+          "time": "5.566"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_binding-UNKNOWN_EXTERNAL_STATE]",
+          "time": "5.159"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_binding-SUPPLIER_FAILED]",
+          "time": "6.829"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_supplier_outcome_without_bound_capture_cannot_assert_paid[foreign_parent-UNKNOWN_EXTERNAL_STATE]",
+          "time": "5.088"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_supplier_outcome_without_bound_capture_cannot_assert_paid[foreign_parent-SUPPLIER_FAILED]",
+          "time": "3.731"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_supplier_outcome_without_bound_capture_cannot_assert_paid[unknown_movement_type-UNKNOWN_EXTERNAL_STATE]",
+          "time": "3.484"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_supplier_outcome_without_bound_capture_cannot_assert_paid[unknown_movement_type-SUPPLIER_FAILED]",
+          "time": "3.515"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_supplier_unknown_preserves_independent_bound_money_fact[0-PAID]",
+          "time": "3.457"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_supplier_unknown_preserves_independent_bound_money_fact[2-PARTIALLY_REFUNDED]",
+          "time": "3.568"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_supplier_unknown_preserves_independent_bound_money_fact[1-REFUNDED]",
+          "time": "3.499"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_same_supplier_event_refreshes_money_without_repeating_supplier_effect[missing_capture]",
+          "time": "3.492"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_same_supplier_event_refreshes_money_without_repeating_supplier_effect[refund]",
+          "time": "3.628"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_late_supplier_confirmation_requires_bound_unrefunded_money[wrong_binding]",
+          "time": "3.439"
+        },
+        {
+          "classname": "tests.test_c10_supplier_money_projection",
+          "name": "test_late_supplier_confirmation_requires_bound_unrefunded_money[refund]",
+          "time": "3.565"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_flight_old_quote_cannot_execute_after_refund",
+          "time": "4.489"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_attraction_expired_quote_fails_closed",
+          "time": "4.091"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_ride_unknown_from_in_progress_restores_in_progress",
+          "time": "3.468"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_late_supplier_fact_cannot_resurrect_completed_ride",
+          "time": "4.012"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_ride_unknown_can_converge_to_failed",
+          "time": "4.628"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_attraction_redeem_evidence_keeps_consumed_credential",
+          "time": "4.076"
+        },
+        {
+          "classname": "tests.test_final_depth_terminal_hardening",
+          "name": "test_same_supplier_fact_replay_does_not_append_events",
+          "time": "3.591"
+        },
+        {
+          "classname": "tests.test_depth32_flight_refund_consent",
+          "name": "test_flight_refund_consent_and_replay_have_one_money_identity",
+          "time": "2.972"
+        },
+        {
+          "classname": "tests.test_depth32_flight_refund_consent",
+          "name": "test_changed_order_invalidates_old_flight_refund_quote[amount]",
+          "time": "3.141"
+        },
+        {
+          "classname": "tests.test_depth32_flight_refund_consent",
+          "name": "test_changed_order_invalidates_old_flight_refund_quote[revision]",
+          "time": "3.080"
+        },
+        {
+          "classname": "tests.test_depth32_flight_refund_consent",
+          "name": "test_flight_timeout_keeps_frozen_consent_and_resumes_original_money_key",
+          "time": "2.946"
+        },
+        {
+          "classname": "tests.test_depth32_flight_refund_consent",
+          "name": "test_mutated_consent_record_blocks_recovery",
+          "time": "2.848"
+        },
+        {
+          "classname": "tests.test_depth32_flight_refund_consent",
+          "name": "test_historical_pending_refund_does_not_invent_consent",
+          "time": "2.936"
+        }
+      ]
+    }
+  ],
+  "browsers": [
+    {
+      "path": "rental-browser/ticket-browser-source/rental-attractions-evidence/results.json",
+      "binding": {
+        "source_tree_sha256": "b1c5f805d4cca353ede609efb7d5035d43c6396320d0680d638212a607cccf8c",
+        "candidate": "1960b51e86acefa45d0eacfce22e2b6a6245adcf",
+        "application_tree": "b8881e3bb869f4666eadffa8328e0df83d4a763e",
+        "tracked_source_dirty": false
+      },
+      "mode": "ISOLATED_SQLITE_CHROMIUM",
+      "errors": [],
+      "native_device": "NOT_RUN",
+      "steps": [
+        {
+          "name": "traveler",
+          "result": "PASS"
+        },
+        {
+          "name": "rental-search-book-pay",
+          "result": "PASS"
+        },
+        {
+          "name": "rental-reprice-change",
+          "result": "PASS"
+        },
+        {
+          "name": "rental-cancel-refund",
+          "result": "PASS"
+        },
+        {
+          "name": "attraction-search-book-pay",
+          "result": "PASS"
+        },
+        {
+          "name": "attraction-future-window-disables-redemption",
+          "result": "PASS"
+        },
+        {
+          "name": "attraction-refund",
+          "result": "PASS"
+        },
+        {
+          "name": "rental-second-book-for-supplier-claim",
+          "result": "PASS"
+        },
+        {
+          "name": "rental-normal-pickup-return",
+          "result": "PASS"
+        },
+        {
+          "name": "supplier-bound-rental-damage-claim",
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "path": "ticket-browser/ticket-browser-source/evidence/results.json",
+      "binding": {
+        "source_tree_sha256": "b1c5f805d4cca353ede609efb7d5035d43c6396320d0680d638212a607cccf8c",
+        "candidate": "1960b51e86acefa45d0eacfce22e2b6a6245adcf",
+        "application_tree": "b8881e3bb869f4666eadffa8328e0df83d4a763e",
+        "tracked_source_dirty": false
+      },
+      "mode": "ISOLATED_SQLITE_CHROMIUM",
+      "errors": [],
+      "native_device": "NOT_RUN",
+      "steps": [
+        {
+          "name": "travelers",
+          "result": "PASS"
+        },
+        {
+          "name": "book-flight",
+          "result": "PASS"
+        },
+        {
+          "name": "partial-change",
+          "result": "PASS"
+        },
+        {
+          "name": "supplier-receipt",
+          "result": "PASS"
+        },
+        {
+          "name": "operator-apply",
+          "result": "PASS"
+        },
+        {
+          "name": "independent-verify",
+          "result": "PASS"
+        },
+        {
+          "name": "consumer-partial-refund",
+          "result": "PASS"
+        }
+      ]
+    }
+  ],
+  "source_files": 1588,
+  "source_tree_sha256": "b1c5f805d4cca353ede609efb7d5035d43c6396320d0680d638212a607cccf8c",
+  "scope_obligations": 44,
+  "scope_required_cases": 152,
+  "scope_cases_complete_acceptance_not_issued": 152,
+  "native": "SOURCE_TYPECHECK_AND_CONTRACT_ONLY; DEVICE_NOT_RUN",
+  "test_count_warning": "PG environment executions, not unique requirements or exclusively PostgreSQL-backed tests; workflows overlap.",
+  "sqlite_exceptions": [
+    "test_c11_idempotency_completion_guard::test_real_sql_claim_survives_failure_and_replays_after_reconciliation (parameterized executions use their own in-memory SQLite)",
+    "test_depth20_api_fulfillment::test_migration_roundtrip_preserves_history_and_refuses_prebook_evidence_loss",
+    "test_depth22_rail_resolution::test_migration_retains_nonempty_journal",
+    "test_depth21_refund_recovery::test_migration_roundtrip_preserves_prior_history_and_blocks_journal_loss",
+    "test_depth23_capacity::test_migration_blocks_allocated_history_loss",
+    "test_depth24_expiry::test_migration_preserves_all_deadline_history"
+  ],
+  "counts": {
+    "rental_attraction_pg_environment_executions": 383,
+    "ticket_pg_environment_executions": 273,
+    "rental_attraction_self_sqlite_executions": 5,
+    "ticket_self_sqlite_executions": 2,
+    "independent_probes_included_in_383": 37,
+    "rental_browser_steps": 10,
+    "ticket_browser_steps": 7,
+    "node_refund_consent_callbacks": 3,
+    "node_supplier_delayed_callbacks": 7,
+    "unique_combined_total": "NOT_CLAIMED"
+  },
+  "scope_index": "FULL_GAPS_1960b51.json"
+}

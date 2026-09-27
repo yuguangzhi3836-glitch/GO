@@ -33,7 +33,11 @@
   function bind({startId,endId,allowSameDay=false,kind='date',labels={}}){
     const start=document.getElementById(startId),end=document.getElementById(endId);
     if(!start||!end)return null;
-    const open=()=>openPicker({start,end,allowSameDay,kind,labels});
+    if(start.goRangeBinding?.end===end)return start.goRangeBinding;
+    const min=dayOnly(start.min)||dayValue(new Date()),max=dayOnly(end.max||start.max);
+    // Text + readonly prevents iOS from opening a second native date picker.
+    for(const input of [start,end]){const value=input.value;input.type='text';input.value=value;input.placeholder=kind==='datetime'?'请选择日期与时间':'请选择日期'}
+    const open=()=>openPicker({start,end,allowSameDay,kind,labels,min,max});
     for(const input of [start,end]){
       input.readOnly=true;
       input.setAttribute('aria-haspopup','dialog');
@@ -41,10 +45,10 @@
       input.addEventListener('click',event=>{event.preventDefault();open()});
       input.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open()}});
     }
-    return {open};
+    return start.goRangeBinding={open,end};
   }
 
-  function openPicker({start,end,allowSameDay,kind,labels}){
+  function openPicker({start,end,allowSameDay=false,kind='date',labels={},min='',max=''}){
     document.querySelector('.go-date-range-backdrop')?.remove();
     const model=createSelection({allowSameDay,start:start.value,end:end.value});
     const initial=dayOnly(start.value);
@@ -63,13 +67,17 @@
       <button type="button" class="btn primary" data-confirm disabled>确认日期</button>
     </section>`;
     document.body.appendChild(wrap);
+    const trigger=document.activeElement;
+    const close=()=>{wrap.remove();if(trigger?.isConnected)trigger.focus()};
+    wrap.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close()}if(e.key==='Tab'){const nodes=[...wrap.querySelectorAll('button:not(:disabled),input')];const i=nodes.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();nodes.at(-1)?.focus()}else if(!e.shiftKey&&i===nodes.length-1){e.preventDefault();nodes[0]?.focus()}}});
     const startTime=wrap.querySelector('[data-start-time]'),endTime=wrap.querySelector('[data-end-time]');
     if(startTime)startTime.value=timeOnly(start.value,'09:00');
     if(endTime)endTime.value=timeOnly(end.value,'18:00');
 
     function valid(){
       const s=model.snapshot();
-      if(!s.complete)return false;
+      if(!s.complete||s.end<s.start||(!allowSameDay&&s.end===s.start))return false;
+      if((min&&s.start<min)||(max&&s.end>max))return false;
       return kind!=='datetime'||s.start!==s.end||endTime.value>startTime.value;
     }
     function refresh(){
@@ -77,7 +85,7 @@
       wrap.querySelector('[data-start]').textContent=`${labels.start||'开始日期'}：${s.start||'未选择'}`;
       wrap.querySelector('[data-end]').textContent=`${labels.end||'结束日期'}：${s.end||'未选择'}`;
       const prompt=wrap.querySelector('[data-prompt]'),error=wrap.querySelector('[data-error]');
-      prompt.textContent=s.complete?'日期区间已选好，请确认':`已选${labels.start||'开始日期'}，请选择${labels.end||'结束日期'}`;
+      prompt.textContent=s.complete?'日期区间已选好，请确认':s.start?`已选${labels.start||'开始日期'}，请选择${labels.end||'结束日期'}`:`请选择${labels.start||'开始日期'}，然后选择${labels.end||'结束日期'}`;
       error.textContent=s.status==='SAME_DAY_BLOCKED'?'该业务的结束日期必须晚于开始日期':s.status==='RESTARTED'?'已将较早日期设为新的开始日期，请继续选择结束日期':kind==='datetime'&&s.complete&&!valid()?'还车时间必须晚于取车时间':'';
       wrap.querySelector('[data-confirm]').disabled=!valid();
       render();
@@ -93,7 +101,8 @@
         const value=`${year}-${pad(month+1)}-${pad(day)}`;
         const selected=value===state.start||value===state.end;
         const inRange=state.start&&state.end&&value>state.start&&value<state.end;
-        cells.push(`<button type="button" role="gridcell" data-day="${value}" aria-pressed="${selected}" class="${selected?'selected ':''}${inRange?'in-range':''}">${day}</button>`);
+        const disabled=(min&&value<min)||(max&&value>max);
+        cells.push(`<button type="button" role="gridcell" data-day="${value}" aria-label="${value}${value===state.start?' '+(labels.start||'开始'):value===state.end?' '+(labels.end||'结束'):''}" aria-pressed="${selected}" ${disabled?'disabled':''} class="${selected?'selected ':''}${inRange?'in-range':''}">${day}</button>`);
       }
       const grid=wrap.querySelector('.go-calendar-grid');
       grid.innerHTML=cells.join('');
@@ -101,8 +110,8 @@
     }
     wrap.querySelector('[data-prev]').onclick=()=>{cursor.setMonth(cursor.getMonth()-1);render()};
     wrap.querySelector('[data-next]').onclick=()=>{cursor.setMonth(cursor.getMonth()+1);render()};
-    wrap.querySelector('[data-close]').onclick=()=>wrap.remove();
-    wrap.onclick=event=>{if(event.target===wrap)wrap.remove()};
+    wrap.querySelector('[data-close]').onclick=close;
+    wrap.onclick=event=>{if(event.target===wrap)close()};
     if(startTime)startTime.oninput=refresh;
     if(endTime)endTime.oninput=refresh;
     wrap.querySelector('[data-confirm]').onclick=()=>{
@@ -111,7 +120,7 @@
       start.value=kind==='datetime'?`${s.start}T${startTime.value}`:s.start;
       end.value=kind==='datetime'?`${s.end}T${endTime.value}`:s.end;
       for(const input of [start,end])input.dispatchEvent(new Event('change',{bubbles:true}));
-      wrap.remove();
+      close();
     };
     refresh();
     wrap.querySelector('[data-day]')?.focus();
