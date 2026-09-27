@@ -9,6 +9,8 @@ router=APIRouter()
 from fastapi import HTTPException
 from go_hotel.security.deps import consumer_principal
 from go_hotel.services import transaction_order_view
+from typing import Literal
+SupplierVertical=Literal['HOTEL','FLIGHT','RAIL','RIDE','RENTAL','ATTRACTION']
 
 def transaction_snapshot(vertical, order_id, **scope):
     try:
@@ -17,8 +19,8 @@ def transaction_snapshot(vertical, order_id, **scope):
         raise HTTPException(404, detail='ORDER_NOT_FOUND')
 
 @router.get('/v1/supplier/transaction-orders')
-def supplier_transaction_orders(limit:int=Query(50,ge=1,le=200),offset:int=Query(0,ge=0),p:Principal=Depends(supplier_principal)):
-    return {'data': transaction_order_view.supplier_orders(p.supplier_id, limit, offset)}
+def supplier_transaction_orders(limit:int=Query(50,ge=1,le=200),offset:int=Query(0,ge=0),vertical:SupplierVertical|None=None,p:Principal=Depends(supplier_principal)):
+    return {'data': transaction_order_view.supplier_orders(p.supplier_id, limit, offset,vertical)}
 
 @router.get('/v1/supplier/transaction-orders/{vertical}/{order_id}')
 def supplier_transaction_order(vertical:str,order_id:str,p:Principal=Depends(supplier_principal)):
@@ -38,7 +40,7 @@ def supplier_dashboard(p:Principal=Depends(supplier_principal)): return {'data':
 @router.get('/v1/supplier/orders')
 def supplier_orders(status:str|None=None,limit:int=Query(50,ge=1,le=200),offset:int=Query(0,ge=0),p:Principal=Depends(supplier_principal)): return {'data':svc.supplier_orders(p.supplier_id,status,limit,offset)}
 @router.get('/v1/supplier/refunds')
-def supplier_refunds(status:str|None=None,limit:int=Query(50,ge=1,le=200),offset:int=Query(0,ge=0),p:Principal=Depends(supplier_principal)): return {'data':svc.supplier_refunds(p.supplier_id,status,limit,offset)}
+def supplier_refunds(status:str|None=None,limit:int=Query(50,ge=1,le=200),offset:int=Query(0,ge=0),vertical:SupplierVertical|None=None,p:Principal=Depends(supplier_principal)): return {'data':transaction_order_view.supplier_refunds(p.supplier_id,status,limit,offset,vertical)}
 @router.get('/v1/supplier/stay-credits')
 def supplier_credits(status:str|None=None,limit:int=Query(50,ge=1,le=200),offset:int=Query(0,ge=0),p:Principal=Depends(supplier_principal)): return {'data':svc.supplier_stay_credits(p.supplier_id,status,limit,offset)}
 @router.get('/v1/supplier/liabilities')

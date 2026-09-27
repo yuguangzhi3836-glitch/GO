@@ -232,7 +232,7 @@ app.add_middleware(Sprint1RAuditMiddleware)
 
 class Sprint1USecurityMiddleware(BaseHTTPMiddleware):
     SAFE={"GET","HEAD","OPTIONS"}
-    EXEMPT={"/bff/auth/login","/bff/auth/supplier/register","/bff/auth/sso/start","/bff/auth/sso/callback","/v1/consumer/auth/register","/v1/consumer/auth/login","/v1/mobile/auth/login","/v1/mobile/auth/refresh"}
+    EXEMPT={"/v1/registration/challenges","/bff/auth/login","/bff/auth/supplier/register","/bff/auth/sso/start","/bff/auth/sso/callback","/v1/consumer/auth/register","/v1/consumer/auth/login","/v1/mobile/auth/login","/v1/mobile/auth/refresh"}
     async def dispatch(self, request, call_next):
         if request.method not in self.SAFE and request.url.path not in self.EXEMPT:
             # Bearer/service clients preserve API compatibility. Browser cookie sessions require CSRF.
@@ -343,3 +343,6 @@ if _frontend_root.exists():
     app.mount("/go-admin", StaticFiles(directory=str(_frontend_root / "admin"), html=True), name="go-admin")
     app.mount("/console-assets", StaticFiles(directory=str(_frontend_root / "shared")), name="console-assets")
     app.mount("/go-app", StaticFiles(directory=str(_frontend_root / "consumer"), html=True), name="go-consumer-app")
+
+from go_hotel.api.routes.registration_verification import router as registration_verification_router
+app.include_router(registration_verification_router)

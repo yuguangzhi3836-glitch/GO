@@ -52,6 +52,8 @@ class Settings(BaseSettings):
     # Registration cannot open until a real outbound verification service and its
     # delivery/receipt acceptance evidence have been approved for the environment.
     registration_verification_enabled: bool = False
+    registration_email_config_path: str = ""
+    registration_terms_version: str = "2026-09-19-draft-v2"
     mobile_push_mode: str = "mock"
     expo_push_url: str = "https://exp.host/--/api/v2/push/send"
     mobile_push_batch_size: int = 100

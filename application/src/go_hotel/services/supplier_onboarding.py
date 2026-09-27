@@ -23,7 +23,7 @@ def _now() -> datetime:
 class SupplierOnboardingService:
     """Public supplier sign-up without weakening authenticated hotel ownership checks."""
 
-    def register(self, body: dict, *, audit_factory=None) -> dict:
+    def register(self, body: dict, *, audit_factory=None, verification_proof=None) -> dict:
         username = str(body.get("username") or "").strip().lower()
         password = str(body.get("password") or "")
         hotel = body.get("hotel") or {}
@@ -39,6 +39,9 @@ class SupplierOnboardingService:
         supplier_id, user_id, property_id = _id("sup"), _id("usr"), _id("prop")
         created = _now()
         with SessionLocal() as session:
+            if verification_proof is not None:
+                from go_hotel.services.registration_verification import consume
+                consume(session, verification_proof, user_id)
             if session.scalar(select(IdentityUserRow).where(IdentityUserRow.username == username)):
                 raise ValueError("USERNAME_ALREADY_REGISTERED")
             user = IdentityUserRow(

@@ -8141,3 +8141,22 @@ class HostedPublicationReviewRow(Base):
     decision: Mapped[str] = mapped_column(String(24), nullable=False)
     evidence_reference: Mapped[str] = mapped_column(String(512), nullable=False)
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+class RegistrationChallengeRow(Base):
+    __tablename__ = 'registration_challenge'
+    subject_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    challenge_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    code_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    policy_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    state: Mapped[str] = mapped_column(String(16), nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False)
+    expires_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    consumed_by: Mapped[str | None] = mapped_column(String(64))
+
+
+class RegistrationRateRow(Base):
+    __tablename__ = 'registration_rate'
+    bucket_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    count: Mapped[int] = mapped_column(Integer, nullable=False)
+    expires_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
