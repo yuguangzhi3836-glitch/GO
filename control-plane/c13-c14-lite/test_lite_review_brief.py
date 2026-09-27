@@ -397,6 +397,26 @@ class ReviewerStandardTests(unittest.TestCase):
         self.assertIn("actually enables or authorizes the operation", prompt)
         self.assertIn("the issue is no longer downstream and may block", prompt)
 
+    def test_c14_pass_scoped_matches_the_existing_seal_contract(self):
+        prompt = lite_ai_reviewer.build_prompt("c14", fx.role_facts("c14"))
+        for expected in (
+            "VERDICT/REMEDIATION CONSISTENCY",
+            "when your verdict is PASS_SCOPED",
+            "blocking_issues must be empty",
+            "remediation_status MUST be NOT_REQUIRED",
+            "or CLOSED if previously blocking remediation has been fully completed",
+            "Never return PASS_SCOPED with OPEN or PARTIAL",
+        ):
+            self.assertIn(expected, prompt, expected)
+
+    def test_c14_open_or_partial_means_pass_scoped_is_inconsistent(self):
+        prompt = lite_ai_reviewer.build_prompt("c14", fx.role_facts("c14"))
+        self.assertIn(
+            "OPEN/PARTIAL means blocking remediation is still outstanding",
+            prompt,
+        )
+        self.assertIn("inconsistent with PASS_SCOPED", prompt)
+
     def test_c13_is_told_minor_improvements_are_not_failures(self):
         prompt = lite_ai_reviewer.build_prompt("c13", fx.role_facts("c13"))
         self.assertIn("These are not failures and must not be turned into a non-PASS verdict",

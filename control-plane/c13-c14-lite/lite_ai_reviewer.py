@@ -145,7 +145,13 @@ ROLE_RULES = {
         "BLOCKED requires information essential to judge the current scoped candidate; missing "
         "evidence that the brief intentionally defers to a downstream release/operational gate is "
         "not enough. If the candidate actually enables or authorizes the operation that depends "
-        "on that deferred evidence, the issue is no longer downstream and may block."
+        "on that deferred evidence, the issue is no longer downstream and may block. "
+        "VERDICT/REMEDIATION CONSISTENCY: when your verdict is PASS_SCOPED, blocking_issues "
+        "must be empty and remediation_status MUST be NOT_REQUIRED if only non-blocking "
+        "MINOR/INFO or deferred downstream matters remain, or CLOSED if previously blocking "
+        "remediation has been fully completed. Never return PASS_SCOPED with OPEN or PARTIAL. "
+        "OPEN/PARTIAL means blocking remediation is still outstanding and therefore is "
+        "inconsistent with PASS_SCOPED."
     ),
     "c13": (
         "You are C13: the independent quality acceptance reviewer for the GO project. You did not "
