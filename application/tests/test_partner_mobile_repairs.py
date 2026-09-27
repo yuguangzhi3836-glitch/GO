@@ -84,6 +84,10 @@ def test_configuration_http_permission_and_no_client_authority(client):
     response=client.put('/v1/supplier/go-identity/configuration',headers=headers,json={'programs':[selection(ids)],'revision':data['revision']})
     assert response.status_code==403
     assert svc.programs('partner-a')==[]
+    legacy=client.put('/v1/supplier/go-identity/programs/STAFF_RATE',headers=headers,json={
+        'enabled':True,'eligible_room_ids':ids,'authorization_reference':'client-reference'})
+    assert legacy.status_code==403
+    assert svc.programs('partner-a')==[]
 
 
 @pytest.mark.parametrize('vertical',list(view.ORDERS))
@@ -98,6 +102,17 @@ def test_category_filter_and_refunds_use_bound_tenant_before_pagination(client,v
     assert view.supplier_refunds(supplier,vertical=vertical)['items'][0]['order_id']==oid
     assert view.supplier_refunds(supplier,vertical=other)['items']==[]
     assert view.supplier_refunds('unrelated',vertical=vertical)['items']==[]
+
+
+def test_legacy_program_owner_write_still_allowed(client):
+    ids=rooms()
+    identity_service.ensure_user('legacy-owner@ui.test','Isolated-ui-fix-password','SUPPLIER_USER','partner-a',['SUPPLIER_OWNER'])
+    assert client.post('/bff/auth/login',json={'username':'legacy-owner@ui.test','password':'Isolated-ui-fix-password'}).status_code==200
+    response=client.put('/v1/supplier/go-identity/programs/STAFF_RATE',headers={'X-CSRF-Token':client.cookies.get('go_csrf')},json={
+        'enabled':True,'eligible_room_ids':ids,'authorization_reference':'existing-owner-authorization'})
+    assert response.status_code==200
+    assert svc.programs('partner-a')[0]['enabled'] is True
+    assert svc.programs('unrelated')==[]
 
 
 def test_invalid_category_rejected_at_api(client):

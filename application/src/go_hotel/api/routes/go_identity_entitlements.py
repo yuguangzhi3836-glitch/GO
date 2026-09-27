@@ -22,6 +22,7 @@ def invite(credential_id:str,b:P,p:Principal=Depends(consumer_principal)):
 def entitlement(supplier_id:str,room_id:str,stay_date:str,bar_minor:int,p:Principal=Depends(consumer_principal)):return call(svc.entitlement,p.user_id,supplier_id,room_id,stay_date,bar_minor)
 @router.put('/v1/supplier/go-identity/programs/{program_type}')
 def program(program_type:str,b:P,p:Principal=Depends(supplier_principal)):
+ if 'supplier:fare-rules' not in p.permissions:raise HTTPException(403,detail='PERMISSION_DENIED')
  x=b.model_dump(exclude_none=True);x['program_type']=program_type;return call(svc.program,p.supplier_id,x,p.user_id)
 @router.get('/v1/supplier/go-identity/programs')
 def programs(p:Principal=Depends(supplier_principal)):return call(svc.programs,p.supplier_id)
