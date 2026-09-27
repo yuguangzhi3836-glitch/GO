@@ -14,11 +14,14 @@ def now(): return datetime.now(timezone.utc)
 def go_id_for(user_id:str): return "GO" + hashlib.sha256(user_id.encode()).hexdigest()[:12].upper()
 
 class ConsumerService:
-    def register(self,email:str,password:str,display_name:str|None=None,phone:str|None=None,registration_audit:dict|None=None):
+    def register(self,email:str,password:str,display_name:str|None=None,phone:str|None=None,registration_audit:dict|None=None,verification_proof:dict|None=None):
         email=email.strip().lower()
         t=now(); user_id=new_id("usr")
         try:
             with SessionLocal.begin() as s:
+                if verification_proof is not None:
+                    from go_hotel.services.registration_verification import consume
+                    consume(s, verification_proof, user_id)
                 if s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==email)):
                     raise ValueError("EMAIL_ALREADY_REGISTERED")
                 s.add(IdentityUserRow(user_id=user_id,username=email,password_hash=hash_password(password),actor_type="CONSUMER",supplier_id=None,roles=["CONSUMER"],status="ACTIVE",token_version=1,created_at=t,updated_at=t))
@@ -28,7 +31,7 @@ class ConsumerService:
                     ConsumerWalletRow(wallet_id=new_id("wal"),user_id=user_id,status="ACTIVE",created_at=t,updated_at=t),
                 ])
                 if registration_audit is not None:
-                    s.add(AuditEventRow(audit_id=new_id("aud"),actor_id=user_id,actor_type="CONSUMER",supplier_id=None,roles=["CONSUMER"],session_id=None,action="CONSUMER_REGISTRATION_TERMS_ACCEPTED",resource_type="CONSUMER_REGISTRATION",resource_id=user_id,request_id=registration_audit.get("request_id"),client_ip=registration_audit.get("client_ip"),http_method="POST",path="/v1/consumer/auth/register",before_state=None,after_state={"registration_state":"ACCOUNT_CREATED"},decision_id=None,evidence_id=None,approval_id=None,metadata_json={"term_versions":registration_audit["term_versions"],"term_hashes":registration_audit.get("term_hashes",{}),"accepted_once":True,"personal_vault_opt_in":False},created_at=t))
+                    s.add(AuditEventRow(audit_id=new_id("aud"),actor_id=user_id,actor_type="CONSUMER",supplier_id=None,roles=["CONSUMER"],session_id=None,action="CONSUMER_REGISTRATION_TERMS_ACCEPTED",resource_type="CONSUMER_REGISTRATION",resource_id=user_id,request_id=registration_audit.get("request_id"),client_ip=registration_audit.get("client_ip"),http_method="POST",path="/v1/consumer/auth/register",before_state=None,after_state={"registration_state":"ACCOUNT_CREATED"},decision_id=None,evidence_id=None,approval_id=None,metadata_json={"term_versions":registration_audit["term_versions"],"term_hashes":registration_audit.get("term_hashes",{}),"accepted_once":True,"personal_vault_opt_in":False,"email_verified":verification_proof is not None,"verification_challenge_id":verification_proof["challenge_id"] if verification_proof else None},created_at=t))
         except IntegrityError:
             with SessionLocal() as s:
                 if s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==email)):

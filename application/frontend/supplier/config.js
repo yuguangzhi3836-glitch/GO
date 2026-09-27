@@ -7,6 +7,7 @@ window.GO_CONSOLE={title:'GO 合作伙伴平台',subtitle:'酒店、机票、铁
 {route:'/finance-hub',label:'财务',custom:'supplierFinanceHub'},
 {route:'/business-management',label:'业务管理',custom:'supplierBusinessManagementHub'},
 {route:'/supplier-exception-center',label:'异常中心',custom:'supplierExceptionCenter'}],hiddenNav:[
+...Object.entries({HOTEL:'酒店',FLIGHT:'机票',RAIL:'火车票',RIDE:'接送用车',RENTAL:'租车',ATTRACTION:'景点门票'}).map(([key,label])=>({route:'/business-'+key.toLowerCase(),label:label+'工作台',custom:'supplierBusinessWorkspace'})),
 {route:'/hotel-webpage',label:'酒店网页',custom:'supplierHotelWebpage'},
 {route:'/property',label:'酒店资料',custom:'supplierPropertyProfile'},
 {route:'/one-click-build',label:'一键建立酒店库',custom:'supplierOneClickBuild'},
@@ -29,7 +30,7 @@ window.GO_CONSOLE={title:'GO 合作伙伴平台',subtitle:'酒店、机票、铁
 {route:'/go-rating',label:'GO星级 / 推荐',custom:'supplierRating'},
 {route:'/content',label:'内容与媒体',custom:'supplierContentTemplate'},
 {route:'/direct',label:'官方直连',custom:'supplierOfficialDirectTemplate'},
-{route:'/direct-value',label:'官方直连价值',custom:'supplierDirectValue'},
+{route:'/direct-value',label:'官方权益',custom:'supplierDirectValue'},
 {route:'/channel-economics',label:'直连经营分析',custom:'supplierChannelEconomics'},
 {route:'/connectors',label:'供应链连接',custom:'supplierConnectors'},
 {route:'/inbox',label:'通知中心',custom:'supplierOperatingSnapshot'},

@@ -1,9 +1,11 @@
 from __future__ import annotations
+from go_hotel.services import registration_privacy
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, Header
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 import re
 from sqlalchemy import select
 from go_hotel.core.config import settings
+from go_hotel.services import registration_verification as registration_verification_service
 from go_hotel.security.service import identity_service, Principal
 from go_hotel.security.deps import consumer_principal, assert_consumer_order
 from go_hotel.consumer.service import consumer_service
@@ -28,6 +30,9 @@ class RegisterBody(BaseModel):
     accepted_terms: bool = Field(strict=True)
     term_versions: dict[str, str]
     term_hashes: dict[str, str] = Field(default_factory=dict)
+    registration_decisions: dict[str, str] = Field(default_factory=dict)
+    challenge_id: str = Field(default="", max_length=64)
+    verification_code: str = Field(default="", max_length=6)
 
     @field_validator("email")
     @classmethod
@@ -63,7 +68,7 @@ def registration_options():
         policy = registration_terms_service.registration_terms_status("consumer")
     except (ValueError, OSError, KeyError) as exc:
         raise HTTPException(503, detail="REGISTRATION_TERMS_UNAVAILABLE") from exc
-    verification_ready = bool(settings.registration_verification_enabled)
+    verification_ready = registration_verification_service.ready()
     return {"data": {**policy, "enabled": bool(policy["acceptance_enabled"] and verification_ready), "coverage": "CN_NATIONWIDE", "method": "EMAIL_PASSWORD", "terms": policy["versions"], "phone_verified": False, "release_gate": {"registration_verification": {"required": True, "implemented": verification_ready, "status": "READY" if verification_ready else "BLOCKED", "reason": None if verification_ready else "LIVE_EMAIL_OR_PHONE_VERIFICATION_EVIDENCE_REQUIRED"}, "candidate_runtime": {"required": True, "status": "BLOCKED", "reason": "SIGNED_HK_STAGING_TEST_PR_EVIDENCE_REQUIRED"}, "page_acceptance": {"required": True, "status": "BLOCKED", "reason": "EXACT_CANDIDATE_C_B_MOBILE_ACCEPTANCE_REQUIRED"}}}}
 
 @router.post("/v1/consumer/auth/register")
@@ -75,13 +80,16 @@ def register(body:RegisterBody,request:Request,response:Response):
             policy = registration_terms_service.require_registration_terms_ready("consumer")
         except (ValueError, OSError, KeyError) as exc:
             raise HTTPException(503, detail="REGISTRATION_TERMS_NOT_READY") from exc
-        if not settings.registration_verification_enabled:
+        if not registration_verification_service.ready():
             raise HTTPException(503, detail="REGISTRATION_VERIFICATION_NOT_READY")
         if body.term_versions != policy["versions"]:
             raise HTTPException(409,detail="CONSUMER_TERMS_VERSION_MISMATCH")
         if body.term_hashes != policy["term_hashes"]:
             raise HTTPException(409,detail="CONSUMER_TERMS_CONTENT_MISMATCH")
-        profile=consumer_service.register(body.email,body.password,body.display_name,body.phone,registration_audit={"request_id":getattr(request.state,"request_id",None),"client_ip":request.client.host if request.client else None,"term_versions":policy["versions"],"term_hashes":policy["term_hashes"]})
+        registration_privacy.validate_decisions(policy,body.registration_decisions)
+        proof = registration_verification_service.check("consumer", body.email, body.challenge_id, body.verification_code, policy)
+        proof.update(audience="consumer",policy=policy,registration_decisions=body.registration_decisions)
+        profile=consumer_service.register(body.email,body.password,body.display_name,body.phone,verification_proof=proof,registration_audit={"request_id":getattr(request.state,"request_id",None),"client_ip":request.client.host if request.client else None,"term_versions":policy["versions"],"term_hashes":policy["term_hashes"]})
         t=consumer_service.login(body.email,body.password,request.client.host if request.client else None,request.headers.get("user-agent")); _set(response,t)
         return {"data":{"authenticated":True,"profile":profile,"terms":policy["versions"],"term_hashes":policy["term_hashes"]}}
     except ValueError as e: raise HTTPException(409,detail=str(e))
