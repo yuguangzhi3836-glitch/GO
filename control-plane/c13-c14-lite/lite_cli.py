@@ -785,7 +785,7 @@ def cmd_raw_evidence(args) -> int:
 
     # Scan everything BEFORE writing anything. A partial directory would be worse than none:
     # it would look like a complete raw record while quietly missing the file that leaked.
-    staged, missing = [], []
+    staged, missing, projections = [], [], []
     for name, source in sorted(stage.items()):
         if not source:
             continue
@@ -794,10 +794,17 @@ def cmd_raw_evidence(args) -> int:
             missing.append(name)
             continue
         raw = path.read_bytes()
+        suffix = path.suffix or ".txt"
+        if name == "facts":
+            raw, projection = _public_facts_projection(raw)
+            if projection is not None:
+                projections.append(projection)
+                # Never label transformed bytes as the original frozen facts.
+                name, suffix = "facts_redacted_projection", ".json"
         for label, pattern in FORBIDDEN_SECRET_PATTERNS:
             if re.search(pattern, raw):
                 raise SystemExit(f"raw-evidence: refusing to publish {name}: matches {label}")
-        staged.append((name, path.suffix or ".txt", raw))
+        staged.append((name, suffix, raw))
 
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -818,6 +825,7 @@ def cmd_raw_evidence(args) -> int:
         "schema_version": RAW_EVIDENCE_SCHEMA_VERSION,
         "files": collected,
         "missing": missing,
+        "redacted_projections": projections,
         "seal_status": seal_status,
         "sealed_bundle_published_by_this_step": False,
         "authorizes_any_action": False,
@@ -826,6 +834,48 @@ def cmd_raw_evidence(args) -> int:
     print(json.dumps({"raw_evidence": str(out), "files": len(collected),
                       "missing": missing, "seal_status": seal_status}))
     return 0
+
+
+def _public_facts_projection(raw):
+    """Redact only bearer values in the diff for publication, never for review.
+
+    Other secret shapes and every other facts field still fail the existing
+    scan-before-write guard. The original facts file and all frozen digests are
+    untouched. This projection is diagnostic, not a replacement seal input.
+    """
+    import re
+
+    try:
+        facts = json.loads(raw)
+    except (ValueError, UnicodeDecodeError):
+        return raw, None  # Existing secret scan still applies.
+    if not isinstance(facts, dict) or not isinstance(facts.get("candidate_diff"), str):
+        return raw, None
+    diff = facts["candidate_diff"]
+    # Horizontal whitespace only: preserve every diff line and hunk boundary.
+    pattern = re.compile(r"\bBearer[ \t]+[A-Za-z0-9._\-]{20,}")
+    matches = list(pattern.finditer(diff))
+    safe_diff = pattern.sub("Bearer [REDACTED]", diff)
+    # Scan decoded text as well: JSON escaping must not hide a multiline secret.
+    for label, forbidden in FORBIDDEN_SECRET_PATTERNS:
+        if re.search(forbidden, safe_diff.encode("utf-8")):
+            raise SystemExit(f"raw-evidence: refusing to publish facts: matches {label}")
+    if not matches:
+        return raw, None
+    facts["candidate_diff"] = safe_diff
+    projected = (json.dumps(facts, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode("utf-8")
+    receipt = {
+        "source": "facts",
+        "field": "candidate_diff",
+        "original_bytes_sha256": hashlib.sha256(raw).hexdigest(),
+        "original_canonical_sha256": lite_canonical.digest(json.loads(raw)),
+        "projection_bytes_sha256": hashlib.sha256(projected).hexdigest(),
+        "redaction_count": len(matches),
+        "redacted_line_numbers": [diff.count("\n", 0, match.start()) + 1 for match in matches],
+        "original_available_in_artifact": False,
+        "authorizes_any_action": False,
+    }
+    return projected, receipt
 
 
 def cmd_review_brief(args) -> int:
