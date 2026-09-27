@@ -17,34 +17,11 @@ name: C14 rule and compliance review (Lite V2)
 #
 # authorizes_any_action is false in every record this workflow produces.
 
+# TEMPORARY ONE-SHOT REPLAY FOR R1 / #269. NEVER MERGE.
 on:
-  workflow_dispatch:
-    inputs:
-      candidate_sha:
-        description: "Frozen candidate commit SHA (40 hex) - never a branch head"
-        required: true
-      application_tree:
-        description: "Frozen application/ subtree SHA (git rev-parse <candidate>:application)"
-        required: true
-      issue_number:
-        description: "Existing issue / ledger issue number this task belongs to"
-        required: true
-      request_id:
-        description: "Scheduler request id that dispatched this task"
-        required: true
-      ledger_round_id:
-        description: "round_id of the ledger record this execution belongs to"
-        required: true
-      c14_task_id:
-        description: "Task id of the C14 cell in that ledger"
-        required: true
-      c13_task_id:
-        description: "Task id of the C13 cell in that ledger (the paired acceptance)"
-        required: true
-      ai_model:
-        description: "Model used for the fresh AI review execution"
-        required: false
-        default: "gpt-5.6-sol"
+  push:
+    branches:
+      - test/c14-r1-replay-20260927
 
 permissions:
   contents: read
@@ -54,7 +31,7 @@ permissions:
 env:
   LITE_CELL_PAIR: "C13+C14"
   LITE_WORKFLOW_IDENTITY: ".github/workflows/c14-rule-compliance.yml"
-  LITE_AI_MODEL: ${{ inputs.ai_model }}
+  LITE_AI_MODEL: gpt-5.6-sol
   # The rule set deliberately does NOT travel with the dispatch. It used to be a
   # comma-separated input whose default was three names our own backend invented, which
   # made "the dispatch declared a rule set" indistinguishable from "the dispatch declared
@@ -91,7 +68,7 @@ jobs:
       - name: Check out the frozen candidate into candidate/ (never executed)
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.candidate_sha }}
+          ref: a40545f94876184091ba914401e531db34d8e30c
           path: candidate
           persist-credentials: false
           fetch-depth: 2
@@ -103,8 +80,8 @@ jobs:
       - name: Bind the exact frozen candidate identity
         run: |
           set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
-          test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
+          test "$(git -C candidate rev-parse HEAD)" = "a40545f94876184091ba914401e531db34d8e30c"
+          test "$(git -C candidate rev-parse HEAD:application)" = "292330a633dc5a782594126160018e8f87617808"
           # A merge commit is NOT diffed by `git diff-tree` unless a merge diff mode is selected,
           # so the plain form printed NOTHING for a merge commit and the frozen changed-path
           # boundary was silently empty - the rule review became a review of nothing (CCV1-145B
@@ -146,7 +123,7 @@ jobs:
           # a refusal, on purpose: the refusal is a *record*, and `spec` below stops the round on
           # it - so the reason survives instead of being lost in a crashed step.
           python control-plane/c13-c14-lite/lite_cli.py review-brief \
-            --candidate-sha "${{ inputs.candidate_sha }}" \
+            --candidate-sha "a40545f94876184091ba914401e531db34d8e30c" \
             --repository "$GITHUB_REPOSITORY" \
             --out "$RUNNER_TEMP/review_brief.json"
 
@@ -196,13 +173,13 @@ jobs:
         run: |
           set -euo pipefail
           {
-            echo "LITE_CANDIDATE_SHA=${{ inputs.candidate_sha }}"
-            echo "LITE_APPLICATION_TREE=${{ inputs.application_tree }}"
-            echo "LITE_ISSUE_NUMBER=${{ inputs.issue_number }}"
-            echo "LITE_REQUEST_ID=${{ inputs.request_id }}"
-            echo "LITE_LEDGER_ROUND_ID=${{ inputs.ledger_round_id }}"
-            echo "LITE_C14_TASK_ID=${{ inputs.c14_task_id }}"
-            echo "LITE_C13_TASK_ID=${{ inputs.c13_task_id }}"
+            echo "LITE_CANDIDATE_SHA=a40545f94876184091ba914401e531db34d8e30c"
+            echo "LITE_APPLICATION_TREE=292330a633dc5a782594126160018e8f87617808"
+            echo "LITE_ISSUE_NUMBER=270"
+            echo "LITE_REQUEST_ID=GO-MOBILE-REGISTRATION-20260927-R1"
+            echo "LITE_LEDGER_ROUND_ID=GO-MOBILE-REGISTRATION-20260927-R1"
+            echo "LITE_C14_TASK_ID=GO-MOBILE-REGISTRATION-20260927-R1-C14"
+            echo "LITE_C13_TASK_ID=GO-MOBILE-REGISTRATION-20260927-R1-C13"
             echo "LITE_WORKFLOW_SHA=$LITE_WORKFLOW_SHA"
             echo "LITE_NONCE=c14-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$RANDOM"
             echo "LITE_RUN_ID=${GITHUB_RUN_ID}"
@@ -299,7 +276,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: c13c14-lite-c14-raw-${{ inputs.candidate_sha }}
+          name: c13c14-lite-c14-raw-a40545f94876184091ba914401e531db34d8e30c
           path: ${{ runner.temp }}/raw
           if-no-files-found: warn
           retention-days: 90
@@ -307,7 +284,7 @@ jobs:
       - name: Publish the sealed C14 bundle
         uses: actions/upload-artifact@v4
         with:
-          name: c13c14-lite-c14-${{ inputs.candidate_sha }}
+          name: c13c14-lite-c14-a40545f94876184091ba914401e531db34d8e30c
           path: ${{ runner.temp }}/artifacts
           if-no-files-found: error
           retention-days: 90
@@ -319,7 +296,7 @@ jobs:
           set -euo pipefail
           python control-plane/c13-c14-lite/lite_readback.py \
             --role c14 \
-            --candidate-sha "${{ inputs.candidate_sha }}" \
+            --candidate-sha "a40545f94876184091ba914401e531db34d8e30c" \
             --expected-head-sha "${GITHUB_SHA}" \
             --workflow-path "$LITE_WORKFLOW_IDENTITY" \
             --run-id "${GITHUB_RUN_ID}" \
@@ -329,7 +306,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: c13c14-lite-c14-readback-${{ inputs.candidate_sha }}
+          name: c13c14-lite-c14-readback-a40545f94876184091ba914401e531db34d8e30c
           path: ${{ runner.temp }}/artifacts/readback.json
           if-no-files-found: warn
           retention-days: 90
