@@ -93,7 +93,9 @@ def classify_ai_failure(http_status=None, body: str = "", transport_error=None) 
     if "no credits remaining" in text or "insufficient_quota" in text:
         return AI_QUOTA_EXHAUSTED
     if http_status == 429:
-        return AI_QUOTA_EXHAUSTED
+        # 429 also covers temporary request/token rate limits. Without explicit
+        # quota evidence do not tell the operator that billing is exhausted.
+        return AI_PROVIDER_FAILURE
     if http_status is not None and 500 <= int(http_status) <= 599:
         return AI_PROVIDER_FAILURE
     if http_status == 401 or http_status == 403:
