@@ -374,6 +374,29 @@ class ReviewerStandardTests(unittest.TestCase):
         # ...and it must still judge whether the brief's own claim is true of the change.
         self.assertIn("that inconsistency is a real governance finding", prompt)
 
+    def test_c14_keeps_deferred_release_gates_out_of_candidate_blockers(self):
+        prompt = lite_ai_reviewer.build_prompt("c14", fx.role_facts("c14"))
+        for expected in (
+            "STAGE BOUNDARY",
+            "the review brief defines what this candidate claims to complete at this review stage",
+            "cannot waive an applicable rule",
+            "remaining gates",
+            "later operational verification",
+            "MUST NOT by themselves cause FAIL or BLOCKED",
+            "the current implementation remains fail-closed",
+            "PASS_SCOPED is allowed",
+            "missing evidence that the brief intentionally defers",
+            "downstream release/operational gate",
+        ):
+            self.assertIn(expected, prompt, expected)
+
+    def test_c14_stage_boundary_does_not_hide_current_rule_violations(self):
+        prompt = lite_ai_reviewer.build_prompt("c14", fx.role_facts("c14"))
+        self.assertIn("FAIL requires a current-stage rule violation", prompt)
+        self.assertIn("false claim that a deferred requirement is complete", prompt)
+        self.assertIn("actually enables or authorizes the operation", prompt)
+        self.assertIn("the issue is no longer downstream and may block", prompt)
+
     def test_c13_is_told_minor_improvements_are_not_failures(self):
         prompt = lite_ai_reviewer.build_prompt("c13", fx.role_facts("c13"))
         self.assertIn("These are not failures and must not be turned into a non-PASS verdict",
