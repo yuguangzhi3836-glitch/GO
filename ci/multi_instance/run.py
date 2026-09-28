@@ -108,12 +108,20 @@ def child(jobpath):
     import ride_workload
     from go_hotel.rail.service import rail_service
     from go_hotel.attractions.service import attraction_service
+    diagnostic=all(t['op']=='ride' for t in job['tasks'])
+    metrics=None;sample=[]
+    if diagnostic:
+        from profiling import Metrics,sampled_call
+        from go_hotel.db.session import engine
+        metrics=Metrics(engine)
     tasks=job['tasks']; ready=threading.Barrier(len(tasks)+1)
     def run(task):
         ready.wait(60); wait_file(Path(job['start']))
         start=time.monotonic_ns()
         result={'task':task['op'],'pid':os.getpid(),'start_ns':start,'ok':False}
-        try: result.update(ok=True,value=action(task))
+        try:
+            value=sampled_call(action,task,sample) if diagnostic and task is job['tasks'][0] else action(task)
+            result.update(ok=True,value=value)
         except Exception as exc:
             result.update(error_type=type(exc).__name__,code=str(exc)[:500] if isinstance(exc,(ValueError,AssertionError)) else 'SEE_ERROR_TYPE')
             if type(exc).__name__=='HTTPException': result.update(code=exc.detail,status=exc.status_code)
@@ -125,6 +133,7 @@ def child(jobpath):
         ready.wait(60); Path(job['ready']).write_text(str(os.getpid()))
         rows=[f.result() for f in futures]
     write(Path(job['result']),rows)
+    if metrics:write(Path(job['result']+'.profile.json'),{'metrics':metrics.snapshot(),'sampled_transaction':sample})
 
 class Runner:
     def __init__(self,out): self.out=out; self.counter=0; self.processes=[]
