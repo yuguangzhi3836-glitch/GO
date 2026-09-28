@@ -44,6 +44,42 @@ def test_append_fetches_only_tail_and_preserves_every_chain_link():
         finally:event.remove(engine,'before_cursor_execute',observed)
         assert len(verified_records(s,order,'RIDE'))==before+3
     assert len(statements)==3 and all('LIMIT' in q.upper() for q in statements)
+    assert all('evidence_json' not in q.lower() for q in statements)
+
+def test_idempotency_replay_uses_one_connection_and_preserves_identity():
+    from go_hotel.repositories.sql import repo
+    body={'owner':'first','amount_minor':16800}
+    assert repo.claim_idempotency('query-test','same-key',body)==('CLAIMED',None)
+    assert repo.claim_idempotency('query-test','same-key',body)[0]=='IN_PROGRESS'
+    response={'order_id':'immutable-result'}
+    repo.complete_idempotency('query-test','same-key',body,response,'immutable-result')
+    checkouts=[]
+    def checkout(*args):checkouts.append(True)
+    event.listen(engine,'checkout',checkout)
+    try:
+        state,record=repo.claim_idempotency('query-test','same-key',body)
+    finally:event.remove(engine,'checkout',checkout)
+    assert state=='REPLAY' and record['response']==response and record['resource_id']=='immutable-result'
+    assert len(checkouts)==1
+    with pytest.raises(ValueError,match='IDEMPOTENCY_CONFLICT'):
+        repo.claim_idempotency('query-test','same-key',dict(body,amount_minor=16801))
+    assert repo.claim_idempotency('different-operation','same-key',body)==('CLAIMED',None)
+
+def test_concurrent_idempotency_claim_has_exactly_one_winner():
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+    from go_hotel.repositories.sql import repo
+    barrier=Barrier(8)
+    def claim(_):
+        barrier.wait(timeout=10)
+        return repo.claim_idempotency('concurrent-query','one-key',{'amount_minor':16800})[0]
+    with ThreadPoolExecutor(max_workers=8) as pool:states=list(pool.map(claim,range(8)))
+    assert states.count('CLAIMED')==1 and states.count('IN_PROGRESS')==7
+
+def test_unrelated_integrity_error_is_not_treated_as_replay():
+    from sqlalchemy.exc import IntegrityError
+    from go_hotel.repositories.sql import repo
+    with pytest.raises(IntegrityError):repo.claim_idempotency(None,'invalid-operation',{})
 
 @pytest.mark.parametrize('case',['wrong_payer','expired'])
 def test_shared_checkout_snapshot_retains_payer_and_deadline_rejections(case):

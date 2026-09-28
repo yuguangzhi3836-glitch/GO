@@ -4,6 +4,8 @@ import json
 from datetime import timedelta
 from sqlalchemy import select, or_, text
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from go_hotel.db.models import (
     OfferRow, PrebookRow, OrderRow, PaymentRow, EventRow, OutboxRow, IdempotencyRow,
     ExternalOperationRow, WebhookInboxRow, ConnectorCursorRow, ConnectorCertificationRow, ConnectorHealthRow, ReconciliationRunRow,
@@ -335,6 +337,27 @@ class SqlRepository:
         digest = self.hash_payload(payload)
         try:
             with SessionLocal.begin() as s:
+                dialect = s.get_bind().dialect.name
+                if dialect in {'postgresql', 'sqlite'}:
+                    # Expected duplicate keys are a normal result, not a failed
+                    # transaction followed by another connection acquisition.
+                    # Only this composite key is ignored; other integrity errors
+                    # must still propagate. The database chooses the sole winner.
+                    factory = pg_insert if dialect == 'postgresql' else sqlite_insert
+                    stmt = factory(IdempotencyRow.__table__).values(
+                        idempotency_key=key, operation=operation, request_hash=digest,
+                        response_code=102, response_body={'status': 'IN_PROGRESS'},
+                        resource_id=None, created_at=now_utc(),
+                    ).on_conflict_do_nothing(index_elements=['idempotency_key', 'operation'])
+                    inserted = s.scalar(stmt.returning(IdempotencyRow.idempotency_key))
+                    if inserted is not None:
+                        return 'CLAIMED', None
+                    r = s.get(IdempotencyRow, {'idempotency_key': key, 'operation': operation})
+                    if not r or r.request_hash != digest:
+                        raise ValueError('IDEMPOTENCY_CONFLICT')
+                    rec = {'request_hash': r.request_hash, 'response_code': r.response_code,
+                           'response': r.response_body, 'resource_id': r.resource_id}
+                    return ('IN_PROGRESS' if r.response_code == 102 else 'REPLAY'), rec
                 s.add(IdempotencyRow(
                     idempotency_key=key, operation=operation, request_hash=digest,
                     response_code=102, response_body={"status":"IN_PROGRESS"},
@@ -342,6 +365,8 @@ class SqlRepository:
                 ))
             return "CLAIMED", None
         except IntegrityError:
+            if dialect in {'postgresql', 'sqlite'}:
+                raise
             rec = self.get_idempotency(operation, key)
             if not rec or rec["request_hash"] != digest:
                 raise ValueError("IDEMPOTENCY_CONFLICT")

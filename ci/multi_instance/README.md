@@ -89,3 +89,17 @@ Coverage remains bounded: it does not establish every vertical's full lifecycle,
 HTTP admission control, callback authentication, long-duration memory behavior,
 multi-host failover, or the million-online planning target. Those require later
 gates, not extrapolation from this evidence.
+
+Diagnostic integrity: the cProfile experiment at `7b7ad1e` produced negative
+function times and cross-worker call counts, even with a calling-thread clock.
+Its function attribution is invalid and is removed. Its instrumented 20-tier
+latency is not acceptance evidence. The separate uninstrumented run remains
+valid (20 passed; 100 P95 8048.292449 ms, zero errors, SQL checks passed).
+Do not use either cProfile experiment to select or claim a CPU hotspot.
+
+The next candidate changes native idempotency-key conflict handling to keep a
+normal replay in one transaction/connection, and reads only sequence/hash when
+appending an evidence-chain tail. It retains full chain verification and durable
+payment checkpoints. Compare baseline `7b7ad1e` with the recorded immutable
+candidate head using identical, uninstrumented ABBA rounds; no capacity claim
+is made until the unchanged normal staircase passes.
