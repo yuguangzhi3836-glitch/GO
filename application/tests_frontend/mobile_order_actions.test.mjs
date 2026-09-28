@@ -6,7 +6,7 @@ import {requestFingerprint} from '../mobile/go-app/src/domain/requestFingerprint
 import {createHash} from 'node:crypto';
 const verticals=['HOTEL','FLIGHT','RAIL','RENTAL','RIDE','ATTRACTION'];
 function fixture(v,{lost=false,simulation=true,amount=10000,fee=0}={}){
- let order={order_id:'owned30',vertical:v,status:'PAYMENT_PENDING',total_amount_minor:amount,currency:'CNY'};const calls=[];
+ let order={order_id:'owned30',vertical:v,status:'PAYMENT_PENDING',total_amount_minor:amount,currency:'CNY',...(v==='RIDE'?{cancellation:{state:'BOOKING_ACCEPTED',policy_hash:'c'.repeat(64)}}:{})};const calls=[];
  const request=async(path,init={})=>{calls.push({path,...init});
    if(path.endsWith('checkout-capabilities'))return {data:{simulation_available:simulation,external_live:false}};
    if(path.includes('/checkout/')){order={...order,status:v==='FLIGHT'||v==='RAIL'?'TICKETED':'CONFIRMED'};if(lost)throw Object.assign(Error('lost'),{uncertain:true});return {data:{...order,external_live:false}};}
@@ -46,16 +46,31 @@ test('screen/session change prevents a mutation after read-only preflight',async
  await assert.rejects(createOrderActions(request,()=>current).pay(orderRef('FLIGHT','owned30'),f.get()),/SESSION_OR_SCREEN/);assert.equal(f.calls.filter(x=>x.method==='POST').length,0);
 });
 test('all six booking intents use explicit vault identities with stable keys and no fabricated people',()=>{
- const base={prebook:{prebook_id:'pb30',currency:'CNY',quantity:1,fare_rule:{offer_rule_hash:'a'.repeat(64)}},offer:{offer_id:'offer30',visit_date:'2026-10-20',currency:'CNY'},quantity:1,search:{pickup:'A',dropoff:'B',pickup_location:'A',return_location:'B',pickup_at:'2026-10-20T10:00:00',return_at:'2026-10-21T10:00:00'}};
- for(const v of verticals){const first=bookingIntent(v,base,'owner30',['traveler30'],true,true),retry=bookingIntent(v,base,'owner30',['traveler30'],true,true);assert.deepEqual(first,retry);
+ const base={prebook:{prebook_id:'pb30',currency:'CNY',quantity:1,fare_rule:{offer_rule_hash:'a'.repeat(64)}},offer:{cancellation:{state:'POLICY_AVAILABLE',policy_hash:'c'.repeat(64),terms:{policy:{version:'isolated-test'}}},offer_id:'offer30',visit_date:'2026-10-20',currency:'CNY'},quantity:1,search:{pickup:'A',dropoff:'B',pickup_location:'A',return_location:'B',pickup_at:'2026-10-20T10:00:00',return_at:'2026-10-21T10:00:00'}};
+ for(const v of verticals){const first=bookingIntent(v,base,'owner30',['traveler30'],true,true,'c'.repeat(64)),retry=bookingIntent(v,base,'owner30',['traveler30'],true,true,'c'.repeat(64));assert.deepEqual(first,retry);
    const b=JSON.parse(first.init.body);assert.equal(v==='HOTEL'?b.traveler_id:b.traveler_ids[0],'traveler30');assert.ok(!b.passengers&&!b.attendees&&!b.drivers&&!b.flight_tracking_enabled);assert.throws(()=>bookingIntent(v,base,'owner30',['traveler30'],false),/CONSENT/);
-   assert.notEqual(first.init.headers['Idempotency-Key'],bookingIntent(v,base,'other30',['traveler30'],true,true).init.headers['Idempotency-Key']);}
+   assert.notEqual(first.init.headers['Idempotency-Key'],bookingIntent(v,base,'other30',['traveler30'],true,true,'c'.repeat(64)).init.headers['Idempotency-Key']);}
  assert.throws(()=>bookingIntent('HOTEL',base,'owner30',['traveler30'],true,false),/FARE_CONSENT/);
  assert.throws(()=>bookingIntent('ATTRACTION',{...base,quantity:2},'owner30',['traveler30'],true),/MISMATCH/);
- const one=bookingIntent('RIDE',base,'owner30',['traveler30'],true);
- const two=bookingIntent('RIDE',{...base,search:{...base.search,pickup_at:'2026-10-22T10:00:00'}},'owner30',['traveler30'],true);
+ const one=bookingIntent('RIDE',base,'owner30',['traveler30'],true,false,'c'.repeat(64));
+ const two=bookingIntent('RIDE',{...base,search:{...base.search,pickup_at:'2026-10-22T10:00:00'}},'owner30',['traveler30'],true,false,'c'.repeat(64));
  assert.notEqual(one.init.headers['Idempotency-Key'],two.init.headers['Idempotency-Key']);
 });
 test('portable request fingerprint matches standard SHA-256 for Unicode and block boundaries',()=>{
  for(const text of ['', 'abc','香港 · 出行人 🚗', 'x'.repeat(55),'x'.repeat(56),'x'.repeat(64),'z'.repeat(1025)])assert.equal(requestFingerprint(text),createHash('sha256').update(text).digest('hex'));
+});
+
+test('RIDE native intent requires a separately accepted current policy and preserves its hash',()=>{
+ const policy={state:'POLICY_AVAILABLE',policy_hash:'a'.repeat(64),terms:{policy:{version:'isolated-v1'}}};
+ const params={offer:{offer_id:'ride_standard',currency:'CNY',cancellation:policy},search:{pickup:'A',dropoff:'B',pickup_at:'2030-01-01T12:00:00+08:00'}};
+ assert.throws(()=>bookingIntent('RIDE',params,'owner',['traveler'],true),/POLICY_ACCEPTANCE_REQUIRED/);
+ assert.throws(()=>bookingIntent('RIDE',{...params,offer:{...params.offer,cancellation:{state:'POLICY_UNAVAILABLE'}}},'owner',['traveler'],true,false,policy.policy_hash),/POLICY_UNAVAILABLE/);
+ const intent=bookingIntent('RIDE',params,'owner',['traveler'],true,false,policy.policy_hash);
+ assert.equal(JSON.parse(intent.init.body).cancellation_policy_hash,policy.policy_hash);
+ assert.throws(()=>bookingIntent('RIDE',{...params,offer:{...params.offer,cancellation:{...policy,policy_hash:'b'.repeat(64)}}},'owner',['traveler'],true,false,policy.policy_hash),/POLICY_ACCEPTANCE_REQUIRED/);
+});
+test('RIDE legacy pending order cannot enter native checkout without a booking policy',async()=>{
+ const f=fixture('RIDE');f.set({cancellation:{state:'POLICY_UNAVAILABLE'}});
+ await assert.rejects(createOrderActions(f.request).pay(orderRef('RIDE','owned30'),f.get()),/BOOKING_POLICY_REQUIRED/);
+ assert.equal(f.calls.filter(x=>x.method==='POST').length,0);
 });

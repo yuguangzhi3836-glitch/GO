@@ -1,0 +1,50 @@
+{
+  "reviewer": "ticket_independent_review",
+  "role": "independent read-only; no implementation edits",
+  "status": "NOT_COMPLETE_CANDIDATE_NOT_FROZEN",
+  "scope_hash": "f120a868a71b242ee7f99a0076c694b137fbbe0a7d988154f3747e88d0b1145a",
+  "scope_obligations": 28,
+  "scope_required_cases": 88,
+  "environment": "isolated SQLite, FastAPI TestClient HTTP and services; no PG, browser or real supplier access",
+  "findings": [
+    {
+      "id": "IR-01",
+      "severity": "high",
+      "title": "Nonchange UNKNOWN / FAILED expose usable issued coupons",
+      "evidence": "readiness-before.xml",
+      "cases_failed": 2
+    },
+    {
+      "id": "IR-02",
+      "severity": "high",
+      "title": "Legacy whole-order refund pending after money commit exposes usable coupons",
+      "evidence": "recovery-review.xml",
+      "case": "test_old_whole_order_refund_pending_does_not_publish_usable_tickets"
+    },
+    {
+      "id": "IR-03",
+      "severity": "medium",
+      "title": "Historical order HTTP leg change rejects new default coupon_ids=None",
+      "evidence": "historical-before.xml",
+      "case": "test_historical_order_leg_change_http_remains_available"
+    }
+  ],
+  "positive_probe": {
+    "case": "test_partial_refund_across_two_captures_recovers_after_first_money_commit",
+    "result": "PASS isolated SQLite only",
+    "evidence": "recovery-review.xml"
+  },
+  "required_next": [
+    "fix and rerun identified probes",
+    "immutable candidate binding",
+    "isolated PostgreSQL concurrency/crash evidence",
+    "actual consumer/supplier/admin UI journeys",
+    "case-by-case C02/C03 scope review"
+  ],
+  "artifacts": {
+    "readiness-before.xml": "ebb50a143b315a319fff8208abd602ffa84ae136ad2e3471c9e4635aa8fc2c99",
+    "historical-before.xml": "81ba40e7e98cff6c154ed8352687eef1a60b8d807b248cabec605ee6b0dd9cf8",
+    "recovery-review.xml": "8d83cacf8f4750075ee41f5766c36318799ee449edba481eb21bd931e88a3bd2",
+    "test_independent_coupon_readiness.py": "69394ad2852d5d5ec542aa15aad364e57da7cd15b95de3fde229fceb7b01cb08"
+  }
+}

@@ -1,0 +1,1253 @@
+{
+  "candidate": "1960b51e86acefa45d0eacfce22e2b6a6245adcf",
+  "application_tree": "b8881e3bb869f4666eadffa8328e0df83d4a763e",
+  "status": "FULL_44_152_NOT_COMPLETE",
+  "historical_pass_transferred": false,
+  "obligations": [
+    {
+      "obligation": "C04-01",
+      "title": "产品车辆与供给身份",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "仅见冻结范围与回归文件索引，尚无充分独立局部判断。",
+      "implementation_assessment": "未独立细读足够实现，不能据此判为已实现或缺实现。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-01-CASE-1",
+          "description": "已登记车辆选择",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-01-CASE-2",
+          "description": "重复车辆身份冲突",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-01-CASE-3",
+          "description": "失效供给不再出售",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-02",
+      "title": "驾驶资格",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "仅见冻结范围与回归文件索引，尚无充分独立局部判断。",
+      "implementation_assessment": "未独立细读足够实现，不能据此判为已实现或缺实现。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-02-CASE-1",
+          "description": "有效驾照/年龄",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-02-CASE-2",
+          "description": "过期或缺失驾照",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-02-CASE-3",
+          "description": "附加驾驶资格不满足",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-03",
+      "title": "保险与里程披露",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "仅见冻结范围与回归文件索引，尚无充分独立局部判断。",
+      "implementation_assessment": "未独立细读足够实现，不能据此判为已实现或缺实现。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-03-CASE-1",
+          "description": "基础保险",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-03-CASE-2",
+          "description": "全险零免赔",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-03-CASE-3",
+          "description": "变更方案须重新确认",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-04",
+      "title": "搜索计价",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "仅见冻结范围与回归文件索引，尚无充分独立局部判断。",
+      "implementation_assessment": "未独立细读足够实现，不能据此判为已实现或缺实现。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-04-CASE-1",
+          "description": "跨日不足整天",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-04-CASE-2",
+          "description": "一年边界",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-04-CASE-3",
+          "description": "时区偏移和无效日期",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-05",
+      "title": "预订冻结",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "仅见冻结范围与回归文件索引，尚无充分独立局部判断。",
+      "implementation_assessment": "未独立细读足够实现，不能据此判为已实现或缺实现。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-05-CASE-1",
+          "description": "有效订单持久化",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-05-CASE-2",
+          "description": "报价失效拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-05-CASE-3",
+          "description": "资料授权撤回拒绝",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-06",
+      "title": "取还车生命周期",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读fulfill与正常消费者取还车按钮；历史候选真实点击达到COMPLETED，仅合成用户声明。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-06-CASE-1",
+          "description": "CONFIRMED取车",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-06-CASE-2",
+          "description": "IN_PROGRESS还车",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-06-CASE-3",
+          "description": "错误车辆/逆序拒绝",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-07",
+      "title": "改期确认",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读changes相关回归和真实改期UI；独立多次长短租期资金正例通过开发复验。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-07-CASE-1",
+          "description": "延长补款",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-07-CASE-2",
+          "description": "缩短退款",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-07-CASE-3",
+          "description": "等价无资金移动",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-08",
+      "title": "取消退款",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立完成收据/资金/账本/HTTP同key损坏反例及多capture全额取消正例；历史浏览器取消退款。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-08-CASE-1",
+          "description": "原租金取消",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-08-CASE-2",
+          "description": "多次改期后取消",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-08-CASE-3",
+          "description": "拒绝过期确认哈希",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-09",
+      "title": "押金义务接受",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读deposit_authority及review的ACTIVATED/consent前置检查，未签完整消费者接受旅程。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-09-CASE-1",
+          "description": "完整条款/车辆来源绑定",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-09-CASE-2",
+          "description": "未经接受不能供C11授权",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-09-CASE-3",
+          "description": "全险与基础方案来源匹配",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-10",
+      "title": "过期义务恢复",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读资金review对过期义务的阻断/allow_expired区分；未逐case复核所有过期恢复。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-10-CASE-1",
+          "description": "过期续期",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-10-CASE-2",
+          "description": "未到期拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-10-CASE-3",
+          "description": "旧hash拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-10-CASE-4",
+          "description": "已接受不可续期",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-11",
+      "title": "未知订单履约",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读租车UNKNOWN恢复记录previous_status；未逐case验未知取还车矩阵。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-11-CASE-1",
+          "description": "未知→原状态恢复",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-11-CASE-2",
+          "description": "无证据拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-11-CASE-3",
+          "description": "确认失败处理",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-12",
+      "title": "未知资金交接",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读资金review发现矛盾后RECONCILIATION_REQUIRED和null金额；无完整跨域交接验收。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-12-CASE-1",
+          "description": "响应超时",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-12-CASE-2",
+          "description": "事实不一致",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-12-CASE-3",
+          "description": "确认收据后更新可见结果",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-13",
+      "title": "订单所有权",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立真实token跨租户/坏binding/只读拒绝；默认damage._order仍拒绝supplier。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-13-CASE-1",
+          "description": "客户跨订单",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-13-CASE-2",
+          "description": "供应商跨租户",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-13-CASE-3",
+          "description": "伪造body actor",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-14",
+      "title": "独立裁决权限",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立supplier不能访问admin裁决；已读damage独立裁决排除owner/发起人。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-14-CASE-1",
+          "description": "开案人自裁拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-14-CASE-2",
+          "description": "无权限管理员拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-14-CASE-3",
+          "description": "前裁决人复核拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-14-CASE-4",
+          "description": "独立审核通过",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-15",
+      "title": "来源与证据完整性",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立binding payee/currency/source租户、真实movement/ledger损坏拒绝；已读审计链检查。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-15-CASE-1",
+          "description": "execution_item错绑",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-15-CASE-2",
+          "description": "payload owner错绑",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-15-CASE-3",
+          "description": "断链或哈希错误",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-15-CASE-4",
+          "description": "伪造证据statement",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-16",
+      "title": "命令幂等",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立申报同key及退款HTTP同key/缓存收据损坏检查，完整钱快照不变。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 本候选已取得局部隔离PG并发/进程死亡恢复原始结果；仍缺该义务全部case逐项映射与跨端验收。",
+      "cases": [
+        {
+          "id": "C04-16-CASE-1",
+          "description": "丢响应重复提交",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-16-CASE-2",
+          "description": "文本不同",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-16-CASE-3",
+          "description": "版本不同",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-16-CASE-4",
+          "description": "跨动作同key",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-17",
+      "title": "竞争决议与释放",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "仅见冻结范围与回归文件索引，尚无充分独立局部判断。",
+      "implementation_assessment": "未独立细读足够实现，不能据此判为已实现或缺实现。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 本候选已取得局部隔离PG并发/进程死亡恢复原始结果；仍缺该义务全部case逐项映射与跨端验收。",
+      "cases": [
+        {
+          "id": "C04-17-CASE-1",
+          "description": "开案与无损检查竞态",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-17-CASE-2",
+          "description": "双审核竞态",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-17-CASE-3",
+          "description": "双押金义务竞态",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-17-CASE-4",
+          "description": "并发PG证明",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-18",
+      "title": "中断重启",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读恢复用例，独立退款中断恢复；新的PG恢复分组产物尚待核对。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 本候选已取得局部隔离PG并发/进程死亡恢复原始结果；仍缺该义务全部case逐项映射与跨端验收。",
+      "cases": [
+        {
+          "id": "C04-18-CASE-1",
+          "description": "证据flush后崩溃",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-18-CASE-2",
+          "description": "提交后响应丢失",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-18-CASE-3",
+          "description": "进程重启",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-18-CASE-4",
+          "description": "隔离PG恢复",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-19",
+      "title": "押金授权来源交接",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读rental_deposit_money要求已激活冻结来源、root/binding/source一致，不接受caller金额。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-19-CASE-1",
+          "description": "无接受拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-19-CASE-2",
+          "description": "源漂移拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-19-CASE-3",
+          "description": "独立押金根",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-19-CASE-4",
+          "description": "错误币种/payee拒绝",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-20",
+      "title": "车损决定交接",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读damage裁决与C11资金执行区分；supplier声明不产生资金。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-20-CASE-1",
+          "description": "未绑定历史案拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-20-CASE-2",
+          "description": "陈旧判决拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-20-CASE-3",
+          "description": "申诉hold拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-20-CASE-4",
+          "description": "金额越界拒绝",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-21",
+      "title": "普通释放依据",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读return review/release前置与资金图；未独立签零争议完整跨端释放旅程。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-21-CASE-1",
+          "description": "无损还车",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-21-CASE-2",
+          "description": "MATCHED_COMPLETED取消",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-21-CASE-3",
+          "description": "存在任何案拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-21-CASE-4",
+          "description": "关闭后再开案拒绝",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-22",
+      "title": "已结算后的更正",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读compensation完整双边账本、历史决议lineage和减少到目标额规则；未独立执行完整补偿UI。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-22-CASE-1",
+          "description": "降额须补偿",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-22-CASE-2",
+          "description": "零额撤销",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-22-CASE-3",
+          "description": "原捕获不足/冲突拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-22-CASE-4",
+          "description": "补偿重放一次",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-23",
+      "title": "消费者完整旅程",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立脚本正常租车搜索/日历/旅客/支付/改期/退款及取还车；旧候选实际10步部分覆盖。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 尚缺完整正常角色网页/原生及异常状态矩阵；API和编译不能替代。",
+      "cases": [
+        {
+          "id": "C04-23-CASE-1",
+          "description": "响应与异议",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-23-CASE-2",
+          "description": "已裁决申诉",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-23-CASE-3",
+          "description": "手机可用",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-23-CASE-4",
+          "description": "重载核最新状态",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-24",
+      "title": "管理员完整旅程",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读admin运营/资金工作台源码和权限；未独立真实UI执行全套裁决/押金/补偿。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 尚缺完整正常角色网页/原生及异常状态矩阵；API和编译不能替代。",
+      "cases": [
+        {
+          "id": "C04-24-CASE-1",
+          "description": "独立身份切换",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-24-CASE-2",
+          "description": "金额/理由明确确认",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-24-CASE-3",
+          "description": "无权限按钮及API拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-24-CASE-4",
+          "description": "正常最终检查",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-25",
+      "title": "供应商内部旅程",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立HTTP所属supplier申报、重放、坏binding拒绝；历史浏览器所属订单详情申报完成。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 尚缺完整正常角色网页/原生及异常状态矩阵；API和编译不能替代。",
+      "cases": [
+        {
+          "id": "C04-25-CASE-1",
+          "description": "自身订单可达",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-25-CASE-2",
+          "description": "跨租户拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-25-CASE-3",
+          "description": "自裁/扣款拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-25-CASE-4",
+          "description": "手机资料提交",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-26",
+      "title": "未知提交界面",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "真实源码回调7项迟到读取测试；旧浏览器异步覆盖失败已保留；全部未知提交UI组合未验。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 尚缺完整正常角色网页/原生及异常状态矩阵；API和编译不能替代。",
+      "cases": [
+        {
+          "id": "C04-26-CASE-1",
+          "description": "超时无回执",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-26-CASE-2",
+          "description": "已提交丢响应读回",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-26-CASE-3",
+          "description": "同key精确重试",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-26-CASE-4",
+          "description": "会话切换隔离",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-27",
+      "title": "异常发现登记",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读工作台按车损case显示记录；不等于独立异常任务登记。",
+      "implementation_assessment": "已审模块入口未提供完整任务登记/派发/SLA升级/验收复查；其他实现未独立核实，不能声明全仓库不存在。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 完整任务责任人/期限/升级/派发/独立验收/复查需实现及正常角色证据。",
+      "cases": [
+        {
+          "id": "C04-27-CASE-1",
+          "description": "待处理车损",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-27-CASE-2",
+          "description": "过期未接受义务",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-27-CASE-3",
+          "description": "未知履约/资金",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-27-CASE-4",
+          "description": "重复扫描不重复任务",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-28",
+      "title": "派发与接管",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读工作台声明/回应/裁决动作；不等于任务授权派发、接管和SLA升级。",
+      "implementation_assessment": "已审模块入口未提供完整任务登记/派发/SLA升级/验收复查；其他实现未独立核实，不能声明全仓库不存在。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 完整任务责任人/期限/升级/派发/独立验收/复查需实现及正常角色证据。",
+      "cases": [
+        {
+          "id": "C04-28-CASE-1",
+          "description": "领取冲突",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-28-CASE-2",
+          "description": "心跳到期",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-28-CASE-3",
+          "description": "接管后旧worker拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-28-CASE-4",
+          "description": "权限拒绝",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-29",
+      "title": "处理验收与复查",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读裁决/申诉历史保留；不等于运营任务独立验收关闭及后续复查。",
+      "implementation_assessment": "已审模块入口未提供完整任务登记/派发/SLA升级/验收复查；其他实现未独立核实，不能声明全仓库不存在。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 完整任务责任人/期限/升级/派发/独立验收/复查需实现及正常角色证据。",
+      "cases": [
+        {
+          "id": "C04-29-CASE-1",
+          "description": "处置成功回读",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-29-CASE-2",
+          "description": "失败不关闭",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-29-CASE-3",
+          "description": "独立验证",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-29-CASE-4",
+          "description": "复发重开关联任务",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C04-30",
+      "title": "可查询运营诊断",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读rental_deposit_review只读诊断；未验全部可查询运营诊断场景。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C04-30-CASE-1",
+          "description": "分页稳定",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-30-CASE-2",
+          "description": "单订单追踪",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-30-CASE-3",
+          "description": "错误来源定位",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C04-30-CASE-4",
+          "description": "只读零写入",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-01",
+      "title": "场次有效期展示",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立过期和无policy拒绝；已读工程合成Asia/Tokyo冻结窗及显示。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C06-01.1",
+          "description": "返回目的地时区有效期、场次及政策版本",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-01.2",
+          "description": "过期/撤销政策不能形成新可用凭证",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-01.3",
+          "description": "仅浏览不占用容量或写订单",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-02",
+      "title": "游客与容量",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读prebook数量/场次冻结与容量prepare_change；完整游客和并发容量场景未独立签发。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C06-02.1",
+          "description": "游客和当前场次容量绑定订单",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-02.2",
+          "description": "同请求重放不重复占用容量",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-02.3",
+          "description": "容量不足拒绝且无资金捕获",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-03",
+      "title": "支付与凭证",
+      "required_cases": 4,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立未来窗UI禁核销、无policy/过期后端拒绝；历史正常支付有voucher，未验全部窗内核销。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C06-03.1",
+          "description": "捕获与凭证发行分别记录真实状态",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-03.2",
+          "description": "未知发券不制造有效凭证",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-03.3",
+          "description": "重复支付最多一次捕获",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-03.4",
+          "description": "有效时间窗内对当前订单未核销凭证正常核销并记录唯一核销事实；窗外或非所属对象拒绝",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-04",
+      "title": "改签事件",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立旧quote不能覆盖已确认改期、完整订单/目标容量/钱不变；已读精确quote_id fencing。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C06-04.1",
+          "description": "所有pending change确认必须带当前quote_id",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-04.2",
+          "description": "首次change前普通UNKNOWN恢复凭据不能套入change",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-04.3",
+          "description": "后续change拒绝此前quote_id且不覆盖场次",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-05",
+      "title": "取消与核销",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立闭园非自愿退款、零额自愿退款拒绝、处理中取消态不回退、完成收据与账本重验。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C06-05.1",
+          "description": "符合冻结政策的取消退款只一次",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-05.2",
+          "description": "已核销凭证拒绝再次核销",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-05.3",
+          "description": "退款/取消终态不能被迟到发券回调恢复",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-06",
+      "title": "场次政策运营",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "仅见冻结范围与回归文件索引，尚无充分独立局部判断。",
+      "implementation_assessment": "未独立细读足够实现，不能据此判为已实现或缺实现。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 原始政策导入字节/摘要、撤销与版本冲突实现和正常角色操作尚未独立核实。",
+      "cases": [
+        {
+          "id": "C06-06.1",
+          "description": "导入raw bytes与声明摘要不一致拒绝整个批次",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-06.2",
+          "description": "撤销版本阻止新有效期使用但历史原始记录保留",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-06.3",
+          "description": "旧版本不能覆盖较新版本，审计记录明确操作者",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-07",
+      "title": "消费者边界",
+      "required_cases": 2,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "读过consumer_principal/owner入口与冻结quote；未逐case验证完整消费者私有信息/写入矩阵。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C06-07.1",
+          "description": "用户B GET用户A订单私有详情被拒绝",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-07.2",
+          "description": "用户B POST用户A改签、退款、支付被拒绝且DB/ledger不变",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-08",
+      "title": "供应商租户边界",
+      "required_cases": 2,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读supplier_query跨域三方绑定；独立坏binding测试属于RENTAL，不能自动移作门票认证。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C06-08.1",
+          "description": "供应商B不可读或处理供应商A订单",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-08.2",
+          "description": "同供应商只读角色不可提交履约或资金动作",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-09",
+      "title": "管理角色边界",
+      "required_cases": 2,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读门票external-state管理依赖修复及对应测试定义；无完整正常角色UI/API独立裁决。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C06-09.1",
+          "description": "普通消费者及供应商不得访问admin运营入口",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-09.2",
+          "description": "admin只读角色不得提交处理操作",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-10",
+      "title": "并发竞争",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "已读capacity/refund order lock与lease恢复；新的PG原始竞争结果待核对。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 本候选已取得局部隔离PG并发/进程死亡恢复原始结果；仍缺该义务全部case逐项映射与跨端验收。",
+      "cases": [
+        {
+          "id": "C06-10.1",
+          "description": "同订单两个并发支付最多一次捕获",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-10.2",
+          "description": "同订单两个并发退款最多一次退款",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-10.3",
+          "description": "并发改签不能同时消费旧报价或泄漏库存",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-11",
+      "title": "崩溃恢复",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立退款异常后读取原冻结报价及恢复；已读os._exit恢复源码，待最新PG执行。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 本候选已取得局部隔离PG并发/进程死亡恢复原始结果；仍缺该义务全部case逐项映射与跨端验收。",
+      "cases": [
+        {
+          "id": "C06-11.1",
+          "description": "本地提交前失败无半成订单/资金状态",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-11.2",
+          "description": "资金已提交业务回写前中断，重试恢复原操作不重复资金",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-11.3",
+          "description": "恢复失败保留UNKNOWN及可追溯事件，不假报完成",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-12",
+      "title": "跨端事实",
+      "required_cases": 5,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立脚本门票搜索/人数场次/旅客/支付/禁核销/退款；初次refund-confirmed使用展示q的回调3项。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 尚缺完整正常角色网页/原生及异常状态矩阵；API和编译不能替代。",
+      "cases": [
+        {
+          "id": "C06-12.1",
+          "description": "消费者网页、native、admin和所属supplier对同一订单确认/未知/取消状态一致",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-12.2",
+          "description": "零退款与已退款到账使用不同显示且资金净额一致",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-12.3",
+          "description": "消费者正常真实点击搜索→选择→接受适用条款→预订→支付→读取结果，绑定同一订单与实际DB事实",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-12.4",
+          "description": "消费者从同一订单正常点击改签/改期及取消退款，确认当前条款，刷新后金额与状态匹配",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-12.5",
+          "description": "所属供应商与授权管理员从正常菜单进入本模块未决/履约处理，真实提交并读取结果；无权限角色界面和API均拒绝写入",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-13",
+      "title": "运营处理闭环",
+      "required_cases": 5,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "门票单据状态/退款事实可读取；未见已读门票流程实现完整运营任务闭环。",
+      "implementation_assessment": "已审模块入口未提供完整任务登记/派发/SLA升级/验收复查；其他实现未独立核实，不能声明全仓库不存在。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。 完整任务责任人/期限/升级/派发/独立验收/复查需实现及正常角色证据。",
+      "cases": [
+        {
+          "id": "C06-13.1",
+          "description": "未决记录显示原因、处理角色及责任人",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-13.2",
+          "description": "超出既定期限记录显示待升级处理",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-13.3",
+          "description": "处理关闭后保留原输入、处理人、时间与结果，不删除未知历史",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-13.4",
+          "description": "从本模块真实未决事件登记任务并派发给有权限责任人；登记、派发和执行三个状态不可混为完成",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-13.5",
+          "description": "受权处理或人工接管后验证订单与资金结果再关闭任务；后续复查记录原事件与前次处理，不静默删除历史",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    },
+    {
+      "obligation": "C06-14",
+      "title": "拒绝无副作用",
+      "required_cases": 3,
+      "complete_status": "NOT_VERIFIED",
+      "partial_evidence": "独立陈旧报价拒绝无订单/容量/钱变动，损坏资金/cache重放409且无钱变化。",
+      "implementation_assessment": "已见局部实现；完整义务实现尚未判定。",
+      "missing_evidence": "本候选逐case原始结果、零副作用/对象权属/金额和库存前后证据；不能用回归数量替代。",
+      "cases": [
+        {
+          "id": "C06-14.1",
+          "description": "陈旧报价拒绝后订单版本、ledger余额、库存不变",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-14.2",
+          "description": "撤销后延迟请求不能恢复终态",
+          "status": "NOT_VERIFIED"
+        },
+        {
+          "id": "C06-14.3",
+          "description": "错误提示指明待核验或重新确认而非声称操作成功",
+          "status": "NOT_VERIFIED"
+        }
+      ]
+    }
+  ],
+  "partial_candidate_evidence_index": "INDEPENDENT_FINAL.json"
+}

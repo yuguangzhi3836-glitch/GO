@@ -1,0 +1,390 @@
+........F..............F.F.............................................. [ 33%]
+.....................F...........................................F...... [ 67%]
+......................................................................   [100%]
+=================================== FAILURES ===================================
+________ test_native_six_vertical_creation_payment_and_refund_contracts ________
+tests/test_depth30_native_api_contract.py:66: in test_native_six_vertical_creation_payment_and_refund_contracts
+    order=bridge(client,headers,create)['data']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_depth30_native_api_contract.py:25: in bridge
+    if 'error' in item:raise AssertionError(item['error'])
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Error: {"detail":"RIDE_CANCELLATION_POLICY_UNAVAILABLE"}
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T08:34:04.496028+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_703224175baa499ab413bfe3e986ba2b","trace_id":"tr_59a0570172c0474b9384e381af739e0b","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":102.39}
+{"ts":"2026-09-25T08:34:04.497021+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:04.539058+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_aba4017c516e4c45815bd2eb658438a4","trace_id":"tr_b97e833be7d34185a35c194691d47d3f","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":41.18}
+{"ts":"2026-09-25T08:34:04.539729+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:04.593199+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_5d49456b3cc04164a95e64199d1b3db6","trace_id":"tr_41d792212b674c9fa2806ef17bcc0ad2","path":"/v1/search/hotels","method":"POST","status_code":200,"duration_ms":14.47}
+{"ts":"2026-09-25T08:34:04.593687+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/search/hotels \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:04.602145+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_d997c510e5264d088377ab9135797d15","trace_id":"tr_296ea3a745ca4ce883c0cf60b4edda4d","path":"/v1/offers/off_152878c8b8984689/prebook","method":"POST","status_code":200,"duration_ms":7.85}
+{"ts":"2026-09-25T08:34:04.602540+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/offers/off_152878c8b8984689/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:04.607002+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_0a366a0556984d92876b5de77b91748d","trace_id":"tr_d457bf306e324860bc27f905395c37df","path":"/v1/flights/search","method":"POST","status_code":200,"duration_ms":3.76}
+{"ts":"2026-09-25T08:34:04.607792+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/flights/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:04.614461+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_3e0c0e556bcb47b9826f9934654d213c","trace_id":"tr_6b6b19e7f52c4eb89d8c873e0a636693","path":"/v1/flights/offers/flt_off_67e22fc8e2cb46df/prebook","method":"POST","status_code":200,"duration_ms":6.06}
+{"ts":"2026-09-25T08:34:04.614891+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/flights/offers/flt_off_67e22fc8e2cb46df/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:04.630853+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_29da2a0bc79f456cacbe61085f4b92b7","trace_id":"tr_3acdce44e21f4b65bc8dfe047217f3bf","path":"/v1/rail/search","method":"POST","status_code":200,"duration_ms":15.35}
+{"ts":"2026-09-25T08:34:04.631360+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:04.642790+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_ab63c923b9e64d95ae4061d55d7201e9","trace_id":"tr_cf694333f8774e3cb46dd020fc7c856a","path":"/v1/rail/offers/rail_off_a0ad59ae70514a08/prebook","method":"POST","status_code":200,"duration_ms":10.8}
+{"ts":"2026-09-25T08:34:04.643292+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/offers/rail_off_a0ad59ae70514a08/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:04.646339+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_5ff04b6b2f604d7a87f7563de4e3df05","trace_id":"tr_71d19fb6d2ac41038f07e1704deb6a0c","path":"/v1/mobility/rides/search","method":"POST","status_code":200,"duration_ms":2.41}
+{"ts":"2026-09-25T08:34:04.646695+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/rides/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:04.649165+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_bba6a7fad81c4340895bbcf43454b78b","trace_id":"tr_db77db7c816540239be118cf33621ada","path":"/v1/mobility/rentals/search","method":"POST","status_code":200,"duration_ms":1.97}
+{"ts":"2026-09-25T08:34:04.649749+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/rentals/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:04.657495+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_923a66ab2c2d4b1c961aac1d3af1dd97","trace_id":"tr_d71c8cc6045849208bbdc7f0e5131d03","path":"/v1/attractions/search","method":"POST","status_code":200,"duration_ms":7.27}
+{"ts":"2026-09-25T08:34:04.657974+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/attractions/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:04.664426+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_5ccd32b0937949e4a4305d23cba7ee7c","trace_id":"tr_58da99962bc04cad9b57b545db36fa60","path":"/v1/attractions/prebook","method":"POST","status_code":200,"duration_ms":5.95}
+{"ts":"2026-09-25T08:34:04.664862+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/attractions/prebook \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:04.799275+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_a44241ceb0ab4bd5b8b07d6ad749c112","trace_id":"tr_82972757029f4a10bc0036e8ef011872","path":"/v1/consumer/orders","method":"POST","status_code":200,"duration_ms":23.74}
+{"ts":"2026-09-25T08:34:04.800000+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:05.403507+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_435f3da26fd142458d17b0ab52831c08","trace_id":"tr_5ce5e54077da419f88ddfe064440ef28","path":"/v1/consumer/orders","method":"POST","status_code":200,"duration_ms":480.84}
+{"ts":"2026-09-25T08:34:05.404064+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:05.535931+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_fc359d18469b462ca46e306ed0f10ec0","trace_id":"tr_bd27051a08094557bebc072f8bd46ecf","path":"/v1/consumer/orders/ord_2a3e15aa45114df7/detail","method":"GET","status_code":200,"duration_ms":25.81}
+{"ts":"2026-09-25T08:34:05.536413+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/consumer/orders/ord_2a3e15aa45114df7/detail \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:05.548231+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_7c3fed5db84a45acb55969fe08c666a5","trace_id":"tr_9f2866990e274b2abaa0e6584770e98f","path":"/v1/consumer/orders/ord_2a3e15aa45114df7/detail","method":"GET","status_code":200,"duration_ms":6.79}
+{"ts":"2026-09-25T08:34:05.548628+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/consumer/orders/ord_2a3e15aa45114df7/detail \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:05.552676+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_8fe2b4e58318423fae7721179709856e","trace_id":"tr_208a67063c974d328644be5dbaaec376","path":"/v1/consumer/checkout-capabilities","method":"GET","status_code":200,"duration_ms":1.98}
+{"ts":"2026-09-25T08:34:05.553102+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/consumer/checkout-capabilities \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:05.598541+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_3ad96367808a47308ae9e17cb92bce86","trace_id":"tr_a6a87607b6c14ef9adadf5164a715817","path":"/v1/consumer/checkout/HOTEL/ord_2a3e15aa45114df7","method":"POST","status_code":200,"duration_ms":44.61}
+{"ts":"2026-09-25T08:34:05.599053+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/checkout/HOTEL/ord_2a3e15aa45114df7 \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:05.609487+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_aaf00ff93a2d4a92b726f1095b299842","trace_id":"tr_691824d494854bb59c239c2bd5e7b515","path":"/v1/consumer/orders/ord_2a3e15aa45114df7/detail","method":"GET","status_code":200,"duration_ms":9.39}
+{"ts":"2026-09-25T08:34:05.609882+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/consumer/orders/ord_2a3e15aa45114df7/detail \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:05.723719+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_48b9848433804f749c6b010b09af7e46","trace_id":"tr_b8a5dd9d488d45ad82f651ba68e6041b","path":"/v1/consumer/orders/ord_2a3e15aa45114df7/detail","method":"GET","status_code":200,"duration_ms":9.23}
+{"ts":"2026-09-25T08:34:05.724154+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/consumer/orders/ord_2a3e15aa45114df7/detail \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:05.778372+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_3bac06e725c340ea8928abbd83d9a3e1","trace_id":"tr_e5038f5cbc3e46b399e054ee405d6567","path":"/v1/mobile/orders/ord_2a3e15aa45114df7/cancellation-quote","method":"POST","status_code":200,"duration_ms":47.29}
+{"ts":"2026-09-25T08:34:05.778875+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/orders/ord_2a3e15aa45114df7/cancellation-quote \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:05.787508+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_eabc1f9cedd1400d89e9002bbf686878","trace_id":"tr_2b3ecc1ee74246de975ac7768e8f5dd6","path":"/v1/consumer/orders/ord_2a3e15aa45114df7/detail","method":"GET","status_code":200,"duration_ms":6.19}
+{"ts":"2026-09-25T08:34:05.788089+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/consumer/orders/ord_2a3e15aa45114df7/detail \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:05.795731+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_b905954792a446d3852d79c3c3eed07f","trace_id":"tr_358968e6053b4cc0bc83362e382a8b3a","path":"/v1/mobile/orders/ord_2a3e15aa45114df7/cancellation-quotes/cq_bf245df30ad34014a159f086f0a79fb5","method":"GET","status_code":200,"duration_ms":3.69}
+{"ts":"2026-09-25T08:34:05.796095+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/mobile/orders/ord_2a3e15aa45114df7/cancellation-quotes/cq_bf245df30ad34014a159f086f0a79fb5 \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:05.832645+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_2beab8bf31cb4145bfba2b2b4d7081f5","trace_id":"tr_08cc8e5a015944a681144909f4150f67","path":"/v1/mobile/orders/ord_2a3e15aa45114df7/cancel","method":"POST","status_code":200,"duration_ms":34.33}
+{"ts":"2026-09-25T08:34:05.833166+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/orders/ord_2a3e15aa45114df7/cancel \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:05.842861+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_58acc1a733fc46be822a0f56ecfea67f","trace_id":"tr_632783b9d2f141a28e49c5f53647a488","path":"/v1/consumer/orders/ord_2a3e15aa45114df7/detail","method":"GET","status_code":200,"duration_ms":7.55}
+{"ts":"2026-09-25T08:34:05.843262+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/consumer/orders/ord_2a3e15aa45114df7/detail \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:05.979680+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_2b8d3e6b411f49b5866fa956aa11b550","trace_id":"tr_12f96bd3316348b8bb7814978fb778ef","path":"/v1/flights/orders","method":"POST","status_code":200,"duration_ms":15.15}
+{"ts":"2026-09-25T08:34:05.980145+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/flights/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.103950+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_429b5f82ee8742d0a5c2760befbd68b7","trace_id":"tr_e1338f3e594d4bceb8951cd47c56df44","path":"/v1/flights/orders","method":"POST","status_code":200,"duration_ms":7.28}
+{"ts":"2026-09-25T08:34:06.104392+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/flights/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.218001+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_b39bf66a97b9441aaea04f92a1210482","trace_id":"tr_9c1daa56106b43fbac977de1afad5596","path":"/v1/flights/orders/flt_ord_6c0e12dea683411c","method":"GET","status_code":200,"duration_ms":8.46}
+{"ts":"2026-09-25T08:34:06.218489+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.228013+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_00080772114e4f2e8e9a27f72414edd7","trace_id":"tr_303d4ada0f2a446380c1661ee1841eb9","path":"/v1/flights/orders/flt_ord_6c0e12dea683411c","method":"GET","status_code":200,"duration_ms":3.36}
+{"ts":"2026-09-25T08:34:06.228394+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.231542+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_b5333de25197402684b7e3b8567b83c7","trace_id":"tr_7051c75efde046ecabfa55667e8f91ed","path":"/v1/consumer/checkout-capabilities","method":"GET","status_code":200,"duration_ms":1.64}
+{"ts":"2026-09-25T08:34:06.231915+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/consumer/checkout-capabilities \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.264998+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_b9059f1ef122493996c65d8e3be99a4a","trace_id":"tr_228b71788f0c431a943b92bfcc561320","path":"/v1/consumer/checkout/FLIGHT/flt_ord_6c0e12dea683411c","method":"POST","status_code":200,"duration_ms":32.21}
+{"ts":"2026-09-25T08:34:06.265464+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/checkout/FLIGHT/flt_ord_6c0e12dea683411c \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.271416+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_b0ce8eb0485f45e5afc7e3beef07391f","trace_id":"tr_d9137cc15dc04a168f81b937416e1dfe","path":"/v1/flights/orders/flt_ord_6c0e12dea683411c","method":"GET","status_code":200,"duration_ms":4.47}
+{"ts":"2026-09-25T08:34:06.271800+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.372462+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_b2c7ba416d0a496787102d380b6df471","trace_id":"tr_ba0b96d0775140d1907b1dc645e67218","path":"/v1/flights/orders/flt_ord_6c0e12dea683411c","method":"GET","status_code":200,"duration_ms":4.53}
+{"ts":"2026-09-25T08:34:06.373060+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.380279+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_4d551d60f2444335813d9c8abbb565d3","trace_id":"tr_ef5a10a97e0240a882eb8960ad3f6874","path":"/v1/flights/orders/flt_ord_6c0e12dea683411c/refund-quote","method":"GET","status_code":200,"duration_ms":3.18}
+{"ts":"2026-09-25T08:34:06.380754+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c/refund-quote \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.384839+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_1beea2aaf10f4bf1b02e93d3e8ff705a","trace_id":"tr_595f5c86f0b94f7c840ccf8a88e0abf3","path":"/v1/flights/orders/flt_ord_6c0e12dea683411c","method":"GET","status_code":200,"duration_ms":2.76}
+{"ts":"2026-09-25T08:34:06.385226+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.390166+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_3c5b59bbd9ea41f89c765b7b25fc35d5","trace_id":"tr_6b2d332501d84cf58127c4bc2d2a310b","path":"/v1/flights/orders/flt_ord_6c0e12dea683411c/refund-quote","method":"GET","status_code":200,"duration_ms":2.42}
+{"ts":"2026-09-25T08:34:06.390594+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c/refund-quote \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.416292+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_559f581680574d82a8aa2c8a54356c72","trace_id":"tr_dd8646ece5a743c78c1e150cd2d5dd55","path":"/v1/flights/orders/flt_ord_6c0e12dea683411c/refund-confirmed","method":"POST","status_code":200,"duration_ms":24.04}
+{"ts":"2026-09-25T08:34:06.417140+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c/refund-confirmed \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.422710+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_4068a56b744b49acba201ce6565784f2","trace_id":"tr_87354c6299a64fa599f2db6e06a44fe9","path":"/v1/flights/orders/flt_ord_6c0e12dea683411c","method":"GET","status_code":200,"duration_ms":3.28}
+{"ts":"2026-09-25T08:34:06.423310+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.555738+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_cc02963a886041a3a86fe81b22af386b","trace_id":"tr_7c430e28fe374be2bc0ddb91363bc4ae","path":"/v1/rail/orders","method":"POST","status_code":200,"duration_ms":20.96}
+{"ts":"2026-09-25T08:34:06.556288+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.663663+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_a8ff74fb5f9449ad9f3ea9f1ac9c67fa","trace_id":"tr_220cdb673ec84139b9ddc4a8a9c306c0","path":"/v1/rail/orders","method":"POST","status_code":200,"duration_ms":6.04}
+{"ts":"2026-09-25T08:34:06.664055+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.811596+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_9814d955681f4582b75f944fc616558a","trace_id":"tr_6250f0162f654b23a53c95d894b82d65","path":"/v1/rail/orders/rail_ord_7081665fbb58419b","method":"GET","status_code":200,"duration_ms":7.99}
+{"ts":"2026-09-25T08:34:06.812019+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.818756+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_319845814205446083f2520edba9376e","trace_id":"tr_36dbbb30c6bd4727b1b1c129b3077a7f","path":"/v1/rail/orders/rail_ord_7081665fbb58419b","method":"GET","status_code":200,"duration_ms":3.24}
+{"ts":"2026-09-25T08:34:06.819077+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.822318+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_f90e406a8d40460ba2d3c9e8c80f238f","trace_id":"tr_fab321b74c7c469e82c365b6974edf49","path":"/v1/consumer/checkout-capabilities","method":"GET","status_code":200,"duration_ms":1.53}
+{"ts":"2026-09-25T08:34:06.822638+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/consumer/checkout-capabilities \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.851445+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_4a1fad17b1264d3492b75eaa0ccd1a5c","trace_id":"tr_8a6b1421b642458d908fa06bbe11b59d","path":"/v1/consumer/checkout/RAIL/rail_ord_7081665fbb58419b","method":"POST","status_code":200,"duration_ms":28.04}
+{"ts":"2026-09-25T08:34:06.851953+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/checkout/RAIL/rail_ord_7081665fbb58419b \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.856334+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_fee7037066fe4fd5b8083d408030ab5e","trace_id":"tr_da87ebd3375f48efbcb21757aadf9ad5","path":"/v1/rail/orders/rail_ord_7081665fbb58419b","method":"GET","status_code":200,"duration_ms":3.32}
+{"ts":"2026-09-25T08:34:06.856748+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.974877+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_1d0f7ae71e2f44f1835e18d94617c39c","trace_id":"tr_4940c46909c94a0fb5ec2c182283b561","path":"/v1/rail/orders/rail_ord_7081665fbb58419b","method":"GET","status_code":200,"duration_ms":5.72}
+{"ts":"2026-09-25T08:34:06.975356+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.985346+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_75a3ef59248e44bb9a6c5eba8516ad7b","trace_id":"tr_d22cab5b8ba841ea8df3bff18e777941","path":"/v1/rail/orders/rail_ord_7081665fbb58419b/refund-quote","method":"GET","status_code":200,"duration_ms":5.57}
+{"ts":"2026-09-25T08:34:06.985740+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b/refund-quote \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.990010+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_e886105fd9684d4681dd8d11173a4ccc","trace_id":"tr_8d55e065869545b6ac27e919e16e9ff1","path":"/v1/rail/orders/rail_ord_7081665fbb58419b","method":"GET","status_code":200,"duration_ms":3.16}
+{"ts":"2026-09-25T08:34:06.990293+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:06.996106+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_0be275db33584250a57339008723176b","trace_id":"tr_634bd14f31f04df292d20fb01ebe135e","path":"/v1/rail/orders/rail_ord_7081665fbb58419b/refund-quote","method":"GET","status_code":200,"duration_ms":2.59}
+{"ts":"2026-09-25T08:34:06.996695+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b/refund-quote \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:07.024907+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_9f6430d267d24ae4849dffe3b6bb0ef4","trace_id":"tr_1e02e98c0514492e8b362fe3eb189951","path":"/v1/rail/orders/rail_ord_7081665fbb58419b/refund-confirmed","method":"POST","status_code":200,"duration_ms":25.96}
+{"ts":"2026-09-25T08:34:07.025396+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b/refund-confirmed \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:07.029616+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_fc18e11183d045e98d38339a0d53fafd","trace_id":"tr_dd7af27eca854e0b86585b9644bfb656","path":"/v1/rail/orders/rail_ord_7081665fbb58419b","method":"GET","status_code":200,"duration_ms":3.31}
+{"ts":"2026-09-25T08:34:07.029944+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:07.148919+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_410410db84414738af98e7fd8d5f23aa","trace_id":"tr_5105e23bd9fa40a0b65300d4d70e8a79","path":"/v1/mobility/rides/orders","method":"POST","status_code":409,"duration_ms":10.66}
+{"ts":"2026-09-25T08:34:07.149341+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/rides/orders \"HTTP/1.1 409 Conflict\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/search/hotels "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/offers/off_152878c8b8984689/prebook "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/flights/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/flights/offers/flt_off_67e22fc8e2cb46df/prebook "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/offers/rail_off_a0ad59ae70514a08/prebook "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/rides/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/rentals/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/attractions/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/attractions/prebook "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/consumer/orders/ord_2a3e15aa45114df7/detail "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/consumer/orders/ord_2a3e15aa45114df7/detail "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/consumer/checkout-capabilities "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/checkout/HOTEL/ord_2a3e15aa45114df7 "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/consumer/orders/ord_2a3e15aa45114df7/detail "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/consumer/orders/ord_2a3e15aa45114df7/detail "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/orders/ord_2a3e15aa45114df7/cancellation-quote "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/consumer/orders/ord_2a3e15aa45114df7/detail "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/mobile/orders/ord_2a3e15aa45114df7/cancellation-quotes/cq_bf245df30ad34014a159f086f0a79fb5 "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/orders/ord_2a3e15aa45114df7/cancel "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/consumer/orders/ord_2a3e15aa45114df7/detail "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/flights/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/flights/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/consumer/checkout-capabilities "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/checkout/FLIGHT/flt_ord_6c0e12dea683411c "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c/refund-quote "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c/refund-quote "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c/refund-confirmed "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/flights/orders/flt_ord_6c0e12dea683411c "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/consumer/checkout-capabilities "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/checkout/RAIL/rail_ord_7081665fbb58419b "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b/refund-quote "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b/refund-quote "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b/refund-confirmed "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/rail/orders/rail_ord_7081665fbb58419b "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/rides/orders "HTTP/1.1 409 Conflict"
+_____ test_refund_and_change_execute_against_native_order_and_money_truth ______
+tests/test_agent_transaction_lifecycle_p02.py:54: in test_refund_and_change_execute_against_native_order_and_money_truth
+    x=run(gw.lifecycle_execute(c,LifecycleExecuteRequest(ride['order_id'],'CHANGE',q['quote_id'],q['quote_hash'],changes,None,'cx'))).data
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_agent_transaction_lifecycle_p02.py:15: in run
+    def run(x):return asyncio.run(x)
+                      ^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+src/go_hotel/agent_gateway/service.py:55: in lifecycle_execute
+    return AgentEnvelope(await self.core.lifecycle_execute(ctx,req),ctx.request_id,ctx.trace_id)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/agent_gateway/lifecycle_core.py:115: in lifecycle_execute
+    return await self._idempotent("AGENT_LIFECYCLE_" + action, req.idempotency_key, payload, execute)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/agent_gateway/real_core.py:43: in _idempotent
+    out=await fn();return repo.complete_idempotency(operation,key,payload,_jsonable(out),out.get("order_id") or out.get("reserve_id") or out.get("payment_truth_id"))
+        ^^^^^^^^^^
+src/go_hotel/agent_gateway/lifecycle_core.py:104: in execute
+    native = (await self._execute_change(account, vertical, oid, req)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/agent_gateway/lifecycle_core.py:160: in _execute_change
+    return ride_service.modify(account, oid, dict(req.changes)["new_time"])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/mobility/ride/service.py:101: in modify
+    cancellation_policy.instant(new_time)
+src/go_hotel/mobility/ride/cancellation_policy.py:54: in instant
+    raise ValueError('RIDE_CANCELLATION_TIME_INVALID') from None
+E   ValueError: RIDE_CANCELLATION_TIME_INVALID
+_____ test_change_quote_hash_mismatch_fails_closed_before_native_mutation ______
+tests/test_agent_transaction_lifecycle_p02.py:73: in test_change_quote_hash_mismatch_fails_closed_before_native_mutation
+    truth=run(gw.order(c,ride['order_id'])).data;assert truth['evidence']['native']['pickup_at']=='2026-10-24T10:00:00'
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert '2026-10-24T10:00:00+08:00' == '2026-10-24T10:00:00'
+E     
+E     - 2026-10-24T10:00:00
+E     + 2026-10-24T10:00:00+08:00
+E     ?                    ++++++
+_______________________ test_ride_and_rental_golden_path _______________________
+tests/test_sprint3c_mobility.py:10: in test_ride_and_rental_golden_path
+    assert client.post(f"/v1/mobility/orders/{oid}/modify",headers=h,json={"new_time":"2026-09-01T11:00:00"}).status_code==200
+E   AssertionError: assert 409 == 200
+E    +  where 409 = <Response [409 Conflict]>.status_code
+E    +    where <Response [409 Conflict]> = post('/v1/mobility/orders/ride_ord_2455e212deff4b7e/modify', headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiQ09OU1VNRVIiLCJleHAiOjE3OTAzMjYxNjM...llcl9pZCI6bnVsbCwidXNlcm5hbWUiOiJtb2JpbGl0eUBleGFtcGxlLmNvbSIsInZlciI6MX0.VrlDXhU_udGtB5XSg-se5raR3VJ_7YipBDMqKI5T_MQ'}, json={'new_time': '2026-09-01T11:00:00'})
+E    +      where post = <starlette.testclient.TestClient object at 0x7f0d6f8e6fc0>.post
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T08:34:23.143480+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_dfcedd3ddd8843858112c7b4f7832a06","trace_id":"tr_b488ac27cda1480a9f33a7984de3f136","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":82.96}
+{"ts":"2026-09-25T08:34:23.144433+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:23.185829+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_c48af4cee698431da6053843e0d60de3","trace_id":"tr_4db2273a744247bd93ab530dfd241244","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":40.61}
+{"ts":"2026-09-25T08:34:23.186307+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:23.191002+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_f3b9691c6fb6418db9cd39c347d35775","trace_id":"tr_9cc9c4873a2946c89396f962cfe82b46","path":"/v1/mobility/rides/search","method":"POST","status_code":200,"duration_ms":4.06}
+{"ts":"2026-09-25T08:34:23.191468+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/rides/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:23.204084+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_e096e4f9c6fb4d8d9b2cd9d8f62790c0","trace_id":"tr_be45d20bcc624844ae20ec338da9e892","path":"/v1/mobility/rides/orders","method":"POST","status_code":200,"duration_ms":10.88}
+{"ts":"2026-09-25T08:34:23.204487+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/rides/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:23.214331+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_84424ac8c7004471960abe173a046948","trace_id":"tr_585d4cab167b4beab38c1ce613dbd532","path":"/v1/payments/intents","method":"POST","status_code":200,"duration_ms":9.19}
+{"ts":"2026-09-25T08:34:23.214728+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/payments/intents \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:23.221405+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_8bba33251bb64f61b3a382f3ebc81f0c","trace_id":"tr_948367d8178a4798914916370f7468a4","path":"/v1/payments/intents/opi_fb57920f314b48768662b5fdd2651614/channel","method":"POST","status_code":200,"duration_ms":6.13}
+{"ts":"2026-09-25T08:34:23.221962+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/payments/intents/opi_fb57920f314b48768662b5fdd2651614/channel \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:23.270068+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_3ec617aaaef540e281510bb6adb416d3","trace_id":"tr_52664183836a44e29b94cf3c63750cb5","path":"/internal/v1/payments/intents/opi_fb57920f314b48768662b5fdd2651614/execute","method":"POST","status_code":200,"duration_ms":7.97}
+{"ts":"2026-09-25T08:34:23.270463+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/payments/intents/opi_fb57920f314b48768662b5fdd2651614/execute \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:23.278813+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_f8b2220b9fb24b79b429d1dcd0b5487a","trace_id":"tr_b3586a42e2084cf6a95b14dbeb9c5b43","path":"/internal/v1/payments/attempts/opa_5635a61e0e654d028314636aaf9146a6/simulate","method":"POST","status_code":200,"duration_ms":7.83}
+{"ts":"2026-09-25T08:34:23.279220+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/payments/attempts/opa_5635a61e0e654d028314636aaf9146a6/simulate \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:23.286145+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_cca02b58eeec4c0ea299fa749ab1a677","trace_id":"tr_8a1f2abd6d264334b0fc0396f8f3395d","path":"/internal/v1/finance/payment-intents/opi_fb57920f314b48768662b5fdd2651614/movements","method":"POST","status_code":200,"duration_ms":6.35}
+{"ts":"2026-09-25T08:34:23.286517+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/finance/payment-intents/opi_fb57920f314b48768662b5fdd2651614/movements \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:23.294401+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_caf315387704426999742a72a2c5d95f","trace_id":"tr_a00e55c32fef475e8417444c9ae7af03","path":"/internal/v1/finance/payment-intents/opi_fb57920f314b48768662b5fdd2651614/movements","method":"POST","status_code":200,"duration_ms":7.31}
+{"ts":"2026-09-25T08:34:23.294816+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/finance/payment-intents/opi_fb57920f314b48768662b5fdd2651614/movements \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:23.344355+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_5a8fe35fac4a47a9a3adfad16ada4069","trace_id":"tr_15372d2e70be49a588086f7b4d543490","path":"/internal/v1/order-supplier-fulfillments/osf_871cdf69cef445c38fcd55dff6749e7d/supplier-fact","method":"POST","status_code":200,"duration_ms":10.9}
+{"ts":"2026-09-25T08:34:23.344842+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/order-supplier-fulfillments/osf_871cdf69cef445c38fcd55dff6749e7d/supplier-fact \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:23.349843+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_7864369a1fd34a2883064a7c918e0bee","trace_id":"tr_948bdcfe435946aab88758d7fa5e3f0b","path":"/v1/mobility/orders/ride_ord_2455e212deff4b7e/modify","method":"POST","status_code":409,"duration_ms":4.49}
+{"ts":"2026-09-25T08:34:23.350367+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_2455e212deff4b7e/modify \"HTTP/1.1 409 Conflict\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/rides/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/rides/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/payments/intents "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/payments/intents/opi_fb57920f314b48768662b5fdd2651614/channel "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/payments/intents/opi_fb57920f314b48768662b5fdd2651614/execute "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/payments/attempts/opa_5635a61e0e654d028314636aaf9146a6/simulate "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/finance/payment-intents/opi_fb57920f314b48768662b5fdd2651614/movements "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/finance/payment-intents/opi_fb57920f314b48768662b5fdd2651614/movements "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/order-supplier-fulfillments/osf_871cdf69cef445c38fcd55dff6749e7d/supplier-fact "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_2455e212deff4b7e/modify "HTTP/1.1 409 Conflict"
+_______ test_ride_state_machine_recovery_illegal_transition_and_evidence _______
+tests/test_rc20_2_all_b_to_a.py:46: in test_ride_state_machine_recovery_illegal_transition_and_evidence
+    assert blocked.status_code==422
+E   assert 409 == 422
+E    +  where 409 = <Response [409 Conflict]>.status_code
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T08:34:29.731907+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_b50d68668ceb441f88c0a0b334649fc0","trace_id":"tr_544f4071b83c4c90a7a78249bafe9af6","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":101.28}
+{"ts":"2026-09-25T08:34:29.732507+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:29.772788+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_e0ddd18a29804e479db67b858f9e0ec6","trace_id":"tr_0bd91a31b817494b8fd1e5b83e9c1db5","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":39.52}
+{"ts":"2026-09-25T08:34:29.773325+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:29.776639+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_68a863a9b19f4b70b83d05895696f8fc","trace_id":"tr_5d60d427286d42ef892e485caa872612","path":"/v1/mobility/rides/search","method":"POST","status_code":200,"duration_ms":2.68}
+{"ts":"2026-09-25T08:34:29.776960+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/rides/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:29.788002+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_b3aac1e67ef04ac38669ac5c8b8f93ac","trace_id":"tr_8f2215fe06464c0b9d5bc234a6c0bf9a","path":"/v1/mobility/rides/orders","method":"POST","status_code":200,"duration_ms":9.66}
+{"ts":"2026-09-25T08:34:29.788365+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/rides/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:29.797631+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_c59cb540b8da417ca655d889206cf0a3","trace_id":"tr_d03b8661d0cc4a4894f9b8f5bb43556b","path":"/v1/payments/intents","method":"POST","status_code":200,"duration_ms":8.68}
+{"ts":"2026-09-25T08:34:29.797992+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/payments/intents \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:29.804609+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_4bea4f660a50478e87ae2e9f1bd86ed8","trace_id":"tr_46d882edc2c746b0a97d6fa0b4c6f1ea","path":"/v1/payments/intents/opi_055a52366ba64029a7e974f51a127056/channel","method":"POST","status_code":200,"duration_ms":6.11}
+{"ts":"2026-09-25T08:34:29.805174+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/payments/intents/opi_055a52366ba64029a7e974f51a127056/channel \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:29.851455+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_0d2a01f8551a4ee0a050dbfe5a4becc3","trace_id":"tr_3f8e1ba7a7954702ba8b6869ee2fcc2d","path":"/internal/v1/payments/intents/opi_055a52366ba64029a7e974f51a127056/execute","method":"POST","status_code":200,"duration_ms":8.13}
+{"ts":"2026-09-25T08:34:29.851936+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/payments/intents/opi_055a52366ba64029a7e974f51a127056/execute \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:29.860281+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_f29c673a993b4b1a93ba61097abcf37e","trace_id":"tr_79dcabf22cb144bb86dbb153e8a8a0bb","path":"/internal/v1/payments/attempts/opa_5d79048dc96644b194eea657e66fa3da/simulate","method":"POST","status_code":200,"duration_ms":7.78}
+{"ts":"2026-09-25T08:34:29.860697+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/payments/attempts/opa_5d79048dc96644b194eea657e66fa3da/simulate \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:29.868003+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_94cabc0bce8948e9a32a5d3e3b1730ad","trace_id":"tr_e5303c73a1c74dc59f9c76d93fb3b79d","path":"/internal/v1/finance/payment-intents/opi_055a52366ba64029a7e974f51a127056/movements","method":"POST","status_code":200,"duration_ms":6.77}
+{"ts":"2026-09-25T08:34:29.868691+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/finance/payment-intents/opi_055a52366ba64029a7e974f51a127056/movements \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:29.876047+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_cdbd3260bbad4419be67b124b6e14d9c","trace_id":"tr_85f7c495270042a98da44f5fb92be8f9","path":"/internal/v1/finance/payment-intents/opi_055a52366ba64029a7e974f51a127056/movements","method":"POST","status_code":200,"duration_ms":6.8}
+{"ts":"2026-09-25T08:34:29.876406+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/finance/payment-intents/opi_055a52366ba64029a7e974f51a127056/movements \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:29.926592+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_31c261dffb3b4999ae6ab560146860c0","trace_id":"tr_3d7e3e0b631e4060815d401f14ad16b9","path":"/internal/v1/order-supplier-fulfillments/osf_f22e19fddb4f40c7bbbaf9ed45dbd189/supplier-fact","method":"POST","status_code":200,"duration_ms":12.45}
+{"ts":"2026-09-25T08:34:29.927036+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/order-supplier-fulfillments/osf_f22e19fddb4f40c7bbbaf9ed45dbd189/supplier-fact \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:34:29.936973+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_39402a42ba2648db8a2569666f28f0b0","trace_id":"tr_f3488cd1ff434959837ed5c99f8de567","path":"/v1/mobility/orders/ride_ord_87233b3b47d04c42/fulfillment","method":"POST","status_code":422,"duration_ms":9.27}
+{"ts":"2026-09-25T08:34:29.937575+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_87233b3b47d04c42/fulfillment \"HTTP/1.1 422 Unprocessable Entity\""}
+{"ts":"2026-09-25T08:34:29.950162+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_84a7d43cba31454785d691bebde11a6d","trace_id":"tr_a16220c1808c4cf2800066f61a1c9178","path":"/v1/mobility/orders/ride_ord_87233b3b47d04c42/modify","method":"POST","status_code":409,"duration_ms":5.07}
+{"ts":"2026-09-25T08:34:29.950538+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_87233b3b47d04c42/modify \"HTTP/1.1 409 Conflict\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/rides/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/rides/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/payments/intents "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/payments/intents/opi_055a52366ba64029a7e974f51a127056/channel "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/payments/intents/opi_055a52366ba64029a7e974f51a127056/execute "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/payments/attempts/opa_5d79048dc96644b194eea657e66fa3da/simulate "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/finance/payment-intents/opi_055a52366ba64029a7e974f51a127056/movements "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/finance/payment-intents/opi_055a52366ba64029a7e974f51a127056/movements "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/order-supplier-fulfillments/osf_f22e19fddb4f40c7bbbaf9ed45dbd189/supplier-fact "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_87233b3b47d04c42/fulfillment "HTTP/1.1 422 Unprocessable Entity"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_87233b3b47d04c42/modify "HTTP/1.1 409 Conflict"
+=========================== short test summary info ============================
+FAILED tests/test_depth30_native_api_contract.py::test_native_six_vertical_creation_payment_and_refund_contracts
+FAILED tests/test_agent_transaction_lifecycle_p02.py::test_refund_and_change_execute_against_native_order_and_money_truth
+FAILED tests/test_agent_transaction_lifecycle_p02.py::test_change_quote_hash_mismatch_fails_closed_before_native_mutation
+FAILED tests/test_sprint3c_mobility.py::test_ride_and_rental_golden_path - As...
+FAILED tests/test_rc20_2_all_b_to_a.py::test_ride_state_machine_recovery_illegal_transition_and_evidence
+5 failed, 209 passed in 45.45s

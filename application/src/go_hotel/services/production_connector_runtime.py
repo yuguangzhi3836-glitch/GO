@@ -6,6 +6,7 @@ from go_hotel.db.models import (
  ProductionConnectorRow, ConnectorAuthorityRow, ConnectorCredentialReferenceRow, ConnectorRuntimeHealthRow, ConnectorKillSwitchRow,
  ConnectorRuntimeAuthorizationRow, ConnectorRuntimeOperationRow, ConnectorWebhookReceiptRow,
  ConnectorRuntimeObservationRow, ConnectorRuntimeReconciliationRow, ConnectorRuntimeSafetyEventRow,
+ ExternalTruthOperationRow,
 )
 
 FINAL_STATES={'CONFIRMED','FAILED','CANCELLED','REFUNDED'}
@@ -175,6 +176,48 @@ class ProductionConnectorRuntimeService:
    row=s.get(ConnectorRuntimeOperationRow,payload.get('runtime_operation_id'))
    if not row or row.connector_id!=connector_id: raise ValueError('WEBHOOK_OPERATION_BINDING_INVALID')
    obs,rec=self._observe(s,row,'WEBHOOK',payload['external_state'].upper(),payload,payload.get('supplier_reference')); s.commit(); return {'receipt':out(receipt),'operation':out(row),'observation':out(obs),'reconciliation':out(rec),'replay':False}
+ def admit_payment_unknown(self,external_truth_operation_id):
+  """Bridge an existing payment truth operation into the Command Center case queue.
+  It never writes payment state, movements, or ledger entries; only a verified
+  external callback can resolve the payment authority chain.
+  """
+  with SessionLocal() as s:
+   truth=s.get(ExternalTruthOperationRow,external_truth_operation_id)
+   if not truth or truth.vertical!='PAYMENT':raise ValueError('PAYMENT_TRUTH_OPERATION_REQUIRED')
+   if truth.state not in {'DISPATCHING','UNKNOWN_EXTERNAL_STATE','TRANSPORT_ACCEPTED_PENDING_SIGNED_CALLBACK'}:raise ValueError('PAYMENT_TRUTH_OPERATION_NOT_RECONCILABLE')
+   key=f'PAYMENT_TRUTH_RECON:{external_truth_operation_id}'
+   existing=s.scalar(select(ConnectorRuntimeOperationRow).where(ConnectorRuntimeOperationRow.idempotency_key==key))
+   if existing:
+    rec=s.scalar(select(ConnectorRuntimeReconciliationRow).where(ConnectorRuntimeReconciliationRow.runtime_operation_id==existing.runtime_operation_id))
+    return {'operation':out(existing),'reconciliation':out(rec),'replay':True}
+   connector_id='COMMAND_CENTER_PAYMENT_RECONCILIATION'
+   connector=s.get(ProductionConnectorRow,connector_id)
+   if not connector:
+    connector=ProductionConnectorRow(connector_id=connector_id,connector_key='command-center-payment-reconciliation',display_name='Command Center Payment Reconciliation',vertical='PAYMENT',supplier_legal_name='GO Command Center Internal Control',environment='CONTROL_PLANE',lifecycle_state='INTERNAL',active_capability_version=1,created_by='PAYMENT_TRUTH_BRIDGE',created_at=now(),updated_at=now());s.add(connector)
+   op=ConnectorRuntimeOperationRow(runtime_operation_id=ident('rop'),connector_id=connector_id,operation_type='RECONCILE_PAYMENT_TRUTH',idempotency_key=key,request_hash=digest({'external_truth_operation_id':external_truth_operation_id,'request_hash':truth.request_hash}),request_json={'external_truth_operation_id':external_truth_operation_id,'payment_intent_id':truth.payment_intent_id,'operation_type':truth.operation_type},state='UNKNOWN_EXTERNAL_STATE',response_json={},authorization_id='PAYMENT_TRUTH_BRIDGE_NO_EXTERNAL_AUTHORIZATION',created_at=now(),updated_at=now());s.add(op);s.flush()
+   rec=ConnectorRuntimeReconciliationRow(reconciliation_id=ident('recon'),runtime_operation_id=op.runtime_operation_id,state='MANUAL_REVIEW',attempt_count=0,max_attempts=0,manual_review_reason='PAYMENT_EXTERNAL_TRUTH_RECONCILIATION_REQUIRED',claimed_by=None,lease_expires_at=None,evidence_due_at=None,resolution_requested_by=None,checker_id=None,escalation_level=0,operator_sla_due_at=None,resolved_at=None,resolution_payload_json=None,resolution_evidence_digest=None,checker_evidence_reference=None,resolution_result_json=None,resolved_by=None,superseded_reason=None,updated_at=now());s.add(rec);s.commit();return {'operation':out(op),'reconciliation':out(rec),'replay':False}
+ def converge_payment_truth_from_callback(self,external_truth_operation_id):
+  """Close only the Command Center case after payment truth reaches a verified terminal callback."""
+  with SessionLocal() as s:
+   truth=s.get(ExternalTruthOperationRow,external_truth_operation_id)
+   if not truth or truth.vertical!='PAYMENT':raise ValueError('PAYMENT_TRUTH_OPERATION_REQUIRED')
+   if truth.state not in {'CALLBACK_SUCCEEDED','CALLBACK_FAILED'}:return None
+   key=f'PAYMENT_TRUTH_RECON:{external_truth_operation_id}'
+   op=s.scalar(select(ConnectorRuntimeOperationRow).where(ConnectorRuntimeOperationRow.idempotency_key==key).with_for_update())
+   if not op:return None
+   rec=s.scalar(select(ConnectorRuntimeReconciliationRow).where(ConnectorRuntimeReconciliationRow.runtime_operation_id==op.runtime_operation_id).with_for_update())
+   if not rec:return None
+   terminal='CONFIRMED' if truth.state=='CALLBACK_SUCCEEDED' else 'FAILED'
+   if rec.state=='CONVERGED' and op.state==terminal:
+    return {'operation':out(op),'reconciliation':out(rec),'replay':True}
+   op.state=terminal;op.response_json={'payment_truth_operation_id':external_truth_operation_id,'verified_terminal_state':truth.state};op.updated_at=now()
+   rec.state='CONVERGED';rec.resolved_at=now();rec.resolved_by='VERIFIED_PAYMENT_CALLBACK';rec.claimed_by=None;rec.lease_expires_at=None;rec.evidence_due_at=None;rec.operator_sla_due_at=None;rec.superseded_reason='SUPERSEDED_BY_VERIFIED_PAYMENT_TRUTH';rec.resolution_result_json={'decision':'VERIFIED_CALLBACK','terminal_state':terminal,'payment_truth_operation_id':external_truth_operation_id};rec.updated_at=now()
+   s.commit();return {'operation':out(op),'reconciliation':out(rec)}
+ def recover_verified_payment_truth_cases(self,limit=100):
+  """Replay-safe recovery for a crash after payment truth commits but before case convergence."""
+  with SessionLocal() as s:
+   ids=s.scalars(select(ExternalTruthOperationRow.external_truth_operation_id).where(ExternalTruthOperationRow.vertical=='PAYMENT',ExternalTruthOperationRow.state.in_({'CALLBACK_SUCCEEDED','CALLBACK_FAILED'})).order_by(ExternalTruthOperationRow.completed_at).limit(limit)).all()
+  return [x for x in (self.converge_payment_truth_from_callback(operation_id) for operation_id in ids) if x]
  def due_reconciliations(self,limit=100):
   with SessionLocal() as s:
    rows=s.scalars(select(ConnectorRuntimeReconciliationRow).where(ConnectorRuntimeReconciliationRow.state.in_({'PENDING','MANUAL_REVIEW','CLAIMED','PENDING_CHECKER'})).order_by(ConnectorRuntimeReconciliationRow.updated_at).limit(limit)).all(); result=[]
@@ -235,6 +278,8 @@ class ProductionConnectorRuntimeService:
    if rec.state=='RESOLVED':return {'reconciliation':out(rec),'result':rec.resolution_result_json,'replay':True}
    if rec.state!='PENDING_CHECKER':raise ValueError('RESOLUTION_NOT_PENDING_CHECKER')
    payload=rec.resolution_payload_json or {}
+   op=s.get(ConnectorRuntimeOperationRow,rec.runtime_operation_id)
+   if op and op.operation_type=='RECONCILE_PAYMENT_TRUTH':raise ValueError('PAYMENT_TRUTH_REQUIRES_VERIFIED_SIGNED_CALLBACK')
    if digest(payload)!=rec.resolution_evidence_digest:
     op=s.get(ConnectorRuntimeOperationRow,rec.runtime_operation_id);self._safety(s,op.connector_id,'RESOLUTION_EVIDENCE_DIGEST_MISMATCH','CRITICAL',['RESOLUTION_EVIDENCE_DIGEST_MISMATCH'],{'reconciliation_id':reconciliation_id});s.commit();raise ValueError('RESOLUTION_EVIDENCE_DIGEST_MISMATCH')
    rec.checker_id=checker;rec.checker_evidence_reference=checker_evidence_reference;rec.updated_at=now()

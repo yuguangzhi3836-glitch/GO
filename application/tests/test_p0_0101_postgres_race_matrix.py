@@ -1,11 +1,12 @@
 import os,threading,uuid,hashlib,json
 from datetime import datetime,timezone
 import pytest
-from sqlalchemy import create_engine,text
+from sqlalchemy import create_engine,text,select
 from sqlalchemy.orm import sessionmaker
 from go_hotel.db.models import (
  PaymentOrderRootRow as Root,ExternalTruthWebhookReceiptRow as Webhook,PostgresRaceProofEvidenceRow as Proof,
  OmnichannelPaymentIntentRow as Intent,OmnichannelMoneyMovementRow as Movement,FinanceScopedCloseBatchRow as Close,
+ OmnichannelLedgerEntryRow as Ledger,
 )
 
 pytestmark=[pytest.mark.postgres,pytest.mark.concurrency]
@@ -50,13 +51,26 @@ def test_0101_capture_refund_serialization_postgres(monkeypatch):
         s.add(Intent(payment_intent_id=iid,business_type='TEST_ORDER',business_id='ord-'+uuid.uuid4().hex,payer_id='payer',payee_id='payee',operation='PAY',amount_minor=1000,currency='USD',channel_priority_json=['CARD'],selected_channel='CARD',state='SUCCEEDED',idempotency_key='ik-'+uuid.uuid4().hex,automatic_fallback_allowed=False,created_at=now,updated_at=now))
         s.add(Movement(money_movement_id=auth,root_payment_intent_id=iid,parent_movement_id=None,movement_type='AUTHORIZATION',business_type='TEST_ORDER',business_id='ord-auth',amount_minor=1000,currency='USD',state='CONFIRMED',idempotency_key='auth-'+uuid.uuid4().hex,external_reference='ext-auth',evidence_json=['race://auth'],created_at=now,updated_at=now))
         s.add(Movement(money_movement_id=cap,root_payment_intent_id=iid,parent_movement_id=auth,movement_type='CAPTURE',business_type='TEST_ORDER',business_id='ord-cap',amount_minor=1000,currency='USD',state='CONFIRMED',idempotency_key='cap-'+uuid.uuid4().hex,external_reference='ext-cap',evidence_json=['race://cap'],created_at=now,updated_at=now));s.commit()
-    monkeypatch.setattr(um,'SessionLocal',Session);barrier=threading.Barrier(2);results=[]
+    monkeypatch.setattr(um,'SessionLocal',Session);barrier=threading.Barrier(2);results=[];errors=[]
+    # This is an isolated money serialization test, with no certified external
+    # callback receipt. The trusted-ingress guard must remain enforced.
+    with pytest.raises(ValueError,match='EXTERNAL_CERTIFIED_FACT_TRUSTED_INGRESS_REQUIRED'):
+        um.unified_money_movement_service.create(iid,{'mode':'EXTERNAL_CERTIFIED_FACT'},'forged-external','test')
     def w(n):
         try:
-            barrier.wait(timeout=10);um.unified_money_movement_service.create(iid,{'movement_type':'REFUND','parent_movement_id':cap,'amount_minor':700,'evidence':[f'race://refund/{n}'],'mode':'EXTERNAL_CERTIFIED_FACT','external_reference':f'ext-ref-{n}'},f'refund-{uuid.uuid4().hex}',f'worker-{n}');results.append('COMMIT')
-        except Exception:results.append('REJECT')
+            barrier.wait(timeout=10);um.unified_money_movement_service.create(iid,{'movement_type':'REFUND','parent_movement_id':cap,'amount_minor':700,'evidence':[f'isolated://refund/{n}'],'mode':'CONTRACT_SIMULATOR'},f'refund-{uuid.uuid4().hex}',f'worker-{n}');results.append('COMMIT')
+        except Exception as exc:results.append('REJECT');errors.append(str(exc))
     ts=[threading.Thread(target=w,args=(i,)) for i in range(2)];[t.start() for t in ts];[t.join(20) for t in ts]
-    assert results.count('COMMIT')==1 and results.count('REJECT')==1;record(Session,'CAPTURE_REFUND_SERIALIZATION',2,1,1);eng.dispose()
+    assert not any(t.is_alive() for t in ts)
+    assert results.count('COMMIT')==1 and results.count('REJECT')==1,errors
+    assert errors==['CUMULATIVE_REFUND_COMPENSATION_EXCEEDS_CAPTURE']
+    with Session() as s:
+        refunds=list(s.scalars(select(Movement).where(Movement.root_payment_intent_id==iid,Movement.movement_type=='REFUND')))
+        assert len(refunds)==1 and refunds[0].amount_minor==700 and refunds[0].parent_movement_id==cap
+        ledger=list(s.scalars(select(Ledger).where(Ledger.payment_intent_id==iid,Ledger.entry_type=='REFUND')))
+        assert sum(x.amount_minor for x in ledger if x.direction=='DEBIT')==700
+        assert sum(x.amount_minor for x in ledger if x.direction=='CREDIT')==700
+    record(Session,'CAPTURE_REFUND_SERIALIZATION',2,1,1);eng.dispose()
 
 @pytest.mark.skipif(not URL,reason='POSTGRES_TEST_DATABASE_URL not configured')
 def test_0101_finance_close_approval_race_postgres(monkeypatch):

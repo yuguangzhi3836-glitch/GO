@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="3.283" timestamp="2026-09-25T00:38:07.827715-07:00" hostname="48cdd5f3df1f"><testcase classname="reviews.c13.probe_c06_first_change" name="test_prechange_reconciliation_cannot_resolve_first_change" time="1.745"><failure message="AssertionError: old unbound reconciliation confirmed first change">def test_prechange_reconciliation_cannot_resolve_first_change():
+        svc, owner, oid = booked('ATTRACTION')
+        svc.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://old-unknown', 'ops')
+        svc.admin_external_state(oid, 'CONFIRMED', 'isolated://old-confirm', 'ops', 'OLD-SUP', 'OLD-VOUCHER')
+        quote = svc.change_quote(owner, oid, '2026-09-17')
+        svc.execute_change(owner, oid, quote['quote_id'])
+        before = svc.get(owner, oid)
+        try:
+            svc.admin_external_state(oid, 'CONFIRMED', 'isolated://old-confirm', 'ops', 'OLD-SUP', 'OLD-VOUCHER')
+        except ValueError:
+            assert svc.get(owner, oid) == before
+            return
+&gt;       raise AssertionError('old unbound reconciliation confirmed first change')
+E       AssertionError: old unbound reconciliation confirmed first change
+
+../../reviews/c13/probe_c06_first_change.py:16: AssertionError</failure></testcase></testsuite></testsuites>

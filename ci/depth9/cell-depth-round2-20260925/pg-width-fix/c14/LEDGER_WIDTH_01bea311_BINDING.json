@@ -1,0 +1,39 @@
+{
+  "review": "C14 limited ledger-width increment",
+  "product_commit": "01bea311b74405a176348597a44dff2dfc487ca7",
+  "application_tree_parent_provided": "a79a2799040fdba9922afe4bfc50dbb71bbc0867",
+  "gate_candidate": "PENDING",
+  "previous_candidate": "a0f3ebc5073813167a67ee76b38bc270e6ec28ec",
+  "status": "NO_NEW_RULES_BLOCKER_FOUND_FOR_SCOPED_ISOLATED_INCREMENT",
+  "method": "Fetched exact-product full remote base64 for two changed sources and new test; independently decoded/SHA256 checked against local bytes. Diff of both sources against prior fixed reviewed candidate inspected.",
+  "files": [
+    {
+      "path": "application/src/go_hotel/services/rental_deposit_money.py",
+      "sha256": "aacab9b1c825d67eaa69275e1ac0db6584e006855a687aff0615b584b7cd9eb5",
+      "remote_local_match": true
+    },
+    {
+      "path": "application/src/go_hotel/services/unified_money_movement.py",
+      "sha256": "d27ee6c91a420bf3a6e72f3317942b28510e8f14c33334c75608cf7deb63099c",
+      "remote_local_match": true
+    },
+    {
+      "path": "application/tests/payments/test_c11_deposit_ledger_width.py",
+      "sha256": "346fe9207c5939e3c5f66a7d4b24e280df9bdb0605347ba37d99a27ff52dd9b1",
+      "remote_local_match": true
+    }
+  ],
+  "conclusions": [
+    "RENTAL_DEPOSIT alone writes RD: plus complete business_id; no truncation or change to C04 obligation identity. Other business namespaces unchanged.",
+    "More than 64 characters is refused before adding either ledger entry; no partial pair caused by this formatter.",
+    "Existing legacy full namespace is accepted only as the exact two-entry capture pair, with full identity, amount, currency, movement evidence and graph checks retained; no history migration/rewrite added.",
+    "Compatibility validates old booked ledger rows; it is not an independent permission to settle/release. Existing source/decision/role/scope/idempotency checks remain in force.",
+    "No fee, adjudication, consent, deployment or real-provider authority is introduced."
+  ],
+  "limitations": [
+    "Static incremental rules review; test content inspected, not independently executed by C14. Parent reports C13 independent33 passing; not relabelled as C14 results.",
+    "Real operation/contract/PSP HOLD and previously tracked internal gaps unchanged.",
+    "Previous50-file manifest remains historical; two source hashes are superseded here. Browser harness correction is separate and this review makes no fresh byte claim for that file.",
+    "Final gate binding pending; app tree recorded from parent metadata, not independently graph-verified."
+  ]
+}

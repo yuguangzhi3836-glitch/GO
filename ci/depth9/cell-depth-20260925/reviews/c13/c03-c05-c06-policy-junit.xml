@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="3" failures="0" skipped="0" tests="52" time="10.702" timestamp="2026-09-25T00:37:45.316192-07:00" hostname="48cdd5f3df1f"><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_rail_old_fare_quote_cannot_execute_after_another_change" time="1.907" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_delayed_unbound_confirmation_cannot_confirm_next_change" time="0.164" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_current_change_submission_is_replay_safe" time="0.097" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_old_quote_cannot_resolve_current_episode[CONFIRMED]" time="0.116" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_old_quote_cannot_resolve_current_episode[CLOSED_BY_SUPPLIER]" time="0.114" /><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_api_carries_quote_identity_and_replays_bound_request" time="2.346"><error message="failed on setup with &quot;RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist&quot;">fixturedef = &lt;FixtureDef argname='client' scope='function' baseid='tests'&gt;
+request = &lt;SubRequest 'client' for &lt;Function test_attraction_api_carries_quote_identity_and_replays_bound_request&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+
+../../go-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:728: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in client
+    from go_hotel.main import app
+src/go_hotel/main.py:334: in &lt;module&gt;
+    app.mount("/supplier-console", StaticFiles(directory=str(_frontend_root / "supplier"), html=True), name="supplier-console")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;starlette.staticfiles.StaticFiles object at 0x7f094e8e0b90&gt;
+
+    def __init__(
+        self,
+        *,
+        directory: PathLike | None = None,
+        packages: list[str | tuple[str, str]] | None = None,
+        html: bool = False,
+        check_dir: bool = True,
+        follow_symlink: bool = False,
+    ) -&gt; None:
+        self.directory = directory
+        self.packages = packages
+        self.all_directories = self.get_directories(directory, packages)
+        self.html = html
+        self.config_checked = False
+        self.follow_symlink = follow_symlink
+        if check_dir and directory is not None and not os.path.isdir(directory):
+&gt;           raise RuntimeError(f"Directory '{directory}' does not exist")
+E           RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist
+
+../../go-venv/lib/python3.12/site-packages/starlette/staticfiles.py:56: RuntimeError</error></testcase><testcase classname="tests.test_c05_engineering_currency" name="test_unsupported_currency_rejected_before_ride_order_or_source_decision[USD]" time="0.054" /><testcase classname="tests.test_c05_engineering_currency" name="test_unsupported_currency_rejected_before_ride_order_or_source_decision[JPY]" time="0.054" /><testcase classname="tests.test_c05_engineering_currency" name="test_unsupported_currency_rejected_before_ride_order_or_source_decision[cny]" time="0.055" /><testcase classname="tests.test_c05_engineering_currency" name="test_unsupported_currency_rejected_before_ride_order_or_source_decision[]" time="0.054" /><testcase classname="tests.test_c05_engineering_currency" name="test_unsupported_currency_rejected_before_ride_order_or_source_decision[None]" time="0.053" /><testcase classname="tests.test_c05_engineering_currency" name="test_unsupported_currency_rejected_before_ride_order_or_source_decision[CNY ]" time="0.053" /><testcase classname="tests.test_c05_engineering_currency" name="test_supported_or_default_currency_keeps_same_fare_from_search_to_order[False-ride_standard-16800]" time="0.061" /><testcase classname="tests.test_c05_engineering_currency" name="test_supported_or_default_currency_keeps_same_fare_from_search_to_order[False-ride_premium-26800]" time="0.058" /><testcase classname="tests.test_c05_engineering_currency" name="test_supported_or_default_currency_keeps_same_fare_from_search_to_order[True-ride_standard-16800]" time="0.058" /><testcase classname="tests.test_c05_engineering_currency" name="test_supported_or_default_currency_keeps_same_fare_from_search_to_order[True-ride_premium-26800]" time="0.056" /><testcase classname="tests.test_c05_engineering_currency" name="test_ride_search_api_rejects_currency_instead_of_publishing_mislabeled_fare[USD]" time="1.051"><error message="failed on setup with &quot;RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist&quot;">fixturedef = &lt;FixtureDef argname='client' scope='function' baseid='tests'&gt;
+request = &lt;SubRequest 'client' for &lt;Function test_ride_search_api_rejects_currency_instead_of_publishing_mislabeled_fare[USD]&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+
+../../go-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:728: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in client
+    from go_hotel.main import app
+src/go_hotel/main.py:334: in &lt;module&gt;
+    app.mount("/supplier-console", StaticFiles(directory=str(_frontend_root / "supplier"), html=True), name="supplier-console")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;starlette.staticfiles.StaticFiles object at 0x7f094f23a4e0&gt;
+
+    def __init__(
+        self,
+        *,
+        directory: PathLike | None = None,
+        packages: list[str | tuple[str, str]] | None = None,
+        html: bool = False,
+        check_dir: bool = True,
+        follow_symlink: bool = False,
+    ) -&gt; None:
+        self.directory = directory
+        self.packages = packages
+        self.all_directories = self.get_directories(directory, packages)
+        self.html = html
+        self.config_checked = False
+        self.follow_symlink = follow_symlink
+        if check_dir and directory is not None and not os.path.isdir(directory):
+&gt;           raise RuntimeError(f"Directory '{directory}' does not exist")
+E           RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist
+
+../../go-venv/lib/python3.12/site-packages/starlette/staticfiles.py:56: RuntimeError</error></testcase><testcase classname="tests.test_c05_engineering_currency" name="test_ride_search_api_rejects_currency_instead_of_publishing_mislabeled_fare[JPY]" time="1.086"><error message="failed on setup with &quot;RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist&quot;">fixturedef = &lt;FixtureDef argname='client' scope='function' baseid='tests'&gt;
+request = &lt;SubRequest 'client' for &lt;Function test_ride_search_api_rejects_currency_instead_of_publishing_mislabeled_fare[JPY]&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+
+../../go-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:728: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in client
+    from go_hotel.main import app
+src/go_hotel/main.py:334: in &lt;module&gt;
+    app.mount("/supplier-console", StaticFiles(directory=str(_frontend_root / "supplier"), html=True), name="supplier-console")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;starlette.staticfiles.StaticFiles object at 0x7f094e6ed520&gt;
+
+    def __init__(
+        self,
+        *,
+        directory: PathLike | None = None,
+        packages: list[str | tuple[str, str]] | None = None,
+        html: bool = False,
+        check_dir: bool = True,
+        follow_symlink: bool = False,
+    ) -&gt; None:
+        self.directory = directory
+        self.packages = packages
+        self.all_directories = self.get_directories(directory, packages)
+        self.html = html
+        self.config_checked = False
+        self.follow_symlink = follow_symlink
+        if check_dir and directory is not None and not os.path.isdir(directory):
+&gt;           raise RuntimeError(f"Directory '{directory}' does not exist")
+E           RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist
+
+../../go-venv/lib/python3.12/site-packages/starlette/staticfiles.py:56: RuntimeError</error></testcase><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_versioned_fixture_binds_decision_and_condition_to_full_snapshot" time="0.043" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_legacy_fixture_cannot_authorize_real_environment[SHADOW]" time="0.043" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_legacy_fixture_cannot_authorize_real_environment[STAGING]" time="0.042" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_legacy_fixture_cannot_authorize_real_environment[CANARY]" time="0.044" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_legacy_fixture_cannot_authorize_real_environment[PRODUCTION]" time="0.045" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_unversioned_isolated_fixture_remains_compatible[DEV]" time="0.045" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_unversioned_isolated_fixture_remains_compatible[TEST]" time="0.043" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_inactive_policy_cannot_be_used[changes0-LEGAL_POLICY_OUTSIDE_VALIDITY_WINDOW]" time="0.044" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_inactive_policy_cannot_be_used[changes1-LEGAL_POLICY_OUTSIDE_VALIDITY_WINDOW]" time="0.042" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_inactive_policy_cannot_be_used[changes2-LEGAL_POLICY_REVOKED]" time="0.047" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_partial_or_malformed_policy_lifecycle_rejected[changes0]" time="0.043" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_partial_or_malformed_policy_lifecycle_rejected[changes1]" time="0.044" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_partial_or_malformed_policy_lifecycle_rejected[changes2]" time="0.045" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_partial_or_malformed_policy_lifecycle_rejected[changes3]" time="0.044" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_partial_or_malformed_policy_lifecycle_rejected[changes4]" time="0.046" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_partial_or_malformed_policy_lifecycle_rejected[changes5]" time="0.043" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_unbound_or_other_version_condition_is_rejected[None]" time="0.043" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_unbound_or_other_version_condition_is_rejected[0000000000000000000000000000000000000000000000000000000000000000]" time="0.045" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_same_id_and_result_cannot_hide_policy_replacement_during_lookup[changes0]" time="0.043" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_same_id_and_result_cannot_hide_policy_replacement_during_lookup[changes1]" time="0.048" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_same_id_and_result_cannot_hide_policy_replacement_during_lookup[changes2]" time="0.045" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_same_id_and_result_cannot_hide_policy_replacement_during_lookup[changes3]" time="0.042" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_slow_condition_lookup_rechecks_policy_lifetime_and_revocation[expire]" time="0.043" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_slow_condition_lookup_rechecks_policy_lifetime_and_revocation[revoke]" time="0.043" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_missing_policy_stays_hold_and_snapshot_does_not_approve_law" time="0.043" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_restrictive_policy_is_not_erased_by_revocation_or_unversioned_allow" time="0.043" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_wrong_jurisdiction_and_invalid_time_fail_closed" time="0.045" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_versioned_test_policy_cannot_be_borrowed_by_another_environment[SHADOW]" time="0.045" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_versioned_test_policy_cannot_be_borrowed_by_another_environment[STAGING]" time="0.045" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_versioned_test_policy_cannot_be_borrowed_by_another_environment[CANARY]" time="0.042" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_versioned_test_policy_cannot_be_borrowed_by_another_environment[PRODUCTION]" time="0.043" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_environment_scope_requires_closed_typed_values[scope0]" time="0.045" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_environment_scope_requires_closed_typed_values[scope1]" time="0.046" /><testcase classname="tests.autonomy.test_policy_lifecycle_binding" name="test_environment_scope_is_in_policy_digest" time="0.045" /></testsuite></testsuites>

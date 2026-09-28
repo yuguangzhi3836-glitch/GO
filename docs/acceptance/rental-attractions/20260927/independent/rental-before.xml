@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="7.895" timestamp="2026-09-26T21:05:38.022146+03:00" hostname="2421f535f56f"><testcase classname="independent-rental-attractions.test_rental_independent" name="test_completed_rental_cancel_replay_checks_real_money[amount_minor-1]" time="5.357"><failure message="AssertionError: {'field': 'amount_minor', 'first': {'data': {'currency': 'CNY', 'order_id': 'rent_ord_0f2e5976603f4e38', 'refund_amoun...'order_id': 'rent_ord_0f2e5976603f4e38', 'refund_amount_minor': 126000, 'refund_id': 'mob_ref_006e895cea454bbd', ...}}}&#10;assert 200 &gt;= 400&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f8e931bc4a0&gt;
+field = 'amount_minor', value = 1
+
+    @pytest.mark.parametrize('field,value',[('amount_minor',1),('currency','USD'),('state','UNKNOWN')])
+    def test_completed_rental_cancel_replay_checks_real_money(client,field,value):
+        account,oid,headers=paid(client)
+        first=client.post(f'/v1/mobility/orders/{oid}/cancel',headers=headers)
+        assert first.status_code==200,first.text
+        with SessionLocal.begin() as s:
+            refunds=list(s.scalars(select(Movement).where(Movement.movement_type=='REFUND')))
+            assert len(refunds)==1
+            setattr(refunds[0],field,value)
+        replay=client.post(f'/v1/mobility/orders/{oid}/cancel',headers=headers)
+&gt;       assert replay.status_code&gt;=400,{'field':field,'first':first.json(),'replay':replay.json()}
+E       AssertionError: {'field': 'amount_minor', 'first': {'data': {'currency': 'CNY', 'order_id': 'rent_ord_0f2e5976603f4e38', 'refund_amoun...'order_id': 'rent_ord_0f2e5976603f4e38', 'refund_amount_minor': 126000, 'refund_id': 'mob_ref_006e895cea454bbd', ...}}}
+E       assert 200 &gt;= 400
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+../../independent-rental-attractions/test_rental_independent.py:17: AssertionError</failure></testcase><testcase classname="independent-rental-attractions.test_rental_independent" name="test_completed_rental_cancel_replay_checks_real_money[currency-USD]" time="0.293"><failure message="AssertionError: {'field': 'currency', 'first': {'data': {'currency': 'CNY', 'order_id': 'rent_ord_f6e8fa70ccdf43ca', 'refund_amount_mi...'order_id': 'rent_ord_f6e8fa70ccdf43ca', 'refund_amount_minor': 126000, 'refund_id': 'mob_ref_835d978a07264482', ...}}}&#10;assert 200 &gt;= 400&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f8e8c2685f0&gt;
+field = 'currency', value = 'USD'
+
+    @pytest.mark.parametrize('field,value',[('amount_minor',1),('currency','USD'),('state','UNKNOWN')])
+    def test_completed_rental_cancel_replay_checks_real_money(client,field,value):
+        account,oid,headers=paid(client)
+        first=client.post(f'/v1/mobility/orders/{oid}/cancel',headers=headers)
+        assert first.status_code==200,first.text
+        with SessionLocal.begin() as s:
+            refunds=list(s.scalars(select(Movement).where(Movement.movement_type=='REFUND')))
+            assert len(refunds)==1
+            setattr(refunds[0],field,value)
+        replay=client.post(f'/v1/mobility/orders/{oid}/cancel',headers=headers)
+&gt;       assert replay.status_code&gt;=400,{'field':field,'first':first.json(),'replay':replay.json()}
+E       AssertionError: {'field': 'currency', 'first': {'data': {'currency': 'CNY', 'order_id': 'rent_ord_f6e8fa70ccdf43ca', 'refund_amount_mi...'order_id': 'rent_ord_f6e8fa70ccdf43ca', 'refund_amount_minor': 126000, 'refund_id': 'mob_ref_835d978a07264482', ...}}}
+E       assert 200 &gt;= 400
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+../../independent-rental-attractions/test_rental_independent.py:17: AssertionError</failure></testcase><testcase classname="independent-rental-attractions.test_rental_independent" name="test_completed_rental_cancel_replay_checks_real_money[state-UNKNOWN]" time="0.296"><failure message="AssertionError: {'field': 'state', 'first': {'data': {'currency': 'CNY', 'order_id': 'rent_ord_5becf59524064f8e', 'refund_amount_minor...'order_id': 'rent_ord_5becf59524064f8e', 'refund_amount_minor': 126000, 'refund_id': 'mob_ref_9fe47af87d4e4615', ...}}}&#10;assert 200 &gt;= 400&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f8e8d440a10&gt;
+field = 'state', value = 'UNKNOWN'
+
+    @pytest.mark.parametrize('field,value',[('amount_minor',1),('currency','USD'),('state','UNKNOWN')])
+    def test_completed_rental_cancel_replay_checks_real_money(client,field,value):
+        account,oid,headers=paid(client)
+        first=client.post(f'/v1/mobility/orders/{oid}/cancel',headers=headers)
+        assert first.status_code==200,first.text
+        with SessionLocal.begin() as s:
+            refunds=list(s.scalars(select(Movement).where(Movement.movement_type=='REFUND')))
+            assert len(refunds)==1
+            setattr(refunds[0],field,value)
+        replay=client.post(f'/v1/mobility/orders/{oid}/cancel',headers=headers)
+&gt;       assert replay.status_code&gt;=400,{'field':field,'first':first.json(),'replay':replay.json()}
+E       AssertionError: {'field': 'state', 'first': {'data': {'currency': 'CNY', 'order_id': 'rent_ord_5becf59524064f8e', 'refund_amount_minor...'order_id': 'rent_ord_5becf59524064f8e', 'refund_amount_minor': 126000, 'refund_id': 'mob_ref_9fe47af87d4e4615', ...}}}
+E       assert 200 &gt;= 400
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+../../independent-rental-attractions/test_rental_independent.py:17: AssertionError</failure></testcase></testsuite></testsuites>

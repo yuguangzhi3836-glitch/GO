@@ -160,6 +160,9 @@ def test_stale_parent_cannot_enqueue_children(queue):
     queue.enqueue(TOPIC,'one',payload())
     old=queue.claim(TOPIC)
     time.sleep(.15)
+    # Keep the replacement claim valid independently of runner scheduling.
+    # The initial 100 ms lease still proves that the first owner is stale.
+    queue.lease_ms=5_000
     new=queue.claim(TOPIC)
     with processing(queue,old), pytest.raises(RegionalLeaseLost):
         queue.enqueue(TOPIC,'child',payload('CITY'))
@@ -282,6 +285,9 @@ def test_migration_roundtrip_preserves_data_and_blocks_loss_of_queue_evidence(tm
         command.downgrade(config,'0124_autonomy_durable')
         command.upgrade(config,'0125_regional_queue')
         queue=make_queue(db)
+        # Scope authority predates this queue migration and is supplied by the
+        # real baseline; the intentionally partial historical fixture needs it.
+        Event.__table__.create(queue.factory.kw['bind'])
         queue.enqueue(TOPIC,'one',payload())
         with pytest.raises(RuntimeError,match='REGIONAL_QUEUE_DATA_PRESENT'):
             command.downgrade(config,'0124_autonomy_durable')

@@ -15,7 +15,7 @@ concurrency:
 jobs:
   postgres:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
@@ -67,8 +67,8 @@ jobs:
           candidate=json.loads(pathlib.Path('ci/next-depth/CANDIDATE.json').read_text())
           actual=subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip()
           assert actual==candidate['application_git_tree']
-          assert candidate['source_anchor']=='fef9c748adb77d37ba5d4dc4fa4662eb668303a1'
-          assert candidate['parent_candidate_commit']=='a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b'
+          assert candidate['source_anchor']=='aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0'
+          assert candidate['parent_candidate_commit']=='0c3da07bc32009dee16c69125111f8e4ea9d546b'
           PY
       - name: Install inherited frozen dependencies
         shell: bash
@@ -76,6 +76,30 @@ jobs:
           set -euo pipefail
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Payment audit integrity and independent adversarial checks
+        if: matrix.cell == 'C11'
+        working-directory: application
+        shell: bash
+        env:
+          GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+          APP_ENV: test
+          PYTHONPATH: src:tests
+          MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED: 'false'
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/next-depth-pg"
+          python -B -m pytest -q -p no:cacheprovider \
+            tests/test_payment_sandbox_audit_integrity.py \
+            ../docs/acceptance/c01-c14/round8/payment-preexternal-audit/review/v2/test_independent_review_v2.py \
+            --junitxml="$RUNNER_TEMP/next-depth-pg/payment-audit-junit.xml" \
+            2>&1 | tee "$RUNNER_TEMP/next-depth-pg/payment-audit.log"
+          python - <<'PY'
+          import os, pathlib, xml.etree.ElementTree as ET
+          root=ET.parse(pathlib.Path(os.environ['RUNNER_TEMP'])/'next-depth-pg/payment-audit-junit.xml').getroot()
+          counts={k:sum(int(s.get(k,0)) for s in root.findall('testsuite')) for k in ('tests','failures','errors','skipped')}
+          assert counts['tests']==35 and counts['failures']==counts['errors']==counts['skipped']==0, counts
+          print(counts)
+          PY
       - name: Run actual isolated process recovery and concurrency checks
         working-directory: application
         shell: bash
@@ -85,6 +109,102 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/next-depth-pg/${{ matrix.cell }}"
           python -B '${{ matrix.script }}' --evidence-dir "$RUNNER_TEMP/next-depth-pg/${{ matrix.cell }}" 2>&1 | tee "$RUNNER_TEMP/next-depth-pg/driver.log"
+      - name: Hosted historical state widths on actual PostgreSQL
+        if: matrix.cell == 'C11'
+        working-directory: application
+        env:
+          GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+        run: >-
+          python -B -m pytest -q -p no:cacheprovider
+          tests/test_depth25_migration_history.py -k hosted_publication_state
+          --junitxml=${{ runner.temp }}/next-depth-pg/hosted-state-widths-junit.xml
+      - name: Payment integration on the same isolated PostgreSQL version
+        if: matrix.cell == 'C11'
+        working-directory: application
+        env:
+          GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+        run: >-
+          python -B -m pytest -q -p no:cacheprovider
+          tests/test_omnichannel_payment_finance_os.py
+          tests/test_p0_0100_real_external_execution.py
+          tests/test_unified_money_movement_finance_close.py
+          tests/test_p0_0097_0098_rebuild.py
+          --junitxml=${{ runner.temp }}/next-depth-pg/payment-junit.xml
+      - name: Outbox row-lock concurrency on real PostgreSQL
+        if: matrix.cell == 'C11'
+        working-directory: application
+        env:
+          GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+        run: |
+          python -B -m pytest -q -p no:cacheprovider \
+            tests/test_outbox_resilience.py::test_postgresql_two_workers_claim_one_row_once \
+            --junitxml="$RUNNER_TEMP/next-depth-pg/outbox-junit.xml"
+          python - <<'PY'
+          import json, os, pathlib, xml.etree.ElementTree as ET
+          report=pathlib.Path(os.environ['RUNNER_TEMP'])/'next-depth-pg/outbox-junit.xml'
+          suites=ET.parse(report).getroot().findall('testsuite')
+          metrics={key:sum(int(suite.get(key,0)) for suite in suites) for key in ('tests','failures','errors','skipped')}
+          assert metrics==dict(tests=1,failures=0,errors=0,skipped=0),metrics
+          print(json.dumps({'outbox_postgres':metrics}))
+          PY
+      - name: Current C01-C14 depth increment on isolated PostgreSQL
+        if: matrix.cell == 'C11'
+        working-directory: application
+        shell: bash
+        env:
+          GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+          APP_ENV: test
+          MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED: 'false'
+        run: |
+          set -euo pipefail
+          python -B -m pytest -q -p no:cacheprovider \
+            tests/test_rental_damage_disputes.py \
+            tests/test_c03_c06_change_quote_fencing.py \
+            tests/test_c05_engineering_currency.py \
+            tests/test_c10_lifecycle_supplier_identity.py \
+            tests/test_c10_unknown_payment_projection.py \
+            tests/test_c10_supplier_money_projection.py \
+            tests/test_c11_consumer_payment_source_boundary.py \
+            tests/test_rental_deposit_authority.py \
+            tests/payments/test_c11_rental_deposit_money.py \
+            tests/payments/test_c11_deposit_ledger_width.py::test_deposit_capture_release_passes_database_column_constraint \
+            tests/payments/test_c11_deposit_ledger_width.py::test_complete_identity_preserved_for_equal_long_prefixes_and_limit \
+            tests/payments/test_c11_deposit_ledger_width.py::test_oversized_deposit_identity_fails_before_either_ledger_entry \
+            tests/payments/test_c11_ride_acceptance_guard.py \
+            tests/test_c05_cancellation_policy.py \
+            tests/test_c05_policy_operations.py \
+            tests/test_rental_operations.py \
+            tests/payments/test_c11_deposit_operations_review.py \
+            tests/payments/test_c11_deposit_compensation.py \
+            tests/test_rental_compensation_authority.py \
+            tests/test_hosted_content_operations_acceptance.py \
+            tests/test_c01_hosted_content_authority.py \
+            tests/test_c01_hosted_media_authority.py \
+            tests/test_c01_hosted_operating_journey.py \
+            tests/test_c01_aoluguya_business_day.py \
+            tests/test_ledger_account_width_migration.py \
+            tests/payments/test_c11_deposit_maintained_award.py \
+            --junitxml="$RUNNER_TEMP/next-depth-pg/cell-depth-increment-junit.xml" \
+            2>&1 | tee "$RUNNER_TEMP/next-depth-pg/cell-depth-increment.log"
+          python - <<'PY'
+          import json, os, pathlib, xml.etree.ElementTree as ET
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'next-depth-pg/cell-depth-increment-junit.xml'
+          suites=ET.parse(p).getroot().findall('testsuite')
+          counts={key:sum(int(s.get(key,0)) for s in suites) for key in ('tests','failures','errors','skipped')}
+          assert counts['tests']>0 and counts['failures']==counts['errors']==counts['skipped']==0, counts
+          print(json.dumps({'isolated_postgres_increment':counts}))
+          PY
+      - name: Bounded transaction write capacity and invariants
+        if: matrix.cell == 'C11'
+        timeout-minutes: 6
+        working-directory: application
+        shell: bash
+        env:
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          python -B ci/next_depth/c12_transaction_capacity.py \
+            --evidence-dir "$RUNNER_TEMP/next-depth-pg/C12-capacity"
       - name: Bind original logs and process observations
         if: always()
         shell: bash
@@ -112,5 +232,88 @@ jobs:
         with:
           name: v70-next-depth-pg-${{ matrix.cell }}-${{ github.event.pull_request.head.sha }}
           path: ${{ runner.temp }}/next-depth-pg
+          if-no-files-found: error
+          retention-days: 90
+
+  room-day:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_c11_isolated
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_c11_isolated"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+      DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_c11_isolated
+      APP_ENV: test
+      MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+      - name: Verify frozen candidate source
+        run: |
+          python ci/retention/verify_source.py "$RUNNER_TEMP/room-day/source"
+          python ci/retention/verify_alignment.py "$RUNNER_TEMP/room-day/alignment.json"
+      - name: Install inherited frozen dependencies
+        run: |
+          python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
+      - name: Room ownership, authority, independent day and legacy compatibility
+        working-directory: application
+        env:
+          PYTHONPATH: src
+        shell: bash
+        run: |
+          set -euo pipefail
+          export GO_C13_ARTIFACT_DIR="$RUNNER_TEMP/room-day/independent-day"
+          python -B -m pytest -q -p no:cacheprovider \
+            tests/test_hosted_room_registry.py tests/test_c01_room_registry_journey.py \
+            tests/test_c13_room_registry_authority.py tests/test_c13_aoluguya_independent_day.py \
+            tests/test_c01_aoluguya_business_day.py \
+            tests/test_guest_stay_fulfillment_settlement_eligibility.py \
+            tests/test_post_stay_dispute_refund_reconciliation.py tests/test_depth06_direct_checkout.py \
+            tests/test_c01_money_authority_matrix.py tests/test_c13_currency_day_scope.py \
+            tests/test_c01_cancellation_second_boundary.py tests/test_c01_booking_replay_matrix.py \
+            --junitxml="$RUNNER_TEMP/room-day/junit.xml" 2>&1 | tee "$RUNNER_TEMP/room-day/tests.log"
+          python - <<'PY'
+          import os, pathlib, xml.etree.ElementTree as ET, json
+          from sqlalchemy import text
+          from go_hotel.db.session import engine
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'room-day'
+          root=ET.parse(out/'junit.xml').getroot()
+          counts={k:sum(int(s.get(k,0)) for s in root.findall('testsuite')) for k in ('tests','failures','errors','skipped')}
+          assert counts['tests']==121 and counts['failures']==counts['errors']==counts['skipped']==0, counts
+          with engine.connect() as s: version=s.scalar(text('select version()'))
+          assert 'PostgreSQL 18.4' in version
+          (out/'RESULT.json').write_text(json.dumps({'counts':counts,'database':version,'scope':'isolated physical-room and complete hotel business-day contracts','external_payment':'NOT_CONNECTED'},indent=2)+'\n')
+          print(counts)
+          PY
+      - name: Bind original evidence to source
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'room-day';out.mkdir(exist_ok=True)
+          report={'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'application_git_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'files':{str(p.relative_to(out)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(out.rglob('*')) if p.is_file()},'external_payment':'NOT_CONNECTED','production':'HOLD'}
+          (out/'EVIDENCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: room-day-pg-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/room-day
           if-no-files-found: error
           retention-days: 90

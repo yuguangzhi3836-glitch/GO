@@ -120,8 +120,13 @@ class RailService:
             o.payment_method_id=payment_method_id; o.updated_at=now(); s.flush()
             order_id=o.order_id; account=o.account_id
         tx=vertical_transaction_bridge.checkout_contract('RAIL',order_id,account,'RAIL_OPERATOR',f'rail-order://{order_id}',payment_method_id)
-        with SessionLocal.begin() as s:
-            o=s.get(RailOrderRow,order_id); o.status=tx['state']; o.updated_at=now(); append_vertical_evidence(s,'RAIL',order_id,'PAYMENT_CAPTURED',o.status,{'payment_intent_id':tx['payment_intent_id'],'capture_id':tx['capture_id'],'external_live':False}); s.flush(); return self._order(o)
+        with transaction(SessionLocal) as s:
+            o=s.get(RailOrderRow,order_id,with_for_update=True)
+            if not o or o.account_id!=account:raise ValueError('RAIL_ORDER_NOT_FOUND')
+            if o.status not in {'PAYMENT_PENDING','PAYMENT_AUTHORIZED'}:return self._order(o)
+            o.status=tx['state'];o.updated_at=now()
+            append_vertical_evidence(s,'RAIL',order_id,'PAYMENT_CAPTURED',o.status,{'payment_intent_id':tx['payment_intent_id'],'capture_id':tx['capture_id'],'external_live':False})
+            s.flush();return self._order(o)
     def _order(self,o):
         return {"order_id":o.order_id,"account_id":o.account_id,"status":o.status,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"passengers":o.passengers,"passenger_count":len(o.passengers or []),"data_mode":"SIMULATION","external_live":False,"booking_reference":o.booking_reference if o.status=="TICKETED" else None,"ticket_numbers":o.ticket_numbers if o.status=="TICKETED" else [],"journey":o.current_journey,"created_at":_utc_iso(o.created_at),"updated_at":_utc_iso(o.updated_at)} | reservation_expiry.projection('RAIL',o)
     def order(self,account_id,order_id):
@@ -144,8 +149,8 @@ class RailService:
         try:
             if date.fromisoformat(new_travel_date).isoformat()!=new_travel_date:raise ValueError()
         except (ValueError,TypeError):raise ValueError('RAIL_DATE_INVALID') from None
-        with SessionLocal.begin() as s:
-            o=s.get(RailOrderRow,order_id)
+        with transaction(SessionLocal) as s:
+            o=s.get(RailOrderRow,order_id,with_for_update=True)
             if not o or o.account_id!=account_id or o.status!="TICKETED": raise ValueError("RAIL_ORDER_NOT_CHANGEABLE")
             current=o.current_journey or {}; seat=new_seat_class or current.get("seat_class","SECOND_CLASS")
             count=contracts.party_count(len(o.passengers or []))
@@ -165,6 +170,14 @@ class RailService:
                 if o.status!='TICKETED' or q.status!='QUOTED' or q.expires_at.replace(tzinfo=q.expires_at.tzinfo or UTC).timestamp()*1000<=db_now_ms(s):raise ValueError('RAIL_CHANGE_QUOTE_INVALID')
                 target=capacity.rail_resource(dict(o.current_journey,travel_date=q.new_travel_date,train_no=q.new_train_no,seat_class=q.new_seat_class))
                 capacity.prepare_change_in(s,'RAIL',order_id,quote_id,target,capacity.RAIL_LIMITS[q.new_seat_class],len(o.passengers))
+                # Every peer quote was priced against the old journey. Once a
+                # change starts, it cannot remain executable after that journey
+                # changes. Quote creation takes the same order lock.
+                for peer in s.scalars(select(RailChangeQuoteRow).where(
+                    RailChangeQuoteRow.order_id==order_id,
+                    RailChangeQuoteRow.quote_id!=quote_id,
+                    RailChangeQuoteRow.status=='QUOTED')):
+                    peer.status='SUPERSEDED'
                 q.status='PREPARING';o.status='CHANGE_PENDING';o.updated_at=now()
                 append_vertical_evidence(s,'RAIL',order_id,'CHANGE_PAYMENT_PREPARING',o.status,{'quote_id':quote_id})
                 project_vertical_lifecycle(s,'RAIL',o,'change-preparing:'+quote_id,facts={'quote_id':quote_id})
@@ -197,8 +210,8 @@ class RailService:
     def refund(self,account_id,order_id,accepted_hash=None):
         production_truth_required('RAIL','REFUND')
         return vertical_refund_recovery.refund('RAIL',account_id,order_id,self._refund_quote_in,accepted_hash)
-    def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,ticket_numbers=None,quote_id=None):
+    def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,ticket_numbers=None,quote_id=None,operation_id=None):
         from go_hotel.services.rail_change_resolution import reconcile
-        return reconcile(order_id,state,evidence_reference,actor,supplier_reference,ticket_numbers,quote_id,self._order)
+        return reconcile(order_id,state,evidence_reference,actor,supplier_reference,ticket_numbers,quote_id,self._order,operation_id=operation_id)
 
 rail_service=RailService()

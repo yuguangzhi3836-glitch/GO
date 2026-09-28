@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="3.322" timestamp="2026-09-25T01:30:26.652864-07:00" hostname="48cdd5f3df1f"><testcase classname="reviews.round2.c13.probe_c05_full_fee" name="test_fully_retained_fee_can_finish_cancellation_without_zero_money_movement" time="1.770"><failure message="ValueError: POSITIVE_MOVEMENT_AMOUNT_REQUIRED">def test_fully_retained_fee_can_finish_cancellation_without_zero_money_movement():
+        with synthetic_policy(before=16800, after=16800):
+            oid = confirm(svc.create('owner', accepted_body(svc, BODY)))
+        quote = svc.refund_quote('owner', oid)
+        assert quote['refund_amount_minor'] == 0
+&gt;       result = svc.cancel('owner', oid, quote['quote_hash'])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../../reviews/round2/c13/probe_c05_full_fee.py:9: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/mobility/ride/service.py:117: in cancel
+    return cancel(account,order_id,accepted_hash)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/mobility/ride/refunds.py:58: in cancel
+    movement=money.refund('RIDE',oid,amount,'ride-refund://'+oid,'ride-refund:'+oid)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/vertical_money_bridge.py:34: in refund
+    return unified_money_movement_service.create(root.payment_intent_id,{'movement_type':'REFUND','parent_movement_id':cap.money_movement_id,'amount_minor':amount_minor,'evidence':[evidence_reference],'mode':mode},key,'vertical-money-bridge')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/unified_money_movement.py:22: in create
+    result=self.create_in_session(s,intent_id,b,key,actor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;go_hotel.services.unified_money_movement.UnifiedMoneyMovementService object at 0x7f4d55ce3dd0&gt;
+s = &lt;sqlalchemy.orm.session.Session object at 0x7f4d550ba5d0&gt;
+intent_id = 'opi_703fb2c1c300476d8e91018f37f7868f'
+b = {'amount_minor': 0, 'evidence': ['ride-refund://ride_ord_482396d4986c4949'], 'mode': 'CONTRACT_SIMULATOR', 'movement_type': 'REFUND', ...}
+key = 'ride-refund:ride_ord_482396d4986c4949', actor = 'vertical-money-bridge'
+
+    def create_in_session(self,s,intent_id,b,key,actor):
+     """Caller owns the transaction; lock order/payment before updating business facts."""
+     typ=b['movement_type']
+     if typ not in {'AUTHORIZATION','CAPTURE','REFUND','COMPENSATION','PAYOUT','RELEASE'}:raise ValueError('INVALID_MONEY_MOVEMENT_TYPE')
+     i=s.scalar(select(Intent).where(Intent.payment_intent_id==intent_id).with_for_update())
+     if not i:raise ValueError('ROOT_PAYMENT_INTENT_REQUIRED')
+     amount=b.get('amount_minor',i.amount_minor)
+     if type(amount) is not int:raise ValueError('INTEGER_MOVEMENT_AMOUNT_REQUIRED')
+     from go_hotel.services.rental_deposit_money import assert_money_action as assert_rental_deposit_money_action
+     assert_rental_deposit_money_action(s,i,typ,amount,b.get('parent_movement_id'),key)
+     old=s.scalar(select(Movement).where(Movement.idempotency_key==key).with_for_update())
+     if old:
+      if (old.root_payment_intent_id,old.movement_type,old.amount_minor,old.parent_movement_id)!=(intent_id,typ,amount,b.get('parent_movement_id')):
+       raise ValueError('MONEY_MOVEMENT_IDEMPOTENCY_CONFLICT')
+      return out(old)
+     from go_hotel.services.catalog_supplier_remedy import assert_money_action
+     assert_money_action(s,i,typ,amount,b.get('parent_movement_id'),key)
+     from go_hotel.services.catalog_credit_value import assert_money_action as assert_credit_money_action
+     assert_credit_money_action(s,i,typ,amount,b.get('parent_movement_id'),key)
+     from go_hotel.services.catalog_cash_fare import money_action as assert_cash_fare_money_action
+     assert_cash_fare_money_action(s,i,typ,amount,b.get('parent_movement_id'),key)
+     if i.state!='SUCCEEDED':raise ValueError('ROOT_PAYMENT_SUCCESS_REQUIRED')
+&gt;    if amount&lt;=0:raise ValueError('POSITIVE_MOVEMENT_AMOUNT_REQUIRED')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    ValueError: POSITIVE_MOVEMENT_AMOUNT_REQUIRED
+
+src/go_hotel/services/unified_money_movement.py:63: ValueError</failure></testcase></testsuite></testsuites>

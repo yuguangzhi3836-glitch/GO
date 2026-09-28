@@ -72,7 +72,7 @@ def _money_in(s, op, result):
     return money.money_movement_id
 
 
-def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ticket_numbers, quote_id, output):
+def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ticket_numbers, quote_id, output, operation_id=None):
     if not str(evidence_reference or '').strip() or not str(actor or '').strip():
         raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
     state = state.upper()
@@ -84,6 +84,16 @@ def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ti
         o = s.get(Order, order_id, with_for_update=True)
         if not o:
             raise ValueError('RAIL_ORDER_NOT_FOUND')
+        if operation_id:
+            from go_hotel.services.ticket_operations import _events
+            from go_hotel.db.models import JourneyRecoveryEvidenceChainRow as Audit
+            _events(s, 'RAIL', order_id)
+            observed = list(s.scalars(select(Audit).where(Audit.execution_id == 'rc20:RAIL:' + order_id)))
+            prior = [r.evidence_json['payload'] for r in observed if r.evidence_json.get('payload', {}).get('observation_id') == operation_id]
+            if prior:
+                if len(prior) != 1 or prior[0].get('request') != request:
+                    raise ValueError('RAIL_OBSERVATION_CONFLICT')
+                return output(o)
         if quote_id:
             q = s.get(Quote, quote_id, with_for_update=True)
             if not q or q.order_id != order_id:
@@ -150,7 +160,7 @@ def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ti
                     raise ValueError('RAIL_RECONCILIATION_NOT_REQUIRED')
                 o.status = state
                 kind = 'RECONCILED_TO_' + state
-            _event(s, o, kind, evidence_reference, {'actor': actor, 'native_status': o.status})
+            _event(s, o, kind, evidence_reference, {'actor': actor, 'native_status': o.status, 'observation_id': operation_id, 'request': request})
             return output(o)
     try:
         action = vertical_money_bridge.capture_adjustment if state == 'TICKETED' else vertical_money_bridge.release_adjustment

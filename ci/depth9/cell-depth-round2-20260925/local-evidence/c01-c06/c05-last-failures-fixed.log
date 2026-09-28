@@ -1,0 +1,79 @@
+.........F.....                                                          [100%]
+=================================== FAILURES ===================================
+_______ test_ride_state_machine_recovery_illegal_transition_and_evidence _______
+tests/test_rc20_2_all_b_to_a.py:55: in test_ride_state_machine_recovery_illegal_transition_and_evidence
+    assert kinds==['ORDER_CREATED','SUPPLIER_CONFIRMED','EXTERNAL_STATE_UNKNOWN','RECONCILED_TO_CONFIRMED','FULFILLMENT_START','FULFILLMENT_COMPLETE']
+E   AssertionError: assert ['ORDER_CREAT...T_START', ...] == ['ORDER_CREAT...ENT_COMPLETE']
+E     
+E     At index 1 diff: 'RIDE_CANCELLATION_ACCEPTED' != 'SUPPLIER_CONFIRMED'
+E     Left contains one more item: 'FULFILLMENT_COMPLETE'
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T08:37:39.531471+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_eb33a18c86f64c20bc6b9e07ed9e9117","trace_id":"tr_0568e032f57a4ad68db5fd7c91c1d9d3","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":87.32}
+{"ts":"2026-09-25T08:37:39.532196+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:37:39.573776+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_48062c60f95441909a3816ac14bea2a8","trace_id":"tr_560e73a386f44343acd9163b072bd94a","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":40.72}
+{"ts":"2026-09-25T08:37:39.574287+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:37:39.579058+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_75042d938165400f97befee8a92ab6bf","trace_id":"tr_06afbedd960346a88781ff1ad67bb659","path":"/v1/mobility/rides/search","method":"POST","status_code":200,"duration_ms":3.98}
+{"ts":"2026-09-25T08:37:39.579468+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/rides/search \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:37:39.592110+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_02704df97557496392ce6e0461a75763","trace_id":"tr_03b1a7bfb42c4916a95ebe16e03632c9","path":"/v1/mobility/rides/orders","method":"POST","status_code":200,"duration_ms":10.2}
+{"ts":"2026-09-25T08:37:39.592546+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/rides/orders \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:37:39.602128+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_23aa0d30bbb24790aee9c25292f4653a","trace_id":"tr_9a49a82c0e2641bfb5d1fe9004d6154c","path":"/v1/payments/intents","method":"POST","status_code":200,"duration_ms":9.0}
+{"ts":"2026-09-25T08:37:39.602497+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/payments/intents \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:37:39.608738+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_b7e330549bfc4d49bacd42a9bfaeea5b","trace_id":"tr_fe54920a793e4e9b8cbfaf5ca07a8858","path":"/v1/payments/intents/opi_09eb788858644e4a9c8013d084304f70/channel","method":"POST","status_code":200,"duration_ms":5.57}
+{"ts":"2026-09-25T08:37:39.609111+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/payments/intents/opi_09eb788858644e4a9c8013d084304f70/channel \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:37:39.657402+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_9c9138beaa264c92a2ec6cc154e6315e","trace_id":"tr_41f2f6ffbedc4a1b8d093f21737357d2","path":"/internal/v1/payments/intents/opi_09eb788858644e4a9c8013d084304f70/execute","method":"POST","status_code":200,"duration_ms":7.45}
+{"ts":"2026-09-25T08:37:39.657847+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/payments/intents/opi_09eb788858644e4a9c8013d084304f70/execute \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:37:39.665798+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_e876b9d43d004e20b08c78b3220d339d","trace_id":"tr_00c14102af8a4347918c66f19c34347f","path":"/internal/v1/payments/attempts/opa_a0abf5429b764231828a83e25c003463/simulate","method":"POST","status_code":200,"duration_ms":7.44}
+{"ts":"2026-09-25T08:37:39.666213+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/payments/attempts/opa_a0abf5429b764231828a83e25c003463/simulate \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:37:39.672519+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_e85a03019a6949e2b134307b2af42c79","trace_id":"tr_bd6b3a9b342f4c038c487dbb043dd0f8","path":"/internal/v1/finance/payment-intents/opi_09eb788858644e4a9c8013d084304f70/movements","method":"POST","status_code":200,"duration_ms":5.8}
+{"ts":"2026-09-25T08:37:39.672926+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/finance/payment-intents/opi_09eb788858644e4a9c8013d084304f70/movements \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:37:39.679863+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_f90402610da648f6bf2081de3b587cc1","trace_id":"tr_1d56093ae2874839934cc5eccc71b481","path":"/internal/v1/finance/payment-intents/opi_09eb788858644e4a9c8013d084304f70/movements","method":"POST","status_code":200,"duration_ms":6.44}
+{"ts":"2026-09-25T08:37:39.680232+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/finance/payment-intents/opi_09eb788858644e4a9c8013d084304f70/movements \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:37:39.729830+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_a960c0722a4f43fdb6ea84391d710349","trace_id":"tr_7b8b785ae49844cd907f94e5fadcff81","path":"/internal/v1/order-supplier-fulfillments/osf_47a83dea59ba492087973cf4eb22ff73/supplier-fact","method":"POST","status_code":200,"duration_ms":11.46}
+{"ts":"2026-09-25T08:37:39.730456+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/internal/v1/order-supplier-fulfillments/osf_47a83dea59ba492087973cf4eb22ff73/supplier-fact \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:37:39.738298+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_c3e2358d31bb4461a9f31c6ad662030b","trace_id":"tr_5c456ef3e54a4aec936b90a20a50ca53","path":"/v1/mobility/orders/ride_ord_eb4d31b79ca64cde/fulfillment","method":"POST","status_code":422,"duration_ms":6.89}
+{"ts":"2026-09-25T08:37:39.738840+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_eb4d31b79ca64cde/fulfillment \"HTTP/1.1 422 Unprocessable Entity\""}
+{"ts":"2026-09-25T08:37:39.753803+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_6ed3f389e57d4c1da4b70656b8abec17","trace_id":"tr_0609bfc8a7b3416aa83b80c6a982578d","path":"/v1/mobility/orders/ride_ord_eb4d31b79ca64cde/modify","method":"POST","status_code":422,"duration_ms":5.59}
+{"ts":"2026-09-25T08:37:39.754202+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_eb4d31b79ca64cde/modify \"HTTP/1.1 422 Unprocessable Entity\""}
+{"ts":"2026-09-25T08:37:39.769462+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_f11c0b4d81ca41bf88be7fdaa972207a","trace_id":"tr_2ece3def60644c11b2a42883265369ac","path":"/v1/mobility/orders/ride_ord_eb4d31b79ca64cde/fulfillment","method":"POST","status_code":200,"duration_ms":9.01}
+{"ts":"2026-09-25T08:37:39.769861+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_eb4d31b79ca64cde/fulfillment \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:37:39.778503+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_799afa8524db4f9d80e5164c412d886e","trace_id":"tr_e7bcb0cde578405c8327015d09ca85f0","path":"/v1/mobility/orders/ride_ord_eb4d31b79ca64cde/fulfillment","method":"POST","status_code":200,"duration_ms":8.05}
+{"ts":"2026-09-25T08:37:39.780161+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_eb4d31b79ca64cde/fulfillment \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T08:37:39.784518+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_9c32575180624c8bb0c372fd0977272b","trace_id":"tr_448671f50abd4649a22c589ed01781d9","path":"/v1/mobility/orders/ride_ord_eb4d31b79ca64cde","method":"GET","status_code":200,"duration_ms":3.83}
+{"ts":"2026-09-25T08:37:39.784877+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: GET http://testserver/v1/mobility/orders/ride_ord_eb4d31b79ca64cde \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/rides/search "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/rides/orders "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/payments/intents "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/payments/intents/opi_09eb788858644e4a9c8013d084304f70/channel "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/payments/intents/opi_09eb788858644e4a9c8013d084304f70/execute "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/payments/attempts/opa_a0abf5429b764231828a83e25c003463/simulate "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/finance/payment-intents/opi_09eb788858644e4a9c8013d084304f70/movements "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/finance/payment-intents/opi_09eb788858644e4a9c8013d084304f70/movements "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/internal/v1/order-supplier-fulfillments/osf_47a83dea59ba492087973cf4eb22ff73/supplier-fact "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_eb4d31b79ca64cde/fulfillment "HTTP/1.1 422 Unprocessable Entity"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_eb4d31b79ca64cde/modify "HTTP/1.1 422 Unprocessable Entity"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_eb4d31b79ca64cde/fulfillment "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobility/orders/ride_ord_eb4d31b79ca64cde/fulfillment "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:328 http_request
+INFO     httpx:_client.py:1025 HTTP Request: GET http://testserver/v1/mobility/orders/ride_ord_eb4d31b79ca64cde "HTTP/1.1 200 OK"
+=========================== short test summary info ============================
+FAILED tests/test_rc20_2_all_b_to_a.py::test_ride_state_machine_recovery_illegal_transition_and_evidence
+1 failed, 14 passed in 13.46s

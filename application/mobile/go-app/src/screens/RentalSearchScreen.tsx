@@ -1,2 +1,10 @@
-import React,{useState}from'react';import{Alert,ScrollView,Text,View}from'react-native';import{screen}from'../design';import{Brand,Btn,Chip}from'../components/GO';import{api}from'../api/client';
-export default function S({navigation}:any){const[busy,setBusy]=useState(false);const search={pickup_location:'上海虹桥机场',return_location:'上海虹桥机场',pickup_at:'2026-08-28T10:00:00+08:00',return_at:'2026-08-31T10:00:00+08:00',currency:'CNY'};const go=async()=>{try{setBusy(true);const r=await api('/v1/mobility/rentals/search',{method:'POST',body:JSON.stringify(search)});navigation.navigate('RentalResults',{items:r.data?.items||[],search})}catch(e:any){Alert.alert('搜索失败',e.message)}finally{setBusy(false)}};return <ScrollView style={screen.root} contentContainerStyle={screen.content}><Brand/><Text style={[screen.h1,{marginTop:24}]}>自驾租车</Text><Text style={[screen.sub,{marginTop:8}]}>{search.pickup_location} · 3天</Text><View style={[screen.card,{marginTop:18}]}><Text style={screen.h2}>GO Mobility</Text><View style={{flexDirection:'row',flexWrap:'wrap',marginTop:12}}><Chip>保险</Chip><Chip>里程</Chip><Chip>押金</Chip><Chip>取消规则</Chip></View><Btn title={busy?'搜索中…':'搜索租车'} onPress={go} disabled={busy}/></View></ScrollView>}
+import React from 'react';
+import MobilitySearchForm from '../components/MobilitySearchForm';
+import {api} from '../api/client';
+
+export default function RentalSearchScreen({navigation}:any) {
+  return <MobilitySearchForm kind="rental" onSearch={async search=>{
+    const response=await api('/v1/mobility/rentals/search',{method:'POST',body:JSON.stringify(search)});
+    navigation.navigate('RentalResults',{items:response.data?.items||[],search});
+  }}/>;
+}

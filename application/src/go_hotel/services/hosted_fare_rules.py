@@ -20,6 +20,7 @@ from go_hotel.services import hosted_money as funds
 from go_hotel.services.unified_money_movement import unified_money_movement_service as money
 from go_hotel.services.omnichannel_payment import digest
 from go_hotel.services import hotel_change_policy
+from go_hotel.services import hotel_cancellation_clock as cancellation_clock
 
 
 def integer(value, low, high, error):
@@ -31,7 +32,8 @@ def validated(body):
     required={'fare_family','timezone','check_in_hour','cooling_off_minutes','cancellation_tiers',
         'change_allowed','change_fee_minor','stay_credit_enabled','stay_credit_days','stay_credit_scope',
         'no_show_grace_hours','no_show_fee_basis_points'}
-    if not required<=set(body) or set(body)-required-{'credit_terms'}:raise ValueError('COMPLETE_STRUCTURED_FARE_RULE_REQUIRED')
+    if not required<=set(body) or set(body)-required-{'credit_terms','cooling_off_anchor'}:raise ValueError('COMPLETE_STRUCTURED_FARE_RULE_REQUIRED')
+    if body.get('cooling_off_anchor','ORDER_CREATED') not in ('ORDER_CREATED','HOTEL_CONFIRMED'):raise ValueError('INVALID_COOLING_OFF_ANCHOR')
     if not isinstance(body['fare_family'],str) or not 1<=len(body['fare_family'])<=64:raise ValueError('FARE_FAMILY_REQUIRED')
     try:ZoneInfo(body['timezone'])
     except (ZoneInfoNotFoundError,TypeError,ValueError):raise ValueError('VALID_HOTEL_TIMEZONE_REQUIRED')
@@ -40,15 +42,7 @@ def validated(body):
     integer(body['stay_credit_days'],1,365,'STAY_CREDIT_MAXIMUM_365_DAYS')
     if body['stay_credit_scope']!='PROPERTY_ONLY':raise ValueError('STAY_CREDIT_PROPERTY_ONLY')
     if any(type(body[x]) is not bool for x in ['change_allowed','stay_credit_enabled']):raise ValueError('BOOLEAN_FARE_PARTICIPATION_REQUIRED')
-    tiers=body['cancellation_tiers']
-    if not isinstance(tiers,list) or not 1<=len(tiers)<=20:raise ValueError('CANCELLATION_TIERS_REQUIRED')
-    thresholds=[];fees=[]
-    for tier in tiers:
-        if not isinstance(tier,dict) or set(tier)!={'min_hours','fee_basis_points'}:raise ValueError('STRUCTURED_CANCELLATION_TIER_REQUIRED')
-        thresholds.append(integer(tier['min_hours'],0,8760,'INVALID_CANCELLATION_THRESHOLD'))
-        fees.append(integer(tier['fee_basis_points'],0,10000,'INVALID_CANCELLATION_FEE'))
-    if thresholds!=sorted(set(thresholds),reverse=True) or thresholds[-1]!=0 or fees!=sorted(fees):
-        raise ValueError('ORDERED_COMPLETE_CANCELLATION_TIERS_REQUIRED')
+    cancellation_clock.validate_tiers(body['cancellation_tiers'])
     if 'credit_terms' in body:
         from go_hotel.services.hosted_credit_value import TERMS
         if body['credit_terms']!=TERMS:raise ValueError('VALID_STRUCTURED_CREDIT_TERMS_REQUIRED')
@@ -127,23 +121,31 @@ def eligible(s,r,stay,guest,a,action,snap):
     return boundary,deadline
 
 
+def cancellation_terms_in_session(s,r,rules,at):
+    confirmed_at=None
+    if rules.get('cooling_off_anchor')=='HOTEL_CONFIRMED':
+        from go_hotel.db.models import HostedDirectReservationEventRow as Event
+        event=s.scalar(select(Event).where(Event.hosted_reservation_id==r.hosted_reservation_id,
+            Event.event_type=='HOTEL_CONFIRM').order_by(Event.occurred_at,Event.hosted_event_id))
+        confirmed_at=aware(event.occurred_at) if event else None
+    return cancellation_clock.terms(rules,r.check_in,check_in_at(r,rules),aware(r.created_at),at,confirmed_at)
+
+
 def calculate(s,r,stay,guest,a,snap,action):
     boundary,deadline=eligible(s,r,stay,guest,a,action,snap)
-    rules=snap.rules_json;t=now();cooling_end=aware(r.created_at)+timedelta(minutes=rules['cooling_off_minutes'])
+    rules=snap.rules_json;t=now()
     if action=='NO_SHOW':fee_bps=rules['no_show_fee_basis_points'];cooling=False
     else:
-        cooling=t<cooling_end and t<boundary
-        hours=max(0,(boundary-t).total_seconds()/3600)
-        fee_bps=0 if cooling else next(x['fee_basis_points'] for x in rules['cancellation_tiers'] if hours>=x['min_hours'])
+        clock=cancellation_terms_in_session(s,r,rules,t)
+        fee_bps=clock['fee_basis_points'];cooling=clock['cooling_off_applied']
     # Integer floor is explicit in every persisted quote; no floating-point money.
     from go_hotel.services.hosted_fare_value import basis
     value=basis(s,r)
     fee=value['current_room_value_minor']*fee_bps//10000
     expiry=min(t+timedelta(minutes=10),deadline) if action=='CANCEL_FOR_REFUND' else t+timedelta(minutes=10)
-    if cooling:expiry=min(expiry,cooling_end,boundary)
+    if cooling:expiry=min(expiry,clock['cooling_end']) if clock['anchor']=='HOTEL_CONFIRMED' else min(expiry,clock['cooling_end'],boundary)
     if action=='CANCEL_FOR_REFUND':
-        for tier in rules['cancellation_tiers']:
-            edge=boundary-timedelta(hours=tier['min_hours'])
+        for edge in clock['edges']:
             if edge>t:expiry=min(expiry,edge)
     from go_hotel.services.hosted_credit_value import prepaid,allocation,Credit
     credit_paid=prepaid(s,r.hosted_reservation_id);prepaid_fee=min(fee,credit_paid-value['prepaid_forfeiture_minor'])

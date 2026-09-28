@@ -1,0 +1,68 @@
+{
+  "voucher": {
+    "voucher_type": "ARRIVAL_CONFIRMATION",
+    "printable": true,
+    "reservation_id": "hdr_7cfaf5a0109240a8b1b0736d510443d2",
+    "guest_name": "***",
+    "room_name": "摄罗子·圆梦大床房",
+    "check_in": "2026-09-28",
+    "check_out": "2026-09-29",
+    "nights": 1,
+    "amount_minor": 69800,
+    "payment_state": "CONTRACT_CAPTURED_NOT_ALIPAY",
+    "payment_captured": false
+  },
+  "money": {
+    "reservation_id": "hdr_7cfaf5a0109240a8b1b0736d510443d2",
+    "reservation_state": "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING",
+    "payment_state": "CONTRACT_CAPTURED_NOT_ALIPAY",
+    "amount_minor": 69800,
+    "currency": "CNY",
+    "dates": [
+      "2026-09-28",
+      "2026-09-29"
+    ],
+    "root_id": "por_e57c0ec20d7e4febb7f277b09812b9e5",
+    "intent_id": "opi_e1cd439c93a04e87ba5a1a1674025b9d",
+    "movements": [
+      {
+        "id": "omm_479620eb65d649d29407c3beb2c30ea8",
+        "kind": "AUTHORIZATION",
+        "amount_minor": 69800,
+        "currency": "CNY",
+        "parent": null,
+        "state": "CONFIRMED",
+        "created_at": "2026-09-28 00:00:00"
+      },
+      {
+        "id": "omm_c537215f5bae4540b0303bccdd1a43cc",
+        "kind": "CAPTURE",
+        "amount_minor": 69800,
+        "currency": "CNY",
+        "parent": "omm_479620eb65d649d29407c3beb2c30ea8",
+        "state": "CONFIRMED",
+        "created_at": "2026-09-28 10:00:00"
+      }
+    ],
+    "ledger": [
+      {
+        "id": "ole_95727143ad52405e9cff8def2fb65188",
+        "transaction": "omm_c537215f5bae4540b0303bccdd1a43cc",
+        "direction": "DEBIT",
+        "amount_minor": 69800,
+        "currency": "CNY",
+        "account": "PAYMENT_CLEARING:LOCAL_MARKET",
+        "created_at": "2026-09-28 10:00:00"
+      },
+      {
+        "id": "ole_158518465a4040f4ba64d5857f79d2f3",
+        "transaction": "omm_c537215f5bae4540b0303bccdd1a43cc",
+        "direction": "CREDIT",
+        "amount_minor": 69800,
+        "currency": "CNY",
+        "account": "BUSINESS:HOSTED_HOTEL_AUTHORIZATION:aauth_6e0c254b139d4075bd416dd2cde8c303",
+        "created_at": "2026-09-28 10:00:00"
+      }
+    ]
+  }
+}

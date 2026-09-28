@@ -1,0 +1,37 @@
+{
+  "reviewer": "ticket_independent_review",
+  "status": "FOUR_LOCAL_PROBES_PASS_NOT_FULL_ACCEPTANCE",
+  "candidate_commit": null,
+  "candidate_frozen": false,
+  "executed_at_utc": "2026-09-26T14:02:51.535232+00:00",
+  "passed": 4,
+  "failed": 0,
+  "local_closed": [
+    "IR-04 APPLY crash recovery",
+    "IR-05 unknown outcome followup",
+    "IR-06 native actor cannot self-verify after recovery"
+  ],
+  "additional_pass": "Late old APPLY cannot execute a new receipt (receipt identity binding already fixed when executed)",
+  "evidence": "operations-third.xml",
+  "limits": [
+    "SQLite/TestClient, actual role JWT, test MFA disabled",
+    "No runtime browser/native-device acceptance",
+    "No isolated PG verification",
+    "No frozen 28 obligation / 88 case final acceptance"
+  ],
+  "source_sha256": {
+    "src/go_hotel/services/ticket_operations.py": "d9fbace3246a02657504be28fc4549c884afb2f5519e32b476198eb59dd98d97",
+    "src/go_hotel/api/routes/dashboard.py": "4a69b091d4dd6d96948b8f2cbe5ef2b47b6f8e51ed99cd0ea75d910267f06e58",
+    "src/go_hotel/services/flight_change_resolution.py": "0b681214200ba0ca6d925ac20979b00e9cedbfc2874aad5d56a17be814b3d8fb",
+    "src/go_hotel/services/rail_change_resolution.py": "e9eecfd85dd1973b320d6928c44cb91992b49bb27d538c34e2a7d28fb0c07254",
+    "src/go_hotel/flight/service.py": "cb9cd449623717c798878676dc87246c3810d9dc8c8897ce2eb2837c7a6dfa96",
+    "frontend/shared/ticket-operations.js": "a42d4481597ccbf26b6a2ad09e3b280a2c830bfd57de800da29a62f7aec21998",
+    "frontend/consumer/flight-changes.js": "684633876db8303181b4ec500c765703335c9b0cf0690736b3490b5aeb3a443c",
+    "frontend/consumer/flight-coupons.js": "1e896f68ed463f61852ca1ead0b4c3b8c48b1169fdd8e982ebcd3afa46a04659",
+    "mobile/go-app/src/screens/FlightCouponActionsScreen.tsx": "d7f806162fe0969c89e8174cca5e30f478edfc22271bd88f0edf1cb18a730e18"
+  },
+  "evidence_sha256": {
+    "test_independent_ticket_operations.py": "7faf34a2f2f4edddee422d2c7d6e189c86760ba8e8622919e0c0dedf0521971e",
+    "operations-third.xml": "9bc22ffb0206997f2395b1dca910007a605602fe434db16ac32c3abc1197448e"
+  }
+}

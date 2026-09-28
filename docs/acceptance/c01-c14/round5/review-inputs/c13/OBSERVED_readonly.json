@@ -1,0 +1,11 @@
+{
+  "kind": "readonly",
+  "expected_status": 403,
+  "actual_status": 409,
+  "body": {
+    "detail": "CONTENT_SNAPSHOT_NOT_FOUND"
+  },
+  "approval_rows_unchanged": true,
+  "authentication": "real password + JWT + DB session; admin MFA; no dependency overrides",
+  "scope": "isolated actual router; not full main middleware"
+}

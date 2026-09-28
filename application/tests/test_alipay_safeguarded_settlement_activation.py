@@ -1,3 +1,4 @@
+from tests.hosted_review_support import legacy_publication
 import hashlib,hmac,json,pytest
 from sqlalchemy import select
 from go_hotel.core.config import settings
@@ -6,7 +7,7 @@ from go_hotel.db.models import HostedDirectHotelRow
 from go_hotel.services.hosted_direct_booking import hosted_direct_booking_service as booking
 from go_hotel.services.alipay_safeguarded_settlement import alipay_safeguarded_settlement_service as svc
 def setup():
- h=booking.create_hotel({'supplier_name':'哈尔滨敖麓谷雅酒店','page_slug':'aoluguya-harbin'},'admin');o=booking.upsert_offer(h['hosted_hotel_id'],{'room_name':'测试房','rate_name':'测试价','price_minor':10000,'inventory':5,'cancellation_policy':'30分钟免费取消'},'hotel');booking.publish(h['hosted_hotel_id'],'hotel');r=booking.reserve('aoluguya-harbin',{'hosted_offer_id':o['hosted_offer_id'],'guest_name':'测试','guest_contact':'13800000000','check_in':'2026-09-01','check_out':'2026-09-02'},'r1');return h,r
+ h=booking.create_hotel({'supplier_name':'哈尔滨敖麓谷雅酒店','page_slug':'aoluguya-harbin'},'admin');o=booking.upsert_offer(h['hosted_hotel_id'],{'room_name':'测试房','rate_name':'测试价','price_minor':10000,'inventory':5,'cancellation_policy':'30分钟免费取消'},'hotel');legacy_publication(h['hosted_hotel_id']);r=booking.reserve('aoluguya-harbin',{'hosted_offer_id':o['hosted_offer_id'],'guest_name':'测试','guest_contact':'13800000000','check_in':'2026-09-01','check_out':'2026-09-02'},'r1');return h,r
 def auth():
  h,r=setup();a=svc.authorize(r['hosted_reservation_id'],{'mode':'CONTRACT_DRY_RUN'},'auth1');return h,r,a
 def test_existing_account_is_attested_but_activation_gate_remains_blocked():

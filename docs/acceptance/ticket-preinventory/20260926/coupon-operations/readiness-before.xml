@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="6.042" timestamp="2026-09-26T21:43:58.489518+08:00" hostname="81f9726e8d4f"><testcase classname="independent-ticket-review.test_independent_coupon_readiness" name="test_nonchange_unknown_and_failed_do_not_publish_usable_tickets[False]" time="4.016"><failure message="AssertionError: {'account_id': 'usr_e27763f11b9c4002', 'change_quotes': [], 'coupon_refunds': [], 'coupons': [{'account_id': 'usr_e277...ee_minor': 10000, 'price_basis': 'PER_COUPON'}, 'coupon_id': 'flt_cpn_d3fc92436e6d4704', 'currency': 'CNY', ...}], ...}&#10;assert [{'coupon_id'...dex': 1, ...}] == []&#10;  &#10;  Left contains 4 more items, first extra item: {'coupon_id': 'flt_cpn_6a46e90282b04561', 'leg': {'arrival_time': '13:15', 'baggage': {'cabin_bag_kg': 7, 'checked_bag...r_code': 'GO', 'change_policy': {'allowed': True, 'fee_minor': 20000}, ...}, 'leg_index': 0, 'passenger_index': 0, ...}&#10;  Use -v to get more diff">client = &lt;starlette.testclient.TestClient object at 0x7f62e8e402f0&gt;
+terminal = False
+
+    @pytest.mark.parametrize('terminal', [False, True])
+    def test_nonchange_unknown_and_failed_do_not_publish_usable_tickets(client, terminal):
+        owner, order, headers = booked(client)
+        oid = order['order_id']
+        flights.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://independent-unknown', 'independent-ops')
+        if terminal:
+            flights.admin_external_state(oid, 'FAILED', 'isolated://independent-failure', 'independent-ops')
+        public = client.get('/v1/flights/orders/' + oid, headers=headers)
+        assert public.status_code == 200
+        data = public.json()['data']
+        assert data['status'] == ('FAILED' if terminal else 'UNKNOWN_EXTERNAL_STATE')
+&gt;       assert data['ticket_assignments'] == [], data
+E       AssertionError: {'account_id': 'usr_e27763f11b9c4002', 'change_quotes': [], 'coupon_refunds': [], 'coupons': [{'account_id': 'usr_e277...ee_minor': 10000, 'price_basis': 'PER_COUPON'}, 'coupon_id': 'flt_cpn_d3fc92436e6d4704', 'currency': 'CNY', ...}], ...}
+E       assert [{'coupon_id'...dex': 1, ...}] == []
+E         
+E         Left contains 4 more items, first extra item: {'coupon_id': 'flt_cpn_6a46e90282b04561', 'leg': {'arrival_time': '13:15', 'baggage': {'cabin_bag_kg': 7, 'checked_bag...r_code': 'GO', 'change_policy': {'allowed': True, 'fee_minor': 20000}, ...}, 'leg_index': 0, 'passenger_index': 0, ...}
+E         Use -v to get more diff
+
+../../independent-ticket-review/test_independent_coupon_readiness.py:17: AssertionError</failure></testcase><testcase classname="independent-ticket-review.test_independent_coupon_readiness" name="test_nonchange_unknown_and_failed_do_not_publish_usable_tickets[True]" time="0.296"><failure message="AssertionError: {'account_id': 'usr_d145bbc8e2b44a0a', 'change_quotes': [], 'coupon_refunds': [], 'coupons': [{'account_id': 'usr_d145...ee_minor': 10000, 'price_basis': 'PER_COUPON'}, 'coupon_id': 'flt_cpn_dd18aa868263482d', 'currency': 'CNY', ...}], ...}&#10;assert [{'coupon_id'...dex': 1, ...}] == []&#10;  &#10;  Left contains 4 more items, first extra item: {'coupon_id': 'flt_cpn_e99c431264924e77', 'leg': {'arrival_time': '13:15', 'baggage': {'cabin_bag_kg': 7, 'checked_bag...r_code': 'GO', 'change_policy': {'allowed': True, 'fee_minor': 20000}, ...}, 'leg_index': 0, 'passenger_index': 0, ...}&#10;  Use -v to get more diff">client = &lt;starlette.testclient.TestClient object at 0x7f62e1ee6660&gt;
+terminal = True
+
+    @pytest.mark.parametrize('terminal', [False, True])
+    def test_nonchange_unknown_and_failed_do_not_publish_usable_tickets(client, terminal):
+        owner, order, headers = booked(client)
+        oid = order['order_id']
+        flights.admin_external_state(oid, 'UNKNOWN_EXTERNAL_STATE', 'isolated://independent-unknown', 'independent-ops')
+        if terminal:
+            flights.admin_external_state(oid, 'FAILED', 'isolated://independent-failure', 'independent-ops')
+        public = client.get('/v1/flights/orders/' + oid, headers=headers)
+        assert public.status_code == 200
+        data = public.json()['data']
+        assert data['status'] == ('FAILED' if terminal else 'UNKNOWN_EXTERNAL_STATE')
+&gt;       assert data['ticket_assignments'] == [], data
+E       AssertionError: {'account_id': 'usr_d145bbc8e2b44a0a', 'change_quotes': [], 'coupon_refunds': [], 'coupons': [{'account_id': 'usr_d145...ee_minor': 10000, 'price_basis': 'PER_COUPON'}, 'coupon_id': 'flt_cpn_dd18aa868263482d', 'currency': 'CNY', ...}], ...}
+E       assert [{'coupon_id'...dex': 1, ...}] == []
+E         
+E         Left contains 4 more items, first extra item: {'coupon_id': 'flt_cpn_e99c431264924e77', 'leg': {'arrival_time': '13:15', 'baggage': {'cabin_bag_kg': 7, 'checked_bag...r_code': 'GO', 'change_policy': {'allowed': True, 'fee_minor': 20000}, ...}, 'leg_index': 0, 'passenger_index': 0, ...}
+E         Use -v to get more diff
+
+../../independent-ticket-review/test_independent_coupon_readiness.py:17: AssertionError</failure></testcase></testsuite></testsuites>

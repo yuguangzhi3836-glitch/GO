@@ -79,6 +79,12 @@ try:
         with SessionLocal.begin() as s:
             s.add(TravelerProfileRow(traveler_id="process-traveler",user_id="process-owner",
                 full_name="C07 SYNTHETIC PROCESS",relationship_type="SELF",status="ACTIVE",created_at=t,updated_at=t))
+        # Graph visibility is a second, narrower release grant layered over
+        # the explicit preference grant. Keep the same exact purpose so process
+        # durability is tested without weakening cross-journey isolation.
+        vault.grant_consent("process-owner",{"traveler_id":"process-traveler",
+            "consent_type":"TRAVELER_CONTEXT","purpose":"HOTEL_PLANNING",
+            "scope":["TRAVEL_PREFERENCES"],"expires_at":(t+timedelta(days=1)).isoformat()})
         result=vault.grant_consent("process-owner",{"traveler_id":"process-traveler",
             "consent_type":"EXPLICIT_TRAVEL_PREFERENCE","purpose":"HOTEL_PLANNING",
             "scope":["TRAVEL_PREFERENCE:HOTEL_ROOM"],"expires_at":(t+timedelta(days=1)).isoformat()})

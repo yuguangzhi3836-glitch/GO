@@ -25,7 +25,7 @@
     section.innerHTML=`<h2>取还车安排</h2><p>${esc(order.pickup_location)} · ${esc(order.pickup_at)}</p><p>${esc(order.return_location)} · ${esc(order.return_at)}</p><div class="kv"><span>当前订单总价</span><strong>${esc(money(order.total_amount_minor,order.currency))}</strong></div>`;
     if(order.pending_change)section.innerHTML+='<p role="status">改期差额尚未处理完，原取还车时间暂时保留。继续处理同一笔改期即可。</p><button class="btn primary" data-resume-change>继续改期</button>';
     if(order.status==='REFUND_PENDING')section.innerHTML+='<p role="status">退款处理中，暂不重复发起其他售后操作。</p><button class="btn primary" data-resume-refund>继续原路退款</button>';
-    document.querySelector('#app').append(section);
+    document.querySelector('#app .shared-consumer-content').append(section);
     const change=section.querySelector('[data-resume-change]');if(change)change.onclick=async()=>{try{if(await confirmChange(order,order.pending_change))await mobilityReload('RENTAL')}catch(e){toast(e.message)}};
     const refund=section.querySelector('[data-resume-refund]');if(refund)refund.onclick=async()=>{try{if(await GOBooking.dialog('继续原路退款','<p>继续处理先前确认的退款，同一笔退款不会重复退回。</p>','继续退款',()=>api(`/v1/mobility/orders/${order.order_id}/cancel`,{method:'POST'})))await mobilityReload('RENTAL')}catch(e){toast(e.message)}};
   };

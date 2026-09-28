@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
+import hashlib
+import json
 from typing import Callable
 
 from .policy import RiskFactors, classify_risk
@@ -111,6 +113,12 @@ class LegalPolicyRule:
     reason: str = ""
     conditions: tuple[str, ...] = ()
     covered_exposure_tags: frozenset[str] | None = None
+    version: str | None = None
+    approval_ref: str | None = None
+    effective_from: datetime | None = None
+    effective_until: datetime | None = None
+    revoked: bool = False
+    environments: frozenset[Environment] = frozenset({Environment.DEV, Environment.TEST})
 
     def __post_init__(self) -> None:
         from .types import LegalExposureProfile
@@ -129,6 +137,48 @@ class LegalPolicyRule:
         object.__setattr__(self, "covered_exposure_tags", covered)
         object.__setattr__(self, "jurisdictions", frozenset(self.jurisdictions))
         object.__setattr__(self, "conditions", tuple(dict.fromkeys(self.conditions)))
+        if type(self.revoked) is not bool:
+            raise ValueError("POLICY_REVOCATION_MUST_BE_BOOLEAN")
+        environments = frozenset(self.environments)
+        if not environments or any(not isinstance(env, Environment) for env in environments):
+            raise ValueError("POLICY_TYPED_ENVIRONMENT_SCOPE_REQUIRED")
+        object.__setattr__(self, "environments", environments)
+        lifecycle = (self.version, self.approval_ref, self.effective_from, self.effective_until)
+        if any(value is not None for value in lifecycle):
+            if any(not isinstance(value, str) or not value.strip() for value in lifecycle[:2]):
+                raise ValueError("POLICY_VERSION_AND_APPROVAL_REQUIRED")
+            if any(not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None
+                   for value in lifecycle[2:]):
+                raise ValueError("POLICY_AWARE_VALIDITY_WINDOW_REQUIRED")
+            if self.effective_from >= self.effective_until:
+                raise ValueError("POLICY_VALIDITY_WINDOW_INVALID")
+
+    @property
+    def policy_sha256(self) -> str | None:
+        """Bind conditions and decisions to the entire approved policy snapshot."""
+        if self.version is None:
+            return None
+        payload = {
+            "rule_id": self.rule_id, "version": self.version, "approval_ref": self.approval_ref,
+            "effective_from": self.effective_from.isoformat(), "effective_until": self.effective_until.isoformat(),
+            "revoked": self.revoked, "decision": self.decision.value, "reason": self.reason,
+            "jurisdictions": sorted(self.jurisdictions), "required": sorted(self.required_exposure_tags),
+            "covered": sorted(self.covered_exposure_tags), "conditions": sorted(self.conditions),
+            "environments": sorted(env.value for env in self.environments),
+        }
+        return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+    def current_denial(self, action: AIActionEnvelope, at: datetime) -> str | None:
+        if self.revoked:
+            return "LEGAL_POLICY_REVOKED"
+        if self.version is None:
+            # Preserve explicitly isolated legacy fixtures; they cannot authorize real environments.
+            return None if action.environment in {Environment.DEV, Environment.TEST} else "LEGAL_POLICY_PROVENANCE_REQUIRED"
+        if action.environment not in self.environments:
+            return "LEGAL_POLICY_ENVIRONMENT_NOT_APPROVED"
+        if not self.effective_from <= at < self.effective_until:
+            return "LEGAL_POLICY_OUTSIDE_VALIDITY_WINDOW"
+        return None
 
     def matches(self, action: AIActionEnvelope) -> bool:
         if "*" not in self.jurisdictions and action.jurisdiction not in self.jurisdictions:
@@ -149,13 +199,17 @@ class AILegalPolicyRegistry:
         if len({r.rule_id for r in self._rules}) != len(self._rules):
             raise ValueError("DUPLICATE_LEGAL_POLICY_ID")
 
-    def review(self, action: AIActionEnvelope, *, authority: AuthorityDecision) -> LegalReviewResult:
+    def review(self, action: AIActionEnvelope, *, authority: AuthorityDecision,
+               at: datetime | None = None) -> LegalReviewResult:
         if not authority.allowed:
             return LegalReviewResult(LegalDecision.LEGAL_BLOCK, "AUTHORITY_BLOCK_PRECEDES_LEGAL", (), ())
         if not requires_legal_review(action):
             return LegalReviewResult(LegalDecision.NOT_REQUIRED, "NO_LEGAL_EXPOSURE", (), ())
         if not action.jurisdiction:
             return LegalReviewResult(LegalDecision.LEGAL_HOLD, "JURISDICTION_REQUIRED", (), ())
+        at = datetime.now(timezone.utc) if at is None else at
+        if not isinstance(at, datetime) or at.tzinfo is None or at.utcoffset() is None:
+            return LegalReviewResult(LegalDecision.LEGAL_HOLD, "POLICY_REVIEW_TIME_REQUIRED")
 
         matches = tuple(rule for rule in self._rules if rule.matches(action))
         if not matches:
@@ -176,15 +230,21 @@ class AILegalPolicyRegistry:
         }
         selected = max(matches, key=lambda r: precedence[r.decision])
         rule_ids = tuple(rule.rule_id for rule in matches)
+        bindings = tuple(sorted((rule.rule_id, rule.policy_sha256) for rule in matches if rule.policy_sha256))
         if selected.decision in {LegalDecision.LEGAL_BLOCK, LegalDecision.LEGAL_HOLD}:
-            return LegalReviewResult(selected.decision, selected.reason or selected.rule_id, rule_ids, selected.conditions)
+            return LegalReviewResult(selected.decision, selected.reason or selected.rule_id, rule_ids,
+                                     selected.conditions, policy_bindings=bindings)
+        for rule in matches:
+            denial = rule.current_denial(action, at)
+            if denial:
+                return LegalReviewResult(LegalDecision.LEGAL_HOLD, denial, rule_ids, policy_bindings=bindings)
         covered = frozenset().union(*(r.covered_exposure_tags for r in matches))
         if not action.legal_exposure.active_tags <= covered:
             return LegalReviewResult(LegalDecision.LEGAL_HOLD, "LEGAL_EXPOSURE_NOT_FULLY_COVERED", rule_ids, ())
         requirements = tuple(sorted({(r.rule_id, c) for r in matches for c in r.conditions}))
         conditions = tuple(sorted({c for _, c in requirements}))
         decision = LegalDecision.LEGAL_ALLOW_WITH_CONDITIONS if requirements else LegalDecision.LEGAL_ALLOW
-        return LegalReviewResult(decision, selected.reason or selected.rule_id, rule_ids, conditions, requirements)
+        return LegalReviewResult(decision, selected.reason or selected.rule_id, rule_ids, conditions, requirements, bindings)
 
 
 def evaluate_ai_action(
@@ -204,12 +264,13 @@ def evaluate_ai_action(
       4. GO Constitution is internal supreme law, but never overrides mandatory applicable external law.
     """
     clock = clock or (lambda: datetime.now(timezone.utc))
-    authority = authority_gate.check(action, at=clock())
+    initial_time = clock()
+    authority = authority_gate.check(action, at=initial_time)
     if not authority.allowed:
         return ActionControlResult(authority, False, None, False)
 
     legal_required = requires_legal_review(action)
-    legal = legal_registry.review(action, authority=authority) if legal_required else LegalReviewResult(
+    legal = legal_registry.review(action, authority=authority, at=initial_time) if legal_required else LegalReviewResult(
         LegalDecision.NOT_REQUIRED, "NO_LEGAL_EXPOSURE", (), ()
     )
     if legal.decision not in {LegalDecision.NOT_REQUIRED, LegalDecision.LEGAL_ALLOW, LegalDecision.LEGAL_ALLOW_WITH_CONDITIONS}:
@@ -226,13 +287,15 @@ def evaluate_ai_action(
     if not authority.allowed:
         return ActionControlResult(authority, legal_required, legal, False)
     # Conditions may perform lookups; recheck policy and every proof at the final decision time.
-    current_legal = legal_registry.review(action, authority=authority)
+    current_legal = legal_registry.review(action, authority=authority, at=final_time)
     if current_legal != legal:
         return ActionControlResult(authority, legal_required,
             LegalReviewResult(LegalDecision.LEGAL_HOLD, "LEGAL_POLICY_CHANGED_DURING_REVIEW"), False)
+    policy_bindings = dict(legal.policy_bindings)
     blocked = tuple(f"{rid}:{cid}" for (rid, cid), proof in proofs.items()
         if not isinstance(proof, ConditionEvidence) or not proof.valid_for(
-            action=action, policy_rule_id=rid, condition_id=cid, at=final_time))
+            action=action, policy_rule_id=rid, condition_id=cid, at=final_time,
+            policy_sha256=policy_bindings.get(rid)))
     refs = tuple(sorted({p.evidence_ref for key, p in proofs.items()
         if isinstance(p, ConditionEvidence) and f"{key[0]}:{key[1]}" not in blocked}))
     return ActionControlResult(authority, legal_required, legal, not blocked, refs, blocked)

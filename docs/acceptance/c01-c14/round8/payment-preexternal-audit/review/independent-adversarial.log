@@ -1,0 +1,87 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_changed_identity_cannot_hide_corruption_and_allow_new_grant[resource_type] _
+
+audit = (<go_hotel.services.payment_sandbox_cutover.PaymentSandboxCutoverService object at 0x7f716fb1b380>, sessionmaker(class..._changed_identity_cannot_h0/audit.db), autoflush=True, expire_on_commit=False), 'pae_d5d5379a226246be9fb5ac02889568d3')
+field = 'resource_type'
+
+    @pytest.mark.parametrize("field", ["resource_type", "resource_id"])
+    def test_changed_identity_cannot_hide_corruption_and_allow_new_grant(audit, field):
+        service, sessions, event_id = audit
+        with sessions.begin() as s:
+            setattr(s.get(AuditEventRow, event_id), field, "TAMPERED")
+>       with pytest.raises(ValueError, match="EVIDENCE_CHAIN_INVALID"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+review/test_independent_review.py:15: Failed
+_ test_changed_identity_cannot_hide_corruption_and_allow_new_grant[resource_id] _
+
+audit = (<go_hotel.services.payment_sandbox_cutover.PaymentSandboxCutoverService object at 0x7f716fb1bec0>, sessionmaker(class..._changed_identity_cannot_h1/audit.db), autoflush=True, expire_on_commit=False), 'pae_72a1ecd42cb44e9f9b8775d9e9d18054')
+field = 'resource_id'
+
+    @pytest.mark.parametrize("field", ["resource_type", "resource_id"])
+    def test_changed_identity_cannot_hide_corruption_and_allow_new_grant(audit, field):
+        service, sessions, event_id = audit
+        with sessions.begin() as s:
+            setattr(s.get(AuditEventRow, event_id), field, "TAMPERED")
+>       with pytest.raises(ValueError, match="EVIDENCE_CHAIN_INVALID"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE <class 'ValueError'>
+
+review/test_independent_review.py:15: Failed
+________ test_preflight_cannot_report_certification_for_corrupted_chain ________
+
+audit = (<go_hotel.services.payment_sandbox_cutover.PaymentSandboxCutoverService object at 0x7f716fb1b8f0>, sessionmaker(class..._preflight_cannot_report_c0/audit.db), autoflush=True, expire_on_commit=False), 'pae_03ad03d77d484fed871e58ad05eb368b')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f716deae780>
+
+    def test_preflight_cannot_report_certification_for_corrupted_chain(audit, monkeypatch):
+        service, sessions, event_id = audit
+        monkeypatch.setattr(runtime, "SessionLocal", sessions)
+        with sessions.begin() as s:
+            s.get(AuditEventRow, event_id).actor_id = "TAMPERED"
+        assert not service.status()["certification_valid"]
+>       assert runtime.payment_sandbox_runtime_service.certification_preflight()["payment_sandbox_certified"] is False
+E       assert True is False
+
+review/test_independent_review.py:27: AssertionError
+_________________ test_concurrent_append_cannot_commit_a_fork __________________
+
+audit = (<go_hotel.services.payment_sandbox_cutover.PaymentSandboxCutoverService object at 0x7f716deff530>, sessionmaker(class..._concurrent_append_cannot_0/audit.db), autoflush=True, expire_on_commit=False), 'pae_6349a8d0684b48a1999d7808dc8345b1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f716defe060>
+
+    def test_concurrent_append_cannot_commit_a_fork(audit, monkeypatch):
+        service, sessions, event_id = audit
+        original = service._events
+        barrier = Barrier(2)
+        def synchronized_read(s, channel):
+            events = original(s, channel)
+            barrier.wait(timeout=10)
+            return events
+        monkeypatch.setattr(service, "_events", synchronized_read)
+        def append(index):
+            with sessions.begin() as s:
+                service._append_event(s, channel="ALIPAY", actor="review", action="REVIEW",
+                    payload={"index": index}, evidence_reference=f"evidence://review/{index}")
+            return "committed"
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            outcomes = list(pool.map(append, [1, 2]))
+        monkeypatch.setattr(service, "_events", original)
+        assert outcomes == ["committed", "committed"]
+>       assert service.evidence_ledger()["chain_valid"], "Two concurrent appends both committed but created a broken chain"
+E       AssertionError: Two concurrent appends both committed but created a broken chain
+E       assert False
+
+review/test_independent_review.py:47: AssertionError
+=============================== warnings summary ===============================
+tests/test_payment_sandbox_audit_integrity.py:13
+  /workspace/scratch/41d07203813b/go-payment-closure/tests/test_payment_sandbox_audit_integrity.py:13: PytestUnknownMarkWarning: Unknown pytest.mark.no_db - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    pytestmark = pytest.mark.no_db
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED review/test_independent_review.py::test_changed_identity_cannot_hide_corruption_and_allow_new_grant[resource_type]
+FAILED review/test_independent_review.py::test_changed_identity_cannot_hide_corruption_and_allow_new_grant[resource_id]
+FAILED review/test_independent_review.py::test_preflight_cannot_report_certification_for_corrupted_chain
+FAILED review/test_independent_review.py::test_concurrent_append_cannot_commit_a_fork
+4 failed, 1 warning in 1.86s

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="8" time="6.596" timestamp="2026-09-26T20:20:06.056444+08:00" hostname="81f9726e8d4f"><testcase classname="tests.test_ticket_preinventory_boundaries" name="test_supplier_fact_write_rejects_readonly_admin[FLIGHT]" time="3.982"><failure message="AssertionError: {&quot;data&quot;:{&quot;fulfillment&quot;:{&quot;order_supplier_fulfillment_id&quot;:&quot;osf_4a81a73498f843bc8e830cf6f297641b&quot;,&quot;payment_intent_id&quot;:&quot;opi_3395b245ce664377b228c233c3739cb6&quot;,&quot;business_type&quot;:&quot;FLIGHT_ORDER&quot;,&quot;business_id&quot;:&quot;flt_ord_fe8a26330f414890&quot;,&quot;supplier_id&quot;:&quot;GO&quot;,&quot;supplier_idempotency_key&quot;:&quot;FLIGHT_ORDER:flt_ord_fe8a26330f414890:SUPPLIER_MUTATION&quot;,&quot;state&quot;:&quot;SUPPLIER_CONFIRMED&quot;,&quot;external_operation_id&quot;:&quot;isolated-flt_ord_fe8a26330f414890&quot;,&quot;supplier_confirmation_reference&quot;:&quot;ISOLATED&quot;,&quot;evidence_reference&quot;:&quot;isolated://ticket&quot;,&quot;created_at&quot;:&quot;2026-09-26T12:20:11.634990&quot;,&quot;updated_at&quot;:&quot;2026-09-26T12:20:11.758042+00:00&quot;},&quot;unified_lifecycle&quot;:{&quot;consumer_unified_lifecycle_id&quot;:&quot;cul_21f5cbfb50fb4b30a99f455fbfd9aee7&quot;,&quot;account_id&quot;:&quot;owner&quot;,&quot;vertical&quot;:&quot;FLIGHT&quot;,&quot;order_id&quot;:&quot;flt_ord_fe8a26330f414890&quot;,&quot;supplier_id&quot;:&quot;GO&quot;,&quot;title&quot;:&quot;FLIGHT flt_ord_fe8a26330f414890&quot;,&quot;lifecycle_state&quot;:&quot;CONFIRMED&quot;,&quot;payment_state&quot;:&quot;PAID&quot;,&quot;refund_state&quot;:&quot;NOT_REQUESTED&quot;,&quot;change_allowed&quot;:false,&quot;cancel_allowed&quot;:true,&quot;facts_json&quot;:{&quot;supplier_confirmation_reference&quot;:&quot;ISOLATED&quot;,&quot;external_operation_id&quot;:&quot;isolated-flt_ord_fe8a26330f414890&quot;},&quot;evidence_reference&quot;:&quot;isolated://ticket&quot;,&quot;source_updated_at&quot;:&quot;2026-09-26T12:20:11.760204+00:00&quot;,&quot;updated_at&quot;:&quot;2026-09-26T12:20:11.761921+00:00&quot;,&quot;stale_ignored&quot;:false}}}&#10;assert 200 == 403&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f03a81ceed0&gt;
+vertical = 'FLIGHT'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT','RAIL'])
+    def test_supplier_fact_write_rejects_readonly_admin(client, vertical):
+        svc, oid = pending_order(vertical)
+        svc.checkout('owner',oid,'isolated')
+        fid, body = supplier_fact(oid,['ISOLATED-1'])
+        _, denied = identity('readonly-fact',['GO_READ_ONLY'])
+        before = business_facts()
+        response = client.post(f'/internal/v1/order-supplier-fulfillments/{fid}/supplier-fact', headers=denied, json=body)
+&gt;       assert response.status_code == 403, response.text
+E       AssertionError: {"data":{"fulfillment":{"order_supplier_fulfillment_id":"osf_4a81a73498f843bc8e830cf6f297641b","payment_intent_id":"opi_3395b245ce664377b228c233c3739cb6","business_type":"FLIGHT_ORDER","business_id":"flt_ord_fe8a26330f414890","supplier_id":"GO","supplier_idempotency_key":"FLIGHT_ORDER:flt_ord_fe8a26330f414890:SUPPLIER_MUTATION","state":"SUPPLIER_CONFIRMED","external_operation_id":"isolated-flt_ord_fe8a26330f414890","supplier_confirmation_reference":"ISOLATED","evidence_reference":"isolated://ticket","created_at":"2026-09-26T12:20:11.634990","updated_at":"2026-09-26T12:20:11.758042+00:00"},"unified_lifecycle":{"consumer_unified_lifecycle_id":"cul_21f5cbfb50fb4b30a99f455fbfd9aee7","account_id":"owner","vertical":"FLIGHT","order_id":"flt_ord_fe8a26330f414890","supplier_id":"GO","title":"FLIGHT flt_ord_fe8a26330f414890","lifecycle_state":"CONFIRMED","payment_state":"PAID","refund_state":"NOT_REQUESTED","change_allowed":false,"cancel_allowed":true,"facts_json":{"supplier_confirmation_reference":"ISOLATED","external_operation_id":"isolated-flt_ord_fe8a26330f414890"},"evidence_reference":"isolated://ticket","source_updated_at":"2026-09-26T12:20:11.760204+00:00","updated_at":"2026-09-26T12:20:11.761921+00:00","stale_ignored":false}}}
+E       assert 200 == 403
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_ticket_preinventory_boundaries.py:134: AssertionError</failure></testcase><testcase classname="tests.test_ticket_preinventory_boundaries" name="test_supplier_fact_write_rejects_readonly_admin[RAIL]" time="0.271"><failure message="AssertionError: {&quot;data&quot;:{&quot;fulfillment&quot;:{&quot;order_supplier_fulfillment_id&quot;:&quot;osf_78514c0be44b477cb90e09ec8410153b&quot;,&quot;payment_intent_id&quot;:&quot;opi_ecd7605c111049aca000480dbc12cc41&quot;,&quot;business_type&quot;:&quot;RAIL_ORDER&quot;,&quot;business_id&quot;:&quot;rail_ord_5ab6dbc9d1f24636&quot;,&quot;supplier_id&quot;:&quot;RAIL_OPERATOR&quot;,&quot;supplier_idempotency_key&quot;:&quot;RAIL_ORDER:rail_ord_5ab6dbc9d1f24636:SUPPLIER_MUTATION&quot;,&quot;state&quot;:&quot;SUPPLIER_CONFIRMED&quot;,&quot;external_operation_id&quot;:&quot;isolated-rail_ord_5ab6dbc9d1f24636&quot;,&quot;supplier_confirmation_reference&quot;:&quot;ISOLATED&quot;,&quot;evidence_reference&quot;:&quot;isolated://ticket&quot;,&quot;created_at&quot;:&quot;2026-09-26T12:20:11.988627&quot;,&quot;updated_at&quot;:&quot;2026-09-26T12:20:12.083689+00:00&quot;},&quot;unified_lifecycle&quot;:{&quot;consumer_unified_lifecycle_id&quot;:&quot;cul_edd9be77ca47408aabe3cc85262889a9&quot;,&quot;account_id&quot;:&quot;owner&quot;,&quot;vertical&quot;:&quot;RAIL&quot;,&quot;order_id&quot;:&quot;rail_ord_5ab6dbc9d1f24636&quot;,&quot;supplier_id&quot;:&quot;RAIL_OPERATOR&quot;,&quot;title&quot;:&quot;RAIL rail_ord_5ab6dbc9d1f24636&quot;,&quot;lifecycle_state&quot;:&quot;CONFIRMED&quot;,&quot;payment_state&quot;:&quot;PAID&quot;,&quot;refund_state&quot;:&quot;NOT_REQUESTED&quot;,&quot;change_allowed&quot;:false,&quot;cancel_allowed&quot;:true,&quot;facts_json&quot;:{&quot;supplier_confirmation_reference&quot;:&quot;ISOLATED&quot;,&quot;external_operation_id&quot;:&quot;isolated-rail_ord_5ab6dbc9d1f24636&quot;},&quot;evidence_reference&quot;:&quot;isolated://ticket&quot;,&quot;source_updated_at&quot;:&quot;2026-09-26T12:20:12.085876+00:00&quot;,&quot;updated_at&quot;:&quot;2026-09-26T12:20:12.086089+00:00&quot;,&quot;stale_ignored&quot;:false}}}&#10;assert 200 == 403&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f03a5411fd0&gt;
+vertical = 'RAIL'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT','RAIL'])
+    def test_supplier_fact_write_rejects_readonly_admin(client, vertical):
+        svc, oid = pending_order(vertical)
+        svc.checkout('owner',oid,'isolated')
+        fid, body = supplier_fact(oid,['ISOLATED-1'])
+        _, denied = identity('readonly-fact',['GO_READ_ONLY'])
+        before = business_facts()
+        response = client.post(f'/internal/v1/order-supplier-fulfillments/{fid}/supplier-fact', headers=denied, json=body)
+&gt;       assert response.status_code == 403, response.text
+E       AssertionError: {"data":{"fulfillment":{"order_supplier_fulfillment_id":"osf_78514c0be44b477cb90e09ec8410153b","payment_intent_id":"opi_ecd7605c111049aca000480dbc12cc41","business_type":"RAIL_ORDER","business_id":"rail_ord_5ab6dbc9d1f24636","supplier_id":"RAIL_OPERATOR","supplier_idempotency_key":"RAIL_ORDER:rail_ord_5ab6dbc9d1f24636:SUPPLIER_MUTATION","state":"SUPPLIER_CONFIRMED","external_operation_id":"isolated-rail_ord_5ab6dbc9d1f24636","supplier_confirmation_reference":"ISOLATED","evidence_reference":"isolated://ticket","created_at":"2026-09-26T12:20:11.988627","updated_at":"2026-09-26T12:20:12.083689+00:00"},"unified_lifecycle":{"consumer_unified_lifecycle_id":"cul_edd9be77ca47408aabe3cc85262889a9","account_id":"owner","vertical":"RAIL","order_id":"rail_ord_5ab6dbc9d1f24636","supplier_id":"RAIL_OPERATOR","title":"RAIL rail_ord_5ab6dbc9d1f24636","lifecycle_state":"CONFIRMED","payment_state":"PAID","refund_state":"NOT_REQUESTED","change_allowed":false,"cancel_allowed":true,"facts_json":{"supplier_confirmation_reference":"ISOLATED","external_operation_id":"isolated-rail_ord_5ab6dbc9d1f24636"},"evidence_reference":"isolated://ticket","source_updated_at":"2026-09-26T12:20:12.085876+00:00","updated_at":"2026-09-26T12:20:12.086089+00:00","stale_ignored":false}}}
+E       assert 200 == 403
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_ticket_preinventory_boundaries.py:134: AssertionError</failure></testcase><testcase classname="tests.test_ticket_preinventory_boundaries" name="test_flight_supplier_cannot_confirm_missing_extra_or_invalid_tickets[tickets0]" time="0.083"><failure message="Failed: DID NOT RAISE &lt;class 'ValueError'&gt;">tickets = []
+
+    @pytest.mark.parametrize('tickets', [[], ['ONE','TWO'], [''], [' PADDED ']])
+    def test_flight_supplier_cannot_confirm_missing_extra_or_invalid_tickets(tickets):
+        from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as fulfillment
+        svc, oid = pending_order('FLIGHT')
+        svc.checkout('owner',oid,'isolated')
+        fid, body = supplier_fact(oid,tickets)
+        before = business_facts()
+&gt;       with pytest.raises(ValueError, match='TICKETS_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE &lt;class 'ValueError'&gt;
+
+tests/test_ticket_preinventory_boundaries.py:145: Failed</failure></testcase><testcase classname="tests.test_ticket_preinventory_boundaries" name="test_flight_supplier_cannot_confirm_missing_extra_or_invalid_tickets[tickets1]" time="0.101"><failure message="Failed: DID NOT RAISE &lt;class 'ValueError'&gt;">tickets = ['ONE', 'TWO']
+
+    @pytest.mark.parametrize('tickets', [[], ['ONE','TWO'], [''], [' PADDED ']])
+    def test_flight_supplier_cannot_confirm_missing_extra_or_invalid_tickets(tickets):
+        from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as fulfillment
+        svc, oid = pending_order('FLIGHT')
+        svc.checkout('owner',oid,'isolated')
+        fid, body = supplier_fact(oid,tickets)
+        before = business_facts()
+&gt;       with pytest.raises(ValueError, match='TICKETS_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE &lt;class 'ValueError'&gt;
+
+tests/test_ticket_preinventory_boundaries.py:145: Failed</failure></testcase><testcase classname="tests.test_ticket_preinventory_boundaries" name="test_flight_supplier_cannot_confirm_missing_extra_or_invalid_tickets[tickets2]" time="0.079"><failure message="Failed: DID NOT RAISE &lt;class 'ValueError'&gt;">tickets = ['']
+
+    @pytest.mark.parametrize('tickets', [[], ['ONE','TWO'], [''], [' PADDED ']])
+    def test_flight_supplier_cannot_confirm_missing_extra_or_invalid_tickets(tickets):
+        from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as fulfillment
+        svc, oid = pending_order('FLIGHT')
+        svc.checkout('owner',oid,'isolated')
+        fid, body = supplier_fact(oid,tickets)
+        before = business_facts()
+&gt;       with pytest.raises(ValueError, match='TICKETS_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE &lt;class 'ValueError'&gt;
+
+tests/test_ticket_preinventory_boundaries.py:145: Failed</failure></testcase><testcase classname="tests.test_ticket_preinventory_boundaries" name="test_flight_supplier_cannot_confirm_missing_extra_or_invalid_tickets[tickets3]" time="0.076"><failure message="Failed: DID NOT RAISE &lt;class 'ValueError'&gt;">tickets = [' PADDED ']
+
+    @pytest.mark.parametrize('tickets', [[], ['ONE','TWO'], [''], [' PADDED ']])
+    def test_flight_supplier_cannot_confirm_missing_extra_or_invalid_tickets(tickets):
+        from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as fulfillment
+        svc, oid = pending_order('FLIGHT')
+        svc.checkout('owner',oid,'isolated')
+        fid, body = supplier_fact(oid,tickets)
+        before = business_facts()
+&gt;       with pytest.raises(ValueError, match='TICKETS_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE &lt;class 'ValueError'&gt;
+
+tests/test_ticket_preinventory_boundaries.py:145: Failed</failure></testcase><testcase classname="tests.test_ticket_preinventory_boundaries" name="test_delayed_checkout_writeback_does_not_regress_confirmed_tickets[FLIGHT]" time="0.083"><failure message="AssertionError: assert 'PAYMENT_CONF...TING_SUPPLIER' == 'TICKETED'&#10;  &#10;  - TICKETED&#10;  + PAYMENT_CONFIRMED_AWAITING_SUPPLIER">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f03a496a6f0&gt;
+vertical = 'FLIGHT'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT','RAIL'])
+    def test_delayed_checkout_writeback_does_not_regress_confirmed_tickets(monkeypatch,vertical):
+        from threading import Event, current_thread
+        from go_hotel.services.vertical_transaction_bridge import vertical_transaction_bridge as bridge
+        from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as fulfillment
+        svc, oid = pending_order(vertical)
+        original = bridge.checkout_contract
+        entered, finish = Event(), Event()
+        def paused(*args, **kwargs):
+            result = original(*args, **kwargs)
+            if current_thread().name.startswith('delayed-checkout'):
+                entered.set()
+                assert finish.wait(15)
+            return result
+        monkeypatch.setattr(bridge,'checkout_contract',paused)
+        with ThreadPoolExecutor(max_workers=1,thread_name_prefix='delayed-checkout') as pool:
+            first = pool.submit(svc.checkout,'owner',oid,'isolated')
+            try:
+                assert entered.wait(15)
+                svc.checkout('owner',oid,'isolated')
+                fid, body = supplier_fact(oid,['ISOLATED-1'])
+                fulfillment.record_supplier_fact(fid,body)
+                assert svc.order('owner',oid)['status']=='TICKETED'
+            finally:
+                finish.set()
+&gt;           assert first.result(timeout=15)['status']=='TICKETED'
+E           AssertionError: assert 'PAYMENT_CONF...TING_SUPPLIER' == 'TICKETED'
+E             
+E             - TICKETED
+E             + PAYMENT_CONFIRMED_AWAITING_SUPPLIER
+
+tests/test_ticket_preinventory_boundaries.py:175: AssertionError</failure></testcase><testcase classname="tests.test_ticket_preinventory_boundaries" name="test_delayed_checkout_writeback_does_not_regress_confirmed_tickets[RAIL]" time="0.103"><failure message="AssertionError: assert 'PAYMENT_CONF...TING_SUPPLIER' == 'TICKETED'&#10;  &#10;  - TICKETED&#10;  + PAYMENT_CONFIRMED_AWAITING_SUPPLIER">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f03a496a8d0&gt;
+vertical = 'RAIL'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT','RAIL'])
+    def test_delayed_checkout_writeback_does_not_regress_confirmed_tickets(monkeypatch,vertical):
+        from threading import Event, current_thread
+        from go_hotel.services.vertical_transaction_bridge import vertical_transaction_bridge as bridge
+        from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as fulfillment
+        svc, oid = pending_order(vertical)
+        original = bridge.checkout_contract
+        entered, finish = Event(), Event()
+        def paused(*args, **kwargs):
+            result = original(*args, **kwargs)
+            if current_thread().name.startswith('delayed-checkout'):
+                entered.set()
+                assert finish.wait(15)
+            return result
+        monkeypatch.setattr(bridge,'checkout_contract',paused)
+        with ThreadPoolExecutor(max_workers=1,thread_name_prefix='delayed-checkout') as pool:
+            first = pool.submit(svc.checkout,'owner',oid,'isolated')
+            try:
+                assert entered.wait(15)
+                svc.checkout('owner',oid,'isolated')
+                fid, body = supplier_fact(oid,['ISOLATED-1'])
+                fulfillment.record_supplier_fact(fid,body)
+                assert svc.order('owner',oid)['status']=='TICKETED'
+            finally:
+                finish.set()
+&gt;           assert first.result(timeout=15)['status']=='TICKETED'
+E           AssertionError: assert 'PAYMENT_CONF...TING_SUPPLIER' == 'TICKETED'
+E             
+E             - TICKETED
+E             + PAYMENT_CONFIRMED_AWAITING_SUPPLIER
+
+tests/test_ticket_preinventory_boundaries.py:175: AssertionError</failure></testcase></testsuite></testsuites>

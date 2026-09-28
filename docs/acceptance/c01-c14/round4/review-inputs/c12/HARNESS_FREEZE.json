@@ -1,0 +1,32 @@
+{
+  "status": "FROZEN_PENDING_EXACT_HEAD_CI",
+  "baseline": "cb8928f",
+  "product_files_modified": false,
+  "preservation": {
+    "prior_journeys": 26,
+    "prior_widget_tests": 9,
+    "original_six_domain_and_hotel_and_operations_sql": "UNCHANGED",
+    "prior_operations_rentals": 2
+  },
+  "new_scope": {
+    "orders": 1,
+    "ui": "RENTAL settled4000→consumer appeal→independent third-admin review1000→real button compensation3000",
+    "negative_api": "explicit supplemental replay200 / stale409 / readonly403; before/after money+movements equal",
+    "consumer_visible": "compensated30.00/net10.00 and authoritative read",
+    "unknown": "backend fail-closed only; no trusted-receipt recovery claim",
+    "sql": "pre-appeal full root/intent/fact/movement/ledger snapshot in existing isolated DB mode=ro; final full old rows unchanged, new COMPENSATION parent original CAPTURE, four balanced entries, case versions/hash/evidence binding"
+  },
+  "local_validation": [
+    "node --check both mjs PASS",
+    "AST parse both Python PASS"
+  ],
+  "browser_executed": false,
+  "postgres_executed": false,
+  "candidate_ci_required": true,
+  "files": {
+    "ci/journey-v2/compensation-depth.mjs": "192f426c6c7efdb3d3c5cb34eccc8682a776411935529e6d13297e54a6e8c0cb",
+    "ci/journey-v2/compensation-ledger.py": "c30da1764e3a864d452566d57f132cdde484d3f737c591467f1d6a109f7ed9c8",
+    "ci/journey-v2/operations-depth.mjs": "2dea2ede4166c10a2053c990ba1a573e464f52c9a5c7fb86b6439570499a9994",
+    "ci/journey-v2/run.py": "b8a18d056f44c9cf91dc2967afd36221477e001e523efb039116909f7daa4f6f"
+  }
+}

@@ -1,3 +1,4 @@
+from ride_cancellation_fixture import create_ride
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 import pytest
@@ -18,7 +19,7 @@ def booked(v):
           'return_at':'2026-10-13T10:00:00+08:00','pickup':'PVG','dropoff':'Bund',
           'pickup_location':'NRT','return_location':'NRT','passengers':[{'full_name':'ISOLATED ADULT'}],
           'drivers':[{'full_name':'ISOLATED DRIVER'}],'currency':'CNY'}
-    oid=svc.create(owner,body)['order_id']
+    oid=(create_ride(svc,owner,body) if v=='RIDE' else svc.create(owner,body))['order_id']
     tx=vertical_transaction_bridge.checkout_contract(v,oid,owner,'test-source','isolated://mobility-refund')
     supplier.record_supplier_fact(tx['supplier_fulfillment_id'],{'state':'SUPPLIER_CONFIRMED',
         'external_operation_id':'op-'+oid,'supplier_confirmation_reference':'CONF-'+oid,

@@ -1,7 +1,8 @@
 from __future__ import annotations
-from datetime import datetime, timezone
-import hashlib, json
-from sqlalchemy import select
+from datetime import datetime, timezone, timedelta
+import hashlib, hmac, json, os, secrets
+from urllib.parse import urlencode
+from sqlalchemy import select, update
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (
     TravelerProfileRow, ProfileImportJobRow, ProfileImportItemRow, ProfileFactRow,
@@ -9,6 +10,7 @@ from go_hotel.db.models import (
     ProfileAccessAuditRow, ConsumerProfileRow,
 )
 from go_hotel.security.crypto import encrypt_secret, decrypt_secret
+from go_hotel.security.external_navigation import validate_external_navigation_url
 from go_hotel.domain.models import new_id
 from go_hotel.services.personal_vault_management import (VaultManagementMixin, mutation_session,
     owned_traveler, permission, revision, validate_value)
@@ -78,6 +80,16 @@ def _growth_profile_created(user_id):
         pass
 
 class PersonalTravelVaultService(VaultManagementMixin):
+    PROFILE_PROVIDERS={
+        'CTRIP':{'label':'携程','authorization_env':'GO_CTRIP_PROFILE_AUTHORIZATION_URL'},
+        'MEITUAN':{'label':'美团','authorization_env':'GO_MEITUAN_PROFILE_AUTHORIZATION_URL'},
+        'FLIGGY':{'label':'飞猪','authorization_env':'GO_FLIGGY_PROFILE_AUTHORIZATION_URL'},
+        'BOOKING':{'label':'Booking.com','authorization_env':'GO_BOOKING_PROFILE_AUTHORIZATION_URL'},
+        'OTHER_OTA':{'label':'其他平台','authorization_env':'GO_OTHER_OTA_PROFILE_AUTHORIZATION_URL'},
+    }
+    CONNECTION_METHODS={'OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD','SCREENSHOT'}
+    CONNECTION_TTL=timedelta(minutes=15)
+
     def bootstrap_vault(self,user_id,b=None):
         b=b or {}
         with mutation_session() as s:
@@ -484,6 +496,141 @@ class PersonalTravelVaultService(VaultManagementMixin):
             if not dob:missing.append('DATE_OF_BIRTH')
             if not mobile and not email:missing.append('MOBILE_OR_EMAIL')
             return {'profile_ready':any(caps.values()),'traveler_id':primary.traveler_id,'capabilities':caps,'missing':missing,'ready_count':sum(1 for x in caps.values() if x),'capability_count':len(caps)}
+
+    @staticmethod
+    def _reject_provider_credentials(value,path='request'):
+        forbidden={'password','passwd','otp','captcha','cookie','cookies','session','access_token','refresh_token','authorization_code'}
+        if isinstance(value,dict):
+            for key,nested in value.items():
+                if str(key).lower() in forbidden:raise ValueError('OTA_CREDENTIALS_NOT_ACCEPTED')
+                PersonalTravelVaultService._reject_provider_credentials(nested,f'{path}.{key}')
+        elif isinstance(value,list):
+            for index,nested in enumerate(value):PersonalTravelVaultService._reject_provider_credentials(nested,f'{path}[{index}]')
+
+    def provider_options(self):
+        return {'providers':[{
+            'provider':key,'label':value['label'],
+            'official_authorization_available':bool(os.getenv(value['authorization_env'])),
+            'fallback_methods':['DATA_EXPORT','FILE_UPLOAD','SCREENSHOT'],
+        } for key,value in self.PROFILE_PROVIDERS.items()],
+        'credential_policy':'PROVIDER_HOSTED_LOGIN_ONLY','state_ttl_seconds':int(self.CONNECTION_TTL.total_seconds())}
+
+    def _connection_view(self,job):
+        metadata=job.metadata_json or {}
+        return {'connection_id':job.import_job_id,'provider':job.source_provider,'method':metadata.get('method'),
+            'status':job.status,'created_at':job.created_at.isoformat(),'expires_at':metadata.get('expires_at'),
+            'import_job_id':metadata.get('import_job_id'),'credentials_received_by_go':False}
+
+    def provider_connections(self,user_id):
+        with SessionLocal() as s:
+            rows=s.scalars(select(ProfileImportJobRow).where(ProfileImportJobRow.user_id==user_id).order_by(ProfileImportJobRow.created_at.desc())).all()
+            return {'items':[self._connection_view(row) for row in rows if (row.metadata_json or {}).get('connection_intent')]}
+
+    def create_provider_connection(self,user_id,b):
+        self._reject_provider_credentials(b)
+        provider=str(b.get('provider') or '').upper();method=str(b.get('method') or 'OFFICIAL_AUTHORIZATION').upper()
+        if provider not in self.PROFILE_PROVIDERS:raise ValueError('UNSUPPORTED_PROFILE_PROVIDER')
+        if method not in self.CONNECTION_METHODS:raise ValueError('UNSUPPORTED_PROFILE_CONNECTION_METHOD')
+        if b.get('account_holder_confirmed') is not True:raise ValueError('ACCOUNT_HOLDER_CONFIRMATION_REQUIRED')
+        authorization_base=os.getenv(self.PROFILE_PROVIDERS[provider]['authorization_env']) if method=='OFFICIAL_AUTHORIZATION' else None
+        if authorization_base:
+            try:authorization_base=validate_external_navigation_url(authorization_base,reject_sensitive_query=False)
+            except ValueError as exc:raise ValueError('PROFILE_PROVIDER_AUTHORIZATION_URL_INVALID') from exc
+        state=secrets.token_urlsafe(32);t=now();expires=t+self.CONNECTION_TTL;connection_id=new_id('pij')
+        effective_method=method if authorization_base or method!='OFFICIAL_AUTHORIZATION' else 'FILE_UPLOAD'
+        status='AWAITING_PROVIDER_AUTHORIZATION' if authorization_base else 'AWAITING_USER_UPLOAD'
+        metadata={'connection_intent':True,'provider':provider,'method':effective_method,
+            'requested_method':method,'account_holder_confirmed':True,'state_hash':h(state),
+            'expires_at':expires.isoformat(),'credentials_received_by_go':False}
+        with mutation_session() as s:
+            s.add(ProfileImportJobRow(import_job_id=connection_id,user_id=user_id,source_type='OFFICIAL_API' if authorization_base else 'USER_DATA_PACKAGE',source_provider=provider,source_reference='account-holder-connection',source_fingerprint=h([user_id,provider,connection_id]),content_hash=h([]),status=status,consent_id=None,item_count=0,accepted_count=0,rejected_count=0,conflict_count=0,metadata_json=metadata,created_at=t,updated_at=t,completed_at=None))
+            self._audit(s,user_id,user_id,'CONSUMER','PROFILE_PROVIDER_CONNECTION_STARTED',purpose='BUILD_PERSONAL_TRAVEL_VAULT',metadata={'provider':provider,'method':effective_method,'connection_id':connection_id})
+        result={'connection_id':connection_id,'status':status,'provider':provider,'method':effective_method,
+            'credentials_received_by_go':False,'expires_at':expires.isoformat()}
+        if authorization_base:
+            query=urlencode({'state':state,'connection_id':connection_id})
+            return result|{'authorization_url':authorization_base+('&' if '?' in authorization_base else '?')+query,'login_surface':'PROVIDER_HOSTED'}
+        return result|{'authorization_url':None,'next_step':'UPLOAD_PROVIDER_EXPORT_FOR_PREVIEW',
+            'upload_endpoint':f'/v1/consumer/profile/provider-connections/{connection_id}/upload'}
+
+    def complete_provider_connection(self,connection_id,b):
+        """Trusted adapter callback. Consume state before parsing provider data so it cannot be replayed."""
+        if b.get('account_holder_verified') is not True:raise ValueError('PROVIDER_ACCOUNT_HOLDER_NOT_VERIFIED')
+        subject=str(b.get('provider_account_subject') or '').strip()
+        evidence=str(b.get('authorization_evidence_reference') or '').strip()
+        if not subject or len(subject)>512 or not evidence or len(evidence)>512:raise ValueError('PROVIDER_AUTHORIZATION_EVIDENCE_REQUIRED')
+        supplied_state=str(b.get('state') or '')
+        expired=False
+        with mutation_session() as s:
+            job=s.get(ProfileImportJobRow,connection_id)
+            metadata=(job.metadata_json or {}) if job else {}
+            if not job or not metadata.get('connection_intent'):raise ValueError('PROFILE_PROVIDER_CONNECTION_NOT_FOUND')
+            if job.status!='AWAITING_PROVIDER_AUTHORIZATION':raise ValueError('PROFILE_PROVIDER_STATE_ALREADY_USED')
+            expires=dt(metadata.get('expires_at'))
+            if not expires or now()>=expires:
+                job.status='AUTHORIZATION_EXPIRED';job.updated_at=now()
+                job.metadata_json={**metadata,'state_hash':None};expired=True
+            else:
+                if not hmac.compare_digest(h(supplied_state),str(metadata.get('state_hash') or '')):raise ValueError('PROFILE_PROVIDER_STATE_INVALID')
+                consumed=s.execute(update(ProfileImportJobRow).where(ProfileImportJobRow.import_job_id==connection_id,
+                    ProfileImportJobRow.status=='AWAITING_PROVIDER_AUTHORIZATION').values(status='AUTHORIZATION_CONSUMED',updated_at=now())).rowcount
+                if consumed!=1:raise ValueError('PROFILE_PROVIDER_STATE_ALREADY_USED')
+                user_id=job.user_id;provider=job.source_provider
+                job.metadata_json={**metadata,'state_hash':None,'provider_account_subject_hash':h(subject),
+                    'authorization_evidence_hash':h(evidence),'account_holder_verified':True,'authorized_at':now().isoformat()}
+                self._audit(s,user_id,'provider-adapter','SYSTEM','PROFILE_PROVIDER_AUTHORIZATION_CONSUMED',purpose='BUILD_PERSONAL_TRAVEL_VAULT',metadata={'provider':provider,'connection_id':connection_id,'evidence_hash':h(evidence)})
+        if expired:raise ValueError('PROFILE_PROVIDER_STATE_EXPIRED')
+        imported=self.create_import(user_id,{'source_type':'OFFICIAL_API','source_provider':provider,
+            'source_reference':connection_id,'source_fingerprint':h([connection_id,'official-import']),
+            'items':b.get('items') or [],'metadata':{'provider_connection_id':connection_id,
+            'account_holder_authorized':True}},trusted_source=True)
+        with mutation_session() as s:
+            job=s.get(ProfileImportJobRow,connection_id);job.status='PREVIEW_READY';job.updated_at=now()
+            job.metadata_json={**(job.metadata_json or {}),'import_job_id':imported['import_job_id']}
+        return self._connection_view(job)|{'preview':imported}
+
+    def upload_provider_export(self,user_id,connection_id,b):
+        self._reject_provider_credentials(b)
+        if b.get('account_holder_confirmed') is not True:raise ValueError('ACCOUNT_HOLDER_CONFIRMATION_REQUIRED')
+        with mutation_session() as s:
+            connection=s.get(ProfileImportJobRow,connection_id)
+            if not connection or connection.user_id!=user_id or not (connection.metadata_json or {}).get('connection_intent'):raise ValueError('PROFILE_PROVIDER_CONNECTION_NOT_FOUND')
+            if connection.status!='AWAITING_USER_UPLOAD':raise ValueError('PROFILE_PROVIDER_UPLOAD_ALREADY_RECEIVED')
+            provider=connection.source_provider
+            claimed=s.execute(update(ProfileImportJobRow).where(ProfileImportJobRow.import_job_id==connection_id,
+                ProfileImportJobRow.user_id==user_id,ProfileImportJobRow.status=='AWAITING_USER_UPLOAD').values(status='UPLOAD_CONSUMED',updated_at=now())).rowcount
+            if claimed!=1:raise ValueError('PROFILE_PROVIDER_UPLOAD_ALREADY_RECEIVED')
+        imported=self.create_import(user_id,{'source_type':'USER_DATA_PACKAGE','source_provider':provider,
+            'source_reference':connection_id,'source_fingerprint':h([connection_id,'user-export']),
+            'items':b.get('items') or [],'metadata':{'provider_connection_id':connection_id,
+            'account_holder_confirmed':True,'upload_kind':str(b.get('upload_kind') or 'DATA_EXPORT').upper()}})
+        with mutation_session() as s:
+            connection=s.get(ProfileImportJobRow,connection_id)
+            if connection.status!='UPLOAD_CONSUMED':raise ValueError('PROFILE_PROVIDER_UPLOAD_ALREADY_RECEIVED')
+            connection.status='PREVIEW_READY';connection.updated_at=now()
+            connection.metadata_json={**(connection.metadata_json or {}),'state_hash':None,'import_job_id':imported['import_job_id']}
+            self._audit(s,user_id,user_id,'CONSUMER','PROFILE_PROVIDER_EXPORT_UPLOADED',purpose='BUILD_PERSONAL_TRAVEL_VAULT',metadata={'provider':provider,'connection_id':connection_id,'import_job_id':imported['import_job_id']})
+        return self._connection_view(connection)|{'preview':imported}
+
+    def disconnect_provider_connection(self,user_id,connection_id,delete_values=False):
+        with SessionLocal() as s:
+            connection=s.get(ProfileImportJobRow,connection_id)
+            if not connection or connection.user_id!=user_id or not (connection.metadata_json or {}).get('connection_intent'):raise ValueError('PROFILE_PROVIDER_CONNECTION_NOT_FOUND')
+            metadata=connection.metadata_json or {};import_job_id=metadata.get('import_job_id')
+            imported=s.get(ProfileImportJobRow,import_job_id) if import_job_id else None
+            fingerprint=imported.source_fingerprint if imported else None
+        deleted=None
+        if delete_values and fingerprint:
+            deleted=self.delete_source(user_id,fingerprint)
+        with mutation_session() as s:
+            connection=s.get(ProfileImportJobRow,connection_id)
+            metadata=connection.metadata_json or {}
+            connection.status='DELETED' if delete_values else 'DISCONNECTED';connection.updated_at=now();connection.completed_at=now()
+            connection.metadata_json={**metadata,'state_hash':None,'provider_account_subject_hash':None,
+                'authorization_evidence_hash':None,'authorization_evidence_reference':None,
+                'disconnected_at':now().isoformat(),'values_deleted':bool(delete_values)}
+            self._audit(s,user_id,user_id,'CONSUMER','PROFILE_PROVIDER_CONNECTION_DELETED' if delete_values else 'PROFILE_PROVIDER_CONNECTION_DISCONNECTED',purpose='USER_DELETE',metadata={'provider':connection.source_provider,'connection_id':connection_id,'values_deleted':bool(delete_values)})
+        return self._connection_view(connection)|{'imported_values':deleted}
 
     def admin_imports(self,limit=100,status=None):
         with SessionLocal() as s:

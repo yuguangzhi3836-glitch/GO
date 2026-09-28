@@ -1,0 +1,84 @@
+{
+  "source_candidate": "49965321a151fe082cbc6381341a5beb6edc93e7",
+  "scope": "materialized local Python only; constructor and unambiguous local assignment uppercase literal static scan",
+  "python_files": 90,
+  "literal_column_checks": 322,
+  "potential_width_violations": [
+    {
+      "file": "services/alipay_safeguarded_settlement.py",
+      "line": 38,
+      "model": "AlipayCredentialBindingRow",
+      "column": "state",
+      "width": 32,
+      "literal": "REFERENCE_BOUND_NOT_EXTERNALLY_VERIFIED",
+      "length": 39,
+      "inference": "constructor"
+    },
+    {
+      "file": "services/alipay_safeguarded_settlement.py",
+      "line": 152,
+      "model": "AlipayReconciliationRow",
+      "column": "decision",
+      "width": 32,
+      "literal": "CONTRACT_ONLY_NOT_EXTERNAL_RECONCILED",
+      "length": 37,
+      "inference": "constructor"
+    },
+    {
+      "file": "services/omnichannel_payment.py",
+      "line": 41,
+      "model": "OmnichannelMerchantBindingRow",
+      "column": "state",
+      "width": 24,
+      "literal": "REFERENCE_BOUND_NOT_CERTIFIED",
+      "length": 29,
+      "inference": "constructor"
+    },
+    {
+      "file": "services/hosted_frontdesk_uat.py",
+      "line": 85,
+      "model": "HostedActionApprovalRow",
+      "column": "state",
+      "width": 24,
+      "literal": "APPROVED_PENDING_EXECUTION",
+      "length": 26,
+      "inference": "local-variable-inference"
+    },
+    {
+      "file": "services/hosted_direct_booking.py",
+      "line": 73,
+      "model": "HostedDirectReservationRow",
+      "column": "reservation_state",
+      "width": 40,
+      "literal": "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING",
+      "length": 42,
+      "inference": "local-variable-inference"
+    },
+    {
+      "file": "services/hosted_stay_credit.py",
+      "line": 173,
+      "model": "HostedDirectReservationRow",
+      "column": "reservation_state",
+      "width": 40,
+      "literal": "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING",
+      "length": 42,
+      "inference": "local-variable-inference"
+    },
+    {
+      "file": "services/hosted_reservation_operations.py",
+      "line": 206,
+      "model": "HostedDirectReservationRow",
+      "column": "reservation_state",
+      "width": 40,
+      "literal": "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING",
+      "length": 42,
+      "inference": "local-variable-inference"
+    }
+  ],
+  "not_covered": [
+    "computed/string-composed states",
+    "unmaterialized application files",
+    "true database schema drift",
+    "values from runtime input"
+  ]
+}

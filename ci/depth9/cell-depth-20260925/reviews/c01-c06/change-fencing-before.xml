@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="3.593" timestamp="2026-09-25T00:33:09.040057-07:00" hostname="48cdd5f3df1f"><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_rail_old_fare_quote_cannot_execute_after_another_change" time="1.830"><failure message="Failed: DID NOT RAISE &lt;class 'ValueError'&gt;">def test_rail_old_fare_quote_cannot_execute_after_another_change():
+        svc, owner, oid = booked('RAIL')
+        first = svc.change_quote(owner, oid, '2026-09-16', 'FIRST_CLASS')
+        stale = svc.change_quote(owner, oid, '2026-09-17', 'SECOND_CLASS')
+        svc.execute_change(owner, oid, first['quote_id'])
+        svc.admin_external_state(oid, 'TICKETED', 'isolated://first', 'ops', 'BOOK-NEW', ['N-A', 'N-B'], first['quote_id'])
+        before = svc.order(owner, oid)
+&gt;       with pytest.raises(ValueError, match='RAIL_CHANGE_QUOTE_INVALID'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE &lt;class 'ValueError'&gt;
+
+tests/test_c03_c06_change_quote_fencing.py:16: Failed</failure></testcase><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_delayed_unbound_confirmation_cannot_confirm_next_change" time="0.150"><failure message="Failed: DID NOT RAISE &lt;class 'ValueError'&gt;">def test_attraction_delayed_unbound_confirmation_cannot_confirm_next_change():
+        svc, owner, oid, first, second = attraction_second_change()
+        before = svc.get(owner, oid)
+&gt;       with pytest.raises(ValueError, match='ATTRACTION_RESOLUTION_QUOTE_ID_REQUIRED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE &lt;class 'ValueError'&gt;
+
+tests/test_c03_c06_change_quote_fencing.py:36: Failed</failure></testcase><testcase classname="tests.test_c03_c06_change_quote_fencing" name="test_attraction_current_change_submission_is_replay_safe" time="0.094"><failure message="ValueError: ATTRACTION_CHANGE_QUOTE_NOT_FOUND">def test_attraction_current_change_submission_is_replay_safe():
+        svc, owner, oid = booked('ATTRACTION')
+        q = svc.change_quote(owner, oid, '2026-09-16')
+        first = svc.execute_change(owner, oid, q['quote_id'])
+        before = svc.get(owner, oid)
+&gt;       assert svc.execute_change(owner, oid, q['quote_id']) == first
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_c03_c06_change_quote_fencing.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;go_hotel.attractions.service.AttractionService object at 0x7f98e886b950&gt;
+account = 'refund-owner', order_id = 'attr_ord_d1fd2e9b9c984f11'
+quote_id = 'attr_chg_e70ad38aded945c8'
+
+    def execute_change(self,account,order_id,quote_id):
+     production_truth_required("ATTRACTION", "EXECUTE_CHANGE")
+     self.get(account,order_id)
+     with transaction(SessionLocal) as s:
+      o=s.get(AttractionOrderRow,order_id,with_for_update=True);q=s.get(AttractionChangeQuoteRow,quote_id,with_for_update=True)
+&gt;     if not o or o.account_id!=account or o.status!="CONFIRMED" or not q or q.order_id!=order_id or q.status!="QUOTED" or q.expires_at&lt;now(): raise ValueError("ATTRACTION_CHANGE_QUOTE_NOT_FOUND")
+                                                                                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     ValueError: ATTRACTION_CHANGE_QUOTE_NOT_FOUND
+
+src/go_hotel/attractions/service.py:142: ValueError</failure></testcase></testsuite></testsuites>

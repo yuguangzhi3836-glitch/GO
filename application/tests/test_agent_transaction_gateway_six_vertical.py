@@ -1,3 +1,4 @@
+from ride_cancellation_fixture import reserve_agent
 import asyncio,time
 import pytest
 from fastapi.testclient import TestClient
@@ -22,8 +23,11 @@ CASES=[
 @pytest.mark.parametrize('vertical,search,booking',CASES)
 def test_non_hotel_verticals_reach_native_payment_and_order_truth(vertical,search,booking):
     gateway=AgentTransactionGateway(GoTransactionCore());c=ctx()
-    offer=run(gateway.offers(c,OfferRequest(vertical,search))).data['items'][0]
-    reservation=run(gateway.reserve(c,ReserveRequest(offer['offer_id'],offer['quote_hash'],search,booking,'reserve-'+vertical))).data
+    if vertical=='RIDE':
+        reservation=reserve_agent(gateway,c,vertical,search,booking,'reserve-'+vertical)
+    else:
+        offer=run(gateway.offers(c,OfferRequest(vertical,search))).data['items'][0]
+        reservation=run(gateway.reserve(c,ReserveRequest(offer['offer_id'],offer['quote_hash'],search,booking,'reserve-'+vertical))).data
     payment=run(gateway.payment(c,PaymentRequest(reservation['reserve_id'],reservation['total_minor'],reservation['currency'],'pm-agent','payment-'+vertical))).data
     assert payment['state']=='SUCCEEDED' and payment['captured'] is True
     order=run(gateway.commit(c,CommitRequest(reservation['reserve_id'],payment['payment_truth_id'],'commit-'+vertical))).data

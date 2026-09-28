@@ -1,0 +1,36 @@
+F..............................                                          [100%]
+=================================== FAILURES ===================================
+_______ test_supplier_closure_refunds_even_customer_nonrefundable_policy _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff51c66efc0>
+
+    def test_supplier_closure_refunds_even_customer_nonrefundable_policy(monkeypatch):
+        monkeypatch.setitem(CATALOG['tokyo_skytree'],'refundable',False)
+        svc,owner,oid=booked('ATTRACTION')
+        assert svc.refund_quote(owner,oid)['refund_amount_minor']==0
+        svc.admin_external_state(oid,'CLOSED_BY_SUPPLIER','isolated://closure','ops')
+        quote=svc.refund_quote(owner,oid)
+        assert quote['reason']=='SUPPLIER_CLOSED' and quote['refund_amount_minor']==36000
+        receipt=svc.refund(owner,oid,quote['quote_hash'])
+        before=money()
+        assert svc.refund(owner,oid,quote['quote_hash'])==receipt
+>       assert money()==before and sum(x[2] for x in before if x[1]=='CONFIRMED')==72000
+E       AssertionError: assert ([('omm_8484bb...36000, 'CNY')] == [('omm_8484bb...36000, 'CNY')]
+E         
+E         Use -v to get more diff and 108000 == 72000)
+E        +  where 108000 = sum(<generator object test_supplier_closure_refunds_even_customer_nonrefundable_policy.<locals>.<genexpr> at 0x7ff51a3a39f0>)
+
+tests/test_rental_attraction_preinventory.py:28: AssertionError
+=============================== warnings summary ===============================
+tests/test_depth21_refund_recovery.py::test_migration_roundtrip_preserves_prior_history_and_blocks_journal_loss
+tests/test_depth21_refund_recovery.py::test_migration_roundtrip_preserves_prior_history_and_blocks_journal_loss
+tests/test_depth21_refund_recovery.py::test_migration_roundtrip_preserves_prior_history_and_blocks_journal_loss
+tests/test_depth21_refund_recovery.py::test_migration_roundtrip_preserves_prior_history_and_blocks_journal_loss
+tests/test_depth21_refund_recovery.py::test_migration_roundtrip_preserves_prior_history_and_blocks_journal_loss
+  /workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/alembic/config.py:598: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_rental_attraction_preinventory.py::test_supplier_closure_refunds_even_customer_nonrefundable_policy
+1 failed, 30 passed, 5 warnings in 15.17s

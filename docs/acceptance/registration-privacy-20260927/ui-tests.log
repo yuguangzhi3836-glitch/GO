@@ -1,0 +1,39 @@
+✔ register requires fetched server terms and posts exactly those terms (3.922804ms)
+✔ double submit creates one request while first request pending (1.206829ms)
+✔ terms metadata failure leaves registration disabled (0.985561ms)
+✔ unchecked consent cannot create account (1.099981ms)
+✔ navigation during signup does not overwrite current page (1.044438ms)
+✔ failed session readback never claims registration is signed in (1.804695ms)
+✔ draft consumer terms render but cannot create account even with checked consent (1.244124ms)
+✔ consumer term mismatch locks consent until full terms are reloaded (1.016557ms)
+✔ approved terms render full body as text, never interpreted markup (2.015036ms)
+✔ draft documents remain readable but never enable consent even if policy enabled (0.833645ms)
+✔ policy closed overrides all approved documents (0.709591ms)
+✔ changed document hash fails closed (0.920114ms)
+✔ changed document version fails closed (0.706718ms)
+✔ missing and duplicate documents never enable consent (1.418393ms)
+✔ body load failure never returns enabled consent (0.785223ms)
+✔ unexpected content URL is never fetched (0.920804ms)
+✔ navigation during document load cannot write detached container (0.982235ms)
+✔ unlisted terms or blank content fail closed (2.549378ms)
+✔ code must be requested and is bound to unchanged address (3.092633ms)
+✔ late delivery result after editing email is discarded (0.971941ms)
+✔ failed sending is visible and cannot submit or immediately spam (0.965961ms)
+✔ missing consent blocks mail and double click sends once (0.834277ms)
+✔ nationwide supplier registration sends independent hotel geography and opens library (4.511025ms)
+✔ double submission only creates one account request (1.449168ms)
+✔ supplier API keeps registration property readback with authenticated identity (0.960123ms)
+✔ terms failure renders in login error without a notice container (1.063977ms)
+✔ late terms result does not replace a disconnected login (0.741208ms)
+✔ late registration success cannot replace another session view (1.033422ms)
+✔ late registration failure ignores disconnected error nodes (2.038041ms)
+✔ draft supplier terms cannot submit despite synthetic checked checkbox (0.97165ms)
+✔ transient supplier failure keeps consent and allows retry (1.558771ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 103.302232

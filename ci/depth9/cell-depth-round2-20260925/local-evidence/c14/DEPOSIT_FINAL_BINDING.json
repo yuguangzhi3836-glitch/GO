@@ -1,0 +1,71 @@
+{
+  "status": "NO_RULES_BLOCKER_FOUND_FOR_SCOPED_ISOLATED_INCREMENT",
+  "binding": "LOCAL_SHA256_PENDING_COMMIT",
+  "supersedes_scope": "C04_BINDING.json four-file first iteration; retain as history",
+  "files": [
+    {
+      "path": "application/src/go_hotel/mobility/rental/deposit_authority.py",
+      "sha256": "7674672ff39f671d3c20e6f267a8c4d6a68b618e9a4291431f0c674906834a16"
+    },
+    {
+      "path": "application/src/go_hotel/mobility/rental/damage.py",
+      "sha256": "93a250a750377c54e32e633a0a1fada65105567eefacdf877400cc7f00523537"
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/rental_deposit.py",
+      "sha256": "dab22c93c34cfd9a4155295698f53db629162963808d021c63aaeb1f01a6cf29"
+    },
+    {
+      "path": "application/tests/test_rental_deposit_authority.py",
+      "sha256": "f3d7cf451f8768edea6150205a4971cfa162c79bca1e04dc8a8244e898a743ae"
+    },
+    {
+      "path": "application/src/go_hotel/services/rental_deposit_money.py",
+      "sha256": "089ffa6fd9797e154aa8c32024fcc9a06ac6a246954f9bdfb10d41e882c29457"
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/rental_deposit_money.py",
+      "sha256": "350c5c226c724e37d130b1aac8e55dd4c9eb5853cf8ed54f7d36344c1ef8e95b"
+    },
+    {
+      "path": "application/src/go_hotel/services/unified_money_movement.py",
+      "sha256": "d3d4139c2df44e2466f3cb849b203f04bbbe5b31b112f62c131e16bcd4521419"
+    },
+    {
+      "path": "application/src/go_hotel/services/omnichannel_payment.py",
+      "sha256": "518d51d4ec558aef918859af707efc3a87f0d49d69fc23f3fd1b0a28eea97496"
+    },
+    {
+      "path": "application/src/go_hotel/services/vertical_transaction_bridge.py",
+      "sha256": "3467a9ec28235575bd06a78c4c057aefa9997c68fbaeef53bca61fcbc1f2762b"
+    },
+    {
+      "path": "application/src/go_hotel/services/order_supplier_fulfillment.py",
+      "sha256": "39298e96eec1884900b7dd23206ce2fbd5da581135a330a1bf3fd576902e9102"
+    },
+    {
+      "path": "application/frontend/consumer/rental-deposit.js",
+      "sha256": "22b76599d27d28a81fbe89eae604ac0df788ca2ec34bdb7e40ae0589de978704",
+      "scope": "consent/renew/readonly money UI static inspection only"
+    }
+  ],
+  "reviewed_boundaries": [
+    "Normal no-damage return/cancelled-refunded release uses independent final-inspection/source fact; it does not create a fictitious damage case. Any damage case blocks plain closure; finalized closure blocks subsequent new case.",
+    "C11 release needs existing verified deposit root/authorization; exact closure version/hash and source binding; cannot create authorization. Positive-award capture rechecks unexpired obligation.",
+    "Unaccepted expired proposal may renew to new hash/revision and still needs explicit consumer acceptance. Accepted source cannot renew.",
+    "Consumer UI requires unchecked explicit consent, binds source hash/revision, states acceptance is not authorization/capture/release, fetches C11 financial states and shows UNKNOWN without false zero/success. No manual admin evidence UI or admin money calls exposed.",
+    "All mutation source paths preserve isolated fixture gate and no real supplier/PSP execution.",
+    "Current adjudication and appeal fence remain separate from consumer obligation consent. Generic money ingress requires verified transaction-local scope."
+  ],
+  "remaining": [
+    "Real contract, supplier/payee/vehicle/media authenticity and PSP acceptance remain external HOLD.",
+    "Accepted source amendment/revocation not implemented; accepted source remains immutable.",
+    "After-booking-money appeal compensation and complete operational recovery still not asserted complete.",
+    "UI review is static, not browser/native or full end-to-end quality acceptance.",
+    "C05 native/zero-refund increment not frozen in this record."
+  ],
+  "evidence": "C04/C11 developer reports and XML are developer evidence; C14 did not rerun tests. Independent quality belongs to C13.",
+  "formal_lite_running": false,
+  "formal_c14_pass": false,
+  "deployment_authorized": false
+}

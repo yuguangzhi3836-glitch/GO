@@ -32,15 +32,40 @@ def _terms(s, o, q):
             'old_itinerary': o.current_itinerary, 'old_ticket_numbers': o.ticket_numbers,
             'old_pnr': o.pnr, 'old_total_minor': o.total_amount_minor,
             'party_count': len(o.passengers or []), 'plan_hash': plan.plan_hash,
-            'changes': plan.plan_json['changes'], 'new_itinerary': plan.plan_json['new_itinerary']}
+            'changes': plan.plan_json['changes'], 'new_itinerary': plan.plan_json['new_itinerary'],
+            'coupon_changes':plan.plan_json.get('coupon_changes',[])}
+
+
+def _printable_token(value, maximum, code):
+    if (not isinstance(value, str) or not 1 <= len(value) <= maximum
+            or value != value.strip() or not value.isprintable()):
+        raise ValueError(code)
+    return value
+
+
+def _invalid_ticket(value):
+    try:
+        _printable_token(value, 64, 'FLIGHT_REISSUED_TICKETS_INVALID')
+        return False
+    except ValueError:
+        return True
 
 
 def _tickets(values, count):
     if (not isinstance(values, list) or len(values) != count
-            or any(not isinstance(x,str) or not 1<=len(x)<=64 or x!=x.strip() for x in values)
+            or any(_invalid_ticket(x) for x in values)
             or len(set(values)) != len(values)):
         raise ValueError('FLIGHT_REISSUED_TICKETS_INVALID')
     return list(values)
+
+
+def validate_existing_tickets(order):
+    """Observation-only recovery cannot create an initial supplier issuance."""
+    count = len(order.passengers or []) * len(order.current_itinerary or [])
+    if not count:
+        raise ValueError('FLIGHT_EXISTING_TICKETS_INVALID')
+    _tickets(order.ticket_numbers, count)
+    _printable_token(order.pnr, 16, 'FLIGHT_SUPPLIER_REFERENCE_INVALID')
 
 
 def _identity(op):
@@ -81,9 +106,9 @@ def _money_in(s, op, result):
     return money.money_movement_id
 
 
-def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ticket_numbers, quote_id, output):
-    if not str(evidence_reference or '').strip() or not str(actor or '').strip():
-        raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
+def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ticket_numbers, quote_id, output, operation_id=None):
+    _printable_token(evidence_reference, 512, 'EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
+    _printable_token(actor, 128, 'EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
     state = state.upper()
     if state not in {'TICKETED', 'FAILED', 'UNKNOWN_EXTERNAL_STATE'}:
         raise ValueError('FLIGHT_EXTERNAL_STATE_INVALID')
@@ -93,6 +118,16 @@ def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ti
         o = s.get(Order, order_id, with_for_update=True)
         if not o:
             raise ValueError('FLIGHT_ORDER_NOT_FOUND')
+        if operation_id:
+            from go_hotel.services.ticket_operations import _events
+            from go_hotel.db.models import JourneyRecoveryEvidenceChainRow as Audit
+            _events(s, 'FLIGHT', order_id)
+            observed = list(s.scalars(select(Audit).where(Audit.execution_id == 'rc20:FLIGHT:' + order_id)))
+            prior = [r.evidence_json['payload'] for r in observed if r.evidence_json.get('payload', {}).get('observation_id') == operation_id]
+            if prior:
+                if len(prior) != 1 or prior[0].get('request') != request:
+                    raise ValueError('FLIGHT_OBSERVATION_CONFLICT')
+                return output(o)
         if quote_id:
             q = s.get(Quote, quote_id, with_for_update=True)
             if not q or q.order_id != order_id:
@@ -108,12 +143,12 @@ def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ti
             if state not in {'TICKETED', 'FAILED'}:
                 raise ValueError('FLIGHT_RESOLUTION_CONFLICT')
             if state == 'TICKETED':
-                if not isinstance(supplier_reference,str) or not 1<=len(supplier_reference)<=16 or supplier_reference != supplier_reference.strip():
-                    raise ValueError('FLIGHT_RECONCILIATION_SUPPLIER_REFERENCE_REQUIRED')
+                _printable_token(supplier_reference, 16, 'FLIGHT_RECONCILIATION_SUPPLIER_REFERENCE_REQUIRED')
                 terms = _terms(s, o, q) if q.status == 'PENDING_SUPPLIER' else None
                 if terms:
-                    request['ticket_numbers'] = _tickets(ticket_numbers or [], len(terms['changes'])*len(o.passengers or []))
-                    unchanged = [x for i,x in enumerate(o.ticket_numbers) if i//len(o.passengers) not in {c['leg_index'] for c in terms['changes']}]
+                    positions={c['leg_index']*len(o.passengers)+c['passenger_index'] for c in terms['coupon_changes']} if terms['coupon_changes'] else {c['leg_index']*len(o.passengers)+p for c in terms['changes'] for p in range(len(o.passengers))}
+                    request['ticket_numbers'] = _tickets(ticket_numbers or [], len(positions))
+                    unchanged = [x for i,x in enumerate(o.ticket_numbers) if i not in positions]
                     if set(unchanged) & set(request['ticket_numbers']):raise ValueError('FLIGHT_REISSUED_TICKETS_INVALID')
             elif supplier_reference or ticket_numbers:
                 raise ValueError('FLIGHT_FAILED_RESOLUTION_TICKET_INVALID')
@@ -161,9 +196,11 @@ def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ti
             else:
                 if o.status != 'UNKNOWN_EXTERNAL_STATE':
                     raise ValueError('FLIGHT_RECONCILIATION_NOT_REQUIRED')
+                if state == 'TICKETED':
+                    validate_existing_tickets(o)
                 o.status = state
                 kind = 'RECONCILED_TO_' + state
-            _event(s, o, kind, evidence_reference, {'actor': actor, 'native_status': o.status})
+            _event(s, o, kind, evidence_reference, {'actor': actor, 'native_status': o.status, 'observation_id': operation_id, 'request': request})
             return output(o)
     try:
         action = vertical_money_bridge.capture_adjustment if state == 'TICKETED' else vertical_money_bridge.release_adjustment
@@ -188,13 +225,27 @@ def reconcile(order_id, state, evidence_reference, actor, supplier_reference, ti
                 party = op.terms_json['party_count']
                 if len(tickets) != len(itinerary)*party:
                     raise ValueError('FLIGHT_ORIGINAL_TICKET_ASSIGNMENTS_INVALID')
-                for position, cell in enumerate(op.terms_json['changes']):
-                    index = cell['leg_index']
-                    itinerary[index]['supplier_reference'] = request['supplier_reference']
-                    tickets[index*party:(index+1)*party] = request['ticket_numbers'][position*party:(position+1)*party]
+                updates=op.terms_json.get('coupon_changes',[])
+                if updates:
+                    from go_hotel.flight.coupons import ledger
+                    by_id={c.coupon_id:c for c in ledger(s,o)}
+                    for update,ticket in zip(updates,request['ticket_numbers']):
+                        c=by_id[update['coupon_id']]
+                        c.leg_json=deepcopy(update['new_leg']);c.ticket_number=ticket
+                        c.supplier_reference=request['supplier_reference'];c.paid_amount_minor=update['new_paid_amount_minor'];c.version+=1
+                        tickets[c.leg_index*party+c.passenger_index]=ticket
+                    for index in {u['leg_index'] for u in updates}:
+                        references={c.supplier_reference for c in by_id.values() if c.leg_index==index and c.state=='ISSUED'}
+                        if len(references)==1:itinerary[index]['supplier_reference']=next(iter(references))
+                        else:itinerary[index].pop('supplier_reference',None)
+                else:
+                    for position, cell in enumerate(op.terms_json['changes']):
+                        index = cell['leg_index']
+                        itinerary[index]['supplier_reference'] = request['supplier_reference']
+                        tickets[index*party:(index+1)*party] = request['ticket_numbers'][position*party:(position+1)*party]
                 o.current_itinerary = itinerary
                 o.total_amount_minor = op.terms_json['old_total_minor'] + due
-                if len(itinerary) == 1:o.pnr = request['supplier_reference']
+                if len(itinerary) == 1 and (not updates or len(updates)==party):o.pnr = request['supplier_reference']
                 o.ticket_numbers = tickets
                 q.status = 'EXECUTED'
                 kind = 'CHANGE_RECONCILED_TO_TICKETED'

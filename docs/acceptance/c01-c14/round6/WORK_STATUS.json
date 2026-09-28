@@ -1,0 +1,179 @@
+{
+  "schema": "go.c01-c14.work-status.v1",
+  "observed_at": "2026-09-26T02:17:27.491714+00:00",
+  "candidate_pr": 246,
+  "prior_reviewed_gate": "4cac30225c3094ded0bc1d2aa06d1b3960c7bfe3",
+  "new_product": "26348745cb3e4c912363afd0bd9a3682e53cefd2",
+  "canonical_main_observed": "16d5f0b99d3de00dfbf02a3d16ffc05adf5c180e",
+  "checklist_version": "1.1.0",
+  "scope_hash": "f120a868a71b242ee7f99a0076c694b137fbbe0a7d988154f3747e88d0b1145a",
+  "requirements": 305,
+  "required_cases": 1009,
+  "prior_candidate_ci": {
+    "runs": [
+      36192561036,
+      36192561113,
+      36192561030,
+      36192561048,
+      36192561078
+    ],
+    "conclusion": "5_COMPLETED_SUCCESS",
+    "observed_in_progress": 0,
+    "observed_queued": 0
+  },
+  "ledger_observation": {
+    "candidate_binding": null,
+    "review_status_counts": {
+      "NOT_ASSESSED": 305
+    },
+    "meaning": "逐项台账尚未回填；不等于零开发完成，也不能由套件PASS自动填写305项PASS"
+  },
+  "formal_tasks_dispatched": false,
+  "runtime_online_claim": false,
+  "reviewer_dispatch": "NOT_PERFORMED_THIS_TURN",
+  "main_control_plane_note": "main已合入#257审核内容输入链修复；本次未执行真实Lite审核，不以合入或测试代替本候选C13/C14意见。",
+  "rows": [
+    {
+      "cell": "C01",
+      "module": "酒店",
+      "operations_owner": "C01",
+      "requirements": 23,
+      "required_cases": 83,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "IMPLEMENTED_DEVELOPER_TESTED_PENDING_REVIEW",
+      "next_internal_obligation": "本批媒体误判和权限修复提交独立验收；继续真实资料到Hosted酒店/库存池关联、发布/预订消费及容量版本闭环。"
+    },
+    {
+      "cell": "C02",
+      "module": "机票",
+      "operations_owner": "C02",
+      "requirements": 14,
+      "required_cases": 44,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "BACKLOG_RECONCILED_NOT_STARTED_THIS_TURN",
+      "next_internal_obligation": "多航段、多旅客退改及各角色异常恢复，映射到固定清单并完成完整操作旅程。"
+    },
+    {
+      "cell": "C03",
+      "module": "火车票",
+      "operations_owner": "C03",
+      "requirements": 14,
+      "required_cases": 44,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "BACKLOG_RECONCILED_NOT_STARTED_THIS_TURN",
+      "next_internal_obligation": "票联/席位/资金全状态守恒、连续退改与异常处置三端旅程。"
+    },
+    {
+      "cell": "C04",
+      "module": "租车",
+      "operations_owner": "C04",
+      "requirements": 30,
+      "required_cases": 108,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "BACKLOG_RECONCILED_NOT_STARTED_THIS_TURN",
+      "next_internal_obligation": "复核争议/押金/申诉补偿已交付范围，补供应商证据提交及完整运营闭环；UNKNOWN不得虚报完成。"
+    },
+    {
+      "cell": "C05",
+      "module": "用车",
+      "operations_owner": "C05",
+      "requirements": 14,
+      "required_cases": 48,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "BACKLOG_RECONCILED_NOT_STARTED_THIS_TURN",
+      "next_internal_obligation": "复核政策制单/审核/生效/撤销、旧订单条款保留，并完成移动端及异常运营验收。"
+    },
+    {
+      "cell": "C06",
+      "module": "景点",
+      "operations_owner": "C06",
+      "requirements": 14,
+      "required_cases": 44,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "BACKLOG_RECONCILED_NOT_STARTED_THIS_TURN",
+      "next_internal_obligation": "核销、改签、异常处置三端旅程及全部状态映射。"
+    },
+    {
+      "cell": "C07",
+      "module": "旅客智能",
+      "operations_owner": "C07",
+      "requirements": 12,
+      "required_cases": 40,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "BACKLOG_RECONCILED_NOT_STARTED_THIS_TURN",
+      "next_internal_obligation": "授权撤回、会员上下文失效、用户及后台端到端闭环。"
+    },
+    {
+      "cell": "C08",
+      "module": "AI规划与执行",
+      "operations_owner": "C08",
+      "requirements": 14,
+      "required_cases": 44,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "BACKLOG_RECONCILED_NOT_STARTED_THIS_TURN",
+      "next_internal_obligation": "目标输入、计划执行、取消/接管、结果回流及同条件比价完整旅程。"
+    },
+    {
+      "cell": "C09",
+      "module": "判断与信任",
+      "operations_owner": "C09",
+      "requirements": 13,
+      "required_cases": 48,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "BACKLOG_RECONCILED_NOT_STARTED_THIS_TURN",
+      "next_internal_obligation": "证据变化导致旧推荐失效，设施/完整性/经营指标来源及解释复核闭环。"
+    },
+    {
+      "cell": "C10",
+      "module": "Unified Trips",
+      "operations_owner": "C10",
+      "requirements": 10,
+      "required_cases": 37,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "BACKLOG_RECONCILED_NOT_STARTED_THIS_TURN",
+      "next_internal_obligation": "全品类与外部订单状态/取消/退款/到账分别投影，保留来源及售后入口。"
+    },
+    {
+      "cell": "C11",
+      "module": "交易与财务",
+      "operations_owner": "C11",
+      "requirements": 24,
+      "required_cases": 91,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "BACKLOG_RECONCILED_NOT_STARTED_THIS_TURN",
+      "next_internal_obligation": "UNKNOWN可信资金恢复、已结算申诉补偿矩阵和财务异常后台闭环；沿既有资金根。"
+    },
+    {
+      "cell": "C12",
+      "module": "平台、安全与运维",
+      "operations_owner": "C12",
+      "requirements": 47,
+      "required_cases": 142,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "CI_SCOPE_UPDATED",
+      "next_internal_obligation": "将新媒体测试加入同候选PG18回归；补调度心跳/失联接管和证据失败恢复。"
+    },
+    {
+      "cell": "C13",
+      "module": "独立质量验收",
+      "operations_owner": "C13",
+      "requirements": 26,
+      "required_cases": 83,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "READY_FOR_REVIEW_NOT_DISPATCHED",
+      "next_internal_obligation": "新候选独立复验与逐项证据登记；不得把开发自测或旧限定PASS迁移到本批。"
+    },
+    {
+      "cell": "C14",
+      "module": "宪法、法务与规则",
+      "operations_owner": "C14",
+      "requirements": 50,
+      "required_cases": 153,
+      "execution_state": "UNKNOWN_NO_FRESH_HEARTBEAT",
+      "current_turn_state": "READY_FOR_REVIEW_NOT_DISPATCHED",
+      "next_internal_obligation": "独立审查本批媒体/身份边界及真实授权HOLD；既有Lite审核输入链修复需实际复跑证据。"
+    }
+  ],
+  "deployment": "NOT_RUN",
+  "production": "HOLD"
+}

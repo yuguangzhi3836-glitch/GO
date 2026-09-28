@@ -1,3 +1,4 @@
+from tests.hosted_review_support import provision
 """Exercise real route dependencies and stale-review guards, not just services."""
 from fastapi import HTTPException
 from go_hotel.security.service import identity_service
@@ -20,6 +21,7 @@ def test_api_scope_independent_evidence_snapshot_and_customer_retry(client,monke
     r,account,h,a,p=booked(client,monkeypatch)
     with SessionLocal() as s:hotel=s.get(Offer,r['hosted_offer_id']).hosted_hotel_id
     rid=r['hosted_reservation_id'];base='/internal/v1/hosted-direct';admin=admin_headers();peer=checker_headers()
+    for headers in [admin,peer]:provision(hotel,identity_service.authenticate(headers['Authorization'].removeprefix('Bearer ')))
     candidates=data(client.get(base+'/disruption-candidates',headers=admin))
     assert rid in [x['reservation_id'] for x in candidates['items']]
     for forbidden in [{},h,supplier_headers()]:
@@ -51,6 +53,7 @@ def test_api_bank_mandate_and_recovery_reject_unscoped_users_and_noninteger_mone
     r,account,h,a,p=booked(client,monkeypatch)
     with SessionLocal() as s:hotel=s.get(Offer,r['hosted_offer_id']).hosted_hotel_id
     base=f'/internal/v1/hosted-direct/hotels/{hotel}';admin=admin_headers()
+    provision(hotel,identity_service.authenticate(admin['Authorization'].removeprefix('Bearer ')))
     body={'currency':'CNY','maximum_per_case_minor':10000,'expires_at':(datetime.now(timezone.utc)+timedelta(days=2)).isoformat(),'authority_reference':'test://scoped-signed-mandate','authority_hash':'e'*64}
     for forbidden in [h,supplier_headers()]:
         assert client.post(base+'/fault-mandates',headers=forbidden,json=body).status_code==403

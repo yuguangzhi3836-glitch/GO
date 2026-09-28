@@ -37,12 +37,15 @@ class ConditionEvidence:
     observed_at: datetime
     valid_until: datetime
     satisfied: bool
+    policy_sha256: str | None = None
 
-    def valid_for(self, *, action: AIActionEnvelope, policy_rule_id: str, condition_id: str, at: datetime) -> bool:
+    def valid_for(self, *, action: AIActionEnvelope, policy_rule_id: str, condition_id: str, at: datetime,
+                  policy_sha256: str | None = None) -> bool:
         dates = (self.observed_at, self.valid_until, at)
         return (
             self.satisfied is True
             and self.policy_rule_id == policy_rule_id
+            and self.policy_sha256 == policy_sha256
             and self.condition_id == condition_id
             and self.action_sha256 == action_fingerprint(action)
             and isinstance(self.evidence_ref, str) and bool(self.evidence_ref.strip())

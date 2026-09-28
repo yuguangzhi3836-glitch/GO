@@ -1,14 +1,15 @@
+from tests.hosted_review_support import legacy_publication
 import pytest
 from go_hotel.services.hosted_direct_booking import hosted_direct_booking_service as svc
 def setup():
- h=svc.create_hotel({'supplier_name':'哈尔滨敖麓谷雅酒店','page_slug':'aoluguya-harbin'},'admin');o=svc.upsert_offer(h['hosted_hotel_id'],{'room_name':'豪华大床房','rate_name':'酒店官方价','price_minor':128800,'inventory':2,'cancellation_policy':'入住前24小时可取消'},'hotel');svc.publish(h['hosted_hotel_id'],'hotel');return h,o
+ h=svc.create_hotel({'supplier_name':'哈尔滨敖麓谷雅酒店','page_slug':'aoluguya-harbin'},'admin');o=svc.upsert_offer(h['hosted_hotel_id'],{'room_name':'豪华大床房','rate_name':'酒店官方价','price_minor':128800,'inventory':2,'cancellation_policy':'入住前24小时可取消'},'hotel');legacy_publication(h['hosted_hotel_id']);return h,o
 def reserve(key='r1'):
  _,o=setup();return svc.reserve('aoluguya-harbin',{'hosted_offer_id':o['hosted_offer_id'],'guest_name':'测试住客','guest_contact':'13800000000','check_in':'2026-09-01','check_out':'2026-09-02'},key)
 def test_first_pilot_supplier_is_locked():
  with pytest.raises(ValueError,match='FIRST_PILOT_SUPPLIER_LOCKED'):svc.create_hotel({'supplier_name':'其他酒店'},'admin')
 def test_page_requires_active_offer_before_publish():
  h=svc.create_hotel({'supplier_name':'哈尔滨敖麓谷雅酒店'},'admin')
- with pytest.raises(ValueError,match='ACTIVE_ROOM_OFFER_REQUIRED'):svc.publish(h['hosted_hotel_id'],'hotel')
+ with pytest.raises(ValueError,match='PUBLICATION_BLOCKED'):svc.publish(h['hosted_hotel_id'],'hotel')
 def test_published_page_discloses_reservation_only_and_alipay_pending():
  setup();p=svc.page('aoluguya-harbin');assert p['booking_mode']=='RESERVATION_REQUEST_ONLY' and p['payment_available'] is False and p['payment']['application_state']=='SANDBOX_APPLICATION_NOT_CREATED'
 def test_reservation_is_idempotent_and_never_attempts_payment():

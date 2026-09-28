@@ -109,21 +109,24 @@ def test_rail_change_holds_both_dates_until_result_then_releases_correct_pool(de
     svc.refund(owner,oid);assert ledger()==0
 
 
-def test_attraction_change_and_redemption_retain_current_session_capacity():
+def test_attraction_change_and_redemption_retain_current_session_capacity(monkeypatch):
     svc,owner,oid=booked('ATTRACTION')
     q=svc.change_quote(owner,oid,'2026-09-16','17:00');svc.execute_change(owner,oid,q['quote_id'])
     assert ledger()==4
-    svc.admin_external_state(oid,'CONFIRMED','isolated://change','ops','NEW','V-NEW')
+    svc.admin_external_state(oid,'CONFIRMED','isolated://change','ops','NEW','V-NEW',q['quote_id'])
     assert ledger()==2
     assert attr.search('东京','2026-09-15')[0]['inventory_by_session']['16:00']==24
     assert attr.search('东京','2026-09-16')[0]['inventory_by_session']['17:00']==22
+    from datetime import datetime
+    from go_hotel.attractions import service
+    monkeypatch.setattr(service,'db_now_ms',lambda s:int(datetime.fromisoformat('2026-09-16T08:00:00+00:00').timestamp()*1000))
     svc.redeem(owner,oid,'isolated://entry');assert ledger()==2
 
 
 def test_attraction_same_session_change_does_not_double_reserve():
     svc,owner,oid=booked('ATTRACTION');q=svc.change_quote(owner,oid,'2026-09-15','16:00')
     svc.execute_change(owner,oid,q['quote_id']);assert ledger()==2
-    svc.admin_external_state(oid,'CONFIRMED','isolated://same','ops','NEW','NEW-V');assert ledger()==2
+    svc.admin_external_state(oid,'CONFIRMED','isolated://same','ops','NEW','NEW-V',q['quote_id']);assert ledger()==2
     svc.refund(owner,oid);assert ledger()==0
 
 
@@ -190,7 +193,7 @@ from go_hotel.rail.service import rail_service
 rail_service.create_order('owner',os.environ['PREBOOK'],[{'full_name':'Person 0'},{'full_name':'Person 1'}])
 os._exit(73)
 '''
-    env={**os.environ,'DATABASE_URL':str(engine.url),'PYTHONPATH':os.path.abspath('src'),'PREBOOK':q['prebook_id']}
+    env={**os.environ,'DATABASE_URL':engine.url.render_as_string(hide_password=False),'PYTHONPATH':os.path.abspath('src'),'PREBOOK':q['prebook_id']}
     p=subprocess.run([sys.executable,'-c',code],env=env,capture_output=True,timeout=30)
     assert p.returncode==73,p.stderr.decode()
     assert ledger()==2

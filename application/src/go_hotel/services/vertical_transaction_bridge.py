@@ -15,6 +15,13 @@ def _prod(): return settings.app_env.strip().lower() in {'prod','production'}
 class VerticalTransactionBridge:
     def checkout_contract(self, vertical:str, order_id:str, account_id:str, source_id:str, evidence_reference:str, payment_method_id:str|None=None):
         if _prod(): raise ValueError('EXTERNAL_PAYMENT_EXECUTOR_REQUIRED')
+        if vertical=='RIDE':
+            from go_hotel.db.models import MobilityRideOrderRow
+            from go_hotel.mobility.ride.cancellation_policy import accepted_in
+            with SessionLocal() as s:
+                order=s.get(MobilityRideOrderRow,order_id)
+                if not order or order.account_id!=account_id:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
+                accepted_in(s,order)
         if vertical in {'RIDE','RENTAL'}:
             from go_hotel.services.vertical_reservation_expiry import guard_checkout_payment
             guard_checkout_payment(vertical, order_id, account_id)
