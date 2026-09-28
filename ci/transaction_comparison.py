@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-BASELINE = '0a8efaf785e384a0a0e8a2c267e73eb1de1066c9'
+BASELINE = 'c3aa5fb93726daebf591b81c71a2927922f41531'
 # Resolve to the immutable PR head supplied by Actions, then record that SHA
 # in every round. Both applications use the identical uninstrumented harness.
 CANDIDATE = os.environ['EXPECTED_HEAD']
