@@ -15,6 +15,13 @@ class Metrics:
         self.holds=[];self.cache=defaultdict(int);self.mapper=[];self.mapper_started=None
         self.services=defaultdict(lambda:[0,0.,0.,0.])
         self.queue_waits=[]
+        self.local=threading.local()
+        self.acquisitions_by_service=defaultdict(list)
+        self.queue_waits_by_service=defaultdict(list)
+        self.holds_by_service=defaultdict(list)
+        def active_service():
+            stack=getattr(self.local,'stack',())
+            return stack[-1] if stack else 'unattributed'
         # Test-only observation of the recorded SQLAlchemy QueuePool's blocking
         # queue get. Unlike pool.connect timing, this excludes creation/pre-ping.
         queue_get=engine.pool._pool.get
@@ -23,7 +30,10 @@ class Metrics:
             try:return queue_get(block,timeout)
             finally:
                 if block:
-                    with self.lock:self.queue_waits.append(time.monotonic()-start)
+                    elapsed=time.monotonic()-start
+                    with self.lock:
+                        self.queue_waits.append(elapsed)
+                        self.queue_waits_by_service[active_service()].append(elapsed)
         engine.pool._pool.get=measured_queue_get
         @event.listens_for(Mapper,'before_configured')
         def mapper_before():
@@ -38,17 +48,26 @@ class Metrics:
         @event.listens_for(engine.pool,'checkout')
         def checkout(dbapi_connection,connection_record,connection_proxy):
             connection_record.info['_mi_checkout_at']=time.monotonic()
+            connection_record.info['_mi_checkout_service']=active_service()
         @event.listens_for(engine.pool,'checkin')
         def checkin(dbapi_connection,connection_record):
             start=connection_record.info.pop('_mi_checkout_at',None)
+            service=connection_record.info.pop('_mi_checkout_service','unattributed')
             if start is not None:
-                with self.lock:self.holds.append(time.monotonic()-start)
+                elapsed=time.monotonic()-start
+                with self.lock:
+                    self.holds.append(elapsed)
+                    self.holds_by_service[service].append(elapsed)
         original=engine.pool.connect
         def connect(*a,**kw):
             start=time.monotonic()
+            service=active_service()
             try:return original(*a,**kw)
             finally:
-                with self.lock:self.acquisitions.append(time.monotonic()-start)
+                elapsed=time.monotonic()-start
+                with self.lock:
+                    self.acquisitions.append(elapsed)
+                    self.acquisitions_by_service[service].append(elapsed)
         engine.pool.connect=connect
         @event.listens_for(engine,'before_cursor_execute')
         def before(conn,cursor,statement,parameters,context,executemany):
@@ -67,8 +86,13 @@ class Metrics:
         @wraps(original)
         def measured(*args,**kwargs):
             wall=time.monotonic();cpu=time.thread_time()
+            stack=getattr(self.local,'stack',None)
+            if stack is None:
+                stack=[];self.local.stack=stack
+            stack.append(label)
             try:return original(*args,**kwargs)
             finally:
+                stack.pop()
                 elapsed=time.monotonic()-wall;used=time.thread_time()-cpu
                 with self.lock:
                     row=self.services[label];row[0]+=1;row[1]+=elapsed;row[2]+=used;row[3]=max(row[3],elapsed)
@@ -85,6 +109,16 @@ class Metrics:
             'blocking_pool_queue_max_seconds':max(self.queue_waits,default=0),
             'connection_holds':len(self.holds),'connection_hold_sum_seconds':sum(self.holds),
             'connection_hold_max_seconds':max(self.holds,default=0),
+            'connection_by_service':{
+                label:{'acquisitions':len(self.acquisitions_by_service[label]),
+                       'acquisition_sum_seconds':sum(self.acquisitions_by_service[label]),
+                       'queue_gets':len(self.queue_waits_by_service[label]),
+                       'queue_sum_seconds':sum(self.queue_waits_by_service[label]),
+                       'hold_count':len(self.holds_by_service[label]),
+                       'hold_sum_seconds':sum(self.holds_by_service[label])}
+                for label in (self.acquisitions_by_service.keys() |
+                              self.queue_waits_by_service.keys() |
+                              self.holds_by_service.keys())},
             'mapper_configuration':self.mapper,'statement_cache':dict(self.cache),
             'service_calls':{k:{'calls':v[0],'inclusive_wall_seconds':v[1],
                 'inclusive_calling_thread_cpu_seconds':v[2],'max_wall_seconds':v[3]} for k,v in self.services.items()},
