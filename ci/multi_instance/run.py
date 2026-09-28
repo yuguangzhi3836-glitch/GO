@@ -26,9 +26,9 @@ ROOT = Path(__file__).resolve().parents[2]
 APP = ROOT / 'application'
 PLAN = [20, 100, 250, 500, 1000]
 
-def plan_for(admission_limit):
+def plan_for(admission_limit,pool_experiment=False):
     # Exploratory admission runs cannot bypass the normal failed 100-tier gate.
-    return PLAN[:2] if admission_limit else PLAN
+    return PLAN[:2] if admission_limit or pool_experiment else PLAN
 
 def write(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True, default=str)+'\n')
@@ -350,12 +350,14 @@ def coordinator(out):
     from go_hotel.db.session import engine
     Base.metadata.create_all(engine)
     admission_limit=int(os.environ.get('GO_MULTI_ADMISSION_LIMIT','0'))
-    r=Runner(out);result={'correctness':'PENDING','stages':[],'status':'RUNNING','admission_active_per_instance':admission_limit,'mode':'ADMISSION_EXPERIMENT_NOT_ACCEPTANCE' if admission_limit else 'NORMAL_STAIRCASE','scope':'two independent service processes, shared PostgreSQL; not HTTP/auth/production or million-online proof'}
+    pool_experiment=os.environ.get('GO_MULTI_POOL_EXPERIMENT')=='1'
+    mode='POOL_EXPERIMENT_NOT_ACCEPTANCE' if pool_experiment else 'ADMISSION_EXPERIMENT_NOT_ACCEPTANCE' if admission_limit else 'NORMAL_STAIRCASE'
+    r=Runner(out);result={'correctness':'PENDING','stages':[],'status':'RUNNING','admission_active_per_instance':admission_limit,'mode':mode,'scope':'two independent service processes, shared PostgreSQL; not HTTP/auth/production or million-online proof'}
     try:
         correctness(r,out);result['correctness']='PASS';write(out/'result.json',result)
         from ride_workload import verify
         raw=[]
-        for n in plan_for(admission_limit):
+        for n in plan_for(admission_limit,pool_experiment):
             host_before=Path('/proc/stat').read_text().splitlines()[0].split()[1:] if os.environ.get('GO_MULTI_DIAGNOSTIC')=='1' else None
             rows=r.group([{'op':'ride','index':i} for i in range(len(raw),len(raw)+n)])
             if host_before:
@@ -386,7 +388,7 @@ def coordinator(out):
             stage['pass']=stage['errors']==0 and stage['p95_ms']<=5000 and stage['p99_ms']<=10000
             if not stage['pass']:
                 result['status']='STOPPED_AT_FAILED_TIER';return 1
-        result['status']='EXPERIMENT_PLAN_COMPLETE_NOT_CAPACITY_ACCEPTANCE' if admission_limit else 'BOUNDED_SERVICE_PLAN_PASS';return 0
+        result['status']='EXPERIMENT_PLAN_COMPLETE_NOT_CAPACITY_ACCEPTANCE' if admission_limit or pool_experiment else 'BOUNDED_SERVICE_PLAN_PASS';return 0
     except Exception as exc:
         if result['correctness']=='PENDING':result['correctness']='FAIL'
         result.update(status='FAILED',error_type=type(exc).__name__,error=str(exc)[:1000] if isinstance(exc,(AssertionError,ValueError)) else 'SEE_LOG')
@@ -396,11 +398,14 @@ def coordinator(out):
         r.stop();write(out/'result.json',result);engine.dispose()
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--child',type=Path);p.add_argument('--coordinator',type=Path);p.add_argument('--diagnostic',action='store_true');p.add_argument('--admission-active-per-instance',type=int,choices=(0,2,5),default=0);p.add_argument('--out',type=Path,default=ROOT/'multi-instance-evidence');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--child',type=Path);p.add_argument('--coordinator',type=Path);p.add_argument('--diagnostic',action='store_true');p.add_argument('--admission-active-per-instance',type=int,choices=(0,2,5),default=0);p.add_argument('--pool-comparison-control',action='store_true');p.add_argument('--experimental-pool-size',type=int,choices=(5,10),default=5);p.add_argument('--out',type=Path,default=ROOT/'multi-instance-evidence');args=p.parse_args()
     sys.addaudithook(guard)
     if args.child:child(args.child);return 0
     if args.coordinator:return coordinator(args.coordinator)
     if args.admission_active_per_instance and args.out==ROOT/'multi-instance-evidence':p.error('Admission experiment requires a separately named --out directory')
+    pool_experiment=args.pool_comparison_control or args.experimental_pool_size!=5
+    if pool_experiment and args.out==ROOT/'multi-instance-evidence':p.error('Pool experiment requires a separately named --out directory')
+    if pool_experiment and args.admission_active_per_instance:p.error('Run pool and admission experiments separately')
     from sqlalchemy import create_engine,text
     from sqlalchemy.engine import make_url
     out=args.out.resolve();out.mkdir(parents=True,exist_ok=False)
@@ -409,7 +414,7 @@ def main():
     url=make_url(os.environ['GO_MULTI_DATABASE_URL'])
     assert (url.drivername,url.host,url.port,url.username,url.database)==('postgresql+psycopg','127.0.0.1',5432,'go_ci','go_c11_isolated') and not url.query
     schema='mi_'+uuid4().hex;engine=create_engine(url);code=1
-    binding={'head':head,'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],cwd=ROOT,text=True).strip(),'schema':schema,'python':sys.version,'platform':platform.platform(),'cpu_count':os.cpu_count(),'plan':PLAN,'instances':2,'pool_per_instance':5,'max_overflow':0,'max_application_connections':15,'parent_connections':5,'p95_gate_ms':5000,'p99_gate_ms':10000,'money_mode':'CONTRACT_SIMULATOR','real_supplier':'NOT_USED','real_psp':'NOT_USED','http_auth':'NOT_TESTED','production_capacity':'NOT_ESTABLISHED'}
+    binding={'head':head,'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],cwd=ROOT,text=True).strip(),'schema':schema,'python':sys.version,'platform':platform.platform(),'cpu_count':os.cpu_count(),'plan':PLAN[:2] if pool_experiment else PLAN,'instances':2,'pool_per_instance':args.experimental_pool_size,'max_overflow':0,'max_application_connections':2*args.experimental_pool_size+5,'parent_connections':5,'p95_gate_ms':5000,'p99_gate_ms':10000,'money_mode':'CONTRACT_SIMULATOR','real_supplier':'NOT_USED','real_psp':'NOT_USED','http_auth':'NOT_TESTED','production_capacity':'NOT_ESTABLISHED'}
     try:
         with engine.begin() as c:
             binding['database_version']=c.scalar(text('select version()'));binding['max_connections']=c.scalar(text('show max_connections'))
@@ -424,13 +429,14 @@ def main():
         binding['orchestration_pool_max_connections']=15
         binding['diagnostic_instrumentation']=args.diagnostic
         binding['admission_active_per_instance']=args.admission_active_per_instance
-        binding['plan']=plan_for(args.admission_active_per_instance)
-        binding['experiment_mode']='ADMISSION_EXPERIMENT_NOT_ACCEPTANCE' if args.admission_active_per_instance else 'NORMAL_STAIRCASE'
+        binding['plan']=plan_for(args.admission_active_per_instance,pool_experiment)
+        binding['experiment_mode']='POOL_EXPERIMENT_NOT_ACCEPTANCE' if pool_experiment else 'ADMISSION_EXPERIMENT_NOT_ACCEPTANCE' if args.admission_active_per_instance else 'NORMAL_STAIRCASE'
         write(out/'binding.json',binding)
         env={k:os.environ[k] for k in ('PATH','LANG','LC_ALL','TZ') if k in os.environ}
         env['GO_MULTI_DIAGNOSTIC']='1' if args.diagnostic else '0'
         env['GO_MULTI_ADMISSION_LIMIT']=str(args.admission_active_per_instance)
-        env.update(DATABASE_URL=url.update_query_dict({'options':'-csearch_path='+schema+' -cstatement_timeout=15000 -clock_timeout=10000 -cidle_in_transaction_session_timeout=30000','connect_timeout':'5'}).render_as_string(hide_password=False),APP_ENV='test',MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED='false',TRAVEL_INTELLIGENCE_ENABLED='false',DATABASE_POOL_SIZE='5',DATABASE_MAX_OVERFLOW='0',DATABASE_POOL_TIMEOUT_SECONDS='10',PYTHONPATH=str(APP/'src'),GO_RIDE_ISOLATED_CANCELLATION_POLICY_FILE=str(APP/'scripts/fixtures/ride-cancellation.synthetic.json'))
+        env['GO_MULTI_POOL_EXPERIMENT']='1' if pool_experiment else '0'
+        env.update(DATABASE_URL=url.update_query_dict({'options':'-csearch_path='+schema+' -cstatement_timeout=15000 -clock_timeout=10000 -cidle_in_transaction_session_timeout=30000','connect_timeout':'5'}).render_as_string(hide_password=False),APP_ENV='test',MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED='false',TRAVEL_INTELLIGENCE_ENABLED='false',DATABASE_POOL_SIZE=str(args.experimental_pool_size),DATABASE_MAX_OVERFLOW='0',DATABASE_POOL_TIMEOUT_SECONDS='10',PYTHONPATH=str(APP/'src'),GO_RIDE_ISOLATED_CANCELLATION_POLICY_FILE=str(APP/'scripts/fixtures/ride-cancellation.synthetic.json'))
         with (out/'coordinator.log').open('w') as log:
             proc=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'--coordinator',str(out)],env=env,cwd=out,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
             try:code=proc.wait(timeout=1200)
