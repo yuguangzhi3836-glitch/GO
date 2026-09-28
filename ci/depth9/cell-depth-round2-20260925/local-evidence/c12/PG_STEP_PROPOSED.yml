@@ -1,0 +1,13 @@
+      # Append to existing C11 PG job before its always-run evidence binding.
+      # Keep all original tests, pinned dependencies, matrix and gates unchanged.
+      - name: Bounded transaction write capacity and invariants
+        if: matrix.cell == 'C11'
+        timeout-minutes: 6
+        working-directory: application
+        shell: bash
+        env:
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          python -B ci/next_depth/c12_transaction_capacity.py \
+            --evidence-dir "$RUNNER_TEMP/next-depth-pg/C12-capacity"

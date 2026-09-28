@@ -1,0 +1,90 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____ test_availability_truthful_currency_and_unsupported_sale_is_zero_write ____
+
+http = <starlette.testclient.TestClient object at 0x7f7d8151be90>
+business = {'body': {'check_in': '2026-09-28', 'check_out': '2026-09-29', 'guest_contact': 'synthetic@example.invalid', 'guest_na...r0wfLcWTp-w5c_TcmmegNwdy74'}, 'clock': {'at': datetime.datetime(2026, 9, 28, 0, 0, tzinfo=datetime.timezone.utc)}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-81/test_availability_truthful_cur0')
+
+    def test_availability_truthful_currency_and_unsupported_sale_is_zero_write(http,business,tmp_path):
+        import pytest
+        h=business;usd=add_usd_offer(http,h,tmp_path)
+        calendar(http,h,h['day'],h['end'])
+        body={**h['body'],'hosted_offer_id':usd}
+        response=post(http,f"/v1/direct/{h['slug']}/availability",{},body)
+        item=next(x for x in response['items'] if x['hosted_offer_id']==usd)
+        assert {x['currency'] for x in response['items']}=={'CNY','USD'}
+        assert response['currency'] is None
+        assert response['currencies']==['CNY','USD']
+        assert not item['bookable'] and 'HOSTED_CHECKOUT_CURRENCY_UNSUPPORTED' in item['unavailable_reasons']
+        body['expected_fare_rule_hash']=item['fare_rule']['rule_hash']
+        def counts():
+            with SessionLocal() as s:
+                return (s.query(m.HostedDirectReservationRow).count(),s.query(m.HostedReservationNightRow).count(),
+                    s.query(m.HostedReservationNotificationRow).count(),s.query(m.HostedDirectReservationEventRow).count(),
+                    [(r.inventory_day_id,r.capacity_available) for r in s.scalars(select(m.HostedInventoryDayRow).order_by(m.HostedInventoryDayRow.inventory_day_id))])
+        before=counts()
+        for suffix in ['reservations','managed-reservations']:
+            rejected=http.post(f"/v1/direct/{h['slug']}/{suffix}",headers={**h['customer_headers'],'Idempotency-Key':'unsupported-'+suffix},json=body)
+            assert rejected.status_code==409 and rejected.json()['detail']=='HOSTED_CHECKOUT_CURRENCY_UNSUPPORTED',rejected.text
+            assert counts()==before
+        for suffix in ['phone-reservations','governed-phone-reservations']:
+            rejected=http.post(f"/internal/v1/hosted-direct/{h['slug']}/{suffix}",headers={**h['maker_headers'],'Idempotency-Key':'unsupported-'+suffix},json=body)
+>           assert rejected.status_code==409 and rejected.json()['detail']=='HOSTED_CHECKOUT_CURRENCY_UNSUPPORTED',rejected.text
+E           AssertionError: {"detail":"HOTEL_STAFF_ROLE_REQUIRED"}
+E           assert (409 == 409 and 'HOTEL_STAFF_ROLE_REQUIRED' == 'HOSTED_CHECK...Y_UNSUPPORTED'
+E            +  where 409 = <Response [409 Conflict]>.status_code
+E             
+E             - HOSTED_CHECKOUT_CURRENCY_UNSUPPORTED
+E             + HOTEL_STAFF_ROLE_REQUIRED)
+
+review/full-scope-v2/test_c13_currency_day_scope.py:130: AssertionError
+_______ test_daily_close_separates_currency_foreign_hotel_and_old_order ________
+
+http = <starlette.testclient.TestClient object at 0x7f7d801e46e0>
+business = {'body': {'check_in': '2026-09-28', 'check_out': '2026-09-29', 'guest_contact': 'synthetic@example.invalid', 'guest_na...Yt_LoX93h1H8YiSku1X0UKS6O8'}, 'clock': {'at': datetime.datetime(2026, 9, 30, 7, 0, tzinfo=datetime.timezone.utc)}, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7d801e54f0>
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-81/test_daily_close_separates_cur0')
+
+    def test_daily_close_separates_currency_foreign_hotel_and_old_order(http,business,monkeypatch,tmp_path):
+        h=business;usd=add_usd_offer(http,h,tmp_path)
+        current=h['day']+timedelta(days=2)
+        calendar(http,h,h['day'],current+timedelta(days=1))
+        # This old order is genuinely booked, authorized, checked in/out and captured
+        # two business days earlier. Its opening balance remains economically real.
+        old=complete(http,h,h['clock'],h['offer'],h['day'],'old-economic-order','ISOLATED-ROUND-DREAM-101')
+        h['clock']['at']=window(current.isoformat())[0]+timedelta(hours=8)
+        cny=complete(http,h,h['clock'],h['offer'],current,'current-cny','ISOLATED-ROUND-DREAM-101')
+>       usd_order=complete(http,h,h['clock'],usd,current,'current-usd','ISOLATED-OVERNIGHT-102',internal_usd_fixture=True)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+review/full-scope-v2/test_c13_currency_day_scope.py:146: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+review/full-scope-v2/test_c13_currency_day_scope.py:71: in complete
+    checkout=authorize(h['customer'].user_id,r['hosted_reservation_id'],r['amount_minor'],'USD')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+account = 'usr_794b94c395a44d9d9e947f3fa1431f7f'
+reservation_id = 'historical-usd_451831832f274cf3b81ce7c444405cc3'
+expected_amount_minor = 12900, currency = 'USD'
+
+    def authorize(account,reservation_id,expected_amount_minor,currency):
+        isolated()
+        with managed_session() as s:
+            stay=s.get(Stay,reservation_id,with_for_update=True)
+            r=s.get(Reservation,reservation_id,with_for_update=True)
+            if not stay or not r or stay.created_by!=account:raise ValueError('RESERVATION_NOT_FOUND')
+            if type(expected_amount_minor) is not int or (r.amount_minor,r.currency)!=(expected_amount_minor,currency):
+                raise ValueError('ORDER_AMOUNT_CHANGED_RECONFIRM_REQUIRED')
+            if not _simulation_offer(s,r):raise ValueError('ISOLATED_HOTEL_RATE_REQUIRED')
+            if stay.operational_state not in {'PENDING_HOTEL_CONFIRMATION','CONFIRMED'}:
+                raise ValueError('RESERVATION_NOT_AUTHORIZABLE')
+            if stay.operational_state=='PENDING_HOTEL_CONFIRMATION' and aware(stay.confirmation_expires_at)<=now():
+>               raise ValueError('RESERVATION_CONFIRMATION_EXPIRED')
+E               ValueError: RESERVATION_CONFIRMATION_EXPIRED
+
+src/go_hotel/services/hosted_checkout.py:42: ValueError
+=========================== short test summary info ============================
+FAILED review/full-scope-v2/test_c13_currency_day_scope.py::test_availability_truthful_currency_and_unsupported_sale_is_zero_write
+FAILED review/full-scope-v2/test_c13_currency_day_scope.py::test_daily_close_separates_currency_foreign_hotel_and_old_order

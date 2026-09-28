@@ -1,3 +1,4 @@
+from tests.hosted_review_support import legacy_publication
 from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import HostedDirectInventoryPoolRow,HostedDirectRateVariantRow
@@ -16,6 +17,9 @@ def test_public_facts_are_structured_and_configuration_is_idempotent():
  assert second['rate_variants']==9
 def test_breakfast_variants_share_atomic_physical_inventory_and_restore():
  setup()
+ from go_hotel.db.models import HostedDirectHotelRow
+ with SessionLocal() as s:hotel=s.scalar(select(HostedDirectHotelRow.hosted_hotel_id))
+ legacy_publication(hotel)
  with SessionLocal() as s:
   pool=s.scalar(select(HostedDirectInventoryPoolRow).where(HostedDirectInventoryPoolRow.physical_room_key=='ROUND_DREAM_KING'));variants=s.scalars(select(HostedDirectRateVariantRow).where(HostedDirectRateVariantRow.inventory_pool_id==pool.inventory_pool_id)).all();offers=[v.hosted_offer_id for v in variants]
  body={'guest_name':'测试','guest_contact':'0451-88800808','check_in':'2026-09-01','check_out':'2026-09-02'};r1=svc.reserve('aoluguya-harbin',{**body,'hosted_offer_id':offers[0]},'k1');r2=svc.reserve('aoluguya-harbin',{**body,'hosted_offer_id':offers[1]},'k2')

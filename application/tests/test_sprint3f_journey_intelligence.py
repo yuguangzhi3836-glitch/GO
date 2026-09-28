@@ -1,10 +1,11 @@
+from registration_terms_test_support import register_synthetic_consumer
 from datetime import datetime,timezone
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import FlightOrderRow,RailOrderRow,MobilityRideOrderRow,OrderRow
 from go_hotel.security.service import identity_service
 
 def auth(client,email='intel@example.com'):
-    r=client.post('/v1/consumer/auth/register',json={'email':email,'password':'StrongPass123!','display_name':'Intel User'});assert r.status_code==200
+    r=register_synthetic_consumer(client, json={'email':email,'password':'StrongPass123!','display_name':'Intel User'});assert r.status_code==200
     t=client.post('/v1/mobile/auth/login',json={'email':email,'password':'StrongPass123!'}).json()['data']
     return {'Authorization':'Bearer '+t['access_token']},identity_service.authenticate(t['access_token']).user_id
 

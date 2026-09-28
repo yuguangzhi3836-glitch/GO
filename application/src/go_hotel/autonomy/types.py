@@ -125,6 +125,7 @@ class LegalReviewResult:
     policy_rule_ids: Tuple[str, ...] = ()
     conditions: Tuple[str, ...] = ()
     condition_requirements: Tuple[Tuple[str, str], ...] = ()
+    policy_bindings: Tuple[Tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)

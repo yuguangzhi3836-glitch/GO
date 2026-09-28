@@ -1,0 +1,49 @@
+{
+  "cell": "C04",
+  "status": "NO_NEW_RULES_BLOCKER_FOUND_FOR_SCOPED_ISOLATED_INCREMENT",
+  "binding": "LOCAL_FROZEN_SHA256_PENDING_CANDIDATE",
+  "files": [
+    {
+      "path": "application/src/go_hotel/api/routes/rental_operations.py",
+      "sha256": "83dcedcb1110b9854d5ad7d32959241a22c9bb72e17463b28e0833a16c58aaa3"
+    },
+    {
+      "path": "application/src/go_hotel/mobility/rental/damage.py",
+      "sha256": "dffad646fd81c155c29ab57b3db71c8ad888ff36020aec270c8bb512663f6d96"
+    },
+    {
+      "path": "application/frontend/shared/rental-operations.js",
+      "sha256": "d93b59e9151a0915de1b8adf529326c5e4c0b0523dab5612f609544ef0a21971"
+    },
+    {
+      "path": "application/frontend/consumer/rental-operations.js",
+      "sha256": "e4d91dbecc649f2e827b92129514595a78243c7433d4ab949a492b05d12e467c"
+    },
+    {
+      "path": "application/tests/test_rental_operations.py",
+      "sha256": "7cf43c69f0b61432f1683adcd81f5e1b6b3b73ff5476d74afc47aa95b3998332"
+    },
+    {
+      "path": "application/tests_frontend/rental_operations_adapter.test.mjs",
+      "sha256": "e0a1018031709ae857a790091bfd9183676f98c5f808f694c7c3c28e1c1f9003"
+    },
+    {
+      "path": "ci/journey-v2/rental-operations-widget.mjs",
+      "sha256": "ca399655a3d4f3c477d855d1e7874a22aeccf6501f71f847082d13a99cad336e"
+    }
+  ],
+  "all_manifest_hashes_match": true,
+  "conclusions": [
+    "statement_evidence由认证路由主体构造，actor/order/case/action/text共同hash且标ACTOR_STATEMENT_UNVERIFIED；没有伪造照片或供应商认证。",
+    "证据嵌入原damage/return domain事务；角色、expected_version、原幂等检查沿用，拒绝请求不先另写成功statement。",
+    "客户回应仍交独立裁决；owner/claim maker和原裁决者独立限制通过原服务执行。return-review只建立释放依据，不执行C11钱。",
+    "widget要求明确确认，保留同actor/同订单pending key/body；请求返回后读取当前receipt，旧幂等结果不冒充当前状态。",
+    "UI明示申诉不会自动撤销已有资金记录，陈述非验车认证，资金状态仍归C11。"
+  ],
+  "limitations": [
+    "7文件hash全部匹配；业务adapter/源码及测试case已阅读，未由C14运行测试。",
+    "浏览器脚本仅冻结文件身份，不能将其存在或adapter单测算作真实浏览器PASS。",
+    "撤销/已接受来源更正、重开、已结算申诉补偿等仍是未完成内部义务；真实证据/合同与部署维持HOLD。",
+    "非完整原子清单PASS、非正式C14组织运行/法律认证/部署许可；候选身份待最终绑定。"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "kind": "supplier",
+  "expected_status": 403,
+  "actual_status": 403,
+  "body": {
+    "detail": "GO_ADMIN_REQUIRED"
+  },
+  "approval_rows_unchanged": true,
+  "authentication": "real password + JWT + DB session; admin MFA; no dependency overrides",
+  "scope": "isolated actual router; not full main middleware"
+}

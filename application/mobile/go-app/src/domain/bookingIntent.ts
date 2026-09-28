@@ -1,7 +1,7 @@
 import type {Vertical} from './orderActions';
 import {requestFingerprint} from './requestFingerprint.ts';
 const id=(v:any)=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,80}$/.test(v);
-export function bookingIntent(vertical:Vertical, params:any, userId:string, travelers:string[], consent:boolean, fareConfirmed=false) {
+export function bookingIntent(vertical:Vertical, params:any, userId:string, travelers:string[], consent:boolean, fareConfirmed=false, cancellationAcceptedHash:string|null=null) {
   const p=params?.prebook,offer=params?.offer||params?.x||{},search=params?.search||{};
   if(!id(userId))throw Error('CONSUMER_IDENTITY_REQUIRED');
   const usesPrebook=['HOTEL','FLIGHT','RAIL','ATTRACTION'].includes(vertical);
@@ -24,6 +24,12 @@ export function bookingIntent(vertical:Vertical, params:any, userId:string, trav
     if(fields.some(f=>typeof search[f]!=='string'||!search[f].trim()))throw Error('MOBILITY_SEARCH_DETAILS_REQUIRED');
     body={offer_id:reference,currency:offer.currency||search.currency,traveler_ids:[...travelers]};
     for(const f of fields)body[f]=search[f];
+    if(vertical==='RIDE'){
+      const policy=offer.cancellation;
+      if(policy?.state!=='POLICY_AVAILABLE'||!policy.terms?.policy||typeof policy.policy_hash!=='string'||!/^[a-f0-9]{64}$/.test(policy.policy_hash))throw Error('RIDE_CANCELLATION_POLICY_UNAVAILABLE');
+      if(cancellationAcceptedHash!==policy.policy_hash)throw Error('RIDE_CANCELLATION_POLICY_ACCEPTANCE_REQUIRED');
+      body.cancellation_policy_hash=cancellationAcceptedHash;
+    }
     path=vertical==='RIDE'?'/v1/mobility/rides/orders':'/v1/mobility/rentals/orders';
     // Flight tracking or a free-wait promise requires its own explicit setup.
   }else throw Error('VERTICAL_NOT_SUPPORTED');

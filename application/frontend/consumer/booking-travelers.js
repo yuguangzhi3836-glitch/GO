@@ -20,6 +20,12 @@
       document.body.append(d);d.showModal();
     });
   }
+  async function acceptRide(id) {
+    const offer=(state.rideSearch||[]).find(x=>x.offer_id===id), c=offer?.cancellation;
+    if(c?.state!=='POLICY_AVAILABLE'||!c.policy_hash||!c.terms?.policy)throw Error('接送取消条款尚待核验，暂不能预订此方案。');
+    const t=c.terms,p=t.policy,seconds=p.cutoff_seconds,lead=seconds>0&&seconds%86400===0?`${seconds/86400}天`:seconds>0&&seconds%3600===0?`${seconds/3600}小时`:seconds>0&&seconds%60===0?`${seconds/60}分钟`:`${seconds}秒`;
+    return dialog('核对接送取消条款',`<p>本方案为隔离测试条款，不代表真实车队收费。</p><p>${esc(t.pickup)} → ${esc(t.dropoff)} · ${esc(t.booked_pickup_at)}</p><p>总价 ${esc(money(t.total_amount_minor,t.currency))}</p><p>以${p.time_basis==='BOOKED_PICKUP'?'预订时接车时间':'当前已确认接车时间'}为基准，提前 ${esc(lead)} 为费用分界。分界前取消费 ${esc(money(p.before_fee_minor,t.currency))}；分界时及之后取消费 ${esc(money(p.after_fee_minor,t.currency))}。</p><p>条款版本 ${esc(p.version)}；适用报价期间 ${esc(p.effective_from)} 至 ${esc(p.effective_until)}。</p><label class="go-consent"><input type="checkbox" required data-policy-consent><span>我已阅读并同意本次预订的取消条款。</span></label>`,'同意条款并继续',d=>{if(!d.querySelector('[data-policy-consent]').checked)throw Error('请先确认取消条款');return c.policy_hash});
+  }
   async function traveler(vertical) {
     const v=await api('/v1/consumer/profile/vault');
     v.travelers=v.travelers.filter(t=>t.booking_permission!==false&&(t.permissions?.USE_FOR_BOOKING??true));
@@ -34,6 +40,7 @@
     });
   }
   async function pay(vertical, order) {
+    if(vertical==='RIDE'&&order.cancellation?.state!=='BOOKING_ACCEPTED')throw Error('该接送订单缺少已确认的取消条款，暂不能继续支付。');
     const caps=await api('/v1/consumer/checkout-capabilities');
     if(!caps.simulation_available){toast('支付渠道尚未开放，此订单尚未付款');return null}
     return dialog(`确认${titles[vertical]}订单`,`${typeof paymentDeadlineHtml==='function'?paymentDeadlineHtml(order):''}<p>含税应付总额</p><h2>${esc(money(order.total_amount_minor,order.currency))}</h2><div class="go-sim-note">当前为隔离测试：不会扣真实款项，生成的预订与票据不能用于实际出行。</div><label class="go-consent"><input type="checkbox" data-consent required><span>已核对金额，确认完成本次测试支付与预订。</span></label>`,'确认测试支付',async d=>{
@@ -65,8 +72,8 @@
   const oldPay=renderPay;
   renderPay=async()=>{const caps=await api('/v1/consumer/checkout-capabilities');if(!caps.simulation_available){oldPay();return}$('#app').innerHTML=shell(`<h1 class="screen-title">确认酒店订单</h1><section class="card"><div class="kv"><span>含税总价</span><b>${esc(money(state.order.total_amount_minor,state.order.currency))}</b></div><div class="go-sim-note">隔离测试订单，不产生真实扣款。</div><button class="btn primary" id="goHotelPay">核对并继续</button></section>`,'trips');bindNav();$('#goHotelPay').onclick=()=>run(async()=>{if(await pay('HOTEL',state.order))await showTrip(state.order.order_id)})};
   createFlightOrderAndCheckout=()=>run(async()=>{const ids=await travelers('FLIGHT',state.flightPrebook.passenger_count||state.flightOffer?.passenger_count||1);if(!ids)return;const o=await post('/v1/flights/orders',{prebook_id:state.flightPrebook.prebook_id,traveler_ids:ids},`flight:${state.flightPrebook.prebook_id}:${ids.join(':')}`);await pay('FLIGHT',o);state.flightOrder=await api(`/v1/flights/orders/${o.order_id}`);renderFlightOrder()});
-  mobilityBook=(kind,id)=>run(async()=>{const tid=await traveler(kind);if(!tid)return;const rental=kind==='RENTAL',criteria=rental?state.rentalCriteria:state.rideCriteria;const o=await post(rental?'/v1/mobility/rentals/orders':'/v1/mobility/rides/orders',{...criteria,offer_id:id,traveler_ids:[tid]},`${kind}:${id}:${tid}:${JSON.stringify(criteria)}`);await pay(kind,o);const detail=await api(`/v1/mobility/orders/${o.order_id}`);if(rental)state.rentalOrder=detail;else state.rideOrder=detail;renderMobilityOrder(kind)});
-  function resume(vertical,o){if(!o||!['PAYMENT_PENDING','PAYMENT_AUTHORIZED','PAYMENT_CONFIRMED_AWAITING_SUPPLIER'].includes(o.status))return;const b=document.createElement('button');b.className='btn primary';b.textContent='继续核对与支付';document.querySelector('#app').append(b);b.onclick=()=>run(async()=>{if(await pay(vertical,o)){if(vertical==='FLIGHT'){state.flightOrder=await api(`/v1/flights/orders/${o.order_id}`);renderFlightOrder()}else if(vertical==='RAIL'){state.railOrder=await api(`/v1/rail/orders/${o.order_id}`);renderRailOrder()}else if(vertical==='ATTRACTION')await attractionReload();else await mobilityReload(vertical)}})}
+  mobilityBook=(kind,id)=>run(async()=>{const rental=kind==='RENTAL',accepted=rental?null:await acceptRide(id);if(!rental&&!accepted)return;const tid=await traveler(kind);if(!tid)return;const criteria=rental?state.rentalCriteria:state.rideCriteria;const o=await post(rental?'/v1/mobility/rentals/orders':'/v1/mobility/rides/orders',{...criteria,offer_id:id,traveler_ids:[tid],...(!rental?{cancellation_policy_hash:accepted}:{})},`${kind}:${id}:${tid}:${JSON.stringify(criteria)}:${accepted||''}`);await pay(kind,o);const detail=await api(`/v1/mobility/orders/${o.order_id}`);if(rental)state.rentalOrder=detail;else state.rideOrder=detail;renderMobilityOrder(kind)});
+  function resume(vertical,o){if(vertical==='RIDE'&&o?.cancellation?.state!=='BOOKING_ACCEPTED')return;if(!o||!['PAYMENT_PENDING','PAYMENT_AUTHORIZED','PAYMENT_CONFIRMED_AWAITING_SUPPLIER'].includes(o.status))return;const b=document.createElement('button');b.className='btn primary';b.textContent='继续核对与支付';document.querySelector('#app').append(b);b.onclick=()=>run(async()=>{if(await pay(vertical,o)){if(vertical==='FLIGHT'){state.flightOrder=await api(`/v1/flights/orders/${o.order_id}`);renderFlightOrder()}else if(vertical==='RAIL'){state.railOrder=await api(`/v1/rail/orders/${o.order_id}`);renderRailOrder()}else if(vertical==='ATTRACTION')await attractionReload();else await mobilityReload(vertical)}})}
   const oldFlight=renderFlightOrder,oldRail=renderRailOrder,oldMobility=renderMobilityOrder,oldAttraction=renderAttractionOrder;
   renderFlightOrder=()=>{oldFlight();resume('FLIGHT',state.flightOrder)};renderRailOrder=()=>{oldRail();resume('RAIL',state.railOrder)};renderMobilityOrder=k=>{oldMobility(k);resume(k,k==='RENTAL'?state.rentalOrder:state.rideOrder)};renderAttractionOrder=()=>{oldAttraction();resume('ATTRACTION',state.attractionOrder)};
   async function addTraveler(existing=null){
@@ -86,5 +93,5 @@
       $('#pvExport').onclick=()=>run(async()=>{const data=await dialog('导出我的旅行资料','<p>文件会包含你的个人资料。同行人仅导出允许分享的字段，请保存在你信任的设备上。</p>','确认导出',()=>api('/v1/consumer/profile/export',{method:'POST',body:JSON.stringify({confirmed:true})}));if(!data)return;const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='GO_Personal_Travel_Vault.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
       $('#pvLogout').onclick=async()=>{await api('/v1/consumer/auth/logout',{method:'POST'});state.me=null;showHome()};
     }catch(e){toast(e.message)}};
-  window.GOBooking={dialog,traveler,travelers,pay,addTraveler};
+  window.GOBooking={dialog,traveler,travelers,pay,addTraveler,acceptRide};
 })();

@@ -196,12 +196,22 @@ class JudgmentService:
         self._complete_hooks_in(hooks, judgment_id, package_id, ev["source_refs"])
         return judgment_id, {"package_id": package_id, "score": score, "decision_id": decision_id, "status": rec_status}
 
-    def _publish_events(self, hotel_id, judgment_id, created):
+    def _stage_events(self, s, hotel_id, judgment_id, created):
+        """Persist judgment events and outbox rows in the judgment transaction.
+
+        The outbox publisher still provides at-least-once delivery.  Atomic
+        staging only closes the committed-judgment/missing-event crash window;
+        it does not claim exactly-once transport.
+        """
         if created is None:
             return
-        repo.append_event(Event(new_id("evt"),"JUDGMENT_CREATED","HOTEL",hotel_id,{"judgment_id":judgment_id,"evidence_package_id":created["package_id"],"go_score_milli":created["score"]}))
-        repo.append_event(Event(new_id("evt"),"GO_SCORE_UPDATED","HOTEL",hotel_id,{"judgment_id":judgment_id,"go_score_milli":created["score"]}))
-        repo.append_event(Event(new_id("evt"),"RECOMMENDATION_STATUS_CHANGED","HOTEL",hotel_id,{"decision_id":created["decision_id"],"status":created["status"],"judgment_id":judgment_id}))
+        events = (
+            Event(new_id("evt"),"JUDGMENT_CREATED","HOTEL",hotel_id,{"judgment_id":judgment_id,"evidence_package_id":created["package_id"],"go_score_milli":created["score"]}),
+            Event(new_id("evt"),"GO_SCORE_UPDATED","HOTEL",hotel_id,{"judgment_id":judgment_id,"go_score_milli":created["score"]}),
+            Event(new_id("evt"),"RECOMMENDATION_STATUS_CHANGED","HOTEL",hotel_id,{"decision_id":created["decision_id"],"status":created["status"],"judgment_id":judgment_id}),
+        )
+        for event in events:
+            repo.append_event_in_session(s, event)
 
     def reevaluate(self, hotel_id: str, extra_features: dict | None = None) -> dict:
         if extra_features:
@@ -215,7 +225,7 @@ class JudgmentService:
         with transaction(SessionLocal) as s:
             self._lock_hotel_in(s, hotel_id)
             judgment_id, created = self._reevaluate_in(s, hotel_id, extra_features, standard)
-        self._publish_events(hotel_id, judgment_id, created)
+            self._stage_events(s, hotel_id, judgment_id, created)
         return self.get_judgment(judgment_id)
 
     def process_hook(self, hook_id: str) -> dict:
@@ -243,7 +253,7 @@ class JudgmentService:
                 judgment_id, created = self._reevaluate_in(s, hotel_id, None, standard)
             else:
                 unprocessable("JUDGMENT_HOOK_STATE_INVALID", "Hook is not processable")
-        self._publish_events(hotel_id, judgment_id, created)
+            self._stage_events(s, hotel_id, judgment_id, created)
         return self.get_judgment(judgment_id)
 
     def process_pending(self,limit:int=100)->list[dict]:

@@ -1,0 +1,34 @@
+........................................................................ [  9%]
+........................................................................ [ 19%]
+........................................................................ [ 29%]
+........................................................................ [ 39%]
+........................................................................ [ 49%]
+........................................................................ [ 58%]
+........................................................................ [ 68%]
+........................................................................ [ 78%]
+........................................................................ [ 88%]
+........................................................................ [ 98%]
+..............                                                           [100%]
+=============================== warnings summary ===============================
+tests/test_commercial_constitution_admin_os.py::test_admin_cannot_create_recommendation_without_independent_judgment
+  /workspace/scratch/1ca5fb2bbbf4/GO/application/src/go_hotel/services/commercial_constitution.py:29: SAWarning: fully NULL primary key identity cannot load any object.  This condition may raise an error in a future release.
+    rec=s.get(RecommendationDecisionRow,judgment_decision_id)
+
+tests/test_depth24_expiry.py::test_migration_preserves_all_deadline_history
+tests/test_depth24_expiry.py::test_migration_preserves_all_deadline_history
+tests/test_depth24_expiry.py::test_migration_preserves_all_deadline_history
+tests/test_depth24_expiry.py::test_migration_preserves_all_deadline_history
+tests/test_depth24_expiry.py::test_migration_preserves_all_deadline_history
+  /workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/alembic/config.py:598: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+tests/test_v61_media_harvester_rights_gate.py::test_download_cache_room_binding_and_rights_gate
+tests/test_v61_media_harvester_rights_gate.py::test_fail_closed_download_rights_ssrf_dedup_and_integrity
+tests/test_v61_media_harvester_rights_gate.py::test_fail_closed_download_rights_ssrf_dedup_and_integrity
+tests/test_v61_media_harvester_rights_gate.py::test_fail_closed_download_rights_ssrf_dedup_and_integrity
+tests/test_v61_media_harvester_rights_gate.py::test_rights_expiry_and_scope_fail_closed
+  /workspace/scratch/1ca5fb2bbbf4/GO/application/src/go_hotel/services/media_harvester.py:79: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    px=list(g.getdata())
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+734 passed, 11 warnings in 328.10s (0:05:28)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 from datetime import datetime, timezone
+from anyio import CapacityLimiter, to_thread
 from go_hotel.connectors.registry import registry
 from go_hotel.connectors.resilience import ResilientConnector, ConnectorTimeout
 from go_hotel.core.config import settings
@@ -15,6 +16,11 @@ from go_hotel.merge.engine import offer_merge_engine
 from go_hotel.services.consistency import booking_consistency_guard, benefit_fingerprint
 from go_hotel.services import catalog_fare_snapshot as fare_snapshot
 
+# This SQL segment was serialized by the event loop before offloading. Preserve
+# that ordering for drift/fare first-write paths while allowing unrelated API
+# requests to run. Waiting does not occupy the shared Starlette thread pool.
+_search_write_limiter = CapacityLimiter(1)
+
 class BookingService:
     def _connector(self, connector_id: str | None = None):
         base = registry.get(connector_id) if connector_id else registry.default()
@@ -23,6 +29,12 @@ class BookingService:
     async def search(self, city_code: str, check_in: str, check_out: str, currency: str):
         request_key = f"{city_code}:{check_in}:{check_out}:{currency}"
         candidates, decision = await traffic_router.search(request_key=request_key, city_code=city_code, check_in=check_in, check_out=check_out, currency=currency)
+        return await to_thread.run_sync(
+            self._merge_and_save_search, candidates, decision, limiter=_search_write_limiter
+        )
+
+    def _merge_and_save_search(self, candidates, decision):
+        # Sessions are created and closed inside this worker, never shared across threads.
         # Merge equivalent multi-source room/rate offers after routing eligibility.
         # GO Recommendation / GO Score are intentionally absent from this transaction merge path.
         raw_offers=[]

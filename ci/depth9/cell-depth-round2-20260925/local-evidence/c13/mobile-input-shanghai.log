@@ -1,0 +1,35 @@
+(node:12) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/scratch/cdb63add4518/go/application/mobile/go-app/src/domain/mobilitySearchInput.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/scratch/cdb63add4518/go/application/mobile/go-app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ defaults move with now, cross midnight, and leave places editable (2.07022ms)
+✔ ride sends selected trimmed places and UTC timestamp (0.746385ms)
+✔ editable +09 and -04 zones map the same wall time to different UTC instants (0.147062ms)
+✔ reject invalid calendar/time 2026-02-29 10:00 (0.21921ms)
+✔ reject invalid calendar/time 2026-04-31 10:00 (0.189285ms)
+✔ reject invalid calendar/time 2026-13-01 10:00 (0.094052ms)
+✔ reject invalid calendar/time 2026-09-00 10:00 (0.083266ms)
+✔ reject invalid calendar/time 2026-09-26 24:00 (0.070987ms)
+✔ reject invalid calendar/time 2026-09-26 10:60 (0.098178ms)
+✔ reject invalid calendar/time 2026/09/26 10:00 (0.162465ms)
+✔ reject invalid calendar/time 2026-09-26 9:30 (0.88863ms)
+✔ leap date accepted and offset crosses UTC day (0.128674ms)
+✔ reject invalid offset UTC+8 (0.162815ms)
+✔ reject invalid offset +8:00 (0.091348ms)
+✔ reject invalid offset +14:01 (0.096105ms)
+✔ reject invalid offset -12:01 (0.067432ms)
+✔ reject invalid offset +08:60 (0.045289ms)
+✔ reject invalid offset NaN (0.071157ms)
+✔ stale form rejects past or current pickup at submission (0.202716ms)
+✔ rental earlier local return date may be later in UTC (0.152761ms)
+✔ later local clock rejected when earlier in UTC (0.27195ms)
+✔ equal instants with different offsets rejected (0.115625ms)
+✔ locations required and bounded without demo fallback (0.210147ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 122.084828

@@ -1,0 +1,4700 @@
+{
+  "binding": {
+    "source_tree_sha256": "ddf2fd1b6d9255634bc3238fb207e9dc273ffa153c25ee17a20435b9820b7bb5",
+    "candidate": "d666da292d1b11a255eeb40dcfd4d4e97d1302c0",
+    "application_tree": "bc83aedbf23d33bb118f65b93a1af272692f689f",
+    "tracked_source_dirty": false
+  },
+  "mode": "ISOLATED_SQLITE_CHROMIUM",
+  "native_device": "NOT_RUN",
+  "acceptance": "LIMITED_SCENARIOS_ONLY",
+  "events": [
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/me",
+      "status": 401,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/auth/login",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/me",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/wallet",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/consents",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/sources",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports",
+      "status": 201,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports/pij_b3c347f2a04e437e/items/pii_3b38acc87c25457a/review",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports/pij_b3c347f2a04e437e/items/pii_ace21e32f64a4d32/review",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports/pij_b3c347f2a04e437e/items/pii_d4dcd13ffade4cb7/review",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports/pij_b3c347f2a04e437e/commit",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/consents",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/sources",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/imports",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/me",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/wallet",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/search",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/consents",
+      "status": 201,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout/RENTAL/rent_ord_7d9f2499b9dc45bd",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_7d9f2499b9dc45bd",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_7d9f2499b9dc45bd/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_7d9f2499b9dc45bd/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_7d9f2499b9dc45bd/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_7d9f2499b9dc45bd/change-quotes",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_7d9f2499b9dc45bd/changes/rent_chq_2f6a3fe42afc4382",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_7d9f2499b9dc45bd",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_7d9f2499b9dc45bd/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_7d9f2499b9dc45bd/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_7d9f2499b9dc45bd/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_7d9f2499b9dc45bd/refund-quote",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_7d9f2499b9dc45bd/refund-confirmed",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_7d9f2499b9dc45bd",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_7d9f2499b9dc45bd/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/me",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/wallet",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/search",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/prebook",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout/ATTRACTION/attr_ord_63ce345224f745de",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders/attr_ord_63ce345224f745de",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders/attr_ord_63ce345224f745de/refund-quote",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders/attr_ord_63ce345224f745de/refund-confirmed",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders/attr_ord_63ce345224f745de",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/me",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/wallet",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/search",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/consents",
+      "status": 201,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout/RENTAL/rent_ord_a72a74a85a354890",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_a72a74a85a354890",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-obligation",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-obligation/rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b/accept",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money/rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/hosted-direct/disruptions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/hosted-direct/disruption-candidates",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/hosted-direct/disruption-candidates",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/hosted-direct/disruptions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/hosted-direct/disruptions",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/hosted-direct/disruption-candidates",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/operations/verticals/RENTAL",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/operations/verticals/RENTAL",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money-review",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money/rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b/authorize",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money-review",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_a72a74a85a354890/fulfillment",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_a72a74a85a354890",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_a72a74a85a354890/fulfillment",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/orders/rent_ord_a72a74a85a354890",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money/rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money/rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/dashboard",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/transaction-orders/RENTAL/rent_ord_a72a74a85a354890",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations/cases",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations/cases/rent_damage_457d246d225b492d/response",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money/rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/operations/verticals/RENTAL",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/operations/verticals/RENTAL",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money-review",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations/cases/rent_damage_457d246d225b492d/decision",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "admin",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money-review",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/operations/verticals/RENTAL",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money-review",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money/rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b/settle",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money-review",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money/rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations/cases/rent_damage_457d246d225b492d/appeal",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money/rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/operations/verticals/RENTAL",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/operations/verticals/RENTAL",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money-review",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations/cases/rent_damage_457d246d225b492d/appeal-decision",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "admin",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money-review",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/operations/verticals/RENTAL",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money-review",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money/rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b/compensate",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money-review",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/damage-cases",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-obligation",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/deposit-money/rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/mobility/rentals/orders/rent_ord_a72a74a85a354890/operations",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/dashboard",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/me",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/wallet",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/completeness",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/search",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/prebook",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/profile/vault",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout-capabilities",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/consumer/checkout/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders/attr_ord_e58e357ef93b43a6/change-quote",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders/attr_ord_e58e357ef93b43a6/execute-change/attr_chg_8077974edcfa40d0",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "consumer",
+      "path": "/v1/attractions/orders/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/transaction-orders",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/transaction-orders/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/transaction-orders/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/transaction-orders/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/transaction-orders/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "supplier",
+      "path": "/v1/supplier/ticket-operations/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/operations/verticals/ATTRACTION",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/operations/verticals/ATTRACTION",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "POST"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/operations/verticals/ATTRACTION",
+      "status": 200,
+      "method": "GET"
+    },
+    {
+      "role": "admin",
+      "path": "/internal/v1/admin/ticket-operations/ATTRACTION/attr_ord_e58e357ef93b43a6",
+      "status": 200,
+      "method": "GET"
+    }
+  ],
+  "steps": [
+    {
+      "name": "traveler",
+      "result": "PASS"
+    },
+    {
+      "name": "rental-search-book-pay",
+      "result": "PASS"
+    },
+    {
+      "name": "rental-reprice-change",
+      "result": "PASS"
+    },
+    {
+      "name": "rental-cancel-refund",
+      "result": "PASS"
+    },
+    {
+      "name": "attraction-search-book-pay",
+      "result": "PASS"
+    },
+    {
+      "name": "attraction-future-window-disables-redemption",
+      "result": "PASS"
+    },
+    {
+      "name": "attraction-refund",
+      "result": "PASS"
+    },
+    {
+      "name": "rental-second-book-for-supplier-claim",
+      "result": "PASS"
+    },
+    {
+      "name": "consumer-explicit-deposit-consent",
+      "result": "PASS"
+    },
+    {
+      "name": "administrator-authorizes-accepted-deposit",
+      "result": "PASS"
+    },
+    {
+      "name": "rental-normal-pickup-return",
+      "result": "PASS"
+    },
+    {
+      "name": "supplier-bound-rental-damage-claim",
+      "result": "PASS"
+    },
+    {
+      "name": "consumer-disputes-supplier-damage-claim",
+      "result": "PASS"
+    },
+    {
+      "name": "independent-administrator-decides-damage",
+      "result": "PASS"
+    },
+    {
+      "name": "administrator-settles-damage-and-releases-balance",
+      "result": "PASS"
+    },
+    {
+      "name": "consumer-sees-settlement-and-appeals",
+      "result": "PASS"
+    },
+    {
+      "name": "another-administrator-reduces-award",
+      "result": "PASS"
+    },
+    {
+      "name": "administrator-compensates-reduced-award",
+      "result": "PASS"
+    },
+    {
+      "name": "consumer-sees-compensation-and-net-damage-charge",
+      "result": "PASS"
+    },
+    {
+      "name": "attraction-operations-new-order",
+      "result": "PASS"
+    },
+    {
+      "name": "consumer-requests-attraction-date-change",
+      "result": "PASS"
+    },
+    {
+      "name": "attraction-supplier-confirms-change-receipt",
+      "result": "PASS"
+    },
+    {
+      "name": "administrator-applies-attraction-change",
+      "result": "FAIL",
+      "error": "locator.waitFor: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('#adminOrders').getByText('CONFIRMED', { exact: true }) to be visible\n",
+      "visible": "GO 全生态运营管理系统\n直订酒店取消与赔付\n运营\n异常中心\n治理后台\nacceptance-ops-maker@example.test\nGO_GOVERNANCE\n景点门票与体验\nGO_ADMIN\n退出\n景点门票 / 体验运营\n搜索/交易/履约/退改/退款统一运营视图\n订单\n2\n退款\n1\n订单号\n查询订单\n清除查询\n订单\n订单号\t状态\t业务字段\t业务字段\t业务字段\t业务字段\t业务字段\t业务字段\t业务字段\nattr_ord_e58e357ef93b43a6\t已确认\t东京晴空塔天望甲板\t东京\t2026-11-11\t16:00\tQR_CODE\tBROWSER-ATTR-VOUCHER\t¥180.00\nattr_ord_63ce345224f745de\t已退款\t东京晴空塔天望甲板\t东京\t2026-10-26\t16:00\tQR_CODE\tSIM-attr_ord_63ce345224f745de\t¥180.00\n上一页\n第 1 / 1 页 · 共 2 条\n下一页\n退款\n业务字段\t订单号\t状态\t业务字段\t币种\t创建时间\t业务字段\nattr_ref_8de5449aa5b6476b\tattr_ord_63ce345224f745de\tREFUND_COMPLETED\t¥180.00\tCNY\t2026-09-26T20:42:04.466480\t2026-09-26T20:42:04.466484\n上一页\n第 1 / 1 页 · 共 1 条\n下一页\n选择订单处理票务\nattr_ord_e58e357ef93b43a6attr_ord_63ce345224f745de\n景点门票处理工作台\n\n订单 attr_ord_e58e357ef93b43a6 · CONFIRMED · 工作流 APPLIED\n\n游玩日期 2026-11-11 · 场次 16:00 · 凭证 BROWSER-ATTR-VOUCHER\n\n供应商仅提交处理陈述；管理员按回执核对订单，复核由另一位管理员完成。退款仍由原订单退款流程处理。\n\n累计实付 CNY 180.00 · 累计已退 0.00 · 净实付 180.00\n\n当前处理人 usr_7f3af05d2932424095075d8bb686d5f1\n\n操作\n登记问题\n领取 / 管理员接管\n提交供应商处理回执\n按已登记回执处理订单\n独立复核处理结果\n记录跟进并关闭\n 处理说明\n提交回执时填写\n回执结果\n发券 / 改期已确认\n供应商闭园 / 无法履约\n结果待核实\n 回执证据编号供应商预订编号 门票凭证编号改签报价编号（改签回执必填）\n提交处理刷新状态\n\n处理与复核记录\n\nREGISTER · usr_7f3af05d2932424095075d8bb686d5f1 · 隔离验收：登记消费者改期\n\nCLAIM · usr_7f3af05d2932424095075d8bb686d5f1 · 隔离验收：所属供应商领取\n\nRECEIPT · usr_7f3af05d2932424095075d8bb686d5f1 · 隔离验收：改期已确认的供应商陈述\n\nAPPLY · usr_9e3bd267ee0d41d9acce3f8d0c75b6cd · 隔离验收：按已登记精确报价回执应用"
+    }
+  ],
+  "errors": [],
+  "facts": {
+    "rental_booked": {
+      "vertical": "RENTAL",
+      "order_id": "rent_ord_7d9f2499b9dc45bd",
+      "status": "CONFIRMED",
+      "pickup_location": "哈尔滨机场",
+      "return_location": "哈尔滨机场",
+      "pickup_at": "2026-10-26T10:00",
+      "return_at": "2026-10-29T10:00",
+      "vehicle_class": "COMPACT",
+      "insurance": {
+        "type": "BASIC",
+        "excess_minor": 500000
+      },
+      "mileage": {
+        "type": "UNLIMITED"
+      },
+      "deposit_minor": 200000,
+      "total_amount_minor": 126000,
+      "currency": "CNY",
+      "drivers": [
+        {
+          "full_name": "INDEPENDENT RENTAL ADULT",
+          "driver_license_number": "TEST-ISOLATED-RENTAL"
+        }
+      ],
+      "supplier_reference": "SIM-rent_ord_7d9f2499b9dc45bd",
+      "payment_deadline_ms": 1790456221927,
+      "unpaid_reservation_state": "PAYMENT_STARTED",
+      "external_live": false,
+      "pending_change": null,
+      "evidence": [
+        {
+          "sequence_no": 1,
+          "kind": "ORDER_CREATED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "3f23b9fda6224bff6a0fa18cdbe2fdd0e5df99898158d3011918528df2ceba05",
+          "previous_hash": "GENESIS",
+          "payload": {
+            "supplier_reference": null,
+            "offer_id": "rental_compact",
+            "deposit_minor": 200000,
+            "insurance": {
+              "type": "BASIC",
+              "excess_minor": 500000
+            },
+            "external_live": false
+          },
+          "created_at": "2026-09-26T20:42:01.930827"
+        },
+        {
+          "sequence_no": 2,
+          "kind": "VAULT_BOOKING_DATA_RELEASED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "7e8b6357760a4a1db09b9c62f981adf35fd2461261d539b4d6545cd22c880fbe",
+          "previous_hash": "3f23b9fda6224bff6a0fa18cdbe2fdd0e5df99898158d3011918528df2ceba05",
+          "payload": {
+            "release_ids": [
+              "pdr_a045c2c3fc464133"
+            ],
+            "minimum_necessary": true
+          },
+          "created_at": "2026-09-26T20:42:01.935927"
+        },
+        {
+          "sequence_no": 3,
+          "kind": "SUPPLIER_CONFIRMED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "4df6ed2303e76bf19d8db159a23584c6a526f9014fd1b970c39eb3e468994035",
+          "previous_hash": "7e8b6357760a4a1db09b9c62f981adf35fd2461261d539b4d6545cd22c880fbe",
+          "payload": {
+            "supplier_confirmation_reference": "SIM-rent_ord_7d9f2499b9dc45bd",
+            "external_operation_id": "SIM-rent_ord_7d9f2499b9dc45bd",
+            "evidence_reference": "contract-simulator://RENTAL/rent_ord_7d9f2499b9dc45bd",
+            "actor_id": null
+          },
+          "created_at": "2026-09-26T20:42:02.136644"
+        }
+      ]
+    },
+    "rental_changed": {
+      "vertical": "RENTAL",
+      "order_id": "rent_ord_7d9f2499b9dc45bd",
+      "status": "CONFIRMED",
+      "pickup_location": "哈尔滨机场",
+      "return_location": "哈尔滨机场",
+      "pickup_at": "2026-10-26T10:00",
+      "return_at": "2026-10-30T10:00",
+      "vehicle_class": "COMPACT",
+      "insurance": {
+        "type": "BASIC",
+        "excess_minor": 500000
+      },
+      "mileage": {
+        "type": "UNLIMITED"
+      },
+      "deposit_minor": 200000,
+      "total_amount_minor": 168000,
+      "currency": "CNY",
+      "drivers": [
+        {
+          "full_name": "INDEPENDENT RENTAL ADULT",
+          "driver_license_number": "TEST-ISOLATED-RENTAL"
+        }
+      ],
+      "supplier_reference": "SIM-rent_ord_7d9f2499b9dc45bd",
+      "payment_deadline_ms": 1790456221927,
+      "unpaid_reservation_state": "PAYMENT_STARTED",
+      "external_live": false,
+      "pending_change": null,
+      "evidence": [
+        {
+          "sequence_no": 1,
+          "kind": "ORDER_CREATED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "3f23b9fda6224bff6a0fa18cdbe2fdd0e5df99898158d3011918528df2ceba05",
+          "previous_hash": "GENESIS",
+          "payload": {
+            "supplier_reference": null,
+            "offer_id": "rental_compact",
+            "deposit_minor": 200000,
+            "insurance": {
+              "type": "BASIC",
+              "excess_minor": 500000
+            },
+            "external_live": false
+          },
+          "created_at": "2026-09-26T20:42:01.930827"
+        },
+        {
+          "sequence_no": 2,
+          "kind": "VAULT_BOOKING_DATA_RELEASED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "7e8b6357760a4a1db09b9c62f981adf35fd2461261d539b4d6545cd22c880fbe",
+          "previous_hash": "3f23b9fda6224bff6a0fa18cdbe2fdd0e5df99898158d3011918528df2ceba05",
+          "payload": {
+            "release_ids": [
+              "pdr_a045c2c3fc464133"
+            ],
+            "minimum_necessary": true
+          },
+          "created_at": "2026-09-26T20:42:01.935927"
+        },
+        {
+          "sequence_no": 3,
+          "kind": "SUPPLIER_CONFIRMED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "4df6ed2303e76bf19d8db159a23584c6a526f9014fd1b970c39eb3e468994035",
+          "previous_hash": "7e8b6357760a4a1db09b9c62f981adf35fd2461261d539b4d6545cd22c880fbe",
+          "payload": {
+            "supplier_confirmation_reference": "SIM-rent_ord_7d9f2499b9dc45bd",
+            "external_operation_id": "SIM-rent_ord_7d9f2499b9dc45bd",
+            "evidence_reference": "contract-simulator://RENTAL/rent_ord_7d9f2499b9dc45bd",
+            "actor_id": null
+          },
+          "created_at": "2026-09-26T20:42:02.136644"
+        },
+        {
+          "sequence_no": 4,
+          "kind": "CHANGE_CONFIRMED_BY_CUSTOMER",
+          "status": "CHANGE_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "f7e08eedd79cfb05eebb9eb48343047b0b46792c10645c91e365bbffcf64584e",
+          "previous_hash": "4df6ed2303e76bf19d8db159a23584c6a526f9014fd1b970c39eb3e468994035",
+          "payload": {
+            "quote_id": "rent_chq_2f6a3fe42afc4382",
+            "difference_minor": 42000,
+            "currency": "CNY",
+            "external_live": false
+          },
+          "created_at": "2026-09-26T20:42:02.515443"
+        },
+        {
+          "sequence_no": 5,
+          "kind": "CHANGE_EXECUTED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "1728fe2df7ab2be9fb82253042863a9c1ca15a24f110588ac986bd255d923f50",
+          "previous_hash": "f7e08eedd79cfb05eebb9eb48343047b0b46792c10645c91e365bbffcf64584e",
+          "payload": {
+            "quote_id": "rent_chq_2f6a3fe42afc4382",
+            "money_movement_ids": [
+              "omm_9bf47ed82b5e4c2e86a98eee2d17164a"
+            ],
+            "difference_minor": 42000,
+            "new_pickup_at": "2026-10-26T10:00",
+            "new_return_at": "2026-10-30T10:00",
+            "external_live": false
+          },
+          "created_at": "2026-09-26T20:42:02.546631"
+        }
+      ]
+    },
+    "rental_refund": {
+      "receipt": {
+        "refund_id": "mob_ref_a96167d8021d403f",
+        "order_id": "rent_ord_7d9f2499b9dc45bd",
+        "status": "REFUND_COMPLETED",
+        "refund_amount_minor": 168000,
+        "currency": "CNY"
+      },
+      "order": {
+        "vertical": "RENTAL",
+        "order_id": "rent_ord_7d9f2499b9dc45bd",
+        "status": "REFUNDED",
+        "pickup_location": "哈尔滨机场",
+        "return_location": "哈尔滨机场",
+        "pickup_at": "2026-10-26T10:00",
+        "return_at": "2026-10-30T10:00",
+        "vehicle_class": "COMPACT",
+        "insurance": {
+          "type": "BASIC",
+          "excess_minor": 500000
+        },
+        "mileage": {
+          "type": "UNLIMITED"
+        },
+        "deposit_minor": 200000,
+        "total_amount_minor": 168000,
+        "currency": "CNY",
+        "drivers": [
+          {
+            "full_name": "INDEPENDENT RENTAL ADULT",
+            "driver_license_number": "TEST-ISOLATED-RENTAL"
+          }
+        ],
+        "supplier_reference": null,
+        "payment_deadline_ms": 1790456221927,
+        "unpaid_reservation_state": "PAYMENT_STARTED",
+        "external_live": false,
+        "pending_change": null,
+        "evidence": [
+          {
+            "sequence_no": 1,
+            "kind": "ORDER_CREATED",
+            "status": "PAYMENT_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "3f23b9fda6224bff6a0fa18cdbe2fdd0e5df99898158d3011918528df2ceba05",
+            "previous_hash": "GENESIS",
+            "payload": {
+              "supplier_reference": null,
+              "offer_id": "rental_compact",
+              "deposit_minor": 200000,
+              "insurance": {
+                "type": "BASIC",
+                "excess_minor": 500000
+              },
+              "external_live": false
+            },
+            "created_at": "2026-09-26T20:42:01.930827"
+          },
+          {
+            "sequence_no": 2,
+            "kind": "VAULT_BOOKING_DATA_RELEASED",
+            "status": "PAYMENT_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "7e8b6357760a4a1db09b9c62f981adf35fd2461261d539b4d6545cd22c880fbe",
+            "previous_hash": "3f23b9fda6224bff6a0fa18cdbe2fdd0e5df99898158d3011918528df2ceba05",
+            "payload": {
+              "release_ids": [
+                "pdr_a045c2c3fc464133"
+              ],
+              "minimum_necessary": true
+            },
+            "created_at": "2026-09-26T20:42:01.935927"
+          },
+          {
+            "sequence_no": 3,
+            "kind": "SUPPLIER_CONFIRMED",
+            "status": "CONFIRMED",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "4df6ed2303e76bf19d8db159a23584c6a526f9014fd1b970c39eb3e468994035",
+            "previous_hash": "7e8b6357760a4a1db09b9c62f981adf35fd2461261d539b4d6545cd22c880fbe",
+            "payload": {
+              "supplier_confirmation_reference": "SIM-rent_ord_7d9f2499b9dc45bd",
+              "external_operation_id": "SIM-rent_ord_7d9f2499b9dc45bd",
+              "evidence_reference": "contract-simulator://RENTAL/rent_ord_7d9f2499b9dc45bd",
+              "actor_id": null
+            },
+            "created_at": "2026-09-26T20:42:02.136644"
+          },
+          {
+            "sequence_no": 4,
+            "kind": "CHANGE_CONFIRMED_BY_CUSTOMER",
+            "status": "CHANGE_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "f7e08eedd79cfb05eebb9eb48343047b0b46792c10645c91e365bbffcf64584e",
+            "previous_hash": "4df6ed2303e76bf19d8db159a23584c6a526f9014fd1b970c39eb3e468994035",
+            "payload": {
+              "quote_id": "rent_chq_2f6a3fe42afc4382",
+              "difference_minor": 42000,
+              "currency": "CNY",
+              "external_live": false
+            },
+            "created_at": "2026-09-26T20:42:02.515443"
+          },
+          {
+            "sequence_no": 5,
+            "kind": "CHANGE_EXECUTED",
+            "status": "CONFIRMED",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "1728fe2df7ab2be9fb82253042863a9c1ca15a24f110588ac986bd255d923f50",
+            "previous_hash": "f7e08eedd79cfb05eebb9eb48343047b0b46792c10645c91e365bbffcf64584e",
+            "payload": {
+              "quote_id": "rent_chq_2f6a3fe42afc4382",
+              "money_movement_ids": [
+                "omm_9bf47ed82b5e4c2e86a98eee2d17164a"
+              ],
+              "difference_minor": 42000,
+              "new_pickup_at": "2026-10-26T10:00",
+              "new_return_at": "2026-10-30T10:00",
+              "external_live": false
+            },
+            "created_at": "2026-09-26T20:42:02.546631"
+          },
+          {
+            "sequence_no": 6,
+            "kind": "REFUND_CONSENT_FROZEN",
+            "status": "CONFIRMED",
+            "source": "COMMAND_CENTER",
+            "entry_hash": "8cd27e0c9b0849de8cb30cd555e74b88fcacbd079904eb3f3fa29c99bb9b723b",
+            "previous_hash": "1728fe2df7ab2be9fb82253042863a9c1ca15a24f110588ac986bd255d923f50",
+            "payload": {
+              "account_id": "usr_f2533b9732a94585",
+              "refund_id": "mob_ref_a96167d8021d403f",
+              "quote": {
+                "order_id": "rent_ord_7d9f2499b9dc45bd",
+                "fee_minor": 0,
+                "refund_amount_minor": 168000,
+                "currency": "CNY",
+                "refund_to": "ORIGINAL_PAYMENT_METHOD",
+                "quote_hash": "cbbb6d10deb321315b5e26d32751cab29256a5b9fdc2ebf929aaebeb911dfe69"
+              },
+              "settlement_plan_hash": "41f668724a48ee33b9d14577253bc4a3f237c980b93580e97d3ec29b34179fe6"
+            },
+            "created_at": "2026-09-26T20:42:02.851907"
+          },
+          {
+            "sequence_no": 7,
+            "kind": "REFUND_REQUESTED",
+            "status": "REFUND_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "932a692e3a64ce72941551a31e06bf047c45c63000e44841cdddce54cd835478",
+            "previous_hash": "8cd27e0c9b0849de8cb30cd555e74b88fcacbd079904eb3f3fa29c99bb9b723b",
+            "payload": {
+              "refund_id": "mob_ref_a96167d8021d403f",
+              "refund_amount_minor": 168000,
+              "refund_to": "ORIGINAL_PAYMENT_METHOD"
+            },
+            "created_at": "2026-09-26T20:42:02.852913"
+          },
+          {
+            "sequence_no": 8,
+            "kind": "REFUND_COMPLETED",
+            "status": "REFUNDED",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "0cd5f45d7c6a258c5a59e77b5491f6946c37179e1b57d919dc84a78298dd66cc",
+            "previous_hash": "932a692e3a64ce72941551a31e06bf047c45c63000e44841cdddce54cd835478",
+            "payload": {
+              "refund_id": "mob_ref_a96167d8021d403f",
+              "refund_amount_minor": 168000,
+              "money_movement_ids": [
+                "omm_66024ee475e44a18a81b7a8a60336c5f",
+                "omm_8f480b76b5ed4edf86b29db22290a49d"
+              ]
+            },
+            "created_at": "2026-09-26T20:42:02.876907"
+          }
+        ]
+      }
+    },
+    "attraction_booked": {
+      "vertical": "ATTRACTION",
+      "order_id": "attr_ord_63ce345224f745de",
+      "status": "CONFIRMED",
+      "product_id": "tokyo_skytree",
+      "product_name": "东京晴空塔天望甲板",
+      "product_type": "ATTRACTION",
+      "destination": "东京",
+      "visit_date": "2026-10-26",
+      "session_time": "16:00",
+      "ticket_type": "成人票",
+      "quantity": 1,
+      "eligibility": {
+        "age": "12+ adult",
+        "id_required": false
+      },
+      "voucher_type": "QR_CODE",
+      "voucher_code": "SIM-attr_ord_63ce345224f745de",
+      "total_amount_minor": 18000,
+      "currency": "CNY",
+      "attendees": [
+        {
+          "full_name": "INDEPENDENT RENTAL ADULT"
+        }
+      ],
+      "supplier_reference": "SIM-attr_ord_63ce345224f745de",
+      "external_live": false,
+      "redemption_window": {
+        "state": "FROZEN_SUPPLIER_WINDOW",
+        "destination_timezone": "Asia/Tokyo",
+        "opens_at": "2026-10-26T06:30:00+00:00",
+        "closes_at": "2026-10-26T09:00:00+00:00",
+        "boundary": "[opens_at,closes_at)",
+        "policy": {
+          "closes_minutes_after_session": 120,
+          "destination_timezone": "Asia/Tokyo",
+          "opens_minutes_before_session": 30,
+          "policy_reference": "engineering-fixture://attraction/session-window/v1"
+        }
+      },
+      "payment_deadline_ms": 1790456224011,
+      "unpaid_reservation_state": "PAYMENT_STARTED",
+      "can_redeem": false,
+      "redemption_blocker": "ATTRACTION_OUTSIDE_SUPPLIER_VALIDITY_WINDOW",
+      "supplier_closed_refund": false,
+      "evidence": [
+        {
+          "sequence_no": 1,
+          "kind": "ORDER_CREATED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "c77db152f7c2f1dd0525f59452ea8b080d6c0fb19a12c1da82c8379afd743ed3",
+          "previous_hash": "GENESIS",
+          "payload": {
+            "prebook_id": "attr_pre_70faf002b05b4b23",
+            "terms_hash": "b86f33473a3a9b591b2b48fe7246b5cb6c05132b593f511d2b51608674b41614",
+            "external_live": false
+          },
+          "created_at": "2026-09-26T20:42:04.014495"
+        },
+        {
+          "sequence_no": 2,
+          "kind": "VAULT_BOOKING_DATA_RELEASED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "2536cc7c45d60d4c0282be21f68dae9c85dec60f226d568c28cded9ee925aec6",
+          "previous_hash": "c77db152f7c2f1dd0525f59452ea8b080d6c0fb19a12c1da82c8379afd743ed3",
+          "payload": {
+            "release_ids": [
+              "pdr_c9d6597fac4f46db"
+            ],
+            "minimum_necessary": true
+          },
+          "created_at": "2026-09-26T20:42:04.020360"
+        },
+        {
+          "sequence_no": 3,
+          "kind": "SUPPLIER_CONFIRMED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "7e43f856d4a18e31352d0ee228e58d9ac4e4b377637945279076c07ce6d1a7f9",
+          "previous_hash": "2536cc7c45d60d4c0282be21f68dae9c85dec60f226d568c28cded9ee925aec6",
+          "payload": {
+            "supplier_confirmation_reference": "SIM-attr_ord_63ce345224f745de",
+            "external_operation_id": "SIM-attr_ord_63ce345224f745de",
+            "evidence_reference": "contract-simulator://ATTRACTION/attr_ord_63ce345224f745de",
+            "actor_id": null
+          },
+          "created_at": "2026-09-26T20:42:04.163779"
+        }
+      ]
+    },
+    "future_window_guard": "UI_DISABLED_WITH_SERVER_CAN_REDEEM_FALSE; backend bypass rejection is outside this UI probe",
+    "attraction_refund": {
+      "receipt": {
+        "refund_id": "attr_ref_8de5449aa5b6476b",
+        "order_id": "attr_ord_63ce345224f745de",
+        "status": "REFUND_COMPLETED",
+        "refund_fee_minor": 0,
+        "refund_amount_minor": 18000,
+        "currency": "CNY"
+      },
+      "order": {
+        "vertical": "ATTRACTION",
+        "order_id": "attr_ord_63ce345224f745de",
+        "status": "REFUNDED",
+        "product_id": "tokyo_skytree",
+        "product_name": "东京晴空塔天望甲板",
+        "product_type": "ATTRACTION",
+        "destination": "东京",
+        "visit_date": "2026-10-26",
+        "session_time": "16:00",
+        "ticket_type": "成人票",
+        "quantity": 1,
+        "eligibility": {
+          "age": "12+ adult",
+          "id_required": false
+        },
+        "voucher_type": "QR_CODE",
+        "voucher_code": null,
+        "total_amount_minor": 18000,
+        "currency": "CNY",
+        "attendees": [
+          {
+            "full_name": "INDEPENDENT RENTAL ADULT"
+          }
+        ],
+        "supplier_reference": null,
+        "external_live": false,
+        "redemption_window": {
+          "state": "FROZEN_SUPPLIER_WINDOW",
+          "destination_timezone": "Asia/Tokyo",
+          "opens_at": "2026-10-26T06:30:00+00:00",
+          "closes_at": "2026-10-26T09:00:00+00:00",
+          "boundary": "[opens_at,closes_at)",
+          "policy": {
+            "closes_minutes_after_session": 120,
+            "destination_timezone": "Asia/Tokyo",
+            "opens_minutes_before_session": 30,
+            "policy_reference": "engineering-fixture://attraction/session-window/v1"
+          }
+        },
+        "payment_deadline_ms": 1790456224011,
+        "unpaid_reservation_state": "PAYMENT_STARTED",
+        "can_redeem": false,
+        "redemption_blocker": "ATTRACTION_NOT_CONFIRMED",
+        "supplier_closed_refund": false,
+        "evidence": [
+          {
+            "sequence_no": 1,
+            "kind": "ORDER_CREATED",
+            "status": "PAYMENT_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "c77db152f7c2f1dd0525f59452ea8b080d6c0fb19a12c1da82c8379afd743ed3",
+            "previous_hash": "GENESIS",
+            "payload": {
+              "prebook_id": "attr_pre_70faf002b05b4b23",
+              "terms_hash": "b86f33473a3a9b591b2b48fe7246b5cb6c05132b593f511d2b51608674b41614",
+              "external_live": false
+            },
+            "created_at": "2026-09-26T20:42:04.014495"
+          },
+          {
+            "sequence_no": 2,
+            "kind": "VAULT_BOOKING_DATA_RELEASED",
+            "status": "PAYMENT_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "2536cc7c45d60d4c0282be21f68dae9c85dec60f226d568c28cded9ee925aec6",
+            "previous_hash": "c77db152f7c2f1dd0525f59452ea8b080d6c0fb19a12c1da82c8379afd743ed3",
+            "payload": {
+              "release_ids": [
+                "pdr_c9d6597fac4f46db"
+              ],
+              "minimum_necessary": true
+            },
+            "created_at": "2026-09-26T20:42:04.020360"
+          },
+          {
+            "sequence_no": 3,
+            "kind": "SUPPLIER_CONFIRMED",
+            "status": "CONFIRMED",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "7e43f856d4a18e31352d0ee228e58d9ac4e4b377637945279076c07ce6d1a7f9",
+            "previous_hash": "2536cc7c45d60d4c0282be21f68dae9c85dec60f226d568c28cded9ee925aec6",
+            "payload": {
+              "supplier_confirmation_reference": "SIM-attr_ord_63ce345224f745de",
+              "external_operation_id": "SIM-attr_ord_63ce345224f745de",
+              "evidence_reference": "contract-simulator://ATTRACTION/attr_ord_63ce345224f745de",
+              "actor_id": null
+            },
+            "created_at": "2026-09-26T20:42:04.163779"
+          },
+          {
+            "sequence_no": 4,
+            "kind": "REFUND_REQUESTED",
+            "status": "REFUND_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "875332c909dcd4d2178b788a3eab0327e4b64bdb64fd84c4624498e8d246c2d9",
+            "previous_hash": "7e43f856d4a18e31352d0ee228e58d9ac4e4b377637945279076c07ce6d1a7f9",
+            "payload": {
+              "amount_minor": 18000,
+              "request_hash": "fad606a2bf598721e4d3cd398df3bece7e3d1e8a66bb763bac4c00d64b76a609"
+            },
+            "created_at": "2026-09-26T20:42:04.448950"
+          },
+          {
+            "sequence_no": 5,
+            "kind": "REFUND_COMPLETED",
+            "status": "REFUNDED",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "3fd7ab83ddeb379087ce017a01d6920698cacc6434da43aec45ccf54ead52c0e",
+            "previous_hash": "875332c909dcd4d2178b788a3eab0327e4b64bdb64fd84c4624498e8d246c2d9",
+            "payload": {
+              "refund_id": "attr_ref_8de5449aa5b6476b",
+              "order_id": "attr_ord_63ce345224f745de",
+              "status": "REFUND_COMPLETED",
+              "refund_fee_minor": 0,
+              "refund_amount_minor": 18000,
+              "currency": "CNY",
+              "money_movement_ids": [
+                "omm_d6d6eed02d0b43aea56da163eba1f016"
+              ],
+              "money_movement_id": "omm_d6d6eed02d0b43aea56da163eba1f016"
+            },
+            "created_at": "2026-09-26T20:42:04.471294"
+          }
+        ]
+      }
+    },
+    "rental_claim_order": {
+      "vertical": "RENTAL",
+      "order_id": "rent_ord_a72a74a85a354890",
+      "status": "CONFIRMED",
+      "pickup_location": "哈尔滨机场",
+      "return_location": "哈尔滨机场",
+      "pickup_at": "2026-11-05T10:00",
+      "return_at": "2026-11-08T10:00",
+      "vehicle_class": "COMPACT",
+      "insurance": {
+        "type": "BASIC",
+        "excess_minor": 500000
+      },
+      "mileage": {
+        "type": "UNLIMITED"
+      },
+      "deposit_minor": 200000,
+      "total_amount_minor": 126000,
+      "currency": "CNY",
+      "drivers": [
+        {
+          "full_name": "INDEPENDENT RENTAL ADULT",
+          "driver_license_number": "TEST-ISOLATED-RENTAL"
+        }
+      ],
+      "supplier_reference": "SIM-rent_ord_a72a74a85a354890",
+      "payment_deadline_ms": 1790456225685,
+      "unpaid_reservation_state": "PAYMENT_STARTED",
+      "external_live": false,
+      "pending_change": null,
+      "evidence": [
+        {
+          "sequence_no": 1,
+          "kind": "ORDER_CREATED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "0d9e23413ee1a6d8a8e0c399d3fe8d1a36442694c0fcf82d0329d7de535c6243",
+          "previous_hash": "GENESIS",
+          "payload": {
+            "supplier_reference": null,
+            "offer_id": "rental_compact",
+            "deposit_minor": 200000,
+            "insurance": {
+              "type": "BASIC",
+              "excess_minor": 500000
+            },
+            "external_live": false
+          },
+          "created_at": "2026-09-26T20:42:05.686046"
+        },
+        {
+          "sequence_no": 2,
+          "kind": "VAULT_BOOKING_DATA_RELEASED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "cfaa17308abf4860e9f54828bd2ecad75cab5d91a2d78c31438fb4fb1d869c3e",
+          "previous_hash": "0d9e23413ee1a6d8a8e0c399d3fe8d1a36442694c0fcf82d0329d7de535c6243",
+          "payload": {
+            "release_ids": [
+              "pdr_51cf9e1692f049aa"
+            ],
+            "minimum_necessary": true
+          },
+          "created_at": "2026-09-26T20:42:05.689572"
+        },
+        {
+          "sequence_no": 3,
+          "kind": "SUPPLIER_CONFIRMED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "1e4e8893b2a06cdfe28d8e62fdf6c812eb8698377a74e0f17aeca2700ee62293",
+          "previous_hash": "cfaa17308abf4860e9f54828bd2ecad75cab5d91a2d78c31438fb4fb1d869c3e",
+          "payload": {
+            "supplier_confirmation_reference": "SIM-rent_ord_a72a74a85a354890",
+            "external_operation_id": "SIM-rent_ord_a72a74a85a354890",
+            "evidence_reference": "contract-simulator://RENTAL/rent_ord_a72a74a85a354890",
+            "actor_id": null
+          },
+          "created_at": "2026-09-26T20:42:05.845471"
+        }
+      ]
+    },
+    "deposit_consent": {
+      "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+      "revision": 2,
+      "state": "ACTIVATED",
+      "source": {
+        "order_id": "rent_ord_a72a74a85a354890",
+        "owner_id": "usr_f2533b9732a94585",
+        "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+        "payee_id": "fixture-rental-merchant-v1",
+        "payee_verification": {
+          "status": "VERIFIED_SYNTHETIC_FIXTURE",
+          "version": "rental-deposit-isolated-v1",
+          "real_payee_verified": false
+        },
+        "currency": "CNY",
+        "amount_minor": 200000,
+        "contract_snapshot": {
+          "fixture_version": "rental-deposit-isolated-v1",
+          "vehicle_class": "COMPACT",
+          "maximum_authorization_minor": 200000,
+          "maximum_damage_award_minor": 200000,
+          "currency": "CNY",
+          "insurance": {
+            "type": "BASIC",
+            "excess_minor": 500000
+          },
+          "consent_scope": "DEPOSIT_OBLIGATION_ONLY_NOT_DAMAGE_ACCEPTANCE",
+          "damage_requires_independent_decision": true,
+          "silence_is_not_acceptance": true,
+          "fixture_validity_seconds": 86400,
+          "real_contract_approved": false
+        },
+        "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+        "issued_at": "2026-09-26T20:42:06.128887",
+        "expires_at": "2026-09-27T20:42:06.128887",
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false
+      },
+      "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+      "consent": {
+        "actor_id": "usr_f2533b9732a94585",
+        "accepted": true,
+        "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+        "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+        "accepted_at": "2026-09-26T20:42:06.348552"
+      },
+      "financial_state": "NO_FINANCIAL_FACT_ASSERTED"
+    },
+    "admin_actors": {
+      "maker": "usr_9e3bd267ee0d41d9acce3f8d0c75b6cd",
+      "checker": "usr_1256876e320a451c896159b715122bbf",
+      "appeal_checker": "usr_aebb840ea90944d0a50bdd70eb8aa10d"
+    },
+    "deposit_authorization": {
+      "receipt": {
+        "payment_intent_id": "opi_85c3e1d2da1749229cbfd3b4795ebd58",
+        "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+        "currency": "CNY",
+        "authorized_minor": 200000,
+        "captured_minor": 0,
+        "released_minor": 0,
+        "compensated_minor": 0,
+        "net_captured_minor": 0,
+        "remaining_minor": 200000,
+        "movement_ids": [
+          "omm_85bc065be0214cec975643fcc22f3ab3"
+        ],
+        "state": "AUTHORIZED",
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false
+      },
+      "snapshot": {
+        "order_id": "rent_ord_a72a74a85a354890",
+        "order_status": "CONFIRMED",
+        "read_only": true,
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false,
+        "source": {
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "revision": 2,
+          "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+          "state": "ACTIVATED",
+          "currency": "CNY",
+          "amount_minor": 200000,
+          "expires_at": "2026-09-27T20:42:06.128887",
+          "consent": {
+            "actor_id": "usr_f2533b9732a94585",
+            "accepted": true,
+            "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+            "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+            "accepted_at": "2026-09-26T20:42:06.348552"
+          }
+        },
+        "money": {
+          "payment_intent_id": "opi_85c3e1d2da1749229cbfd3b4795ebd58",
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "currency": "CNY",
+          "authorized_minor": 200000,
+          "captured_minor": 0,
+          "released_minor": 0,
+          "compensated_minor": 0,
+          "net_captured_minor": 0,
+          "remaining_minor": 200000,
+          "movement_ids": [
+            "omm_85bc065be0214cec975643fcc22f3ab3"
+          ],
+          "state": "AUTHORIZED",
+          "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+          "external_live": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_85bc065be0214cec975643fcc22f3ab3",
+            "type": "AUTHORIZATION",
+            "state": "CONFIRMED",
+            "recorded_amount_minor": 200000,
+            "currency": "CNY",
+            "operation_key": "rental-deposit-auth:rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+            "parent_movement_id": null
+          }
+        ],
+        "decisions": [],
+        "release": null,
+        "can_authorize": false,
+        "blockers": []
+      }
+    },
+    "rental_in_progress": {
+      "vertical": "RENTAL",
+      "order_id": "rent_ord_a72a74a85a354890",
+      "status": "IN_PROGRESS",
+      "pickup_location": "哈尔滨机场",
+      "return_location": "哈尔滨机场",
+      "pickup_at": "2026-11-05T10:00",
+      "return_at": "2026-11-08T10:00",
+      "vehicle_class": "COMPACT",
+      "insurance": {
+        "type": "BASIC",
+        "excess_minor": 500000
+      },
+      "mileage": {
+        "type": "UNLIMITED"
+      },
+      "deposit_minor": 200000,
+      "total_amount_minor": 126000,
+      "currency": "CNY",
+      "drivers": [
+        {
+          "full_name": "INDEPENDENT RENTAL ADULT",
+          "driver_license_number": "TEST-ISOLATED-RENTAL"
+        }
+      ],
+      "supplier_reference": "SIM-rent_ord_a72a74a85a354890",
+      "payment_deadline_ms": 1790456225685,
+      "unpaid_reservation_state": "PAYMENT_STARTED",
+      "external_live": false,
+      "pending_change": null,
+      "evidence": [
+        {
+          "sequence_no": 1,
+          "kind": "ORDER_CREATED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "0d9e23413ee1a6d8a8e0c399d3fe8d1a36442694c0fcf82d0329d7de535c6243",
+          "previous_hash": "GENESIS",
+          "payload": {
+            "supplier_reference": null,
+            "offer_id": "rental_compact",
+            "deposit_minor": 200000,
+            "insurance": {
+              "type": "BASIC",
+              "excess_minor": 500000
+            },
+            "external_live": false
+          },
+          "created_at": "2026-09-26T20:42:05.686046"
+        },
+        {
+          "sequence_no": 2,
+          "kind": "VAULT_BOOKING_DATA_RELEASED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "cfaa17308abf4860e9f54828bd2ecad75cab5d91a2d78c31438fb4fb1d869c3e",
+          "previous_hash": "0d9e23413ee1a6d8a8e0c399d3fe8d1a36442694c0fcf82d0329d7de535c6243",
+          "payload": {
+            "release_ids": [
+              "pdr_51cf9e1692f049aa"
+            ],
+            "minimum_necessary": true
+          },
+          "created_at": "2026-09-26T20:42:05.689572"
+        },
+        {
+          "sequence_no": 3,
+          "kind": "SUPPLIER_CONFIRMED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "1e4e8893b2a06cdfe28d8e62fdf6c812eb8698377a74e0f17aeca2700ee62293",
+          "previous_hash": "cfaa17308abf4860e9f54828bd2ecad75cab5d91a2d78c31438fb4fb1d869c3e",
+          "payload": {
+            "supplier_confirmation_reference": "SIM-rent_ord_a72a74a85a354890",
+            "external_operation_id": "SIM-rent_ord_a72a74a85a354890",
+            "evidence_reference": "contract-simulator://RENTAL/rent_ord_a72a74a85a354890",
+            "actor_id": null
+          },
+          "created_at": "2026-09-26T20:42:05.845471"
+        },
+        {
+          "sequence_no": 4,
+          "kind": "RENTAL_DEPOSIT_OBLIGATION",
+          "status": "CONFIRMED",
+          "source": "C04_DEPOSIT_AUTHORITY",
+          "entry_hash": "c4929a286bf388496bf4d9b93c0a7fad8aece638abcb37155c236b0ad36fdbde",
+          "previous_hash": "1e4e8893b2a06cdfe28d8e62fdf6c812eb8698377a74e0f17aeca2700ee62293",
+          "payload": {
+            "actor_id": "usr_f2533b9732a94585",
+            "key": "93792720-a30e-48dd-8aea-890d784c4e1b",
+            "request_hash": "746ee5ffffc73d49c39ad086ab2d5a9f0a8ae4e25f61e3da410c1f3bac0ebac6",
+            "obligation": {
+              "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+              "revision": 1,
+              "state": "PROPOSED",
+              "source": {
+                "order_id": "rent_ord_a72a74a85a354890",
+                "owner_id": "usr_f2533b9732a94585",
+                "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+                "payee_id": "fixture-rental-merchant-v1",
+                "payee_verification": {
+                  "status": "VERIFIED_SYNTHETIC_FIXTURE",
+                  "version": "rental-deposit-isolated-v1",
+                  "real_payee_verified": false
+                },
+                "currency": "CNY",
+                "amount_minor": 200000,
+                "contract_snapshot": {
+                  "fixture_version": "rental-deposit-isolated-v1",
+                  "vehicle_class": "COMPACT",
+                  "maximum_authorization_minor": 200000,
+                  "maximum_damage_award_minor": 200000,
+                  "currency": "CNY",
+                  "insurance": {
+                    "type": "BASIC",
+                    "excess_minor": 500000
+                  },
+                  "consent_scope": "DEPOSIT_OBLIGATION_ONLY_NOT_DAMAGE_ACCEPTANCE",
+                  "damage_requires_independent_decision": true,
+                  "silence_is_not_acceptance": true,
+                  "fixture_validity_seconds": 86400,
+                  "real_contract_approved": false
+                },
+                "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+                "issued_at": "2026-09-26T20:42:06.128887",
+                "expires_at": "2026-09-27T20:42:06.128887",
+                "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+                "external_live": false
+              },
+              "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+              "consent": null,
+              "financial_state": "NO_FINANCIAL_FACT_ASSERTED"
+            }
+          },
+          "created_at": "2026-09-26T20:42:06.129696"
+        },
+        {
+          "sequence_no": 5,
+          "kind": "RENTAL_DEPOSIT_OBLIGATION",
+          "status": "CONFIRMED",
+          "source": "C04_DEPOSIT_AUTHORITY",
+          "entry_hash": "55ea360147a69b36a121247807309e48773a90d272a81d249baf8ad99f8d5654",
+          "previous_hash": "c4929a286bf388496bf4d9b93c0a7fad8aece638abcb37155c236b0ad36fdbde",
+          "payload": {
+            "actor_id": "usr_f2533b9732a94585",
+            "key": "256bf78e-9d45-4c2e-a498-60a26681da2b",
+            "request_hash": "b40cd111ea0ecc35a8e6f8d45a839594ab3fe8374272b9f6486d1f89b0568b57",
+            "obligation": {
+              "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+              "revision": 2,
+              "state": "ACTIVATED",
+              "source": {
+                "order_id": "rent_ord_a72a74a85a354890",
+                "owner_id": "usr_f2533b9732a94585",
+                "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+                "payee_id": "fixture-rental-merchant-v1",
+                "payee_verification": {
+                  "status": "VERIFIED_SYNTHETIC_FIXTURE",
+                  "version": "rental-deposit-isolated-v1",
+                  "real_payee_verified": false
+                },
+                "currency": "CNY",
+                "amount_minor": 200000,
+                "contract_snapshot": {
+                  "fixture_version": "rental-deposit-isolated-v1",
+                  "vehicle_class": "COMPACT",
+                  "maximum_authorization_minor": 200000,
+                  "maximum_damage_award_minor": 200000,
+                  "currency": "CNY",
+                  "insurance": {
+                    "type": "BASIC",
+                    "excess_minor": 500000
+                  },
+                  "consent_scope": "DEPOSIT_OBLIGATION_ONLY_NOT_DAMAGE_ACCEPTANCE",
+                  "damage_requires_independent_decision": true,
+                  "silence_is_not_acceptance": true,
+                  "fixture_validity_seconds": 86400,
+                  "real_contract_approved": false
+                },
+                "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+                "issued_at": "2026-09-26T20:42:06.128887",
+                "expires_at": "2026-09-27T20:42:06.128887",
+                "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+                "external_live": false
+              },
+              "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+              "consent": {
+                "actor_id": "usr_f2533b9732a94585",
+                "accepted": true,
+                "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+                "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+                "accepted_at": "2026-09-26T20:42:06.348552"
+              },
+              "financial_state": "NO_FINANCIAL_FACT_ASSERTED"
+            }
+          },
+          "created_at": "2026-09-26T20:42:06.349231"
+        },
+        {
+          "sequence_no": 6,
+          "kind": "FULFILLMENT_PICKUP",
+          "status": "IN_PROGRESS",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "cf4d544560c2853655d6c539428f7b5bfd6ff55603e4fa33394428dca11a0a49",
+          "previous_hash": "55ea360147a69b36a121247807309e48773a90d272a81d249baf8ad99f8d5654",
+          "payload": {
+            "evidence_reference": "CONSUMER_UI_PICKUP",
+            "supplier_reference": "SIM-rent_ord_a72a74a85a354890"
+          },
+          "created_at": "2026-09-26T20:42:08.961353"
+        }
+      ]
+    },
+    "rental_completed": {
+      "vertical": "RENTAL",
+      "order_id": "rent_ord_a72a74a85a354890",
+      "status": "COMPLETED",
+      "pickup_location": "哈尔滨机场",
+      "return_location": "哈尔滨机场",
+      "pickup_at": "2026-11-05T10:00",
+      "return_at": "2026-11-08T10:00",
+      "vehicle_class": "COMPACT",
+      "insurance": {
+        "type": "BASIC",
+        "excess_minor": 500000
+      },
+      "mileage": {
+        "type": "UNLIMITED"
+      },
+      "deposit_minor": 200000,
+      "total_amount_minor": 126000,
+      "currency": "CNY",
+      "drivers": [
+        {
+          "full_name": "INDEPENDENT RENTAL ADULT",
+          "driver_license_number": "TEST-ISOLATED-RENTAL"
+        }
+      ],
+      "supplier_reference": null,
+      "payment_deadline_ms": 1790456225685,
+      "unpaid_reservation_state": "PAYMENT_STARTED",
+      "external_live": false,
+      "pending_change": null,
+      "evidence": [
+        {
+          "sequence_no": 1,
+          "kind": "ORDER_CREATED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "0d9e23413ee1a6d8a8e0c399d3fe8d1a36442694c0fcf82d0329d7de535c6243",
+          "previous_hash": "GENESIS",
+          "payload": {
+            "supplier_reference": null,
+            "offer_id": "rental_compact",
+            "deposit_minor": 200000,
+            "insurance": {
+              "type": "BASIC",
+              "excess_minor": 500000
+            },
+            "external_live": false
+          },
+          "created_at": "2026-09-26T20:42:05.686046"
+        },
+        {
+          "sequence_no": 2,
+          "kind": "VAULT_BOOKING_DATA_RELEASED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "cfaa17308abf4860e9f54828bd2ecad75cab5d91a2d78c31438fb4fb1d869c3e",
+          "previous_hash": "0d9e23413ee1a6d8a8e0c399d3fe8d1a36442694c0fcf82d0329d7de535c6243",
+          "payload": {
+            "release_ids": [
+              "pdr_51cf9e1692f049aa"
+            ],
+            "minimum_necessary": true
+          },
+          "created_at": "2026-09-26T20:42:05.689572"
+        },
+        {
+          "sequence_no": 3,
+          "kind": "SUPPLIER_CONFIRMED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "1e4e8893b2a06cdfe28d8e62fdf6c812eb8698377a74e0f17aeca2700ee62293",
+          "previous_hash": "cfaa17308abf4860e9f54828bd2ecad75cab5d91a2d78c31438fb4fb1d869c3e",
+          "payload": {
+            "supplier_confirmation_reference": "SIM-rent_ord_a72a74a85a354890",
+            "external_operation_id": "SIM-rent_ord_a72a74a85a354890",
+            "evidence_reference": "contract-simulator://RENTAL/rent_ord_a72a74a85a354890",
+            "actor_id": null
+          },
+          "created_at": "2026-09-26T20:42:05.845471"
+        },
+        {
+          "sequence_no": 4,
+          "kind": "RENTAL_DEPOSIT_OBLIGATION",
+          "status": "CONFIRMED",
+          "source": "C04_DEPOSIT_AUTHORITY",
+          "entry_hash": "c4929a286bf388496bf4d9b93c0a7fad8aece638abcb37155c236b0ad36fdbde",
+          "previous_hash": "1e4e8893b2a06cdfe28d8e62fdf6c812eb8698377a74e0f17aeca2700ee62293",
+          "payload": {
+            "actor_id": "usr_f2533b9732a94585",
+            "key": "93792720-a30e-48dd-8aea-890d784c4e1b",
+            "request_hash": "746ee5ffffc73d49c39ad086ab2d5a9f0a8ae4e25f61e3da410c1f3bac0ebac6",
+            "obligation": {
+              "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+              "revision": 1,
+              "state": "PROPOSED",
+              "source": {
+                "order_id": "rent_ord_a72a74a85a354890",
+                "owner_id": "usr_f2533b9732a94585",
+                "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+                "payee_id": "fixture-rental-merchant-v1",
+                "payee_verification": {
+                  "status": "VERIFIED_SYNTHETIC_FIXTURE",
+                  "version": "rental-deposit-isolated-v1",
+                  "real_payee_verified": false
+                },
+                "currency": "CNY",
+                "amount_minor": 200000,
+                "contract_snapshot": {
+                  "fixture_version": "rental-deposit-isolated-v1",
+                  "vehicle_class": "COMPACT",
+                  "maximum_authorization_minor": 200000,
+                  "maximum_damage_award_minor": 200000,
+                  "currency": "CNY",
+                  "insurance": {
+                    "type": "BASIC",
+                    "excess_minor": 500000
+                  },
+                  "consent_scope": "DEPOSIT_OBLIGATION_ONLY_NOT_DAMAGE_ACCEPTANCE",
+                  "damage_requires_independent_decision": true,
+                  "silence_is_not_acceptance": true,
+                  "fixture_validity_seconds": 86400,
+                  "real_contract_approved": false
+                },
+                "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+                "issued_at": "2026-09-26T20:42:06.128887",
+                "expires_at": "2026-09-27T20:42:06.128887",
+                "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+                "external_live": false
+              },
+              "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+              "consent": null,
+              "financial_state": "NO_FINANCIAL_FACT_ASSERTED"
+            }
+          },
+          "created_at": "2026-09-26T20:42:06.129696"
+        },
+        {
+          "sequence_no": 5,
+          "kind": "RENTAL_DEPOSIT_OBLIGATION",
+          "status": "CONFIRMED",
+          "source": "C04_DEPOSIT_AUTHORITY",
+          "entry_hash": "55ea360147a69b36a121247807309e48773a90d272a81d249baf8ad99f8d5654",
+          "previous_hash": "c4929a286bf388496bf4d9b93c0a7fad8aece638abcb37155c236b0ad36fdbde",
+          "payload": {
+            "actor_id": "usr_f2533b9732a94585",
+            "key": "256bf78e-9d45-4c2e-a498-60a26681da2b",
+            "request_hash": "b40cd111ea0ecc35a8e6f8d45a839594ab3fe8374272b9f6486d1f89b0568b57",
+            "obligation": {
+              "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+              "revision": 2,
+              "state": "ACTIVATED",
+              "source": {
+                "order_id": "rent_ord_a72a74a85a354890",
+                "owner_id": "usr_f2533b9732a94585",
+                "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+                "payee_id": "fixture-rental-merchant-v1",
+                "payee_verification": {
+                  "status": "VERIFIED_SYNTHETIC_FIXTURE",
+                  "version": "rental-deposit-isolated-v1",
+                  "real_payee_verified": false
+                },
+                "currency": "CNY",
+                "amount_minor": 200000,
+                "contract_snapshot": {
+                  "fixture_version": "rental-deposit-isolated-v1",
+                  "vehicle_class": "COMPACT",
+                  "maximum_authorization_minor": 200000,
+                  "maximum_damage_award_minor": 200000,
+                  "currency": "CNY",
+                  "insurance": {
+                    "type": "BASIC",
+                    "excess_minor": 500000
+                  },
+                  "consent_scope": "DEPOSIT_OBLIGATION_ONLY_NOT_DAMAGE_ACCEPTANCE",
+                  "damage_requires_independent_decision": true,
+                  "silence_is_not_acceptance": true,
+                  "fixture_validity_seconds": 86400,
+                  "real_contract_approved": false
+                },
+                "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+                "issued_at": "2026-09-26T20:42:06.128887",
+                "expires_at": "2026-09-27T20:42:06.128887",
+                "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+                "external_live": false
+              },
+              "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+              "consent": {
+                "actor_id": "usr_f2533b9732a94585",
+                "accepted": true,
+                "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+                "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+                "accepted_at": "2026-09-26T20:42:06.348552"
+              },
+              "financial_state": "NO_FINANCIAL_FACT_ASSERTED"
+            }
+          },
+          "created_at": "2026-09-26T20:42:06.349231"
+        },
+        {
+          "sequence_no": 6,
+          "kind": "FULFILLMENT_PICKUP",
+          "status": "IN_PROGRESS",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "cf4d544560c2853655d6c539428f7b5bfd6ff55603e4fa33394428dca11a0a49",
+          "previous_hash": "55ea360147a69b36a121247807309e48773a90d272a81d249baf8ad99f8d5654",
+          "payload": {
+            "evidence_reference": "CONSUMER_UI_PICKUP",
+            "supplier_reference": "SIM-rent_ord_a72a74a85a354890"
+          },
+          "created_at": "2026-09-26T20:42:08.961353"
+        },
+        {
+          "sequence_no": 7,
+          "kind": "FULFILLMENT_RETURN",
+          "status": "COMPLETED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "017aa623ec3b2bce75f1c08cb1660853f11297f6e88bce1ca68e19e3c407a140",
+          "previous_hash": "cf4d544560c2853655d6c539428f7b5bfd6ff55603e4fa33394428dca11a0a49",
+          "payload": {
+            "evidence_reference": "CONSUMER_UI_RETURN",
+            "supplier_reference": "SIM-rent_ord_a72a74a85a354890"
+          },
+          "created_at": "2026-09-26T20:42:09.124789"
+        }
+      ]
+    },
+    "fulfillment_boundary": "Synthetic consumer pickup/return clicks; not independently verified physical handover",
+    "supplier_claim": {
+      "claim": {
+        "case_id": "rent_damage_457d246d225b492d",
+        "order_id": "rent_ord_a72a74a85a354890",
+        "deposit_obligation": {
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "revision": 2,
+          "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+          "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+          "owner_id": "usr_f2533b9732a94585",
+          "payee_id": "fixture-rental-merchant-v1",
+          "currency": "CNY"
+        },
+        "owner_id": "usr_f2533b9732a94585",
+        "opened_by": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+        "status": "AWAITING_CUSTOMER",
+        "version": 1,
+        "claimed_minor": 10000,
+        "currency": "CNY",
+        "contract_snapshot": {
+          "deposit_minor": 200000,
+          "insurance": {
+            "type": "BASIC",
+            "excess_minor": 500000
+          },
+          "maximum_award_minor": 200000
+        },
+        "pickup_evidence": [
+          {
+            "reference": "rental-statement://b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+            "sha256": "b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "actor_type": "SUPPLIER_USER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": null,
+              "action": "PICKUP_OBSERVATION",
+              "text": "隔离验收：取车时观察陈述"
+            }
+          }
+        ],
+        "return_evidence": [
+          {
+            "reference": "rental-statement://fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+            "sha256": "fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "actor_type": "SUPPLIER_USER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": null,
+              "action": "RETURN_OBSERVATION",
+              "text": "隔离验收：还车时观察陈述"
+            }
+          }
+        ],
+        "supplier_evidence_status": "SUPPLIER_STATEMENT_UNVERIFIED",
+        "customer_evidence": [],
+        "customer_response": null,
+        "awarded_minor": null,
+        "actionable_award_minor": null,
+        "decision_history": [],
+        "appeals": [],
+        "money_instruction_state": "BLOCKED_PENDING_DECISION",
+        "money_status": "NOT_REQUESTED",
+        "money_movement_ids": [],
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false
+      },
+      "workspace": {
+        "order_id": "rent_ord_a72a74a85a354890",
+        "order_status": "COMPLETED",
+        "currency": "CNY",
+        "actor_type": "SUPPLIER_USER",
+        "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+        "writes_enabled": true,
+        "cases": [
+          {
+            "case": {
+              "case_id": "rent_damage_457d246d225b492d",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "deposit_obligation": {
+                "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+                "revision": 2,
+                "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+                "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+                "owner_id": "usr_f2533b9732a94585",
+                "payee_id": "fixture-rental-merchant-v1",
+                "currency": "CNY"
+              },
+              "owner_id": "usr_f2533b9732a94585",
+              "opened_by": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "status": "AWAITING_CUSTOMER",
+              "version": 1,
+              "claimed_minor": 10000,
+              "currency": "CNY",
+              "contract_snapshot": {
+                "deposit_minor": 200000,
+                "insurance": {
+                  "type": "BASIC",
+                  "excess_minor": 500000
+                },
+                "maximum_award_minor": 200000
+              },
+              "pickup_evidence": [
+                {
+                  "reference": "rental-statement://b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+                  "sha256": "b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+                    "actor_type": "SUPPLIER_USER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": null,
+                    "action": "PICKUP_OBSERVATION",
+                    "text": "隔离验收：取车时观察陈述"
+                  }
+                }
+              ],
+              "return_evidence": [
+                {
+                  "reference": "rental-statement://fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+                  "sha256": "fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+                    "actor_type": "SUPPLIER_USER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": null,
+                    "action": "RETURN_OBSERVATION",
+                    "text": "隔离验收：还车时观察陈述"
+                  }
+                }
+              ],
+              "supplier_evidence_status": "SUPPLIER_STATEMENT_UNVERIFIED",
+              "customer_evidence": [],
+              "customer_response": null,
+              "awarded_minor": null,
+              "actionable_award_minor": null,
+              "decision_history": [],
+              "appeals": [],
+              "money_instruction_state": "BLOCKED_PENDING_DECISION",
+              "money_status": "NOT_REQUESTED",
+              "money_movement_ids": [],
+              "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+              "external_live": false
+            },
+            "actions": []
+          }
+        ],
+        "actions": [],
+        "obligation": {
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "revision": 2,
+          "state": "ACTIVATED",
+          "source": {
+            "order_id": "rent_ord_a72a74a85a354890",
+            "owner_id": "usr_f2533b9732a94585",
+            "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+            "payee_id": "fixture-rental-merchant-v1",
+            "payee_verification": {
+              "status": "VERIFIED_SYNTHETIC_FIXTURE",
+              "version": "rental-deposit-isolated-v1",
+              "real_payee_verified": false
+            },
+            "currency": "CNY",
+            "amount_minor": 200000,
+            "contract_snapshot": {
+              "fixture_version": "rental-deposit-isolated-v1",
+              "vehicle_class": "COMPACT",
+              "maximum_authorization_minor": 200000,
+              "maximum_damage_award_minor": 200000,
+              "currency": "CNY",
+              "insurance": {
+                "type": "BASIC",
+                "excess_minor": 500000
+              },
+              "consent_scope": "DEPOSIT_OBLIGATION_ONLY_NOT_DAMAGE_ACCEPTANCE",
+              "damage_requires_independent_decision": true,
+              "silence_is_not_acceptance": true,
+              "fixture_validity_seconds": 86400,
+              "real_contract_approved": false
+            },
+            "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+            "issued_at": "2026-09-26T20:42:06.128887",
+            "expires_at": "2026-09-27T20:42:06.128887",
+            "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+            "external_live": false
+          },
+          "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+          "consent": {
+            "actor_id": "usr_f2533b9732a94585",
+            "accepted": true,
+            "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+            "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+            "accepted_at": "2026-09-26T20:42:06.348552"
+          },
+          "financial_state": "NO_FINANCIAL_FACT_ASSERTED"
+        },
+        "receipts": [
+          {
+            "key": "361f76d8-5ba2-4c38-9e1b-479b3145dcdf",
+            "case_id": "rent_damage_457d246d225b492d",
+            "version": 1
+          }
+        ],
+        "release": null,
+        "financial_authority": "C11",
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false
+      }
+    },
+    "damage_dispute": {
+      "claim": {
+        "case_id": "rent_damage_457d246d225b492d",
+        "order_id": "rent_ord_a72a74a85a354890",
+        "deposit_obligation": {
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "revision": 2,
+          "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+          "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+          "owner_id": "usr_f2533b9732a94585",
+          "payee_id": "fixture-rental-merchant-v1",
+          "currency": "CNY"
+        },
+        "owner_id": "usr_f2533b9732a94585",
+        "opened_by": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+        "status": "REVIEW_REQUIRED",
+        "version": 2,
+        "claimed_minor": 10000,
+        "currency": "CNY",
+        "contract_snapshot": {
+          "deposit_minor": 200000,
+          "insurance": {
+            "type": "BASIC",
+            "excess_minor": 500000
+          },
+          "maximum_award_minor": 200000
+        },
+        "pickup_evidence": [
+          {
+            "reference": "rental-statement://b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+            "sha256": "b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "actor_type": "SUPPLIER_USER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": null,
+              "action": "PICKUP_OBSERVATION",
+              "text": "隔离验收：取车时观察陈述"
+            }
+          }
+        ],
+        "return_evidence": [
+          {
+            "reference": "rental-statement://fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+            "sha256": "fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "actor_type": "SUPPLIER_USER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": null,
+              "action": "RETURN_OBSERVATION",
+              "text": "隔离验收：还车时观察陈述"
+            }
+          }
+        ],
+        "supplier_evidence_status": "SUPPLIER_STATEMENT_UNVERIFIED",
+        "customer_evidence": [
+          {
+            "reference": "rental-statement://d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+            "sha256": "d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_f2533b9732a94585",
+              "actor_type": "CONSUMER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": "rent_damage_457d246d225b492d",
+              "action": "RESPONSE",
+              "text": "隔离验收：不同意供应商车损申报，请独立核对。"
+            }
+          }
+        ],
+        "customer_response": "DISPUTE",
+        "awarded_minor": null,
+        "actionable_award_minor": null,
+        "decision_history": [],
+        "appeals": [],
+        "money_instruction_state": "BLOCKED_PENDING_DECISION",
+        "money_status": "NOT_REQUESTED",
+        "money_movement_ids": [],
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false,
+        "responded_by": "usr_f2533b9732a94585"
+      },
+      "workspace": {
+        "order_id": "rent_ord_a72a74a85a354890",
+        "order_status": "COMPLETED",
+        "currency": "CNY",
+        "actor_type": "CONSUMER",
+        "actor_id": "usr_f2533b9732a94585",
+        "writes_enabled": true,
+        "cases": [
+          {
+            "case": {
+              "case_id": "rent_damage_457d246d225b492d",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "deposit_obligation": {
+                "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+                "revision": 2,
+                "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+                "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+                "owner_id": "usr_f2533b9732a94585",
+                "payee_id": "fixture-rental-merchant-v1",
+                "currency": "CNY"
+              },
+              "owner_id": "usr_f2533b9732a94585",
+              "opened_by": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "status": "REVIEW_REQUIRED",
+              "version": 2,
+              "claimed_minor": 10000,
+              "currency": "CNY",
+              "contract_snapshot": {
+                "deposit_minor": 200000,
+                "insurance": {
+                  "type": "BASIC",
+                  "excess_minor": 500000
+                },
+                "maximum_award_minor": 200000
+              },
+              "pickup_evidence": [
+                {
+                  "reference": "rental-statement://b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+                  "sha256": "b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+                    "actor_type": "SUPPLIER_USER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": null,
+                    "action": "PICKUP_OBSERVATION",
+                    "text": "隔离验收：取车时观察陈述"
+                  }
+                }
+              ],
+              "return_evidence": [
+                {
+                  "reference": "rental-statement://fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+                  "sha256": "fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+                    "actor_type": "SUPPLIER_USER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": null,
+                    "action": "RETURN_OBSERVATION",
+                    "text": "隔离验收：还车时观察陈述"
+                  }
+                }
+              ],
+              "supplier_evidence_status": "SUPPLIER_STATEMENT_UNVERIFIED",
+              "customer_evidence": [
+                {
+                  "reference": "rental-statement://d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+                  "sha256": "d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_f2533b9732a94585",
+                    "actor_type": "CONSUMER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": "rent_damage_457d246d225b492d",
+                    "action": "RESPONSE",
+                    "text": "隔离验收：不同意供应商车损申报，请独立核对。"
+                  }
+                }
+              ],
+              "customer_response": "DISPUTE",
+              "awarded_minor": null,
+              "actionable_award_minor": null,
+              "decision_history": [],
+              "appeals": [],
+              "money_instruction_state": "BLOCKED_PENDING_DECISION",
+              "money_status": "NOT_REQUESTED",
+              "money_movement_ids": [],
+              "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+              "external_live": false,
+              "responded_by": "usr_f2533b9732a94585"
+            },
+            "actions": []
+          }
+        ],
+        "actions": [],
+        "obligation": {
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "revision": 2,
+          "state": "ACTIVATED",
+          "source": {
+            "order_id": "rent_ord_a72a74a85a354890",
+            "owner_id": "usr_f2533b9732a94585",
+            "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+            "payee_id": "fixture-rental-merchant-v1",
+            "payee_verification": {
+              "status": "VERIFIED_SYNTHETIC_FIXTURE",
+              "version": "rental-deposit-isolated-v1",
+              "real_payee_verified": false
+            },
+            "currency": "CNY",
+            "amount_minor": 200000,
+            "contract_snapshot": {
+              "fixture_version": "rental-deposit-isolated-v1",
+              "vehicle_class": "COMPACT",
+              "maximum_authorization_minor": 200000,
+              "maximum_damage_award_minor": 200000,
+              "currency": "CNY",
+              "insurance": {
+                "type": "BASIC",
+                "excess_minor": 500000
+              },
+              "consent_scope": "DEPOSIT_OBLIGATION_ONLY_NOT_DAMAGE_ACCEPTANCE",
+              "damage_requires_independent_decision": true,
+              "silence_is_not_acceptance": true,
+              "fixture_validity_seconds": 86400,
+              "real_contract_approved": false
+            },
+            "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+            "issued_at": "2026-09-26T20:42:06.128887",
+            "expires_at": "2026-09-27T20:42:06.128887",
+            "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+            "external_live": false
+          },
+          "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+          "consent": {
+            "actor_id": "usr_f2533b9732a94585",
+            "accepted": true,
+            "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+            "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+            "accepted_at": "2026-09-26T20:42:06.348552"
+          },
+          "financial_state": "NO_FINANCIAL_FACT_ASSERTED"
+        },
+        "receipts": [
+          {
+            "key": "9693b04a-49cb-4e60-8364-dd40a04ef7ac",
+            "case_id": "rent_damage_457d246d225b492d",
+            "version": 2
+          }
+        ],
+        "release": null,
+        "financial_authority": "C11",
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false
+      }
+    },
+    "damage_decision": {
+      "claim": {
+        "case_id": "rent_damage_457d246d225b492d",
+        "order_id": "rent_ord_a72a74a85a354890",
+        "deposit_obligation": {
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "revision": 2,
+          "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+          "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+          "owner_id": "usr_f2533b9732a94585",
+          "payee_id": "fixture-rental-merchant-v1",
+          "currency": "CNY"
+        },
+        "owner_id": "usr_f2533b9732a94585",
+        "opened_by": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+        "status": "ADJUDICATED",
+        "version": 3,
+        "claimed_minor": 10000,
+        "currency": "CNY",
+        "contract_snapshot": {
+          "deposit_minor": 200000,
+          "insurance": {
+            "type": "BASIC",
+            "excess_minor": 500000
+          },
+          "maximum_award_minor": 200000
+        },
+        "pickup_evidence": [
+          {
+            "reference": "rental-statement://b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+            "sha256": "b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "actor_type": "SUPPLIER_USER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": null,
+              "action": "PICKUP_OBSERVATION",
+              "text": "隔离验收：取车时观察陈述"
+            }
+          }
+        ],
+        "return_evidence": [
+          {
+            "reference": "rental-statement://fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+            "sha256": "fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "actor_type": "SUPPLIER_USER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": null,
+              "action": "RETURN_OBSERVATION",
+              "text": "隔离验收：还车时观察陈述"
+            }
+          }
+        ],
+        "supplier_evidence_status": "SUPPLIER_STATEMENT_UNVERIFIED",
+        "customer_evidence": [
+          {
+            "reference": "rental-statement://d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+            "sha256": "d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_f2533b9732a94585",
+              "actor_type": "CONSUMER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": "rent_damage_457d246d225b492d",
+              "action": "RESPONSE",
+              "text": "隔离验收：不同意供应商车损申报，请独立核对。"
+            }
+          }
+        ],
+        "customer_response": "DISPUTE",
+        "awarded_minor": 8000,
+        "actionable_award_minor": 8000,
+        "decision_history": [
+          {
+            "version": 3,
+            "reviewer_id": "usr_1256876e320a451c896159b715122bbf",
+            "award_minor": 8000,
+            "reason": "隔离验收：独立核对陈述后裁决80元。",
+            "evidence": [
+              {
+                "reference": "rental-statement://273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                "sha256": "273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                "statement": {
+                  "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                  "actor_id": "usr_1256876e320a451c896159b715122bbf",
+                  "actor_type": "GO_ADMIN",
+                  "order_id": "rent_ord_a72a74a85a354890",
+                  "case_id": "rent_damage_457d246d225b492d",
+                  "action": "DECISION",
+                  "text": "隔离验收：独立核对陈述后裁决80元。"
+                }
+              }
+            ]
+          }
+        ],
+        "appeals": [],
+        "money_instruction_state": "AWAITING_C11_REVIEW",
+        "money_status": "C11_MONEY_REVIEW_REQUIRED",
+        "money_movement_ids": [],
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false,
+        "responded_by": "usr_f2533b9732a94585",
+        "reviewer_id": "usr_1256876e320a451c896159b715122bbf",
+        "decision_reason": "隔离验收：独立核对陈述后裁决80元。",
+        "decision_evidence": [
+          {
+            "reference": "rental-statement://273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+            "sha256": "273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_1256876e320a451c896159b715122bbf",
+              "actor_type": "GO_ADMIN",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": "rent_damage_457d246d225b492d",
+              "action": "DECISION",
+              "text": "隔离验收：独立核对陈述后裁决80元。"
+            }
+          }
+        ]
+      },
+      "workspace": {
+        "order_id": "rent_ord_a72a74a85a354890",
+        "order_status": "COMPLETED",
+        "currency": "CNY",
+        "actor_type": "GO_ADMIN",
+        "actor_id": "usr_1256876e320a451c896159b715122bbf",
+        "writes_enabled": true,
+        "cases": [
+          {
+            "case": {
+              "case_id": "rent_damage_457d246d225b492d",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "deposit_obligation": {
+                "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+                "revision": 2,
+                "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+                "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+                "owner_id": "usr_f2533b9732a94585",
+                "payee_id": "fixture-rental-merchant-v1",
+                "currency": "CNY"
+              },
+              "owner_id": "usr_f2533b9732a94585",
+              "opened_by": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "status": "ADJUDICATED",
+              "version": 3,
+              "claimed_minor": 10000,
+              "currency": "CNY",
+              "contract_snapshot": {
+                "deposit_minor": 200000,
+                "insurance": {
+                  "type": "BASIC",
+                  "excess_minor": 500000
+                },
+                "maximum_award_minor": 200000
+              },
+              "pickup_evidence": [
+                {
+                  "reference": "rental-statement://b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+                  "sha256": "b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+                    "actor_type": "SUPPLIER_USER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": null,
+                    "action": "PICKUP_OBSERVATION",
+                    "text": "隔离验收：取车时观察陈述"
+                  }
+                }
+              ],
+              "return_evidence": [
+                {
+                  "reference": "rental-statement://fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+                  "sha256": "fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+                    "actor_type": "SUPPLIER_USER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": null,
+                    "action": "RETURN_OBSERVATION",
+                    "text": "隔离验收：还车时观察陈述"
+                  }
+                }
+              ],
+              "supplier_evidence_status": "SUPPLIER_STATEMENT_UNVERIFIED",
+              "customer_evidence": [
+                {
+                  "reference": "rental-statement://d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+                  "sha256": "d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_f2533b9732a94585",
+                    "actor_type": "CONSUMER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": "rent_damage_457d246d225b492d",
+                    "action": "RESPONSE",
+                    "text": "隔离验收：不同意供应商车损申报，请独立核对。"
+                  }
+                }
+              ],
+              "customer_response": "DISPUTE",
+              "awarded_minor": 8000,
+              "actionable_award_minor": 8000,
+              "decision_history": [
+                {
+                  "version": 3,
+                  "reviewer_id": "usr_1256876e320a451c896159b715122bbf",
+                  "award_minor": 8000,
+                  "reason": "隔离验收：独立核对陈述后裁决80元。",
+                  "evidence": [
+                    {
+                      "reference": "rental-statement://273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                      "sha256": "273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                      "statement": {
+                        "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                        "actor_id": "usr_1256876e320a451c896159b715122bbf",
+                        "actor_type": "GO_ADMIN",
+                        "order_id": "rent_ord_a72a74a85a354890",
+                        "case_id": "rent_damage_457d246d225b492d",
+                        "action": "DECISION",
+                        "text": "隔离验收：独立核对陈述后裁决80元。"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "appeals": [],
+              "money_instruction_state": "AWAITING_C11_REVIEW",
+              "money_status": "C11_MONEY_REVIEW_REQUIRED",
+              "money_movement_ids": [],
+              "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+              "external_live": false,
+              "responded_by": "usr_f2533b9732a94585",
+              "reviewer_id": "usr_1256876e320a451c896159b715122bbf",
+              "decision_reason": "隔离验收：独立核对陈述后裁决80元。",
+              "decision_evidence": [
+                {
+                  "reference": "rental-statement://273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                  "sha256": "273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_1256876e320a451c896159b715122bbf",
+                    "actor_type": "GO_ADMIN",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": "rent_damage_457d246d225b492d",
+                    "action": "DECISION",
+                    "text": "隔离验收：独立核对陈述后裁决80元。"
+                  }
+                }
+              ]
+            },
+            "actions": []
+          }
+        ],
+        "actions": [],
+        "obligation": {
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "revision": 2,
+          "state": "ACTIVATED",
+          "source": {
+            "order_id": "rent_ord_a72a74a85a354890",
+            "owner_id": "usr_f2533b9732a94585",
+            "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+            "payee_id": "fixture-rental-merchant-v1",
+            "payee_verification": {
+              "status": "VERIFIED_SYNTHETIC_FIXTURE",
+              "version": "rental-deposit-isolated-v1",
+              "real_payee_verified": false
+            },
+            "currency": "CNY",
+            "amount_minor": 200000,
+            "contract_snapshot": {
+              "fixture_version": "rental-deposit-isolated-v1",
+              "vehicle_class": "COMPACT",
+              "maximum_authorization_minor": 200000,
+              "maximum_damage_award_minor": 200000,
+              "currency": "CNY",
+              "insurance": {
+                "type": "BASIC",
+                "excess_minor": 500000
+              },
+              "consent_scope": "DEPOSIT_OBLIGATION_ONLY_NOT_DAMAGE_ACCEPTANCE",
+              "damage_requires_independent_decision": true,
+              "silence_is_not_acceptance": true,
+              "fixture_validity_seconds": 86400,
+              "real_contract_approved": false
+            },
+            "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+            "issued_at": "2026-09-26T20:42:06.128887",
+            "expires_at": "2026-09-27T20:42:06.128887",
+            "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+            "external_live": false
+          },
+          "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+          "consent": {
+            "actor_id": "usr_f2533b9732a94585",
+            "accepted": true,
+            "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+            "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+            "accepted_at": "2026-09-26T20:42:06.348552"
+          },
+          "financial_state": "NO_FINANCIAL_FACT_ASSERTED"
+        },
+        "receipts": [
+          {
+            "key": "53971334-312a-4541-a460-14429cd2d3a3",
+            "case_id": "rent_damage_457d246d225b492d",
+            "version": 3
+          }
+        ],
+        "release": null,
+        "financial_authority": "C11",
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false
+      }
+    },
+    "deposit_settlement": {
+      "receipt": {
+        "payment_intent_id": "opi_85c3e1d2da1749229cbfd3b4795ebd58",
+        "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+        "currency": "CNY",
+        "authorized_minor": 200000,
+        "captured_minor": 8000,
+        "released_minor": 192000,
+        "compensated_minor": 0,
+        "net_captured_minor": 8000,
+        "remaining_minor": 0,
+        "movement_ids": [
+          "omm_85bc065be0214cec975643fcc22f3ab3",
+          "omm_7da0fd7aba954da5857914c0920a5558",
+          "omm_1ebecb41c3ff4b70886382d1cba6166b"
+        ],
+        "state": "SETTLED",
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false
+      },
+      "snapshot": {
+        "order_id": "rent_ord_a72a74a85a354890",
+        "order_status": "COMPLETED",
+        "read_only": true,
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false,
+        "source": {
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "revision": 2,
+          "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+          "state": "ACTIVATED",
+          "currency": "CNY",
+          "amount_minor": 200000,
+          "expires_at": "2026-09-27T20:42:06.128887",
+          "consent": {
+            "actor_id": "usr_f2533b9732a94585",
+            "accepted": true,
+            "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+            "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+            "accepted_at": "2026-09-26T20:42:06.348552"
+          }
+        },
+        "money": {
+          "payment_intent_id": "opi_85c3e1d2da1749229cbfd3b4795ebd58",
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "currency": "CNY",
+          "authorized_minor": 200000,
+          "captured_minor": 8000,
+          "released_minor": 192000,
+          "compensated_minor": 0,
+          "net_captured_minor": 8000,
+          "remaining_minor": 0,
+          "movement_ids": [
+            "omm_85bc065be0214cec975643fcc22f3ab3",
+            "omm_7da0fd7aba954da5857914c0920a5558",
+            "omm_1ebecb41c3ff4b70886382d1cba6166b"
+          ],
+          "state": "SETTLED",
+          "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+          "external_live": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_85bc065be0214cec975643fcc22f3ab3",
+            "type": "AUTHORIZATION",
+            "state": "CONFIRMED",
+            "recorded_amount_minor": 200000,
+            "currency": "CNY",
+            "operation_key": "rental-deposit-auth:rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+            "parent_movement_id": null
+          },
+          {
+            "movement_id": "omm_7da0fd7aba954da5857914c0920a5558",
+            "type": "CAPTURE",
+            "state": "CONFIRMED",
+            "recorded_amount_minor": 8000,
+            "currency": "CNY",
+            "operation_key": "rental-deposit:c36cef924f68918675f68a53216efd7da408f4d285625121c93324a150a7e352:capture",
+            "parent_movement_id": "omm_85bc065be0214cec975643fcc22f3ab3"
+          },
+          {
+            "movement_id": "omm_1ebecb41c3ff4b70886382d1cba6166b",
+            "type": "RELEASE",
+            "state": "CONFIRMED",
+            "recorded_amount_minor": 192000,
+            "currency": "CNY",
+            "operation_key": "rental-deposit:c36cef924f68918675f68a53216efd7da408f4d285625121c93324a150a7e352:release",
+            "parent_movement_id": "omm_85bc065be0214cec975643fcc22f3ab3"
+          }
+        ],
+        "decisions": [
+          {
+            "case_id": "rent_damage_457d246d225b492d",
+            "case_version": 3,
+            "case_status": "ADJUDICATED",
+            "can_settle": false,
+            "decision": {
+              "case_id": "rent_damage_457d246d225b492d",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+              "case_version": 3,
+              "awarded_minor": 8000,
+              "owner_id": "usr_f2533b9732a94585",
+              "currency": "CNY",
+              "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+              "obligation_revision": 2,
+              "decision_history": [
+                {
+                  "version": 3,
+                  "reviewer_id": "usr_1256876e320a451c896159b715122bbf",
+                  "award_minor": 8000,
+                  "reason": "隔离验收：独立核对陈述后裁决80元。",
+                  "evidence": [
+                    {
+                      "reference": "rental-statement://273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                      "sha256": "273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                      "statement": {
+                        "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                        "actor_id": "usr_1256876e320a451c896159b715122bbf",
+                        "actor_type": "GO_ADMIN",
+                        "order_id": "rent_ord_a72a74a85a354890",
+                        "case_id": "rent_damage_457d246d225b492d",
+                        "action": "DECISION",
+                        "text": "隔离验收：独立核对陈述后裁决80元。"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "status": "ADJUDICATED",
+              "held": false,
+              "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+              "external_live": false,
+              "decision_hash": "d0b23e82e0535c64fa9fe781d7600f91669f5712dc2667ed3140ce52c18dcb5a"
+            },
+            "blocker": "SETTLED_MONEY_REQUIRES_SEPARATE_COMPENSATION_REVIEW",
+            "compensation_blocker": "DEPOSIT_COMPENSATION_APPEAL_REQUIRED"
+          }
+        ],
+        "release": null,
+        "can_authorize": false,
+        "blockers": []
+      }
+    },
+    "consumer_settled_funds": {
+      "payment_intent_id": "opi_85c3e1d2da1749229cbfd3b4795ebd58",
+      "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+      "currency": "CNY",
+      "authorized_minor": 200000,
+      "captured_minor": 8000,
+      "released_minor": 192000,
+      "compensated_minor": 0,
+      "net_captured_minor": 8000,
+      "remaining_minor": 0,
+      "movement_ids": [
+        "omm_85bc065be0214cec975643fcc22f3ab3",
+        "omm_7da0fd7aba954da5857914c0920a5558",
+        "omm_1ebecb41c3ff4b70886382d1cba6166b"
+      ],
+      "state": "SETTLED",
+      "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+      "external_live": false
+    },
+    "damage_appeal": {
+      "claim": {
+        "case_id": "rent_damage_457d246d225b492d",
+        "order_id": "rent_ord_a72a74a85a354890",
+        "deposit_obligation": {
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "revision": 2,
+          "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+          "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+          "owner_id": "usr_f2533b9732a94585",
+          "payee_id": "fixture-rental-merchant-v1",
+          "currency": "CNY"
+        },
+        "owner_id": "usr_f2533b9732a94585",
+        "opened_by": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+        "status": "APPEAL_REVIEW_REQUIRED",
+        "version": 4,
+        "claimed_minor": 10000,
+        "currency": "CNY",
+        "contract_snapshot": {
+          "deposit_minor": 200000,
+          "insurance": {
+            "type": "BASIC",
+            "excess_minor": 500000
+          },
+          "maximum_award_minor": 200000
+        },
+        "pickup_evidence": [
+          {
+            "reference": "rental-statement://b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+            "sha256": "b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "actor_type": "SUPPLIER_USER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": null,
+              "action": "PICKUP_OBSERVATION",
+              "text": "隔离验收：取车时观察陈述"
+            }
+          }
+        ],
+        "return_evidence": [
+          {
+            "reference": "rental-statement://fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+            "sha256": "fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "actor_type": "SUPPLIER_USER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": null,
+              "action": "RETURN_OBSERVATION",
+              "text": "隔离验收：还车时观察陈述"
+            }
+          }
+        ],
+        "supplier_evidence_status": "SUPPLIER_STATEMENT_UNVERIFIED",
+        "customer_evidence": [
+          {
+            "reference": "rental-statement://d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+            "sha256": "d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_f2533b9732a94585",
+              "actor_type": "CONSUMER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": "rent_damage_457d246d225b492d",
+              "action": "RESPONSE",
+              "text": "隔离验收：不同意供应商车损申报，请独立核对。"
+            }
+          }
+        ],
+        "customer_response": "DISPUTE",
+        "awarded_minor": 8000,
+        "actionable_award_minor": null,
+        "decision_history": [
+          {
+            "version": 3,
+            "reviewer_id": "usr_1256876e320a451c896159b715122bbf",
+            "award_minor": 8000,
+            "reason": "隔离验收：独立核对陈述后裁决80元。",
+            "evidence": [
+              {
+                "reference": "rental-statement://273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                "sha256": "273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                "statement": {
+                  "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                  "actor_id": "usr_1256876e320a451c896159b715122bbf",
+                  "actor_type": "GO_ADMIN",
+                  "order_id": "rent_ord_a72a74a85a354890",
+                  "case_id": "rent_damage_457d246d225b492d",
+                  "action": "DECISION",
+                  "text": "隔离验收：独立核对陈述后裁决80元。"
+                }
+              }
+            ]
+          }
+        ],
+        "appeals": [
+          {
+            "actor_id": "usr_f2533b9732a94585",
+            "reason": "隔离验收：对80元裁决提出申诉，请另一独立管理员复核。",
+            "evidence": [
+              {
+                "reference": "rental-statement://abd066d060ef94f0127b9983ee731e51568b5e5db98283929b670e175be0c5b0",
+                "sha256": "abd066d060ef94f0127b9983ee731e51568b5e5db98283929b670e175be0c5b0",
+                "statement": {
+                  "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                  "actor_id": "usr_f2533b9732a94585",
+                  "actor_type": "CONSUMER",
+                  "order_id": "rent_ord_a72a74a85a354890",
+                  "case_id": "rent_damage_457d246d225b492d",
+                  "action": "APPEAL",
+                  "text": "隔离验收：对80元裁决提出申诉，请另一独立管理员复核。"
+                }
+              }
+            ],
+            "decision_version": 3
+          }
+        ],
+        "money_instruction_state": "DISPUTE_HOLD",
+        "money_status": "C11_MONEY_REVIEW_REQUIRED",
+        "money_movement_ids": [],
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false,
+        "responded_by": "usr_f2533b9732a94585",
+        "reviewer_id": "usr_1256876e320a451c896159b715122bbf",
+        "decision_reason": "隔离验收：独立核对陈述后裁决80元。",
+        "decision_evidence": [
+          {
+            "reference": "rental-statement://273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+            "sha256": "273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_1256876e320a451c896159b715122bbf",
+              "actor_type": "GO_ADMIN",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": "rent_damage_457d246d225b492d",
+              "action": "DECISION",
+              "text": "隔离验收：独立核对陈述后裁决80元。"
+            }
+          }
+        ]
+      },
+      "workspace": {
+        "order_id": "rent_ord_a72a74a85a354890",
+        "order_status": "COMPLETED",
+        "currency": "CNY",
+        "actor_type": "CONSUMER",
+        "actor_id": "usr_f2533b9732a94585",
+        "writes_enabled": true,
+        "cases": [
+          {
+            "case": {
+              "case_id": "rent_damage_457d246d225b492d",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "deposit_obligation": {
+                "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+                "revision": 2,
+                "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+                "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+                "owner_id": "usr_f2533b9732a94585",
+                "payee_id": "fixture-rental-merchant-v1",
+                "currency": "CNY"
+              },
+              "owner_id": "usr_f2533b9732a94585",
+              "opened_by": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "status": "APPEAL_REVIEW_REQUIRED",
+              "version": 4,
+              "claimed_minor": 10000,
+              "currency": "CNY",
+              "contract_snapshot": {
+                "deposit_minor": 200000,
+                "insurance": {
+                  "type": "BASIC",
+                  "excess_minor": 500000
+                },
+                "maximum_award_minor": 200000
+              },
+              "pickup_evidence": [
+                {
+                  "reference": "rental-statement://b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+                  "sha256": "b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+                    "actor_type": "SUPPLIER_USER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": null,
+                    "action": "PICKUP_OBSERVATION",
+                    "text": "隔离验收：取车时观察陈述"
+                  }
+                }
+              ],
+              "return_evidence": [
+                {
+                  "reference": "rental-statement://fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+                  "sha256": "fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+                    "actor_type": "SUPPLIER_USER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": null,
+                    "action": "RETURN_OBSERVATION",
+                    "text": "隔离验收：还车时观察陈述"
+                  }
+                }
+              ],
+              "supplier_evidence_status": "SUPPLIER_STATEMENT_UNVERIFIED",
+              "customer_evidence": [
+                {
+                  "reference": "rental-statement://d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+                  "sha256": "d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_f2533b9732a94585",
+                    "actor_type": "CONSUMER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": "rent_damage_457d246d225b492d",
+                    "action": "RESPONSE",
+                    "text": "隔离验收：不同意供应商车损申报，请独立核对。"
+                  }
+                }
+              ],
+              "customer_response": "DISPUTE",
+              "awarded_minor": 8000,
+              "actionable_award_minor": null,
+              "decision_history": [
+                {
+                  "version": 3,
+                  "reviewer_id": "usr_1256876e320a451c896159b715122bbf",
+                  "award_minor": 8000,
+                  "reason": "隔离验收：独立核对陈述后裁决80元。",
+                  "evidence": [
+                    {
+                      "reference": "rental-statement://273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                      "sha256": "273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                      "statement": {
+                        "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                        "actor_id": "usr_1256876e320a451c896159b715122bbf",
+                        "actor_type": "GO_ADMIN",
+                        "order_id": "rent_ord_a72a74a85a354890",
+                        "case_id": "rent_damage_457d246d225b492d",
+                        "action": "DECISION",
+                        "text": "隔离验收：独立核对陈述后裁决80元。"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "appeals": [
+                {
+                  "actor_id": "usr_f2533b9732a94585",
+                  "reason": "隔离验收：对80元裁决提出申诉，请另一独立管理员复核。",
+                  "evidence": [
+                    {
+                      "reference": "rental-statement://abd066d060ef94f0127b9983ee731e51568b5e5db98283929b670e175be0c5b0",
+                      "sha256": "abd066d060ef94f0127b9983ee731e51568b5e5db98283929b670e175be0c5b0",
+                      "statement": {
+                        "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                        "actor_id": "usr_f2533b9732a94585",
+                        "actor_type": "CONSUMER",
+                        "order_id": "rent_ord_a72a74a85a354890",
+                        "case_id": "rent_damage_457d246d225b492d",
+                        "action": "APPEAL",
+                        "text": "隔离验收：对80元裁决提出申诉，请另一独立管理员复核。"
+                      }
+                    }
+                  ],
+                  "decision_version": 3
+                }
+              ],
+              "money_instruction_state": "DISPUTE_HOLD",
+              "money_status": "C11_MONEY_REVIEW_REQUIRED",
+              "money_movement_ids": [],
+              "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+              "external_live": false,
+              "responded_by": "usr_f2533b9732a94585",
+              "reviewer_id": "usr_1256876e320a451c896159b715122bbf",
+              "decision_reason": "隔离验收：独立核对陈述后裁决80元。",
+              "decision_evidence": [
+                {
+                  "reference": "rental-statement://273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                  "sha256": "273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_1256876e320a451c896159b715122bbf",
+                    "actor_type": "GO_ADMIN",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": "rent_damage_457d246d225b492d",
+                    "action": "DECISION",
+                    "text": "隔离验收：独立核对陈述后裁决80元。"
+                  }
+                }
+              ]
+            },
+            "actions": []
+          }
+        ],
+        "actions": [],
+        "obligation": {
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "revision": 2,
+          "state": "ACTIVATED",
+          "source": {
+            "order_id": "rent_ord_a72a74a85a354890",
+            "owner_id": "usr_f2533b9732a94585",
+            "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+            "payee_id": "fixture-rental-merchant-v1",
+            "payee_verification": {
+              "status": "VERIFIED_SYNTHETIC_FIXTURE",
+              "version": "rental-deposit-isolated-v1",
+              "real_payee_verified": false
+            },
+            "currency": "CNY",
+            "amount_minor": 200000,
+            "contract_snapshot": {
+              "fixture_version": "rental-deposit-isolated-v1",
+              "vehicle_class": "COMPACT",
+              "maximum_authorization_minor": 200000,
+              "maximum_damage_award_minor": 200000,
+              "currency": "CNY",
+              "insurance": {
+                "type": "BASIC",
+                "excess_minor": 500000
+              },
+              "consent_scope": "DEPOSIT_OBLIGATION_ONLY_NOT_DAMAGE_ACCEPTANCE",
+              "damage_requires_independent_decision": true,
+              "silence_is_not_acceptance": true,
+              "fixture_validity_seconds": 86400,
+              "real_contract_approved": false
+            },
+            "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+            "issued_at": "2026-09-26T20:42:06.128887",
+            "expires_at": "2026-09-27T20:42:06.128887",
+            "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+            "external_live": false
+          },
+          "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+          "consent": {
+            "actor_id": "usr_f2533b9732a94585",
+            "accepted": true,
+            "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+            "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+            "accepted_at": "2026-09-26T20:42:06.348552"
+          },
+          "financial_state": "NO_FINANCIAL_FACT_ASSERTED"
+        },
+        "receipts": [
+          {
+            "key": "9693b04a-49cb-4e60-8364-dd40a04ef7ac",
+            "case_id": "rent_damage_457d246d225b492d",
+            "version": 2
+          },
+          {
+            "key": "dad1575e-ea3e-43bf-aadf-ce9955585366",
+            "case_id": "rent_damage_457d246d225b492d",
+            "version": 4
+          }
+        ],
+        "release": null,
+        "financial_authority": "C11",
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false
+      }
+    },
+    "damage_appeal_decision": {
+      "claim": {
+        "case_id": "rent_damage_457d246d225b492d",
+        "order_id": "rent_ord_a72a74a85a354890",
+        "deposit_obligation": {
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "revision": 2,
+          "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+          "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+          "owner_id": "usr_f2533b9732a94585",
+          "payee_id": "fixture-rental-merchant-v1",
+          "currency": "CNY"
+        },
+        "owner_id": "usr_f2533b9732a94585",
+        "opened_by": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+        "status": "ADJUDICATED",
+        "version": 5,
+        "claimed_minor": 10000,
+        "currency": "CNY",
+        "contract_snapshot": {
+          "deposit_minor": 200000,
+          "insurance": {
+            "type": "BASIC",
+            "excess_minor": 500000
+          },
+          "maximum_award_minor": 200000
+        },
+        "pickup_evidence": [
+          {
+            "reference": "rental-statement://b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+            "sha256": "b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "actor_type": "SUPPLIER_USER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": null,
+              "action": "PICKUP_OBSERVATION",
+              "text": "隔离验收：取车时观察陈述"
+            }
+          }
+        ],
+        "return_evidence": [
+          {
+            "reference": "rental-statement://fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+            "sha256": "fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "actor_type": "SUPPLIER_USER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": null,
+              "action": "RETURN_OBSERVATION",
+              "text": "隔离验收：还车时观察陈述"
+            }
+          }
+        ],
+        "supplier_evidence_status": "SUPPLIER_STATEMENT_UNVERIFIED",
+        "customer_evidence": [
+          {
+            "reference": "rental-statement://d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+            "sha256": "d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_f2533b9732a94585",
+              "actor_type": "CONSUMER",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": "rent_damage_457d246d225b492d",
+              "action": "RESPONSE",
+              "text": "隔离验收：不同意供应商车损申报，请独立核对。"
+            }
+          }
+        ],
+        "customer_response": "DISPUTE",
+        "awarded_minor": 3000,
+        "actionable_award_minor": 3000,
+        "decision_history": [
+          {
+            "version": 3,
+            "reviewer_id": "usr_1256876e320a451c896159b715122bbf",
+            "award_minor": 8000,
+            "reason": "隔离验收：独立核对陈述后裁决80元。",
+            "evidence": [
+              {
+                "reference": "rental-statement://273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                "sha256": "273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                "statement": {
+                  "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                  "actor_id": "usr_1256876e320a451c896159b715122bbf",
+                  "actor_type": "GO_ADMIN",
+                  "order_id": "rent_ord_a72a74a85a354890",
+                  "case_id": "rent_damage_457d246d225b492d",
+                  "action": "DECISION",
+                  "text": "隔离验收：独立核对陈述后裁决80元。"
+                }
+              }
+            ]
+          },
+          {
+            "version": 5,
+            "reviewer_id": "usr_aebb840ea90944d0a50bdd70eb8aa10d",
+            "award_minor": 3000,
+            "reason": "隔离验收：另一独立管理员复核，责任减至30元。",
+            "evidence": [
+              {
+                "reference": "rental-statement://abb88ca653fceae390257b739d2e8f119cd2a8dd2fa4a92b01cd8c87b1090936",
+                "sha256": "abb88ca653fceae390257b739d2e8f119cd2a8dd2fa4a92b01cd8c87b1090936",
+                "statement": {
+                  "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                  "actor_id": "usr_aebb840ea90944d0a50bdd70eb8aa10d",
+                  "actor_type": "GO_ADMIN",
+                  "order_id": "rent_ord_a72a74a85a354890",
+                  "case_id": "rent_damage_457d246d225b492d",
+                  "action": "APPEAL_DECISION",
+                  "text": "隔离验收：另一独立管理员复核，责任减至30元。"
+                }
+              }
+            ],
+            "supersedes_decision_version": 3
+          }
+        ],
+        "appeals": [
+          {
+            "actor_id": "usr_f2533b9732a94585",
+            "reason": "隔离验收：对80元裁决提出申诉，请另一独立管理员复核。",
+            "evidence": [
+              {
+                "reference": "rental-statement://abd066d060ef94f0127b9983ee731e51568b5e5db98283929b670e175be0c5b0",
+                "sha256": "abd066d060ef94f0127b9983ee731e51568b5e5db98283929b670e175be0c5b0",
+                "statement": {
+                  "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                  "actor_id": "usr_f2533b9732a94585",
+                  "actor_type": "CONSUMER",
+                  "order_id": "rent_ord_a72a74a85a354890",
+                  "case_id": "rent_damage_457d246d225b492d",
+                  "action": "APPEAL",
+                  "text": "隔离验收：对80元裁决提出申诉，请另一独立管理员复核。"
+                }
+              }
+            ],
+            "decision_version": 3
+          }
+        ],
+        "money_instruction_state": "AWAITING_C11_REVIEW",
+        "money_status": "C11_MONEY_REVIEW_REQUIRED",
+        "money_movement_ids": [],
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false,
+        "responded_by": "usr_f2533b9732a94585",
+        "reviewer_id": "usr_aebb840ea90944d0a50bdd70eb8aa10d",
+        "decision_reason": "隔离验收：另一独立管理员复核，责任减至30元。",
+        "decision_evidence": [
+          {
+            "reference": "rental-statement://abb88ca653fceae390257b739d2e8f119cd2a8dd2fa4a92b01cd8c87b1090936",
+            "sha256": "abb88ca653fceae390257b739d2e8f119cd2a8dd2fa4a92b01cd8c87b1090936",
+            "statement": {
+              "kind": "ACTOR_STATEMENT_UNVERIFIED",
+              "actor_id": "usr_aebb840ea90944d0a50bdd70eb8aa10d",
+              "actor_type": "GO_ADMIN",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "case_id": "rent_damage_457d246d225b492d",
+              "action": "APPEAL_DECISION",
+              "text": "隔离验收：另一独立管理员复核，责任减至30元。"
+            }
+          }
+        ]
+      },
+      "workspace": {
+        "order_id": "rent_ord_a72a74a85a354890",
+        "order_status": "COMPLETED",
+        "currency": "CNY",
+        "actor_type": "GO_ADMIN",
+        "actor_id": "usr_aebb840ea90944d0a50bdd70eb8aa10d",
+        "writes_enabled": true,
+        "cases": [
+          {
+            "case": {
+              "case_id": "rent_damage_457d246d225b492d",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "deposit_obligation": {
+                "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+                "revision": 2,
+                "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+                "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+                "owner_id": "usr_f2533b9732a94585",
+                "payee_id": "fixture-rental-merchant-v1",
+                "currency": "CNY"
+              },
+              "owner_id": "usr_f2533b9732a94585",
+              "opened_by": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+              "status": "ADJUDICATED",
+              "version": 5,
+              "claimed_minor": 10000,
+              "currency": "CNY",
+              "contract_snapshot": {
+                "deposit_minor": 200000,
+                "insurance": {
+                  "type": "BASIC",
+                  "excess_minor": 500000
+                },
+                "maximum_award_minor": 200000
+              },
+              "pickup_evidence": [
+                {
+                  "reference": "rental-statement://b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+                  "sha256": "b532a3cb8ae4ecf03119419ac2729153c66d0b89021bb72e2f8a2f59a8962762",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+                    "actor_type": "SUPPLIER_USER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": null,
+                    "action": "PICKUP_OBSERVATION",
+                    "text": "隔离验收：取车时观察陈述"
+                  }
+                }
+              ],
+              "return_evidence": [
+                {
+                  "reference": "rental-statement://fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+                  "sha256": "fc665af3ec151f508adadbba5d25ba47ffd5152c9d45f149d440a9675f0881d0",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_451fea238c1841f3ac0267cd3d4a1b1b",
+                    "actor_type": "SUPPLIER_USER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": null,
+                    "action": "RETURN_OBSERVATION",
+                    "text": "隔离验收：还车时观察陈述"
+                  }
+                }
+              ],
+              "supplier_evidence_status": "SUPPLIER_STATEMENT_UNVERIFIED",
+              "customer_evidence": [
+                {
+                  "reference": "rental-statement://d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+                  "sha256": "d2f5fd49fd93664eee281ccb7afc05e5d10583effa530a25f7491045522b1f1a",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_f2533b9732a94585",
+                    "actor_type": "CONSUMER",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": "rent_damage_457d246d225b492d",
+                    "action": "RESPONSE",
+                    "text": "隔离验收：不同意供应商车损申报，请独立核对。"
+                  }
+                }
+              ],
+              "customer_response": "DISPUTE",
+              "awarded_minor": 3000,
+              "actionable_award_minor": 3000,
+              "decision_history": [
+                {
+                  "version": 3,
+                  "reviewer_id": "usr_1256876e320a451c896159b715122bbf",
+                  "award_minor": 8000,
+                  "reason": "隔离验收：独立核对陈述后裁决80元。",
+                  "evidence": [
+                    {
+                      "reference": "rental-statement://273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                      "sha256": "273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                      "statement": {
+                        "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                        "actor_id": "usr_1256876e320a451c896159b715122bbf",
+                        "actor_type": "GO_ADMIN",
+                        "order_id": "rent_ord_a72a74a85a354890",
+                        "case_id": "rent_damage_457d246d225b492d",
+                        "action": "DECISION",
+                        "text": "隔离验收：独立核对陈述后裁决80元。"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "version": 5,
+                  "reviewer_id": "usr_aebb840ea90944d0a50bdd70eb8aa10d",
+                  "award_minor": 3000,
+                  "reason": "隔离验收：另一独立管理员复核，责任减至30元。",
+                  "evidence": [
+                    {
+                      "reference": "rental-statement://abb88ca653fceae390257b739d2e8f119cd2a8dd2fa4a92b01cd8c87b1090936",
+                      "sha256": "abb88ca653fceae390257b739d2e8f119cd2a8dd2fa4a92b01cd8c87b1090936",
+                      "statement": {
+                        "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                        "actor_id": "usr_aebb840ea90944d0a50bdd70eb8aa10d",
+                        "actor_type": "GO_ADMIN",
+                        "order_id": "rent_ord_a72a74a85a354890",
+                        "case_id": "rent_damage_457d246d225b492d",
+                        "action": "APPEAL_DECISION",
+                        "text": "隔离验收：另一独立管理员复核，责任减至30元。"
+                      }
+                    }
+                  ],
+                  "supersedes_decision_version": 3
+                }
+              ],
+              "appeals": [
+                {
+                  "actor_id": "usr_f2533b9732a94585",
+                  "reason": "隔离验收：对80元裁决提出申诉，请另一独立管理员复核。",
+                  "evidence": [
+                    {
+                      "reference": "rental-statement://abd066d060ef94f0127b9983ee731e51568b5e5db98283929b670e175be0c5b0",
+                      "sha256": "abd066d060ef94f0127b9983ee731e51568b5e5db98283929b670e175be0c5b0",
+                      "statement": {
+                        "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                        "actor_id": "usr_f2533b9732a94585",
+                        "actor_type": "CONSUMER",
+                        "order_id": "rent_ord_a72a74a85a354890",
+                        "case_id": "rent_damage_457d246d225b492d",
+                        "action": "APPEAL",
+                        "text": "隔离验收：对80元裁决提出申诉，请另一独立管理员复核。"
+                      }
+                    }
+                  ],
+                  "decision_version": 3
+                }
+              ],
+              "money_instruction_state": "AWAITING_C11_REVIEW",
+              "money_status": "C11_MONEY_REVIEW_REQUIRED",
+              "money_movement_ids": [],
+              "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+              "external_live": false,
+              "responded_by": "usr_f2533b9732a94585",
+              "reviewer_id": "usr_aebb840ea90944d0a50bdd70eb8aa10d",
+              "decision_reason": "隔离验收：另一独立管理员复核，责任减至30元。",
+              "decision_evidence": [
+                {
+                  "reference": "rental-statement://abb88ca653fceae390257b739d2e8f119cd2a8dd2fa4a92b01cd8c87b1090936",
+                  "sha256": "abb88ca653fceae390257b739d2e8f119cd2a8dd2fa4a92b01cd8c87b1090936",
+                  "statement": {
+                    "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                    "actor_id": "usr_aebb840ea90944d0a50bdd70eb8aa10d",
+                    "actor_type": "GO_ADMIN",
+                    "order_id": "rent_ord_a72a74a85a354890",
+                    "case_id": "rent_damage_457d246d225b492d",
+                    "action": "APPEAL_DECISION",
+                    "text": "隔离验收：另一独立管理员复核，责任减至30元。"
+                  }
+                }
+              ]
+            },
+            "actions": []
+          }
+        ],
+        "actions": [],
+        "obligation": {
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "revision": 2,
+          "state": "ACTIVATED",
+          "source": {
+            "order_id": "rent_ord_a72a74a85a354890",
+            "owner_id": "usr_f2533b9732a94585",
+            "vehicle_id": "fixture-vehicle-f0bea46d503d6dccd7e9465c",
+            "payee_id": "fixture-rental-merchant-v1",
+            "payee_verification": {
+              "status": "VERIFIED_SYNTHETIC_FIXTURE",
+              "version": "rental-deposit-isolated-v1",
+              "real_payee_verified": false
+            },
+            "currency": "CNY",
+            "amount_minor": 200000,
+            "contract_snapshot": {
+              "fixture_version": "rental-deposit-isolated-v1",
+              "vehicle_class": "COMPACT",
+              "maximum_authorization_minor": 200000,
+              "maximum_damage_award_minor": 200000,
+              "currency": "CNY",
+              "insurance": {
+                "type": "BASIC",
+                "excess_minor": 500000
+              },
+              "consent_scope": "DEPOSIT_OBLIGATION_ONLY_NOT_DAMAGE_ACCEPTANCE",
+              "damage_requires_independent_decision": true,
+              "silence_is_not_acceptance": true,
+              "fixture_validity_seconds": 86400,
+              "real_contract_approved": false
+            },
+            "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+            "issued_at": "2026-09-26T20:42:06.128887",
+            "expires_at": "2026-09-27T20:42:06.128887",
+            "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+            "external_live": false
+          },
+          "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+          "consent": {
+            "actor_id": "usr_f2533b9732a94585",
+            "accepted": true,
+            "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+            "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+            "accepted_at": "2026-09-26T20:42:06.348552"
+          },
+          "financial_state": "NO_FINANCIAL_FACT_ASSERTED"
+        },
+        "receipts": [
+          {
+            "key": "1c00c2e0-7c5f-4525-9ad6-737e336d1e38",
+            "case_id": "rent_damage_457d246d225b492d",
+            "version": 5
+          }
+        ],
+        "release": null,
+        "financial_authority": "C11",
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false
+      }
+    },
+    "deposit_compensation": {
+      "receipt": {
+        "payment_intent_id": "opi_85c3e1d2da1749229cbfd3b4795ebd58",
+        "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+        "currency": "CNY",
+        "authorized_minor": 200000,
+        "captured_minor": 8000,
+        "released_minor": 192000,
+        "compensated_minor": 5000,
+        "net_captured_minor": 3000,
+        "remaining_minor": 0,
+        "movement_ids": [
+          "omm_85bc065be0214cec975643fcc22f3ab3",
+          "omm_7da0fd7aba954da5857914c0920a5558",
+          "omm_1ebecb41c3ff4b70886382d1cba6166b",
+          "omm_65552e10a25e409f8922fe94a6e9f165"
+        ],
+        "state": "SETTLED",
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false,
+        "compensation_case_id": "rent_damage_457d246d225b492d",
+        "compensation_decision_hash": "2c7a80890a4dec6f78f392bf3d6311596d0ea391593bc848ebb0d4c65150af0c"
+      },
+      "snapshot": {
+        "order_id": "rent_ord_a72a74a85a354890",
+        "order_status": "COMPLETED",
+        "read_only": true,
+        "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+        "external_live": false,
+        "source": {
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "revision": 2,
+          "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+          "state": "ACTIVATED",
+          "currency": "CNY",
+          "amount_minor": 200000,
+          "expires_at": "2026-09-27T20:42:06.128887",
+          "consent": {
+            "actor_id": "usr_f2533b9732a94585",
+            "accepted": true,
+            "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+            "terms_hash": "4b12db520140f9a8c2e2f4dcb93414085b05e235d88cf9677483c48b6dfb9a68",
+            "accepted_at": "2026-09-26T20:42:06.348552"
+          }
+        },
+        "money": {
+          "payment_intent_id": "opi_85c3e1d2da1749229cbfd3b4795ebd58",
+          "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+          "currency": "CNY",
+          "authorized_minor": 200000,
+          "captured_minor": 8000,
+          "released_minor": 192000,
+          "compensated_minor": 5000,
+          "net_captured_minor": 3000,
+          "remaining_minor": 0,
+          "movement_ids": [
+            "omm_85bc065be0214cec975643fcc22f3ab3",
+            "omm_7da0fd7aba954da5857914c0920a5558",
+            "omm_1ebecb41c3ff4b70886382d1cba6166b",
+            "omm_65552e10a25e409f8922fe94a6e9f165"
+          ],
+          "state": "SETTLED",
+          "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+          "external_live": false
+        },
+        "movements": [
+          {
+            "movement_id": "omm_85bc065be0214cec975643fcc22f3ab3",
+            "type": "AUTHORIZATION",
+            "state": "CONFIRMED",
+            "recorded_amount_minor": 200000,
+            "currency": "CNY",
+            "operation_key": "rental-deposit-auth:rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+            "parent_movement_id": null
+          },
+          {
+            "movement_id": "omm_7da0fd7aba954da5857914c0920a5558",
+            "type": "CAPTURE",
+            "state": "CONFIRMED",
+            "recorded_amount_minor": 8000,
+            "currency": "CNY",
+            "operation_key": "rental-deposit:c36cef924f68918675f68a53216efd7da408f4d285625121c93324a150a7e352:capture",
+            "parent_movement_id": "omm_85bc065be0214cec975643fcc22f3ab3"
+          },
+          {
+            "movement_id": "omm_1ebecb41c3ff4b70886382d1cba6166b",
+            "type": "RELEASE",
+            "state": "CONFIRMED",
+            "recorded_amount_minor": 192000,
+            "currency": "CNY",
+            "operation_key": "rental-deposit:c36cef924f68918675f68a53216efd7da408f4d285625121c93324a150a7e352:release",
+            "parent_movement_id": "omm_85bc065be0214cec975643fcc22f3ab3"
+          },
+          {
+            "movement_id": "omm_65552e10a25e409f8922fe94a6e9f165",
+            "type": "COMPENSATION",
+            "state": "CONFIRMED",
+            "recorded_amount_minor": 5000,
+            "currency": "CNY",
+            "operation_key": "rental-deposit-comp:b89a9fec175028c71910c2d80345737c454713345e84209cf736ec361cdd52fd",
+            "parent_movement_id": "omm_7da0fd7aba954da5857914c0920a5558"
+          }
+        ],
+        "decisions": [
+          {
+            "case_id": "rent_damage_457d246d225b492d",
+            "case_version": 5,
+            "case_status": "ADJUDICATED",
+            "can_settle": false,
+            "decision": {
+              "case_id": "rent_damage_457d246d225b492d",
+              "order_id": "rent_ord_a72a74a85a354890",
+              "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+              "case_version": 5,
+              "awarded_minor": 3000,
+              "owner_id": "usr_f2533b9732a94585",
+              "currency": "CNY",
+              "source_hash": "0df59824b2a92e385d7d5265b3552b34dd0715741a1190db80c86aee42936549",
+              "obligation_revision": 2,
+              "decision_history": [
+                {
+                  "version": 3,
+                  "reviewer_id": "usr_1256876e320a451c896159b715122bbf",
+                  "award_minor": 8000,
+                  "reason": "隔离验收：独立核对陈述后裁决80元。",
+                  "evidence": [
+                    {
+                      "reference": "rental-statement://273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                      "sha256": "273e805d2f195752e6c3acf5e8a63325d83b3421cf01298f96e5af33355cf363",
+                      "statement": {
+                        "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                        "actor_id": "usr_1256876e320a451c896159b715122bbf",
+                        "actor_type": "GO_ADMIN",
+                        "order_id": "rent_ord_a72a74a85a354890",
+                        "case_id": "rent_damage_457d246d225b492d",
+                        "action": "DECISION",
+                        "text": "隔离验收：独立核对陈述后裁决80元。"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "version": 5,
+                  "reviewer_id": "usr_aebb840ea90944d0a50bdd70eb8aa10d",
+                  "award_minor": 3000,
+                  "reason": "隔离验收：另一独立管理员复核，责任减至30元。",
+                  "evidence": [
+                    {
+                      "reference": "rental-statement://abb88ca653fceae390257b739d2e8f119cd2a8dd2fa4a92b01cd8c87b1090936",
+                      "sha256": "abb88ca653fceae390257b739d2e8f119cd2a8dd2fa4a92b01cd8c87b1090936",
+                      "statement": {
+                        "kind": "ACTOR_STATEMENT_UNVERIFIED",
+                        "actor_id": "usr_aebb840ea90944d0a50bdd70eb8aa10d",
+                        "actor_type": "GO_ADMIN",
+                        "order_id": "rent_ord_a72a74a85a354890",
+                        "case_id": "rent_damage_457d246d225b492d",
+                        "action": "APPEAL_DECISION",
+                        "text": "隔离验收：另一独立管理员复核，责任减至30元。"
+                      }
+                    }
+                  ],
+                  "supersedes_decision_version": 3
+                }
+              ],
+              "status": "ADJUDICATED",
+              "held": false,
+              "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+              "external_live": false,
+              "decision_hash": "2c7a80890a4dec6f78f392bf3d6311596d0ea391593bc848ebb0d4c65150af0c"
+            },
+            "blocker": null,
+            "compensation": {
+              "amount_minor": 0,
+              "target_net_captured_minor": 3000,
+              "operation_key": "rental-deposit-comp:b89a9fec175028c71910c2d80345737c454713345e84209cf736ec361cdd52fd",
+              "original_capture_id": "omm_7da0fd7aba954da5857914c0920a5558",
+              "case_id": "rent_damage_457d246d225b492d",
+              "case_version": 5,
+              "decision_hash": "2c7a80890a4dec6f78f392bf3d6311596d0ea391593bc848ebb0d4c65150af0c",
+              "already_applied": true
+            },
+            "can_compensate": false
+          }
+        ],
+        "release": null,
+        "can_authorize": false,
+        "blockers": []
+      }
+    },
+    "consumer_compensated_funds": {
+      "payment_intent_id": "opi_85c3e1d2da1749229cbfd3b4795ebd58",
+      "obligation_id": "rent_dep_a8ddec1936b09d3c666ae71b4ad3f1f3a409f23b",
+      "currency": "CNY",
+      "authorized_minor": 200000,
+      "captured_minor": 8000,
+      "released_minor": 192000,
+      "compensated_minor": 5000,
+      "net_captured_minor": 3000,
+      "remaining_minor": 0,
+      "movement_ids": [
+        "omm_85bc065be0214cec975643fcc22f3ab3",
+        "omm_7da0fd7aba954da5857914c0920a5558",
+        "omm_1ebecb41c3ff4b70886382d1cba6166b",
+        "omm_65552e10a25e409f8922fe94a6e9f165"
+      ],
+      "state": "SETTLED",
+      "data_mode": "ISOLATED_CONTRACT_FIXTURE",
+      "external_live": false
+    },
+    "attraction_operations_order": {
+      "vertical": "ATTRACTION",
+      "order_id": "attr_ord_e58e357ef93b43a6",
+      "status": "CONFIRMED",
+      "product_id": "tokyo_skytree",
+      "product_name": "东京晴空塔天望甲板",
+      "product_type": "ATTRACTION",
+      "destination": "东京",
+      "visit_date": "2026-11-10",
+      "session_time": "16:00",
+      "ticket_type": "成人票",
+      "quantity": 1,
+      "eligibility": {
+        "age": "12+ adult",
+        "id_required": false
+      },
+      "voucher_type": "QR_CODE",
+      "voucher_code": "SIM-attr_ord_e58e357ef93b43a6",
+      "total_amount_minor": 18000,
+      "currency": "CNY",
+      "attendees": [
+        {
+          "full_name": "INDEPENDENT RENTAL ADULT"
+        }
+      ],
+      "supplier_reference": "SIM-attr_ord_e58e357ef93b43a6",
+      "external_live": false,
+      "redemption_window": {
+        "state": "FROZEN_SUPPLIER_WINDOW",
+        "destination_timezone": "Asia/Tokyo",
+        "opens_at": "2026-11-10T06:30:00+00:00",
+        "closes_at": "2026-11-10T09:00:00+00:00",
+        "boundary": "[opens_at,closes_at)",
+        "policy": {
+          "closes_minutes_after_session": 120,
+          "destination_timezone": "Asia/Tokyo",
+          "opens_minutes_before_session": 30,
+          "policy_reference": "engineering-fixture://attraction/session-window/v1"
+        }
+      },
+      "payment_deadline_ms": 1790456234971,
+      "unpaid_reservation_state": "PAYMENT_STARTED",
+      "can_redeem": false,
+      "redemption_blocker": "ATTRACTION_OUTSIDE_SUPPLIER_VALIDITY_WINDOW",
+      "supplier_closed_refund": false,
+      "evidence": [
+        {
+          "sequence_no": 1,
+          "kind": "ORDER_CREATED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "d879f61b5bb3025cd3b4d830c6130827833dfcaad6cb345cd49bfb95febb6951",
+          "previous_hash": "GENESIS",
+          "payload": {
+            "prebook_id": "attr_pre_7eaba322e2db41de",
+            "terms_hash": "b1d7cb4b79ef2e6f2cf4c4ab322497f00d1d730dccfe85255c867927f07598be",
+            "external_live": false
+          },
+          "created_at": "2026-09-26T20:42:14.974163"
+        },
+        {
+          "sequence_no": 2,
+          "kind": "VAULT_BOOKING_DATA_RELEASED",
+          "status": "PAYMENT_PENDING",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "b73708ccf765d4aad0b9ea1c299d7c316a03c721267225a00e49bddaa5aa1314",
+          "previous_hash": "d879f61b5bb3025cd3b4d830c6130827833dfcaad6cb345cd49bfb95febb6951",
+          "payload": {
+            "release_ids": [
+              "pdr_9803cd6376364d33"
+            ],
+            "minimum_necessary": true
+          },
+          "created_at": "2026-09-26T20:42:14.980009"
+        },
+        {
+          "sequence_no": 3,
+          "kind": "SUPPLIER_CONFIRMED",
+          "status": "CONFIRMED",
+          "source": "RC20_VERTICAL",
+          "entry_hash": "675f0fca3ac5cb658335157d26e33aaea13ca8d1657d957775c29807ef306b1f",
+          "previous_hash": "b73708ccf765d4aad0b9ea1c299d7c316a03c721267225a00e49bddaa5aa1314",
+          "payload": {
+            "supplier_confirmation_reference": "SIM-attr_ord_e58e357ef93b43a6",
+            "external_operation_id": "SIM-attr_ord_e58e357ef93b43a6",
+            "evidence_reference": "contract-simulator://ATTRACTION/attr_ord_e58e357ef93b43a6",
+            "actor_id": null
+          },
+          "created_at": "2026-09-26T20:42:15.129455"
+        }
+      ]
+    },
+    "attraction_pending_change": {
+      "quote": {
+        "quote_id": "attr_chg_8077974edcfa40d0",
+        "order_id": "attr_ord_e58e357ef93b43a6",
+        "new_visit_date": "2026-11-11",
+        "new_session_time": "16:00",
+        "change_fee_minor": 0,
+        "total_due_minor": 0,
+        "currency": "CNY",
+        "expires_at": "2026-09-26T20:52:15.345785"
+      },
+      "order": {
+        "vertical": "ATTRACTION",
+        "order_id": "attr_ord_e58e357ef93b43a6",
+        "status": "UNKNOWN_EXTERNAL_STATE",
+        "product_id": "tokyo_skytree",
+        "product_name": "东京晴空塔天望甲板",
+        "product_type": "ATTRACTION",
+        "destination": "东京",
+        "visit_date": "2026-11-10",
+        "session_time": "16:00",
+        "ticket_type": "成人票",
+        "quantity": 1,
+        "eligibility": {
+          "age": "12+ adult",
+          "id_required": false
+        },
+        "voucher_type": "QR_CODE",
+        "voucher_code": null,
+        "total_amount_minor": 18000,
+        "currency": "CNY",
+        "attendees": [
+          {
+            "full_name": "INDEPENDENT RENTAL ADULT"
+          }
+        ],
+        "supplier_reference": null,
+        "external_live": false,
+        "redemption_window": {
+          "state": "FROZEN_SUPPLIER_WINDOW",
+          "destination_timezone": "Asia/Tokyo",
+          "opens_at": "2026-11-10T06:30:00+00:00",
+          "closes_at": "2026-11-10T09:00:00+00:00",
+          "boundary": "[opens_at,closes_at)",
+          "policy": {
+            "closes_minutes_after_session": 120,
+            "destination_timezone": "Asia/Tokyo",
+            "opens_minutes_before_session": 30,
+            "policy_reference": "engineering-fixture://attraction/session-window/v1"
+          }
+        },
+        "payment_deadline_ms": 1790456234971,
+        "unpaid_reservation_state": "PAYMENT_STARTED",
+        "can_redeem": false,
+        "redemption_blocker": "ATTRACTION_NOT_CONFIRMED",
+        "supplier_closed_refund": false,
+        "evidence": [
+          {
+            "sequence_no": 1,
+            "kind": "ORDER_CREATED",
+            "status": "PAYMENT_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "d879f61b5bb3025cd3b4d830c6130827833dfcaad6cb345cd49bfb95febb6951",
+            "previous_hash": "GENESIS",
+            "payload": {
+              "prebook_id": "attr_pre_7eaba322e2db41de",
+              "terms_hash": "b1d7cb4b79ef2e6f2cf4c4ab322497f00d1d730dccfe85255c867927f07598be",
+              "external_live": false
+            },
+            "created_at": "2026-09-26T20:42:14.974163"
+          },
+          {
+            "sequence_no": 2,
+            "kind": "VAULT_BOOKING_DATA_RELEASED",
+            "status": "PAYMENT_PENDING",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "b73708ccf765d4aad0b9ea1c299d7c316a03c721267225a00e49bddaa5aa1314",
+            "previous_hash": "d879f61b5bb3025cd3b4d830c6130827833dfcaad6cb345cd49bfb95febb6951",
+            "payload": {
+              "release_ids": [
+                "pdr_9803cd6376364d33"
+              ],
+              "minimum_necessary": true
+            },
+            "created_at": "2026-09-26T20:42:14.980009"
+          },
+          {
+            "sequence_no": 3,
+            "kind": "SUPPLIER_CONFIRMED",
+            "status": "CONFIRMED",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "675f0fca3ac5cb658335157d26e33aaea13ca8d1657d957775c29807ef306b1f",
+            "previous_hash": "b73708ccf765d4aad0b9ea1c299d7c316a03c721267225a00e49bddaa5aa1314",
+            "payload": {
+              "supplier_confirmation_reference": "SIM-attr_ord_e58e357ef93b43a6",
+              "external_operation_id": "SIM-attr_ord_e58e357ef93b43a6",
+              "evidence_reference": "contract-simulator://ATTRACTION/attr_ord_e58e357ef93b43a6",
+              "actor_id": null
+            },
+            "created_at": "2026-09-26T20:42:15.129455"
+          },
+          {
+            "sequence_no": 4,
+            "kind": "CHANGE_QUOTED",
+            "status": "CONFIRMED",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "8657591f52c499819b10418026349519adbbb9e062d12f5019f7a054b5727541",
+            "previous_hash": "675f0fca3ac5cb658335157d26e33aaea13ca8d1657d957775c29807ef306b1f",
+            "payload": {
+              "quote": {
+                "quote_id": "attr_chg_8077974edcfa40d0",
+                "order_id": "attr_ord_e58e357ef93b43a6",
+                "new_visit_date": "2026-11-11",
+                "new_session_time": "16:00",
+                "change_fee_minor": 0,
+                "total_due_minor": 0,
+                "currency": "CNY",
+                "expires_at": "2026-09-26T20:52:15.345785"
+              },
+              "order_revision": "df8a7070912366de899f11267ff2d7b045fd96d989560aa5e329cf1111121ef7"
+            },
+            "created_at": "2026-09-26T20:42:15.347832"
+          },
+          {
+            "sequence_no": 5,
+            "kind": "CHANGE_SUBMITTED_AWAITING_SUPPLIER",
+            "status": "UNKNOWN_EXTERNAL_STATE",
+            "source": "RC20_VERTICAL",
+            "entry_hash": "966509429299f658a90796724926af74f8a014d9a7237fbb83abe9f4e3dab1d9",
+            "previous_hash": "8657591f52c499819b10418026349519adbbb9e062d12f5019f7a054b5727541",
+            "payload": {
+              "quote_id": "attr_chg_8077974edcfa40d0",
+              "previous_voucher_code": "SIM-attr_ord_e58e357ef93b43a6",
+              "previous_supplier_reference": "SIM-attr_ord_e58e357ef93b43a6"
+            },
+            "created_at": "2026-09-26T20:42:15.420431"
+          }
+        ]
+      }
+    },
+    "attraction_change_receipt": {
+      "workflow": {
+        "revision": 3,
+        "stage": "RECEIPT_RECORDED",
+        "assignee": "usr_7f3af05d2932424095075d8bb686d5f1",
+        "receipt": {
+          "state": "CONFIRMED",
+          "evidence_reference": "isolated://browser-attraction-change",
+          "supplier_reference": "BROWSER-ATTR-CHANGE",
+          "voucher_code": "BROWSER-ATTR-VOUCHER",
+          "quote_id": "attr_chg_8077974edcfa40d0"
+        },
+        "receipt_actor": "usr_7f3af05d2932424095075d8bb686d5f1",
+        "applied_by": null,
+        "verified_order_hash": null,
+        "contributors": [
+          "usr_7f3af05d2932424095075d8bb686d5f1"
+        ]
+      },
+      "idempotent_replay": false
+    }
+  },
+  "not_verified": [
+    "FULL_C04_30_108",
+    "FULL_C06_14_44",
+    "PG_BROWSER_CONCURRENCY",
+    "NATIVE_INTERACTION",
+    "OPERATIONS_SLA_ESCALATION",
+    "REAL_SUPPLIER_POLICY"
+  ],
+  "browser": "140.0.7339.186",
+  "result": "FAIL",
+  "error": "locator.waitFor: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('#adminOrders').getByText('CONFIRMED', { exact: true }) to be visible\n"
+}

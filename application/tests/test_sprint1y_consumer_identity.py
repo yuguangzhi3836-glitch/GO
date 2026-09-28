@@ -1,8 +1,9 @@
+from registration_terms_test_support import register_synthetic_consumer
 def csrf(client):
     return {"X-CSRF-Token": client.cookies.get("go_consumer_csrf")}
 
 def register(client,email="traveler@example.com"):
-    r=client.post('/v1/consumer/auth/register',json={"email":email,"password":"StrongPass123!","display_name":"GO Traveler"})
+    r=register_synthetic_consumer(client, json={"email":email,"password":"StrongPass123!","display_name":"GO Traveler"})
     assert r.status_code==200,r.text
     assert r.json()['data']['profile']['go_id'].startswith('GO')
     return r.json()['data']['profile']

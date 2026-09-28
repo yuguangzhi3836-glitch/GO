@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="7" time="6.683" timestamp="2026-09-25T00:36:06.798687-07:00" hostname="48cdd5f3df1f"><testcase classname="tests.test_c11_consumer_payment_source_boundary" name="test_consumer_cannot_create_unbound_money_obligation[RENTAL_DEPOSIT]" time="3.791"><failure message="assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f6c52f60bc0&gt;
+business_type = 'RENTAL_DEPOSIT'
+
+    @pytest.mark.parametrize('business_type', ['RENTAL_DEPOSIT', 'RENTAL_CHANGE', 'SUBSCRIPTION_INVOICE', 'ARBITRARY'])
+    def test_consumer_cannot_create_unbound_money_obligation(client, business_type):
+        headers = auth(client)
+        body = dict(business_type=business_type, business_id='invented', payee_id='attacker',
+                    operation='AUTHORIZE', amount_minor=99999, currency='USD',
+                    channel_priority=['LOCAL_MARKET'])
+        response = client.post('/v1/payments/intents', headers=headers | {'Idempotency-Key': 'invented'}, json=body)
+&gt;       assert response.status_code == 409
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_c11_consumer_payment_source_boundary.py:17: AssertionError</failure></testcase><testcase classname="tests.test_c11_consumer_payment_source_boundary" name="test_consumer_cannot_create_unbound_money_obligation[RENTAL_CHANGE]" time="0.295"><failure message="assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f6c4c50c7d0&gt;
+business_type = 'RENTAL_CHANGE'
+
+    @pytest.mark.parametrize('business_type', ['RENTAL_DEPOSIT', 'RENTAL_CHANGE', 'SUBSCRIPTION_INVOICE', 'ARBITRARY'])
+    def test_consumer_cannot_create_unbound_money_obligation(client, business_type):
+        headers = auth(client)
+        body = dict(business_type=business_type, business_id='invented', payee_id='attacker',
+                    operation='AUTHORIZE', amount_minor=99999, currency='USD',
+                    channel_priority=['LOCAL_MARKET'])
+        response = client.post('/v1/payments/intents', headers=headers | {'Idempotency-Key': 'invented'}, json=body)
+&gt;       assert response.status_code == 409
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_c11_consumer_payment_source_boundary.py:17: AssertionError</failure></testcase><testcase classname="tests.test_c11_consumer_payment_source_boundary" name="test_consumer_cannot_create_unbound_money_obligation[SUBSCRIPTION_INVOICE]" time="0.220"><failure message="assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f6c4e8b1c70&gt;
+business_type = 'SUBSCRIPTION_INVOICE'
+
+    @pytest.mark.parametrize('business_type', ['RENTAL_DEPOSIT', 'RENTAL_CHANGE', 'SUBSCRIPTION_INVOICE', 'ARBITRARY'])
+    def test_consumer_cannot_create_unbound_money_obligation(client, business_type):
+        headers = auth(client)
+        body = dict(business_type=business_type, business_id='invented', payee_id='attacker',
+                    operation='AUTHORIZE', amount_minor=99999, currency='USD',
+                    channel_priority=['LOCAL_MARKET'])
+        response = client.post('/v1/payments/intents', headers=headers | {'Idempotency-Key': 'invented'}, json=body)
+&gt;       assert response.status_code == 409
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_c11_consumer_payment_source_boundary.py:17: AssertionError</failure></testcase><testcase classname="tests.test_c11_consumer_payment_source_boundary" name="test_consumer_cannot_create_unbound_money_obligation[ARBITRARY]" time="0.209"><failure message="assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">client = &lt;starlette.testclient.TestClient object at 0x7f6c4d967470&gt;
+business_type = 'ARBITRARY'
+
+    @pytest.mark.parametrize('business_type', ['RENTAL_DEPOSIT', 'RENTAL_CHANGE', 'SUBSCRIPTION_INVOICE', 'ARBITRARY'])
+    def test_consumer_cannot_create_unbound_money_obligation(client, business_type):
+        headers = auth(client)
+        body = dict(business_type=business_type, business_id='invented', payee_id='attacker',
+                    operation='AUTHORIZE', amount_minor=99999, currency='USD',
+                    channel_priority=['LOCAL_MARKET'])
+        response = client.post('/v1/payments/intents', headers=headers | {'Idempotency-Key': 'invented'}, json=body)
+&gt;       assert response.status_code == 409
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_c11_consumer_payment_source_boundary.py:17: AssertionError</failure></testcase><testcase classname="tests.test_c11_consumer_payment_source_boundary" name="test_non_consumer_cannot_use_consumer_creation_route[go_admin-change-me-admin]" time="0.138" /><testcase classname="tests.test_c11_consumer_payment_source_boundary" name="test_non_consumer_cannot_use_consumer_creation_route[supplier_owner-change-me-supplier]" time="0.141" /><testcase classname="tests.test_c11_consumer_payment_source_boundary" name="test_internal_subscription_creation_remains_available" time="0.058" /></testsuite></testsuites>

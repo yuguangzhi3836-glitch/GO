@@ -4,6 +4,7 @@ from sqlalchemy import select, func
 from go_hotel.db.session import SessionLocal
 from go_hotel.security.deps import admin_principal
 from go_hotel.security.service import Principal
+from go_hotel.mobility.rental.reconciliation import inspect_refund
 from go_hotel.db.models import (
     OrderRow, RefundRow, FlightOrderRow, FlightRefundRow, RailOrderRow, RailRefundRow,
     MobilityRideOrderRow, MobilityRentalOrderRow, MobilityRefundRow, AttractionOrderRow,
@@ -18,7 +19,14 @@ router = APIRouter(prefix='/internal/v1/admin/operations', tags=['go-operations-
 VERTICALS = {'HOTEL','FLIGHT','RAIL','RIDE','RENTAL','ATTRACTION'}
 
 def _row_dict(row, fields):
-    return {f: getattr(row, f, None) for f in fields}
+    data = {f: getattr(row, f, None) for f in fields}
+    # Stored supplier credentials are historical evidence after the order leaves
+    # CONFIRMED. Match the consumer/workbench projection without erasing history.
+    if isinstance(row, AttractionOrderRow) and row.status != 'CONFIRMED':
+        for key in ('voucher_code', 'supplier_reference'):
+            if key in data:
+                data[key] = None
+    return data
 
 def _sample(s, model, fields, limit=50):
     rows = s.scalars(select(model).limit(limit)).all()
@@ -98,6 +106,88 @@ def vertical_snapshot(
             data['supply'] = _sample(s, HotelPartnerPropertyRow, ['property_id','supplier_id','name_zh','name_en','property_type','group_name','brand_name','publication_state','updated_at'])
             data['metrics']['properties'] = _count(s, HotelPartnerPropertyRow)
         return {'data': data}
+
+
+RENTAL_RECONCILIATION_LABELS = {
+    'FROZEN_CONSENT_UNAVAILABLE': '缺少冻结的退款同意证据',
+    'FROZEN_PLAN_UNAVAILABLE_OR_INVALID': '冻结退款计划缺失或无效',
+    'FROZEN_PLAN_RECEIPT_MISSING_OR_AMBIGUOUS': '冻结计划对应的资金凭证缺失或不唯一',
+    'REFUND_RECEIPT_PLAN_MISMATCH': '退款资金凭证与冻结计划不一致',
+    'COMPLETED_REFUND_ORDER_STATE_MISMATCH': '退款已完成但订单状态不一致',
+    'PENDING_REFUND_ORDER_STATE_MISMATCH': '退款处理中但订单状态不一致',
+}
+RENTAL_RECONCILIATION_STATUS_LABELS = {
+    'MATCHED_COMPLETED': '已完成且证据一致',
+    'MONEY_CONFIRMED_ORDER_PENDING': '资金已确认，订单仍待复核',
+    'PENDING_MONEY': '资金结果待核对',
+    'UNPROVEN_HISTORICAL': '历史证据不足',
+    'CONTRADICTION': '订单、退款或资金证据存在矛盾',
+}
+
+
+def _present_rental_reconciliation(result):
+    # The case envelope is a deterministic read-only handoff identifier. It is
+    # deliberately derived from existing business identifiers and never creates
+    # a review row, writes an acknowledgement, or changes money/order state.
+    case_id = f"RENTAL_REFUND:{result['order_id']}:{result['refund_id']}"
+    return {
+        'title': '租车退款只读对账',
+        'case': {
+            'case_id': case_id,
+            'vertical': 'RENTAL',
+            'order_id': result['order_id'],
+            'refund_id': result['refund_id'],
+            'next_review_action': result['next_action'],
+            'confirmed_movement_ids': sorted(result['confirmed_movement_ids']),
+            'evidence_observed_at': result['evidence_observed_at'],
+            'read_only': True,
+        },
+        'status': {
+            'code': result['status'],
+            'label': RENTAL_RECONCILIATION_STATUS_LABELS[result['status']],
+        },
+        'findings': [
+            {'code': code, 'label': RENTAL_RECONCILIATION_LABELS.get(code, '需人工核对的证据异常')}
+            for code in result['findings']
+        ],
+        'review_required': result['status'] != 'MATCHED_COMPLETED',
+        'allowed_operator_actions': [
+            '核对冻结退款计划与同意证据',
+            '核对现有资金凭证',
+            '转入既有退款完成流程复核',
+        ],
+        'prohibited_operator_actions': [
+            '从本页面执行资金操作',
+            '从本页面自动修改订单或退款状态',
+        ],
+        'read_only': True,
+        'automatic_repair': False,
+    }
+
+
+@router.get('/reconciliations/rental/{order_id}/{refund_id}')
+def rental_refund_reconciliation(
+    order_id: str,
+    refund_id: str,
+    p: Principal = Depends(admin_principal),
+):
+    # Resolve ownership internally for an authenticated administrator; the underlying
+    # diagnostic still enforces the order/refund/owner relationship and performs reads only.
+    with SessionLocal() as s:
+        order = s.get(MobilityRentalOrderRow, order_id)
+        account_id = order.account_id if order else None
+    if not account_id:
+        raise HTTPException(404, detail='RENTAL_REFUND_NOT_FOUND')
+    try:
+        diagnosis = inspect_refund(account_id, order_id, refund_id)
+    except ValueError as error:
+        if str(error) == 'RENTAL_REFUND_NOT_FOUND':
+            raise HTTPException(404, detail='RENTAL_REFUND_NOT_FOUND') from error
+        raise
+    return {'data': {
+        'diagnosis': diagnosis,
+        'presentation': _present_rental_reconciliation(diagnosis),
+    }}
 
 
 

@@ -93,7 +93,8 @@ def test_invalid_supplier_policy_never_issues_a_quote(monkeypatch, bad):
         svc.prebook('tokyo_skytree', '2026-09-15', 1)
 
 
-def test_missing_supplier_policy_is_explicitly_legacy_unverified():
+def test_missing_supplier_policy_is_explicitly_legacy_unverified(monkeypatch):
+    monkeypatch.delitem(CATALOG['tokyo_skytree'], 'supplier_validity_policy')
     quote = svc.prebook('tokyo_skytree', '2026-09-15', 1)
     assert quote['redemption_window'] == {'state': 'LEGACY_UNVERIFIED'}
 
@@ -141,7 +142,7 @@ def test_supplier_confirmed_date_change_uses_frozen_policy_on_new_session(monkey
     quote = svc.change_quote(owner, oid, '2026-09-16', '17:00')
     svc.execute_change(owner, oid, quote['quote_id'])
     assert svc.get(owner, oid)['status'] == 'UNKNOWN_EXTERNAL_STATE'
-    svc.admin_external_state(oid, 'CONFIRMED', 'isolated://change-proof', 'ops', 'NEW-SUPPLIER', 'NEW-VOUCHER')
+    svc.admin_external_state(oid, 'CONFIRMED', 'isolated://change-proof', 'ops', 'NEW-SUPPLIER', 'NEW-VOUCHER', quote['quote_id'])
     window = svc.get(owner, oid)['redemption_window']
     assert window['opens_at'] == '2026-09-16T07:30:00+00:00'
     assert window['closes_at'] == '2026-09-16T10:00:00+00:00'
@@ -156,3 +157,11 @@ def test_valid_window_does_not_bypass_inflight_refund_exclusion(monkeypatch):
     install(monkeypatch)
     monkeypatch.setattr(service, 'db_now_ms', lambda session: int(datetime(2026,9,15,8,0,tzinfo=UTC).timestamp()*1000))
     test_concurrent_refund_has_one_executor_and_blocks_change_or_redeem('ATTRACTION', monkeypatch)
+
+
+# Collect the Issue #146 internal fixture matrix in the already-admitted C06 shard.
+from tests.test_c06_internal_policy_registry import *  # noqa: F401,F403,E402
+
+
+# Collect the successor raw-byte binding matrix in the admitted C06 shard.
+from tests.test_v70_r5_c06_raw_payload_binding import *  # noqa: F401,F403,E402

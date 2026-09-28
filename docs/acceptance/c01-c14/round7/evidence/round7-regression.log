@@ -1,0 +1,43 @@
+..............................................................FE.....    [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_production_legacy_routes_require_identity_and_cannot_spoof_owner _
+
+fixturedef = <FixtureDef argname='client' scope='function' baseid='tests'>
+request = <SubRequest 'client' for <Function test_production_legacy_routes_require_identity_and_cannot_spoof_owner>>
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -> object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+>               return (yield)
+                        ^^^^^
+
+/root/.local/lib/python3.12/site-packages/pytest_asyncio/plugin.py:728: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @pytest.fixture
+    def client():
+        """Create a fully managed TestClient for tests that need HTTP runtime."""
+        from fastapi.testclient import TestClient
+        from go_hotel.db.models import Base
+        from go_hotel.db.session import engine
+    
+        Base.metadata.create_all(engine)
+>       from go_hotel.main import app
+E       ModuleNotFoundError: No module named 'go_hotel.main'
+
+tests/conftest.py:85: ModuleNotFoundError
+=================================== FAILURES ===================================
+_______________ test_rental_duration_pricing_and_invalid_periods _______________
+
+    def test_rental_duration_pricing_and_invalid_periods():
+>       from go_hotel.mobility.rental.service import RentalService,rental_days
+E       ModuleNotFoundError: No module named 'go_hotel.mobility.rental.service'
+
+tests/test_master03_inventory_security.py:105: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED tests/test_master03_inventory_security.py::test_rental_duration_pricing_and_invalid_periods
+ERROR tests/test_master03_inventory_security.py::test_production_legacy_routes_require_identity_and_cannot_spoof_owner

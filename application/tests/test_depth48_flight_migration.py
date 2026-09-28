@@ -15,7 +15,10 @@ def test_flight_plan_upgrade_preserves_parent_and_refuses_data_loss(tmp_path, mo
     command.upgrade(cfg, 'head')
     with sqlite3.connect(db) as s:
         after = set(s.execute("SELECT name FROM sqlite_master WHERE type='table'"))
-        assert after - before == {('flight_change_plan',), ('flight_change_resolution',)}
+        assert after - before == {('flight_change_plan',), ('flight_change_resolution',), ('go_ai_execution',),
+                                  ('hosted_money_unknown_episode',), ('hosted_money_unknown_episode_audit',),
+                                  ('hotel_partner_import_authorization',), ('hotel_partner_import_job',),
+                                  ('hosted_publication_review',)}
         s.execute("INSERT INTO flight_change_plan VALUES ('quote','order','owner','{}',?,?)", ('a'*64,'2026-09-13'))
     with pytest.raises(RuntimeError, match='DATA_PRESENT'):
         command.downgrade(cfg, '0132_rail_runtime_field_widths')

@@ -1,0 +1,32 @@
+{
+  "status": "SCOPED_RULES_NO_BLOCKER_FOR_ISOLATED_MECHANISM",
+  "files": [
+    {
+      "path": "application/src/go_hotel/mobility/rental/deposit_authority.py",
+      "sha256": "32d680cac40d27ca4f0f8459ab8dede6624f2cbc95e912c90940b35aff8f5424",
+      "matches_author_manifest": true
+    },
+    {
+      "path": "application/src/go_hotel/mobility/rental/damage.py",
+      "sha256": "c956623b0628d711377d069120d0dc9940abc3b673d0628e89b6a7ee16253843",
+      "matches_author_manifest": true
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/rental_deposit.py",
+      "sha256": "405cd3882496edfc46fd3a2650f9fc303c0cf1a4f9117c352c54307a7bc0ce86",
+      "matches_author_manifest": true
+    },
+    {
+      "path": "application/tests/test_rental_deposit_authority.py",
+      "sha256": "6b312ef323a9b9ddc11b7e02b7dc04fe3f6d7920fa0cfbb36cde18952229802b",
+      "matches_author_manifest": true
+    }
+  ],
+  "tests": "author-reported45SQLite; not rerun by C14",
+  "remaining": [
+    "source amendment/revocation not implemented",
+    "normal no-damage or cancellation deposit release has no dedicated fact path",
+    "real supplier/media/contract approval HOLD",
+    "formal C14 organization status not implied"
+  ]
+}

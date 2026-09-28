@@ -9,7 +9,7 @@ def call(fn,*a):
  except ValueError as e:raise HTTPException(409,detail=str(e))
 router=APIRouter(tags=['omnichannel-payment-finance'])
 @router.post('/v1/payments/intents')
-def create(b:P,idempotency_key:str=Header(alias='Idempotency-Key'),p:Principal=Depends(consumer_principal)):return call(svc.create_intent,b.model_dump(exclude_none=True),idempotency_key,p.user_id)
+def create(b:P,idempotency_key:str=Header(alias='Idempotency-Key'),p:Principal=Depends(consumer_principal)):return call(svc.create_consumer_intent,b.model_dump(exclude_none=True),idempotency_key,p.user_id)
 @router.post('/v1/payments/intents/{iid}/channel')
 def channel(iid:str,b:P,p:Principal=Depends(consumer_principal)):return call(svc.select_channel,iid,b.model_dump()['channel'],p.user_id,True)
 @router.get('/v1/payments')

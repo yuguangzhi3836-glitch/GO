@@ -1,0 +1,521 @@
+{
+  "review": "C14 scoped rules review candidate byte binding",
+  "date": "2026-09-25",
+  "repository": "yuguangzhi3836-glitch/GO",
+  "pr": 246,
+  "candidate_head": "a0f3ebc5073813167a67ee76b38bc270e6ec28ec",
+  "product_commit_parent_provided": "73596d9958e685368484b7b2f811d601f1d95614",
+  "application_tree_parent_provided": "eb4a5517f4661cd8ad12c0a9e6d8166c87e6869f",
+  "verification_method": "Fetch each complete remote file as base64 at fixed candidate_head, decode and SHA256 independently with Python hashlib; compare frozen manifest and freshly read local file. Git blob identities retained as secondary evidence.",
+  "checked_count": 50,
+  "matched_count": 50,
+  "status": "NO_RULES_BLOCKER_FOUND_FOR_SCOPED_ISOLATED_INCREMENT",
+  "files": [
+    {
+      "path": "application/src/go_hotel/mobility/rental/deposit_authority.py",
+      "sha256": "7674672ff39f671d3c20e6f267a8c4d6a68b618e9a4291431f0c674906834a16",
+      "local_sha256": "7674672ff39f671d3c20e6f267a8c4d6a68b618e9a4291431f0c674906834a16",
+      "remote_sha256": "7674672ff39f671d3c20e6f267a8c4d6a68b618e9a4291431f0c674906834a16",
+      "remote_git_blob": "d62b59110db4eebb3c517cdf6e07ef40c4b0c7d9",
+      "local_git_blob": "d62b59110db4eebb3c517cdf6e07ef40c4b0c7d9",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/src/go_hotel/mobility/rental/damage.py",
+      "sha256": "93a250a750377c54e32e633a0a1fada65105567eefacdf877400cc7f00523537",
+      "local_sha256": "93a250a750377c54e32e633a0a1fada65105567eefacdf877400cc7f00523537",
+      "remote_sha256": "93a250a750377c54e32e633a0a1fada65105567eefacdf877400cc7f00523537",
+      "remote_git_blob": "6c4d54f226d34b46757415623052e375e3890844",
+      "local_git_blob": "6c4d54f226d34b46757415623052e375e3890844",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/rental_deposit.py",
+      "sha256": "dab22c93c34cfd9a4155295698f53db629162963808d021c63aaeb1f01a6cf29",
+      "local_sha256": "dab22c93c34cfd9a4155295698f53db629162963808d021c63aaeb1f01a6cf29",
+      "remote_sha256": "dab22c93c34cfd9a4155295698f53db629162963808d021c63aaeb1f01a6cf29",
+      "remote_git_blob": "b5d41f0efe7ba5042c42f84ab65a96b716b553ea",
+      "local_git_blob": "b5d41f0efe7ba5042c42f84ab65a96b716b553ea",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_rental_deposit_authority.py",
+      "sha256": "f3d7cf451f8768edea6150205a4971cfa162c79bca1e04dc8a8244e898a743ae",
+      "local_sha256": "f3d7cf451f8768edea6150205a4971cfa162c79bca1e04dc8a8244e898a743ae",
+      "remote_sha256": "f3d7cf451f8768edea6150205a4971cfa162c79bca1e04dc8a8244e898a743ae",
+      "remote_git_blob": "8968fadb3657677a7f3cae5ab12da76117294738",
+      "local_git_blob": "8968fadb3657677a7f3cae5ab12da76117294738",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/src/go_hotel/services/rental_deposit_money.py",
+      "sha256": "089ffa6fd9797e154aa8c32024fcc9a06ac6a246954f9bdfb10d41e882c29457",
+      "local_sha256": "089ffa6fd9797e154aa8c32024fcc9a06ac6a246954f9bdfb10d41e882c29457",
+      "remote_sha256": "089ffa6fd9797e154aa8c32024fcc9a06ac6a246954f9bdfb10d41e882c29457",
+      "remote_git_blob": "41ab121c8c629063ea06e6335c26b5c4a6f85e07",
+      "local_git_blob": "41ab121c8c629063ea06e6335c26b5c4a6f85e07",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/rental_deposit_money.py",
+      "sha256": "350c5c226c724e37d130b1aac8e55dd4c9eb5853cf8ed54f7d36344c1ef8e95b",
+      "local_sha256": "350c5c226c724e37d130b1aac8e55dd4c9eb5853cf8ed54f7d36344c1ef8e95b",
+      "remote_sha256": "350c5c226c724e37d130b1aac8e55dd4c9eb5853cf8ed54f7d36344c1ef8e95b",
+      "remote_git_blob": "12dbe6d795615a24c62622572fbbca882ca0fe9a",
+      "local_git_blob": "12dbe6d795615a24c62622572fbbca882ca0fe9a",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/src/go_hotel/services/unified_money_movement.py",
+      "sha256": "d3d4139c2df44e2466f3cb849b203f04bbbe5b31b112f62c131e16bcd4521419",
+      "local_sha256": "d3d4139c2df44e2466f3cb849b203f04bbbe5b31b112f62c131e16bcd4521419",
+      "remote_sha256": "d3d4139c2df44e2466f3cb849b203f04bbbe5b31b112f62c131e16bcd4521419",
+      "remote_git_blob": "8b077fc571f24d98af375960c557cb3482a8b24a",
+      "local_git_blob": "8b077fc571f24d98af375960c557cb3482a8b24a",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/src/go_hotel/services/omnichannel_payment.py",
+      "sha256": "518d51d4ec558aef918859af707efc3a87f0d49d69fc23f3fd1b0a28eea97496",
+      "local_sha256": "518d51d4ec558aef918859af707efc3a87f0d49d69fc23f3fd1b0a28eea97496",
+      "remote_sha256": "518d51d4ec558aef918859af707efc3a87f0d49d69fc23f3fd1b0a28eea97496",
+      "remote_git_blob": "6b497194729b7c1744c5e42ba02588a36516e5aa",
+      "local_git_blob": "6b497194729b7c1744c5e42ba02588a36516e5aa",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/src/go_hotel/services/vertical_transaction_bridge.py",
+      "sha256": "3467a9ec28235575bd06a78c4c057aefa9997c68fbaeef53bca61fcbc1f2762b",
+      "local_sha256": "3467a9ec28235575bd06a78c4c057aefa9997c68fbaeef53bca61fcbc1f2762b",
+      "remote_sha256": "3467a9ec28235575bd06a78c4c057aefa9997c68fbaeef53bca61fcbc1f2762b",
+      "remote_git_blob": "700e42142d36d878e7077440a1f2791b91a7aa74",
+      "local_git_blob": "700e42142d36d878e7077440a1f2791b91a7aa74",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/src/go_hotel/services/order_supplier_fulfillment.py",
+      "sha256": "39298e96eec1884900b7dd23206ce2fbd5da581135a330a1bf3fd576902e9102",
+      "local_sha256": "39298e96eec1884900b7dd23206ce2fbd5da581135a330a1bf3fd576902e9102",
+      "remote_sha256": "39298e96eec1884900b7dd23206ce2fbd5da581135a330a1bf3fd576902e9102",
+      "remote_git_blob": "4b34f03e6d4cfbc25bd588df58dd0d5cdcddc42b",
+      "local_git_blob": "4b34f03e6d4cfbc25bd588df58dd0d5cdcddc42b",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/frontend/consumer/rental-deposit.js",
+      "sha256": "22b76599d27d28a81fbe89eae604ac0df788ca2ec34bdb7e40ae0589de978704",
+      "local_sha256": "22b76599d27d28a81fbe89eae604ac0df788ca2ec34bdb7e40ae0589de978704",
+      "remote_sha256": "22b76599d27d28a81fbe89eae604ac0df788ca2ec34bdb7e40ae0589de978704",
+      "remote_git_blob": "fc878967a62dd1b774fedfa92a5644fd61857ffd",
+      "local_git_blob": "fc878967a62dd1b774fedfa92a5644fd61857ffd",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/src/go_hotel/mobility/ride/cancellation_policy.py",
+      "sha256": "15b29e665a24b1f365957b46c55cbf6998d10197a41d7e883182cc7b7c091f66",
+      "local_sha256": "15b29e665a24b1f365957b46c55cbf6998d10197a41d7e883182cc7b7c091f66",
+      "remote_sha256": "15b29e665a24b1f365957b46c55cbf6998d10197a41d7e883182cc7b7c091f66",
+      "remote_git_blob": "dcb9201434045d3170883f10a4de6659aadcaee1",
+      "local_git_blob": "dcb9201434045d3170883f10a4de6659aadcaee1",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/src/go_hotel/mobility/ride/service.py",
+      "sha256": "51d07a007da0ccaf107ead73037558245173aee8a1dc9f4e86dadc4d0fb52533",
+      "local_sha256": "51d07a007da0ccaf107ead73037558245173aee8a1dc9f4e86dadc4d0fb52533",
+      "remote_sha256": "51d07a007da0ccaf107ead73037558245173aee8a1dc9f4e86dadc4d0fb52533",
+      "remote_git_blob": "93d3e46a8a7464843e4e62e9bc48299b4590c1ad",
+      "local_git_blob": "93d3e46a8a7464843e4e62e9bc48299b4590c1ad",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/src/go_hotel/mobility/ride/refunds.py",
+      "sha256": "9bb8227fd3a4730ec733969bec9c09a2a04b569d23ae52409c10bca79d71808c",
+      "local_sha256": "9bb8227fd3a4730ec733969bec9c09a2a04b569d23ae52409c10bca79d71808c",
+      "remote_sha256": "9bb8227fd3a4730ec733969bec9c09a2a04b569d23ae52409c10bca79d71808c",
+      "remote_git_blob": "a01582a93f71d18ce6734e2b313941ec43a20823",
+      "local_git_blob": "a01582a93f71d18ce6734e2b313941ec43a20823",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/mobility.py",
+      "sha256": "a7d1e9fddd4927c987107c3c96856368b6f140030f3a181fedbfde4ed93301d5",
+      "local_sha256": "a7d1e9fddd4927c987107c3c96856368b6f140030f3a181fedbfde4ed93301d5",
+      "remote_sha256": "a7d1e9fddd4927c987107c3c96856368b6f140030f3a181fedbfde4ed93301d5",
+      "remote_git_blob": "6456a66cb68d8e04a28ed44a9f0d1e65e5f848b4",
+      "local_git_blob": "6456a66cb68d8e04a28ed44a9f0d1e65e5f848b4",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/frontend/consumer/app.js",
+      "sha256": "87a33183d80838d0f26cfaf4535ce47135e5cb22742c3d13bc522f73f51d689b",
+      "local_sha256": "87a33183d80838d0f26cfaf4535ce47135e5cb22742c3d13bc522f73f51d689b",
+      "remote_sha256": "87a33183d80838d0f26cfaf4535ce47135e5cb22742c3d13bc522f73f51d689b",
+      "remote_git_blob": "e43693be909ceca1be2c7b9cfc4646a669bd128e",
+      "local_git_blob": "e43693be909ceca1be2c7b9cfc4646a669bd128e",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/frontend/consumer/booking-travelers.js",
+      "sha256": "21705cf4320c15de9be4a689ab0289babc535ffabc26327cac079c1aa2aca19c",
+      "local_sha256": "21705cf4320c15de9be4a689ab0289babc535ffabc26327cac079c1aa2aca19c",
+      "remote_sha256": "21705cf4320c15de9be4a689ab0289babc535ffabc26327cac079c1aa2aca19c",
+      "remote_git_blob": "229cd9354538be712fc5a63d857db175598da509",
+      "local_git_blob": "229cd9354538be712fc5a63d857db175598da509",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/mobile/go-app/src/domain/bookingIntent.ts",
+      "sha256": "e2708c8806cd23334959346796b58f8f9568ed62b4632573579d268d5712a341",
+      "local_sha256": "e2708c8806cd23334959346796b58f8f9568ed62b4632573579d268d5712a341",
+      "remote_sha256": "e2708c8806cd23334959346796b58f8f9568ed62b4632573579d268d5712a341",
+      "remote_git_blob": "13b06664ece770bb351a937e55c74c5d649ee54c",
+      "local_git_blob": "13b06664ece770bb351a937e55c74c5d649ee54c",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/mobile/go-app/src/domain/orderActions.ts",
+      "sha256": "ad8b9ea304a625d2c0266e23fc5a09124fe6f5ab0c0d57fe7d22a00bfc99246d",
+      "local_sha256": "ad8b9ea304a625d2c0266e23fc5a09124fe6f5ab0c0d57fe7d22a00bfc99246d",
+      "remote_sha256": "ad8b9ea304a625d2c0266e23fc5a09124fe6f5ab0c0d57fe7d22a00bfc99246d",
+      "remote_git_blob": "88de48add7004d7d6429e8ffced4b9dc5965abec",
+      "local_git_blob": "88de48add7004d7d6429e8ffced4b9dc5965abec",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/mobile/go-app/src/screens/CheckoutScreen.tsx",
+      "sha256": "7cb16d2cf7cb04f4389f8eda5cfd4b898d82e3afe8d683e058d22368d6d48b20",
+      "local_sha256": "7cb16d2cf7cb04f4389f8eda5cfd4b898d82e3afe8d683e058d22368d6d48b20",
+      "remote_sha256": "7cb16d2cf7cb04f4389f8eda5cfd4b898d82e3afe8d683e058d22368d6d48b20",
+      "remote_git_blob": "a01d6752e6fadb9ea557b68bbe910ae2f77e7c37",
+      "local_git_blob": "a01d6752e6fadb9ea557b68bbe910ae2f77e7c37",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/scripts/acceptance_runtime.py",
+      "sha256": "fc9a34d327566147ca704d8983067a62ee8c27f4aec3df7edb9e1ecf628c482b",
+      "local_sha256": "fc9a34d327566147ca704d8983067a62ee8c27f4aec3df7edb9e1ecf628c482b",
+      "remote_sha256": "fc9a34d327566147ca704d8983067a62ee8c27f4aec3df7edb9e1ecf628c482b",
+      "remote_git_blob": "f7cb0c7950bfc0390f172e585888bad4908f1b8f",
+      "local_git_blob": "f7cb0c7950bfc0390f172e585888bad4908f1b8f",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/scripts/fixtures/ride-cancellation.synthetic.json",
+      "sha256": "086ef80f9a3186e058fc3488246a5026575a0bfbbbb0f7957bd5a7195bea8d85",
+      "local_sha256": "086ef80f9a3186e058fc3488246a5026575a0bfbbbb0f7957bd5a7195bea8d85",
+      "remote_sha256": "086ef80f9a3186e058fc3488246a5026575a0bfbbbb0f7957bd5a7195bea8d85",
+      "remote_git_blob": "f5bcbbcf3eec089a77a1415913ce0c5156125361",
+      "local_git_blob": "f5bcbbcf3eec089a77a1415913ce0c5156125361",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "ci/journey-v2/browser.mjs",
+      "sha256": "13025766ad853c2612bf260e430a0bcb23e5433d30e0d18d74e750303bc3b600",
+      "local_sha256": "13025766ad853c2612bf260e430a0bcb23e5433d30e0d18d74e750303bc3b600",
+      "remote_sha256": "13025766ad853c2612bf260e430a0bcb23e5433d30e0d18d74e750303bc3b600",
+      "remote_git_blob": "8356e53d557e740819f9188bff7b975c9284514f",
+      "local_git_blob": "8356e53d557e740819f9188bff7b975c9284514f",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/ride_cancellation_fixture.py",
+      "sha256": "20dd0f21c74647eff8ab0932b1b43a139c9ede43e51bcdbfbe744a1446ed1160",
+      "local_sha256": "20dd0f21c74647eff8ab0932b1b43a139c9ede43e51bcdbfbe744a1446ed1160",
+      "remote_sha256": "20dd0f21c74647eff8ab0932b1b43a139c9ede43e51bcdbfbe744a1446ed1160",
+      "remote_git_blob": "4ed626f02c894bcca5e58c85f5b3fdc091be42e3",
+      "local_git_blob": "4ed626f02c894bcca5e58c85f5b3fdc091be42e3",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_c05_cancellation_policy.py",
+      "sha256": "5aff343b93d3c8ebb00dc7dae0a402d94d8524946350f94b910043b28dffa631",
+      "local_sha256": "5aff343b93d3c8ebb00dc7dae0a402d94d8524946350f94b910043b28dffa631",
+      "remote_sha256": "5aff343b93d3c8ebb00dc7dae0a402d94d8524946350f94b910043b28dffa631",
+      "remote_git_blob": "00f8d8fc1f0819f814b3cf938b9dce616cb95333",
+      "local_git_blob": "00f8d8fc1f0819f814b3cf938b9dce616cb95333",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_c05_engineering_currency.py",
+      "sha256": "1adf29e30321a9e7272949e6266e03534290511e492d4c319acea57e06406ebb",
+      "local_sha256": "1adf29e30321a9e7272949e6266e03534290511e492d4c319acea57e06406ebb",
+      "remote_sha256": "1adf29e30321a9e7272949e6266e03534290511e492d4c319acea57e06406ebb",
+      "remote_git_blob": "19694404fa6d8f25eee6c3cb0c979fbd73974240",
+      "local_git_blob": "19694404fa6d8f25eee6c3cb0c979fbd73974240",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_depth33_mobility_refund_consent.py",
+      "sha256": "ef8470bbdeb91176c7b599119f660f0ad5fd6255d04867d3bdb95b2238962a9d",
+      "local_sha256": "ef8470bbdeb91176c7b599119f660f0ad5fd6255d04867d3bdb95b2238962a9d",
+      "remote_sha256": "ef8470bbdeb91176c7b599119f660f0ad5fd6255d04867d3bdb95b2238962a9d",
+      "remote_git_blob": "5002e969a61e38632d91a7dc7161a9eea7838a6c",
+      "local_git_blob": "5002e969a61e38632d91a7dc7161a9eea7838a6c",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_depth19_ride_sync.py",
+      "sha256": "67d793acbb9bdb5aef1566d143f9303561ec42ec33c04f02a88b3b724661eae7",
+      "local_sha256": "67d793acbb9bdb5aef1566d143f9303561ec42ec33c04f02a88b3b724661eae7",
+      "remote_sha256": "67d793acbb9bdb5aef1566d143f9303561ec42ec33c04f02a88b3b724661eae7",
+      "remote_git_blob": "7c76928ec7b6aee41bedd8c9e5983c5aacaab045",
+      "local_git_blob": "7c76928ec7b6aee41bedd8c9e5983c5aacaab045",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_depth42_cross_end_journeys.py",
+      "sha256": "8541bf481883d8a6efa1aabb2eb1e9d2663ecda4943ec7c889535c5b1bd5fa1d",
+      "local_sha256": "8541bf481883d8a6efa1aabb2eb1e9d2663ecda4943ec7c889535c5b1bd5fa1d",
+      "remote_sha256": "8541bf481883d8a6efa1aabb2eb1e9d2663ecda4943ec7c889535c5b1bd5fa1d",
+      "remote_git_blob": "a20bd3c57ad84e3c9dcfca6c15dfab71e10bdee6",
+      "local_git_blob": "a20bd3c57ad84e3c9dcfca6c15dfab71e10bdee6",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_agent_native_lifecycle_p03.py",
+      "sha256": "b66ea28b98e99f677bdabf01a97308be008543acf1227433d4185b92e3297b25",
+      "local_sha256": "b66ea28b98e99f677bdabf01a97308be008543acf1227433d4185b92e3297b25",
+      "remote_sha256": "b66ea28b98e99f677bdabf01a97308be008543acf1227433d4185b92e3297b25",
+      "remote_git_blob": "ebadc2654348d2197aab72c52a4bc60f417173f0",
+      "local_git_blob": "ebadc2654348d2197aab72c52a4bc60f417173f0",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_agent_transaction_lifecycle_p02.py",
+      "sha256": "f583a6991c0bd1e4b02047a4892183b9a9c6c967a82fb0c21b99326227cd2860",
+      "local_sha256": "f583a6991c0bd1e4b02047a4892183b9a9c6c967a82fb0c21b99326227cd2860",
+      "remote_sha256": "f583a6991c0bd1e4b02047a4892183b9a9c6c967a82fb0c21b99326227cd2860",
+      "remote_git_blob": "548923659d3646d5414ccc42dd3f956238f30cc8",
+      "local_git_blob": "548923659d3646d5414ccc42dd3f956238f30cc8",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_agent_transaction_gateway_six_vertical.py",
+      "sha256": "50f42d540d4eae85a47e161b124cbeb86d80fb853b4ba9aac9c9b9fc511ad8cf",
+      "local_sha256": "50f42d540d4eae85a47e161b124cbeb86d80fb853b4ba9aac9c9b9fc511ad8cf",
+      "remote_sha256": "50f42d540d4eae85a47e161b124cbeb86d80fb853b4ba9aac9c9b9fc511ad8cf",
+      "remote_git_blob": "8a0b0ed593d271cf3ad12559c1a4eaf77d7e7828",
+      "local_git_blob": "8a0b0ed593d271cf3ad12559c1a4eaf77d7e7828",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_depth29_trip_reentry.py",
+      "sha256": "c417e19ff724e7fb95eeed41a809d7e797365d22505820618492525597718762",
+      "local_sha256": "c417e19ff724e7fb95eeed41a809d7e797365d22505820618492525597718762",
+      "remote_sha256": "c417e19ff724e7fb95eeed41a809d7e797365d22505820618492525597718762",
+      "remote_git_blob": "bef39204a603580e55f94f8dfe009f071e320d31",
+      "local_git_blob": "bef39204a603580e55f94f8dfe009f071e320d31",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_master03_closure.py",
+      "sha256": "d14f69b6883c496bd347457e5a00daa4e9fa791e4737a13f03813dc87603303d",
+      "local_sha256": "d14f69b6883c496bd347457e5a00daa4e9fa791e4737a13f03813dc87603303d",
+      "remote_sha256": "d14f69b6883c496bd347457e5a00daa4e9fa791e4737a13f03813dc87603303d",
+      "remote_git_blob": "bec0a9527425bd3cdc5a309581bb2918970eedc1",
+      "local_git_blob": "bec0a9527425bd3cdc5a309581bb2918970eedc1",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_rc20_2_all_b_to_a.py",
+      "sha256": "c84fe979af05c5f957fb08215785f8eafb0283e691d285eff58e18ff7af089e4",
+      "local_sha256": "c84fe979af05c5f957fb08215785f8eafb0283e691d285eff58e18ff7af089e4",
+      "remote_sha256": "c84fe979af05c5f957fb08215785f8eafb0283e691d285eff58e18ff7af089e4",
+      "remote_git_blob": "709416f2edf0925ef10f811e78cebf4da3435559",
+      "local_git_blob": "709416f2edf0925ef10f811e78cebf4da3435559",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_final_depth_terminal_hardening.py",
+      "sha256": "19bdf3f75a4a4f1823bacb88894dd472c5ef09b640137e271d7367a204fe6491",
+      "local_sha256": "19bdf3f75a4a4f1823bacb88894dd472c5ef09b640137e271d7367a204fe6491",
+      "remote_sha256": "19bdf3f75a4a4f1823bacb88894dd472c5ef09b640137e271d7367a204fe6491",
+      "remote_git_blob": "edc8407adb904ec474edbf5025ad35714a97cd98",
+      "local_git_blob": "edc8407adb904ec474edbf5025ad35714a97cd98",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_sprint3c_mobility.py",
+      "sha256": "ca42b8e9a82924b8810e1356ab3c0d0841b353c8c24f78cd404de44267fcc1dd",
+      "local_sha256": "ca42b8e9a82924b8810e1356ab3c0d0841b353c8c24f78cd404de44267fcc1dd",
+      "remote_sha256": "ca42b8e9a82924b8810e1356ab3c0d0841b353c8c24f78cd404de44267fcc1dd",
+      "remote_git_blob": "ec3d751d38f2fceff435185976a9160212a7216b",
+      "local_git_blob": "ec3d751d38f2fceff435185976a9160212a7216b",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_final_depth_vault_booking_entry.py",
+      "sha256": "bb924f504b3fe709679780363414b8f54e322ded1ca939f8898506e13a37e273",
+      "local_sha256": "bb924f504b3fe709679780363414b8f54e322ded1ca939f8898506e13a37e273",
+      "remote_sha256": "bb924f504b3fe709679780363414b8f54e322ded1ca939f8898506e13a37e273",
+      "remote_git_blob": "ffc6d7378ba944b658ac1fd64a46a713931bb752",
+      "local_git_blob": "ffc6d7378ba944b658ac1fd64a46a713931bb752",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests/test_depth30_native_api_contract.py",
+      "sha256": "4dc043b3613488c5cc454aa4088a856c461b41edf8b3d57df405623f308b4b91",
+      "local_sha256": "4dc043b3613488c5cc454aa4088a856c461b41edf8b3d57df405623f308b4b91",
+      "remote_sha256": "4dc043b3613488c5cc454aa4088a856c461b41edf8b3d57df405623f308b4b91",
+      "remote_git_blob": "fabab79bda5f616a0650459deb08901dbe76679e",
+      "local_git_blob": "fabab79bda5f616a0650459deb08901dbe76679e",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests_frontend/native_api_bridge.mjs",
+      "sha256": "dd689e7f885a19b5357dc19826df39e78aa98adbf6de46232e790f30613264e7",
+      "local_sha256": "dd689e7f885a19b5357dc19826df39e78aa98adbf6de46232e790f30613264e7",
+      "remote_sha256": "dd689e7f885a19b5357dc19826df39e78aa98adbf6de46232e790f30613264e7",
+      "remote_git_blob": "066632c9d4b88b384264c9fb1e4258102cc970c7",
+      "local_git_blob": "066632c9d4b88b384264c9fb1e4258102cc970c7",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests_frontend/mobile_order_actions.test.mjs",
+      "sha256": "b37bf558a5149237b22cadfb5b6c2ad70b6139f82e4de45286e1aefa1fae485a",
+      "local_sha256": "b37bf558a5149237b22cadfb5b6c2ad70b6139f82e4de45286e1aefa1fae485a",
+      "remote_sha256": "b37bf558a5149237b22cadfb5b6c2ad70b6139f82e4de45286e1aefa1fae485a",
+      "remote_git_blob": "f591705cdc8b652d2693f7838dfdb1e529a5957a",
+      "local_git_blob": "f591705cdc8b652d2693f7838dfdb1e529a5957a",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/tests_frontend/booking_intent.test.mjs",
+      "sha256": "c578fd9ff84e02d9a313843207be233b8ef2573654e163541e7371588e490a56",
+      "local_sha256": "c578fd9ff84e02d9a313843207be233b8ef2573654e163541e7371588e490a56",
+      "remote_sha256": "c578fd9ff84e02d9a313843207be233b8ef2573654e163541e7371588e490a56",
+      "remote_git_blob": "fbab1ed884145dab97f872a6d84122ba584bd813",
+      "local_git_blob": "fbab1ed884145dab97f872a6d84122ba584bd813",
+      "matches": true,
+      "scope": "round2_frozen_manifest"
+    },
+    {
+      "path": "application/src/go_hotel/autonomy/action_control.py",
+      "sha256": "f7e19ac1fcea318e98c0f5e288ff1231caed08b071a9350cfde6cd99ff07a44a",
+      "local_sha256": "f7e19ac1fcea318e98c0f5e288ff1231caed08b071a9350cfde6cd99ff07a44a",
+      "remote_sha256": "f7e19ac1fcea318e98c0f5e288ff1231caed08b071a9350cfde6cd99ff07a44a",
+      "remote_git_blob": "ea5b9c08630c16a6fc33d45517952ac0b35ecb33",
+      "matches": true,
+      "scope": "prior_review_unchanged"
+    },
+    {
+      "path": "application/src/go_hotel/autonomy/types.py",
+      "sha256": "a0aeb541030395f7191482b9df8ee85acb9764b8bb2094a47042e102d110dacc",
+      "local_sha256": "a0aeb541030395f7191482b9df8ee85acb9764b8bb2094a47042e102d110dacc",
+      "remote_sha256": "a0aeb541030395f7191482b9df8ee85acb9764b8bb2094a47042e102d110dacc",
+      "remote_git_blob": "f946088563c2e644906eea05ab3a92b55306d811",
+      "matches": true,
+      "scope": "prior_review_unchanged"
+    },
+    {
+      "path": "application/src/go_hotel/autonomy/condition_evidence.py",
+      "sha256": "6ec835cd92019daf5443bb4a577b2224b12579850f53bd9e9945a6cad69b4903",
+      "local_sha256": "6ec835cd92019daf5443bb4a577b2224b12579850f53bd9e9945a6cad69b4903",
+      "remote_sha256": "6ec835cd92019daf5443bb4a577b2224b12579850f53bd9e9945a6cad69b4903",
+      "remote_git_blob": "fccb00b171d0b903b7c9c777d2b08dcf5dbbfcad",
+      "matches": true,
+      "scope": "prior_review_unchanged"
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/rental_damage.py",
+      "sha256": "6636992f3220d1854000f6d4ca7c89ecb85f32975bb7e880d5885d7cb2a7334b",
+      "local_sha256": "6636992f3220d1854000f6d4ca7c89ecb85f32975bb7e880d5885d7cb2a7334b",
+      "remote_sha256": "6636992f3220d1854000f6d4ca7c89ecb85f32975bb7e880d5885d7cb2a7334b",
+      "remote_git_blob": "c1f14e1fc7937ebdf72737e4906d3d3ad6bb6151",
+      "matches": true,
+      "scope": "prior_review_unchanged"
+    },
+    {
+      "path": "application/src/go_hotel/mobility/ride/flight_sync.py",
+      "sha256": "6d66fa1ae3da41d355c6feaeb62c27a253f6277c66f2edf6281f88ac40ed4808",
+      "local_sha256": "6d66fa1ae3da41d355c6feaeb62c27a253f6277c66f2edf6281f88ac40ed4808",
+      "remote_sha256": "6d66fa1ae3da41d355c6feaeb62c27a253f6277c66f2edf6281f88ac40ed4808",
+      "remote_git_blob": "52e37dec005999063eb4739bb68856ce2d458f19",
+      "matches": true,
+      "scope": "prior_review_unchanged"
+    },
+    {
+      "path": "application/src/go_hotel/core/production_truth_gate.py",
+      "sha256": "7420017fed1c46fbde69da610cf50e4ff3ed2fe1b3f6ebfda64703d9fb6a2158",
+      "local_sha256": "7420017fed1c46fbde69da610cf50e4ff3ed2fe1b3f6ebfda64703d9fb6a2158",
+      "remote_sha256": "7420017fed1c46fbde69da610cf50e4ff3ed2fe1b3f6ebfda64703d9fb6a2158",
+      "remote_git_blob": "148c2565e895e8a8db86b7566c915bcb9ffd1160",
+      "matches": true,
+      "scope": "prior_review_unchanged"
+    },
+    {
+      "path": "application/src/go_hotel/rail/service.py",
+      "sha256": "d1f6cf4719154db642cc2c8460d53dec99f3137c413336f7be50b592d1440078",
+      "local_sha256": "d1f6cf4719154db642cc2c8460d53dec99f3137c413336f7be50b592d1440078",
+      "remote_sha256": "d1f6cf4719154db642cc2c8460d53dec99f3137c413336f7be50b592d1440078",
+      "remote_git_blob": "45178e3b8f25190f2d3cd1dbc61d1083821e228a",
+      "matches": true,
+      "scope": "prior_review_unchanged"
+    },
+    {
+      "path": "application/src/go_hotel/attractions/service.py",
+      "sha256": "eb7c8679cc75d15bf72d57b1e6c5e9aebaea0c97792a41007d4e1d5f49ad07d7",
+      "local_sha256": "eb7c8679cc75d15bf72d57b1e6c5e9aebaea0c97792a41007d4e1d5f49ad07d7",
+      "remote_sha256": "eb7c8679cc75d15bf72d57b1e6c5e9aebaea0c97792a41007d4e1d5f49ad07d7",
+      "remote_git_blob": "94281181ddfdbdec437f307337953176f77c7bea",
+      "matches": true,
+      "scope": "prior_review_unchanged"
+    }
+  ],
+  "scope_records": [
+    "DEPOSIT_FINAL_BINDING.json",
+    "C05_FINAL_BINDING.json",
+    "../../c14/RULES_DISPOSITION_FINAL.json"
+  ],
+  "caveats": [
+    "42 round2 manifest files plus 8 prior unchanged review sources. Byte verification is not full semantic audit of every listed file or independent test execution.",
+    "C05 prior fixed-fee/zero-refund inconsistency is superseded by accepted versioned policy mechanism; no commercial fee or cutoff approved.",
+    "Real supplier contract/cancellation policy, deposit liability/payee/evidence authority and PSP remain external HOLD.",
+    "Accepted deposit-source amendment/revocation, post-settlement appeal compensation, full recovery and cross-end evidence remain separately tracked internal obligations; no 100% claim.",
+    "Formal C14 Lite organizational runtime, legal certification, C13 quality verdict and deployment authorization are not granted.",
+    "Product commit and application tree identifiers are parent-provided metadata, not independently graph-verified in this file-only check.",
+    "No product source, remote state, PR or #247 changed."
+  ]
+}

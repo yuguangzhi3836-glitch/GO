@@ -1,0 +1,41 @@
+{
+  "review": "C14 limited source-bound rules disposition",
+  "base_candidate": "6acf9fdcde4b208b12a8c9d57ef74497e745faae",
+  "binding": "LOCAL_SHA256_PENDING_FROZEN_COMMIT",
+  "files_sha256": {
+    "autonomy/action_control.py": "f7e19ac1fcea318e98c0f5e288ff1231caed08b071a9350cfde6cd99ff07a44a",
+    "autonomy/types.py": "a0aeb541030395f7191482b9df8ee85acb9764b8bb2094a47042e102d110dacc",
+    "autonomy/condition_evidence.py": "6ec835cd92019daf5443bb4a577b2224b12579850f53bd9e9945a6cad69b4903",
+    "mobility/rental/damage.py": "03c9bfd8badff6d448fc49500d3eb44f99d45055de358cdabe12f5c0158102da",
+    "api/routes/rental_damage.py": "6636992f3220d1854000f6d4ca7c89ecb85f32975bb7e880d5885d7cb2a7334b",
+    "mobility/ride/service.py": "0eec9fdc9897e85a202638017abf4f5987834d3fd516f39b9f382ceb6000cb1b",
+    "mobility/ride/refunds.py": "191abb39c043d4def0fc9ef432565b92e71bd044ff35df99a686e0389ac40e36",
+    "mobility/ride/flight_sync.py": "6d66fa1ae3da41d355c6feaeb62c27a253f6277c66f2edf6281f88ac40ed4808",
+    "core/production_truth_gate.py": "7420017fed1c46fbde69da610cf50e4ff3ed2fe1b3f6ebfda64703d9fb6a2158",
+    "rail/service.py": "d1f6cf4719154db642cc2c8460d53dec99f3137c413336f7be50b592d1440078",
+    "attractions/service.py": "eb7c8679cc75d15bf72d57b1e6c5e9aebaea0c97792a41007d4e1d5f49ad07d7"
+  },
+  "c05_status": "REAL_OPERATION_HOLD_CONTRACT_INCONSISTENCY",
+  "c05_evidence": [
+    "RideService.search advertises 24-hour cutoff and late fee 8400/13400 minor units.",
+    "ride.refunds.terms unconditionally quotes fee 0 for confirmed orders.",
+    "engineering_policy/snapshot_policy freeze waiting/delay terms only.",
+    "No Owner-approved cancellation contract found in the inspected operating decisions/state sources; absence is limited to reviewed sources."
+  ],
+  "single_rule_to_freeze": "Booking-accepted ride cancellation policy version: applicable product/order, cutoff time basis/timezone and modification effects, free/charged conditions and fee/refund calculation, and legacy-order applicability. Values require authoritative approval; none are invented.",
+  "isolated_continuation": "Allowed only as engineering fixture in an isolated environment with real providers/funds disabled. Conflict remains a failing contract-consistency scope, not a passing simulation contract. No deployment authorization.",
+  "environment_caveat": "production_truth_required only rejects prod/production; it does not by itself fence staging/shadow/canary. No claim of universal non-test blocking.",
+  "policy_update": "Versioned policies now default to DEV/TEST environment scope; scope is typed and included in policy digest. Cross-environment borrow rejects. This closes the default synthetic-versioned-policy environment gap. approval_ref authenticity still depends on trusted approved registry ingestion.",
+  "other_increment_disposition": [
+    "C03 stale quote supersession preserves authoritative fare basis; no new fee policy introduced.",
+    "C06 pending change requires exact quote_id and rejects unbound/foreign recovery; no supplier authorization created by this binding.",
+    "C05 currency change rejects incompatible currency for fixed CNY fixture amounts rather than inventing FX.",
+    "C04 remains isolated adjudication with distinct admin maker/checker and C11-money hold, not evidence authenticity or real contractual liability certification."
+  ],
+  "limits": [
+    "Static scoped review only; not all changed modules independently inspected.",
+    "No formal C14 PASS, legal certification, C13 quality result or deployment approval.",
+    "Test files read, tests not independently rerun.",
+    "No source or #247 implementation modified."
+  ]
+}

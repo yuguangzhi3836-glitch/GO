@@ -1,0 +1,33 @@
+{
+  "failed_candidate": "bd5665",
+  "run_id": 36128357084,
+  "job_id": 108049614135,
+  "artifact_path": "reviews/round3/c13/browser-bd5665",
+  "status": "FIXED_CI_SOURCE_PENDING_RERUN",
+  "product_changed": false,
+  "policy_failure": {
+    "cause": "Same-hash navigation reused checker widget snapshot older than newly created premium draft.",
+    "evidence": [
+      "Checker last initial GET 11:18:25.714Z; premium POST created 11:18:25.855Z.",
+      "No checker GET or premium activation POST before 12s timeout.",
+      "Maker screenshot shows premium DRAFT; screenshot is maker, not checker.",
+      "Initial standard activation and later replacement/revoke succeeded."
+    ],
+    "repair": "Click actual refresh diagnostic control; await matching GET, busy-to-ready DOM; assert fresh target policy and can_activate/can_revoke before normal checkbox/button interactions."
+  },
+  "widget_failure": {
+    "passed": 1,
+    "failed": 4,
+    "cause_status": "STRONG_SOURCE_BASED_INFERENCE_REQUIRES_RERUN",
+    "cause": "http://rental.test mock origin is not a secure context; native crypto.randomUUID unavailable before setPending try. All submit cases fail and display-only case passes. Original widget did not collect pageerror, so original artifact does not directly prove exception.",
+    "repair": "Intercepted https://rental.test origin; assert secureContext and native randomUUID, collect pageerror diagnostics; preserve all five tests and assertions."
+  },
+  "original_failure_reclassified": false,
+  "verification": [
+    "node --check for both modified files PASS"
+  ],
+  "files": {
+    "ci/journey-v2/operations-depth.mjs": "3e596c4ede9e63bb02d60000e726c93f73f35a9c34dcf26ca43b091133936de1",
+    "ci/journey-v2/rental-operations-widget.mjs": "8d94400195ce03621da391345bfaf8adc01df3f9183796aa0f145982750076b8"
+  }
+}

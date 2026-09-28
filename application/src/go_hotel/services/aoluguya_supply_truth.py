@@ -110,6 +110,56 @@ def _contains_test_truth(value: Any) -> bool:
     return any(m in text for m in markers)
 
 
+def _stable_rate_key(room_key, offer_id):
+    return f"{room_key}:offer:{offer_id}"
+
+
+def _resolve_rate_variants(rooms, variants, existing_map):
+    """Resolve every rate before writes; breakfast is never a plan identity.
+
+    Legacy breakfast-only matching is retained only for one unbound source rate
+    and one unbound hosted variant. Ambiguous mappings require explicit keys.
+    """
+    exact = {}
+    legacy = {}
+    for variant, pool, offer in variants:
+        saved = existing_map.get(offer.hosted_offer_id) or {}
+        if saved and saved.get("room_key") != pool.physical_room_key:
+            raise ValueError("HOSTED_RATE_ROOM_IDENTITY_MISMATCH")
+        key = saved.get("rate_plan_key") or _stable_rate_key(pool.physical_room_key, offer.hosted_offer_id)
+        identity = (pool.physical_room_key, key)
+        if identity in exact:
+            raise ValueError("DUPLICATE_HOSTED_RATE_PLAN_KEY")
+        exact[identity] = (variant, pool, offer)
+        if not saved:
+            legacy.setdefault((pool.physical_room_key, variant.breakfast_count), []).append((variant, pool, offer))
+    result = {}
+    used = set()
+    pending = {}
+    for room in rooms:
+        for rate in room["rates"]:
+            identity = (room["room_key"], rate["rate_plan_key"])
+            if identity in result:
+                raise ValueError("DUPLICATE_SOURCE_RATE_PLAN_KEY")
+            matched = exact.get(identity)
+            if matched:
+                if matched[0].breakfast_count != rate["breakfast_count"]:
+                    raise ValueError("HOSTED_RATE_BREAKFAST_MISMATCH")
+                if matched[2].hosted_offer_id in used:
+                    raise ValueError("DUPLICATE_HOSTED_RATE_MAPPING")
+                result[identity] = matched
+                used.add(matched[2].hosted_offer_id)
+            else:
+                pending.setdefault((room["room_key"], rate["breakfast_count"]), []).append(identity)
+    for breakfast_key, identities in pending.items():
+        candidates = [item for item in legacy.get(breakfast_key, []) if item[2].hosted_offer_id not in used]
+        if len(identities) != 1 or len(candidates) != 1:
+            raise ValueError("UNMAPPED_OR_AMBIGUOUS_HOSTED_RATE_VARIANT:" + ":".join(map(str, breakfast_key)))
+        result[identities[0]] = candidates[0]
+        used.add(candidates[0][2].hosted_offer_id)
+    return result
+
+
 class AoluguyaSupplyTruthService:
     def ensure_named_connector(self, actor: str) -> dict[str, Any]:
         with SessionLocal() as s:
@@ -192,7 +242,6 @@ class AoluguyaSupplyTruthService:
             if not isinstance(rates, list) or not rates:
                 raise ValueError("RATE_PLAN_TRUTH_REQUIRED")
             normalized_rates = []
-            seen_breakfast: set[int] = set()
             for rate in rates:
                 rate_key = str(rate.get("rate_plan_key") or "").strip()
                 rate_name = str(rate.get("rate_name") or "").strip()
@@ -209,9 +258,8 @@ class AoluguyaSupplyTruthService:
                     raise ValueError("VALID_OFFICIAL_PRICE_REQUIRED")
                 if currency != "CNY":
                     raise ValueError("AOLUGUYA_CNY_REQUIRED")
-                if not isinstance(breakfast_count, int) or breakfast_count < 0 or breakfast_count in seen_breakfast:
+                if not isinstance(breakfast_count, int) or breakfast_count < 0:
                     raise ValueError("UNIQUE_BREAKFAST_VARIANT_REQUIRED")
-                seen_breakfast.add(breakfast_count)
                 if not cancellation_policy:
                     raise ValueError("CANCELLATION_POLICY_REQUIRED")
                 if not isinstance(taxes_fees, dict) or "included_in_total" not in taxes_fees:
@@ -334,13 +382,17 @@ class AoluguyaSupplyTruthService:
                 .order_by(HostedDirectInventoryPoolRow.physical_room_key, HostedDirectRateVariantRow.breakfast_count)
             ).all()
             grouped: dict[str, dict[str, Any]] = {}
+            existing_map = (hotel.contact_json or {}).get("official_rate_map") or {}
             for variant, pool in rows:
                 room = grouped.setdefault(pool.physical_room_key, {
                     "room_key": pool.physical_room_key, "room_name": pool.physical_room_name,
                     "inventory": None, "rates": []
                 })
                 room["rates"].append({
-                    "rate_plan_key": f"{pool.physical_room_key}:bf{variant.breakfast_count}",
+                    "rate_plan_key": (existing_map.get(variant.hosted_offer_id) or {}).get("rate_plan_key")
+                        or (_stable_rate_key(pool.physical_room_key, variant.hosted_offer_id)
+                            if sum(p.physical_room_key == pool.physical_room_key and v.breakfast_count == variant.breakfast_count for v, p in rows) > 1
+                            else f"{pool.physical_room_key}:bf{variant.breakfast_count}"),
                     "rate_name": "", "price_minor": None, "currency": "CNY",
                     "breakfast_count": variant.breakfast_count, "breakfast": {"count": variant.breakfast_count},
                     "cancellation_policy": "", "taxes_fees": {"included_in_total": None},
@@ -368,7 +420,7 @@ class AoluguyaSupplyTruthService:
 
     def _cutover_backup(self, db, hotel, pools, all_offers) -> dict[str, Any]:
         return {
-            "schema": "go.aoluguya-cutover-backup.v1",
+            "schema": "go.aoluguya-cutover-backup.v2",
             "hotel_state": hotel.state, "contact_json": dict(hotel.contact_json or {}),
             "pools": {p.inventory_pool_id: {
                 "physical_room_name": p.physical_room_name, "capacity_total": p.capacity_total,
@@ -379,6 +431,10 @@ class AoluguyaSupplyTruthService:
                 "currency": o.currency, "inventory": o.inventory,
                 "cancellation_policy": o.cancellation_policy, "state": o.state
             } for o in all_offers},
+            "variants": {v.rate_variant_id: {"state": v.state}
+                for v in db.scalars(select(HostedDirectRateVariantRow)
+                    .join(HostedDirectInventoryPoolRow, HostedDirectInventoryPoolRow.inventory_pool_id == HostedDirectRateVariantRow.inventory_pool_id)
+                    .where(HostedDirectInventoryPoolRow.hosted_hotel_id == hotel.hosted_hotel_id)).all()},
             "captured_at": now().isoformat(),
         }
 
@@ -393,6 +449,12 @@ class AoluguyaSupplyTruthService:
                 raise ValueError("AOLUGUYA_HOSTED_DIRECT_HOTEL_REQUIRED")
             pools = db.scalars(select(HostedDirectInventoryPoolRow).where(HostedDirectInventoryPoolRow.hosted_hotel_id == hotel.hosted_hotel_id)).all()
             offers = db.scalars(select(HostedDirectRoomOfferRow).where(HostedDirectRoomOfferRow.hosted_hotel_id == hotel.hosted_hotel_id)).all()
+            variants = db.scalars(select(HostedDirectRateVariantRow)
+                .join(HostedDirectInventoryPoolRow, HostedDirectInventoryPoolRow.inventory_pool_id == HostedDirectRateVariantRow.inventory_pool_id)
+                .where(HostedDirectInventoryPoolRow.hosted_hotel_id == hotel.hosted_hotel_id)).all()
+            variant_backup = backup.get("variants")
+            if variant_backup is not None and set(variant_backup) != {v.rate_variant_id for v in variants}:
+                raise ValueError("AOLUGUYA_ROLLBACK_VARIANT_IDENTITY_MISMATCH")
             for p in pools:
                 old = backup["pools"].get(p.inventory_pool_id)
                 if old:
@@ -403,12 +465,19 @@ class AoluguyaSupplyTruthService:
                     for k in ("room_name","rate_name","price_minor","currency","inventory","cancellation_policy","state"):
                         setattr(o, k, old[k])
                     o.updated_at = now()
+            if variant_backup is not None:
+                for variant in variants:
+                    variant.state = variant_backup[variant.rate_variant_id]["state"]
             hotel.state = backup["hotel_state"]; hotel.contact_json = backup["contact_json"]; hotel.updated_at = now()
             caps = dict(latest.capabilities_json or {})
-            caps["aoluguya_cutover_rollback"] = {"rolled_back_at": now().isoformat(), "rolled_back_by": actor}
+            limitations = [] if variant_backup is not None else ["LEGACY_BACKUP_VARIANT_STATE_UNAVAILABLE"]
+            caps["aoluguya_cutover_rollback"] = {"rolled_back_at": now().isoformat(), "rolled_back_by": actor,
+                "variant_states_restored": variant_backup is not None, "limitations": limitations}
             _new_matrix(db, connector, caps)
             db.commit()
-            return {"state": "AOLUGUYA_CUTOVER_ROLLED_BACK", "payment_available": False, "booking_mode": "RESERVATION_REQUEST_ONLY"}
+            return {"state": "AOLUGUYA_CUTOVER_ROLLED_BACK" if not limitations else "AOLUGUYA_CUTOVER_PARTIALLY_ROLLED_BACK",
+                "variant_states_restored": variant_backup is not None, "limitations": limitations,
+                "payment_available": False, "booking_mode": "RESERVATION_REQUEST_ONLY"}
 
     def project_to_hosted_direct(self, actor: str) -> dict[str, Any]:
         assessment = self.evaluate()
@@ -431,9 +500,20 @@ class AoluguyaSupplyTruthService:
                 .join(HostedDirectRoomOfferRow, HostedDirectRoomOfferRow.hosted_offer_id == HostedDirectRateVariantRow.hosted_offer_id)
                 .where(HostedDirectInventoryPoolRow.hosted_hotel_id == hotel.hosted_hotel_id)
             ).all()
-            by_key = {(pool.physical_room_key, variant.breakfast_count): (variant, pool, offer) for variant, pool, offer in variants}
+            missing_rooms = [room["room_key"] for room in snapshot["rooms"] if room["room_key"] not in pools]
+            if missing_rooms:
+                raise ValueError("AOLUGUYA_CUTOVER_MAPPING_INCOMPLETE:" + ",".join(missing_rooms))
+            by_key = _resolve_rate_variants(snapshot["rooms"], variants,
+                (hotel.contact_json or {}).get("official_rate_map") or {})
+            all_offers = s.scalars(select(HostedDirectRoomOfferRow).where(HostedDirectRoomOfferRow.hosted_hotel_id == hotel.hosted_hotel_id)).all()
+            backup = self._cutover_backup(s, hotel, pools, all_offers)
             touched: set[str] = set()
-            official_rate_map: dict[str, dict[str, Any]] = {}
+            # A partial snapshot may stop a sale, but must not erase its identity:
+            # otherwise a later unknown plan could claim the old offer by breakfast.
+            official_rate_map: dict[str, dict[str, Any]] = {
+                offer_id: dict(binding) for offer_id, binding in
+                ((hotel.contact_json or {}).get("official_rate_map") or {}).items()
+            }
             for room in snapshot["rooms"]:
                 pool = pools.get(room["room_key"])
                 if not pool:
@@ -445,7 +525,7 @@ class AoluguyaSupplyTruthService:
                     pool.capacity_available = 0
                 pool.updated_at = now()
                 for rate in room["rates"]:
-                    key = (room["room_key"], rate["breakfast_count"])
+                    key = (room["room_key"], rate["rate_plan_key"])
                     tupled = by_key.get(key)
                     if not tupled:
                         raise ValueError("UNMAPPED_HOSTED_RATE_VARIANT:" + room["room_key"] + ":" + str(rate["breakfast_count"]))
@@ -466,19 +546,17 @@ class AoluguyaSupplyTruthService:
                         "taxes_fees": rate["taxes_fees"],
                         "breakfast": rate["breakfast"],
                         "sell_state": rate["sell_state"],
+                        "projection_state": offer.state,
                     }
-            all_offers = s.scalars(select(HostedDirectRoomOfferRow).where(HostedDirectRoomOfferRow.hosted_hotel_id == hotel.hosted_hotel_id)).all()
-            # Validate the entire mapping before mutating any row. This makes cutover fail closed.
-            expected = {(room["room_key"], rate["breakfast_count"]) for room in snapshot["rooms"] for rate in room["rates"]}
-            missing_rooms = [room["room_key"] for room in snapshot["rooms"] if room["room_key"] not in pools]
-            missing_rates = [f"{rk}:{bf}" for rk, bf in expected if (rk, bf) not in by_key]
-            if missing_rooms or missing_rates:
-                raise ValueError("AOLUGUYA_CUTOVER_MAPPING_INCOMPLETE:" + ",".join(missing_rooms + missing_rates))
-            backup = self._cutover_backup(s, hotel, pools, all_offers)
             for offer in all_offers:
                 if offer.hosted_offer_id not in touched:
                     offer.state = "INACTIVE"
                     offer.updated_at = now()
+                    if offer.hosted_offer_id in official_rate_map:
+                        official_rate_map[offer.hosted_offer_id]["projection_state"] = "INACTIVE"
+                    for variant, _, variant_offer in variants:
+                        if variant_offer.hosted_offer_id == offer.hosted_offer_id:
+                            variant.state = "INACTIVE"
             if not any(x.state == "ACTIVE" for x in all_offers):
                 raise ValueError("ACTIVE_OFFICIAL_OFFER_REQUIRED")
             contact = dict(hotel.contact_json or {})

@@ -1,0 +1,743 @@
+﻿2026-09-26T04:06:09.1288681Z Current runner version: '2.337.0'
+2026-09-26T04:06:09.1326692Z ##[group]Runner Image Provisioner
+2026-09-26T04:06:09.1328203Z Hosted Compute Agent
+2026-09-26T04:06:09.1329388Z Version: 20260828.587
+2026-09-26T04:06:09.1330585Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-26T04:06:09.1331991Z Build Date: 2026-08-28T16:44:25Z
+2026-09-26T04:06:09.1333315Z Worker ID: {5373ef45-9886-41fd-8537-6070cf5a1fd2}
+2026-09-26T04:06:09.1334616Z Azure Region: westus
+2026-09-26T04:06:09.1335651Z ##[endgroup]
+2026-09-26T04:06:09.1338622Z ##[group]Operating System
+2026-09-26T04:06:09.1339859Z Ubuntu
+2026-09-26T04:06:09.1340975Z 24.04.5
+2026-09-26T04:06:09.1341940Z LTS
+2026-09-26T04:06:09.1342800Z ##[endgroup]
+2026-09-26T04:06:09.1343869Z ##[group]Runner Image
+2026-09-26T04:06:09.1344975Z Image: ubuntu-24.04
+2026-09-26T04:06:09.1346360Z Version: 20260920.314.1
+2026-09-26T04:06:09.1348647Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260920.314/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-26T04:06:09.1351634Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260920.314
+2026-09-26T04:06:09.1353489Z ##[endgroup]
+2026-09-26T04:06:09.1355480Z ##[group]GITHUB_TOKEN Permissions
+2026-09-26T04:06:09.1358617Z Contents: read
+2026-09-26T04:06:09.1359718Z Metadata: read
+2026-09-26T04:06:09.1360836Z ##[endgroup]
+2026-09-26T04:06:09.1364398Z Secret source: Actions
+2026-09-26T04:06:09.1366717Z Cache mode: write
+2026-09-26T04:06:09.1367869Z Prepare workflow directory
+2026-09-26T04:06:09.2206400Z Prepare all required actions
+2026-09-26T04:06:09.2279943Z Getting action download info
+2026-09-26T04:06:09.6524462Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-26T04:06:09.7698421Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-09-26T04:06:09.8663193Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-09-26T04:06:10.0889978Z Complete job name: postgres
+2026-09-26T04:06:10.1511989Z ##[group]Checking docker version
+2026-09-26T04:06:10.1527464Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+2026-09-26T04:06:10.2684037Z '1.48'
+2026-09-26T04:06:10.2792225Z Docker daemon API version: '1.48'
+2026-09-26T04:06:10.2793787Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+2026-09-26T04:06:10.3003536Z '1.48'
+2026-09-26T04:06:10.3019892Z Docker client API version: '1.48'
+2026-09-26T04:06:10.3026054Z ##[endgroup]
+2026-09-26T04:06:10.3029694Z ##[group]Clean up resources from previous jobs
+2026-09-26T04:06:10.3036048Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=75501d"
+2026-09-26T04:06:10.3196550Z ##[command]/usr/bin/docker network prune --force --filter "label=75501d"
+2026-09-26T04:06:10.3342559Z ##[endgroup]
+2026-09-26T04:06:10.3343119Z ##[group]Create local container network
+2026-09-26T04:06:10.3353062Z ##[command]/usr/bin/docker network create --label 75501d github_network_d6eca29f955b45ada0d819f6d2fa9720
+2026-09-26T04:06:10.4026737Z 72f940cf55357381432a4cada129c18c58ba19772179500b5d8a146b3ea9605d
+2026-09-26T04:06:10.4043082Z ##[endgroup]
+2026-09-26T04:06:10.4068161Z ##[group]Starting postgres service container
+2026-09-26T04:06:10.4093204Z ##[command]/usr/bin/docker pull postgres:16.4
+2026-09-26T04:06:11.3170157Z 16.4: Pulling from library/postgres
+2026-09-26T04:06:11.6574459Z 2d429b9e73a6: Pulling fs layer
+2026-09-26T04:06:11.6576765Z 46eab5b44a35: Pulling fs layer
+2026-09-26T04:06:11.6578941Z c4d302cc468d: Pulling fs layer
+2026-09-26T04:06:11.6580429Z 01e0882c90d9: Pulling fs layer
+2026-09-26T04:06:11.6582047Z 531ee2cf3c0c: Pulling fs layer
+2026-09-26T04:06:11.6583523Z ed54a7dee1d8: Pulling fs layer
+2026-09-26T04:06:11.6585148Z 12c5c803443f: Pulling fs layer
+2026-09-26T04:06:11.6586790Z e27c75a98748: Pulling fs layer
+2026-09-26T04:06:11.6588250Z e73cb4a42719: Pulling fs layer
+2026-09-26T04:06:11.6589747Z a83b68436f09: Pulling fs layer
+2026-09-26T04:06:11.6591235Z 787d6bee9571: Pulling fs layer
+2026-09-26T04:06:11.6593231Z 13ff0988aaea: Pulling fs layer
+2026-09-26T04:06:11.6594820Z 4b82842ab819: Pulling fs layer
+2026-09-26T04:06:11.6596685Z 7e568a0dc8fb: Pulling fs layer
+2026-09-26T04:06:11.6598178Z 01e0882c90d9: Waiting
+2026-09-26T04:06:11.6599680Z 531ee2cf3c0c: Waiting
+2026-09-26T04:06:11.6603651Z ed54a7dee1d8: Waiting
+2026-09-26T04:06:11.6606494Z 12c5c803443f: Waiting
+2026-09-26T04:06:11.6608370Z e27c75a98748: Waiting
+2026-09-26T04:06:11.6611322Z e73cb4a42719: Waiting
+2026-09-26T04:06:11.6613800Z a83b68436f09: Waiting
+2026-09-26T04:06:11.6617313Z 787d6bee9571: Waiting
+2026-09-26T04:06:11.6620361Z 13ff0988aaea: Waiting
+2026-09-26T04:06:11.6622406Z 4b82842ab819: Waiting
+2026-09-26T04:06:11.6624120Z 7e568a0dc8fb: Waiting
+2026-09-26T04:06:11.8153812Z 46eab5b44a35: Verifying Checksum
+2026-09-26T04:06:11.8156751Z 46eab5b44a35: Download complete
+2026-09-26T04:06:11.8687680Z c4d302cc468d: Verifying Checksum
+2026-09-26T04:06:11.8688861Z c4d302cc468d: Download complete
+2026-09-26T04:06:12.0111633Z 2d429b9e73a6: Verifying Checksum
+2026-09-26T04:06:12.0112903Z 2d429b9e73a6: Download complete
+2026-09-26T04:06:12.0487355Z 01e0882c90d9: Verifying Checksum
+2026-09-26T04:06:12.0487837Z 01e0882c90d9: Download complete
+2026-09-26T04:06:12.1331891Z 531ee2cf3c0c: Verifying Checksum
+2026-09-26T04:06:12.1333026Z 531ee2cf3c0c: Download complete
+2026-09-26T04:06:12.2434100Z ed54a7dee1d8: Verifying Checksum
+2026-09-26T04:06:12.2436033Z ed54a7dee1d8: Download complete
+2026-09-26T04:06:12.2730378Z 12c5c803443f: Verifying Checksum
+2026-09-26T04:06:12.2750190Z 12c5c803443f: Download complete
+2026-09-26T04:06:12.3404647Z e27c75a98748: Verifying Checksum
+2026-09-26T04:06:12.3406770Z e27c75a98748: Download complete
+2026-09-26T04:06:12.4889072Z a83b68436f09: Verifying Checksum
+2026-09-26T04:06:12.4891793Z a83b68436f09: Download complete
+2026-09-26T04:06:12.5773555Z 787d6bee9571: Verifying Checksum
+2026-09-26T04:06:12.5779712Z 787d6bee9571: Download complete
+2026-09-26T04:06:12.7550433Z 13ff0988aaea: Verifying Checksum
+2026-09-26T04:06:12.7558449Z 13ff0988aaea: Download complete
+2026-09-26T04:06:12.8089010Z 4b82842ab819: Verifying Checksum
+2026-09-26T04:06:12.8116319Z 4b82842ab819: Download complete
+2026-09-26T04:06:12.9998388Z 7e568a0dc8fb: Verifying Checksum
+2026-09-26T04:06:13.0000379Z 7e568a0dc8fb: Download complete
+2026-09-26T04:06:13.1528851Z e73cb4a42719: Verifying Checksum
+2026-09-26T04:06:13.1535957Z e73cb4a42719: Download complete
+2026-09-26T04:06:13.6592524Z 2d429b9e73a6: Pull complete
+2026-09-26T04:06:14.4542467Z 46eab5b44a35: Pull complete
+2026-09-26T04:06:14.6145185Z c4d302cc468d: Pull complete
+2026-09-26T04:06:14.6704052Z 01e0882c90d9: Pull complete
+2026-09-26T04:06:15.0298165Z 531ee2cf3c0c: Pull complete
+2026-09-26T04:06:15.1204914Z ed54a7dee1d8: Pull complete
+2026-09-26T04:06:15.1319413Z 12c5c803443f: Pull complete
+2026-09-26T04:06:15.1461538Z e27c75a98748: Pull complete
+2026-09-26T04:06:19.2450638Z e73cb4a42719: Pull complete
+2026-09-26T04:06:19.2632351Z a83b68436f09: Pull complete
+2026-09-26T04:06:19.2741033Z 787d6bee9571: Pull complete
+2026-09-26T04:06:19.2922613Z 13ff0988aaea: Pull complete
+2026-09-26T04:06:19.3016694Z 4b82842ab819: Pull complete
+2026-09-26T04:06:19.3100306Z 7e568a0dc8fb: Pull complete
+2026-09-26T04:06:19.3141955Z Digest: sha256:e62fbf9d3e2b49816a32c400ed2dba83e3b361e6833e624024309c35d334b412
+2026-09-26T04:06:19.3154614Z Status: Downloaded newer image for postgres:16.4
+2026-09-26T04:06:19.3164030Z docker.io/library/postgres:16.4
+2026-09-26T04:06:19.3237805Z ##[command]/usr/bin/docker create --name 9b704a38c57d4f5082b771483735a861_postgres164_0fd353 --label 75501d --network github_network_d6eca29f955b45ada0d819f6d2fa9720 --network-alias postgres -p 5432:5432 --health-cmd "pg_isready -U go_ci -d go_ci" --health-interval 5s --health-timeout 5s --health-retries 20 -e "POSTGRES_DB=go_ci" -e "POSTGRES_USER=go_ci" -e "POSTGRES_PASSWORD=isolated_ci_only" -e GITHUB_ACTIONS=true -e CI=true postgres:16.4
+2026-09-26T04:06:19.3539182Z 24198e56c177af0f39d4253374e3c82ae5ece7f47eed401834edad32d890830c
+2026-09-26T04:06:19.3563592Z ##[command]/usr/bin/docker start 24198e56c177af0f39d4253374e3c82ae5ece7f47eed401834edad32d890830c
+2026-09-26T04:06:19.6230457Z 24198e56c177af0f39d4253374e3c82ae5ece7f47eed401834edad32d890830c
+2026-09-26T04:06:19.6294058Z ##[command]/usr/bin/docker ps --all --filter id=24198e56c177af0f39d4253374e3c82ae5ece7f47eed401834edad32d890830c --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-09-26T04:06:19.6502631Z 24198e56c177af0f39d4253374e3c82ae5ece7f47eed401834edad32d890830c Up Less than a second (health: starting)
+2026-09-26T04:06:19.6530475Z ##[command]/usr/bin/docker port 24198e56c177af0f39d4253374e3c82ae5ece7f47eed401834edad32d890830c
+2026-09-26T04:06:19.6719859Z 5432/tcp -> 0.0.0.0:5432
+2026-09-26T04:06:19.6720900Z 5432/tcp -> [::]:5432
+2026-09-26T04:06:19.6814860Z ##[endgroup]
+2026-09-26T04:06:19.6827982Z ##[group]Waiting for all services to be ready
+2026-09-26T04:06:19.6847586Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 24198e56c177af0f39d4253374e3c82ae5ece7f47eed401834edad32d890830c
+2026-09-26T04:06:19.7059895Z starting
+2026-09-26T04:06:19.7089230Z postgres service is starting, waiting 2 seconds before checking again.
+2026-09-26T04:06:21.7094158Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 24198e56c177af0f39d4253374e3c82ae5ece7f47eed401834edad32d890830c
+2026-09-26T04:06:21.7233410Z starting
+2026-09-26T04:06:21.7247619Z postgres service is starting, waiting 3 seconds before checking again.
+2026-09-26T04:06:25.4089545Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 24198e56c177af0f39d4253374e3c82ae5ece7f47eed401834edad32d890830c
+2026-09-26T04:06:25.4275070Z healthy
+2026-09-26T04:06:25.4290683Z postgres service is healthy.
+2026-09-26T04:06:25.4291061Z ##[endgroup]
+2026-09-26T04:06:25.4584201Z ##[group]Run actions/checkout@v4
+2026-09-26T04:06:25.4584755Z with:
+2026-09-26T04:06:25.4585014Z   ref: 42d71f4eb3a9efacf2f290e31ca1d763b2b77a4f
+2026-09-26T04:06:25.4585336Z   persist-credentials: false
+2026-09-26T04:06:25.4585600Z   repository: yuguangzhi3836-glitch/GO
+2026-09-26T04:06:25.4588570Z   token: ***
+2026-09-26T04:06:25.4588790Z   ssh-strict: true
+2026-09-26T04:06:25.4588992Z   ssh-user: git
+2026-09-26T04:06:25.4589188Z   clean: true
+2026-09-26T04:06:25.4589392Z   sparse-checkout-cone-mode: true
+2026-09-26T04:06:25.4589645Z   fetch-depth: 1
+2026-09-26T04:06:25.4589838Z   fetch-tags: false
+2026-09-26T04:06:25.4590040Z   show-progress: true
+2026-09-26T04:06:25.4590264Z   lfs: false
+2026-09-26T04:06:25.4590462Z   submodules: false
+2026-09-26T04:06:25.4590666Z   set-safe-directory: true
+2026-09-26T04:06:25.4590907Z   allow-unsafe-pr-checkout: false
+2026-09-26T04:06:25.4591387Z ##[endgroup]
+2026-09-26T04:06:25.5724970Z Syncing repository: yuguangzhi3836-glitch/GO
+2026-09-26T04:06:25.5727404Z ##[group]Getting Git version info
+2026-09-26T04:06:25.5728001Z Working directory is '/home/runner/work/GO/GO'
+2026-09-26T04:06:25.5729453Z [command]/usr/bin/git version
+2026-09-26T04:06:25.5901019Z git version 2.55.0
+2026-09-26T04:06:25.5950293Z ##[endgroup]
+2026-09-26T04:06:25.5957447Z Temporarily overriding HOME='/home/runner/work/_temp/b940cce3-5bfb-45f1-a12e-b8def0899c25' before making global git config changes
+2026-09-26T04:06:25.5958760Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-26T04:06:25.5959704Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-26T04:06:25.6037193Z Deleting the contents of '/home/runner/work/GO/GO'
+2026-09-26T04:06:25.6038331Z ##[group]Initializing the repository
+2026-09-26T04:06:25.6047648Z [command]/usr/bin/git init /home/runner/work/GO/GO
+2026-09-26T04:06:25.6196071Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-26T04:06:25.6206947Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-26T04:06:25.6223438Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-26T04:06:25.6224253Z hint: call:
+2026-09-26T04:06:25.6224743Z hint:
+2026-09-26T04:06:25.6225411Z hint: 	git config --global init.defaultBranch <name>
+2026-09-26T04:06:25.6226408Z hint:
+2026-09-26T04:06:25.6227064Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-26T04:06:25.6228128Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-26T04:06:25.6228941Z hint:
+2026-09-26T04:06:25.6229393Z hint: 	git branch -m <name>
+2026-09-26T04:06:25.6229895Z hint:
+2026-09-26T04:06:25.6230554Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-26T04:06:25.6231562Z Initialized empty Git repository in /home/runner/work/GO/GO/.git/
+2026-09-26T04:06:25.6233993Z [command]/usr/bin/git remote add origin https://github.com/yuguangzhi3836-glitch/GO
+2026-09-26T04:06:25.6316897Z ##[endgroup]
+2026-09-26T04:06:25.6319702Z ##[group]Disabling automatic garbage collection
+2026-09-26T04:06:25.6320618Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-26T04:06:25.6387029Z ##[endgroup]
+2026-09-26T04:06:25.6387873Z ##[group]Setting up auth
+2026-09-26T04:06:25.6388736Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-26T04:06:25.6444956Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-26T04:06:25.7029840Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-26T04:06:25.7100100Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-26T04:06:25.7346819Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-26T04:06:25.7388135Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-26T04:06:25.7650396Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-26T04:06:25.7700868Z ##[endgroup]
+2026-09-26T04:06:25.7701919Z ##[group]Fetching the repository
+2026-09-26T04:06:25.7712698Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 42d71f4eb3a9efacf2f290e31ca1d763b2b77a4f
+2026-09-26T04:06:38.8059467Z From https://github.com/yuguangzhi3836-glitch/GO
+2026-09-26T04:06:38.8073933Z  * branch            42d71f4eb3a9efacf2f290e31ca1d763b2b77a4f -> FETCH_HEAD
+2026-09-26T04:06:38.8084832Z ##[endgroup]
+2026-09-26T04:06:38.8085708Z ##[group]Determining the checkout info
+2026-09-26T04:06:38.8086902Z ##[endgroup]
+2026-09-26T04:06:38.8087535Z [command]/usr/bin/git sparse-checkout disable
+2026-09-26T04:06:38.8144718Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-26T04:06:38.8207397Z ##[group]Checking out the ref
+2026-09-26T04:06:38.8218864Z [command]/usr/bin/git checkout --progress --force 42d71f4eb3a9efacf2f290e31ca1d763b2b77a4f
+2026-09-26T04:06:40.4788091Z Updating files:  35% (2306/6504)
+2026-09-26T04:06:40.4822270Z Updating files:  36% (2342/6504)
+2026-09-26T04:06:40.4852343Z Updating files:  37% (2407/6504)
+2026-09-26T04:06:40.4895289Z Updating files:  38% (2472/6504)
+2026-09-26T04:06:40.5013046Z Updating files:  39% (2537/6504)
+2026-09-26T04:06:40.5101620Z Updating files:  40% (2602/6504)
+2026-09-26T04:06:40.5134069Z Updating files:  41% (2667/6504)
+2026-09-26T04:06:40.5164791Z Updating files:  42% (2732/6504)
+2026-09-26T04:06:40.5198559Z Updating files:  43% (2797/6504)
+2026-09-26T04:06:40.5235070Z Updating files:  44% (2862/6504)
+2026-09-26T04:06:40.5271345Z Updating files:  45% (2927/6504)
+2026-09-26T04:06:40.5302703Z Updating files:  46% (2992/6504)
+2026-09-26T04:06:40.5340401Z Updating files:  47% (3057/6504)
+2026-09-26T04:06:40.5397980Z Updating files:  48% (3122/6504)
+2026-09-26T04:06:40.5443643Z Updating files:  49% (3187/6504)
+2026-09-26T04:06:40.5497808Z Updating files:  50% (3252/6504)
+2026-09-26T04:06:40.5544795Z Updating files:  51% (3318/6504)
+2026-09-26T04:06:40.5584406Z Updating files:  52% (3383/6504)
+2026-09-26T04:06:40.5627726Z Updating files:  53% (3448/6504)
+2026-09-26T04:06:40.5665426Z Updating files:  54% (3513/6504)
+2026-09-26T04:06:40.5705154Z Updating files:  55% (3578/6504)
+2026-09-26T04:06:40.6575395Z Updating files:  56% (3643/6504)
+2026-09-26T04:06:40.6618894Z Updating files:  57% (3708/6504)
+2026-09-26T04:06:40.6683255Z Updating files:  58% (3773/6504)
+2026-09-26T04:06:40.6957440Z Updating files:  59% (3838/6504)
+2026-09-26T04:06:40.7271809Z Updating files:  60% (3903/6504)
+2026-09-26T04:06:40.7639668Z Updating files:  61% (3968/6504)
+2026-09-26T04:06:40.7682627Z Updating files:  62% (4033/6504)
+2026-09-26T04:06:40.7714329Z Updating files:  63% (4098/6504)
+2026-09-26T04:06:40.7743778Z Updating files:  64% (4163/6504)
+2026-09-26T04:06:40.7816486Z Updating files:  65% (4228/6504)
+2026-09-26T04:06:40.7848152Z Updating files:  66% (4293/6504)
+2026-09-26T04:06:40.7881034Z Updating files:  67% (4358/6504)
+2026-09-26T04:06:40.7922754Z Updating files:  68% (4423/6504)
+2026-09-26T04:06:40.7969680Z Updating files:  69% (4488/6504)
+2026-09-26T04:06:40.8020047Z Updating files:  70% (4553/6504)
+2026-09-26T04:06:40.8061568Z Updating files:  71% (4618/6504)
+2026-09-26T04:06:40.8116658Z Updating files:  72% (4683/6504)
+2026-09-26T04:06:40.8193417Z Updating files:  73% (4748/6504)
+2026-09-26T04:06:40.8263219Z Updating files:  74% (4813/6504)
+2026-09-26T04:06:40.8303983Z Updating files:  75% (4878/6504)
+2026-09-26T04:06:40.8559603Z Updating files:  75% (4884/6504)
+2026-09-26T04:06:40.9022185Z Updating files:  76% (4944/6504)
+2026-09-26T04:06:40.9091862Z Updating files:  77% (5009/6504)
+2026-09-26T04:06:40.9162606Z Updating files:  78% (5074/6504)
+2026-09-26T04:06:40.9234170Z Updating files:  79% (5139/6504)
+2026-09-26T04:06:40.9264482Z Updating files:  80% (5204/6504)
+2026-09-26T04:06:40.9289037Z Updating files:  81% (5269/6504)
+2026-09-26T04:06:40.9335377Z Updating files:  82% (5334/6504)
+2026-09-26T04:06:40.9350840Z Updating files:  83% (5399/6504)
+2026-09-26T04:06:40.9407656Z Updating files:  84% (5464/6504)
+2026-09-26T04:06:40.9436266Z Updating files:  85% (5529/6504)
+2026-09-26T04:06:40.9477410Z Updating files:  86% (5594/6504)
+2026-09-26T04:06:40.9557248Z Updating files:  87% (5659/6504)
+2026-09-26T04:06:40.9594944Z Updating files:  88% (5724/6504)
+2026-09-26T04:06:40.9631955Z Updating files:  89% (5789/6504)
+2026-09-26T04:06:40.9672272Z Updating files:  90% (5854/6504)
+2026-09-26T04:06:40.9703247Z Updating files:  91% (5919/6504)
+2026-09-26T04:06:40.9735297Z Updating files:  92% (5984/6504)
+2026-09-26T04:06:40.9803063Z Updating files:  93% (6049/6504)
+2026-09-26T04:06:40.9830346Z Updating files:  94% (6114/6504)
+2026-09-26T04:06:40.9860848Z Updating files:  95% (6179/6504)
+2026-09-26T04:06:40.9905190Z Updating files:  96% (6244/6504)
+2026-09-26T04:06:40.9946557Z Updating files:  97% (6309/6504)
+2026-09-26T04:06:40.9985745Z Updating files:  98% (6374/6504)
+2026-09-26T04:06:41.0020037Z Updating files:  99% (6439/6504)
+2026-09-26T04:06:41.0021466Z Updating files: 100% (6504/6504)
+2026-09-26T04:06:41.0022187Z Updating files: 100% (6504/6504), done.
+2026-09-26T04:06:42.0038617Z Note: switching to '42d71f4eb3a9efacf2f290e31ca1d763b2b77a4f'.
+2026-09-26T04:06:42.0039360Z 
+2026-09-26T04:06:42.0040196Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-26T04:06:42.0041390Z changes and commit them, and you can discard any commits you make in this
+2026-09-26T04:06:42.0042069Z state without impacting any branches by switching back to a branch.
+2026-09-26T04:06:42.0042438Z 
+2026-09-26T04:06:42.0042678Z If you want to create a new branch to retain commits you create, you may
+2026-09-26T04:06:42.0043568Z do so (now or later) by using -c with the switch command. Example:
+2026-09-26T04:06:42.0044364Z 
+2026-09-26T04:06:42.0044726Z   git switch -c <new-branch-name>
+2026-09-26T04:06:42.0045037Z 
+2026-09-26T04:06:42.0045370Z Or undo this operation with:
+2026-09-26T04:06:42.0045978Z 
+2026-09-26T04:06:42.0046167Z   git switch -
+2026-09-26T04:06:42.0046386Z 
+2026-09-26T04:06:42.0046726Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-26T04:06:42.0050095Z 
+2026-09-26T04:06:42.0050646Z HEAD is now at 42d71f4 test: bind round7 candidate and preserve independent failures for complete CI review
+2026-09-26T04:06:42.0607890Z ##[endgroup]
+2026-09-26T04:06:42.2103267Z [command]/usr/bin/git log -1 --format=%H
+2026-09-26T04:06:42.2145687Z 42d71f4eb3a9efacf2f290e31ca1d763b2b77a4f
+2026-09-26T04:06:42.2157972Z ##[group]Removing auth
+2026-09-26T04:06:42.2173021Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-26T04:06:42.2198093Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-26T04:06:42.2450184Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-26T04:06:42.3490829Z http.https://github.com/.extraheader
+2026-09-26T04:06:42.3516130Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-26T04:06:42.9059522Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-26T04:06:42.9372851Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-26T04:06:42.9437165Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-26T04:06:42.9706287Z ##[endgroup]
+2026-09-26T04:06:42.9957801Z ##[group]Run actions/setup-python@v5
+2026-09-26T04:06:42.9958110Z with:
+2026-09-26T04:06:42.9958312Z   python-version: 3.13.5
+2026-09-26T04:06:42.9958547Z   check-latest: false
+2026-09-26T04:06:42.9961272Z   token: ***
+2026-09-26T04:06:42.9961489Z   update-environment: true
+2026-09-26T04:06:42.9961728Z   allow-prereleases: false
+2026-09-26T04:06:42.9961959Z   freethreaded: false
+2026-09-26T04:06:42.9962170Z ##[endgroup]
+2026-09-26T04:06:43.1359025Z ##[group]Installed versions
+2026-09-26T04:06:43.2028734Z Version 3.13.5 was not found in the local cache
+2026-09-26T04:06:43.2136300Z (node:2548) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-26T04:06:43.2137918Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-26T04:06:43.9451448Z Version 3.13.5 is available for downloading
+2026-09-26T04:06:43.9452982Z Download from "https://github.com/actions/python-versions/releases/download/3.13.5-15601068749/python-3.13.5-linux-24.04-x64.tar.gz"
+2026-09-26T04:06:45.1083116Z Extract downloaded archive
+2026-09-26T04:06:45.1367324Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/9eebba97-5403-4ab5-9e25-bdb708548363 -f /home/runner/work/_temp/6eff2b3c-76fa-4be9-ba6d-4c6178de9e40
+2026-09-26T04:06:47.5826425Z Execute installation script
+2026-09-26T04:06:47.5946604Z Check if Python hostedtoolcache folder exist...
+2026-09-26T04:06:47.5955628Z Create Python 3.13.5 folder
+2026-09-26T04:06:47.8045826Z Copy Python binaries to hostedtoolcache folder
+2026-09-26T04:06:48.3414098Z Create additional symlinks (Required for the UsePythonVersion Azure Pipelines task and the setup-python GitHub Action)
+2026-09-26T04:06:48.3455793Z Upgrading pip...
+2026-09-26T04:06:51.1832314Z Looking in links: /tmp/tmp_l6uovwf
+2026-09-26T04:06:51.1836863Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages (25.1.1)
+2026-09-26T04:06:52.2740925Z Collecting pip
+2026-09-26T04:06:52.3287111Z Downloading pip-26.2.1-py3-none-any.whl.metadata (4.6 kB)
+2026-09-26T04:06:52.3447796Z Downloading pip-26.2.1-py3-none-any.whl (1.8 MB)
+2026-09-26T04:06:52.4185003Z ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 36.6 MB/s eta 0:00:00
+2026-09-26T04:06:52.4197061Z 
+2026-09-26T04:06:52.4373370Z Installing collected packages: pip
+2026-09-26T04:06:52.4375485Z Attempting uninstall: pip
+2026-09-26T04:06:52.4404785Z Found existing installation: pip 25.1.1
+2026-09-26T04:06:52.4741237Z Uninstalling pip-25.1.1:
+2026-09-26T04:06:52.4795405Z Successfully uninstalled pip-25.1.1
+2026-09-26T04:06:53.4087432Z Successfully installed pip-26.2.1
+2026-09-26T04:06:53.4557072Z Create complete file
+2026-09-26T04:06:53.4601550Z Successfully set up CPython (3.13.5)
+2026-09-26T04:06:53.4603171Z ##[endgroup]
+2026-09-26T04:06:53.4859847Z ##[group]Run python ci/retention/verify_source.py "$RUNNER_TEMP/postgres-evidence/source"
+2026-09-26T04:06:53.4860578Z [36;1mpython ci/retention/verify_source.py "$RUNNER_TEMP/postgres-evidence/source"[0m
+2026-09-26T04:06:53.4861245Z [36;1mpython ci/retention/verify_alignment.py "$RUNNER_TEMP/postgres-evidence/alignment.json"[0m
+2026-09-26T04:06:53.5107888Z shell: /usr/bin/bash -e {0}
+2026-09-26T04:06:53.5108196Z env:
+2026-09-26T04:06:53.5108505Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:06:53.5109044Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-26T04:06:53.5109559Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:06:53.5110028Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:06:53.5110486Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:06:53.5110945Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-26T04:06:53.5111371Z ##[endgroup]
+2026-09-26T04:06:53.6698196Z {"product_candidate_commit": "8f66ebfc2c54bd76de91d5062ccb444a7f43179f", "gate_commit": "42d71f4eb3a9efacf2f290e31ca1d763b2b77a4f", "application_tree": "85d01481aa5775f2f9e45673cd56786644c7b70f", "source_files": 1542, "source_tree_sha256": "628dfe93c9c56b2c8f3d76c61399c3ee6ae6fd706237a008ad0f83bf9288c2a6", "inherited_baseline_blob": "8eda2e86ad5164c0e8203a068026ef195cb3f995", "approved_overrides": [".pytest_cache/v/cache/nodeids", "alembic/versions/0134_flight_status_width.py", "alembic/versions/0135_go_ai_execution.py", "alembic/versions/0135_journey_search_trigram.py", "alembic/versions/0136_merge_go_ai_journey.py", "alembic/versions/0137_hosted_money_unknown_episode.py", "alembic/versions/0138_supplier_library_import.py", "alembic/versions/0139_hosted_publication_review.py", "ci/next_depth/c11_postgres.py", "ci/next_depth/c12_transaction_capacity.py", "docs/evidence/aoluguya-expanded-gallery-20260918/C13_REVIEW.json", "docs/evidence/aoluguya-expanded-gallery-20260918/FINAL_TEST.log", "docs/evidence/aoluguya-expanded-gallery-20260918/PR198_HISTORICAL_GALLERY_TEST.mjs.txt", "docs/evidence/aoluguya-expanded-gallery-20260918/PR198_HISTORICAL_TEST.log", "docs/evidence/aoluguya-expanded-gallery-20260918/REVIEW.md", "docs/evidence/aoluguya-expanded-gallery-20260918/SOURCE_PROVENANCE.json", "frontend/admin/config.js", "frontend/admin/hotel-direct-review.js", "frontend/admin/hotel-page-factory.js", "frontend/admin/index.html", "frontend/admin/rental-deposit-finance.js", "frontend/admin/ride-policy-operations.js", "frontend/consumer/app.js", "frontend/consumer/booking-travelers.js", "frontend/consumer/date-range.js", "frontend/consumer/flight-journeys.js", "frontend/consumer/index.html", "frontend/consumer/rental-after-sales.js", "frontend/consumer/rental-deposit.js", "frontend/consumer/rental-operations.js", "frontend/consumer/styles.css", "frontend/consumer/travel-status.js", "frontend/consumer/vi-reference-10.css", "frontend/shared/api.js", "frontend/shared/app.js", "frontend/shared/registration-terms.js", "frontend/shared/rental-operations.js", "frontend/supplier/config.js", "frontend/supplier/index.html", "mobile/go-app/scripts/contract-check.mjs", "mobile/go-app/src/components/MobilitySearchForm.tsx", "mobile/go-app/src/domain/bookingIntent.ts", "mobile/go-app/src/domain/mobilitySearchInput.ts", "mobile/go-app/src/domain/orderActions.ts", "mobile/go-app/src/screens/ChangeBookingScreen.tsx", "mobile/go-app/src/screens/CheckoutScreen.tsx", "mobile/go-app/src/screens/FlightTripDetailScreen.tsx", "mobile/go-app/src/screens/HomeScreen.tsx", "mobile/go-app/src/screens/HotelListScreen.tsx", "mobile/go-app/src/screens/MobilityTripDetailScreen.tsx", "mobile/go-app/src/screens/RentalSearchScreen.tsx", "mobile/go-app/src/screens/RideSearchScreen.tsx", "mobile/go-app/src/screens/TravelProfileImportScreen.tsx", "mobile/go-app/src/screens/TripsScreen.tsx", "mobile/go-app/src/screens/WalletScreen.tsx", "pyproject.toml", "scripts/acceptance_runtime.py", "scripts/fixtures/ride-cancellation.synthetic.json", "scripts/r82_rc142_external_sandbox_executor_gate.py", "scripts/staging_aoluguya_hosted_direct_bootstrap.py", "scripts/test_catalog_graph_visibility.py", "scripts/test_catalog_scope.py", "scripts/test_catalog_scope_postgres.py", "scripts/test_hotel_search_event_loop.py", "src/go_hotel/api/idempotency.py", "src/go_hotel/api/routes/attractions.py", "src/go_hotel/api/routes/bff.py", "src/go_hotel/api/routes/consumer_identity.py", "src/go_hotel/api/routes/consumer_unified_lifecycle.py", "src/go_hotel/api/routes/flight.py", "src/go_hotel/api/routes/hosted_direct_booking.py", "src/go_hotel/api/routes/hotel.py", "src/go_hotel/api/routes/hotel_autopage_factory.py", "src/go_hotel/api/routes/hotel_direct_submission.py", "src/go_hotel/api/routes/hotel_partner_core.py", "src/go_hotel/api/routes/journey.py", "src/go_hotel/api/routes/mobility.py", "src/go_hotel/api/routes/omnichannel_payment.py", "src/go_hotel/api/routes/operations_console.py", "src/go_hotel/api/routes/personal_travel_vault.py", "src/go_hotel/api/routes/registration_terms.py", "src/go_hotel/api/routes/rental_damage.py", "src/go_hotel/api/routes/rental_deposit.py", "src/go_hotel/api/routes/rental_deposit_money.py", "src/go_hotel/api/routes/rental_operations.py", "src/go_hotel/api/routes/ride_policy_operations.py", "src/go_hotel/attractions/policy_registry.py", "src/go_hotel/attractions/service.py", "src/go_hotel/autonomy/action_control.py", "src/go_hotel/autonomy/condition_evidence.py", "src/go_hotel/autonomy/types.py", "src/go_hotel/connectors/external_sandbox_runtime.py", "src/go_hotel/connectors/supplier_runtime_controls.py", "src/go_hotel/consumer/service.py", "src/go_hotel/core/config.py", "src/go_hotel/db/models.py", "src/go_hotel/flight/airports.py", "src/go_hotel/flight/coupon_authority.py", "src/go_hotel/flight/journeys.py", "src/go_hotel/go_ai/planner.py", "src/go_hotel/go_ai/service.py", "src/go_hotel/journey/service.py", "src/go_hotel/judgment/service.py", "src/go_hotel/legal/registration/2026-09-19-draft-v1/consumer_service_terms.md", "src/go_hotel/legal/registration/2026-09-19-draft-v1/data_processing_terms.md", "src/go_hotel/legal/registration/2026-09-19-draft-v1/electronic_signature_authorization.md", "src/go_hotel/legal/registration/2026-09-19-draft-v1/personal_vault_terms.md", "src/go_hotel/legal/registration/2026-09-19-draft-v1/platform_operating_rules.md", "src/go_hotel/legal/registration/2026-09-19-draft-v1/privacy_policy.md", "src/go_hotel/legal/registration/2026-09-19-draft-v1/registry.json", "src/go_hotel/legal/registration/2026-09-19-draft-v1/supplier_service_terms.md", "src/go_hotel/legal/registration/2026-09-19-draft-v2/consumer_service_terms.md", "src/go_hotel/legal/registration/2026-09-19-draft-v2/data_processing_terms.md", "src/go_hotel/legal/registration/2026-09-19-draft-v2/electronic_signature_authorization.md", "src/go_hotel/legal/registration/2026-09-19-draft-v2/personal_vault_terms.md", "src/go_hotel/legal/registration/2026-09-19-draft-v2/platform_operating_rules.md", "src/go_hotel/legal/registration/2026-09-19-draft-v2/privacy_policy.md", "src/go_hotel/legal/registration/2026-09-19-draft-v2/registry.json", "src/go_hotel/legal/registration/2026-09-19-draft-v2/supplier_service_terms.md", "src/go_hotel/main.py", "src/go_hotel/mobility/rental/damage.py", "src/go_hotel/mobility/rental/deposit_authority.py", "src/go_hotel/mobility/rental/reconciliation.py", "src/go_hotel/mobility/ride/cancellation_policy.py", "src/go_hotel/mobility/ride/policy_operations.py", "src/go_hotel/mobility/ride/recovery_evidence.py", "src/go_hotel/mobility/ride/refunds.py", "src/go_hotel/mobility/ride/service.py", "src/go_hotel/mobility/service.py", "src/go_hotel/queue/durable_regional.py", "src/go_hotel/rail/service.py", "src/go_hotel/repositories/sql.py", "src/go_hotel/routing/router.py", "src/go_hotel/security/deps.py", "src/go_hotel/security/external_navigation.py", "src/go_hotel/security/service.py", "src/go_hotel/services/alipay_safeguarded_settlement.py", "src/go_hotel/services/aoluguya_supply_truth.py", "src/go_hotel/services/booking.py", "src/go_hotel/services/catalog_fare_snapshot.py", "src/go_hotel/services/catalog_scope.py", "src/go_hotel/services/consumer_ota_comparison.py", "src/go_hotel/services/consumer_unified_lifecycle.py", "src/go_hotel/services/flight_change_resolution.py", "src/go_hotel/services/flight_command_lease.py", "src/go_hotel/services/hosted_content_acceptance.py", "src/go_hotel/services/hosted_direct_booking.py", "src/go_hotel/services/hosted_fare_rules.py", "src/go_hotel/services/hosted_frontdesk_uat.py", "src/go_hotel/services/hosted_money.py", "src/go_hotel/services/hosted_operation_authority.py", "src/go_hotel/services/hosted_publication.py", "src/go_hotel/services/hosted_reservation_operations.py", "src/go_hotel/services/hotel_autopage_factory.py", "src/go_hotel/services/hotel_cancellation_clock.py", "src/go_hotel/services/hotel_catalog_quality.py", "src/go_hotel/services/hotel_direct_submission_manifest.py", "src/go_hotel/services/hotel_direct_submission_publication.py", "src/go_hotel/services/hotel_direct_submission_review.py", "src/go_hotel/services/hotel_direct_submission_verification.py", "src/go_hotel/services/hotel_discovery_orchestrator.py", "src/go_hotel/services/hotel_infrastructure_p0.py", "src/go_hotel/services/hotel_original_verification_scope.py", "src/go_hotel/services/hotel_partner_core.py", "src/go_hotel/services/hotel_partner_media_upload.py", "src/go_hotel/services/omnichannel_payment.py", "src/go_hotel/services/order_supplier_fulfillment.py", "src/go_hotel/services/outbox.py", "src/go_hotel/services/payment_sandbox_runtime.py", "src/go_hotel/services/personal_travel_vault.py", "src/go_hotel/services/production_connector_runtime.py", "src/go_hotel/services/real_external_execution.py", "src/go_hotel/services/recovery.py", "src/go_hotel/services/regional_hotel_build.py", "src/go_hotel/services/registration_terms.py", "src/go_hotel/services/rental_deposit_money.py", "src/go_hotel/services/rental_deposit_review.py", "src/go_hotel/services/supplier_onboarding.py", "src/go_hotel/services/unified_money_movement.py", "src/go_hotel/services/vertical_lifecycle_projection.py", "src/go_hotel/services/vertical_transaction_bridge.py", "src/go_hotel/travel_intelligence/preferences.py", "src/go_hotel/travel_intelligence/service.py", "tests/autonomy/test_policy_lifecycle_binding.py", "tests/c07_preference_process_actor.py", "tests/conftest.py", "tests/flight/test_c02_airport_resolver.py", "tests/flight/test_c02_three_end_change_quote.py", "tests/go_ai/c08_hard_exit_worker.py", "tests/go_ai/test_c08_complete_task_plan.py", "tests/go_ai/test_c08_durable_execution.py", "tests/hosted_review_support.py", "tests/journey/test_c10_pagination_search.py", "tests/judgment/test_next_depth_concurrent_judgment.py", "tests/manual/HOTEL_LIBRARY_BROWSER_ACCEPTANCE.md", "tests/manual/hotel_library_browser_harness.py", "tests/manual/hotel_library_http_acceptance.py", "tests/payments/test_c11_deposit_compensation.py", "tests/payments/test_c11_deposit_ledger_width.py", "tests/payments/test_c11_deposit_maintained_award.py", "tests/payments/test_c11_deposit_operations_review.py", "tests/payments/test_c11_flight_idempotency_recovery.py", "tests/payments/test_c11_rental_deposit_money.py", "tests/payments/test_c11_ride_acceptance_guard.py", "tests/registration_terms_fixture.cjs", "tests/registration_terms_test_support.py", "tests/ride_cancellation_fixture.py", "tests/test_account_holder_http_integration.py", "tests/test_agent_native_lifecycle_p03.py", "tests/test_agent_transaction_gateway_six_vertical.py", "tests/test_agent_transaction_lifecycle_p02.py", "tests/test_alipay_safeguarded_settlement_activation.py", "tests/test_aoluguya_staging_bootstrap_cycle.py", "tests/test_c01_hosted_content_authority.py", "tests/test_c01_hosted_media_authority.py", "tests/test_c01_hosted_operating_journey.py", "tests/test_c03_c06_change_quote_fencing.py", "tests/test_c05_cancellation_policy.py", "tests/test_c05_engineering_currency.py", "tests/test_c05_policy_operations.py", "tests/test_c06_internal_policy_registry.py", "tests/test_c10_lifecycle_supplier_identity.py", "tests/test_c10_supplier_money_projection.py", "tests/test_c10_unknown_payment_projection.py", "tests/test_c11_consumer_payment_source_boundary.py", "tests/test_c12_capacity_harness_guards.py", "tests/test_catalog_scope_nationwide.py", "tests/test_catalog_scope_nationwide_ui.cjs", "tests/test_consumer_ota_acceptance_contract.py", "tests/test_consumer_ota_security_boundaries.py", "tests/test_consumer_registration_open.py", "tests/test_consumer_registration_ui.cjs", "tests/test_ctrip_rate_plan_identity.py", "tests/test_depth04_vault_management.py", "tests/test_depth05_flight_parties.py", "tests/test_depth06_direct_checkout.py", "tests/test_depth08_hosted_fare.py", "tests/test_depth18_regional_queue.py", "tests/test_depth19_ride_sync.py", "tests/test_depth23_capacity.py", "tests/test_depth25_migration_history.py", "tests/test_depth27_session_isolation.py", "tests/test_depth29_trip_reentry.py", "tests/test_depth30_native_api_contract.py", "tests/test_depth33_mobility_refund_consent.py", "tests/test_depth35_refresh_scope.py", "tests/test_depth42_cross_end_journeys.py", "tests/test_depth47_credit_original_deadline.py", "tests/test_depth48_flight_migration.py", "tests/test_external_order_money_projection.py", "tests/test_external_order_verification_clock.py", "tests/test_external_orders_in_go_trips.py", "tests/test_final_depth_terminal_hardening.py", "tests/test_final_depth_vault_booking_entry.py", "tests/test_first_go_hosted_direct_booking_pilot.py", "tests/test_guest_stay_fulfillment_settlement_eligibility.py", "tests/test_hosted_content_operations_acceptance.py", "tests/test_hosted_direct_reservation_operations.py", "tests/test_hosted_frontdesk_uat_daily_close.py", "tests/test_hotel_cancellation_clock.py", "tests/test_hotel_direct_review_ui.cjs", "tests/test_hotel_direct_submission_api.py", "tests/test_hotel_direct_submission_full_app.py", "tests/test_hotel_direct_submission_gallery_probe.py", "tests/test_hotel_direct_submission_inspection.py", "tests/test_hotel_direct_submission_manifest.py", "tests/test_hotel_direct_submission_publication.py", "tests/test_hotel_direct_submission_real_identity.py", "tests/test_hotel_direct_submission_review.py", "tests/test_hotel_direct_submission_verification.py", "tests/test_hotel_original_verification_scope.py", "tests/test_hotel_partner_media_publication.py", "tests/test_hotel_partner_media_upload.py", "tests/test_hotel_partner_selected_import.py", "tests/test_hotel_partner_self_operating_core.py", "tests/test_hotel_property_workspace.py", "tests/test_hotel_source_room_mapping.py", "tests/test_master03_closure.py", "tests/test_master03_inventory_security.py", "tests/test_member_comparison_quote_validity.py", "tests/test_member_product_comparability.py", "tests/test_nationwide_registration_full_app.py", "tests/test_next_depth_c06_supplier_validity.py", "tests/test_omnichannel_payment_finance_os.py", "tests/test_outbox_resilience.py", "tests/test_p0_0097_0098_rebuild.py", "tests/test_p0_0100_real_external_execution.py", "tests/test_p0_0101_postgres_race_matrix.py", "tests/test_p0_final_virtual_closure_stress.py", "tests/test_parent_implementation_code_review_debt_closure.py", "tests/test_personal_travel_vault.py", "tests/test_post_stay_dispute_refund_reconciliation.py", "tests/test_rc191_registration_vault_tiered_build.py", "tests/test_rc20_2_all_b_to_a.py", "tests/test_registration_terms_admission.py", "tests/test_registration_terms_reader.cjs", "tests/test_registration_terms_registry.py", "tests/test_rental_compensation_authority.py", "tests/test_rental_damage_disputes.py", "tests/test_rental_deposit_authority.py", "tests/test_rental_operations.py", "tests/test_round2_c07_explicit_preferences.py", "tests/test_sprint1y_consumer_identity.py", "tests/test_sprint1z_mobile.py", "tests/test_sprint2a_mobile_e2e.py", "tests/test_sprint2b_mobile_release.py", "tests/test_sprint3a_flight.py", "tests/test_sprint3b_rail.py", "tests/test_sprint3c_mobility.py", "tests/test_sprint3d_attractions.py", "tests/test_sprint3e_unified_trips.py", "tests/test_sprint3f_journey_intelligence.py", "tests/test_sprint3g_journey_recovery.py", "tests/test_supplier_hotel_import_ui.cjs", "tests/test_supplier_import_migration.py", "tests/test_supplier_onboarding_and_member_comparison.py", "tests/test_supplier_preflight_runtime.py", "tests/test_supplier_registration_nationwide.py", "tests/test_supplier_registration_ui.cjs", "tests/test_supplier_runtime_controls.py", "tests/test_unified_money_movement_finance_close.py", "tests/test_v70_next_c01_authorization_replay.py", "tests/test_v70_next_c01_unknown_funding.py", "tests/test_v70_next_c05_recovery_evidence.py", "tests/test_v70_r3_c02_coupon_authority.py", "tests/test_v70_r3_c04_admin_reconciliation.py", "tests/test_v70_r3_c04_http_get_zero_write.py", "tests/test_v70_r3_c05_current_unknown_episode.py", "tests/test_v70_r4_c01_unknown_episode.py", "tests/test_v70_r4_c05_episode_reference_reuse.py", "tests/test_v70_r4_c05_failed_episode.py", "tests/test_v70_r4_c07_consent_provenance.py", "tests/test_v70_r5_c05_concurrent_unknown.py", "tests/test_v70_r5_c06_raw_payload_binding.py", "tests/test_v70_r6_c02_partial_party_authority.py", "tests/test_v70_round2_c05_recovery_fulfillment.py", "tests_frontend/booking_intent.test.mjs", "tests_frontend/brand_v14.test.mjs", "tests_frontend/date_range.test.mjs", "tests_frontend/fixtures/aoluguya_hyatt_expanded_40_plan.json", "tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan.json", "tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan_legacy_jpeg.json", "tests_frontend/fixtures/aoluguya_normalized_ingest_plan.json", "tests_frontend/hotel_catalog_contacts.test.mjs", "tests_frontend/hotel_catalog_hyatt_gallery.test.mjs", "tests_frontend/hotel_catalog_reviewed_import.test.mjs", "tests_frontend/mobile_mobility_search_input.test.mjs", "tests_frontend/mobile_order_actions.test.mjs", "tests_frontend/native_api_bridge.mjs", "tests_frontend/rental_deposit_operations.test.mjs", "tests_frontend/rental_operations_adapter.test.mjs", "tests_frontend/ride_policy_operations.test.mjs"], "migration_head": "0139_hosted_publication_review", "byte_retention": "PASS", "deployment": "NOT_RUN", "final_release": "HOLD", "production": "HOLD"}
+2026-09-26T04:06:53.8680041Z {"commit": "42d71f4eb3a9efacf2f290e31ca1d763b2b77a4f", "product_candidate_commit": "8f66ebfc2c54bd76de91d5062ccb444a7f43179f", "application_tree": "85d01481aa5775f2f9e45673cd56786644c7b70f", "selected_source_files": 1542, "retained_baseline_files": 1300, "registered_acceptance_repairs": 144, "approved_integration_overrides": ["application/.pytest_cache/v/cache/nodeids", "application/alembic/versions/0134_flight_status_width.py", "application/alembic/versions/0135_go_ai_execution.py", "application/alembic/versions/0135_journey_search_trigram.py", "application/alembic/versions/0136_merge_go_ai_journey.py", "application/alembic/versions/0137_hosted_money_unknown_episode.py", "application/alembic/versions/0138_supplier_library_import.py", "application/alembic/versions/0139_hosted_publication_review.py", "application/ci/next_depth/c11_postgres.py", "application/ci/next_depth/c12_transaction_capacity.py", "application/docs/evidence/aoluguya-expanded-gallery-20260918/C13_REVIEW.json", "application/docs/evidence/aoluguya-expanded-gallery-20260918/FINAL_TEST.log", "application/docs/evidence/aoluguya-expanded-gallery-20260918/PR198_HISTORICAL_GALLERY_TEST.mjs.txt", "application/docs/evidence/aoluguya-expanded-gallery-20260918/PR198_HISTORICAL_TEST.log", "application/docs/evidence/aoluguya-expanded-gallery-20260918/REVIEW.md", "application/docs/evidence/aoluguya-expanded-gallery-20260918/SOURCE_PROVENANCE.json", "application/frontend/admin/config.js", "application/frontend/admin/hotel-direct-review.js", "application/frontend/admin/hotel-page-factory.js", "application/frontend/admin/index.html", "application/frontend/admin/rental-deposit-finance.js", "application/frontend/admin/ride-policy-operations.js", "application/frontend/consumer/app.js", "application/frontend/consumer/booking-travelers.js", "application/frontend/consumer/date-range.js", "application/frontend/consumer/flight-journeys.js", "application/frontend/consumer/index.html", "application/frontend/consumer/rental-after-sales.js", "application/frontend/consumer/rental-deposit.js", "application/frontend/consumer/rental-operations.js", "application/frontend/consumer/styles.css", "application/frontend/consumer/travel-status.js", "application/frontend/consumer/vi-reference-10.css", "application/frontend/shared/api.js", "application/frontend/shared/app.js", "application/frontend/shared/registration-terms.js", "application/frontend/shared/rental-operations.js", "application/frontend/supplier/config.js", "application/frontend/supplier/index.html", "application/mobile/go-app/scripts/contract-check.mjs", "application/mobile/go-app/src/components/MobilitySearchForm.tsx", "application/mobile/go-app/src/domain/bookingIntent.ts", "application/mobile/go-app/src/domain/mobilitySearchInput.ts", "application/mobile/go-app/src/domain/orderActions.ts", "application/mobile/go-app/src/screens/ChangeBookingScreen.tsx", "application/mobile/go-app/src/screens/CheckoutScreen.tsx", "application/mobile/go-app/src/screens/FlightTripDetailScreen.tsx", "application/mobile/go-app/src/screens/HomeScreen.tsx", "application/mobile/go-app/src/screens/HotelListScreen.tsx", "application/mobile/go-app/src/screens/MobilityTripDetailScreen.tsx", "application/mobile/go-app/src/screens/RentalSearchScreen.tsx", "application/mobile/go-app/src/screens/RideSearchScreen.tsx", "application/mobile/go-app/src/screens/TravelProfileImportScreen.tsx", "application/mobile/go-app/src/screens/TripsScreen.tsx", "application/mobile/go-app/src/screens/WalletScreen.tsx", "application/pyproject.toml", "application/scripts/acceptance_runtime.py", "application/scripts/fixtures/ride-cancellation.synthetic.json", "application/scripts/r82_rc142_external_sandbox_executor_gate.py", "application/scripts/staging_aoluguya_hosted_direct_bootstrap.py", "application/scripts/test_catalog_graph_visibility.py", "application/scripts/test_catalog_scope.py", "application/scripts/test_catalog_scope_postgres.py", "application/scripts/test_hotel_search_event_loop.py", "application/src/go_hotel/api/idempotency.py", "application/src/go_hotel/api/routes/attractions.py", "application/src/go_hotel/api/routes/bff.py", "application/src/go_hotel/api/routes/consumer_identity.py", "application/src/go_hotel/api/routes/consumer_unified_lifecycle.py", "application/src/go_hotel/api/routes/flight.py", "application/src/go_hotel/api/routes/hosted_direct_booking.py", "application/src/go_hotel/api/routes/hotel.py", "application/src/go_hotel/api/routes/hotel_autopage_factory.py", "application/src/go_hotel/api/routes/hotel_direct_submission.py", "application/src/go_hotel/api/routes/hotel_partner_core.py", "application/src/go_hotel/api/routes/journey.py", "application/src/go_hotel/api/routes/mobility.py", "application/src/go_hotel/api/routes/omnichannel_payment.py", "application/src/go_hotel/api/routes/operations_console.py", "application/src/go_hotel/api/routes/personal_travel_vault.py", "application/src/go_hotel/api/routes/registration_terms.py", "application/src/go_hotel/api/routes/rental_damage.py", "application/src/go_hotel/api/routes/rental_deposit.py", "application/src/go_hotel/api/routes/rental_deposit_money.py", "application/src/go_hotel/api/routes/rental_operations.py", "application/src/go_hotel/api/routes/ride_policy_operations.py", "application/src/go_hotel/attractions/policy_registry.py", "application/src/go_hotel/attractions/service.py", "application/src/go_hotel/autonomy/action_control.py", "application/src/go_hotel/autonomy/condition_evidence.py", "application/src/go_hotel/autonomy/types.py", "application/src/go_hotel/connectors/external_sandbox_runtime.py", "application/src/go_hotel/connectors/supplier_runtime_controls.py", "application/src/go_hotel/consumer/service.py", "application/src/go_hotel/core/config.py", "application/src/go_hotel/db/models.py", "application/src/go_hotel/flight/airports.py", "application/src/go_hotel/flight/coupon_authority.py", "application/src/go_hotel/flight/journeys.py", "application/src/go_hotel/go_ai/planner.py", "application/src/go_hotel/go_ai/service.py", "application/src/go_hotel/journey/service.py", "application/src/go_hotel/judgment/service.py", "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/consumer_service_terms.md", "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/data_processing_terms.md", "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/electronic_signature_authorization.md", "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/personal_vault_terms.md", "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/platform_operating_rules.md", "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/privacy_policy.md", "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/registry.json", "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/supplier_service_terms.md", "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/consumer_service_terms.md", "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/data_processing_terms.md", "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/electronic_signature_authorization.md", "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/personal_vault_terms.md", "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/platform_operating_rules.md", "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/privacy_policy.md", "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/registry.json", "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/supplier_service_terms.md", "application/src/go_hotel/main.py", "application/src/go_hotel/mobility/rental/damage.py", "application/src/go_hotel/mobility/rental/deposit_authority.py", "application/src/go_hotel/mobility/rental/reconciliation.py", "application/src/go_hotel/mobility/ride/cancellation_policy.py", "application/src/go_hotel/mobility/ride/policy_operations.py", "application/src/go_hotel/mobility/ride/recovery_evidence.py", "application/src/go_hotel/mobility/ride/refunds.py", "application/src/go_hotel/mobility/ride/service.py", "application/src/go_hotel/mobility/service.py", "application/src/go_hotel/queue/durable_regional.py", "application/src/go_hotel/rail/service.py", "application/src/go_hotel/repositories/sql.py", "application/src/go_hotel/routing/router.py", "application/src/go_hotel/security/deps.py", "application/src/go_hotel/security/external_navigation.py", "application/src/go_hotel/security/service.py", "application/src/go_hotel/services/alipay_safeguarded_settlement.py", "application/src/go_hotel/services/aoluguya_supply_truth.py", "application/src/go_hotel/services/booking.py", "application/src/go_hotel/services/catalog_fare_snapshot.py", "application/src/go_hotel/services/catalog_scope.py", "application/src/go_hotel/services/consumer_ota_comparison.py", "application/src/go_hotel/services/consumer_unified_lifecycle.py", "application/src/go_hotel/services/flight_change_resolution.py", "application/src/go_hotel/services/flight_command_lease.py", "application/src/go_hotel/services/hosted_content_acceptance.py", "application/src/go_hotel/services/hosted_direct_booking.py", "application/src/go_hotel/services/hosted_fare_rules.py", "application/src/go_hotel/services/hosted_frontdesk_uat.py", "application/src/go_hotel/services/hosted_money.py", "application/src/go_hotel/services/hosted_operation_authority.py", "application/src/go_hotel/services/hosted_publication.py", "application/src/go_hotel/services/hosted_reservation_operations.py", "application/src/go_hotel/services/hotel_autopage_factory.py", "application/src/go_hotel/services/hotel_cancellation_clock.py", "application/src/go_hotel/services/hotel_catalog_quality.py", "application/src/go_hotel/services/hotel_direct_submission_manifest.py", "application/src/go_hotel/services/hotel_direct_submission_publication.py", "application/src/go_hotel/services/hotel_direct_submission_review.py", "application/src/go_hotel/services/hotel_direct_submission_verification.py", "application/src/go_hotel/services/hotel_discovery_orchestrator.py", "application/src/go_hotel/services/hotel_infrastructure_p0.py", "application/src/go_hotel/services/hotel_original_verification_scope.py", "application/src/go_hotel/services/hotel_partner_core.py", "application/src/go_hotel/services/hotel_partner_media_upload.py", "application/src/go_hotel/services/omnichannel_payment.py", "application/src/go_hotel/services/order_supplier_fulfillment.py", "application/src/go_hotel/services/outbox.py", "application/src/go_hotel/services/payment_sandbox_runtime.py", "application/src/go_hotel/services/personal_travel_vault.py", "application/src/go_hotel/services/production_connector_runtime.py", "application/src/go_hotel/services/real_external_execution.py", "application/src/go_hotel/services/recovery.py", "application/src/go_hotel/services/regional_hotel_build.py", "application/src/go_hotel/services/registration_terms.py", "application/src/go_hotel/services/rental_deposit_money.py", "application/src/go_hotel/services/rental_deposit_review.py", "application/src/go_hotel/services/supplier_onboarding.py", "application/src/go_hotel/services/unified_money_movement.py", "application/src/go_hotel/services/vertical_lifecycle_projection.py", "application/src/go_hotel/services/vertical_transaction_bridge.py", "application/src/go_hotel/travel_intelligence/preferences.py", "application/src/go_hotel/travel_intelligence/service.py", "application/tests/autonomy/test_policy_lifecycle_binding.py", "application/tests/c07_preference_process_actor.py", "application/tests/conftest.py", "application/tests/flight/test_c02_airport_resolver.py", "application/tests/flight/test_c02_three_end_change_quote.py", "application/tests/go_ai/c08_hard_exit_worker.py", "application/tests/go_ai/test_c08_complete_task_plan.py", "application/tests/go_ai/test_c08_durable_execution.py", "application/tests/hosted_review_support.py", "application/tests/journey/test_c10_pagination_search.py", "application/tests/judgment/test_next_depth_concurrent_judgment.py", "application/tests/manual/HOTEL_LIBRARY_BROWSER_ACCEPTANCE.md", "application/tests/manual/hotel_library_browser_harness.py", "application/tests/manual/hotel_library_http_acceptance.py", "application/tests/payments/test_c11_deposit_compensation.py", "application/tests/payments/test_c11_deposit_ledger_width.py", "application/tests/payments/test_c11_deposit_maintained_award.py", "application/tests/payments/test_c11_deposit_operations_review.py", "application/tests/payments/test_c11_flight_idempotency_recovery.py", "application/tests/payments/test_c11_rental_deposit_money.py", "application/tests/payments/test_c11_ride_acceptance_guard.py", "application/tests/registration_terms_fixture.cjs", "application/tests/registration_terms_test_support.py", "application/tests/ride_cancellation_fixture.py", "application/tests/test_account_holder_http_integration.py", "application/tests/test_agent_native_lifecycle_p03.py", "application/tests/test_agent_transaction_gateway_six_vertical.py", "application/tests/test_agent_transaction_lifecycle_p02.py", "application/tests/test_alipay_safeguarded_settlement_activation.py", "application/tests/test_aoluguya_staging_bootstrap_cycle.py", "application/tests/test_c01_hosted_content_authority.py", "application/tests/test_c01_hosted_media_authority.py", "application/tests/test_c01_hosted_operating_journey.py", "application/tests/test_c03_c06_change_quote_fencing.py", "application/tests/test_c05_cancellation_policy.py", "application/tests/test_c05_engineering_currency.py", "application/tests/test_c05_policy_operations.py", "application/tests/test_c06_internal_policy_registry.py", "application/tests/test_c10_lifecycle_supplier_identity.py", "application/tests/test_c10_supplier_money_projection.py", "application/tests/test_c10_unknown_payment_projection.py", "application/tests/test_c11_consumer_payment_source_boundary.py", "application/tests/test_c12_capacity_harness_guards.py", "application/tests/test_catalog_scope_nationwide.py", "application/tests/test_catalog_scope_nationwide_ui.cjs", "application/tests/test_consumer_ota_acceptance_contract.py", "application/tests/test_consumer_ota_security_boundaries.py", "application/tests/test_consumer_registration_open.py", "application/tests/test_consumer_registration_ui.cjs", "application/tests/test_ctrip_rate_plan_identity.py", "application/tests/test_depth04_vault_management.py", "application/tests/test_depth05_flight_parties.py", "application/tests/test_depth06_direct_checkout.py", "application/tests/test_depth08_hosted_fare.py", "application/tests/test_depth18_regional_queue.py", "application/tests/test_depth19_ride_sync.py", "application/tests/test_depth23_capacity.py", "application/tests/test_depth25_migration_history.py", "application/tests/test_depth27_session_isolation.py", "application/tests/test_depth29_trip_reentry.py", "application/tests/test_depth30_native_api_contract.py", "application/tests/test_depth33_mobility_refund_consent.py", "application/tests/test_depth35_refresh_scope.py", "application/tests/test_depth42_cross_end_journeys.py", "application/tests/test_depth47_credit_original_deadline.py", "application/tests/test_depth48_flight_migration.py", "application/tests/test_external_order_money_projection.py", "application/tests/test_external_order_verification_clock.py", "application/tests/test_external_orders_in_go_trips.py", "application/tests/test_final_depth_terminal_hardening.py", "application/tests/test_final_depth_vault_booking_entry.py", "application/tests/test_first_go_hosted_direct_booking_pilot.py", "application/tests/test_guest_stay_fulfillment_settlement_eligibility.py", "application/tests/test_hosted_content_operations_acceptance.py", "application/tests/test_hosted_direct_reservation_operations.py", "application/tests/test_hosted_frontdesk_uat_daily_close.py", "application/tests/test_hotel_cancellation_clock.py", "application/tests/test_hotel_direct_review_ui.cjs", "application/tests/test_hotel_direct_submission_api.py", "application/tests/test_hotel_direct_submission_full_app.py", "application/tests/test_hotel_direct_submission_gallery_probe.py", "application/tests/test_hotel_direct_submission_inspection.py", "application/tests/test_hotel_direct_submission_manifest.py", "application/tests/test_hotel_direct_submission_publication.py", "application/tests/test_hotel_direct_submission_real_identity.py", "application/tests/test_hotel_direct_submission_review.py", "application/tests/test_hotel_direct_submission_verification.py", "application/tests/test_hotel_original_verification_scope.py", "application/tests/test_hotel_partner_media_publication.py", "application/tests/test_hotel_partner_media_upload.py", "application/tests/test_hotel_partner_selected_import.py", "application/tests/test_hotel_partner_self_operating_core.py", "application/tests/test_hotel_property_workspace.py", "application/tests/test_hotel_source_room_mapping.py", "application/tests/test_master03_closure.py", "application/tests/test_master03_inventory_security.py", "application/tests/test_member_comparison_quote_validity.py", "application/tests/test_member_product_comparability.py", "application/tests/test_nationwide_registration_full_app.py", "application/tests/test_next_depth_c06_supplier_validity.py", "application/tests/test_omnichannel_payment_finance_os.py", "application/tests/test_outbox_resilience.py", "application/tests/test_p0_0097_0098_rebuild.py", "application/tests/test_p0_0100_real_external_execution.py", "application/tests/test_p0_0101_postgres_race_matrix.py", "application/tests/test_p0_final_virtual_closure_stress.py", "application/tests/test_parent_implementation_code_review_debt_closure.py", "application/tests/test_personal_travel_vault.py", "application/tests/test_post_stay_dispute_refund_reconciliation.py", "application/tests/test_rc191_registration_vault_tiered_build.py", "application/tests/test_rc20_2_all_b_to_a.py", "application/tests/test_registration_terms_admission.py", "application/tests/test_registration_terms_reader.cjs", "application/tests/test_registration_terms_registry.py", "application/tests/test_rental_compensation_authority.py", "application/tests/test_rental_damage_disputes.py", "application/tests/test_rental_deposit_authority.py", "application/tests/test_rental_operations.py", "application/tests/test_round2_c07_explicit_preferences.py", "application/tests/test_sprint1y_consumer_identity.py", "application/tests/test_sprint1z_mobile.py", "application/tests/test_sprint2a_mobile_e2e.py", "application/tests/test_sprint2b_mobile_release.py", "application/tests/test_sprint3a_flight.py", "application/tests/test_sprint3b_rail.py", "application/tests/test_sprint3c_mobility.py", "application/tests/test_sprint3d_attractions.py", "application/tests/test_sprint3e_unified_trips.py", "application/tests/test_sprint3f_journey_intelligence.py", "application/tests/test_sprint3g_journey_recovery.py", "application/tests/test_supplier_hotel_import_ui.cjs", "application/tests/test_supplier_import_migration.py", "application/tests/test_supplier_onboarding_and_member_comparison.py", "application/tests/test_supplier_preflight_runtime.py", "application/tests/test_supplier_registration_nationwide.py", "application/tests/test_supplier_registration_ui.cjs", "application/tests/test_supplier_runtime_controls.py", "application/tests/test_unified_money_movement_finance_close.py", "application/tests/test_v70_next_c01_authorization_replay.py", "application/tests/test_v70_next_c01_unknown_funding.py", "application/tests/test_v70_next_c05_recovery_evidence.py", "application/tests/test_v70_r3_c02_coupon_authority.py", "application/tests/test_v70_r3_c04_admin_reconciliation.py", "application/tests/test_v70_r3_c04_http_get_zero_write.py", "application/tests/test_v70_r3_c05_current_unknown_episode.py", "application/tests/test_v70_r4_c01_unknown_episode.py", "application/tests/test_v70_r4_c05_episode_reference_reuse.py", "application/tests/test_v70_r4_c05_failed_episode.py", "application/tests/test_v70_r4_c07_consent_provenance.py", "application/tests/test_v70_r5_c05_concurrent_unknown.py", "application/tests/test_v70_r5_c06_raw_payload_binding.py", "application/tests/test_v70_r6_c02_partial_party_authority.py", "application/tests/test_v70_round2_c05_recovery_fulfillment.py", "application/tests_frontend/booking_intent.test.mjs", "application/tests_frontend/brand_v14.test.mjs", "application/tests_frontend/date_range.test.mjs", "application/tests_frontend/fixtures/aoluguya_hyatt_expanded_40_plan.json", "application/tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan.json", "application/tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan_legacy_jpeg.json", "application/tests_frontend/fixtures/aoluguya_normalized_ingest_plan.json", "application/tests_frontend/hotel_catalog_contacts.test.mjs", "application/tests_frontend/hotel_catalog_hyatt_gallery.test.mjs", "application/tests_frontend/hotel_catalog_reviewed_import.test.mjs", "application/tests_frontend/mobile_mobility_search_input.test.mjs", "application/tests_frontend/mobile_order_actions.test.mjs", "application/tests_frontend/native_api_bridge.mjs", "application/tests_frontend/rental_deposit_operations.test.mjs", "application/tests_frontend/rental_operations_adapter.test.mjs", "application/tests_frontend/ride_policy_operations.test.mjs"], "selection_counts": {"BOTH": 1264, "PR47": 35, "PR48": 1}, "pr47_application_changes": ["application/frontend/shared/app.js"], "archived_tooling_files": 8, "alignment": "PASS", "migration_head": "0139_hosted_publication_review", "historical_pass_transferred": false, "full_three_end_ux": "HOLD", "six_vertical_closed_loop": "HOLD", "sealed_node": "HOLD", "final_release": "HOLD"}
+2026-09-26T04:06:53.8865196Z ##[group]Run python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
+2026-09-26T04:06:53.8866272Z [36;1mpython ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"[0m
+2026-09-26T04:06:53.8867587Z [36;1mpython -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock[0m
+2026-09-26T04:06:53.8936809Z shell: /usr/bin/bash -e {0}
+2026-09-26T04:06:53.8937063Z env:
+2026-09-26T04:06:53.8937329Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:06:53.8937797Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-26T04:06:53.8938233Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:06:53.8938634Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:06:53.8939022Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:06:53.8939431Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-26T04:06:53.8939750Z ##[endgroup]
+2026-09-26T04:06:54.0758598Z {"archive_sha256": "b13a76ab9351f81da70e8e2c8873c20141abe953cd3f96aeb181ef86a34b58dd", "verified_wheels": 37, "source": "pinned GO repository ci/dependency_parts only", "application_source_restored": false}
+2026-09-26T04:06:54.4707131Z Looking in links: /home/runner/work/_temp/frozen/wheelhouse
+2026-09-26T04:06:54.4837689Z Processing /home/runner/work/_temp/frozen/wheelhouse/alembic-1.16.5-py3-none-any.whl (from -r ci/retention/requirements.lock (line 1))
+2026-09-26T04:06:54.4894615Z Processing /home/runner/work/_temp/frozen/wheelhouse/annotated_doc-0.0.4-py3-none-any.whl (from -r ci/retention/requirements.lock (line 2))
+2026-09-26T04:06:54.4924151Z Processing /home/runner/work/_temp/frozen/wheelhouse/annotated_types-0.7.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 3))
+2026-09-26T04:06:54.4956161Z Processing /home/runner/work/_temp/frozen/wheelhouse/anyio-4.13.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 4))
+2026-09-26T04:06:54.5007217Z Processing /home/runner/work/_temp/frozen/wheelhouse/certifi-2026.5.20-py3-none-any.whl (from -r ci/retention/requirements.lock (line 5))
+2026-09-26T04:06:54.5050904Z Processing /home/runner/work/_temp/frozen/wheelhouse/cffi-2.0.0-cp313-cp313-manylinux_2_17_x86_64.whl (from -r ci/retention/requirements.lock (line 6))
+2026-09-26T04:06:54.5109729Z Processing /home/runner/work/_temp/frozen/wheelhouse/click-8.5.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 7))
+2026-09-26T04:06:54.5115311Z Processing /home/runner/work/_temp/frozen/wheelhouse/cryptography-46.0.4-cp311-abi3-manylinux_2_34_x86_64.whl (from -r ci/retention/requirements.lock (line 8))
+2026-09-26T04:06:54.5221195Z Processing /home/runner/work/_temp/frozen/wheelhouse/fastapi-0.128.2-py3-none-any.whl (from -r ci/retention/requirements.lock (line 9))
+2026-09-26T04:06:54.5288721Z Processing /home/runner/work/_temp/frozen/wheelhouse/greenlet-3.5.1-cp313-cp313-manylinux_2_24_x86_64.whl (from -r ci/retention/requirements.lock (line 10))
+2026-09-26T04:06:54.5329524Z Processing /home/runner/work/_temp/frozen/wheelhouse/h11-0.16.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 11))
+2026-09-26T04:06:54.5357056Z Processing /home/runner/work/_temp/frozen/wheelhouse/httpcore-1.0.9-py3-none-any.whl (from -r ci/retention/requirements.lock (line 12))
+2026-09-26T04:06:54.5396327Z Processing /home/runner/work/_temp/frozen/wheelhouse/httpx-0.28.1-py3-none-any.whl (from -r ci/retention/requirements.lock (line 13))
+2026-09-26T04:06:54.5430902Z Processing /home/runner/work/_temp/frozen/wheelhouse/idna-3.17-py3-none-any.whl (from -r ci/retention/requirements.lock (line 14))
+2026-09-26T04:06:54.5461567Z Processing /home/runner/work/_temp/frozen/wheelhouse/iniconfig-2.3.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 15))
+2026-09-26T04:06:54.5491435Z Processing /home/runner/work/_temp/frozen/wheelhouse/mako-1.3.10-py3-none-any.whl (from -r ci/retention/requirements.lock (line 16))
+2026-09-26T04:06:54.5520960Z Processing /home/runner/work/_temp/frozen/wheelhouse/markupsafe-3.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from -r ci/retention/requirements.lock (line 17))
+2026-09-26T04:06:54.5545011Z Processing /home/runner/work/_temp/frozen/wheelhouse/packaging-25.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 18))
+2026-09-26T04:06:54.5597135Z Processing /home/runner/work/_temp/frozen/wheelhouse/pillow-12.3.0-cp313-cp313-manylinux_2_27_x86_64.whl (from -r ci/retention/requirements.lock (line 19))
+2026-09-26T04:06:54.5697125Z Processing /home/runner/work/_temp/frozen/wheelhouse/pluggy-1.6.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 20))
+2026-09-26T04:06:54.5728459Z Processing /home/runner/work/_temp/frozen/wheelhouse/psycopg_binary-3.2.10-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from -r ci/retention/requirements.lock (line 21))
+2026-09-26T04:06:54.5793990Z Processing /home/runner/work/_temp/frozen/wheelhouse/psycopg-3.2.10-py3-none-any.whl (from -r ci/retention/requirements.lock (line 22))
+2026-09-26T04:06:54.5850988Z Processing /home/runner/work/_temp/frozen/wheelhouse/pycparser-3.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 23))
+2026-09-26T04:06:54.5880534Z Processing /home/runner/work/_temp/frozen/wheelhouse/pydantic_settings-2.14.1-py3-none-any.whl (from -r ci/retention/requirements.lock (line 24))
+2026-09-26T04:06:54.5912653Z Processing /home/runner/work/_temp/frozen/wheelhouse/pydantic-2.13.4-py3-none-any.whl (from -r ci/retention/requirements.lock (line 25))
+2026-09-26T04:06:54.5993977Z Processing /home/runner/work/_temp/frozen/wheelhouse/pydantic_core-2.46.4-cp313-cp313-manylinux_2_17_x86_64.whl (from -r ci/retention/requirements.lock (line 26))
+2026-09-26T04:06:54.6067426Z Processing /home/runner/work/_temp/frozen/wheelhouse/Pygments-2.20.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 27))
+2026-09-26T04:06:54.6177151Z Processing /home/runner/work/_temp/frozen/wheelhouse/PyJWT-2.13.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 28))
+2026-09-26T04:06:54.6208190Z Processing /home/runner/work/_temp/frozen/wheelhouse/pytest_asyncio-1.3.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 29))
+2026-09-26T04:06:54.6241032Z Processing /home/runner/work/_temp/frozen/wheelhouse/pytest-9.0.2-py3-none-any.whl (from -r ci/retention/requirements.lock (line 30))
+2026-09-26T04:06:54.6295359Z Processing /home/runner/work/_temp/frozen/wheelhouse/python_dotenv-1.2.2-py3-none-any.whl (from -r ci/retention/requirements.lock (line 31))
+2026-09-26T04:06:54.6334521Z Processing /home/runner/work/_temp/frozen/wheelhouse/redis-5.2.1-py3-none-any.whl (from -r ci/retention/requirements.lock (line 32))
+2026-09-26T04:06:54.6372490Z Processing /home/runner/work/_temp/frozen/wheelhouse/SQLAlchemy-2.0.50-cp313-cp313-manylinux_2_17_x86_64.whl (from -r ci/retention/requirements.lock (line 33))
+2026-09-26T04:06:54.6543230Z Processing /home/runner/work/_temp/frozen/wheelhouse/starlette-0.50.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 34))
+2026-09-26T04:06:54.6592586Z Processing /home/runner/work/_temp/frozen/wheelhouse/typing_inspection-0.4.2-py3-none-any.whl (from -r ci/retention/requirements.lock (line 35))
+2026-09-26T04:06:54.6626352Z Processing /home/runner/work/_temp/frozen/wheelhouse/typing_extensions-4.16.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 36))
+2026-09-26T04:06:54.6677528Z Processing /home/runner/work/_temp/frozen/wheelhouse/uvicorn-0.35.0-py3-none-any.whl (from -r ci/retention/requirements.lock (line 37))
+2026-09-26T04:06:54.8635392Z Installing collected packages: typing_extensions, redis, python-dotenv, PyJWT, Pygments, pycparser, psycopg-binary, psycopg, pluggy, Pillow, packaging, MarkupSafe, iniconfig, idna, h11, greenlet, click, certifi, annotated-types, annotated-doc, uvicorn, typing-inspection, SQLAlchemy, pytest, pydantic_core, Mako, httpcore, cffi, anyio, starlette, pytest-asyncio, pydantic, httpx, cryptography, alembic, pydantic-settings, fastapi
+2026-09-26T04:07:00.5349955Z 
+2026-09-26T04:07:00.5398157Z Successfully installed Mako-1.3.10 MarkupSafe-3.0.3 Pillow-12.3.0 PyJWT-2.13.0 Pygments-2.20.0 SQLAlchemy-2.0.50 alembic-1.16.5 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.13.0 certifi-2026.5.20 cffi-2.0.0 click-8.5.0 cryptography-46.0.4 fastapi-0.128.2 greenlet-3.5.1 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.17 iniconfig-2.3.0 packaging-25.0 pluggy-1.6.0 psycopg-3.2.10 psycopg-binary-3.2.10 pycparser-3.0 pydantic-2.13.4 pydantic-settings-2.14.1 pydantic_core-2.46.4 pytest-9.0.2 pytest-asyncio-1.3.0 python-dotenv-1.2.2 redis-5.2.1 starlette-0.50.0 typing-inspection-0.4.2 typing_extensions-4.16.0 uvicorn-0.35.0
+2026-09-26T04:07:00.5921744Z ##[group]Run python -B ci/depth47/postgres.py
+2026-09-26T04:07:00.5922164Z [36;1mpython -B ci/depth47/postgres.py[0m
+2026-09-26T04:07:00.5986958Z shell: /usr/bin/bash -e {0}
+2026-09-26T04:07:00.5987210Z env:
+2026-09-26T04:07:00.5987476Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:07:00.5987918Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-26T04:07:00.5988345Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:07:00.5988724Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:07:00.5989119Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:07:00.5989495Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-26T04:07:00.5989828Z   PYTHONPATH: application/src
+2026-09-26T04:07:00.5990069Z ##[endgroup]
+2026-09-26T04:07:07.8281285Z .migration] Running upgrade 0090_go_identity_entitlements -> 0091_go_offer_order_handoff
+2026-09-26T04:07:07.8287528Z INFO  [alembic.runtime.migration] Running upgrade 0091_go_offer_order_handoff -> 0092_d6ac03c98590
+2026-09-26T04:07:07.8363837Z INFO  [alembic.runtime.migration] Running upgrade 0092_d6ac03c98590 -> 0093_f656e2fd0f65
+2026-09-26T04:07:07.8386668Z INFO  [alembic.runtime.migration] Running upgrade 0093_f656e2fd0f65 -> 0094_c3116e73c367
+2026-09-26T04:07:07.8412856Z INFO  [alembic.runtime.migration] Running upgrade 0094_c3116e73c367 -> 0095_59ac5a29f1d5
+2026-09-26T04:07:07.8414223Z INFO  [alembic.runtime.migration] Running upgrade 0095_59ac5a29f1d5 -> 0096_e63794766c0d
+2026-09-26T04:07:07.8420493Z INFO  [alembic.runtime.migration] Running upgrade 0096_e63794766c0d -> 0097_vertical_source_runtime
+2026-09-26T04:07:07.8427763Z INFO  [alembic.runtime.migration] Running upgrade 0097_vertical_source_runtime -> 0098_1372d8c45b6f
+2026-09-26T04:07:07.8428896Z INFO  [alembic.runtime.migration] Running upgrade 0098_1372d8c45b6f -> 0099_e9ab838ca46d
+2026-09-26T04:07:07.8430430Z INFO  [alembic.runtime.migration] Running upgrade 0099_e9ab838ca46d -> 0100_159ffd29a7f8, P0 0100 real external execution and certified sandbox closure evidence.
+2026-09-26T04:07:07.8432427Z INFO  [alembic.runtime.migration] Running upgrade 0100_159ffd29a7f8 -> 0101_7ae44f334cf0, P0 0101 named provider certification evidence and PostgreSQL race proof registry.
+2026-09-26T04:07:07.8434583Z INFO  [alembic.runtime.migration] Running upgrade 0101_7ae44f334cf0 -> 0102_p0_final_closure_program, P0 Final Closure Program: immutable requirement-to-code-to-runtime evidence registry.
+2026-09-26T04:07:07.8436735Z INFO  [alembic.runtime.migration] Running upgrade 0102_p0_final_closure_program -> 0103_p0_design_code_freeze, P0 design/code freeze marker.
+2026-09-26T04:07:07.8438398Z INFO  [alembic.runtime.migration] Running upgrade 0103_p0_design_code_freeze -> 0104_529182b87c94, GO AI multi-model aggregation audit registry.
+2026-09-26T04:07:07.8440265Z INFO  [alembic.runtime.migration] Running upgrade 0104_529182b87c94 -> 0105_hotel_autopage_factory, GO Hotel AutoPage Factory: multi-source content graph, prebuilt pages, contacts and claims.
+2026-09-26T04:07:07.8442624Z INFO  [alembic.runtime.migration] Running upgrade 0105_hotel_autopage_factory -> 0106_449aeedcd91d, Replace hotel claim terminology with registration + official association.
+2026-09-26T04:07:07.8444529Z INFO  [alembic.runtime.migration] Running upgrade 0106_449aeedcd91d -> 0107_166151c9cc6e, Replace official-association vocabulary with official-direct lifecycle.
+2026-09-26T04:07:07.8446604Z INFO  [alembic.runtime.migration] Running upgrade 0107_166151c9cc6e -> 0108_hotel_go_direct_semantics, Make GO Direct the single product vocabulary for hotel registration lifecycle.
+2026-09-26T04:07:07.8448500Z INFO  [alembic.runtime.migration] Running upgrade 0108_hotel_go_direct_semantics -> 0109_bf96588075fe, GO Personal Travel Vault + Universal Import master baseline.
+2026-09-26T04:07:07.8450406Z INFO  [alembic.runtime.migration] Running upgrade 0109_bf96588075fe -> 0110_7012f1955180, GO Consumer Growth + Official Direct Value Constitution V5.3.
+2026-09-26T04:07:07.8451894Z INFO  [alembic.runtime.migration] Running upgrade 0110_7012f1955180 -> 0111_test_account_expiry, R7 compatibility lineage node for staging test-account expiry.
+2026-09-26T04:07:07.8453376Z INFO  [alembic.runtime.migration] Running upgrade 0111_test_account_expiry -> 0112_ti_p0_20260829, Travel Intelligence Layer 1.0 P0 implementation.
+2026-09-26T04:07:07.8454885Z INFO  [alembic.runtime.migration] Running upgrade 0112_ti_p0_20260829 -> 0113_ext_truth_ops_20260901, External truth operator workflow governance.
+2026-09-26T04:07:07.8456772Z INFO  [alembic.runtime.migration] Running upgrade 0113_ext_truth_ops_20260901 -> 0114_ext_truth_incident_hard, External truth incident evidence and replay hardening.
+2026-09-26T04:07:07.8458757Z INFO  [alembic.runtime.migration] Running upgrade 0114_ext_truth_incident_hard -> 0115_rental_change_settlement, Durable rental reprice quotes and original-payment refund plans.
+2026-09-26T04:07:07.8460887Z INFO  [alembic.runtime.migration] Running upgrade 0115_rental_change_settlement -> 0116_hosted_fare_snapshot, Versioned hotel rules, immutable order snapshots and executable fare quotes.
+2026-09-26T04:07:07.8463044Z INFO  [alembic.runtime.migration] Running upgrade 0116_hosted_fare_snapshot -> 0117_hosted_stay_credit, Funded property credit, allocation/value ledger and original-source refund plans.
+2026-09-26T04:07:07.8465181Z INFO  [alembic.runtime.migration] Running upgrade 0117_hosted_stay_credit -> 0118_hosted_supplier_disruption, Independent hotel disruption decisions and scoped fault debit mandates.
+2026-09-26T04:07:07.8467576Z INFO  [alembic.runtime.migration] Running upgrade 0118_hosted_supplier_disruption -> 0119_catalog_supplier_remedy, Independent legacy hotel remedy execution; preserve historical cases and hosted data.
+2026-09-26T04:07:07.8469886Z INFO  [alembic.runtime.migration] Running upgrade 0119_catalog_supplier_remedy -> 0120_catalog_stay_credit, Funded catalog credit contracts; do not manufacture facts for historical credits.
+2026-09-26T04:07:07.8472078Z INFO  [alembic.runtime.migration] Running upgrade 0120_catalog_stay_credit -> 0121_catalog_fare_snapshot, Versioned catalog rules and new order acceptance; no invented historical acceptance.
+2026-09-26T04:07:07.8474192Z INFO  [alembic.runtime.migration] Running upgrade 0121_catalog_fare_snapshot -> 0122_catalog_cash_fare, Durable ordinary cash after-sales; historical quotes remain unaccepted.
+2026-09-26T04:07:07.8476500Z INFO  [alembic.runtime.migration] Running upgrade 0122_catalog_cash_fare -> 0123_catalog_credit_exclusion, Separate previously forfeited cash value from prepaid credit source budgets.
+2026-09-26T04:07:07.8478512Z INFO  [alembic.runtime.migration] Running upgrade 0123_catalog_credit_exclusion -> 0124_autonomy_durable, Durable governed task execution; existing business schema remains intact.
+2026-09-26T04:07:07.8480385Z INFO  [alembic.runtime.migration] Running upgrade 0124_autonomy_durable -> 0125_regional_queue, Durable regional queue; retain old Redis data until reviewed import.
+2026-09-26T04:07:07.8482655Z INFO  [alembic.runtime.migration] Running upgrade 0125_regional_queue -> 0126_travel_operational_facts, Signed travel facts and versioned flight-linked ride adjustments; no legacy facts are upgraded.
+2026-09-26T04:07:07.8485258Z INFO  [alembic.runtime.migration] Running upgrade 0126_travel_operational_facts -> 0127_vertical_prebook_contract, Bind quoted parties and terms to one consumer order; no fabricated legacy backfill.
+2026-09-26T04:07:07.8487771Z INFO  [alembic.runtime.migration] Running upgrade 0127_vertical_prebook_contract -> 0128_vertical_refund_recovery, Durable rail/attraction refund claims; preserve existing order history.
+2026-09-26T04:07:07.8490030Z INFO  [alembic.runtime.migration] Running upgrade 0128_vertical_refund_recovery -> 0129_rail_change_resolution, Durable supplier decisions for rail changes; do not alter historical rows.
+2026-09-26T04:07:07.8492448Z INFO  [alembic.runtime.migration] Running upgrade 0129_rail_change_resolution -> 0130_vertical_capacity, Shared isolated rail/attraction capacity; legacy orders are not fabricated.
+2026-09-26T04:07:07.8494633Z INFO  [alembic.runtime.migration] Running upgrade 0130_vertical_capacity -> 0131_vertical_payment_deadline, Frozen deadlines for newly created unpaid rail and attraction reservations.
+2026-09-26T04:07:07.8497041Z INFO  [alembic.runtime.migration] Running upgrade 0131_vertical_payment_deadline -> 0132_rail_runtime_field_widths, Allow complete canonical rail payment states and provider references.
+2026-09-26T04:07:07.8499170Z INFO  [alembic.runtime.migration] Running upgrade 0132_rail_runtime_field_widths -> 0133_flight_change_plan, Bound multi-leg flight plans and durable supplier decisions.
+2026-09-26T04:07:07.8501100Z INFO  [alembic.runtime.migration] Running upgrade 0133_flight_change_plan -> 0134_flight_status_width, Preserve complete flight payment states in existing and fresh databases.
+2026-09-26T04:07:07.8503043Z INFO  [alembic.runtime.migration] Running upgrade 0134_flight_status_width -> 0135_journey_search_trigram, Add online trigram indexes for normalized Journey contains search.
+2026-09-26T04:07:07.8504928Z INFO  [alembic.runtime.migration] Running upgrade 0134_flight_status_width -> 0135_go_ai_execution, Add GO AI-specific durable execution ownership and checkpoints.
+2026-09-26T04:07:07.8506880Z INFO  [alembic.runtime.migration] Running upgrade 0135_go_ai_execution, 0135_journey_search_trigram -> 0136_merge_go_ai_journey, Merge GO AI durability and Journey trigram migration branches.
+2026-09-26T04:07:07.8508769Z INFO  [alembic.runtime.migration] Running upgrade 0136_merge_go_ai_journey -> 0137_hosted_unknown_episode, Durable, episode-bound reconciliation for hosted mixed funding.
+2026-09-26T04:07:07.8510803Z INFO  [alembic.runtime.migration] Running upgrade 0137_hosted_unknown_episode -> 0138_supplier_library_import, Durable supplier hotel-library import authorization and idempotency.
+2026-09-26T04:07:07.8512923Z INFO  [alembic.runtime.migration] Running upgrade 0138_supplier_library_import -> 0139_hosted_publication_review, Persist version-bound isolated Hosted publication reviews.
+2026-09-26T04:07:07.8514255Z Traceback (most recent call last):
+2026-09-26T04:07:07.8521554Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+2026-09-26T04:07:07.8522614Z     self.dialect.do_execute(
+2026-09-26T04:07:07.8522994Z     ~~~~~~~~~~~~~~~~~~~~~~~^
+2026-09-26T04:07:07.8523437Z         cursor, str_statement, effective_parameters, context
+2026-09-26T04:07:07.8523965Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8524427Z     )
+2026-09-26T04:07:07.8524712Z     ^
+2026-09-26T04:07:07.8525642Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+2026-09-26T04:07:07.8526946Z     cursor.execute(statement, parameters)
+2026-09-26T04:07:07.8527416Z     ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8528375Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py", line 97, in execute
+2026-09-26T04:07:07.8529554Z     raise ex.with_traceback(None)
+2026-09-26T04:07:07.8530359Z psycopg.errors.DuplicateColumn: column "submitted_by" of relation "hosted_media_asset" already exists
+2026-09-26T04:07:07.8531058Z 
+2026-09-26T04:07:07.8531376Z The above exception was the direct cause of the following exception:
+2026-09-26T04:07:07.8531857Z 
+2026-09-26T04:07:07.8532022Z Traceback (most recent call last):
+2026-09-26T04:07:07.8532683Z   File "<frozen runpy>", line 198, in _run_module_as_main
+2026-09-26T04:07:07.8533326Z   File "<frozen runpy>", line 88, in _run_code
+2026-09-26T04:07:07.8534295Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/__main__.py", line 4, in <module>
+2026-09-26T04:07:07.8535246Z     main(prog="alembic")
+2026-09-26T04:07:07.8535605Z     ~~~~^^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8536936Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/config.py", line 1022, in main
+2026-09-26T04:07:07.8537879Z     CommandLine(prog=prog).main(argv=argv)
+2026-09-26T04:07:07.8538336Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+2026-09-26T04:07:07.8539240Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/config.py", line 1012, in main
+2026-09-26T04:07:07.8540072Z     self.run_cmd(cfg, options)
+2026-09-26T04:07:07.8540429Z     ~~~~~~~~~~~~^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8541237Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/config.py", line 946, in run_cmd
+2026-09-26T04:07:07.8542064Z     fn(
+2026-09-26T04:07:07.8542309Z     ~~^
+2026-09-26T04:07:07.8542546Z         config,
+2026-09-26T04:07:07.8542804Z         ^^^^^^^
+2026-09-26T04:07:07.8543174Z         *[getattr(options, k, None) for k in positional],
+2026-09-26T04:07:07.8543629Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8544088Z         **{k: getattr(options, k, None) for k in kwarg},
+2026-09-26T04:07:07.8544524Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8544903Z     )
+2026-09-26T04:07:07.8545139Z     ^
+2026-09-26T04:07:07.8545805Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/command.py", line 483, in upgrade
+2026-09-26T04:07:07.8546758Z     script.run_env()
+2026-09-26T04:07:07.8547040Z     ~~~~~~~~~~~~~~^^
+2026-09-26T04:07:07.8547748Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/script/base.py", line 549, in run_env
+2026-09-26T04:07:07.8548551Z     util.load_python_file(self.dir, "env.py")
+2026-09-26T04:07:07.8548961Z     ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8549931Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+2026-09-26T04:07:07.8550934Z     module = load_module_py(module_id, path)
+2026-09-26T04:07:07.8551931Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+2026-09-26T04:07:07.8552945Z     spec.loader.exec_module(module)  # type: ignore
+2026-09-26T04:07:07.8553437Z     ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+2026-09-26T04:07:07.8554051Z   File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+2026-09-26T04:07:07.8554960Z   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-09-26T04:07:07.8556029Z   File "/home/runner/work/GO/GO/application/alembic/env.py", line 22, in <module>
+2026-09-26T04:07:07.8556969Z     run_migrations_offline() if context.is_offline_mode() else run_migrations_online()
+2026-09-26T04:07:07.8557721Z                                                                ~~~~~~~~~~~~~~~~~~~~~^^
+2026-09-26T04:07:07.8558602Z   File "/home/runner/work/GO/GO/application/alembic/env.py", line 20, in run_migrations_online
+2026-09-26T04:07:07.8559448Z     with context.begin_transaction(): context.run_migrations()
+2026-09-26T04:07:07.8560017Z                                       ~~~~~~~~~~~~~~~~~~~~~~^^
+2026-09-26T04:07:07.8560767Z   File "<string>", line 8, in run_migrations
+2026-09-26T04:07:07.8561785Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/runtime/environment.py", line 946, in run_migrations
+2026-09-26T04:07:07.8562808Z     self.get_context().run_migrations(**kw)
+2026-09-26T04:07:07.8563273Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+2026-09-26T04:07:07.8564282Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/runtime/migration.py", line 627, in run_migrations
+2026-09-26T04:07:07.8565293Z     step.migration_fn(**kw)
+2026-09-26T04:07:07.8565663Z     ~~~~~~~~~~~~~~~~~^^^^^^
+2026-09-26T04:07:07.8566722Z   File "/home/runner/work/GO/GO/application/alembic/versions/0139_hosted_publication_review.py", line 16, in upgrade
+2026-09-26T04:07:07.8568079Z     op.add_column('hosted_media_asset',sa.Column('submitted_by',sa.String(64),nullable=True))
+2026-09-26T04:07:07.8568905Z     ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8569535Z   File "<string>", line 8, in add_column
+2026-09-26T04:07:07.8570027Z   File "<string>", line 3, in add_column
+2026-09-26T04:07:07.8571023Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/operations/ops.py", line 2186, in add_column
+2026-09-26T04:07:07.8572037Z     return operations.invoke(op)
+2026-09-26T04:07:07.8572441Z            ~~~~~~~~~~~~~~~~~^^^^
+2026-09-26T04:07:07.8573410Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/operations/base.py", line 441, in invoke
+2026-09-26T04:07:07.8574356Z     return fn(self, operation)
+2026-09-26T04:07:07.8575313Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/operations/toimpl.py", line 175, in add_column
+2026-09-26T04:07:07.8576512Z     operations.impl.add_column(
+2026-09-26T04:07:07.8576936Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-09-26T04:07:07.8577307Z         table_name,
+2026-09-26T04:07:07.8577630Z         ^^^^^^^^^^^
+2026-09-26T04:07:07.8577932Z     ...<3 lines>...
+2026-09-26T04:07:07.8578234Z         **kw,
+2026-09-26T04:07:07.8578541Z         ^^^^^
+2026-09-26T04:07:07.8578830Z     )
+2026-09-26T04:07:07.8579104Z     ^
+2026-09-26T04:07:07.8579922Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/ddl/impl.py", line 378, in add_column
+2026-09-26T04:07:07.8580879Z     self._exec(
+2026-09-26T04:07:07.8581180Z     ~~~~~~~~~~^
+2026-09-26T04:07:07.8581495Z         base.AddColumn(
+2026-09-26T04:07:07.8581834Z         ^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8582166Z     ...<4 lines>...
+2026-09-26T04:07:07.8582473Z         )
+2026-09-26T04:07:07.8582752Z         ^
+2026-09-26T04:07:07.8583026Z     )
+2026-09-26T04:07:07.8583297Z     ^
+2026-09-26T04:07:07.8584069Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/alembic/ddl/impl.py", line 246, in _exec
+2026-09-26T04:07:07.8584969Z     return conn.execute(construct, params)
+2026-09-26T04:07:07.8585418Z            ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8586568Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+2026-09-26T04:07:07.8587491Z     return meth(
+2026-09-26T04:07:07.8587800Z         self,
+2026-09-26T04:07:07.8588108Z         distilled_parameters,
+2026-09-26T04:07:07.8588505Z         execution_options or NO_OPTIONS,
+2026-09-26T04:07:07.8588910Z     )
+2026-09-26T04:07:07.8589914Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/sql/ddl.py", line 188, in _execute_on_connection
+2026-09-26T04:07:07.8590930Z     return connection._execute_ddl(
+2026-09-26T04:07:07.8591345Z            ~~~~~~~~~~~~~~~~~~~~~~~^
+2026-09-26T04:07:07.8591802Z         self, distilled_params, execution_options
+2026-09-26T04:07:07.8592284Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8592709Z     )
+2026-09-26T04:07:07.8592975Z     ^
+2026-09-26T04:07:07.8593827Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1532, in _execute_ddl
+2026-09-26T04:07:07.8595130Z     ret = self._execute_context(
+2026-09-26T04:07:07.8595532Z         dialect,
+2026-09-26T04:07:07.8596039Z     ...<4 lines>...
+2026-09-26T04:07:07.8596372Z         compiled,
+2026-09-26T04:07:07.8596681Z     )
+2026-09-26T04:07:07.8597581Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+2026-09-26T04:07:07.8598596Z     return self._exec_single_context(
+2026-09-26T04:07:07.8599029Z            ~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-09-26T04:07:07.8599478Z         dialect, context, statement, parameters
+2026-09-26T04:07:07.8599958Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8600352Z     )
+2026-09-26T04:07:07.8600616Z     ^
+2026-09-26T04:07:07.8601737Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+2026-09-26T04:07:07.8602804Z     self._handle_dbapi_exception(
+2026-09-26T04:07:07.8603206Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-09-26T04:07:07.8603691Z         e, str_statement, effective_parameters, cursor, context
+2026-09-26T04:07:07.8604267Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8604714Z     )
+2026-09-26T04:07:07.8604988Z     ^
+2026-09-26T04:07:07.8606130Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 2365, in _handle_dbapi_exception
+2026-09-26T04:07:07.8607392Z     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+2026-09-26T04:07:07.8608599Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+2026-09-26T04:07:07.8609623Z     self.dialect.do_execute(
+2026-09-26T04:07:07.8610021Z     ~~~~~~~~~~~~~~~~~~~~~~~^
+2026-09-26T04:07:07.8610477Z         cursor, str_statement, effective_parameters, context
+2026-09-26T04:07:07.8611037Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8611482Z     )
+2026-09-26T04:07:07.8611759Z     ^
+2026-09-26T04:07:07.8612635Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+2026-09-26T04:07:07.8613638Z     cursor.execute(statement, parameters)
+2026-09-26T04:07:07.8614090Z     ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+2026-09-26T04:07:07.8614963Z   File "/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py", line 97, in execute
+2026-09-26T04:07:07.8616078Z     raise ex.with_traceback(None)
+2026-09-26T04:07:07.8617135Z sqlalchemy.exc.ProgrammingError: (psycopg.errors.DuplicateColumn) column "submitted_by" of relation "hosted_media_asset" already exists
+2026-09-26T04:07:07.8618377Z [SQL: ALTER TABLE hosted_media_asset ADD COLUMN submitted_by VARCHAR(64)]
+2026-09-26T04:07:07.8619148Z (Background on this error at: https://sqlalche.me/e/20/f405)
+2026-09-26T04:07:07.8619593Z 
+2026-09-26T04:07:07.8685140Z ##[error]Process completed with exit code 1.
+2026-09-26T04:07:07.8770851Z ##[group]Run actions/upload-artifact@v4
+2026-09-26T04:07:07.8771155Z with:
+2026-09-26T04:07:07.8771455Z   name: depth47-postgres-42d71f4eb3a9efacf2f290e31ca1d763b2b77a4f
+2026-09-26T04:07:07.8771862Z   path: /home/runner/work/_temp/postgres-evidence
+2026-09-26T04:07:07.8772175Z   if-no-files-found: error
+2026-09-26T04:07:07.8772407Z   retention-days: 90
+2026-09-26T04:07:07.8772620Z   compression-level: 6
+2026-09-26T04:07:07.8772839Z   overwrite: false
+2026-09-26T04:07:07.8773047Z   include-hidden-files: false
+2026-09-26T04:07:07.8773275Z env:
+2026-09-26T04:07:07.8773518Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:07:07.8773953Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib/pkgconfig
+2026-09-26T04:07:07.8774509Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:07:07.8775007Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:07:07.8776143Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.5/x64
+2026-09-26T04:07:07.8776667Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.5/x64/lib
+2026-09-26T04:07:07.8777152Z ##[endgroup]
+2026-09-26T04:07:08.0513855Z (node:2771) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-09-26T04:07:08.0518785Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-09-26T04:07:08.1506987Z With the provided path, there will be 4 files uploaded
+2026-09-26T04:07:08.1508909Z Artifact name is valid!
+2026-09-26T04:07:08.1509667Z Root directory input is valid!
+2026-09-26T04:07:08.4564427Z Beginning upload of artifact content to blob storage
+2026-09-26T04:07:08.4940797Z (node:2771) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-09-26T04:07:08.9053201Z Uploaded bytes 90018
+2026-09-26T04:07:08.9856372Z Finished uploading artifact content to blob storage!
+2026-09-26T04:07:08.9868845Z SHA256 digest of uploaded artifact zip is 1aa0aa19a1020bedf236adbb0e30885f88f586eed4d8ec667ae21d4f99e6dab9
+2026-09-26T04:07:08.9869834Z Finalizing artifact upload
+2026-09-26T04:07:09.2518995Z Artifact depth47-postgres-42d71f4eb3a9efacf2f290e31ca1d763b2b77a4f.zip successfully finalized. Artifact ID 10898016817
+2026-09-26T04:07:09.2521079Z Artifact depth47-postgres-42d71f4eb3a9efacf2f290e31ca1d763b2b77a4f has been successfully uploaded! Final size is 90018 bytes. Artifact ID is 10898016817
+2026-09-26T04:07:09.2523019Z Artifact download URL: https://github.com/yuguangzhi3836-glitch/GO/actions/runs/36216819791/artifacts/10898016817
+2026-09-26T04:07:09.2703315Z Post job cleanup.
+2026-09-26T04:07:09.3656677Z [command]/usr/bin/git version
+2026-09-26T04:07:09.3735519Z git version 2.55.0
+2026-09-26T04:07:09.3817251Z Temporarily overriding HOME='/home/runner/work/_temp/83c0a3d5-01f5-42cb-b946-8a0408e580a2' before making global git config changes
+2026-09-26T04:07:09.3818846Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-26T04:07:09.3819992Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/GO/GO
+2026-09-26T04:07:09.3899807Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-26T04:07:09.3970043Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-26T04:07:09.4321006Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-26T04:07:09.4391967Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-26T04:07:09.4986923Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-26T04:07:09.5047581Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-26T04:07:09.5799815Z Print service container logs: 9b704a38c57d4f5082b771483735a861_postgres164_0fd353
+2026-09-26T04:07:09.5805518Z ##[command]/usr/bin/docker logs --details 24198e56c177af0f39d4253374e3c82ae5ece7f47eed401834edad32d890830c
+2026-09-26T04:07:09.5954869Z  initdb: warning: enabling "trust" authentication for local connections
+2026-09-26T04:07:09.5955811Z  The files belonging to this database system will be owned by user "postgres".
+2026-09-26T04:07:09.5957074Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+2026-09-26T04:07:09.5958100Z  2026-09-26 04:06:20.662 UTC [1] LOG:  starting PostgreSQL 16.4 (Debian 16.4-1.pgdg120+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit
+2026-09-26T04:07:09.5959097Z  2026-09-26 04:06:20.662 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-09-26T04:07:09.5959627Z  2026-09-26 04:06:20.662 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-09-26T04:07:09.5960364Z  2026-09-26 04:06:20.663 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-26T04:07:09.5960981Z  2026-09-26 04:06:20.668 UTC [63] LOG:  database system was shut down at 2026-09-26 04:06:20 UTC
+2026-09-26T04:07:09.5961656Z  2026-09-26 04:06:20.672 UTC [1] LOG:  database system is ready to accept connections
+2026-09-26T04:07:09.5962241Z  2026-09-26 04:07:07.357 UTC [132] ERROR:  column "submitted_by" of relation "hosted_media_asset" already exists
+2026-09-26T04:07:09.5962915Z  2026-09-26 04:07:07.357 UTC [132] STATEMENT:  ALTER TABLE hosted_media_asset ADD COLUMN submitted_by VARCHAR(64)
+2026-09-26T04:07:09.5963427Z  This user must also own the server process.
+2026-09-26T04:07:09.5963715Z  
+2026-09-26T04:07:09.5964000Z  The database cluster will be initialized with locale "en_US.utf8".
+2026-09-26T04:07:09.5964469Z  The default database encoding has accordingly been set to "UTF8".
+2026-09-26T04:07:09.5964908Z  The default text search configuration will be set to "english".
+2026-09-26T04:07:09.5965241Z  
+2026-09-26T04:07:09.5965436Z  Data page checksums are disabled.
+2026-09-26T04:07:09.5965678Z  
+2026-09-26T04:07:09.5966654Z  fixing permissions on existing directory /var/lib/postgresql/data ... ok
+2026-09-26T04:07:09.5967391Z  creating subdirectories ... ok
+2026-09-26T04:07:09.5967956Z  selecting dynamic shared memory implementation ... posix
+2026-09-26T04:07:09.5968566Z  selecting default max_connections ... 100
+2026-09-26T04:07:09.5969083Z  selecting default shared_buffers ... 128MB
+2026-09-26T04:07:09.5969599Z  selecting default time zone ... Etc/UTC
+2026-09-26T04:07:09.5970087Z  creating configuration files ... ok
+2026-09-26T04:07:09.5970572Z  running bootstrap script ... ok
+2026-09-26T04:07:09.5971098Z  performing post-bootstrap initialization ... ok
+2026-09-26T04:07:09.5971631Z  syncing data to disk ... ok
+2026-09-26T04:07:09.5972023Z  
+2026-09-26T04:07:09.5972307Z  
+2026-09-26T04:07:09.5972705Z  Success. You can now start the database server using:
+2026-09-26T04:07:09.5973219Z  
+2026-09-26T04:07:09.5973609Z      pg_ctl -D /var/lib/postgresql/data -l logfile start
+2026-09-26T04:07:09.5974132Z  
+2026-09-26T04:07:09.5975346Z  waiting for server to start....2026-09-26 04:06:20.344 UTC [47] LOG:  starting PostgreSQL 16.4 (Debian 16.4-1.pgdg120+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit
+2026-09-26T04:07:09.5977197Z  2026-09-26 04:06:20.344 UTC [47] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-09-26T04:07:09.5978215Z  2026-09-26 04:06:20.347 UTC [50] LOG:  database system was shut down at 2026-09-26 04:06:20 UTC
+2026-09-26T04:07:09.5979833Z  2026-09-26 04:06:20.351 UTC [47] LOG:  database system is ready to accept connections
+2026-09-26T04:07:09.5980523Z   done
+2026-09-26T04:07:09.5980851Z  server started
+2026-09-26T04:07:09.5981191Z  CREATE DATABASE
+2026-09-26T04:07:09.5981525Z  
+2026-09-26T04:07:09.5981803Z  
+2026-09-26T04:07:09.5982627Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+2026-09-26T04:07:09.5983330Z  
+2026-09-26T04:07:09.5983615Z  2026-09-26 04:06:20.533 UTC [47] LOG:  received fast shutdown request
+2026-09-26T04:07:09.5984177Z  waiting for server to shut down...2026-09-26 04:06:20.534 UTC [47] LOG:  aborting any active transactions
+2026-09-26T04:07:09.5984910Z  2026-09-26 04:06:20.536 UTC [47] LOG:  background worker "logical replication launcher" (PID 53) exited with exit code 1
+2026-09-26T04:07:09.5985468Z  .2026-09-26 04:06:20.538 UTC [48] LOG:  shutting down
+2026-09-26T04:07:09.5986194Z  2026-09-26 04:06:20.538 UTC [48] LOG:  checkpoint starting: shutdown immediate
+2026-09-26T04:07:09.5987369Z  2026-09-26 04:06:20.554 UTC [48] LOG:  checkpoint complete: wrote 922 buffers (5.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.013 s, sync=0.002 s, total=0.016 s; sync files=301, longest=0.001 s, average=0.001 s; distance=4255 kB, estimate=4255 kB; lsn=0/19120F8, redo lsn=0/19120F8
+2026-09-26T04:07:09.5988657Z  2026-09-26 04:06:20.561 UTC [47] LOG:  database system is shut down
+2026-09-26T04:07:09.5989001Z   done
+2026-09-26T04:07:09.5989186Z  server stopped
+2026-09-26T04:07:09.5989379Z  
+2026-09-26T04:07:09.5989628Z  PostgreSQL init process complete; ready for start up.
+2026-09-26T04:07:09.5989934Z  
+2026-09-26T04:07:09.5996322Z Stop and remove container: 9b704a38c57d4f5082b771483735a861_postgres164_0fd353
+2026-09-26T04:07:09.6000915Z ##[command]/usr/bin/docker rm --force 24198e56c177af0f39d4253374e3c82ae5ece7f47eed401834edad32d890830c
+2026-09-26T04:07:11.2037466Z 24198e56c177af0f39d4253374e3c82ae5ece7f47eed401834edad32d890830c
+2026-09-26T04:07:11.2066823Z Remove container network: github_network_d6eca29f955b45ada0d819f6d2fa9720
+2026-09-26T04:07:11.2071058Z ##[command]/usr/bin/docker network rm github_network_d6eca29f955b45ada0d819f6d2fa9720
+2026-09-26T04:07:11.2846480Z github_network_d6eca29f955b45ada0d819f6d2fa9720
+2026-09-26T04:07:11.2917637Z Cleaning up orphan processes
+2026-09-26T04:07:11.3234511Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+

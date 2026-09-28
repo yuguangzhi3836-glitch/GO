@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="7" time="3.487" timestamp="2026-09-25T00:30:55.737401-07:00" hostname="48cdd5f3df1f"><testcase classname="tests.test_c10_unknown_payment_projection" name="test_unknown_external_state_does_not_assert_payment_success[FLIGHT]" time="1.499"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">vertical = 'FLIGHT'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT', 'RAIL', 'HOTEL', 'RIDE', 'RENTAL', 'ATTRACTION'])
+    def test_unknown_external_state_does_not_assert_payment_success(vertical):
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='unknown-order', supplier_id=None)
+        with SessionLocal() as session:
+            projected = project_vertical_lifecycle(session, vertical, order, 'recovery://unknown')
+            session.commit()
+        item = svc.detail('owner', projected['consumer_unified_lifecycle_id'])['item']
+        assert item['lifecycle_state'] == 'UNKNOWN_EXTERNAL_STATE'
+&gt;       assert item['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:19: AssertionError</failure></testcase><testcase classname="tests.test_c10_unknown_payment_projection" name="test_unknown_external_state_does_not_assert_payment_success[RAIL]" time="0.117"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">vertical = 'RAIL'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT', 'RAIL', 'HOTEL', 'RIDE', 'RENTAL', 'ATTRACTION'])
+    def test_unknown_external_state_does_not_assert_payment_success(vertical):
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='unknown-order', supplier_id=None)
+        with SessionLocal() as session:
+            projected = project_vertical_lifecycle(session, vertical, order, 'recovery://unknown')
+            session.commit()
+        item = svc.detail('owner', projected['consumer_unified_lifecycle_id'])['item']
+        assert item['lifecycle_state'] == 'UNKNOWN_EXTERNAL_STATE'
+&gt;       assert item['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:19: AssertionError</failure></testcase><testcase classname="tests.test_c10_unknown_payment_projection" name="test_unknown_external_state_does_not_assert_payment_success[HOTEL]" time="0.082"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">vertical = 'HOTEL'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT', 'RAIL', 'HOTEL', 'RIDE', 'RENTAL', 'ATTRACTION'])
+    def test_unknown_external_state_does_not_assert_payment_success(vertical):
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='unknown-order', supplier_id=None)
+        with SessionLocal() as session:
+            projected = project_vertical_lifecycle(session, vertical, order, 'recovery://unknown')
+            session.commit()
+        item = svc.detail('owner', projected['consumer_unified_lifecycle_id'])['item']
+        assert item['lifecycle_state'] == 'UNKNOWN_EXTERNAL_STATE'
+&gt;       assert item['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:19: AssertionError</failure></testcase><testcase classname="tests.test_c10_unknown_payment_projection" name="test_unknown_external_state_does_not_assert_payment_success[RIDE]" time="0.072"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">vertical = 'RIDE'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT', 'RAIL', 'HOTEL', 'RIDE', 'RENTAL', 'ATTRACTION'])
+    def test_unknown_external_state_does_not_assert_payment_success(vertical):
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='unknown-order', supplier_id=None)
+        with SessionLocal() as session:
+            projected = project_vertical_lifecycle(session, vertical, order, 'recovery://unknown')
+            session.commit()
+        item = svc.detail('owner', projected['consumer_unified_lifecycle_id'])['item']
+        assert item['lifecycle_state'] == 'UNKNOWN_EXTERNAL_STATE'
+&gt;       assert item['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:19: AssertionError</failure></testcase><testcase classname="tests.test_c10_unknown_payment_projection" name="test_unknown_external_state_does_not_assert_payment_success[RENTAL]" time="0.078"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">vertical = 'RENTAL'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT', 'RAIL', 'HOTEL', 'RIDE', 'RENTAL', 'ATTRACTION'])
+    def test_unknown_external_state_does_not_assert_payment_success(vertical):
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='unknown-order', supplier_id=None)
+        with SessionLocal() as session:
+            projected = project_vertical_lifecycle(session, vertical, order, 'recovery://unknown')
+            session.commit()
+        item = svc.detail('owner', projected['consumer_unified_lifecycle_id'])['item']
+        assert item['lifecycle_state'] == 'UNKNOWN_EXTERNAL_STATE'
+&gt;       assert item['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:19: AssertionError</failure></testcase><testcase classname="tests.test_c10_unknown_payment_projection" name="test_unknown_external_state_does_not_assert_payment_success[ATTRACTION]" time="0.071"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">vertical = 'ATTRACTION'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT', 'RAIL', 'HOTEL', 'RIDE', 'RENTAL', 'ATTRACTION'])
+    def test_unknown_external_state_does_not_assert_payment_success(vertical):
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='unknown-order', supplier_id=None)
+        with SessionLocal() as session:
+            projected = project_vertical_lifecycle(session, vertical, order, 'recovery://unknown')
+            session.commit()
+        item = svc.detail('owner', projected['consumer_unified_lifecycle_id'])['item']
+        assert item['lifecycle_state'] == 'UNKNOWN_EXTERNAL_STATE'
+&gt;       assert item['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:19: AssertionError</failure></testcase><testcase classname="tests.test_c10_unknown_payment_projection" name="test_unknown_can_recover_to_confirmed_on_later_authoritative_projection" time="0.068"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">def test_unknown_can_recover_to_confirmed_on_later_authoritative_projection():
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='recovering-order', supplier_id=None)
+        with SessionLocal() as session:
+            first = project_vertical_lifecycle(session, 'FLIGHT', order, 'recovery://unknown')
+            session.commit()
+            order.status = 'TICKETED'
+            second = project_vertical_lifecycle(session, 'FLIGHT', order, 'supplier://ticketed')
+            session.commit()
+&gt;       assert first['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:32: AssertionError</failure></testcase></testsuite></testsuites>

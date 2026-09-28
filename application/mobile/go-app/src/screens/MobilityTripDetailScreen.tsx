@@ -31,7 +31,7 @@ export default function MobilityTripDetail({route,navigation}:any) {
       <Text style={screen.sub}>{b?(b.tracking_enabled?(b.source_current===false?'航班来源暂不可用':'已开启航班追踪'):'已暂停航班追踪'):'未关联航班'}</Text>
       {b&&<InfoRow label="包含免费等待" value={`${b.included_wait_minutes} 分钟`}/>}
       {(t.events||[]).slice().reverse().map((e:any,i:number)=><View key={e.event_id||i}><StatusPill text={e.status||'待核对'} tone={e.status==='CONFIRMED'?'green':'navy'}/><Text style={screen.sub}>{e.status==='CONFIRMED'?'该次确认':'建议'}接车时间：{e.proposed_pickup_at}</Text>{Number.isFinite(e.free_wait_minutes)&&<Text style={screen.sub}>本次规则内免费等待：{e.free_wait_minutes} 分钟</Text>}</View>)}
-      {t.data_mode==='SIMULATION'&&<Text style={screen.sub}>当前为模拟体验，未连接真实车队。</Text>}
+      {t.data_mode==='SIMULATION'&&<Text style={screen.sub}>当前未连接真实车队，服务状态请以承运方确认为准。</Text>}
     </View>}
   </ScrollView>;
 }

@@ -18,6 +18,7 @@ from go_hotel.services.hosted_fare_rules import validated as validate_structure
 from go_hotel.services.hosted_reservation_operations import aware
 from go_hotel.services.omnichannel_payment import digest
 from go_hotel.services import hotel_change_policy
+from go_hotel.services import hotel_cancellation_clock as cancellation_clock
 
 
 def identity(offer):
@@ -229,7 +230,7 @@ def order_rule(order_id):
             'change_allowed': rules['change_allowed'], **hotel_change_policy.terms(order.created_at),
             'stay_credit_allowed': rules['stay_credit_enabled'], 'stay_credit_validity_days': rules['stay_credit_days'],
             'stay_credit_scope': rules['stay_credit_scope'],
-            'tiers': [{'min_hours': t['min_hours'], 'fee_percent': t['fee_basis_points'] // 100 if t['fee_basis_points'] % 100 == 0 else t['fee_basis_points'] / 100, 'fee_basis_points': t['fee_basis_points']} for t in rules['cancellation_tiers']],
+            'tiers': [{**t, 'fee_percent': t['fee_basis_points'] // 100 if t['fee_basis_points'] % 100 == 0 else t['fee_basis_points'] / 100} for t in rules['cancellation_tiers']],
             'rules': deepcopy(rules), 'version_id': version['version_id'], 'rule_hash': version['rule_hash'],
             'order_snapshot_hash': snap.snapshot_hash, 'order_created_at': snap.snapshot_json['order_created_at']}
 
@@ -239,15 +240,27 @@ def cancellation_terms(order, check_in, rule, at):
     boundary = datetime.fromisoformat(check_in).replace(hour=rules['check_in_hour'], tzinfo=ZoneInfo(rules['timezone'])).astimezone(timezone.utc)
     if at >= boundary + timedelta(hours=rules['no_show_grace_hours']):
         raise ValueError('CANCELLATION_WINDOW_CLOSED')
-    cooling_end = datetime.fromisoformat(rule['order_created_at']) + timedelta(minutes=rules['cooling_off_minutes'])
-    cooling = at < min(cooling_end, boundary)
+    confirmed_at = None
+    if rules.get('cooling_off_anchor') == 'HOTEL_CONFIRMED':
+        from go_hotel.db.models import OrderSupplierFulfillmentRow as Fulfillment, OrderSupplierFulfillmentEventRow as Event
+        with SessionLocal() as s:
+            event = s.scalar(select(Event).join(Fulfillment,
+                Fulfillment.order_supplier_fulfillment_id == Event.order_supplier_fulfillment_id).where(
+                Fulfillment.business_type == 'HOTEL_ORDER', Fulfillment.business_id == order.order_id,
+                Fulfillment.supplier_id == order.supplier_id,
+                Event.event_type == 'SUPPLIER_FACT_RECORDED', Event.state == 'SUPPLIER_CONFIRMED'
+            ).order_by(Event.occurred_at, Event.order_supplier_fulfillment_event_id))
+            confirmed_at = aware(event.occurred_at) if event else None
+    clock = cancellation_clock.terms(rules, check_in, boundary,
+        datetime.fromisoformat(rule['order_created_at']), at, confirmed_at)
+    cooling_end = clock['cooling_end']
+    cooling = clock['cooling_off_applied']
     hours = max(0, (boundary - at).total_seconds() / 3600)
-    bps = 0 if cooling else next(t['fee_basis_points'] for t in rules['cancellation_tiers'] if hours >= t['min_hours'])
+    bps = clock['fee_basis_points']
     expiry = min(at + timedelta(minutes=10), boundary + timedelta(hours=rules['no_show_grace_hours']))
     if cooling:
         expiry = min(expiry, cooling_end, boundary)
-    for tier in rules['cancellation_tiers']:
-        edge = boundary - timedelta(hours=tier['min_hours'])
+    for edge in clock['edges']:
         if edge > at:
             expiry = min(expiry, edge)
     return {'fee_basis_points': bps, 'cooling_off_applied': cooling, 'hours_before_checkin': hours,

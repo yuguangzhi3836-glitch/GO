@@ -162,7 +162,7 @@ if os.environ['COMMIT_FIRST']=='False':
 expiry.expire_one('RAIL',os.environ['ORDER_ID'])
 os._exit(74)
 '''
-    env = {**os.environ, 'DATABASE_URL': str(engine.url), 'PYTHONPATH': os.path.abspath('src'),
+    env = {**os.environ, 'DATABASE_URL': engine.url.render_as_string(hide_password=False), 'PYTHONPATH': os.path.abspath('src'),
         'ORDER_ID': oid, 'COMMIT_FIRST': str(commit_first)}
     p = subprocess.run([sys.executable, '-c', code], env=env, capture_output=True, timeout=30)
     assert p.returncode == 74, p.stderr.decode()
@@ -201,7 +201,7 @@ def test_rail_checkout_does_not_fabricate_authorized_state_on_pre_root_failure(m
 
 def test_one_shot_worker_runs_against_durable_database():
     oid = pending('ATTRACTION')['order_id']; age('ATTRACTION', oid)
-    env = {**os.environ, 'DATABASE_URL': str(engine.url), 'PYTHONPATH': os.path.abspath('src')}
+    env = {**os.environ, 'DATABASE_URL': engine.url.render_as_string(hide_password=False), 'PYTHONPATH': os.path.abspath('src')}
     p = subprocess.run([sys.executable, '-m', 'go_hotel.workers.vertical_expiry_worker', '--once'],
         env=env, capture_output=True, timeout=30)
     assert p.returncode == 0, p.stderr.decode()

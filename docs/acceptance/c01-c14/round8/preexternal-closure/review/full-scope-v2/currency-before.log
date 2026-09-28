@@ -1,0 +1,60 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_availability_mixed_currency_header_never_labels_usd_as_cny ________
+
+http = <starlette.testclient.TestClient object at 0x7f75c3a07da0>
+business = {'body': {'check_in': '2026-09-28', 'check_out': '2026-09-29', 'guest_contact': 'synthetic@example.invalid', 'guest_na...Ax0UTXIZZOloWlj_ocqGw5hRaA'}, 'clock': {'at': datetime.datetime(2026, 9, 28, 0, 0, tzinfo=datetime.timezone.utc)}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-78/test_availability_mixed_curren0')
+
+    def test_availability_mixed_currency_header_never_labels_usd_as_cny(http,business,tmp_path):
+        h=business;usd=add_usd_offer(http,h,tmp_path)
+        calendar(http,h,h['day'],h['end'])
+        response,_,_=quote(http,h,usd,h['day'])
+        assert {x['currency'] for x in response['items']}=={'CNY','USD'}
+>       assert response['currency'] is None
+E       AssertionError: assert 'CNY' is None
+
+review/full-scope-v2/test_c13_currency_day_scope.py:85: AssertionError
+_______ test_daily_close_separates_currency_foreign_hotel_and_old_order ________
+
+http = <starlette.testclient.TestClient object at 0x7f75c26336b0>
+business = {'body': {'check_in': '2026-09-28', 'check_out': '2026-09-29', 'guest_contact': 'synthetic@example.invalid', 'guest_na...GonbcY9qlmoYQnfJIYu_nR2jCA'}, 'clock': {'at': datetime.datetime(2026, 9, 30, 7, 0, tzinfo=datetime.timezone.utc)}, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f75c2654c50>
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-78/test_daily_close_separates_cur0')
+
+    def test_daily_close_separates_currency_foreign_hotel_and_old_order(http,business,monkeypatch,tmp_path):
+        h=business;usd=add_usd_offer(http,h,tmp_path)
+        current=h['day']+timedelta(days=2)
+        calendar(http,h,h['day'],current+timedelta(days=1))
+        # This old order is genuinely booked, authorized, checked in/out and captured
+        # two business days earlier. Its opening balance remains economically real.
+        old=complete(http,h,h['clock'],h['offer'],h['day'],'old-economic-order','ISOLATED-ROUND-DREAM-101')
+        h['clock']['at']=window(current.isoformat())[0]+timedelta(hours=8)
+        cny=complete(http,h,h['clock'],h['offer'],current,'current-cny','ISOLATED-ROUND-DREAM-101')
+>       usd_order=complete(http,h,h['clock'],usd,current,'current-usd','ISOLATED-OVERNIGHT-102')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+review/full-scope-v2/test_c13_currency_day_scope.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+review/full-scope-v2/test_c13_currency_day_scope.py:51: in complete
+    checkout=post(http,f'/v1/direct/reservations/{rid}/checkout',h['customer_headers'],
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+http = <starlette.testclient.TestClient object at 0x7f75c26336b0>
+path = '/v1/direct/reservations/hdr_60530db6f1dc4163a61f1613f3558a6f/checkout'
+headers = {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiQ09OU1VNRVIiLCJleHAiOjE3OTA0MTM4NDQ...xpZXJfaWQiOm51bGwsInVzZXJuYW1lIjoiY3VzdG9tZXItZDhlOTIxYjU1ZiIsInZlciI6MX0.UbCRgCpoupt5I3xeXglMDyZUZty7iRi6bc_XXMbQPd0'}
+body = {'currency': 'USD', 'expected_amount_minor': 12900, 'mode': 'CONTRACT_SIMULATOR'}
+key = None, status = 200
+
+    def post(http,path,headers,body=None,key=None,status=200):
+        headers={**headers,**({'Idempotency-Key':key} if key else {})}
+        result=http.post(path,headers=headers,**({'json':body} if body is not None else {}))
+>       assert result.status_code==status,(path,result.text)
+E       AssertionError: ('/v1/direct/reservations/hdr_60530db6f1dc4163a61f1613f3558a6f/checkout', '{"detail":[{"type":"literal_error","loc":["body","currency"],"msg":"Input should be \'CNY\'","input":"USD","ctx":{"expected":"\'CNY\'"}}]}')
+E       assert 422 == 200
+E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+
+tests/test_c01_aoluguya_business_day.py:73: AssertionError
+=========================== short test summary info ============================
+FAILED review/full-scope-v2/test_c13_currency_day_scope.py::test_availability_mixed_currency_header_never_labels_usd_as_cny
+FAILED review/full-scope-v2/test_c13_currency_day_scope.py::test_daily_close_separates_currency_foreign_hotel_and_old_order

@@ -79,7 +79,7 @@ export async function hotelDepth(h) {
   };
   if(!await scenario(p,'DEPTH45-unpaid-order-search-and-resume',async()=>{
     await home(p,'HOTEL');await p.locator('#city').fill('TYO');
-    await p.locator('#cin').fill(day(40));await p.locator('#cout').fill(day(42));
+    await selectDateRange(p,'#cin','#cout',day(40),day(42));
     await p.locator('#searchBtn').click();await p.locator('[data-hotel]').first().click();
     await p.locator('[data-offer]').first().click();await p.locator('#continue').click();
     const response=p.waitForResponse(r=>requestAt(r,'/v1/consumer/orders'));
@@ -258,3 +258,4 @@ export async function hotelDepth(h) {
     },'journeys'))return;
   }finally{await owner.context().close();}
 }
+import { selectDateRange } from './date-range.mjs';

@@ -1,0 +1,132 @@
+FFFF...                                                                  [100%]
+=================================== FAILURES ===================================
+_____ test_consumer_cannot_create_unbound_money_obligation[RENTAL_DEPOSIT] _____
+
+client = <starlette.testclient.TestClient object at 0x7f6c52f60bc0>
+business_type = 'RENTAL_DEPOSIT'
+
+    @pytest.mark.parametrize('business_type', ['RENTAL_DEPOSIT', 'RENTAL_CHANGE', 'SUBSCRIPTION_INVOICE', 'ARBITRARY'])
+    def test_consumer_cannot_create_unbound_money_obligation(client, business_type):
+        headers = auth(client)
+        body = dict(business_type=business_type, business_id='invented', payee_id='attacker',
+                    operation='AUTHORIZE', amount_minor=99999, currency='USD',
+                    channel_priority=['LOCAL_MARKET'])
+        response = client.post('/v1/payments/intents', headers=headers | {'Idempotency-Key': 'invented'}, json=body)
+>       assert response.status_code == 409
+E       assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_c11_consumer_payment_source_boundary.py:17: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T07:36:12.318068+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_7429d57912544bf6b9cdd86fd1569a44","trace_id":"tr_5fc7dd62a8474a61a02ab0c6e2a73e7e","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":86.75}
+{"ts":"2026-09-25T07:36:12.319129+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:36:12.360097+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_da1af7cda00b4ee9bce8888459b7ead7","trace_id":"tr_f5db9867391a440dae85049e0b0a7c79","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":39.87}
+{"ts":"2026-09-25T07:36:12.360637+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:36:12.370993+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_a64cd4ab12124098b784875fbdf33313","trace_id":"tr_be433a0eccda419e89b5116f1c76ff13","path":"/v1/payments/intents","method":"POST","status_code":200,"duration_ms":9.68}
+{"ts":"2026-09-25T07:36:12.371442+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/payments/intents \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/payments/intents "HTTP/1.1 200 OK"
+_____ test_consumer_cannot_create_unbound_money_obligation[RENTAL_CHANGE] ______
+
+client = <starlette.testclient.TestClient object at 0x7f6c4c50c7d0>
+business_type = 'RENTAL_CHANGE'
+
+    @pytest.mark.parametrize('business_type', ['RENTAL_DEPOSIT', 'RENTAL_CHANGE', 'SUBSCRIPTION_INVOICE', 'ARBITRARY'])
+    def test_consumer_cannot_create_unbound_money_obligation(client, business_type):
+        headers = auth(client)
+        body = dict(business_type=business_type, business_id='invented', payee_id='attacker',
+                    operation='AUTHORIZE', amount_minor=99999, currency='USD',
+                    channel_priority=['LOCAL_MARKET'])
+        response = client.post('/v1/payments/intents', headers=headers | {'Idempotency-Key': 'invented'}, json=body)
+>       assert response.status_code == 409
+E       assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_c11_consumer_payment_source_boundary.py:17: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T07:36:12.644095+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_3308b64810394dca9e505b3446fc1370","trace_id":"tr_5d630cd590c944098fd011cc8ffd2ba5","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":110.69}
+{"ts":"2026-09-25T07:36:12.644850+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:36:12.694470+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_ac6997abd98d4a19829af22f988d83ac","trace_id":"tr_eb2bc29180294f1d87407386c69dfdfb","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":48.72}
+{"ts":"2026-09-25T07:36:12.695086+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:36:12.702216+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_9d9c369418104c7b8d19ab5459d50351","trace_id":"tr_2e3ee0b40abc4d0f8fd369b965e73c70","path":"/v1/payments/intents","method":"POST","status_code":200,"duration_ms":6.29}
+{"ts":"2026-09-25T07:36:12.702719+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/payments/intents \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/payments/intents "HTTP/1.1 200 OK"
+__ test_consumer_cannot_create_unbound_money_obligation[SUBSCRIPTION_INVOICE] __
+
+client = <starlette.testclient.TestClient object at 0x7f6c4e8b1c70>
+business_type = 'SUBSCRIPTION_INVOICE'
+
+    @pytest.mark.parametrize('business_type', ['RENTAL_DEPOSIT', 'RENTAL_CHANGE', 'SUBSCRIPTION_INVOICE', 'ARBITRARY'])
+    def test_consumer_cannot_create_unbound_money_obligation(client, business_type):
+        headers = auth(client)
+        body = dict(business_type=business_type, business_id='invented', payee_id='attacker',
+                    operation='AUTHORIZE', amount_minor=99999, currency='USD',
+                    channel_priority=['LOCAL_MARKET'])
+        response = client.post('/v1/payments/intents', headers=headers | {'Idempotency-Key': 'invented'}, json=body)
+>       assert response.status_code == 409
+E       assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_c11_consumer_payment_source_boundary.py:17: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T07:36:12.876817+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_6164c98254414f5c8c4e92d09408fc0a","trace_id":"tr_016908e64ffc4d39896f0df68680ab0b","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":81.16}
+{"ts":"2026-09-25T07:36:12.877450+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:36:12.916846+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_beb004eb6ea44ba2a46182fbdfd4e2ee","trace_id":"tr_158738bca5934fdc9f50306c7bab5680","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":38.65}
+{"ts":"2026-09-25T07:36:12.917233+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:36:12.925149+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_99bf0cc01b804901b95073f5d99590e4","trace_id":"tr_07eef6c9314d40a3bf30f869f54f4b63","path":"/v1/payments/intents","method":"POST","status_code":200,"duration_ms":7.34}
+{"ts":"2026-09-25T07:36:12.925518+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/payments/intents \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/payments/intents "HTTP/1.1 200 OK"
+_______ test_consumer_cannot_create_unbound_money_obligation[ARBITRARY] ________
+
+client = <starlette.testclient.TestClient object at 0x7f6c4d967470>
+business_type = 'ARBITRARY'
+
+    @pytest.mark.parametrize('business_type', ['RENTAL_DEPOSIT', 'RENTAL_CHANGE', 'SUBSCRIPTION_INVOICE', 'ARBITRARY'])
+    def test_consumer_cannot_create_unbound_money_obligation(client, business_type):
+        headers = auth(client)
+        body = dict(business_type=business_type, business_id='invented', payee_id='attacker',
+                    operation='AUTHORIZE', amount_minor=99999, currency='USD',
+                    channel_priority=['LOCAL_MARKET'])
+        response = client.post('/v1/payments/intents', headers=headers | {'Idempotency-Key': 'invented'}, json=body)
+>       assert response.status_code == 409
+E       assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_c11_consumer_payment_source_boundary.py:17: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"ts":"2026-09-25T07:36:13.080933+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_e90f0fc6ffa54fc3af430b27327c7a50","trace_id":"tr_85623a5039f447e4aa591022a9462c18","path":"/v1/consumer/auth/register","method":"POST","status_code":200,"duration_ms":76.76}
+{"ts":"2026-09-25T07:36:13.081610+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/consumer/auth/register \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:36:13.128265+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_d5f00e068c0f401596011529df54d1e4","trace_id":"tr_abe5ab39e377457f82bf11a3595398f2","path":"/v1/mobile/auth/login","method":"POST","status_code":200,"duration_ms":45.96}
+{"ts":"2026-09-25T07:36:13.128805+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/mobile/auth/login \"HTTP/1.1 200 OK\""}
+{"ts":"2026-09-25T07:36:13.135632+00:00","level":"INFO","logger":"go.runtime","message":"http_request","request_id":"req_a3e8d548d57e44508f21a2e8dd2cf281","trace_id":"tr_4736fbb73b384b66b1c12ba19cc064ad","path":"/v1/payments/intents","method":"POST","status_code":200,"duration_ms":6.14}
+{"ts":"2026-09-25T07:36:13.136024+00:00","level":"INFO","logger":"httpx","message":"HTTP Request: POST http://testserver/v1/payments/intents \"HTTP/1.1 200 OK\""}
+------------------------------ Captured log call -------------------------------
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/consumer/auth/register "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/mobile/auth/login "HTTP/1.1 200 OK"
+INFO     go.runtime:main.py:324 http_request
+INFO     httpx:_client.py:1025 HTTP Request: POST http://testserver/v1/payments/intents "HTTP/1.1 200 OK"
+=========================== short test summary info ============================
+FAILED tests/test_c11_consumer_payment_source_boundary.py::test_consumer_cannot_create_unbound_money_obligation[RENTAL_DEPOSIT]
+FAILED tests/test_c11_consumer_payment_source_boundary.py::test_consumer_cannot_create_unbound_money_obligation[RENTAL_CHANGE]
+FAILED tests/test_c11_consumer_payment_source_boundary.py::test_consumer_cannot_create_unbound_money_obligation[SUBSCRIPTION_INVOICE]
+FAILED tests/test_c11_consumer_payment_source_boundary.py::test_consumer_cannot_create_unbound_money_obligation[ARBITRARY]
+4 failed, 3 passed in 6.68s

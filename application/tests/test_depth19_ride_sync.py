@@ -1,3 +1,4 @@
+from ride_cancellation_fixture import create_ride
 """Server waiting policy, exact-flight matching, and actual disk-backed fleet recovery."""
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
@@ -24,7 +25,7 @@ svc=FlightRideSync()
 
 def seed_ride(auth, account='u19', day_offset=0, airport='NRT', enabled=True, protection=False):
     time=datetime.now(timezone.utc).replace(microsecond=0)+timedelta(days=day_offset)
-    ride=ride_service.create(account,{'offer_id':'ride_standard','pickup':airport,'dropoff':'City','pickup_at':time.isoformat(),'passengers':[{'full_name':'TEST RIDER'}]})
+    ride=create_ride(ride_service,account,{'offer_id':'ride_standard','pickup':airport,'dropoff':'City','pickup_at':time.isoformat(),'passengers':[{'full_name':'TEST RIDER'}]})
     with SessionLocal.begin() as s:
         row=s.get(Ride,ride['order_id']);row.status='CONFIRMED';row.supplier_reference='isolated:'+row.order_id
     identity={'carrier_code':'MU','flight_no':'MU523','departure_date':time.date().isoformat(),'arrival_airport':airport}
@@ -216,13 +217,13 @@ def test_booking_entry_saves_server_policy_and_tracking_together():
     body={'offer_id':'ride_premium','pickup':'NRT','dropoff':'City','pickup_at':now.isoformat(),
         'passengers':[{'full_name':'ISOLATED RIDER'}],'flight_tracking_enabled':True,
         'flight_identity':identity,'flight_authority_id':auth[0],'delay_protection_enabled':True}
-    ride=ride_service.create('u19',body)
+    ride=create_ride(ride_service,'u19',body)
     with SessionLocal() as s:
         assert s.get(Ride,ride['order_id']).status=='PAYMENT_PENDING'
         assert s.get(Policy,ride['order_id']).policy_json['max_free_wait_minutes']==120
         assert s.get(Binding,ride['order_id']).delay_protection_enabled
     body['flight_identity']={}
-    with pytest.raises(ValueError):ride_service.create('u19',body)
+    with pytest.raises(ValueError):create_ride(ride_service,'u19',body)
     with SessionLocal() as s:assert s.scalar(select(func.count()).select_from(Ride))==1
 
 

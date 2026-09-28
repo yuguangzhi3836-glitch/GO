@@ -1,0 +1,519 @@
+{
+  "baseline": "cba99d085ffe8ff576e44120ac796e59b4ff11bf",
+  "candidate": null,
+  "status": "NOT_ASSESSED",
+  "frozen_scope_hash": "f120a868a71b242ee7f99a0076c694b137fbbe0a7d988154f3747e88d0b1145a",
+  "checklist_changed": false,
+  "frozen_requirement_references": [
+    {
+      "id": "C01-06",
+      "cell": "C01",
+      "title": "条款与媒体运营",
+      "category": "OPERATIONS",
+      "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+      "actor": "对应模块有权限运营管理员",
+      "preconditions": "既有当前版本/未决案件与操作者角色已记录；操作只作用本模块范围",
+      "trigger": "条款与媒体运营的真实入口请求（验证case给出具体分支）",
+      "expected_result": "发布版本对新报价可见；撤回素材不能继续作为当前可售展示；已有订单的已接受条款仍保持原版本",
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_change_policy.py"
+      ],
+      "test_paths": [
+        "application/tests/test_depth43_hotel_change_trips.py"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-06.1",
+          "description": "发布版本对新报价可见",
+          "required": true
+        },
+        {
+          "id": "C01-06.2",
+          "description": "撤回素材不能继续作为当前可售展示",
+          "required": true
+        },
+        {
+          "id": "C01-06.3",
+          "description": "已有订单的已接受条款仍保持原版本",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选与清单绑定",
+        "逐case原始API/DB/ledger/库存前后结果",
+        "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+        "独立复核与原始artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "baseline_status": "SCOPED_REFERENCE_ONLY",
+      "exclusion_review": null
+    },
+    {
+      "id": "C01-08",
+      "cell": "C01",
+      "title": "供应商租户边界",
+      "category": "AUTH_TENANT",
+      "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+      "actor": "所属供应商及非所属供应商、供应商只读角色",
+      "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+      "trigger": "供应商租户边界的真实入口请求（验证case给出具体分支）",
+      "expected_result": "供应商B不可读或处理供应商A订单；同供应商只读角色不可提交履约或资金动作",
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_change_policy.py"
+      ],
+      "test_paths": [
+        "application/tests/test_depth43_hotel_change_trips.py"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-08.1",
+          "description": "供应商B不可读或处理供应商A订单",
+          "required": true
+        },
+        {
+          "id": "C01-08.2",
+          "description": "同供应商只读角色不可提交履约或资金动作",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选与清单绑定",
+        "逐case原始API/DB/ledger/库存前后结果",
+        "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+        "独立复核与原始artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "baseline_status": "SCOPED_REFERENCE_ONLY",
+      "exclusion_review": null
+    },
+    {
+      "id": "C01-13",
+      "cell": "C01",
+      "title": "运营处理闭环",
+      "category": "OPERATIONS",
+      "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+      "actor": "对应模块有权限运营管理员",
+      "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+      "trigger": "运营处理闭环的真实入口请求（验证case给出具体分支）",
+      "expected_result": "未决记录显示原因、处理角色及责任人；超出既定期限记录显示待升级处理；处理关闭后保留原输入、处理人、时间与结果，不删除未知历史；从本模块真实未决事件登记任务并派发给有权限责任人；登记、派发和执行三个状态不可混为完成；受权处理或人工接管后验证订单与资金结果再关闭任务；后续复查记录原事件与前次处理，不静默删除历史",
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_change_policy.py"
+      ],
+      "test_paths": [
+        "application/tests/test_depth43_hotel_change_trips.py"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-13.1",
+          "description": "未决记录显示原因、处理角色及责任人",
+          "required": true
+        },
+        {
+          "id": "C01-13.2",
+          "description": "超出既定期限记录显示待升级处理",
+          "required": true
+        },
+        {
+          "id": "C01-13.3",
+          "description": "处理关闭后保留原输入、处理人、时间与结果，不删除未知历史",
+          "required": true
+        },
+        {
+          "id": "C01-13.4",
+          "description": "从本模块真实未决事件登记任务并派发给有权限责任人；登记、派发和执行三个状态不可混为完成",
+          "required": true
+        },
+        {
+          "id": "C01-13.5",
+          "description": "受权处理或人工接管后验证订单与资金结果再关闭任务；后续复查记录原事件与前次处理，不静默删除历史",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选与清单绑定",
+        "逐case原始API/DB/ledger/库存前后结果",
+        "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+        "独立复核与原始artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "baseline_status": "SCOPED_REFERENCE_ONLY",
+      "exclusion_review": null
+    },
+    {
+      "id": "C01-14",
+      "cell": "C01",
+      "title": "拒绝无副作用",
+      "category": "ERROR_UNKNOWN",
+      "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+      "actor": "已认证原请求者及恢复worker；无新额外权限",
+      "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+      "trigger": "拒绝无副作用的真实入口请求（验证case给出具体分支）",
+      "expected_result": "陈旧报价拒绝后订单版本、ledger余额、库存不变；撤销后延迟请求不能恢复终态；错误提示指明待核验或重新确认而非声称操作成功",
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_change_policy.py"
+      ],
+      "test_paths": [
+        "application/tests/test_depth43_hotel_change_trips.py"
+      ],
+      "verification_cases": [
+        {
+          "id": "C01-14.1",
+          "description": "陈旧报价拒绝后订单版本、ledger余额、库存不变",
+          "required": true
+        },
+        {
+          "id": "C01-14.2",
+          "description": "撤销后延迟请求不能恢复终态",
+          "required": true
+        },
+        {
+          "id": "C01-14.3",
+          "description": "错误提示指明待核验或重新确认而非声称操作成功",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "固定候选与清单绑定",
+        "逐case原始API/DB/ledger/库存前后结果",
+        "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+        "独立复核与原始artifact摘要"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "baseline_status": "SCOPED_REFERENCE_ONLY",
+      "exclusion_review": null
+    },
+    {
+      "id": "C14-PER-01",
+      "group": "permissions",
+      "criterion": "每个管理动作验证认证主体与服务端权限，拒绝正文actor/approved_by替代",
+      "evidence_required": "匿名、consumer、supplier、无权admin矩阵",
+      "scope": "INTERNAL_ENGINEERING",
+      "included_in_denominator": true,
+      "cell": "C14",
+      "title": "每个管理动作验证认证主体与服务端权限，拒绝正文actor/approved_by替代",
+      "requirement_ref": "用户最新C01–C14职责与持续运营授权；C14原始V1义务；C13 CHECKLIST_RULES.md；Round3独立补充",
+      "category": "AUTH_TENANT",
+      "actor": "用户/供应商/管理员",
+      "preconditions": "固定候选及规则/fixture版本；受控隔离环境；本条所述角色与对象已准备，真实部署/收费未授权",
+      "trigger": "调用管理动作",
+      "expected_result": "每个管理动作验证认证主体与服务端权限，拒绝正文actor/approved_by替代",
+      "source_paths": [],
+      "verification_cases": [
+        {
+          "id": "C14-PER-01-CASE-1",
+          "description": "有权限认证主体按原范围执行",
+          "required": true
+        },
+        {
+          "id": "C14-PER-01-CASE-2",
+          "description": "匿名及错误角色拒绝",
+          "required": true
+        },
+        {
+          "id": "C14-PER-01-CASE-3",
+          "description": "正文actor或approved_by替换身份拒绝",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "匿名、consumer、supplier、无权admin矩阵",
+        "固定候选源码和原始结果hash、全部必需case；适用数据库状态/真实页面/API与独立review"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "baseline_reference": "ecab有限审查仅历史参考，不覆盖本条完整义务",
+      "exclusion_review": null
+    },
+    {
+      "id": "C14-PER-04",
+      "group": "permissions",
+      "criterion": "订单、供应商、环境与动作权限不能跨范围借用",
+      "evidence_required": "跨订单/跨租户/跨环境ID用例",
+      "scope": "INTERNAL_ENGINEERING",
+      "included_in_denominator": true,
+      "cell": "C14",
+      "title": "订单、供应商、环境与动作权限不能跨范围借用",
+      "requirement_ref": "用户最新C01–C14职责与持续运营授权；C14原始V1义务；C13 CHECKLIST_RULES.md；Round3独立补充",
+      "category": "AUTH_TENANT",
+      "actor": "跨对象运营账号",
+      "preconditions": "固定候选及规则/fixture版本；受控隔离环境；本条所述角色与对象已准备，真实部署/收费未授权",
+      "trigger": "操作规则或订单",
+      "expected_result": "订单、供应商、环境与动作权限不能跨范围借用",
+      "source_paths": [],
+      "verification_cases": [
+        {
+          "id": "C14-PER-04-CASE-1",
+          "description": "本范围对象允许",
+          "required": true
+        },
+        {
+          "id": "C14-PER-04-CASE-2",
+          "description": "借用其他订单/租户ID拒绝",
+          "required": true
+        },
+        {
+          "id": "C14-PER-04-CASE-3",
+          "description": "测试授权借入非允许环境拒绝",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "跨订单/跨租户/跨环境ID用例",
+        "固定候选源码和原始结果hash、全部必需case；适用数据库状态/真实页面/API与独立review"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "baseline_reference": "ecab有限审查仅历史参考，不覆盖本条完整义务",
+      "exclusion_review": null
+    },
+    {
+      "id": "C14-PER-05",
+      "group": "permissions",
+      "criterion": "权限撤销后新执行重验当前权限，不靠旧页面或token声明放行",
+      "evidence_required": "排队后撤权到执行竞态",
+      "scope": "INTERNAL_ENGINEERING",
+      "included_in_denominator": true,
+      "cell": "C14",
+      "title": "权限撤销后新执行重验当前权限，不靠旧页面或token声明放行",
+      "requirement_ref": "用户最新C01–C14职责与持续运营授权；C14原始V1义务；C13 CHECKLIST_RULES.md；Round3独立补充",
+      "category": "AUTH_TENANT",
+      "actor": "已撤权运营账号",
+      "preconditions": "固定候选及规则/fixture版本；受控隔离环境；本条所述角色与对象已准备，真实部署/收费未授权",
+      "trigger": "执行已排队管理动作",
+      "expected_result": "权限撤销后新执行重验当前权限，不靠旧页面或token声明放行",
+      "source_paths": [],
+      "verification_cases": [
+        {
+          "id": "C14-PER-05-CASE-1",
+          "description": "仍有权的主体执行",
+          "required": true
+        },
+        {
+          "id": "C14-PER-05-CASE-2",
+          "description": "排队后撤权的新执行拒绝",
+          "required": true
+        },
+        {
+          "id": "C14-PER-05-CASE-3",
+          "description": "旧页面或旧会话声明不能覆盖当前权限",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "排队后撤权到执行竞态",
+        "固定候选源码和原始结果hash、全部必需case；适用数据库状态/真实页面/API与独立review"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "baseline_reference": "ecab有限审查仅历史参考，不覆盖本条完整义务",
+      "exclusion_review": null
+    },
+    {
+      "id": "C14-VER-02",
+      "group": "version_scope_revocation",
+      "criterion": "生效版本完整不可变；变更生成新版本和新hash",
+      "evidence_required": "直接修改生效rule/scope/provenance拒绝",
+      "scope": "INTERNAL_ENGINEERING",
+      "included_in_denominator": true,
+      "cell": "C14",
+      "title": "生效版本完整不可变；变更生成新版本和新hash",
+      "requirement_ref": "用户最新C01–C14职责与持续运营授权；C14原始V1义务；C13 CHECKLIST_RULES.md；Round3独立补充",
+      "category": "NORMAL",
+      "actor": "规则维护者",
+      "preconditions": "固定候选及规则/fixture版本；受控隔离环境；本条所述角色与对象已准备，真实部署/收费未授权",
+      "trigger": "更改已生效规则",
+      "expected_result": "生效版本完整不可变；变更生成新版本和新hash",
+      "source_paths": [],
+      "verification_cases": [
+        {
+          "id": "C14-VER-02-CASE-1",
+          "description": "变更产生新版本新摘要",
+          "required": true
+        },
+        {
+          "id": "C14-VER-02-CASE-2",
+          "description": "原地修改ACTIVE规则拒绝",
+          "required": true
+        },
+        {
+          "id": "C14-VER-02-CASE-3",
+          "description": "改scope/provenance也必须新版本",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "直接修改生效rule/scope/provenance拒绝",
+        "固定候选源码和原始结果hash、全部必需case；适用数据库状态/真实页面/API与独立review"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "baseline_reference": "ecab有限审查仅历史参考，不覆盖本条完整义务",
+      "exclusion_review": null
+    },
+    {
+      "id": "C14-VER-04",
+      "group": "version_scope_revocation",
+      "criterion": "同一策略键并发发布保证唯一可消费版本",
+      "evidence_required": "数据库并发双激活、重复version与崩溃测试",
+      "scope": "INTERNAL_ENGINEERING",
+      "included_in_denominator": true,
+      "cell": "C14",
+      "title": "同一策略键并发发布保证唯一可消费版本",
+      "requirement_ref": "用户最新C01–C14职责与持续运营授权；C14原始V1义务；C13 CHECKLIST_RULES.md；Round3独立补充",
+      "category": "CONCURRENCY_RECOVERY",
+      "actor": "并发发布者",
+      "preconditions": "固定候选及规则/fixture版本；受控隔离环境；本条所述角色与对象已准备，真实部署/收费未授权",
+      "trigger": "同时激活同策略键",
+      "expected_result": "同一策略键并发发布保证唯一可消费版本",
+      "source_paths": [],
+      "verification_cases": [
+        {
+          "id": "C14-VER-04-CASE-1",
+          "description": "并发结束唯一可消费ACTIVE",
+          "required": true
+        },
+        {
+          "id": "C14-VER-04-CASE-2",
+          "description": "version分配无重复",
+          "required": true
+        },
+        {
+          "id": "C14-VER-04-CASE-3",
+          "description": "中途崩溃不残留半激活版本",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "数据库并发双激活、重复version与崩溃测试",
+        "固定候选源码和原始结果hash、全部必需case；适用数据库状态/真实页面/API与独立review"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "baseline_reference": "ecab有限审查仅历史参考，不覆盖本条完整义务",
+      "exclusion_review": null
+    },
+    {
+      "id": "C14-REC-03",
+      "group": "failure_recovery",
+      "criterion": "陈旧页面版本与撤销隔离",
+      "evidence_required": "expected_revision不符拒绝|已revoked版本不能从旧页面执行|刷新显示新权威状态且未产生成功动作/审计",
+      "scope": "INTERNAL_ENGINEERING",
+      "included_in_denominator": true,
+      "cell": "C14",
+      "title": "陈旧页面版本与撤销隔离",
+      "requirement_ref": "用户最新C01–C14职责与持续运营授权；C14原始V1义务；C13 CHECKLIST_RULES.md；Round3独立补充",
+      "category": "CONCURRENCY_RECOVERY",
+      "actor": "持有陈旧页面的运营者",
+      "preconditions": "固定候选及规则/fixture版本；受控隔离环境；本条所述角色与对象已准备，真实部署/收费未授权",
+      "trigger": "其他操作者已改版或撤销后旧页面提交",
+      "expected_result": "陈旧页面版本与撤销隔离",
+      "source_paths": [],
+      "verification_cases": [
+        {
+          "id": "C14-REC-03-CASE-1",
+          "description": "expected_revision不符拒绝",
+          "required": true
+        },
+        {
+          "id": "C14-REC-03-CASE-2",
+          "description": "已revoked版本不能从旧页面执行",
+          "required": true
+        },
+        {
+          "id": "C14-REC-03-CASE-3",
+          "description": "刷新显示新权威状态且未产生成功动作/审计",
+          "required": true
+        }
+      ],
+      "evidence_requirements": [
+        "expected_revision不符拒绝|已revoked版本不能从旧页面执行|刷新显示新权威状态且未产生成功动作/审计",
+        "固定候选源码和原始结果hash、全部必需case；适用数据库状态/真实页面/API与独立review"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "baseline_reference": "ecab有限审查仅历史参考，不覆盖本条完整义务",
+      "exclusion_review": null
+    }
+  ],
+  "probe_groups": [
+    {
+      "id": "R5-AUTH-01",
+      "proof_required": "真实会话只读/匿名/consumer/supplier审批拒绝；header/body身份伪造不可提升",
+      "requirement_id": "C14-PER-01",
+      "status": "NOT_ASSESSED"
+    },
+    {
+      "id": "R5-AUTH-02",
+      "proof_required": "服务直入复核当前真实principal/权限；调用者自报role字符串不能授予批准资格",
+      "requirement_id": "C14-PER-01",
+      "status": "NOT_ASSESSED"
+    },
+    {
+      "id": "R5-TENANT-01",
+      "proof_required": "server-held酒店授权精确绑定actor+hotel+action+有效期；外酒店/缺绑定/过期/撤销HOLD或拒绝",
+      "requirement_id": "C01-08",
+      "status": "NOT_ASSESSED"
+    },
+    {
+      "id": "R5-TENANT-02",
+      "proof_required": "酒店授权记录的创建/撤销本身由明确权限保护，不允许自授或caller布尔替代",
+      "requirement_id": "C14-PER-04",
+      "status": "NOT_ASSESSED"
+    },
+    {
+      "id": "R5-VERSION-01",
+      "proof_required": "approve绑定snapshot所属hotel、不可变内容hash/version；篡改/旧版/错hotel拒绝",
+      "requirement_id": "C14-VER-02",
+      "status": "NOT_ASSESSED"
+    },
+    {
+      "id": "R5-REVOKE-01",
+      "proof_required": "授权撤销、角色降级、session撤销后的旧token/旧页面不得新批准",
+      "requirement_id": "C14-PER-05",
+      "status": "NOT_ASSESSED"
+    },
+    {
+      "id": "R5-ATOMIC-01",
+      "proof_required": "重复审批/并发审批与撤销、数据库失败恢复保证唯一决定与完整审计，无半批准",
+      "requirement_id": "C14-VER-04",
+      "status": "NOT_ASSESSED"
+    },
+    {
+      "id": "R5-NEGATIVE-01",
+      "proof_required": "所有拒绝无snapshot/approval/发布/资金副作用；权限在对象查询前拒绝",
+      "requirement_id": "C01-14",
+      "status": "NOT_ASSESSED"
+    },
+    {
+      "id": "R5-POSITIVE-01",
+      "proof_required": "有权真实session+可信当前hotel授权+确切snapshot可批准；审计包含认证actor和authority版本",
+      "requirement_id": "C01-06",
+      "status": "NOT_ASSESSED"
+    },
+    {
+      "id": "R5-UI-OPS-01",
+      "proof_required": "交付UI则真实点击权限反馈/陈旧授权刷新；未交付不能仅API断言替代角色端或完整运营闭环",
+      "requirement_id": "C01-13",
+      "status": "NOT_ASSESSED"
+    }
+  ],
+  "excluded": [
+    "酒店容量/入住政策本轮未交付不得声称通过",
+    "真实供应商/PSP/生产/HK均不执行",
+    "不自动为整个义务赋PASS"
+  ]
+}

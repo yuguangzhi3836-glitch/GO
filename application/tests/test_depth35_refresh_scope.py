@@ -1,4 +1,5 @@
 """Isolated HTTP/SQLite sessions. No browser, credentials service, or Hong Kong."""
+from registration_terms_test_support import register_synthetic_consumer
 import pytest
 from sqlalchemy import select
 from go_hotel.security.service import identity_service
@@ -9,7 +10,7 @@ from go_hotel.db.models import AuthSessionRow, RefreshTokenRow
 def tokens(client,actor):
     if actor=='CONSUMER':
         body={'email':'depth35@example.test','password':'Isolated-Depth35-Only!','display_name':'Isolated consumer'}
-        r=client.post('/v1/consumer/auth/register',json=body)
+        r=register_synthetic_consumer(client, json=body)
         assert r.status_code==200,r.text
         result=identity_service.login(body['email'],body['password'])
     else:

@@ -9,12 +9,18 @@ bearer=HTTPBearer(auto_error=False)
 def current_principal(request:Request, cred:HTTPAuthorizationCredentials|None=Depends(bearer))->Principal:
     token = cred.credentials if cred else cookie_access_token(request)
     if not token: raise HTTPException(401,detail='AUTHENTICATION_REQUIRED')
-    try: p=identity_service.authenticate(token)
+    try:
+        p=identity_service.authenticate(
+            token, touch_session=request.method not in {'GET', 'HEAD', 'OPTIONS'}
+        )
     except ValueError as e: raise HTTPException(401,detail=str(e))
     expected_actor = request.headers.get('X-GO-Actor')
     if expected_actor is not None and expected_actor not in {'CONSUMER', 'SUPPLIER_USER', 'GO_ADMIN'}:
         raise HTTPException(400, detail='INVALID_ACTOR_CONTEXT')
     if expected_actor and expected_actor != p.actor_type:
+        raise HTTPException(403, detail='ACTOR_CONTEXT_CHANGED')
+    expected_user = request.headers.get('X-GO-User')
+    if expected_user and expected_user != p.user_id:
         raise HTTPException(403, detail='ACTOR_CONTEXT_CHANGED')
     request.state.principal=p
     return p
@@ -31,6 +37,15 @@ def supplier_principal(p:Principal=Depends(current_principal)):
 
 def admin_principal(p:Principal=Depends(current_principal)):
     if p.actor_type!='GO_ADMIN': raise HTTPException(403,detail='GO_ADMIN_REQUIRED')
+    return p
+
+def order_admin_principal(p:Principal=Depends(admin_principal)):
+    if 'admin:orders' not in p.permissions:
+        raise HTTPException(403,detail='TICKET_ORDER_OPERATOR_REQUIRED')
+    return p
+
+def connector_admin_principal(p:Principal=Depends(admin_principal)):
+    if 'admin:connector' not in p.permissions: raise HTTPException(403,detail='CONNECTOR_ADMIN_REQUIRED')
     return p
 
 from sqlalchemy import select

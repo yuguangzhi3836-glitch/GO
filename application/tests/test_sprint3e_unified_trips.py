@@ -1,10 +1,11 @@
+from registration_terms_test_support import register_synthetic_consumer
 from datetime import datetime,timezone
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import OrderRow,FlightOrderRow,RailOrderRow,MobilityRideOrderRow,MobilityRentalOrderRow,AttractionOrderRow
 from go_hotel.security.service import identity_service
 
 def auth(client):
- r=client.post('/v1/consumer/auth/register',json={'email':'journey@example.com','password':'StrongPass123!','display_name':'Journey User'});assert r.status_code==200
+ r=register_synthetic_consumer(client, json={'email':'journey@example.com','password':'StrongPass123!','display_name':'Journey User'});assert r.status_code==200
  t=client.post('/v1/mobile/auth/login',json={'email':'journey@example.com','password':'StrongPass123!'}).json()['data'];return {'Authorization':'Bearer '+t['access_token']},identity_service.authenticate(t['access_token']).user_id
 
 def seed(uid):
@@ -34,5 +35,5 @@ def test_unified_go_trips_six_verticals(client):
 
 def test_cross_account_journey_isolation(client):
  h,uid=auth(client);seed(uid);r=client.post('/v1/trips/journeys',headers=h,json={'title':'Private Journey','items':[{'vertical':'HOTEL','order_id':'h_jny'}]}).json()['data']
- client.post('/v1/consumer/auth/register',json={'email':'other@example.com','password':'StrongPass123!','display_name':'Other'});t=client.post('/v1/mobile/auth/login',json={'email':'other@example.com','password':'StrongPass123!'}).json()['data'];h2={'Authorization':'Bearer '+t['access_token']}
+ register_synthetic_consumer(client, json={'email':'other@example.com','password':'StrongPass123!','display_name':'Other'});t=client.post('/v1/mobile/auth/login',json={'email':'other@example.com','password':'StrongPass123!'}).json()['data'];h2={'Authorization':'Bearer '+t['access_token']}
  assert client.get('/v1/trips/journeys/'+r['journey_id'],headers=h2).status_code==404

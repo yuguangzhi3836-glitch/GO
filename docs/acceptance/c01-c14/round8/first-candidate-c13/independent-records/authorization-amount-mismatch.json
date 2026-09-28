@@ -1,0 +1,137 @@
+{
+  "actual": {
+    "daily_close_id": "hdc_255b4f68e19544b8bdae9eb9791e6110",
+    "hosted_hotel_id": "hdh_78f3234a1ded453093f7fcce89ca72f1",
+    "business_date": "2026-09-28",
+    "inventory_snapshot_json": {
+      "total": 250,
+      "available": 249,
+      "days": [
+        {
+          "inventory_day_id": "hid_064f40cdc3424381a14e3595dfda6bbc",
+          "total": 50,
+          "available": 50,
+          "held": 0,
+          "difference": 0
+        },
+        {
+          "inventory_day_id": "hid_464d5eff607a49e1a298faecc2da46b9",
+          "total": 50,
+          "available": 50,
+          "held": 0,
+          "difference": 0
+        },
+        {
+          "inventory_day_id": "hid_81451ae0e9fe4825b3466b482ce4089d",
+          "total": 50,
+          "available": 50,
+          "held": 0,
+          "difference": 0
+        },
+        {
+          "inventory_day_id": "hid_9381071933424fd7bdb8066aa086d3d2",
+          "total": 50,
+          "available": 50,
+          "held": 0,
+          "difference": 0
+        },
+        {
+          "inventory_day_id": "hid_f74f58dfad5e420f8ee63ee87d5f4e9d",
+          "total": 50,
+          "available": 49,
+          "held": 1,
+          "difference": 0
+        }
+      ]
+    },
+    "reservation_summary_json": {
+      "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING": 1
+    },
+    "exception_summary_json": {
+      "schema": "HOSTED_BUSINESS_DAY_V1",
+      "timezone": "Asia/Shanghai",
+      "window_start": "2026-09-27T16:00:00+00:00",
+      "window_end_exclusive": "2026-09-28T16:00:00+00:00",
+      "pending": 0,
+      "payment_transactions": 0,
+      "refund_transactions": 0,
+      "currencies": {
+        "CNY": {
+          "authorization_minor": 69801,
+          "capture_minor": 0,
+          "release_minor": 0,
+          "refund_minor": 0,
+          "debit_minor": 0,
+          "credit_minor": 0,
+          "difference_minor": 0,
+          "net_capture_minor": 0,
+          "opening_held_minor": 0,
+          "opening_net_capture_minor": 0,
+          "closing_held_minor": 69801,
+          "closing_net_capture_minor": 0
+        }
+      },
+      "blockers": [],
+      "unresolved_reservations": [],
+      "reservations": [
+        {
+          "reservation_id": "hdr_c8d6b8f7054b446cb56f3a5e2e2e9cbc",
+          "state": "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING",
+          "payment_state": "CONTRACT_AUTHORIZED_NOT_ALIPAY"
+        }
+      ],
+      "order_facts": [
+        {
+          "hosted_reservation_id": "hdr_c8d6b8f7054b446cb56f3a5e2e2e9cbc",
+          "hosted_offer_id": "hdo_7f8cd7a3ca724b13ab7eaeb54cec1c6f",
+          "check_in": "2026-09-28",
+          "check_out": "2026-09-29",
+          "amount_minor": 69800,
+          "currency": "CNY",
+          "created_at": "2026-09-28 00:00:00",
+          "updated_at": "2026-09-28 00:00:00"
+        }
+      ],
+      "stays": [],
+      "movement_ids": [
+        "omm_83a381f8b20c4c8fa4483a0cf9e10115"
+      ],
+      "ledger_ids": [],
+      "source_facts_hash": "56b3f085009743caf6fd4866b7e742256815250646df1a3891fa0f640e94f588",
+      "external_reconciliation": "NOT_PERFORMED",
+      "production_live": false,
+      "state": "OPERATIONAL_SNAPSHOT_RECONCILED",
+      "immutable_facts_hash": "8bc8dc96d74ffd15668df35142db92847e616408ccc313ca9ee0c86aadd38b01",
+      "snapshot_cutoff_at": "2026-09-28T16:00:00+00:00"
+    },
+    "closed_by": "usr_1d2df5795f1040db8510c0a4b906de39",
+    "evidence_hash": "dbf6d8b6a73f665cc607cc9fb25cb9a539946dd8f0308cb64568cb3b2524a2f3",
+    "closed_at": "2026-09-28T16:00:00+00:00"
+  },
+  "money": {
+    "reservation_id": "hdr_c8d6b8f7054b446cb56f3a5e2e2e9cbc",
+    "reservation_state": "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING",
+    "payment_state": "CONTRACT_AUTHORIZED_NOT_ALIPAY",
+    "amount_minor": 69800,
+    "currency": "CNY",
+    "dates": [
+      "2026-09-28",
+      "2026-09-29"
+    ],
+    "root_id": "por_deded424b99c46bd895dd4f66a7b60c9",
+    "intent_id": "opi_3424c45b490c4b8cba8800c0e6a61eb0",
+    "movements": [
+      {
+        "id": "omm_83a381f8b20c4c8fa4483a0cf9e10115",
+        "kind": "AUTHORIZATION",
+        "amount_minor": 69801,
+        "currency": "CNY",
+        "parent": null,
+        "state": "CONFIRMED",
+        "created_at": "2026-09-28 00:00:00"
+      }
+    ],
+    "ledger": []
+  },
+  "expected": "BLOCKED_NO_FINAL_CLOSE"
+}

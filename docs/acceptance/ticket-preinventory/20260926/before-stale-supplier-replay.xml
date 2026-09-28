@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="3.579" timestamp="2026-09-26T20:48:27.034391+08:00" hostname="81f9726e8d4f"><testcase classname="tests.test_ticket_preinventory_boundaries" name="test_initial_supplier_replay_cannot_publish_success_over_pending_change[FLIGHT]" time="1.731"><failure message="Failed: DID NOT RAISE &lt;class 'ValueError'&gt;">vertical = 'FLIGHT'
+
+    @pytest.mark.parametrize('vertical',['FLIGHT','RAIL'])
+    def test_initial_supplier_replay_cannot_publish_success_over_pending_change(vertical):
+        from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as fulfillment
+        svc, oid = pending_order(vertical)
+        svc.checkout('owner',oid,'isolated')
+        fid, fact = supplier_fact(oid,['ORIGINAL-TICKET'])
+        fulfillment.record_supplier_fact(fid,fact)
+        q=svc.change_quote('owner',oid,(datetime.now().date()+timedelta(days=12)).isoformat())
+        svc.execute_change('owner',oid,q['quote_id'])
+        assert svc.order('owner',oid)['status']=='UNKNOWN_EXTERNAL_STATE'
+        before=business_facts()
+&gt;       with pytest.raises(ValueError,match='TICKET_OPERATION_RECONCILIATION_REQUIRED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE &lt;class 'ValueError'&gt;
+
+tests/test_ticket_preinventory_boundaries.py:203: Failed</failure></testcase><testcase classname="tests.test_ticket_preinventory_boundaries" name="test_initial_supplier_replay_cannot_publish_success_over_pending_change[RAIL]" time="0.123"><failure message="Failed: DID NOT RAISE &lt;class 'ValueError'&gt;">vertical = 'RAIL'
+
+    @pytest.mark.parametrize('vertical',['FLIGHT','RAIL'])
+    def test_initial_supplier_replay_cannot_publish_success_over_pending_change(vertical):
+        from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as fulfillment
+        svc, oid = pending_order(vertical)
+        svc.checkout('owner',oid,'isolated')
+        fid, fact = supplier_fact(oid,['ORIGINAL-TICKET'])
+        fulfillment.record_supplier_fact(fid,fact)
+        q=svc.change_quote('owner',oid,(datetime.now().date()+timedelta(days=12)).isoformat())
+        svc.execute_change('owner',oid,q['quote_id'])
+        assert svc.order('owner',oid)['status']=='UNKNOWN_EXTERNAL_STATE'
+        before=business_facts()
+&gt;       with pytest.raises(ValueError,match='TICKET_OPERATION_RECONCILIATION_REQUIRED'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE &lt;class 'ValueError'&gt;
+
+tests/test_ticket_preinventory_boundaries.py:203: Failed</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,15 @@
+{
+  "baseline": "cb8928f (parent supplied)",
+  "files": {
+    "application/src/go_hotel/mobility/rental/deposit_authority.py": "cd8012281973d3591315a07a0dfa0a4b9b5c19409b2734e403d850919bd20521",
+    "application/tests/test_rental_compensation_authority.py": "39d6b5127583b17fe62e9988a37d1f1b83b6407724113dded7512ab692b0c704",
+    "application/frontend/shared/rental-operations.js": "e6f8828c1c1a09fe5c1844760ac3b8addf7df152cb93d981d2149c4b2b5330ff"
+  },
+  "validation": {
+    "command": "PYTHONPATH=src python -m pytest -p no:cacheprovider tests/test_rental_compensation_authority.py tests/test_rental_damage_disputes.py tests/test_rental_deposit_authority.py",
+    "result": "64 passed: 10 new + 54 regression",
+    "environment": "isolated SQLite",
+    "junit": "source-junit.xml",
+    "UI": "syntax and existing 3 adapter checks passed; new real interaction is C12 responsibility"
+  }
+}

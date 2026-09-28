@@ -7,8 +7,14 @@ from pathlib import Path
 import pytest
 
 # tempfile is portable across the Windows review workstation and Linux Staging.
-DB = Path(os.getenv("GO_TEST_DB_PATH", str(Path(tempfile.gettempdir()) / f"go_hotel_test_{os.getpid()}_{uuid.uuid4().hex}.db")))
-os.environ["DATABASE_URL"] = f"sqlite+pysqlite:///{DB}"
+# Isolated PostgreSQL evidence jobs set GO_TEST_DATABASE_URL explicitly. All
+# other tests retain the deterministic SQLite snapshot; no runtime environment is touched.
+_test_database_url=os.getenv("GO_TEST_DATABASE_URL")
+if _test_database_url:
+    os.environ["DATABASE_URL"]=_test_database_url
+else:
+    DB = Path(os.getenv("GO_TEST_DB_PATH", str(Path(tempfile.gettempdir()) / f"go_hotel_test_{os.getpid()}_{uuid.uuid4().hex}.db")))
+    os.environ["DATABASE_URL"] = f"sqlite+pysqlite:///{DB}"
 os.environ["SAGA_RETRY_SECONDS"] = "0"
 os.environ["OUTBOX_MAX_ATTEMPTS"] = "5"
 

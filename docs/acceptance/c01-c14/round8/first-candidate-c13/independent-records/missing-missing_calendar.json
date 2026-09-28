@@ -1,0 +1,102 @@
+{
+  "daily_close_id": null,
+  "hosted_hotel_id": "hdh_acc729b424ac454b9b0ce59047be8bf9",
+  "business_date": "2026-09-28",
+  "inventory_snapshot_json": {
+    "total": 200,
+    "available": 199,
+    "days": [
+      {
+        "inventory_day_id": "hid_8b9a06e9993a44bd8d5569056c4367c8",
+        "total": 50,
+        "available": 50,
+        "held": 0,
+        "difference": 0
+      },
+      {
+        "inventory_day_id": "hid_bbb4c12b897144bfa103320ef2d1cbc6",
+        "total": 50,
+        "available": 50,
+        "held": 0,
+        "difference": 0
+      },
+      {
+        "inventory_day_id": "hid_daf64360f49d487c81c543c5588fbe31",
+        "total": 50,
+        "available": 50,
+        "held": 0,
+        "difference": 0
+      },
+      {
+        "inventory_day_id": "hid_e706529758e5480ba7a65f58cdcd321e",
+        "total": 50,
+        "available": 49,
+        "held": 1,
+        "difference": 0
+      }
+    ]
+  },
+  "reservation_summary_json": {
+    "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING": 1
+  },
+  "exception_summary_json": {
+    "schema": "HOSTED_BUSINESS_DAY_V1",
+    "timezone": "Asia/Shanghai",
+    "window_start": "2026-09-27T16:00:00+00:00",
+    "window_end_exclusive": "2026-09-28T16:00:00+00:00",
+    "pending": 0,
+    "payment_transactions": 0,
+    "refund_transactions": 0,
+    "currencies": {
+      "CNY": {
+        "authorization_minor": 69800,
+        "capture_minor": 0,
+        "release_minor": 0,
+        "refund_minor": 0,
+        "debit_minor": 0,
+        "credit_minor": 0,
+        "difference_minor": 0,
+        "net_capture_minor": 0,
+        "opening_held_minor": 0,
+        "opening_net_capture_minor": 0,
+        "closing_held_minor": 69800,
+        "closing_net_capture_minor": 0
+      }
+    },
+    "blockers": [
+      "MISSING_INVENTORY_DAY:pool_b25ce91e7fb0466b8f2d49117c92f158"
+    ],
+    "unresolved_reservations": [],
+    "reservations": [
+      {
+        "reservation_id": "hdr_778315c3cb114cc5ba467879450b0629",
+        "state": "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING",
+        "payment_state": "CONTRACT_AUTHORIZED_NOT_ALIPAY"
+      }
+    ],
+    "order_facts": [
+      {
+        "hosted_reservation_id": "hdr_778315c3cb114cc5ba467879450b0629",
+        "hosted_offer_id": "hdo_a173319aa791417a90036f3152a1f4e3",
+        "check_in": "2026-09-28",
+        "check_out": "2026-09-29",
+        "amount_minor": 69800,
+        "currency": "CNY",
+        "created_at": "2026-09-28 00:00:00",
+        "updated_at": "2026-09-28 00:00:00"
+      }
+    ],
+    "stays": [],
+    "movement_ids": [
+      "omm_4a16cbacc96643b08dec31617da9d9b3"
+    ],
+    "ledger_ids": [],
+    "source_facts_hash": "f5bc53eedc98285bea50d59f3ec92419ab02d557ad6adbcf24a4186bb9f568d7",
+    "external_reconciliation": "NOT_PERFORMED",
+    "production_live": false,
+    "state": "BLOCKED",
+    "immutable_facts_hash": "537651fda2e0e40feb498407e9d6f6ce07fc81ed630ae9223a25a527b5000405",
+    "snapshot_cutoff_at": "2026-09-28T00:00:00+00:00"
+  },
+  "evidence_hash": "5c510a8853ca9c6d8ce873d58f5431be02693a7f12e4d595ec23ace40465c5e9"
+}

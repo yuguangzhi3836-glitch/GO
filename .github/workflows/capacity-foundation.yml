@@ -1,0 +1,87 @@
+name: Capacity foundation and integrated journeys
+on:
+  pull_request:
+    paths:
+      - 'application/**'
+      - 'ci/capacity/**'
+      - '.github/workflows/capacity-foundation.yml'
+permissions:
+  contents: read
+concurrency:
+  group: capacity-foundation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  isolated:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_capacity_only
+          POSTGRES_DB: go_capacity_isolated
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U go_ci -d go_capacity_isolated" --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      APP_ENV: test
+      GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_capacity_only@127.0.0.1:5432/go_capacity_isolated
+      DATABASE_URL: postgresql+psycopg://go_ci:isolated_capacity_only@127.0.0.1:5432/go_capacity_isolated
+      GO_POOL_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_capacity_only@127.0.0.1:5432/go_capacity_isolated
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED: 'false'
+      TRAVEL_INTELLIGENCE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e './application[dev]'
+      - name: Bind candidate and database
+        run: |
+          mkdir -p capacity-evidence
+          python - <<'PY'
+          import os,json,subprocess,hashlib,psycopg
+          from pathlib import Path
+          head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          assert head==os.environ['EXPECTED_HEAD']
+          with psycopg.connect(os.environ['DATABASE_URL'].replace('postgresql+psycopg:','postgresql:')) as c:
+              version,db=c.execute('select version(),current_database()').fetchone()
+          assert 'PostgreSQL 18.4' in version and db=='go_capacity_isolated'
+          files=subprocess.check_output(['git','ls-files','application','ci/capacity'],text=True).splitlines()
+          Path('capacity-evidence/source.json').write_text(json.dumps({p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in files},indent=2))
+          Path('capacity-evidence/binding.json').write_text(json.dumps({'head':head,'application_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'database':db,'version':version,'scope':'POOL_BOUNDARY_AND_EXISTING_INTERNAL_JOURNEYS','million_online':'NOT_LOAD_TESTED','C13':'NOT_RUN','C14':'NOT_RUN','real_supplier':'NOT_ACCESSED','real_psp':'NOT_ACCESSED','deployment':'NOT_RUN'},indent=2))
+          PY
+      - name: Capacity arithmetic and refusal boundaries
+        run: |
+          set -o pipefail
+          python -m pytest ci/capacity --junitxml=capacity-evidence/model.xml 2>&1 | tee capacity-evidence/model.log
+          python ci/capacity/model.py ci/capacity/planning-example.json > capacity-evidence/planning.json
+      - name: Real PostgreSQL pool exhaustion and recovery
+        working-directory: application
+        run: |
+          set -o pipefail
+          python -m pytest tests/test_database_pool_budget.py --junitxml=../capacity-evidence/pool.xml 2>&1 | tee ../capacity-evidence/pool.log
+      - name: Shared three-role facts, registration, hotel business day
+        working-directory: application
+        run: |
+          set -o pipefail
+          python -m pytest tests/test_depth41_transaction_views.py tests/test_registration_privacy.py tests/test_registration_privacy_admin.py tests/test_registration_verification.py tests/test_c01_aoluguya_business_day.py --junitxml=../capacity-evidence/journeys.xml 2>&1 | tee ../capacity-evidence/journeys.log
+      - name: Hash raw results including failures
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path('capacity-evidence');root.mkdir(exist_ok=True)
+          (root/'SHA256.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir() if p.is_file() and p.name!='SHA256.json'},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: capacity-foundation-${{ github.event.pull_request.head.sha }}
+          path: capacity-evidence/
+          retention-days: 30
