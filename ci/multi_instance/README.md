@@ -14,6 +14,8 @@ Correctness runs first:
   and hotel room-night; verify one winner and capacity accounting.
 - Same-key ride creation across processes, receipt replay and changed-payload
   rejection; 20 capture replays must all resolve to the same money movement.
+- 20 initial checkouts for the same rail/attraction order, then replay from both
+  processes; exactly one successful intent and one successful attempt may exist.
 - Rail and attraction payment/cancellation on both sides of payment-root commit.
   The losing action must fail without releasing paid inventory or charging a
   cancelled order.
@@ -33,7 +35,7 @@ The fixed diagnostic gates are zero unexpected failures, valid inventory and
 money ledgers, full-transaction P95 <= 5 seconds and P99 <= 10 seconds. These
 latencies include replay checks and pool waiting. A failed gate blocks higher
 tiers. PIDs, observed transaction overlap, all outcomes, ledger facts, hardware,
-database identity, source commit/tree, and artifact hashes are retained.
+  database identity, source commit/tree, and artifact hashes are retained.
 
 Each child pool has size 5 and zero overflow; coordinator pool size is also 5.
 The orchestration connection is separate. Provider credentials are not inherited;

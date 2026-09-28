@@ -175,8 +175,17 @@ def check_money():
             siblings=[x for x in moves if x.parent_movement_id==parent.money_movement_id and x.movement_type==m.movement_type and x.state=='CONFIRMED']
             assert sum(x.amount_minor for x in siblings)<=parent.amount_minor,'OVER_CAPTURE_OR_REFUND'
             observations.append({'id':m.money_movement_id,'kind':m.movement_type,'amount_minor':m.amount_minor,'debit_minor':sum(x.amount_minor for x in e if x.direction=='DEBIT'),'credit_minor':sum(x.amount_minor for x in e if x.direction=='CREDIT')})
+        from go_hotel.db.models import HostedInventoryDayRow,HostedReservationNightRow
+        hotel_days=list(s.scalars(select(HostedInventoryDayRow)))
+        hotel_nights=list(s.scalars(select(HostedReservationNightRow)))
+        hotel_inventory=[]
+        for d in hotel_days:
+            held=sum(n.inventory_day_id==d.inventory_day_id and n.state=='HELD' for n in hotel_nights)
+            assert d.capacity_total-d.capacity_available==held,'HOTEL_DAY_LEDGER_MISMATCH'
+            assert 0<=d.capacity_available<=d.capacity_total,'HOTEL_DAY_OUT_OF_BOUNDS'
+            hotel_inventory.append({'day':d.stay_date,'total':d.capacity_total,'available':d.capacity_available,'held_nights':held})
     from test_depth23_capacity import ledger
-    return {'movement_counts':counts,'allocated':ledger(),'movements':observations}
+    return {'movement_counts':counts,'allocated':ledger(),'movements':observations,'hotel_inventory':hotel_inventory}
 
 def correctness(r,out):
     from sqlalchemy import select
@@ -206,6 +215,21 @@ def correctness(r,out):
         model=m.RailOrderRow if v=='RAIL' else m.AttractionOrderRow
         with SessionLocal() as s: owner=s.get(model,winner['order_id']).account_id
         cancel(v,winner['order_id'],owner);assert ledger()==0
+    # Compete for the initial checkout itself, not only an already-created capture.
+    for v,quote in [('RAIL',rail_quote),('ATTRACTION',attr_quote)]:
+        oid=order(v,quote(),'checkout-race-'+v)['order_id']
+        task={'op':'pay','vertical':v,'owner':'checkout-race-'+v,'oid':oid}
+        rows=r.group([task]*20);record(v+'_initial_checkout_race',rows)
+        assert any(x['ok'] for x in rows),'NO_CHECKOUT_WINNER'
+        allowed={'CHANNEL_SWITCH_BLOCKED_BY_PAYMENT_STATE','PAYMENT_INTENT_NOT_READY','ACTIVE_OR_UNKNOWN_ATTEMPT_BLOCKS_RESEND'}
+        assert all(x['ok'] or x['code'] in allowed for x in rows),'UNEXPECTED_CHECKOUT_FAILURE'
+        receipts=r.group([task]*2);assert all(x['ok'] for x in receipts)
+        assert receipts[0]['value']==receipts[1]['value'],'CHECKOUT_REPLAY_CHANGED'
+        with SessionLocal() as s:
+            intents=list(s.scalars(select(m.OmnichannelPaymentIntentRow).where(m.OmnichannelPaymentIntentRow.business_type==v+'_ORDER',m.OmnichannelPaymentIntentRow.business_id==oid)))
+            assert len(intents)==1 and intents[0].state=='SUCCEEDED','CHECKOUT_INTENT_COUNT_OR_STATE'
+            attempts=list(s.scalars(select(m.OmnichannelPaymentAttemptRow).where(m.OmnichannelPaymentAttemptRow.payment_intent_id==intents[0].payment_intent_id)))
+            assert len(attempts)==1 and attempts[0].state=='SUCCEEDED','CHECKOUT_ATTEMPT_COUNT_OR_STATE'
     # Hotel availability and reservation use the real approved synthetic fixture.
     from hosted_review_support import hotel_fixture
     class Environment:
@@ -223,6 +247,7 @@ def correctness(r,out):
         assert len(bookings)==1
         days=list(s.scalars(select(m.HostedInventoryDayRow).where(m.HostedInventoryDayRow.inventory_pool_id==hotel['pool'])))
         assert all(0<=d.capacity_available<=1 for d in days)
+        assert next(d for d in days if d.stay_date==hotel['body']['check_in']).capacity_available==0
     # Concurrent same-key order creation and altered-payload rejection.
     from datetime import timedelta
     from go_hotel.mobility.ride.service import ride_service
@@ -314,6 +339,7 @@ def coordinator(out):
                 result['status']='STOPPED_AT_FAILED_TIER';return 1
         result['status']='BOUNDED_SERVICE_PLAN_PASS';return 0
     except Exception as exc:
+        if result['correctness']=='PENDING':result['correctness']='FAIL'
         result.update(status='FAILED',error_type=type(exc).__name__,error=str(exc)[:1000] if isinstance(exc,(AssertionError,ValueError)) else 'SEE_LOG')
         import traceback;traceback.print_exc()
         return 1
@@ -338,11 +364,15 @@ def main():
         with engine.begin() as c:
             binding['database_version']=c.scalar(text('select version()'));binding['max_connections']=c.scalar(text('show max_connections'))
             c.execute(text('CREATE SCHEMA '+schema))
+        from importlib.metadata import version
+        binding['packages']={p:version(p) for p in ('sqlalchemy','psycopg','fastapi','pydantic')}
+        binding['memory']=Path('/proc/meminfo').read_text().splitlines()[:3]
+        binding['orchestration_pool_max_connections']=15
         write(out/'binding.json',binding)
         env={k:os.environ[k] for k in ('PATH','LANG','LC_ALL','TZ') if k in os.environ}
         env.update(DATABASE_URL=url.update_query_dict({'options':'-csearch_path='+schema+' -cstatement_timeout=15000 -clock_timeout=10000 -cidle_in_transaction_session_timeout=30000','connect_timeout':'5'}).render_as_string(hide_password=False),APP_ENV='test',MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED='false',TRAVEL_INTELLIGENCE_ENABLED='false',DATABASE_POOL_SIZE='5',DATABASE_MAX_OVERFLOW='0',DATABASE_POOL_TIMEOUT_SECONDS='10',PYTHONPATH=str(APP/'src'),GO_RIDE_ISOLATED_CANCELLATION_POLICY_FILE=str(APP/'scripts/fixtures/ride-cancellation.synthetic.json'))
         with (out/'coordinator.log').open('w') as log:
-            proc=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'--coordinator',str(out)],env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+            proc=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'--coordinator',str(out)],env=env,cwd=out,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
             try:code=proc.wait(timeout=1200)
             except subprocess.TimeoutExpired:os.killpg(proc.pid,signal.SIGKILL);proc.wait();code=124
     finally:
