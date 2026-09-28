@@ -1,0 +1,45 @@
+name: Multi-instance transaction correctness and staircase
+on:
+  pull_request:
+    paths:
+      - 'ci/multi_instance/**'
+      - '.github/workflows/multi-instance-transactions.yml'
+      - 'application/**'
+permissions:
+  contents: read
+concurrency:
+  group: multi-instance-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  isolated:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_multi_only
+          POSTGRES_DB: go_c11_isolated
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U go_ci -d go_c11_isolated" --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      GO_MULTI_DATABASE_URL: postgresql+psycopg://go_ci:isolated_multi_only@127.0.0.1:5432/go_c11_isolated
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e './application[dev]'
+      - name: Correctness before 20-100-250-500-1000 concurrent transactions
+        run: python ci/multi_instance/run.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: multi-instance-${{ github.event.pull_request.head.sha }}
+          path: multi-instance-evidence/
+          retention-days: 30
