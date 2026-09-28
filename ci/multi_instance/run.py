@@ -124,7 +124,7 @@ def child(jobpath):
         for service,methods,prefix in (
             (bridge,('checkout_contract','_confirm_contract_payment'),'bridge'),
             (payments,('create_intent','select_channel','execute','simulate_result'),'payment'),
-            (sources,('latest','decide'),'source'),
+            (sources,('latest','decide','decide_in'),'source'),
             (ride_workload.money,('create',),'money'),
             (ride_workload.supplier,('record_supplier_fact',),'supplier'),
             (ride_workload.ride_service,('fulfill',),'ride')):

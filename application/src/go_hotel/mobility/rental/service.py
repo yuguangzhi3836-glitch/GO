@@ -66,7 +66,7 @@ class RentalService:
                 "insurance": ins, "external_live": False,
             })
             result=self.out(o)
-        vertical_source_runtime_service.decide("RENTAL",result["order_id"],[{"source_id":"rental-engineering-source","source_type":"RENTAL_COMPANY_OFFICIAL","authorized":True,"available":True,"evidence_reference":f"rental-offer://{body['offer_id']}"}])
+            vertical_source_runtime_service.decide_in(s,"RENTAL",result["order_id"],[{"source_id":"rental-engineering-source","source_type":"RENTAL_COMPANY_OFFICIAL","authorized":True,"available":True,"evidence_reference":f"rental-offer://{body['offer_id']}"}])
         return result
 
     def out(self, o):

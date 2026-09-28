@@ -117,7 +117,7 @@ class AttractionService:
    s.add(o);s.flush();reservation_expiry.issue_in(s,'ATTRACTION',o);contracts.consume_in(s,contract,account,o.order_id,request)
    append_vertical_evidence(s,'ATTRACTION',o.order_id,'ORDER_CREATED',o.status,{'prebook_id':contract.prebook_id,'terms_hash':contract.terms_hash,'external_live':False})
    result=self.out(o)
-  vertical_source_runtime_service.decide('ATTRACTION',result['order_id'],[{'source_id':'attraction-engineering-source','source_type':'ATTRACTION_OFFICIAL','authorized':True,'available':True,'evidence_reference':f"attraction-prebook://{b['prebook_id']}"}])
+   vertical_source_runtime_service.decide_in(s,'ATTRACTION',result['order_id'],[{'source_id':'attraction-engineering-source','source_type':'ATTRACTION_OFFICIAL','authorized':True,'available':True,'evidence_reference':f"attraction-prebook://{b['prebook_id']}"}])
   return result
  def _window_in(self,s,o):
   if s is None:return {'state':'LEGACY_UNVERIFIED'}

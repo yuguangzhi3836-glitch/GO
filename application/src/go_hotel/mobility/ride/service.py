@@ -73,7 +73,9 @@ class RideService:
                     'expected_revision': 0}, creating=True)
             result=self.out(o)
             result["service_policy"]=engineering_policy(body["offer_id"])
-        vertical_source_runtime_service.decide("RIDE",result["order_id"],[{"source_id":"ride-engineering-source","source_type":"FLEET_OFFICIAL","authorized":True,"available":True,"evidence_reference":f"ride-offer://{body['offer_id']}"}])
+            # Failure must roll back both facts before the API releases its
+            # idempotency claim; a retry must not create a second native order.
+            vertical_source_runtime_service.decide_in(s,"RIDE",result["order_id"],[{"source_id":"ride-engineering-source","source_type":"FLEET_OFFICIAL","authorized":True,"available":True,"evidence_reference":f"ride-offer://{body['offer_id']}"}])
         return result
 
     def out(self, o):

@@ -103,3 +103,15 @@ appending an evidence-chain tail. It retains full chain verification and durable
 payment checkpoints. Compare baseline `7b7ad1e` with the recorded immutable
 candidate head using identical, uninstrumented ABBA rounds; no capacity claim
 is made until the unchanged normal staircase passes.
+
+Source/order atomicity follow-up: failure injected immediately after the source
+INSERT reproduced a surviving native order in RIDE, RENTAL and ATTRACTION.
+Their creation now calls `decide_in` in the caller-owned transaction, so order,
+deadline, evidence, source and (for attractions) capacity/prebook consumption
+commit or roll back together. Standalone `decide` still owns its transaction.
+Three regression scenarios prove no surviving order/source/allocation and a
+successful retry; the RIDE case exercises API idempotency receipt replay too.
+This fixes future failures; it does not repair pre-existing partial orders or
+change any live data. Local query observation: 10 complete synthetic RIDE
+journeys use 220 connection acquisitions versus 240 at 7b7ad1e; SQLite evidence
+is not PostgreSQL capacity acceptance.
