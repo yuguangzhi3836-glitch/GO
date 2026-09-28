@@ -37,7 +37,11 @@ class VerticalSourceRuntimeService:
         return out(persisted)
     def latest(self, vertical, business_id):
         with SessionLocal() as s:
-            r=s.scalar(select(Decision).where(Decision.vertical==vertical,Decision.business_id==business_id).order_by(Decision.created_at.desc()))
-            return out(r) if r else None
+            return self.latest_in(s,vertical,business_id)
+
+    def latest_in(self, s, vertical, business_id):
+        """Read current source facts using the caller's existing transaction."""
+        r=s.scalar(select(Decision).where(Decision.vertical==vertical,Decision.business_id==business_id).order_by(Decision.created_at.desc()))
+        return out(r) if r else None
 
 vertical_source_runtime_service=VerticalSourceRuntimeService()

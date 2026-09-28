@@ -110,3 +110,46 @@ def test_shared_checkout_snapshot_retains_payer_and_deadline_rejections(case):
         age('RIDE',oid);code='RESERVATION_EXPIRED_NOT_PAYABLE'
     with pytest.raises(ValueError,match=code):bridge.checkout_contract('RIDE',oid,owner,'isolated','isolated://query-test')
     with SessionLocal() as s:assert not list(s.scalars(select(Intent).where(Intent.business_id==oid)))
+
+@pytest.mark.parametrize('source_present',[True,False])
+def test_checkout_reads_source_on_guard_connection_and_repairs_missing_source(monkeypatch,source_present):
+    from sqlalchemy import delete
+    from go_hotel.db.models import VerticalSourceDecisionRow as Decision
+    from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service as sources
+    oid=ride()
+    if not source_present:
+        with SessionLocal.begin() as s:
+            s.execute(delete(Decision).where(Decision.vertical=='RIDE',Decision.business_id==oid))
+    checked=[]
+    original=sources.latest_in
+    def observed(s,vertical,business_id):
+        # The order and intent guard already use this transaction's connection.
+        assert s.in_transaction()
+        acquisitions=[]
+        def checkout(*args):acquisitions.append(True)
+        event.listen(engine,'checkout',checkout)
+        try:result=original(s,vertical,business_id)
+        finally:event.remove(engine,'checkout',checkout)
+        assert not acquisitions
+        checked.append(result)
+        return result
+    monkeypatch.setattr(sources,'latest_in',observed)
+    result=bridge.checkout_contract('RIDE',oid,'query-owner','isolated','isolated://query-test')
+    assert result['state']=='PAYMENT_CONFIRMED_AWAITING_SUPPLIER'
+    assert len(checked)==1 and bool(checked[0])==source_present
+    with SessionLocal() as s:
+        records=list(s.scalars(select(Decision).where(Decision.vertical=='RIDE',Decision.business_id==oid)))
+        assert len(records)==1
+        assert records[0].selected_source_id==('ride-engineering-source' if source_present else 'isolated')
+
+def test_source_read_in_session_does_not_commit_caller_changes():
+    from go_hotel.db.models import VerticalSourceDecisionRow as Decision
+    from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service as sources
+    oid=ride()
+    with SessionLocal() as s:
+        order=s.get(Ride,oid)
+        order.pickup='UNCOMMITTED';s.flush()
+        assert sources.latest_in(s,'RIDE',oid)['business_id']==oid
+        assert sources.latest_in(s,'RIDE','missing') is None
+        s.rollback()
+    with SessionLocal() as s:assert s.get(Ride,oid).pickup=='ISOLATED_A'

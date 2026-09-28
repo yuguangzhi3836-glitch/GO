@@ -75,10 +75,15 @@ class VerticalTransactionBridge:
                 accepted_in(s,order)
                 guard_checkout_payment_in(s,vertical,order,account_id)
                 i=self._existing_intent_in(s,vertical,order_id,account_id)
+                # This read needs no separate connection after the order guard.
+                # Only the snapshot crosses this boundary; no Session is shared
+                # with the independently committed payment transitions below.
+                source=vertical_source_runtime_service.latest_in(s,vertical,order_id)
         if vertical=='RENTAL':
             from go_hotel.services.vertical_reservation_expiry import guard_checkout_payment
             guard_checkout_payment(vertical, order_id, account_id)
-        if not vertical_source_runtime_service.latest(vertical,order_id):
+        if vertical!='RIDE':source=vertical_source_runtime_service.latest(vertical,order_id)
+        if not source:
             vertical_source_runtime_service.decide(vertical,order_id,[{'source_id':source_id,'source_type':OFFICIAL[vertical],'authorized':True,'available':True,'evidence_reference':evidence_reference}])
         # Resume the durable payment root. Order status legitimately changes after capture;
         # re-hashing that changed status as a new payment request must not double-charge.
