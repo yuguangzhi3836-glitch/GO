@@ -85,7 +85,7 @@ class OmnichannelPaymentService:
    i=s.scalar(select(Intent).where(Intent.payment_intent_id==iid).with_for_update())
    if i and i.payer_id!=actor:raise ValueError('PAYMENT_INTENT_ACCESS_DENIED')
    if not i or channel not in i.channel_priority_json:raise ValueError('CHANNEL_NOT_ALLOWED_FOR_INTENT')
-   if i.state in {'SUCCEEDED','PAID','UNKNOWN_EXTERNAL_STATE'}:raise ValueError('CHANNEL_SWITCH_BLOCKED_BY_PAYMENT_STATE')
+   if i.state not in {'REQUIRES_CHANNEL_SELECTION','READY','FAILED'}:raise ValueError('CHANNEL_SWITCH_BLOCKED_BY_PAYMENT_STATE')
    i.selected_channel=channel;i.user_channel_consent_at=now() if consent else None;i.state='READY';i.updated_at=now();s.commit();return out(i)
  def checkout_readiness(self,iid,actor):
   with SessionLocal() as s:
