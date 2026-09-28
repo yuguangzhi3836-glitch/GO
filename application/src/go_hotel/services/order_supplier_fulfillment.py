@@ -1,6 +1,6 @@
 from datetime import datetime,timezone
 import hashlib,json,uuid
-from sqlalchemy import select
+from sqlalchemy import select,bindparam
 from go_hotel.db.session import SessionLocal
 from go_hotel.autonomy.durable import transaction
 from go_hotel.services.vertical_prebook_contract import rail_tickets
@@ -15,6 +15,12 @@ from go_hotel.db.models import (
  PaymentOrderRootRow as Root,PaymentOrderFactBindingRow as Binding
 )
 MODELS={'HOTEL_ORDER':('HOTEL',OrderRow),'FLIGHT_ORDER':('FLIGHT',FlightOrderRow),'RAIL_ORDER':('RAIL',RailOrderRow),'RIDE_ORDER':('RIDE',MobilityRideOrderRow),'RENTAL_ORDER':('RENTAL',MobilityRentalOrderRow),'ATTRACTION_ORDER':('ATTRACTION',AttractionOrderRow)}
+# All three rows are unique for a payment intent. An inner join requires the
+# complete durable binding before any supplier fact can project money as paid.
+_BOUND_PAYMENT = (select(Intent,Root,Binding)
+ .join(Root,Root.payment_intent_id==Intent.payment_intent_id)
+ .join(Binding,Binding.payment_intent_id==Intent.payment_intent_id)
+ .where(Intent.payment_intent_id==bindparam('intent_id')))
 def now():return datetime.now(timezone.utc)
 def ident(p):return f'{p}_{uuid.uuid4().hex}'
 def digest(x):return hashlib.sha256(json.dumps(x,sort_keys=True,separators=(',',':'),default=str).encode()).hexdigest()
@@ -23,11 +29,11 @@ def out(r):return {c.name:(getattr(r,c.name).isoformat() if isinstance(getattr(r
 def _payment_state(s, f, order):
  """Supplier outcomes never supply money truth; read the bound C11 graph."""
  unknown='UNKNOWN_EXTERNAL_STATE'
- i=s.get(Intent,f.payment_intent_id)
- root=s.scalar(select(Root).where(Root.payment_intent_id==f.payment_intent_id))
- binding=s.scalar(select(Binding).where(Binding.payment_intent_id==f.payment_intent_id))
+ graph=s.execute(_BOUND_PAYMENT,{'intent_id':f.payment_intent_id}).one_or_none()
  expected=(f.business_type,f.business_id,order.account_id,f.supplier_id,order.total_amount_minor,order.currency)
- if not i or not root or not binding or i.state!='SUCCEEDED':return unknown
+ if not graph:return unknown
+ i,root,binding=graph
+ if i.state!='SUCCEEDED':return unknown
  if (i.business_type,i.business_id,i.payer_id,i.payee_id,i.amount_minor,i.currency)!=expected:return unknown
  if (binding.business_type,binding.business_id,binding.payer_id,binding.payee_id,binding.amount_minor,binding.currency)!=expected:return unknown
  if (root.business_type,root.business_id,root.legal_entity_id)!=(f.business_type,f.business_id,binding.legal_entity_id):return unknown

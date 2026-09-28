@@ -153,3 +153,42 @@ def test_source_read_in_session_does_not_commit_caller_changes():
         assert sources.latest_in(s,'RIDE','missing') is None
         s.rollback()
     with SessionLocal() as s:assert s.get(Ride,oid).pickup=='ISOLATED_A'
+
+@pytest.mark.parametrize('broken',['missing_root','missing_binding','wrong_binding'])
+def test_supplier_rejects_incomplete_bound_money_graph(broken):
+    from sqlalchemy import delete
+    from go_hotel.db.models import (PaymentOrderRootRow as Root,
+        PaymentOrderFactBindingRow as Binding, OrderSupplierFulfillmentRow as Fulfillment)
+    from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillment_service as supplier
+    oid=ride()
+    tx=bridge.checkout_contract('RIDE',oid,'query-owner','ride-engineering-source','isolated://bound-graph')
+    iid=tx['payment_intent_id']
+    with SessionLocal.begin() as s:
+        if broken=='missing_root':s.execute(delete(Root).where(Root.payment_intent_id==iid))
+        elif broken=='missing_binding':s.execute(delete(Binding).where(Binding.payment_intent_id==iid))
+        else:s.scalar(select(Binding).where(Binding.payment_intent_id==iid)).payee_id='foreign-supplier'
+    with pytest.raises(ValueError,match='FULL_CAPTURED_MONEY_GRAPH_REQUIRED'):
+        supplier.record_supplier_fact(tx['supplier_fulfillment_id'],{
+            'state':'SUPPLIER_CONFIRMED','supplier_confirmation_reference':'ref-bound',
+            'evidence_reference':'isolated://bound-confirm'})
+    with SessionLocal() as s:
+        assert s.get(Ride,oid).status=='PAYMENT_PENDING'
+        assert s.get(Fulfillment,tx['supplier_fulfillment_id']).state=='CAPTURE_CONFIRMED_READY_FOR_SUPPLIER'
+
+def test_supplier_projection_reads_complete_binding_and_movements():
+    from go_hotel.db.models import OrderSupplierFulfillmentRow as Fulfillment
+    from go_hotel.services.order_supplier_fulfillment import _payment_state
+    oid=ride()
+    tx=bridge.checkout_contract('RIDE',oid,'query-owner','ride-engineering-source','isolated://bound-graph')
+    queries=[]
+    def observed(conn,cursor,statement,parameters,context,executemany):
+        queries.append(statement)
+    with SessionLocal() as s:
+        f=s.get(Fulfillment,tx['supplier_fulfillment_id']);o=s.get(Ride,oid)
+        event.listen(engine,'before_cursor_execute',observed)
+        try:assert _payment_state(s,f,o)=='PAID'
+        finally:event.remove(engine,'before_cursor_execute',observed)
+    assert len(queries)==2
+    assert 'payment_order_root' in queries[0].lower()
+    assert 'payment_order_fact_binding' in queries[0].lower()
+    assert 'omnichannel_money_movement' in queries[1].lower()
