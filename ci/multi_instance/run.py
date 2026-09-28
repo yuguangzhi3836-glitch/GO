@@ -121,7 +121,12 @@ def child(jobpath):
         from go_hotel.services.vertical_transaction_bridge import vertical_transaction_bridge as bridge
         from go_hotel.services.omnichannel_payment import omnichannel_payment_service as payments
         from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service as sources
+        from go_hotel.repositories.sql import repo
+        from go_hotel.api.routes import mobility as mobility_routes
         for service,methods,prefix in (
+            (mobility_routes,('run_idempotent',),'route'),
+            (repo,('claim_idempotency','complete_idempotency'),'idempotency'),
+            (ride_workload.ride_service,('create',),'ride'),
             (bridge,('checkout_contract','_confirm_contract_payment'),'bridge'),
             (payments,('create_intent','select_channel','execute','simulate_result'),'payment'),
             (sources,('latest','decide','decide_in'),'source'),
