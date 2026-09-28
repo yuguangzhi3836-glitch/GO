@@ -31,6 +31,15 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
+          fetch-depth: 2
+      - name: Detect admission experiment definition changes
+        id: admission
+        run: |
+          if git diff --quiet HEAD^ HEAD -- ci/multi_instance/admission_experiment.py; then
+            echo 'run=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -53,8 +62,11 @@ jobs:
           python -c "import json; assert json.load(open('multi-instance-evidence/result.json'))['correctness']=='PASS'"
           python ci/multi_instance/run.py --diagnostic --out multi-profile-evidence
       - name: Bounded admission experiments with queue time included
-        if: always() && steps.regressions.outcome == 'success'
+        if: always() && steps.regressions.outcome == 'success' && steps.admission.outputs.run == 'true'
         run: python ci/multi_instance/admission_experiment.py
+      - name: Source snapshot for reproducible local diagnosis
+        if: always()
+        run: git archive --format=tar.gz --output=diagnostic-source.tar.gz HEAD application
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -64,4 +76,5 @@ jobs:
             multi-regression-evidence/
             multi-profile-evidence/
             multi-admission-evidence/
+            diagnostic-source.tar.gz
           retention-days: 30

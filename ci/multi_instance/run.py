@@ -143,7 +143,25 @@ def child(jobpath):
                 if not admitted:raise TimeoutError('EXPERIMENT_ADMISSION_TIMEOUT')
             result['execution_start_ns']=time.monotonic_ns()
             result['admission_wait_ms']=(result['execution_start_ns']-start)/1e6 if admission else 0
-            value=action(task)
+            # One actor per process, calling-thread CPU only. Never instrument
+            # acceptance runs; nested replay threads are explicitly excluded.
+            if diagnostic and task is tasks[0]:
+                import cProfile, pstats
+                profiler=cProfile.Profile(timer=time.thread_time)
+                try:
+                    profiler.enable()
+                    value=action(task)
+                finally:
+                    profiler.disable()
+                    stats=pstats.Stats(profiler)
+                    entries=[{'file':key[0],'line':key[1],'function':key[2],
+                        'primitive_calls':v[0],'calls':v[1],'self_cpu_seconds':v[2],
+                        'inclusive_cpu_seconds':v[3]} for key,v in stats.stats.items()]
+                    write(Path(job['result']+'.actor-cpu.json'),{
+                        'thread_id':threading.get_ident(),'timer':'time.thread_time',
+                        'scope':'One actor parent thread; excludes nested replay threads; diagnostic only',
+                        'functions':sorted(entries,key=lambda x:x['self_cpu_seconds'],reverse=True)})
+            else:value=action(task)
             result.update(ok=True,value=value)
         except Exception as exc:
             result.update(error_type=type(exc).__name__,code=str(exc)[:500] if isinstance(exc,(ValueError,AssertionError)) else 'SEE_ERROR_TYPE')
