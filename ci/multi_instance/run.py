@@ -14,6 +14,7 @@ import math
 import os
 from pathlib import Path
 import platform
+import signal
 import socket
 import subprocess
 import sys
@@ -190,13 +191,17 @@ def correctness(r,out):
         write(out/'correctness.json',{'status':'RUNNING','scenarios':evidence})
     # Distinct quotes contend for exactly the final unit in a shared bucket.
     for v,limit,quote in [('RAIL',18,rail_quote),('ATTRACTION',24,attr_quote)]:
-        first=order(v,quote(quantity=limit-1),'stock-holder')
+        holders=[];remaining=limit-1
+        while remaining:
+            quantity=min(8,remaining)
+            holders.append(order(v,quote(quantity=quantity),'stock-holder'))
+            remaining-=quantity
         tasks=[{'op':'stock','vertical':v,'quote':quote(quantity=1),'owner':f'stock-{i}'} for i in range(20)]
         rows=r.group(tasks)
         record(v+'_last_unit',rows)
         assert sum(x['ok'] for x in rows)==1, 'LAST_UNIT_WINNER_COUNT'
         assert all(x['ok'] or x['code']==v+'_INVENTORY_CHANGED' for x in rows),'UNEXPECTED_STOCK_FAILURE'
-        cancel(v,first['order_id'],'stock-holder')
+        for first in holders:cancel(v,first['order_id'],'stock-holder')
         winner=next(x['value'] for x in rows if x['ok'])
         model=m.RailOrderRow if v=='RAIL' else m.AttractionOrderRow
         with SessionLocal() as s: owner=s.get(model,winner['order_id']).account_id
@@ -337,9 +342,9 @@ def main():
         env={k:os.environ[k] for k in ('PATH','LANG','LC_ALL','TZ') if k in os.environ}
         env.update(DATABASE_URL=url.update_query_dict({'options':'-csearch_path='+schema+' -cstatement_timeout=15000 -clock_timeout=10000 -cidle_in_transaction_session_timeout=30000','connect_timeout':'5'}).render_as_string(hide_password=False),APP_ENV='test',MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED='false',TRAVEL_INTELLIGENCE_ENABLED='false',DATABASE_POOL_SIZE='5',DATABASE_MAX_OVERFLOW='0',DATABASE_POOL_TIMEOUT_SECONDS='10',PYTHONPATH=str(APP/'src'),GO_RIDE_ISOLATED_CANCELLATION_POLICY_FILE=str(APP/'scripts/fixtures/ride-cancellation.synthetic.json'))
         with (out/'coordinator.log').open('w') as log:
-            proc=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'--coordinator',str(out)],env=env,stdout=log,stderr=subprocess.STDOUT)
+            proc=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'--coordinator',str(out)],env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
             try:code=proc.wait(timeout=1200)
-            except subprocess.TimeoutExpired:proc.kill();proc.wait();code=124
+            except subprocess.TimeoutExpired:os.killpg(proc.pid,signal.SIGKILL);proc.wait();code=124
     finally:
         with engine.begin() as c:c.execute(text('DROP SCHEMA IF EXISTS '+schema+' CASCADE'))
         engine.dispose()

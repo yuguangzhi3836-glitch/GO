@@ -1,0 +1,47 @@
+# Independent-process transaction gate
+
+Run `python ci/multi_instance/run.py` only in the disposable CI environment
+defined in `.github/workflows/multi-instance-transactions.yml`.
+
+This exercises actual GO transaction services with two separate Python processes
+and independent SQLAlchemy pools sharing PostgreSQL 18.4. It is **not** an HTTP,
+authentication, load-balancer, distributed-host, real PSP, or real supplier test.
+Do not translate these transaction counts into online users or production SLA.
+
+Correctness runs first:
+
+- 20 distinct requests for the last available rail seat, attraction admission,
+  and hotel room-night; verify one winner and capacity accounting.
+- Same-key ride creation across processes, receipt replay and changed-payload
+  rejection; 20 capture replays must all resolve to the same money movement.
+- Rail and attraction payment/cancellation on both sides of payment-root commit.
+  The losing action must fail without releasing paid inventory or charging a
+  cancelled order.
+- An OS process exits after actual simulated refund-money commit and before order
+  completion. Another process must refuse premature takeover, wait for the real
+  30-second database lease to expire, and finish without another refund. Neither
+  the persisted lease nor the system clock is edited.
+
+Only after correctness passes do 20, 100, 250, 500, and 1,000 concurrent RIDE
+transaction actors run, split across two processes. Each tier is one bounded
+burst, **not a soak test**. Each transaction creates an order, replays creation,
+checks out, replays capture concurrently, rejects altered capture amounts,
+records a synthetic supplier fact, starts and completes fulfillment. SQL checks
+cover all persisted load orders, including partial effects from failed requests.
+
+The fixed diagnostic gates are zero unexpected failures, valid inventory and
+money ledgers, full-transaction P95 <= 5 seconds and P99 <= 10 seconds. These
+latencies include replay checks and pool waiting. A failed gate blocks higher
+tiers. PIDs, observed transaction overlap, all outcomes, ledger facts, hardware,
+database identity, source commit/tree, and artifact hashes are retained.
+
+Each child pool has size 5 and zero overflow; coordinator pool size is also 5.
+The orchestration connection is separate. Provider credentials are not inherited;
+Python socket audit hooks deny non-loopback connections in all test processes.
+Schema names are random and cleanup targets only that run's schema. Fault
+injection is local to test processes and does not alter production source.
+
+Coverage remains bounded: it does not establish every vertical's full lifecycle,
+HTTP admission control, callback authentication, long-duration memory behavior,
+multi-host failover, or the million-online planning target. Those require later
+gates, not extrapolation from this evidence.
