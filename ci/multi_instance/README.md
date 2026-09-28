@@ -9,6 +9,28 @@ CPU/RSS after rechecking correctness. Concurrent summed times are not additive;
 connection acquisition includes pre-ping/creation as well as queueing. Diagnostic
 latencies are not substituted for the uninstrumented capacity gate. No statement
 parameters or SQL text are stored, only statement hashes and operation types.
+SQL counts cover successful SQLAlchemy cursor events, excluding driver-level
+ping/commit/rollback; cursor time excludes statement compilation.
+
+Extended diagnostics also record connection checkout-to-checkin duration,
+statement-cache outcomes, mapper-configuration event duration, transaction phase
+wall/actor-thread CPU times, and host CPU counters. Actor-thread CPU excludes
+the nested replay threads; process CPU is retained separately. Host counters
+include PostgreSQL and OS work and are not attribution to the application alone.
+Selected synchronous service calls also record inclusive wall/calling-thread CPU
+durations with thread-safe counters. Nested service times overlap and must not be
+added; these explicit wrappers replace the discarded cProfile attribution.
+Each tier starts fresh service processes, so first-use ORM/statement setup is
+inside transaction latency; startup is not silently warmed out of acceptance.
+
+`ci/transaction_comparison.py` runs pinned baseline/candidate/candidate/baseline
+versions sequentially on one runner with identical dependency installation and
+the same uninstrumented harness. Each round uses a fresh schema and repeats all
+correctness gates. Its manifest binds the copied harness separately from each
+unchanged application tree. A failed latency tier allows the next comparison
+round but never a higher tier in that round; correctness/errors stop comparison.
+Two repetitions per version are an initial control, not statistical confidence
+or a substitute for sustained production-like capacity testing.
 
 This exercises actual GO transaction services with two separate Python processes
 and independent SQLAlchemy pools sharing PostgreSQL 18.4. It is **not** an HTTP,

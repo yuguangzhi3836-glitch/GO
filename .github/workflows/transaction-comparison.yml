@@ -31,14 +31,25 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Run frozen comparison only when its experiment definition changes
+        id: change
+        run: |
+          if git diff --quiet HEAD^ HEAD -- ci/transaction_comparison.py; then
+            echo 'run=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-python@v5
+        if: steps.change.outputs.run == 'true'
         with:
           python-version: '3.12'
       - run: python -m pip install -e './application[dev]'
+        if: steps.change.outputs.run == 'true'
       - name: Baseline-candidate-candidate-baseline; identical harness, no profiler
+        if: steps.change.outputs.run == 'true'
         run: python ci/transaction_comparison.py
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.change.outputs.run == 'true'
         with:
           name: transaction-comparison-${{ github.event.pull_request.head.sha }}
           path: transaction-comparison-evidence/

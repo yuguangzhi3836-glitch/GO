@@ -114,6 +114,17 @@ def child(jobpath):
         from profiling import Metrics
         from go_hotel.db.session import engine
         metrics=Metrics(engine)
+        from go_hotel.services.vertical_transaction_bridge import vertical_transaction_bridge as bridge
+        from go_hotel.services.omnichannel_payment import omnichannel_payment_service as payments
+        from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service as sources
+        for service,methods,prefix in (
+            (bridge,('checkout_contract','_confirm_contract_payment'),'bridge'),
+            (payments,('create_intent','select_channel','execute','simulate_result'),'payment'),
+            (sources,('latest','decide'),'source'),
+            (ride_workload.money,('create',),'money'),
+            (ride_workload.supplier,('record_supplier_fact',),'supplier'),
+            (ride_workload.ride_service,('fulfill',),'ride')):
+            for method in methods:metrics.track(service,method,prefix+'.'+method)
     tasks=job['tasks']; ready=threading.Barrier(len(tasks)+1)
     def run(task):
         ready.wait(60); wait_file(Path(job['start']))
@@ -329,7 +340,14 @@ def coordinator(out):
         from ride_workload import verify
         raw=[]
         for n in PLAN:
+            host_before=Path('/proc/stat').read_text().splitlines()[0].split()[1:] if os.environ.get('GO_MULTI_DIAGNOSTIC')=='1' else None
             rows=r.group([{'op':'ride','index':i} for i in range(len(raw),len(raw)+n)])
+            if host_before:
+                host_after=Path('/proc/stat').read_text().splitlines()[0].split()[1:]
+                write(out/f'host-cpu-{n}.json',{'clock_ticks_per_second':os.sysconf('SC_CLK_TCK'),
+                    'fields':['user','nice','system','idle','iowait','irq','softirq','steal','guest','guest_nice'],
+                    'delta_ticks':[int(b)-int(a) for a,b in zip(host_before,host_after)],
+                    'scope':'Host CPU from before service launch to group completion; includes PostgreSQL, services and other OS work. Guest fields overlap user/nice; do not double count.'})
             write(out/f'load-{n}.json',rows)
             values=[x['value'] for x in rows if x['ok']];raw+=values
             latency=sorted(x['duration_ms'] for x in rows)
@@ -373,8 +391,12 @@ def main():
         with engine.begin() as c:
             binding['database_version']=c.scalar(text('select version()'));binding['max_connections']=c.scalar(text('show max_connections'))
             c.execute(text('CREATE SCHEMA '+schema))
-        from importlib.metadata import version
+        from importlib.metadata import version,distributions
+        from psycopg import pq
         binding['packages']={p:version(p) for p in ('sqlalchemy','psycopg','fastapi','pydantic')}
+        binding['installed_packages']={d.metadata['Name']:d.version for d in distributions() if d.metadata.get('Name')}
+        binding['psycopg_implementation']=pq.__impl__
+        binding['cpu_model']=next((line.split(':',1)[1].strip() for line in Path('/proc/cpuinfo').read_text().splitlines() if line.startswith('model name')),None)
         binding['memory']=Path('/proc/meminfo').read_text().splitlines()[:3]
         binding['orchestration_pool_max_connections']=15
         binding['diagnostic_instrumentation']=args.diagnostic

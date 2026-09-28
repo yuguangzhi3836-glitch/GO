@@ -4,7 +4,7 @@ Transport/auth are outside this service-level test. Synthetic money only.
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime,timedelta,timezone
 from types import SimpleNamespace
-import threading,time
+import os,threading,time
 from sqlalchemy import select
 from go_hotel.db.session import engine, SessionLocal
 from go_hotel.db.models import (Base, MobilityRideOrderRow as Order,
@@ -26,6 +26,16 @@ def transaction(index):
     principal=SimpleNamespace(user_id=owner)
     key=owner+'-create'
     record={'index':index,'owner':owner,'outcome':'FAIL','phase':'create_order'}
+    diagnostic=os.environ.get('GO_MULTI_DIAGNOSTIC')=='1'
+    phase_wall=time.perf_counter();phase_cpu=time.thread_time()
+    def phase(name):
+        nonlocal phase_wall,phase_cpu
+        if diagnostic:
+            wall=time.perf_counter();cpu=time.thread_time()
+            record.setdefault('phase_timings',{})[record['phase']]={
+                'wall_ms':(wall-phase_wall)*1000,'actor_thread_cpu_ms':(cpu-phase_cpu)*1000}
+            phase_wall=wall;phase_cpu=cpu
+        record['phase']=name
     try:
         pickup_at=(datetime.now(timezone.utc)+timedelta(days=10)).isoformat()
         offer=ride_service.search('ISOLATED_A','ISOLATED_B',pickup_at,'CNY')[0]
@@ -36,13 +46,13 @@ def transaction(index):
         response=rb(body,principal,key)
         oid=response['data']['order_id'];record['order_id']=oid
         assert rb(body,principal,key)==response, 'CREATE_REPLAY_CHANGED'
-        record['phase']='payment_capture'
+        phase('payment_capture')
         tx=vertical_transaction_bridge.checkout_contract('RIDE',oid,owner,
             'ride-engineering-source','isolated://c12/'+oid,'isolated-method')
         assert tx['state']=='PAYMENT_CONFIRMED_AWAITING_SUPPLIER'
         assert tx['supplier_fulfillment_id'], 'FULFILLMENT_MISSING'
         iid=tx['payment_intent_id']
-        record['phase']='concurrent_money_replay'
+        phase('concurrent_money_replay')
         cap_body={'movement_type':'CAPTURE','parent_movement_id':tx['authorization_id'],
                   'mode':'CONTRACT_SIMULATOR','evidence':['isolated://c12/replay']}
         def replay(_):
@@ -58,13 +68,16 @@ def transaction(index):
             assert str(exc)=='MONEY_MOVEMENT_IDEMPOTENCY_CONFLICT'
         else:
             raise AssertionError('CHANGED_AMOUNT_REPLAY_ACCEPTED')
-        record['phase']='simulated_supplier_and_fulfillment'
+        phase('simulated_supplier')
         supplier.record_supplier_fact(tx['supplier_fulfillment_id'],{
             'state':'SUPPLIER_CONFIRMED','external_operation_id':owner+'-supplier',
             'supplier_confirmation_reference':owner,
             'evidence_reference':'isolated://c12/synthetic-supplier/'+oid})
+        phase('fulfillment_start')
         ride_service.fulfill(owner,oid,'START','isolated://c12/start/'+oid)
+        phase('fulfillment_complete')
         ride_service.fulfill(owner,oid,'COMPLETE','isolated://c12/complete/'+oid)
+        phase('completed')
         record.update(outcome='SUCCESS',phase='completed',payment_intent_id=iid)
     except Exception as exc:
         # Do not render SQLAlchemy exception strings: they may contain URLs.
@@ -116,4 +129,3 @@ def verify(raw):
                 'ledger_debit_minor':16800,'ledger_credit_minor':16800,'trips_state':life[0].lifecycle_state})
 
     return observations
-
