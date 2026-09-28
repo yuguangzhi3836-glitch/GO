@@ -6,6 +6,7 @@ from go_hotel.db.models import OrderSupplierFulfillmentRow, OmnichannelPaymentIn
 from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service
 from go_hotel.services.omnichannel_payment import omnichannel_payment_service
 from go_hotel.services.unified_money_movement import unified_money_movement_service
+from go_hotel.autonomy.durable import transaction
 
 OFFICIAL={'FLIGHT':'AIRLINE_OFFICIAL','RAIL':'RAIL_OPERATOR_OFFICIAL','RIDE':'FLEET_OFFICIAL','RENTAL':'RENTAL_COMPANY_OFFICIAL','ATTRACTION':'ATTRACTION_OFFICIAL'}
 BTYPE={'FLIGHT':'FLIGHT_ORDER','RAIL':'RAIL_ORDER','RIDE':'RIDE_ORDER','RENTAL':'RENTAL_ORDER','ATTRACTION':'ATTRACTION_ORDER'}
@@ -13,11 +14,14 @@ BTYPE={'FLIGHT':'FLIGHT_ORDER','RAIL':'RAIL_ORDER','RIDE':'RIDE_ORDER','RENTAL':
 def _prod(): return settings.app_env.strip().lower() in {'prod','production'}
 
 class VerticalTransactionBridge:
+    def _existing_intent_in(self, s, vertical, order_id, account_id):
+        existing=s.scalar(select(OmnichannelPaymentIntentRow).where(OmnichannelPaymentIntentRow.business_type==BTYPE[vertical],OmnichannelPaymentIntentRow.business_id==order_id))
+        if existing and existing.payer_id!=account_id:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
+        return {'payment_intent_id':existing.payment_intent_id,'state':existing.state} if existing else None
+
     def _existing_intent(self, vertical, order_id, account_id):
         with SessionLocal() as s:
-            existing=s.scalar(select(OmnichannelPaymentIntentRow).where(OmnichannelPaymentIntentRow.business_type==BTYPE[vertical],OmnichannelPaymentIntentRow.business_id==order_id))
-            if existing and existing.payer_id!=account_id:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
-            return {'payment_intent_id':existing.payment_intent_id,'state':existing.state} if existing else None
+            return self._existing_intent_in(s,vertical,order_id,account_id)
 
     def _confirm_contract_payment(self, iid, account_id):
         # Resume committed simulator steps, never infer success from a stale
@@ -37,13 +41,22 @@ class VerticalTransactionBridge:
                 aid=pending[0].payment_attempt_id if pending else None
             try:
                 if state=='REQUIRES_CHANNEL_SELECTION':
-                    omnichannel_payment_service.select_channel(iid,'LOCAL_MARKET',account_id,True)
-                elif state=='READY':
+                    selected=omnichannel_payment_service.select_channel(iid,'LOCAL_MARKET',account_id,True)
+                    if selected['payment_intent_id']!=iid or selected['payer_id']!=account_id:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
+                    state=selected['state']
+                if state=='READY':
                     a=omnichannel_payment_service.execute(iid,'CONTRACT_SIMULATOR')
-                    omnichannel_payment_service.simulate_result(a['payment_attempt_id'],'SUCCEEDED')
+                    confirmed=omnichannel_payment_service.simulate_result(a['payment_attempt_id'],'SUCCEEDED')['intent']
                 elif state=='CONTRACT_READY_NOT_EXTERNAL':
-                    if aid:omnichannel_payment_service.simulate_result(aid,'SUCCEEDED')
+                    if not aid:continue
+                    confirmed=omnichannel_payment_service.simulate_result(aid,'SUCCEEDED')['intent']
                 else:raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+                # These are the committed result facts of the locked transition,
+                # not the stale snapshot read before execution. Concurrent-state
+                # conflicts still go through the existing reload loop.
+                if confirmed['payment_intent_id']!=iid or confirmed['payer_id']!=account_id:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
+                if confirmed['state']=='SUCCEEDED':return
+                raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
             except ValueError as exc:
                 if str(exc) not in {'CHANNEL_SWITCH_BLOCKED_BY_PAYMENT_STATE','PAYMENT_INTENT_NOT_READY','ACTIVE_OR_UNKNOWN_ATTEMPT_BLOCKS_RESEND'}:raise
                 # Another worker may have committed the next state. Reload it;
@@ -55,18 +68,21 @@ class VerticalTransactionBridge:
         if vertical=='RIDE':
             from go_hotel.db.models import MobilityRideOrderRow
             from go_hotel.mobility.ride.cancellation_policy import accepted_in
-            with SessionLocal() as s:
-                order=s.get(MobilityRideOrderRow,order_id)
+            from go_hotel.services.vertical_reservation_expiry import guard_checkout_payment_in
+            with transaction(SessionLocal) as s:
+                order=s.get(MobilityRideOrderRow,order_id,with_for_update=True)
                 if not order or order.account_id!=account_id:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
                 accepted_in(s,order)
-        if vertical in {'RIDE','RENTAL'}:
+                guard_checkout_payment_in(s,vertical,order,account_id)
+                i=self._existing_intent_in(s,vertical,order_id,account_id)
+        if vertical=='RENTAL':
             from go_hotel.services.vertical_reservation_expiry import guard_checkout_payment
             guard_checkout_payment(vertical, order_id, account_id)
         if not vertical_source_runtime_service.latest(vertical,order_id):
             vertical_source_runtime_service.decide(vertical,order_id,[{'source_id':source_id,'source_type':OFFICIAL[vertical],'authorized':True,'available':True,'evidence_reference':evidence_reference}])
         # Resume the durable payment root. Order status legitimately changes after capture;
         # re-hashing that changed status as a new payment request must not double-charge.
-        i=self._existing_intent(vertical,order_id,account_id)
+        if vertical!='RIDE':i=self._existing_intent(vertical,order_id,account_id)
         if i is None:
             try:
                 i=omnichannel_payment_service.create_intent({'business_type':BTYPE[vertical],'business_id':order_id,'channel_priority':['LOCAL_MARKET']},f'{vertical.lower()}-checkout:{order_id}',account_id)

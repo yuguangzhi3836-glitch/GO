@@ -1,9 +1,6 @@
 """Test-only diagnostics. No SQL parameters, URLs or application data recorded."""
-import cProfile
 from collections import defaultdict
 import hashlib
-from pathlib import Path
-import pstats
 import resource
 import threading
 import time
@@ -42,15 +39,3 @@ class Metrics:
             'sql_sum_seconds':sum(v[1] for v in self.queries.values()),
             'sql':sorted([{'statement':k,'count':v[0],'sum_seconds':v[1],'max_seconds':v[2]} for k,v in self.queries.items()],key=lambda x:x['sum_seconds'],reverse=True),
             'note':'Summed concurrent wall times are not additive CPU time. Acquisition includes queueing, connection creation and pre-ping. SQL time includes transport, database execution and scheduling.'}
-
-def sampled_call(fn,task,output):
-    profiler=cProfile.Profile()
-    try:return profiler.runcall(fn,task)
-    finally:
-        stats=pstats.Stats(profiler)
-        rows=[]
-        for (file,line,name),(primitive,calls,own,cumulative,callers) in stats.stats.items():
-            # Function locations only; never arguments, locals or frame values.
-            namefile=file.split('/go_hotel/')[-1] if '/go_hotel/' in file else Path(file).name
-            rows.append({'file':namefile,'line':line,'function':name,'calls':calls,'own_seconds':own,'cumulative_seconds':cumulative})
-        output.extend(sorted(rows,key=lambda x:x['cumulative_seconds'],reverse=True)[:80])

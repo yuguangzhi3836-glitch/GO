@@ -108,10 +108,10 @@ def child(jobpath):
     import ride_workload
     from go_hotel.rail.service import rail_service
     from go_hotel.attractions.service import attraction_service
-    diagnostic=all(t['op']=='ride' for t in job['tasks'])
-    metrics=None;sample=[]
+    diagnostic=os.environ.get('GO_MULTI_DIAGNOSTIC')=='1' and all(t['op']=='ride' for t in job['tasks'])
+    metrics=None
     if diagnostic:
-        from profiling import Metrics,sampled_call
+        from profiling import Metrics
         from go_hotel.db.session import engine
         metrics=Metrics(engine)
     tasks=job['tasks']; ready=threading.Barrier(len(tasks)+1)
@@ -120,7 +120,7 @@ def child(jobpath):
         start=time.monotonic_ns()
         result={'task':task['op'],'pid':os.getpid(),'start_ns':start,'ok':False}
         try:
-            value=sampled_call(action,task,sample) if diagnostic and task is job['tasks'][0] else action(task)
+            value=action(task)
             result.update(ok=True,value=value)
         except Exception as exc:
             result.update(error_type=type(exc).__name__,code=str(exc)[:500] if isinstance(exc,(ValueError,AssertionError)) else 'SEE_ERROR_TYPE')
@@ -133,7 +133,7 @@ def child(jobpath):
         ready.wait(60); Path(job['ready']).write_text(str(os.getpid()))
         rows=[f.result() for f in futures]
     write(Path(job['result']),rows)
-    if metrics:write(Path(job['result']+'.profile.json'),{'metrics':metrics.snapshot(),'sampled_transaction':sample})
+    if metrics:write(Path(job['result']+'.profile.json'),{'metrics':metrics.snapshot()})
 
 class Runner:
     def __init__(self,out): self.out=out; self.counter=0; self.processes=[]
@@ -356,7 +356,7 @@ def coordinator(out):
         r.stop();write(out/'result.json',result);engine.dispose()
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--child',type=Path);p.add_argument('--coordinator',type=Path);p.add_argument('--out',type=Path,default=ROOT/'multi-instance-evidence');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--child',type=Path);p.add_argument('--coordinator',type=Path);p.add_argument('--diagnostic',action='store_true');p.add_argument('--out',type=Path,default=ROOT/'multi-instance-evidence');args=p.parse_args()
     sys.addaudithook(guard)
     if args.child:child(args.child);return 0
     if args.coordinator:return coordinator(args.coordinator)
@@ -377,8 +377,10 @@ def main():
         binding['packages']={p:version(p) for p in ('sqlalchemy','psycopg','fastapi','pydantic')}
         binding['memory']=Path('/proc/meminfo').read_text().splitlines()[:3]
         binding['orchestration_pool_max_connections']=15
+        binding['diagnostic_instrumentation']=args.diagnostic
         write(out/'binding.json',binding)
         env={k:os.environ[k] for k in ('PATH','LANG','LC_ALL','TZ') if k in os.environ}
+        env['GO_MULTI_DIAGNOSTIC']='1' if args.diagnostic else '0'
         env.update(DATABASE_URL=url.update_query_dict({'options':'-csearch_path='+schema+' -cstatement_timeout=15000 -clock_timeout=10000 -cidle_in_transaction_session_timeout=30000','connect_timeout':'5'}).render_as_string(hide_password=False),APP_ENV='test',MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED='false',TRAVEL_INTELLIGENCE_ENABLED='false',DATABASE_POOL_SIZE='5',DATABASE_MAX_OVERFLOW='0',DATABASE_POOL_TIMEOUT_SECONDS='10',PYTHONPATH=str(APP/'src'),GO_RIDE_ISOLATED_CANCELLATION_POLICY_FILE=str(APP/'scripts/fixtures/ride-cancellation.synthetic.json'))
         with (out/'coordinator.log').open('w') as log:
             proc=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'--coordinator',str(out)],env=env,cwd=out,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)

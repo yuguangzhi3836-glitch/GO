@@ -21,6 +21,7 @@ def append_vertical_evidence(session, vertical: str, order_id: str, kind: str, o
         select(JourneyRecoveryEvidenceChainRow)
         .where(JourneyRecoveryEvidenceChainRow.execution_id == execution_id)
         .order_by(JourneyRecoveryEvidenceChainRow.sequence_no.desc())
+        .limit(1)
     )
     seq = (last.sequence_no if last else 0) + 1
     prev = last.entry_hash if last else "GENESIS"

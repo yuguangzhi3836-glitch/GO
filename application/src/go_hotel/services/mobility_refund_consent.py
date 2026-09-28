@@ -11,11 +11,11 @@ from go_hotel.services import refund_consent
 KIND='REFUND_CONSENT_FROZEN'
 
 
-def records(s, order, vertical):
+def verified_records(s, order, vertical):
+    """Return this transaction's fully validated chain, without cross-call caching."""
     rows=list(s.scalars(select(Evidence).where(
         Evidence.execution_id=='rc20:'+vertical+':'+order.order_id).order_by(Evidence.sequence_no)))
     previous='GENESIS'
-    found=[]
     for sequence,entry in enumerate(rows,1):
         body=entry.evidence_json
         if (not isinstance(body,dict) or entry.sequence_no!=sequence
@@ -29,8 +29,12 @@ def records(s, order, vertical):
                     'previous_hash':previous,'sequence_no':sequence})):
             raise ValueError('REFUND_OPERATION_INTEGRITY_INVALID')
         previous=entry.entry_hash
-        if entry.evidence_kind==KIND:found.append(body['payload'])
-    return found
+    return rows
+
+
+def records(s, order, vertical):
+    return [row.evidence_json['payload'] for row in verified_records(s,order,vertical)
+            if row.evidence_kind==KIND]
 
 
 def existing(s, order, row, accepted_hash, vertical):

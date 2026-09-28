@@ -3,6 +3,13 @@
 Run `python ci/multi_instance/run.py` only in the disposable CI environment
 defined in `.github/workflows/multi-instance-transactions.yml`.
 
+The normal gate has no profiling hooks. A separate `--diagnostic --out DIR` run
+records successful SQL counts/times, connection-acquisition wall times and process
+CPU/RSS after rechecking correctness. Concurrent summed times are not additive;
+connection acquisition includes pre-ping/creation as well as queueing. Diagnostic
+latencies are not substituted for the uninstrumented capacity gate. No statement
+parameters or SQL text are stored, only statement hashes and operation types.
+
 This exercises actual GO transaction services with two separate Python processes
 and independent SQLAlchemy pools sharing PostgreSQL 18.4. It is **not** an HTTP,
 authentication, load-balancer, distributed-host, real PSP, or real supplier test.
