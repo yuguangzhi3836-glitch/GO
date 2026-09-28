@@ -56,6 +56,15 @@ jobs:
           python -m pytest tests/test_multi_instance_payment_regressions.py tests/test_transaction_read_optimization.py tests/test_next_depth_c03_payment_inventory_races.py tests/test_depth33_mobility_refund_consent.py tests/test_c11_idempotency_completion_guard.py tests/payments/test_c11_flight_idempotency_recovery.py tests/test_vertical_source_atomicity.py --junitxml=../multi-regression-evidence/results.xml
       - name: Correctness before 20-100-250-500-1000 concurrent transactions
         run: python ci/multi_instance/run.py
+      - name: Preserve normal gate evidence before diagnostics
+        uses: actions/upload-artifact@v4
+        if: always() && steps.regressions.outcome == 'success'
+        with:
+          name: multi-normal-${{ github.event.pull_request.head.sha }}
+          path: |
+            multi-instance-evidence/
+            multi-regression-evidence/
+          retention-days: 30
       - name: Separate diagnostic measurement after correctness gate
         if: always() && steps.regressions.outcome == 'success'
         run: |

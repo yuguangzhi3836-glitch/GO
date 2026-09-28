@@ -1,9 +1,13 @@
 from __future__ import annotations
 import hashlib, json
 from datetime import datetime, timezone
-from sqlalchemy import select
+from sqlalchemy import select, bindparam
 from go_hotel.db.models import JourneyRecoveryEvidenceChainRow
 from go_hotel.domain.models import new_id
+
+_TAIL = (select(JourneyRecoveryEvidenceChainRow.sequence_no, JourneyRecoveryEvidenceChainRow.entry_hash)
+         .where(JourneyRecoveryEvidenceChainRow.execution_id == bindparam('execution_id'))
+         .order_by(JourneyRecoveryEvidenceChainRow.sequence_no.desc()).limit(1))
 
 
 def now():
@@ -19,12 +23,7 @@ def append_vertical_evidence(session, vertical: str, order_id: str, kind: str, o
     execution_item_id = order_id
     # Appending needs only the tail sequence and hash. Do not hydrate the
     # previous entry's JSON payload; full-chain verification remains unchanged.
-    last = session.execute(
-        select(JourneyRecoveryEvidenceChainRow.sequence_no, JourneyRecoveryEvidenceChainRow.entry_hash)
-        .where(JourneyRecoveryEvidenceChainRow.execution_id == execution_id)
-        .order_by(JourneyRecoveryEvidenceChainRow.sequence_no.desc())
-        .limit(1)
-    ).first()
+    last = session.execute(_TAIL, {'execution_id': execution_id}).first()
     seq = (last.sequence_no if last else 0) + 1
     prev = last.entry_hash if last else "GENESIS"
     body = {

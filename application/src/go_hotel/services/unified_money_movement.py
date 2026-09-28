@@ -1,6 +1,6 @@
 from datetime import datetime,timezone,timedelta
 import hashlib,json,uuid
-from sqlalchemy import select,text
+from sqlalchemy import select,text,bindparam
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (
  OmnichannelPaymentIntentRow as Intent,OmnichannelMoneyMovementRow as Movement,
@@ -10,6 +10,12 @@ from go_hotel.db.models import (
  OrderSupplierFulfillmentRow as Fulfillment,OrderSupplierFulfillmentEventRow as FulfillmentEvent,
  ExternalTruthOperationRow as ExternalTruthOperation,ExternalTruthWebhookReceiptRow as ExternalTruthWebhookReceipt
 )
+# Reuse immutable query shapes, never rows or request values. Every execution
+# still reads the database and acquires the original FOR UPDATE locks.
+_INTENT_LOCK = select(Intent).where(Intent.payment_intent_id==bindparam('intent_id')).with_for_update()
+_MOVEMENT_KEY_LOCK = select(Movement).where(Movement.idempotency_key==bindparam('movement_key')).with_for_update()
+_MOVEMENTS_LOCK = select(Movement).where(Movement.root_payment_intent_id==bindparam('intent_id')).with_for_update()
+_FULFILLMENT_LOCK = select(Fulfillment).where(Fulfillment.payment_intent_id==bindparam('intent_id')).with_for_update()
 def now():return datetime.now(timezone.utc)
 def ident(p):return f'{p}_{uuid.uuid4().hex}'
 def digest(x):return hashlib.sha256(json.dumps(x,sort_keys=True,separators=(',',':'),default=str).encode()).hexdigest()
@@ -48,13 +54,13 @@ class UnifiedMoneyMovementService:
   """Caller owns the transaction; lock order/payment before updating business facts."""
   typ=b['movement_type']
   if typ not in {'AUTHORIZATION','CAPTURE','REFUND','COMPENSATION','PAYOUT','RELEASE'}:raise ValueError('INVALID_MONEY_MOVEMENT_TYPE')
-  i=s.scalar(select(Intent).where(Intent.payment_intent_id==intent_id).with_for_update())
+  i=s.scalar(_INTENT_LOCK,{'intent_id':intent_id})
   if not i:raise ValueError('ROOT_PAYMENT_INTENT_REQUIRED')
   amount=b.get('amount_minor',i.amount_minor)
   if type(amount) is not int:raise ValueError('INTEGER_MOVEMENT_AMOUNT_REQUIRED')
   from go_hotel.services.rental_deposit_money import assert_money_action as assert_rental_deposit_money_action
   assert_rental_deposit_money_action(s,i,typ,amount,b.get('parent_movement_id'),key)
-  old=s.scalar(select(Movement).where(Movement.idempotency_key==key).with_for_update())
+  old=s.scalar(_MOVEMENT_KEY_LOCK,{'movement_key':key})
   if old:
    if (old.root_payment_intent_id,old.movement_type,old.amount_minor,old.parent_movement_id)!=(intent_id,typ,amount,b.get('parent_movement_id')):
     raise ValueError('MONEY_MOVEMENT_IDEMPOTENCY_CONFLICT')
@@ -67,7 +73,7 @@ class UnifiedMoneyMovementService:
   assert_cash_fare_money_action(s,i,typ,amount,b.get('parent_movement_id'),key)
   if i.state!='SUCCEEDED':raise ValueError('ROOT_PAYMENT_SUCCESS_REQUIRED')
   if amount<=0:raise ValueError('POSITIVE_MOVEMENT_AMOUNT_REQUIRED')
-  movements=s.scalars(select(Movement).where(Movement.root_payment_intent_id==intent_id).with_for_update()).all()
+  movements=s.scalars(_MOVEMENTS_LOCK,{'intent_id':intent_id}).all()
   auth=sum(x.amount_minor for x in movements if x.movement_type=='AUTHORIZATION' and x.state=='CONFIRMED')
   captured=sum(x.amount_minor for x in movements if x.movement_type=='CAPTURE' and x.state=='CONFIRMED')
   released=sum(x.amount_minor for x in movements if x.movement_type=='RELEASE' and x.state=='CONFIRMED')
@@ -99,7 +105,7 @@ class UnifiedMoneyMovementService:
   r=Movement(money_movement_id=ident('omm'),root_payment_intent_id=intent_id,parent_movement_id=parent_id,movement_type=typ,business_type=i.business_type,business_id=i.business_id,amount_minor=amount,currency=i.currency,state=state,idempotency_key=key,external_reference=b.get('external_reference'),evidence_json=evidence,created_at=now(),updated_at=now());s.add(r)
   if state=='CONFIRMED' and typ not in {'AUTHORIZATION','RELEASE'}:self._post(s,i,r)
   if typ=='CAPTURE' and state=='CONFIRMED' and captured+amount==i.amount_minor:
-   f=s.scalar(select(Fulfillment).where(Fulfillment.payment_intent_id==intent_id).with_for_update())
+   f=s.scalar(_FULFILLMENT_LOCK,{'intent_id':intent_id})
    if f and f.state=='PAYMENT_CONFIRMED_AWAITING_MONEY_GRAPH':
     f.state='CAPTURE_CONFIRMED_READY_FOR_SUPPLIER';f.updated_at=now();s.add(FulfillmentEvent(order_supplier_fulfillment_event_id=ident('osfe'),order_supplier_fulfillment_id=f.order_supplier_fulfillment_id,event_type='MONEY_GRAPH_CAPTURE_CONFIRMED',state=f.state,evidence_reference=(evidence[0] if isinstance(evidence[0],str) else evidence[0].get('reference','money://capture')),payload_hash=digest({'movement':r.money_movement_id,'captured_total':captured+amount}),occurred_at=now()))
   if i.business_type=='SUBSCRIPTION_INVOICE' and typ=='CAPTURE' and state=='CONFIRMED':

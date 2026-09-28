@@ -81,6 +81,26 @@ def test_unrelated_integrity_error_is_not_treated_as_replay():
     from go_hotel.repositories.sql import repo
     with pytest.raises(IntegrityError):repo.claim_idempotency(None,'invalid-operation',{})
 
+def test_reused_chain_queries_keep_orders_separate_and_read_new_entries():
+    first,second=ride(),ride()
+    with SessionLocal.begin() as s:
+        a=s.get(Ride,first);b=s.get(Ride,second)
+        a_before=verified_records(s,a,'RIDE');b_before=verified_records(s,b,'RIDE')
+        append_vertical_evidence(s,'RIDE',first,'ONLY_FIRST','PAYMENT_PENDING',{'order':first})
+        assert len(verified_records(s,a,'RIDE'))==len(a_before)+1
+        assert len(verified_records(s,b,'RIDE'))==len(b_before)
+        append_vertical_evidence(s,'RIDE',second,'ONLY_SECOND','PAYMENT_PENDING',{'order':second})
+        assert verified_records(s,a,'RIDE')[-1].evidence_kind=='ONLY_FIRST'
+        assert verified_records(s,b,'RIDE')[-1].evidence_kind=='ONLY_SECOND'
+
+def test_reused_clock_query_reads_fresh_database_time():
+    import time
+    from go_hotel.autonomy.durable import db_now_ms
+    with SessionLocal() as s:
+        before=db_now_ms(s)
+        time.sleep(.03)
+        assert db_now_ms(s)>before
+
 @pytest.mark.parametrize('case',['wrong_payer','expired'])
 def test_shared_checkout_snapshot_retains_payer_and_deadline_rejections(case):
     oid=ride();owner='query-owner'
