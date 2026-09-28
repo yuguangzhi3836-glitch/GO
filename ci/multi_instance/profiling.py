@@ -14,6 +14,17 @@ class Metrics:
         self.acquisitions=[];self.started=time.monotonic();self.cpu=resource.getrusage(resource.RUSAGE_SELF)
         self.holds=[];self.cache=defaultdict(int);self.mapper=[];self.mapper_started=None
         self.services=defaultdict(lambda:[0,0.,0.,0.])
+        self.queue_waits=[]
+        # Test-only observation of the recorded SQLAlchemy QueuePool's blocking
+        # queue get. Unlike pool.connect timing, this excludes creation/pre-ping.
+        queue_get=engine.pool._pool.get
+        def measured_queue_get(block=True,timeout=None):
+            start=time.monotonic()
+            try:return queue_get(block,timeout)
+            finally:
+                if block:
+                    with self.lock:self.queue_waits.append(time.monotonic()-start)
+        engine.pool._pool.get=measured_queue_get
         @event.listens_for(Mapper,'before_configured')
         def mapper_before():
             self.mapper_started=(time.monotonic(),time.thread_time(),threading.get_ident())
@@ -69,6 +80,9 @@ class Metrics:
             'peak_rss_kib':usage.ru_maxrss,'connection_acquisitions':len(self.acquisitions),
             'connection_acquisition_sum_seconds':sum(self.acquisitions),
             'connection_acquisition_max_seconds':max(self.acquisitions,default=0),
+            'blocking_pool_queue_gets':len(self.queue_waits),
+            'blocking_pool_queue_sum_seconds':sum(self.queue_waits),
+            'blocking_pool_queue_max_seconds':max(self.queue_waits,default=0),
             'connection_holds':len(self.holds),'connection_hold_sum_seconds':sum(self.holds),
             'connection_hold_max_seconds':max(self.holds,default=0),
             'mapper_configuration':self.mapper,'statement_cache':dict(self.cache),

@@ -52,6 +52,9 @@ jobs:
         run: |
           python -c "import json; assert json.load(open('multi-instance-evidence/result.json'))['correctness']=='PASS'"
           python ci/multi_instance/run.py --diagnostic --out multi-profile-evidence
+      - name: Bounded admission experiments with queue time included
+        if: always() && steps.regressions.outcome == 'success'
+        run: python ci/multi_instance/admission_experiment.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -60,4 +63,5 @@ jobs:
             multi-instance-evidence/
             multi-regression-evidence/
             multi-profile-evidence/
+            multi-admission-evidence/
           retention-days: 30

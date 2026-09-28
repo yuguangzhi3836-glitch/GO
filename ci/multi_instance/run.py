@@ -26,6 +26,10 @@ ROOT = Path(__file__).resolve().parents[2]
 APP = ROOT / 'application'
 PLAN = [20, 100, 250, 500, 1000]
 
+def plan_for(admission_limit):
+    # Exploratory admission runs cannot bypass the normal failed 100-tier gate.
+    return PLAN[:2] if admission_limit else PLAN
+
 def write(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True, default=str)+'\n')
 
@@ -126,16 +130,27 @@ def child(jobpath):
             (ride_workload.ride_service,('fulfill',),'ride')):
             for method in methods:metrics.track(service,method,prefix+'.'+method)
     tasks=job['tasks']; ready=threading.Barrier(len(tasks)+1)
+    admission_limit=int(os.environ.get('GO_MULTI_ADMISSION_LIMIT','0')) if all(t['op']=='ride' for t in tasks) else 0
+    admission=threading.BoundedSemaphore(admission_limit) if admission_limit else None
     def run(task):
         ready.wait(60); wait_file(Path(job['start']))
         start=time.monotonic_ns()
         result={'task':task['op'],'pid':os.getpid(),'start_ns':start,'ok':False}
+        admitted=False
         try:
+            if admission:
+                admitted=admission.acquire(timeout=60)
+                if not admitted:raise TimeoutError('EXPERIMENT_ADMISSION_TIMEOUT')
+            result['execution_start_ns']=time.monotonic_ns()
+            result['admission_wait_ms']=(result['execution_start_ns']-start)/1e6 if admission else 0
             value=action(task)
             result.update(ok=True,value=value)
         except Exception as exc:
             result.update(error_type=type(exc).__name__,code=str(exc)[:500] if isinstance(exc,(ValueError,AssertionError)) else 'SEE_ERROR_TYPE')
             if type(exc).__name__=='HTTPException': result.update(code=exc.detail,status=exc.status_code)
+        finally:
+            if 'execution_start_ns' in result:result['execution_end_ns']=time.monotonic_ns()
+            if admitted:admission.release()
         result.update(end_ns=time.monotonic_ns())
         result['duration_ms']=(result['end_ns']-start)/1e6
         return result
@@ -334,12 +349,13 @@ def coordinator(out):
     from go_hotel.db.models import Base
     from go_hotel.db.session import engine
     Base.metadata.create_all(engine)
-    r=Runner(out);result={'correctness':'PENDING','stages':[],'status':'RUNNING','scope':'two independent service processes, shared PostgreSQL; not HTTP/auth/production or million-online proof'}
+    admission_limit=int(os.environ.get('GO_MULTI_ADMISSION_LIMIT','0'))
+    r=Runner(out);result={'correctness':'PENDING','stages':[],'status':'RUNNING','admission_active_per_instance':admission_limit,'mode':'ADMISSION_EXPERIMENT_NOT_ACCEPTANCE' if admission_limit else 'NORMAL_STAIRCASE','scope':'two independent service processes, shared PostgreSQL; not HTTP/auth/production or million-online proof'}
     try:
         correctness(r,out);result['correctness']='PASS';write(out/'result.json',result)
         from ride_workload import verify
         raw=[]
-        for n in PLAN:
+        for n in plan_for(admission_limit):
             host_before=Path('/proc/stat').read_text().splitlines()[0].split()[1:] if os.environ.get('GO_MULTI_DIAGNOSTIC')=='1' else None
             rows=r.group([{'op':'ride','index':i} for i in range(len(raw),len(raw)+n)])
             if host_before:
@@ -354,8 +370,14 @@ def coordinator(out):
             events=sorted([(x['start_ns'],1) for x in rows]+[(x['end_ns'],-1) for x in rows])
             peak=active=0
             for _,delta in events:active+=delta;peak=max(peak,active)
+            executing_events=sorted([(x['execution_start_ns'],1) for x in rows if 'execution_start_ns' in x]+[(x['execution_end_ns'],-1) for x in rows if 'execution_end_ns' in x])
+            executing_peak=executing=0
+            for _,delta in executing_events:executing+=delta;executing_peak=max(executing_peak,executing)
             duration=(max(x['end_ns'] for x in rows)-min(x['start_ns'] for x in rows))/1e9
             stage={'concurrent_transactions':n,'transactions':len(rows),'process_ids':sorted({x['pid'] for x in rows}),'observed_peak_inflight':peak,'errors':sum(not x['ok'] for x in rows),'p95_ms':latency[math.ceil(n*.95)-1],'p99_ms':latency[math.ceil(n*.99)-1],'completed_per_second':len(values)/duration,'sql':'PENDING'}
+            waits=sorted(x.get('admission_wait_ms',0) for x in rows)
+            stage.update(observed_peak_executing=executing_peak,admission_wait_p95_ms=waits[math.ceil(n*.95)-1])
+            if admission_limit:assert executing_peak<=2*admission_limit,'ADMISSION_LIMIT_VIOLATION'
             result['stages'].append(stage);write(out/'result.json',result)
             write(out/f'money-{n}.json',check_money())
             # Query every persisted RIDE load order, including failed/partial attempts.
@@ -364,7 +386,7 @@ def coordinator(out):
             stage['pass']=stage['errors']==0 and stage['p95_ms']<=5000 and stage['p99_ms']<=10000
             if not stage['pass']:
                 result['status']='STOPPED_AT_FAILED_TIER';return 1
-        result['status']='BOUNDED_SERVICE_PLAN_PASS';return 0
+        result['status']='EXPERIMENT_PLAN_COMPLETE_NOT_CAPACITY_ACCEPTANCE' if admission_limit else 'BOUNDED_SERVICE_PLAN_PASS';return 0
     except Exception as exc:
         if result['correctness']=='PENDING':result['correctness']='FAIL'
         result.update(status='FAILED',error_type=type(exc).__name__,error=str(exc)[:1000] if isinstance(exc,(AssertionError,ValueError)) else 'SEE_LOG')
@@ -374,10 +396,11 @@ def coordinator(out):
         r.stop();write(out/'result.json',result);engine.dispose()
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--child',type=Path);p.add_argument('--coordinator',type=Path);p.add_argument('--diagnostic',action='store_true');p.add_argument('--out',type=Path,default=ROOT/'multi-instance-evidence');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--child',type=Path);p.add_argument('--coordinator',type=Path);p.add_argument('--diagnostic',action='store_true');p.add_argument('--admission-active-per-instance',type=int,choices=(0,2,5),default=0);p.add_argument('--out',type=Path,default=ROOT/'multi-instance-evidence');args=p.parse_args()
     sys.addaudithook(guard)
     if args.child:child(args.child);return 0
     if args.coordinator:return coordinator(args.coordinator)
+    if args.admission_active_per_instance and args.out==ROOT/'multi-instance-evidence':p.error('Admission experiment requires a separately named --out directory')
     from sqlalchemy import create_engine,text
     from sqlalchemy.engine import make_url
     out=args.out.resolve();out.mkdir(parents=True,exist_ok=False)
@@ -400,9 +423,13 @@ def main():
         binding['memory']=Path('/proc/meminfo').read_text().splitlines()[:3]
         binding['orchestration_pool_max_connections']=15
         binding['diagnostic_instrumentation']=args.diagnostic
+        binding['admission_active_per_instance']=args.admission_active_per_instance
+        binding['plan']=plan_for(args.admission_active_per_instance)
+        binding['experiment_mode']='ADMISSION_EXPERIMENT_NOT_ACCEPTANCE' if args.admission_active_per_instance else 'NORMAL_STAIRCASE'
         write(out/'binding.json',binding)
         env={k:os.environ[k] for k in ('PATH','LANG','LC_ALL','TZ') if k in os.environ}
         env['GO_MULTI_DIAGNOSTIC']='1' if args.diagnostic else '0'
+        env['GO_MULTI_ADMISSION_LIMIT']=str(args.admission_active_per_instance)
         env.update(DATABASE_URL=url.update_query_dict({'options':'-csearch_path='+schema+' -cstatement_timeout=15000 -clock_timeout=10000 -cidle_in_transaction_session_timeout=30000','connect_timeout':'5'}).render_as_string(hide_password=False),APP_ENV='test',MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED='false',TRAVEL_INTELLIGENCE_ENABLED='false',DATABASE_POOL_SIZE='5',DATABASE_MAX_OVERFLOW='0',DATABASE_POOL_TIMEOUT_SECONDS='10',PYTHONPATH=str(APP/'src'),GO_RIDE_ISOLATED_CANCELLATION_POLICY_FILE=str(APP/'scripts/fixtures/ride-cancellation.synthetic.json'))
         with (out/'coordinator.log').open('w') as log:
             proc=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'--coordinator',str(out)],env=env,cwd=out,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)

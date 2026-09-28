@@ -32,6 +32,19 @@ round but never a higher tier in that round; correctness/errors stop comparison.
 Two repetitions per version are an initial control, not statistical confidence
 or a substitute for sustained production-like capacity testing.
 
+`admission_experiment.py` follows valid normal/diagnostic runs with fresh-schema
+experiments allowing 2 and 5 simultaneously executing RIDE actors per process.
+All actors start their latency clock before admission; queue time is included.
+Results separately report in-flight actors (queued plus executing) and the
+observed executing peak. Each experiment repeats all correctness scenarios and
+stops at its first failed latency tier; its plan is capped at 100 even if it passes.
+These experiments are not the normal staircase, production admission control,
+or evidence of 100 simultaneously executing transactions. The normal capacity
+gate stays red on failure. A single run per variant explores a hypothesis rather
+than establishing repeatable superiority. Diagnostic-only queue timing wraps
+SQLAlchemy QueuePool's internal blocking queue get; the observed library version
+is recorded and incompatibility fails the diagnostic rather than hiding it.
+
 This exercises actual GO transaction services with two separate Python processes
 and independent SQLAlchemy pools sharing PostgreSQL 18.4. It is **not** an HTTP,
 authentication, load-balancer, distributed-host, real PSP, or real supplier test.
