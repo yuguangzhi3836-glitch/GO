@@ -19,6 +19,7 @@ class Metrics:
         self.acquisitions_by_service=defaultdict(list)
         self.queue_waits_by_service=defaultdict(list)
         self.holds_by_service=defaultdict(list)
+        self.sql_by_service=defaultdict(lambda:[0,0.])
         def active_service():
             stack=getattr(self.local,'stack',())
             return stack[-1] if stack else 'unattributed'
@@ -81,6 +82,8 @@ class Metrics:
             with self.lock:
                 row=self.queries[key];row[0]+=1;row[1]+=elapsed;row[2]=max(row[2],elapsed)
                 self.cache[getattr(context.cache_hit,'name',str(context.cache_hit))]+=1
+                service=self.sql_by_service[active_service()]
+                service[0]+=1;service[1]+=elapsed
     def track(self,service,method,label):
         original=getattr(service,method)
         @wraps(original)
@@ -124,5 +127,7 @@ class Metrics:
                 'inclusive_calling_thread_cpu_seconds':v[2],'max_wall_seconds':v[3]} for k,v in self.services.items()},
             'sql_count':sum(v[0] for v in self.queries.values()),
             'sql_sum_seconds':sum(v[1] for v in self.queries.values()),
+            'sql_by_service':{label:{'count':v[0],'sum_seconds':v[1]}
+                              for label,v in self.sql_by_service.items()},
             'sql':sorted([{'statement':k,'count':v[0],'sum_seconds':v[1],'max_seconds':v[2]} for k,v in self.queries.items()],key=lambda x:x['sum_seconds'],reverse=True),
             'note':'Summed concurrent wall times are not additive CPU time. Acquisition includes queueing, connection creation and pre-ping. SQL counts cover successful cursor events, excluding DBAPI ping/commit/rollback. SQL time includes transport, database execution and scheduling, but not statement compilation.'}
