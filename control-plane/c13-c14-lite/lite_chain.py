@@ -21,7 +21,8 @@ from __future__ import annotations
 from lite_bundle import C13_ROOT_FIELD, C14_ROOT_FIELD
 from lite_bundle import validate as validate_bundle
 from lite_bundle import verify_root
-from lite_canonical import digest_bytes
+from lite_canonical import digest_bytes, parse_json
+import lite_ai_reviewer
 from lite_errors import C14_PREREQUISITE_OK, Block, Reject
 import lite_candidate as candidate_module
 import lite_identity as identity_module
@@ -156,6 +157,31 @@ def _hash_artifacts(decision, artifacts, bundles):
             continue
         if digest_bytes(artifacts[name]) != bundle[field]:
             decision.reject("artifact_digest_tamper", f"{name}:{field}")
+            continue
+        if name in ("c14_opinion", "c13_opinion"):
+            try:
+                document = parse_json(artifacts[name])
+                if "opinion" in document:
+                    lite_ai_reviewer.validate_outcome(document)
+                    for key in ("verdict", "input_sha256", "prompt_sha256", "ai_provider",
+                                "ai_model", "ai_execution_id", "failure_class"):
+                        if document[key] != bundle[key]:
+                            raise ValueError("opinion_envelope_bundle_mismatch:" + key)
+                    if document["role"] != role:
+                        raise ValueError("opinion_envelope_role_mismatch")
+                    opinion = document["opinion"]
+                else:
+                    # Historical fixtures / artifacts contain the canonical opinion
+                    # itself; their original raw-byte digest remains authoritative.
+                    opinion = document
+                if opinion is not None:
+                    lite_ai_reviewer.validate_opinion(role, opinion, bundle["candidate_sha"])
+                    for key in (("verdict", "findings", "blocking_issues", "remediation_status", "not_applicable")
+                                if role == "c14" else ("verdict", "quality_findings", "remaining_risks")):
+                        if opinion[key] != bundle[key]:
+                            raise ValueError("opinion_bundle_mismatch:" + key)
+            except (lite_ai_reviewer.ReviewUnavailable, KeyError, TypeError, ValueError) as error:
+                decision.reject("opinion_evidence_invalid", str(error))
 
 
 def verify_round(
