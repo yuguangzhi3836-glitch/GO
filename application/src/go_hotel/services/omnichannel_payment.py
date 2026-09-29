@@ -1,7 +1,7 @@
 from go_hotel.services import vertical_reservation_expiry as reservation_expiry
 from datetime import datetime,timezone,timedelta
 import hashlib,hmac,json,uuid,os
-from sqlalchemy import select,func
+from sqlalchemy import select,func,bindparam
 from go_hotel.db.session import SessionLocal
 from go_hotel.autonomy.durable import transaction
 from go_hotel.db.models import (
@@ -21,6 +21,22 @@ ORDER_TYPES={
  'RIDE_ORDER':('RIDE',MobilityRideOrderRow),'RENTAL_ORDER':('RENTAL',MobilityRentalOrderRow),'ATTRACTION_ORDER':('ATTRACTION',AttractionOrderRow),
 }
 TERMINAL={'SUCCEEDED','FAILED'}
+# These are immutable statement shapes, not cached payment facts. The caller
+# still holds the original attempt and intent locks when each read executes.
+_SUCCESS_CONFLICTS = select(
+ select(Attempt.payment_attempt_id).where(
+  Attempt.payment_intent_id==bindparam('intent_id'), Attempt.state=='SUCCEEDED',
+  Attempt.payment_attempt_id!=bindparam('attempt_id')).exists(),
+ select(Intent.payment_intent_id).where(
+  Intent.business_type==bindparam('business_type'), Intent.business_id==bindparam('business_id'),
+  Intent.state=='SUCCEEDED', Intent.payment_intent_id!=bindparam('intent_id')).exists(),
+)
+_SUCCESS_FULFILLMENT = (select(FactBinding.payment_order_fact_binding_id,
+ FactBinding.evidence_reference, Fulfillment.order_supplier_fulfillment_id)
+ .select_from(Intent)
+ .outerjoin(FactBinding,FactBinding.payment_intent_id==Intent.payment_intent_id)
+ .outerjoin(Fulfillment,Fulfillment.payment_intent_id==Intent.payment_intent_id)
+ .where(Intent.payment_intent_id==bindparam('intent_id')))
 def now():return datetime.now(timezone.utc)
 def utc(v):return v.replace(tzinfo=timezone.utc) if v and v.tzinfo is None else v
 def ident(p):return f'{p}_{uuid.uuid4().hex}'
@@ -106,16 +122,16 @@ class OmnichannelPaymentService:
   if i.state in TERMINAL:
    if i.state==mapped:return
    raise ValueError('PAYMENT_TERMINAL_STATE_IMMUTABLE')
-  if mapped=='SUCCEEDED' and s.scalar(select(Attempt).where(Attempt.payment_intent_id==i.payment_intent_id,Attempt.state=='SUCCEEDED',Attempt.payment_attempt_id!=a.payment_attempt_id)):
-   raise ValueError('DUPLICATE_ROOT_PAYMENT_SUCCESS_BLOCKED')
-  if mapped=='SUCCEEDED' and s.scalar(select(Intent).where(Intent.business_type==i.business_type,Intent.business_id==i.business_id,Intent.state=='SUCCEEDED',Intent.payment_intent_id!=i.payment_intent_id)):
-   raise ValueError('ORDER_ALREADY_HAS_SUCCESSFUL_PAYMENT')
+  if mapped=='SUCCEEDED':
+   attempt_conflict,intent_conflict=s.execute(_SUCCESS_CONFLICTS,{'intent_id':i.payment_intent_id,
+    'attempt_id':a.payment_attempt_id,'business_type':i.business_type,'business_id':i.business_id}).one()
+   if attempt_conflict:raise ValueError('DUPLICATE_ROOT_PAYMENT_SUCCESS_BLOCKED')
+   if intent_conflict:raise ValueError('ORDER_ALREADY_HAS_SUCCESSFUL_PAYMENT')
   a.external_operation_id=external_operation_id or a.external_operation_id;a.state=mapped;a.updated_at=now();i.state=mapped;i.updated_at=now()
   if mapped=='SUCCEEDED' and i.business_type in ORDER_TYPES:
-   binding=s.scalar(select(FactBinding).where(FactBinding.payment_intent_id==i.payment_intent_id))
-   existing=s.scalar(select(Fulfillment).where(Fulfillment.payment_intent_id==i.payment_intent_id))
-   if not existing:
-    f=Fulfillment(order_supplier_fulfillment_id=ident('osf'),payment_intent_id=i.payment_intent_id,business_type=i.business_type,business_id=i.business_id,supplier_id=i.payee_id,supplier_idempotency_key=f'{i.business_type}:{i.business_id}:SUPPLIER_MUTATION',state='PAYMENT_CONFIRMED_AWAITING_MONEY_GRAPH',external_operation_id=None,supplier_confirmation_reference=None,evidence_reference=binding.evidence_reference if binding else 'payment://confirmed',created_at=now(),updated_at=now());s.add(f);s.flush();s.add(FulfillmentEvent(order_supplier_fulfillment_event_id=ident('osfe'),order_supplier_fulfillment_id=f.order_supplier_fulfillment_id,event_type='PAYMENT_CONFIRMED',state=f.state,evidence_reference=f.evidence_reference,payload_hash=digest({'payment_intent_id':i.payment_intent_id,'state':f.state}),occurred_at=now()))
+   binding_id,evidence_reference,existing=s.execute(_SUCCESS_FULFILLMENT,{'intent_id':i.payment_intent_id}).one()
+   if existing is None:
+    f=Fulfillment(order_supplier_fulfillment_id=ident('osf'),payment_intent_id=i.payment_intent_id,business_type=i.business_type,business_id=i.business_id,supplier_id=i.payee_id,supplier_idempotency_key=f'{i.business_type}:{i.business_id}:SUPPLIER_MUTATION',state='PAYMENT_CONFIRMED_AWAITING_MONEY_GRAPH',external_operation_id=None,supplier_confirmation_reference=None,evidence_reference=evidence_reference if binding_id is not None else 'payment://confirmed',created_at=now(),updated_at=now());s.add(f);s.flush();s.add(FulfillmentEvent(order_supplier_fulfillment_event_id=ident('osfe'),order_supplier_fulfillment_id=f.order_supplier_fulfillment_id,event_type='PAYMENT_CONFIRMED',state=f.state,evidence_reference=f.evidence_reference,payload_hash=digest({'payment_intent_id':i.payment_intent_id,'state':f.state}),occurred_at=now()))
  def simulate_result(self,aid,result):
   if result not in {'SUCCEEDED','FAILED','TIMEOUT'}:raise ValueError('INVALID_SIMULATOR_RESULT')
   with SessionLocal() as s:
