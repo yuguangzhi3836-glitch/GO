@@ -69,3 +69,15 @@ def test_money_projection_has_two_queries_and_preserves_parent_check(client, cor
         finally:
             event.remove(engine, 'before_cursor_execute', observed)
     assert len(statements) == 2
+
+
+def test_projection_imports_do_not_prewarm_mappers():
+    import os
+    import subprocess
+    import sys
+    code = """
+from go_hotel.db.models import Base
+from go_hotel.services import mobility_refund_consent, order_supplier_fulfillment
+assert not any(mapper.configured for mapper in Base.registry.mappers)
+"""
+    subprocess.run([sys.executable, '-c', code], env=dict(os.environ), check=True)

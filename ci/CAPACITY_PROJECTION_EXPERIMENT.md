@@ -5,7 +5,7 @@ the integration candidate. No merge, deployment, live payment or supplier access
 
 Baseline commit: `059ebec3ab379099ef258effc3ab0a9833d52c35`.
 Baseline application tree: `6570b66bc977f89c0311d67bdc6b721cd70d4e09`.
-Experimental application tree: `b4a998aa5980a5207e658cc708c7e88829543918`.
+Experimental application tree: `09f45b2db848f406edb72cdf265d2edf108d859e`.
 
 ## Hypothesis and scope
 
@@ -58,3 +58,23 @@ C14 R9 remains historical evidence for the old candidate. API credit exhaustion
 does not prevent this isolated development/measurement work. A changed final
 application must receive a fresh whole-candidate C14 and then C13 when usable API
 credit is restored. No paid retry is queued by this experiment.
+
+## Qualification repairs, before admissible comparison
+
+The first CI attempt (36583938348) failed test collection before any measurement;
+the dedicated test step now runs from application/. The next attempt correctly
+refused a changed frozen formal workflow. That workflow is restored byte-for-byte
+(SHA256 160720754942621bdff87dbf2a96e90395444567c7c932d3bb799d0622160330);
+additional candidate tests run in the separate CPU qualification step.
+
+Standalone journey run 36585228759 then refused COLD_MAPPERS_ALREADY_CONFIGURED:
+constructing load_only options at module import configured the mapper registry.
+Artifact 11041565901 SHA256 c9d0bf2c18eeebaf4496d421f444fa6224c4844b124e01d8a94f611a0c672ac8
+preserves this invalid attempt. No result on application b4a998a is admissible
+for adoption. Query options now initialize on the first actual service call;
+only immutable statement shapes are cached afterward. The original cold mapper
+check is unchanged and the first-use cost remains inside the operation. A fresh
+subprocess regression verifies importing the services does not configure mappers.
+All nine candidate-specific local tests pass (SQLite); existing 68 regressions
+and 31 harness tests were previously qualified. Fresh PostgreSQL and ABBA runs
+are required on application 09f45b2; no partial result is carried forward.

@@ -1,4 +1,5 @@
 from datetime import datetime,timezone
+from functools import cache
 import hashlib,json,uuid
 from sqlalchemy import select,bindparam
 from sqlalchemy.orm import load_only
@@ -18,19 +19,27 @@ from go_hotel.db.models import (
 MODELS={'HOTEL_ORDER':('HOTEL',OrderRow),'FLIGHT_ORDER':('FLIGHT',FlightOrderRow),'RAIL_ORDER':('RAIL',RailOrderRow),'RIDE_ORDER':('RIDE',MobilityRideOrderRow),'RENTAL_ORDER':('RENTAL',MobilityRentalOrderRow),'ATTRACTION_ORDER':('ATTRACTION',AttractionOrderRow)}
 # All three rows are unique for a payment intent. An inner join requires the
 # complete durable binding before any supplier fact can project money as paid.
-_BOUND_PAYMENT = (select(Intent,Root,Binding)
- .options(load_only(Intent.payment_intent_id, Intent.state, Intent.business_type,
-   Intent.business_id, Intent.payer_id, Intent.payee_id, Intent.amount_minor, Intent.currency),
-  load_only(Root.business_type, Root.business_id, Root.legal_entity_id),
-  load_only(Binding.business_type, Binding.business_id, Binding.payer_id,
-   Binding.payee_id, Binding.amount_minor, Binding.currency, Binding.legal_entity_id))
- .join(Root,Root.payment_intent_id==Intent.payment_intent_id)
- .join(Binding,Binding.payment_intent_id==Intent.payment_intent_id)
- .where(Intent.payment_intent_id==bindparam('intent_id')))
-_BOUND_MOVEMENTS = (select(Movement).options(load_only(
- Movement.money_movement_id, Movement.parent_movement_id, Movement.movement_type,
- Movement.state, Movement.business_type, Movement.business_id, Movement.currency,
- Movement.amount_minor)).where(Movement.root_payment_intent_id==bindparam('intent_id')))
+@cache
+def _bound_payment():
+ # Construct load_only only at first use; keep mapper work in cold operations.
+ return (select(Intent,Root,Binding)
+  .options(load_only(Intent.payment_intent_id, Intent.state, Intent.business_type,
+    Intent.business_id, Intent.payer_id, Intent.payee_id, Intent.amount_minor, Intent.currency),
+   load_only(Root.business_type, Root.business_id, Root.legal_entity_id),
+   load_only(Binding.business_type, Binding.business_id, Binding.payer_id,
+    Binding.payee_id, Binding.amount_minor, Binding.currency, Binding.legal_entity_id))
+  .join(Root,Root.payment_intent_id==Intent.payment_intent_id)
+  .join(Binding,Binding.payment_intent_id==Intent.payment_intent_id)
+  .where(Intent.payment_intent_id==bindparam('intent_id')))
+
+@cache
+def _bound_movements():
+ # Construct load_only only at first use; keep mapper work in cold operations.
+ return (select(Movement).options(load_only(
+  Movement.money_movement_id, Movement.parent_movement_id, Movement.movement_type,
+  Movement.state, Movement.business_type, Movement.business_id, Movement.currency,
+  Movement.amount_minor)).where(Movement.root_payment_intent_id==bindparam('intent_id')))
+
 _FULFILLMENT_BY_ID = select(Fulfillment).where(
  Fulfillment.order_supplier_fulfillment_id==bindparam('fulfillment_id')).with_for_update()
 _ORDER_LOCKS = {kind:select(model).where(model.order_id==bindparam('order_id')).with_for_update()
@@ -44,7 +53,7 @@ def out(r):return {c.name:(getattr(r,c.name).isoformat() if isinstance(getattr(r
 def _payment_state(s, f, order):
  """Supplier outcomes never supply money truth; read the bound C11 graph."""
  unknown='UNKNOWN_EXTERNAL_STATE'
- graph=s.execute(_BOUND_PAYMENT,{'intent_id':f.payment_intent_id}).one_or_none()
+ graph=s.execute(_bound_payment(),{'intent_id':f.payment_intent_id}).one_or_none()
  expected=(f.business_type,f.business_id,order.account_id,f.supplier_id,order.total_amount_minor,order.currency)
  if not graph:return unknown
  i,root,binding=graph
@@ -52,7 +61,7 @@ def _payment_state(s, f, order):
  if (i.business_type,i.business_id,i.payer_id,i.payee_id,i.amount_minor,i.currency)!=expected:return unknown
  if (binding.business_type,binding.business_id,binding.payer_id,binding.payee_id,binding.amount_minor,binding.currency)!=expected:return unknown
  if (root.business_type,root.business_id,root.legal_entity_id)!=(f.business_type,f.business_id,binding.legal_entity_id):return unknown
- rows=s.scalars(_BOUND_MOVEMENTS,{'intent_id':i.payment_intent_id}).all()
+ rows=s.scalars(_bound_movements(),{'intent_id':i.payment_intent_id}).all()
  if any(x.state!='CONFIRMED' for x in rows):return unknown
  if any((x.business_type,x.business_id,x.currency)!=(f.business_type,f.business_id,i.currency)
         or type(x.amount_minor) is not int or x.amount_minor<=0 for x in rows):return unknown
