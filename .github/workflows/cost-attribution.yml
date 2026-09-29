@@ -31,11 +31,22 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
           fetch-depth: 2
+      - name: Detect attribution definition changes
+        id: change
+        run: |
+          if git diff --quiet HEAD^ HEAD -- ci/cost_attribution .github/workflows/cost-attribution.yml; then
+            echo 'run=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/setup-python@v5
+        if: steps.change.outputs.run == 'true'
         with:
           python-version: '3.12'
       - run: python -m pip install -e './application[dev]'
+        if: steps.change.outputs.run == 'true'
       - name: Enable server accounting in this disposable container only
+        if: steps.change.outputs.run == 'true'
         env:
           PG_CONTAINER: ${{ job.services.postgres.id }}
         run: |
@@ -50,11 +61,13 @@ jobs:
           docker exec "$PG_CONTAINER" psql -U go_ci -d go_c11_isolated -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION pg_stat_statements'
           echo "GO_COST_POSTGRES_PID=$(docker inspect --format '{{.State.Pid}}' "$PG_CONTAINER")" >> "$GITHUB_ENV"
       - name: Validate observer contracts
+        if: steps.change.outputs.run == 'true'
         run: python -m pytest ci/cost_attribution/test_observe.py -q
       - name: Same runner control-observed-observed-control
+        if: steps.change.outputs.run == 'true'
         run: python ci/cost_attribution/run.py
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.change.outputs.run == 'true'
         with:
           name: cost-attribution-${{ github.event.pull_request.head.sha }}
           path: cost-attribution-evidence/

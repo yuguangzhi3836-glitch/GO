@@ -1,5 +1,6 @@
 from __future__ import annotations
 from datetime import datetime, timezone
+from functools import partial
 from anyio import CapacityLimiter, to_thread
 from go_hotel.connectors.registry import registry
 from go_hotel.connectors.resilience import ResilientConnector, ConnectorTimeout
@@ -20,6 +21,14 @@ from go_hotel.services import catalog_fare_snapshot as fare_snapshot
 # that ordering for drift/fare first-write paths while allowing unrelated API
 # requests to run. Waiting does not occupy the shared Starlette thread pool.
 _search_write_limiter = CapacityLimiter(1)
+# Preserve the previous per-event-loop ordering of contiguous synchronous legacy
+# segments. The limiter waits asynchronously; Session lifetimes stay inside the
+# worker. External provider awaits still execute on the caller's event loop.
+_legacy_write_limiter = CapacityLimiter(1)
+
+async def _db_segment(function, *args, **kwargs):
+    return await to_thread.run_sync(partial(function, *args, **kwargs), limiter=_legacy_write_limiter)
+
 
 class BookingService:
     def _connector(self, connector_id: str | None = None):
@@ -51,6 +60,11 @@ class BookingService:
         return offers
 
     async def prebook(self, offer_id: str):
+        offer = await _db_segment(self._prepare_prebook, offer_id)
+        prebook = await self._connector(offer.connector_id).prebook(offer)
+        return await _db_segment(self._save_prebook, offer_id, offer, prebook)
+
+    def _prepare_prebook(self, offer_id):
         offer = repo.get_offer(offer_id)
         if not offer: not_found("OFFER_NOT_FOUND", "Offer not found")
         offer_exp = offer.expires_at if offer.expires_at.tzinfo else offer.expires_at.replace(tzinfo=timezone.utc)
@@ -59,7 +73,9 @@ class BookingService:
             fare_snapshot.offer_rule(offer_id)
         except ValueError as exc:
             conflict(str(exc), 'The supplier fare rules need confirmation before booking')
-        prebook = await self._connector(offer.connector_id).prebook(offer)
+        return offer
+
+    def _save_prebook(self, offer_id, offer, prebook):
         if prebook.fare_rule_id is None: prebook.fare_rule_id = offer.fare_rule_id
         if prebook.benefits_fingerprint is None: prebook.benefits_fingerprint = benefit_fingerprint(offer)
         price_status, inventory_status, policy_status, benefit_status = booking_consistency_guard.validate_prebook_result(offer, prebook)
@@ -80,6 +96,9 @@ class BookingService:
         return prebook
 
     async def create_order(self, prebook_id: str, account_id: str, expected_rule_hash=None, fare_confirmed=False, simulation_fixture=False):
+        return await _db_segment(self._create_order, prebook_id, account_id, expected_rule_hash, fare_confirmed, simulation_fixture)
+
+    def _create_order(self, prebook_id, account_id, expected_rule_hash, fare_confirmed, simulation_fixture):
         prebook = repo.get_prebook(prebook_id)
         if not prebook: not_found("PREBOOK_NOT_FOUND", "Prebook not found")
         if prebook.status != PrebookStatus.PREBOOKED: conflict("PREBOOK_STATE_CONFLICT", "Prebook is not available")
@@ -108,14 +127,21 @@ class BookingService:
         return order
 
     async def pay(self, order_id: str, amount_minor: int, currency: str, payment_method_token: str):
-        """Authorize only. Customer funds are captured only after supplier booking succeeds."""
+        """Authorize only; capture still requires confirmed supplier booking."""
+        existing, op = await _db_segment(self._prepare_payment, order_id, amount_minor, currency)
+        if existing:
+            return existing
+        payment = await payment_provider.authorize(order_id, amount_minor, currency, payment_method_token, idempotency_key=op["operation_id"])
+        return await _db_segment(self._commit_payment, order_id, amount_minor, currency, payment, op)
+
+    def _prepare_payment(self, order_id, amount_minor, currency):
         order = repo.get_order(order_id)
         if not order: not_found("ORDER_NOT_FOUND", "Order not found")
         if amount_minor != order.total_amount_minor or currency != order.currency:
             unprocessable("PAYMENT_AMOUNT_MISMATCH", "Payment amount does not match order")
         existing = repo.get_authorized_payment_for_order(order_id)
         if order.status in (OrderStatus.PAYMENT_AUTHORIZED, OrderStatus.BOOKING_PENDING, OrderStatus.CAPTURE_PENDING, OrderStatus.CONFIRMED) and existing:
-            return existing
+            return existing, None
         if order.status != OrderStatus.PAYMENT_PENDING:
             conflict("ORDER_STATE_CONFLICT", "Order is not awaiting payment authorization")
         prebook = repo.get_prebook(order.prebook_id)
@@ -129,10 +155,12 @@ class BookingService:
         if not acquired:
             if op.get("status") == "COMPLETED":
                 p = repo.get_payment_by_operation(op["operation_id"])
-                if p: return p
+                if p: return p, None
             conflict("PAYMENT_OPERATION_IN_PROGRESS", "A payment authorization is already in progress")
 
-        payment = await payment_provider.authorize(order_id, amount_minor, currency, payment_method_token, idempotency_key=op["operation_id"])
+        return None, op
+
+    def _commit_payment(self, order_id, amount_minor, currency, payment, op):
         if payment.status == PaymentStatus.FAILED:
             repo.save_failed_payment(payment, op["operation_id"], Event(new_id("evt"), "PAYMENT_AUTHORIZATION_FAILED", "HOTEL_ORDER", order_id, {"payment_id": payment.payment_id}))
             repo.mark_external_failed(op["operation_id"], "PAYMENT_AUTHORIZATION_DECLINED")
@@ -148,22 +176,44 @@ class BookingService:
         return payment
 
     async def _void_after_definitive_booking_failure(self, order_id: str, payment: Payment, reason: str):
-        void_op, acquired = repo.begin_external_operation("PAYMENT_VOID", order_id, {"payment_id":payment.payment_id,"reason":reason})
+        void_op, acquired = await _db_segment(repo.begin_external_operation, "PAYMENT_VOID", order_id, {"payment_id":payment.payment_id,"reason":reason})
         if acquired:
             result = await payment_provider.void(payment.payment_id, idempotency_key=void_op["operation_id"])
-            if result.status != PaymentStatus.VOIDED:
-                repo.mark_reconcile_required(void_op["operation_id"], "PAYMENT_VOID_FAILED")
-                repo.mark_order_reconciliation_required(order_id, "BOOKING_FAILED_VOID_RECONCILIATION", "PAYMENT_VOID_FAILED")
-                unavailable("PAYMENT_VOID_RECONCILIATION_REQUIRED", "Booking failed and authorization void requires reconciliation")
-            repo.mark_external_success(void_op["operation_id"], payment.payment_id, {"status":"VOIDED"})
-            repo.mark_external_completed(void_op["operation_id"], {"status":"VOIDED","payment_id":payment.payment_id})
+            return await _db_segment(self._commit_void, order_id, payment, reason, void_op, result)
+        return await _db_segment(repo.fail_booking_and_void_authorization, order_id, payment.payment_id, reason)
+
+    def _commit_void(self, order_id, payment, reason, void_op, result):
+        if result.status != PaymentStatus.VOIDED:
+            repo.mark_reconcile_required(void_op["operation_id"], "PAYMENT_VOID_FAILED")
+            repo.mark_order_reconciliation_required(order_id, "BOOKING_FAILED_VOID_RECONCILIATION", "PAYMENT_VOID_FAILED")
+            unavailable("PAYMENT_VOID_RECONCILIATION_REQUIRED", "Booking failed and authorization void requires reconciliation")
+        repo.mark_external_success(void_op["operation_id"], payment.payment_id, {"status":"VOIDED"})
+        repo.mark_external_completed(void_op["operation_id"], {"status":"VOIDED","payment_id":payment.payment_id})
         return repo.fail_booking_and_void_authorization(order_id, payment.payment_id, reason)
 
     async def confirm(self, order_id: str):
-        """Orchestrate AUTHORIZED -> supplier book -> CAPTURED. No capture before confirmed booking."""
+        """Orchestrate AUTHORIZED -> supplier book -> CAPTURED, preserving checkpoints."""
+        mode, data = await _db_segment(self._prepare_confirmation, order_id)
+        if mode == 'DONE': return data
+        if mode == 'CAPTURE': return await self.capture_after_booking(order_id, data)
+        if mode == 'RECOVER': return await self.recover_confirmation(data)
+        payment, op, prebook, connector_id = data
+        try:
+            confirmation = await self._connector(connector_id).book(order_id, prebook, idempotency_key=op["operation_id"])
+        except (TimeoutError, ConnectorTimeout) as exc:
+            # Unknown external result must retain the authorization for recovery.
+            await _db_segment(self._unknown_booking, order_id, op, str(exc))
+        except Exception as exc:
+            await _db_segment(repo.mark_external_failed, op["operation_id"], str(exc))
+            await self._void_after_definitive_booking_failure(order_id, payment, str(exc))
+            unavailable("SUPPLIER_BOOKING_FAILED_NO_CHARGE", "Hotel booking failed; payment authorization was voided and no capture occurred")
+        await _db_segment(self._commit_booking, order_id, op, confirmation)
+        return await self.capture_after_booking(order_id, payment)
+
+    def _prepare_confirmation(self, order_id):
         order = repo.get_order(order_id)
         if not order: not_found("ORDER_NOT_FOUND", "Order not found")
-        if order.status == OrderStatus.CONFIRMED: return order
+        if order.status == OrderStatus.CONFIRMED: return "DONE", order
         payment = repo.get_authorized_payment_for_order(order_id)
         if not payment:
             conflict("BOOK_PAYMENT_NOT_AUTHORIZED", "Payment authorization is required before booking")
@@ -171,36 +221,31 @@ class BookingService:
         request_hash = repo.hash_payload({"order_id": order_id, "payment_id": payment.payment_id})
         op, acquired = repo.start_confirmation_saga(order_id, request_hash)
         if op.get("missing"): not_found("ORDER_NOT_FOUND", "Order not found")
-        if op.get("already_confirmed"): return repo.get_order(order_id)
+        if op.get("already_confirmed"): return "DONE", repo.get_order(order_id)
         if op.get("invalid_state"): conflict("BOOK_PAYMENT_NOT_AUTHORIZED", "Order must be payment-authorized before booking")
         if not acquired:
             if op.get("status") == "COMPLETED":
                 # Supplier may already be booked; continue capture if needed.
                 order = repo.get_order(order_id)
                 if order.status == OrderStatus.CAPTURE_PENDING:
-                    return await self.capture_after_booking(order_id, payment)
-                return order
+                    return "CAPTURE", payment
+                return "DONE", order
             if op.get("status") in ("EXTERNAL_SUCCEEDED", "RECONCILE_REQUIRED"):
-                return await self.recover_confirmation(op)
+                return "RECOVER", op
             conflict("BOOK_OPERATION_IN_PROGRESS", "Supplier booking is already in progress")
 
         prebook = repo.get_prebook(order.prebook_id)
         offer = repo.get_offer(prebook.offer_id) if prebook else None
         connector_id = offer.connector_id if offer else None
         if prebook and offer: booking_consistency_guard.assert_before_booking(order, prebook, offer)
-        try:
-            confirmation = await self._connector(connector_id).book(order_id, prebook, idempotency_key=op["operation_id"])
-        except (TimeoutError, ConnectorTimeout) as exc:
-            # Unknown external result: never void because supplier may have booked.
-            repo.mark_reconcile_required(op["operation_id"], str(exc))
-            repo.mark_order_reconciliation_required(order_id, "SUPPLIER_BOOK_RESULT_UNKNOWN", str(exc))
-            unavailable("BOOKING_RECONCILIATION_REQUIRED", "Supplier booking result is unknown; authorization remains on hold pending reconciliation")
-        except Exception as exc:
-            # Definitive rejection: safe compensation is to void authorization.
-            repo.mark_external_failed(op["operation_id"], str(exc))
-            await self._void_after_definitive_booking_failure(order_id, payment, str(exc))
-            unavailable("SUPPLIER_BOOKING_FAILED_NO_CHARGE", "Hotel booking failed; payment authorization was voided and no capture occurred")
+        return 'BOOK', (payment, op, prebook, connector_id)
 
+    def _unknown_booking(self, order_id, op, reason):
+        repo.mark_reconcile_required(op["operation_id"], reason)
+        repo.mark_order_reconciliation_required(order_id, "SUPPLIER_BOOK_RESULT_UNKNOWN", reason)
+        unavailable("BOOKING_RECONCILIATION_REQUIRED", "Supplier booking result is unknown; authorization remains on hold pending reconciliation")
+
+    def _commit_booking(self, order_id, op, confirmation):
         repo.mark_external_success(op["operation_id"], confirmation, {"confirmation_no": confirmation})
         try:
             faults.hit("confirm_after_external_success")
@@ -209,16 +254,18 @@ class BookingService:
             repo.mark_reconcile_required(op["operation_id"], str(exc))
             repo.mark_order_reconciliation_required(order_id, "SUPPLIER_BOOKED_LOCAL_COMMIT_UNKNOWN", str(exc), confirmation)
             unavailable("BOOKING_RECONCILIATION_REQUIRED", "Supplier booking succeeded; local recovery has been scheduled")
-        return await self.capture_after_booking(order_id, payment)
 
     async def capture_after_booking(self, order_id: str, payment: Payment):
-        capture_op, acquired = repo.begin_external_operation("PAYMENT_CAPTURE_AFTER_BOOK", order_id, {"payment_id":payment.payment_id,"order_id":order_id})
+        capture_op, acquired = await _db_segment(repo.begin_external_operation, "PAYMENT_CAPTURE_AFTER_BOOK", order_id, {"payment_id":payment.payment_id,"order_id":order_id})
         if not acquired:
-            if capture_op.get("status") == "COMPLETED": return self._finalize_hotel_truth(order_id)
+            if capture_op.get("status") == "COMPLETED": return await _db_segment(self._finalize_hotel_truth, order_id)
             if capture_op.get("status") in ("EXTERNAL_SUCCEEDED","RECONCILE_REQUIRED"):
                 return await self.recover_capture(capture_op)
             conflict("PAYMENT_CAPTURE_IN_PROGRESS", "Payment capture is already in progress")
         result = await payment_provider.capture(payment.payment_id, idempotency_key=capture_op["operation_id"])
+        return await _db_segment(self._commit_capture, order_id, capture_op, result)
+
+    def _commit_capture(self, order_id, capture_op, result):
         if result.status != PaymentStatus.CAPTURED:
             repo.mark_external_failed(capture_op["operation_id"], "PAYMENT_CAPTURE_FAILED_AFTER_BOOKING")
             repo.mark_order_reconciliation_required(order_id, "SUPPLIER_BOOKED_CAPTURE_FAILED", "PAYMENT_CAPTURE_FAILED_AFTER_BOOKING", repo.get_order(order_id).supplier_confirmation_no)
@@ -233,34 +280,48 @@ class BookingService:
             unavailable("PAYMENT_CAPTURE_RECONCILIATION_REQUIRED", "Capture succeeded; local recovery has been scheduled")
 
     async def recover_authorization(self, op: dict):
+        return await _db_segment(self._recover_authorization, op)
+
+    def _recover_authorization(self, op):
         result = op.get("result_payload") or {}
         payment = Payment(result.get("payment_id") or op.get("external_reference"), op["aggregate_id"], int(result["amount_minor"]), result["currency"], PaymentStatus.AUTHORIZED)
         return repo.commit_authorization_saga(payment, op["operation_id"])
 
-    async def recover_confirmation(self, op: dict):
-        order = repo.get_order(op["aggregate_id"])
+    def _recovery_order(self, order_id):
+        order = repo.get_order(order_id)
         prebook = repo.get_prebook(order.prebook_id) if order else None
         offer = repo.get_offer(prebook.offer_id) if prebook else None
+        return order, prebook, offer
+
+    def _recovered_confirmation(self, order, op, confirmation):
+        if order.status != OrderStatus.CAPTURE_PENDING:
+            order = repo.commit_supplier_booking_before_capture(op["operation_id"], confirmation)
+        return order, repo.get_authorized_payment_for_order(order.order_id)
+
+    async def recover_confirmation(self, op: dict):
+        order, prebook, offer = await _db_segment(self._recovery_order, op["aggregate_id"])
         confirmation = (op.get("result_payload") or {}).get("confirmation_no") or op.get("external_reference")
         if confirmation:
             status = await self._connector(offer.connector_id if offer else None).status(confirmation)
             if status == "CONFIRMED":
-                if order.status != OrderStatus.CAPTURE_PENDING:
-                    order = repo.commit_supplier_booking_before_capture(op["operation_id"], confirmation)
-                payment = repo.get_authorized_payment_for_order(order.order_id)
+                order, payment = await _db_segment(self._recovered_confirmation, order, op, confirmation)
                 return await self.capture_after_booking(order.order_id, payment)
         raise RuntimeError("Supplier booking status remains unresolved")
 
-    async def recover_capture(self, op: dict):
-        order_id=op["aggregate_id"]
+    def _capture_recovery_payment(self, order_id):
         payment=repo.get_authorized_payment_for_order(order_id)
         if not payment:
             captured=repo.get_captured_payment_for_order(order_id)
-            if captured: return repo.get_order(order_id)
+            if captured: return None, repo.get_order(order_id)
             raise RuntimeError("Missing payment during capture recovery")
+        return payment, None
+
+    async def recover_capture(self, op: dict):
+        payment, order = await _db_segment(self._capture_recovery_payment, op["aggregate_id"])
+        if payment is None: return order
         status=await payment_provider.status(payment.payment_id)
         if status == PaymentStatus.CAPTURED:
-            return repo.commit_capture_after_booking(payment.payment_id, op["operation_id"])
+            return await _db_segment(repo.commit_capture_after_booking, payment.payment_id, op["operation_id"])
         raise RuntimeError(f"Payment capture status remains {status}")
 
 booking_service = BookingService()

@@ -1,3 +1,4 @@
+from starlette.concurrency import run_in_threadpool
 from fastapi import Depends, Header, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from .service import identity_service, Principal
@@ -84,7 +85,7 @@ def assert_consumer_order(p:Principal, order_id:str):
         if not row or row.account_id != p.user_id: raise HTTPException(404,detail="ORDER_NOT_FOUND")
         return row
 
-async def legacy_order_access(request: Request, cred: HTTPAuthorizationCredentials | None = Depends(bearer)):
+def _legacy_order_principal(request: Request, cred: HTTPAuthorizationCredentials | None):
     """Legacy contract fixtures are local-only; signed callers always obey ownership.
 
     Production never falls back to a caller-supplied account or an anonymous demo ID.
@@ -109,6 +110,15 @@ async def legacy_order_access(request: Request, cred: HTTPAuthorizationCredentia
             credit = s.get(StayCreditRow, credit_id)
             if not credit or credit.account_id != p.user_id:
                 raise HTTPException(404, detail='STAY_CREDIT_NOT_FOUND')
+    return p
+
+
+async def legacy_order_access(request: Request, cred: HTTPAuthorizationCredentials | None = Depends(bearer)):
+    # Authentication and ownership each open/close their Session in this worker.
+    # Read the ASGI body on its event loop only after the original access checks.
+    p = await run_in_threadpool(_legacy_order_principal, request, cred)
+    if p is None:
+        return None
     if request.url.path == '/v1/orders' and request.method == 'POST':
         body = await request.json()
         if body.get('account_id') != p.user_id:
