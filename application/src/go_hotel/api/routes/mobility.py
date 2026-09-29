@@ -4,7 +4,7 @@ from typing import Literal
 from go_hotel.security.deps import consumer_principal,admin_principal,order_admin_principal
 from go_hotel.security.service import Principal
 from go_hotel.mobility.service import mobility_service as m
-from go_hotel.api.idempotency import run_idempotent
+from go_hotel.api.idempotency import run_idempotent, run_local_idempotent
 from go_hotel.api.refund_confirmation import RefundConfirmation, revalidate_completed_receipt
 from go_hotel.services.booking_data_release import release_booking_data
 from go_hotel.db.session import SessionLocal
@@ -36,13 +36,13 @@ def rs(b:RideSearch):
 @router.post("/v1/mobility/rides/orders")
 def rb(b:RideBook,p:Principal=Depends(consumer_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
 
- def execute():
+ def execute(s):
   body=b.model_dump(); released=release_booking_data(p.user_id,'RIDE',b.traveler_ids,b.passengers,requester_id=p.user_id); body['passengers']=released['items']; body.pop('traveler_ids',None)
-  response=w(m.create_ride,p.user_id,body)
+  response=w(m.create_ride_in_session,s,p.user_id,body)
   if released['release_ids']:
-   with SessionLocal.begin() as s: append_vertical_evidence(s,'RIDE',response['data']['order_id'],'VAULT_BOOKING_DATA_RELEASED',response['data']['status'],{'release_ids':released['release_ids'],'minimum_necessary':True})
+   append_vertical_evidence(s,'RIDE',response['data']['order_id'],'VAULT_BOOKING_DATA_RELEASED',response['data']['status'],{'release_ids':released['release_ids'],'minimum_necessary':True})
   return response
- return run_idempotent('RIDE_CREATE_ORDER',idempotency_key,{'user_id':p.user_id,**b.model_dump()},execute)
+ return run_local_idempotent('RIDE_CREATE_ORDER',idempotency_key,{'user_id':p.user_id,**b.model_dump()},execute)
 @router.post("/v1/mobility/rentals/search")
 def cs(b:RentalSearch):
  try:items=m.rental_search(**b.model_dump())

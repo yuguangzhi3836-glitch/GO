@@ -74,6 +74,44 @@ def _require_key(key: str | None) -> None:
     if settings.app_env.strip().lower() in _PROD and not key:
         raise HTTPException(status_code=428, detail={"code":"IDEMPOTENCY_KEY_REQUIRED","message":"Idempotency-Key is required for production mutations"})
 
+def run_local_idempotent(operation, key, payload, fn):
+    """RIDE-only local mutation: durable claim, then atomic facts + receipt.
+
+    fn receives the sole mutation Session and must neither commit nor perform
+    external transaction effects. A commit exception is ambiguous: retain the
+    claim even if a later rollback succeeds. Process death retains it as well.
+    Other operations keep their existing recovery contracts.
+    """
+    from go_hotel.db.session import SessionLocal
+    if operation != 'RIDE_CREATE_ORDER':
+        raise ValueError('LOCAL_IDEMPOTENCY_OPERATION_UNSUPPORTED')
+    _require_key(key)
+    if key:
+        try:
+            state, rec = repo.claim_idempotency(operation, key, payload)
+        except ValueError as exc:
+            if str(exc) == 'IDEMPOTENCY_CONFLICT':
+                raise HTTPException(409, detail={'code': 'IDEMPOTENCY_CONFLICT', 'message': 'Idempotency key reused with different payload'}) from exc
+            raise
+        if state == 'REPLAY':
+            return rec['response']
+        if state == 'IN_PROGRESS':
+            raise HTTPException(409, detail={'code': 'IDEMPOTENCY_IN_PROGRESS', 'message': 'Request with this idempotency key is still in progress'})
+    with SessionLocal() as s:
+        try:
+            response = fn(s)
+            if key:
+                repo.complete_idempotency_in_session(s, operation, key, payload, response)
+        except BaseException:
+            # Release only after a proven pre-commit rollback. If rollback or
+            # release fails, retain the durable claim and fail closed.
+            s.rollback()
+            if key:
+                repo.release_idempotency_claim(operation, key, payload)
+            raise
+        s.commit()  # Deliberately outside the claim-release exception handler.
+        return response
+
 def run_idempotent(operation: str, key: str | None, payload: dict, fn, resource_id_fn=None, replay_fn=None):
     _require_key(key)
     if not key:
