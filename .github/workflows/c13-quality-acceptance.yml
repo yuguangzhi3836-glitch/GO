@@ -179,7 +179,7 @@ jobs:
   c13-ai-review:
     name: C13 fresh AI quality review (no candidate execution, no Docker)
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     needs: c13-machine-test
     steps:
       - name: Check out the execution backend (this run's own commit)

@@ -14,6 +14,7 @@ ROOT = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 import lite_ai_reviewer as ai
 import lite_review_batches as batches
+import lite_review_pacing as pacing
 import lite_chain
 import lite_cli
 import lite_fixtures as fx
@@ -73,6 +74,9 @@ class Provider:
 
 class PartitionedReviewTests(unittest.TestCase):
     def setUp(self):
+        self.pacing = patch.object(pacing, "REQUEST_START_GAP_SECONDS", 0.0)
+        self.pacing.start()
+        self.addCleanup(self.pacing.stop)
         self.budget = patch.object(batches, "MAX_PROMPT_BYTES", 96 * 1024)
         self.budget.start()
         self.addCleanup(self.budget.stop)

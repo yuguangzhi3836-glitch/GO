@@ -30,8 +30,13 @@ candidate SHA, full facts digest, full logical prompt digest, diff digest,
 every byte range, content digest and actual submitted prompt digest.
 
 Backend limits are 512 KiB per submitted prompt, at most 64 local requests plus
-one final request, four simultaneous calls, and an 18-minute review budget.
-No automatic retries. These are application budgets, not a claim about model
+one final request. The R7 rate-limit follow-up reduces concurrency to two, spaces
+starts by at least 20 seconds and bounds the entire review to 25 minutes. Only
+explicit HTTP 429 `rate_limit_exceeded` may retry, at most twice per request and
+eight extra attempts in the whole review (at most 73 API attempts). Numeric/date
+Retry-After and provider seconds/milliseconds hints extend the shared cooldown;
+quota, authentication, generic 429, 5xx and opinion failures are never retried.
+See RATE_LIMIT_REPAIR_20260929.md. These are application budgets, not a claim about model
 context capacity. Oversized global context, too many parts, or an oversized
 final context blocks before paid calls. Reports exceeding 4096 canonical UTF-8
 bytes block without truncation. Worst-case final-report space is reserved
