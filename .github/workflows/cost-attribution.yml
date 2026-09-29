@@ -1,0 +1,61 @@
+name: Isolated same-window cost attribution
+on:
+  pull_request:
+    paths:
+      - 'ci/cost_attribution/**'
+      - '.github/workflows/cost-attribution.yml'
+permissions:
+  contents: read
+concurrency:
+  group: cost-attribution-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: true
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_multi_only
+          POSTGRES_DB: go_c11_isolated
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U go_ci -d go_c11_isolated" --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      GO_MULTI_DATABASE_URL: postgresql+psycopg://go_ci:isolated_multi_only@127.0.0.1:5432/go_c11_isolated
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e './application[dev]'
+      - name: Enable server accounting in this disposable container only
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker exec "$PG_CONTAINER" psql -U go_ci -d go_c11_isolated -v ON_ERROR_STOP=1 -c "ALTER SYSTEM SET shared_preload_libraries='pg_stat_statements'"
+          docker exec "$PG_CONTAINER" psql -U go_ci -d go_c11_isolated -v ON_ERROR_STOP=1 -c "ALTER SYSTEM SET track_io_timing=on"
+          docker exec "$PG_CONTAINER" psql -U go_ci -d go_c11_isolated -v ON_ERROR_STOP=1 -c "ALTER SYSTEM SET track_wal_io_timing=on"
+          docker restart "$PG_CONTAINER"
+          for attempt in $(seq 1 30); do
+            if docker exec "$PG_CONTAINER" pg_isready -U go_ci -d go_c11_isolated; then break; fi
+            sleep 1
+          done
+          docker exec "$PG_CONTAINER" psql -U go_ci -d go_c11_isolated -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION pg_stat_statements'
+          echo "GO_COST_POSTGRES_PID=$(docker inspect --format '{{.State.Pid}}' "$PG_CONTAINER")" >> "$GITHUB_ENV"
+      - name: Validate observer contracts
+        run: python -m pytest ci/cost_attribution/test_observe.py -q
+      - name: Same runner control-observed-observed-control
+        run: python ci/cost_attribution/run.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cost-attribution-${{ github.event.pull_request.head.sha }}
+          path: cost-attribution-evidence/
+          retention-days: 30
