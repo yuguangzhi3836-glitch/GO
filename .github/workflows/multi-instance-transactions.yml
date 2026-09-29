@@ -53,7 +53,7 @@ jobs:
           MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED: 'false'
         run: |
           mkdir -p ../multi-regression-evidence
-          python -m pytest tests/test_multi_instance_payment_regressions.py tests/test_transaction_read_optimization.py tests/test_next_depth_c03_payment_inventory_races.py tests/test_depth33_mobility_refund_consent.py tests/test_c11_idempotency_completion_guard.py tests/payments/test_c11_flight_idempotency_recovery.py tests/test_vertical_source_atomicity.py tests/test_credit_source_intent_index_migration.py --junitxml=../multi-regression-evidence/results.xml
+          python -m pytest tests/test_multi_instance_payment_regressions.py tests/test_transaction_read_optimization.py tests/test_idempotency_atomic_mutation.py tests/test_next_depth_c03_payment_inventory_races.py tests/test_depth33_mobility_refund_consent.py tests/test_c11_idempotency_completion_guard.py tests/payments/test_c11_flight_idempotency_recovery.py tests/test_vertical_source_atomicity.py tests/test_credit_source_intent_index_migration.py --junitxml=../multi-regression-evidence/results.xml
       - name: Correctness before 20-100-250-500-1000 concurrent transactions
         run: python ci/multi_instance/run.py
       - name: Preserve normal gate evidence before diagnostics
