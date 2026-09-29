@@ -61,14 +61,15 @@ jobs:
         run: python -m pytest ci/test_cpu_candidate.py ci/journey_latency/test_measure.py ci/journey_latency/test_verify.py -q
       - name: Query reuse payment safety on isolated PostgreSQL
         if: steps.change.outputs.candidate == 'true'
+        working-directory: application
         env:
           GO_TEST_DATABASE_URL: ${{ env.GO_MULTI_DATABASE_URL }}
           APP_ENV: test
           MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED: 'false'
           TRAVEL_INTELLIGENCE_ENABLED: 'false'
         run: |
-          mkdir -p cpu-candidate-qualification
-          python -m pytest application/tests/test_payment_query_reuse.py application/tests/test_capacity_projection_reads.py -q --junitxml=cpu-candidate-qualification/payment.xml
+          mkdir -p ../cpu-candidate-qualification
+          python -m pytest tests/test_payment_query_reuse.py tests/test_capacity_projection_reads.py -q --junitxml=../cpu-candidate-qualification/payment.xml
       - name: Baseline-candidate-candidate-baseline; identical harness, no profiler
         if: steps.change.outputs.run == 'true'
         run: python ci/cpu_candidate.py
