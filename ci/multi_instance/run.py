@@ -26,9 +26,20 @@ ROOT = Path(__file__).resolve().parents[2]
 APP = ROOT / 'application'
 PLAN = [20, 100, 250, 500, 1000]
 
-def plan_for(admission_limit,pool_experiment=False):
+def plan_for(admission_limit,pool_experiment=False,switch_experiment=False):
     # Exploratory admission runs cannot bypass the normal failed 100-tier gate.
-    return PLAN[:2] if admission_limit or pool_experiment else PLAN
+    return PLAN[:2] if admission_limit or pool_experiment or switch_experiment else PLAN
+
+def configure_worker_switch_interval():
+    # Harness-only experiment, before importing services or starting threads.
+    # The parent sanitizes the environment; normal runs never set this variable.
+    requested=os.environ.get('GO_MULTI_SWITCH_INTERVAL_MS')
+    if requested is None:return None
+    if requested not in ('1','5'):raise ValueError('INVALID_SWITCH_EXPERIMENT_INTERVAL')
+    sys.setswitchinterval(int(requested)/1000)
+    observed=sys.getswitchinterval()*1000
+    assert math.isclose(observed,int(requested)), 'SWITCH_INTERVAL_NOT_APPLIED'
+    return observed
 
 def write(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True, default=str)+'\n')
@@ -106,12 +117,20 @@ def action(task):
     raise ValueError('UNKNOWN_TEST_OPERATION')
 
 def child(jobpath):
+    switch_ms=configure_worker_switch_interval()
     imports()
     job=json.loads(jobpath.read_text())
     # Load service modules before marking all worker threads ready.
     import ride_workload
     from go_hotel.rail.service import rail_service
     from go_hotel.attractions.service import attraction_service
+    if switch_ms is not None:
+        import resource
+        cpu_before=resource.getrusage(resource.RUSAGE_SELF)
+        wall_before=time.monotonic_ns()
+        write(Path(job['result']+'.runtime.json'),{'pid':os.getpid(),
+            'worker_switch_interval_ms':switch_ms,'phase':'BEFORE_THREADS',
+            'coordinator_unchanged':True})
     diagnostic=os.environ.get('GO_MULTI_DIAGNOSTIC')=='1' and all(t['op']=='ride' for t in job['tasks'])
     metrics=None
     if diagnostic:
@@ -141,6 +160,7 @@ def child(jobpath):
         ready.wait(60); wait_file(Path(job['start']))
         start=time.monotonic_ns()
         result={'task':task['op'],'pid':os.getpid(),'start_ns':start,'ok':False}
+        if switch_ms is not None:result['worker_switch_interval_ms']=sys.getswitchinterval()*1000
         admitted=False
         try:
             if admission:
@@ -164,6 +184,17 @@ def child(jobpath):
         ready.wait(60); Path(job['ready']).write_text(str(os.getpid()))
         rows=[f.result() for f in futures]
     write(Path(job['result']),rows)
+    if switch_ms is not None:
+        cpu_after=resource.getrusage(resource.RUSAGE_SELF)
+        write(Path(job['result']+'.resources.json'),{'pid':os.getpid(),
+            'worker_switch_interval_ms':sys.getswitchinterval()*1000,
+            'user_cpu_seconds':cpu_after.ru_utime-cpu_before.ru_utime,
+            'system_cpu_seconds':cpu_after.ru_stime-cpu_before.ru_stime,
+            'voluntary_context_switches':cpu_after.ru_nvcsw-cpu_before.ru_nvcsw,
+            'involuntary_context_switches':cpu_after.ru_nivcsw-cpu_before.ru_nivcsw,
+            'max_rss_kib':cpu_after.ru_maxrss,
+            'wall_seconds':(time.monotonic_ns()-wall_before)/1e9,
+            'scope':'Process counters after service imports through thread completion; includes barrier wait and result serialization, excludes imports. RSS is process-lifetime high water. No per-call profiling.'})
     if metrics:write(Path(job['result']+'.profile.json'),{'metrics':metrics.snapshot()})
 
 class Runner:
@@ -356,13 +387,15 @@ def coordinator(out):
     Base.metadata.create_all(engine)
     admission_limit=int(os.environ.get('GO_MULTI_ADMISSION_LIMIT','0'))
     pool_experiment=os.environ.get('GO_MULTI_POOL_EXPERIMENT')=='1'
-    mode='POOL_EXPERIMENT_NOT_ACCEPTANCE' if pool_experiment else 'ADMISSION_EXPERIMENT_NOT_ACCEPTANCE' if admission_limit else 'NORMAL_STAIRCASE'
+    switch_experiment='GO_MULTI_SWITCH_INTERVAL_MS' in os.environ
+    mode='THREAD_SWITCH_EXPERIMENT_NOT_ACCEPTANCE' if switch_experiment else 'POOL_EXPERIMENT_NOT_ACCEPTANCE' if pool_experiment else 'ADMISSION_EXPERIMENT_NOT_ACCEPTANCE' if admission_limit else 'NORMAL_STAIRCASE'
     r=Runner(out);result={'correctness':'PENDING','stages':[],'status':'RUNNING','admission_active_per_instance':admission_limit,'mode':mode,'scope':'two independent service processes, shared PostgreSQL; not HTTP/auth/production or million-online proof'}
+    if switch_experiment:result['coordinator_switch_interval_ms']=sys.getswitchinterval()*1000
     try:
         correctness(r,out);result['correctness']='PASS';write(out/'result.json',result)
         from ride_workload import verify
         raw=[]
-        for n in plan_for(admission_limit,pool_experiment):
+        for n in plan_for(admission_limit,pool_experiment,switch_experiment):
             host_before=Path('/proc/stat').read_text().splitlines()[0].split()[1:] if os.environ.get('GO_MULTI_DIAGNOSTIC')=='1' else None
             rows=r.group([{'op':'ride','index':i} for i in range(len(raw),len(raw)+n)])
             if host_before:
@@ -393,7 +426,7 @@ def coordinator(out):
             stage['pass']=stage['errors']==0 and stage['p95_ms']<=5000 and stage['p99_ms']<=10000
             if not stage['pass']:
                 result['status']='STOPPED_AT_FAILED_TIER';return 1
-        result['status']='EXPERIMENT_PLAN_COMPLETE_NOT_CAPACITY_ACCEPTANCE' if admission_limit or pool_experiment else 'BOUNDED_SERVICE_PLAN_PASS';return 0
+        result['status']='EXPERIMENT_PLAN_COMPLETE_NOT_CAPACITY_ACCEPTANCE' if admission_limit or pool_experiment or switch_experiment else 'BOUNDED_SERVICE_PLAN_PASS';return 0
     except Exception as exc:
         if result['correctness']=='PENDING':result['correctness']='FAIL'
         result.update(status='FAILED',error_type=type(exc).__name__,error=str(exc)[:1000] if isinstance(exc,(AssertionError,ValueError)) else 'SEE_LOG')
@@ -403,7 +436,7 @@ def coordinator(out):
         r.stop();write(out/'result.json',result);engine.dispose()
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--child',type=Path);p.add_argument('--coordinator',type=Path);p.add_argument('--diagnostic',action='store_true');p.add_argument('--admission-active-per-instance',type=int,choices=(0,2,5),default=0);p.add_argument('--pool-comparison-control',action='store_true');p.add_argument('--experimental-pool-size',type=int,choices=(5,10),default=5);p.add_argument('--out',type=Path,default=ROOT/'multi-instance-evidence');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--child',type=Path);p.add_argument('--coordinator',type=Path);p.add_argument('--diagnostic',action='store_true');p.add_argument('--admission-active-per-instance',type=int,choices=(0,2,5),default=0);p.add_argument('--pool-comparison-control',action='store_true');p.add_argument('--experimental-pool-size',type=int,choices=(5,10),default=5);p.add_argument('--experimental-switch-interval-ms',type=int,choices=(1,5));p.add_argument('--out',type=Path,default=ROOT/'multi-instance-evidence');args=p.parse_args()
     sys.addaudithook(guard)
     if args.child:child(args.child);return 0
     if args.coordinator:return coordinator(args.coordinator)
@@ -411,6 +444,9 @@ def main():
     pool_experiment=args.pool_comparison_control or args.experimental_pool_size!=5
     if pool_experiment and args.out==ROOT/'multi-instance-evidence':p.error('Pool experiment requires a separately named --out directory')
     if pool_experiment and args.admission_active_per_instance:p.error('Run pool and admission experiments separately')
+    switch_experiment=args.experimental_switch_interval_ms is not None
+    if switch_experiment and args.out.resolve()==(ROOT/'multi-instance-evidence').resolve():p.error('Thread switch experiment requires a separately named --out directory')
+    if switch_experiment and (pool_experiment or args.admission_active_per_instance or args.diagnostic):p.error('Run thread switch experiment separately from pool, admission and profiling changes')
     from sqlalchemy import create_engine,text
     from sqlalchemy.engine import make_url
     out=args.out.resolve();out.mkdir(parents=True,exist_ok=False)
@@ -434,13 +470,18 @@ def main():
         binding['orchestration_pool_max_connections']=15
         binding['diagnostic_instrumentation']=args.diagnostic
         binding['admission_active_per_instance']=args.admission_active_per_instance
-        binding['plan']=plan_for(args.admission_active_per_instance,pool_experiment)
-        binding['experiment_mode']='POOL_EXPERIMENT_NOT_ACCEPTANCE' if pool_experiment else 'ADMISSION_EXPERIMENT_NOT_ACCEPTANCE' if args.admission_active_per_instance else 'NORMAL_STAIRCASE'
+        binding['plan']=plan_for(args.admission_active_per_instance,pool_experiment,switch_experiment)
+        binding['experiment_mode']='THREAD_SWITCH_EXPERIMENT_NOT_ACCEPTANCE' if switch_experiment else 'POOL_EXPERIMENT_NOT_ACCEPTANCE' if pool_experiment else 'ADMISSION_EXPERIMENT_NOT_ACCEPTANCE' if args.admission_active_per_instance else 'NORMAL_STAIRCASE'
+        if switch_experiment:
+            binding['worker_switch_interval_ms']=args.experimental_switch_interval_ms
+            binding['coordinator_switch_interval_ms']=sys.getswitchinterval()*1000
+            binding['switch_interval_scope']='All service children, including correctness and load; coordinator default unchanged'
         write(out/'binding.json',binding)
         env={k:os.environ[k] for k in ('PATH','LANG','LC_ALL','TZ') if k in os.environ}
         env['GO_MULTI_DIAGNOSTIC']='1' if args.diagnostic else '0'
         env['GO_MULTI_ADMISSION_LIMIT']=str(args.admission_active_per_instance)
         env['GO_MULTI_POOL_EXPERIMENT']='1' if pool_experiment else '0'
+        if switch_experiment:env['GO_MULTI_SWITCH_INTERVAL_MS']=str(args.experimental_switch_interval_ms)
         env.update(DATABASE_URL=url.update_query_dict({'options':'-csearch_path='+schema+' -cstatement_timeout=15000 -clock_timeout=10000 -cidle_in_transaction_session_timeout=30000','connect_timeout':'5'}).render_as_string(hide_password=False),APP_ENV='test',MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED='false',TRAVEL_INTELLIGENCE_ENABLED='false',DATABASE_POOL_SIZE=str(args.experimental_pool_size),DATABASE_MAX_OVERFLOW='0',DATABASE_POOL_TIMEOUT_SECONDS='10',PYTHONPATH=str(APP/'src'),GO_RIDE_ISOLATED_CANCELLATION_POLICY_FILE=str(APP/'scripts/fixtures/ride-cancellation.synthetic.json'))
         with (out/'coordinator.log').open('w') as log:
             proc=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'--coordinator',str(out)],env=env,cwd=out,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)

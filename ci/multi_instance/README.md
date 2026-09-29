@@ -3,6 +3,24 @@
 Run `python ci/multi_instance/run.py` only in the disposable CI environment
 defined in `.github/workflows/multi-instance-transactions.yml`.
 
+`thread_switch_experiment.py` tests whether worker-thread scheduling contributes
+to connection hold time and complete-transaction latency. On one runner it uses
+5, 1, 1, then 5 ms as CPython's ideal switch interval, with fresh processes/schema
+and all 13 correctness scenarios every round. This is a hypothesis, not an
+established GIL bottleneck. The actual OS schedule can exceed this ideal interval.
+Only this explicit harness option calls `sys.setswitchinterval`; application
+code, coordinator, ordinary staircase, pool size 5 and zero overflow stay as is.
+All service children (including crash recovery) record the interval before
+threads start, and each actor records its observed value. Boundary CPU/context
+switch counters are collected in both variants without per-call profiling.
+Counters exclude imports but include barrier waiting; RSS is lifetime high water.
+The experiment is capped at 20/100, stops each round at the first failed tier,
+and validates raw durations/percentiles, SQL facts and artifact digests. A green
+comparison means evidence is internally consistent, not that capacity passed.
+Two samples per variant cannot establish sustained performance or production
+safety. No default tuning is adopted without evaluating these tradeoffs.
+Reference: https://docs.python.org/3.12/library/sys.html#sys.setswitchinterval
+
 The normal gate has no profiling hooks. A separate `--diagnostic --out DIR` run
 records successful SQL counts/times, connection-acquisition wall times and process
 CPU/RSS after rechecking correctness. Concurrent summed times are not additive;
