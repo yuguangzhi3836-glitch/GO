@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import time, uuid, hmac, json
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import IdentityUserRow, AuthSessionRow, RefreshTokenRow, ApprovalRequestRow, AuditEventRow
 from go_hotel.core.config import settings
@@ -30,7 +31,19 @@ class IdentityService:
             row=s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==username))
             if row: return row.user_id
             t=now(); row=IdentityUserRow(user_id=uid('usr'),username=username,password_hash=hash_password(password),actor_type=actor_type,supplier_id=supplier_id,roles=roles,status='ACTIVE',token_version=1,created_at=t,updated_at=t)
-            s.add(row); s.commit(); return row.user_id
+            s.add(row)
+            try:
+                s.commit()
+            except IntegrityError:
+                # Another process may have bootstrapped this username after our
+                # read. Re-read after rollback; never overwrite its credentials
+                # or roles, and never hide an unrelated constraint failure.
+                s.rollback()
+                existing = s.scalar(select(IdentityUserRow).where(IdentityUserRow.username == username))
+                if existing is None:
+                    raise
+                return existing.user_id
+            return row.user_id
     def create_user(self, username,password,actor_type,supplier_id,roles): return self.ensure_user(username,password,actor_type,supplier_id,roles)
     def _create_session(self, s, u, client_ip=None, user_agent=None, auth_method='PASSWORD', mfa_verified_at=None):
         t=now(); sid=uid('ses'); csrf=random_token()

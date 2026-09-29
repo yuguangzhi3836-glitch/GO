@@ -1,0 +1,25 @@
+{
+  "meaning": "Illustrative planning assumptions, NOT runtime configuration or a measured capacity claim. Database example is a small staging budget, NOT million-user sizing.",
+  "traffic": {
+    "online_users": 1000000,
+    "request_interval_seconds": 10,
+    "peak_multiplier": 3,
+    "capacity_reserve_fraction": 0.3,
+    "request_mix": {"browse": 0.60, "search": 0.25, "trips_and_status": 0.10, "transaction_commands": 0.05}
+  },
+  "database": {
+    "server_max_connections": 200,
+    "reserved_connections": 30,
+    "other_connections": 20,
+    "services": [
+      {"name": "api", "max_replicas": 2, "rollout_surge_replicas": 1, "processes_per_replica": 2, "pool_size": 5, "max_overflow": 0},
+      {"name": "outbox-worker", "max_replicas": 1, "rollout_surge_replicas": 1, "processes_per_replica": 1, "pool_size": 5, "max_overflow": 0},
+      {"name": "recovery-worker", "max_replicas": 1, "rollout_surge_replicas": 1, "processes_per_replica": 1, "pool_size": 5, "max_overflow": 0},
+      {"name": "reconciliation-worker", "max_replicas": 1, "rollout_surge_replicas": 1, "processes_per_replica": 1, "pool_size": 5, "max_overflow": 0},
+      {"name": "judgment-worker", "max_replicas": 1, "rollout_surge_replicas": 1, "processes_per_replica": 1, "pool_size": 5, "max_overflow": 0},
+      {"name": "mobile-engagement-worker", "max_replicas": 1, "rollout_surge_replicas": 1, "processes_per_replica": 1, "pool_size": 5, "max_overflow": 0},
+      {"name": "mobile-push-worker", "max_replicas": 1, "rollout_surge_replicas": 1, "processes_per_replica": 1, "pool_size": 5, "max_overflow": 0},
+      {"name": "mobile-push-receipt-worker", "max_replicas": 1, "rollout_surge_replicas": 1, "processes_per_replica": 1, "pool_size": 5, "max_overflow": 0}
+    ]
+  }
+}

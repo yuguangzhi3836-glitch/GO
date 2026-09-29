@@ -97,6 +97,8 @@ Declared gate order on main: `RETENTION → C07_POSTGRES → C09_POSTGRES → C1
 
 **Scoped acceptance does not transfer across source changes.** The round-2 `C13`/`C14` `PASS_SCOPED` records under `evidence/v70-round2-20260914/` are bound to candidate tree `740d026e…` (1341 files) — that is **not** the current main tree, and the same CI manifests say `historical_pass_transferred=false`. Those records are inherited evidence, not a verdict on `dd815baf…`.
 
+> C13/C14 Lite V2 (2026-09-25 – 2026-09-26) 收口状态：见 [`C13_C14_LITE_V2_CLOSEOUT_20260926.md`](C13_C14_LITE_V2_CLOSEOUT_20260926.md)。该文是历史收口 / current-state navigation，**不是 Authority**；与 main 代码、正式 Policy、GitHub 事实冲突时，以那些更直接的事实来源为准。
+
 ## 6. Three axes that must not be conflated
 
 | Axis | What it covers | Where it lives |

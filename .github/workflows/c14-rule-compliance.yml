@@ -1,0 +1,335 @@
+name: C14 rule and compliance review (Lite V2)
+
+# C14 = GO constitution, permission boundary, IAM, legal / regulatory, contract,
+# AI-behaviour rules. It is explicitly NOT a second quality tester: this workflow
+# runs no Docker, no PostgreSQL and no regression / recovery / journey suite.
+#
+# The rule set is NOT a dispatch input and NOT a constant in this file. It is resolved
+# read-only from docs/governance/C14_RULE_SOURCES.json at THIS RUN'S OWN COMMIT
+# (GITHUB_SHA), before any AI call - so a candidate cannot edit the rules that judge it,
+# the rule text and the backend are the same fixed commit, and a round with no
+# resolvable rule source is a deterministic BLOCKED. The three rule-set names that used
+# to be the input default were our own invention (CCV1-145C).
+#
+# The workflow is the *execution backend* for the C14 cell. It does not decide
+# anything about scheduling: cell and task identity come from the dispatch inputs
+# which the caller takes from the existing 14-Cell issue / ledger.
+#
+# authorizes_any_action is false in every record this workflow produces.
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: "Frozen candidate commit SHA (40 hex) - never a branch head"
+        required: true
+      application_tree:
+        description: "Frozen application/ subtree SHA (git rev-parse <candidate>:application)"
+        required: true
+      issue_number:
+        description: "Existing issue / ledger issue number this task belongs to"
+        required: true
+      request_id:
+        description: "Scheduler request id that dispatched this task"
+        required: true
+      ledger_round_id:
+        description: "round_id of the ledger record this execution belongs to"
+        required: true
+      c14_task_id:
+        description: "Task id of the C14 cell in that ledger"
+        required: true
+      c13_task_id:
+        description: "Task id of the C13 cell in that ledger (the paired acceptance)"
+        required: true
+      ai_model:
+        description: "Model used for the fresh AI review execution"
+        required: false
+        default: "gpt-5.6-sol"
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+env:
+  LITE_CELL_PAIR: "C13+C14"
+  LITE_WORKFLOW_IDENTITY: ".github/workflows/c14-rule-compliance.yml"
+  LITE_AI_MODEL: ${{ inputs.ai_model }}
+  # The rule set deliberately does NOT travel with the dispatch. It used to be a
+  # comma-separated input whose default was three names our own backend invented, which
+  # made "the dispatch declared a rule set" indistinguishable from "the dispatch declared
+  # three strings" (CCV1-145C). It is resolved read-only at this run's own commit by the
+  # `Resolve the authoritative rule sources` step below, which publishes LITE_RULE_INPUT.
+
+jobs:
+  c14-rule-review:
+    name: C14 fresh rule review (read-only, no quality sandbox)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out the execution backend (this run's own commit)
+        uses: actions/checkout@v4
+        with:
+          # EXECUTION_BACKEND_SHA = github.sha: the backend that runs is the backend
+          # registered on the ref this run used, and GitHub records that commit as the
+          # run's head_sha. Nothing outside the default branch has to stay alive: this used
+          # to be a literal commit SHA that only lived on an unmerged working branch, so
+          # deleting that branch broke the first checkout of the next dispatch while
+          # nothing on the default branch showed it - and the code that ran was never the
+          # code that had been merged. There is no pin registry to keep in step either,
+          # because the commit is already recorded by the run itself.
+          #
+          # This is NOT the reviewed candidate: the candidate is checked out separately
+          # below at candidate_sha, and the two are never assumed to be equal.
+          #
+          # Deliberately not a dispatch input: the backend identity is the run's own
+          # commit, which GitHub already records. See the rule-input step for where the
+          # rule set comes from instead.
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Check out the frozen candidate into candidate/ (never executed)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Bind the exact frozen candidate identity
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
+          test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
+          # A merge commit is NOT diffed by `git diff-tree` unless a merge diff mode is selected,
+          # so the plain form printed NOTHING for a merge commit and the frozen changed-path
+          # boundary was silently empty - the rule review became a review of nothing (CCV1-145B
+          # D-1, proved by recomputing the frozen scope digest).
+          #   * `-m` is NOT the fix, and neither is `-m --first-parent`: `--first-parent` does not
+          #     narrow `-m`'s output, so the boundary silently becomes the union of BOTH parents'
+          #     diffs (measured).
+          #   * `--diff-merges=first-parent` is the boundary we want: what this candidate brings
+          #     into its own line. It is a no-op for an ordinary single-parent commit.
+          # The first parent must also be present locally - that is why this checkout uses
+          # fetch-depth 2. At depth 1 the boundary is empty again, with exit code 0.
+          git -C candidate diff-tree --no-commit-id --name-only -r --diff-merges=first-parent HEAD | sort -u > "$RUNNER_TEMP/changed_paths.txt"
+          # Fail closed, and never swallow a failure with `|| true`: an empty boundary must stop
+          # the round rather than quietly degrade the review to "nothing changed".
+          test -s "$RUNNER_TEMP/changed_paths.txt"
+          # WHAT changed, not only which paths: the reviewer is asked to judge content, and the
+          # first real Review E2E handed the model an empty change surface while the frozen scope
+          # carried eight paths - it faithfully answered NOT_APPLICABLE for "no changed paths"
+          # (CCV1-147B; proved by recomputing both digests, and nothing failed because every
+          # digest still recomputed). These are git's own bytes for the frozen candidate's
+          # first-parent diff. No diff authority, no signature and no second registry: GitHub
+          # already owns commit identity.
+          git -C candidate diff --no-ext-diff --no-color HEAD^1 HEAD > "$RUNNER_TEMP/candidate.diff"
+          test -s "$RUNNER_TEMP/candidate.diff"
+          wc -c < "$RUNNER_TEMP/candidate.diff"
+          wc -l < "$RUNNER_TEMP/changed_paths.txt"
+
+      - name: Resolve the review brief from the candidate's own pull request (read-only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # WHAT WAS ASKED FOR, not only what changed. Until now C14 could see the change
+          # surface, the diff and the rule text but not the task the candidate was given, so it
+          # could only grade against its own idea of best practice. The brief is the candidate's
+          # own pull request, frozen as GitHub's raw facts by the commit -> pull requests API.
+          # The match must be unique (the candidate is that PR's head sha or its merge commit
+          # sha); zero or several matches is a refusal, never a guess. This step exits 0 even on
+          # a refusal, on purpose: the refusal is a *record*, and `spec` below stops the round on
+          # it - so the reason survives instead of being lost in a crashed step.
+          python control-plane/c13-c14-lite/lite_cli.py review-brief \
+            --candidate-sha "${{ inputs.candidate_sha }}" \
+            --repository "$GITHUB_REPOSITORY" \
+            --out "$RUNNER_TEMP/review_brief.json"
+
+      - name: Resolve the authoritative rule sources (read-only, this run's commit)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # The rule set is governance data read at THIS RUN'S OWN COMMIT, not a dispatch
+          # input and not a constant in this file. Reading the manifest at GITHUB_SHA
+          # instead of at a moving ref is what keeps RULE_AUTHORITY_SHA equal to
+          # EXECUTION_BACKEND_SHA: with a branch name, a run that started at commit A
+          # could silently read the rule text of a commit B that landed while it started.
+          # Two things follow, and both are the point:
+          #   * a candidate cannot edit the rules that judge it: the resolver fails the round
+          #     if this candidate's own change surface touches the manifest or a declared
+          #     source (GOVERNANCE_SOURCE_CHANGED);
+          #   * a round with no resolvable rule source becomes a deterministic BLOCKED before
+          #     any AI call, instead of being reviewed against three names we invented.
+          # This step exits 0 even on a governance refusal, on purpose: the refusal is a
+          # *record* that the seal publishes, and a crashed step would leave no record of
+          # what was wrong (CCV1-145B D-4). LITE_RULE_INPUT is exported for later steps -
+          # $GITHUB_ENV is next-step only, which is how that same trap was found before.
+          python control-plane/c13-c14-lite/lite_cli.py rule-input \
+            --out "$RUNNER_TEMP/rule_input.json" \
+            --repository "$GITHUB_REPOSITORY" \
+            --ref "${GITHUB_SHA}" \
+            --changed-paths "$RUNNER_TEMP/changed_paths.txt"
+          echo "LITE_RULE_INPUT=$RUNNER_TEMP/rule_input.json" >> "$GITHUB_ENV"
+
+      - name: Bind the workflow definition that is actually executing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # NOT `git rev-parse HEAD:$LITE_WORKFLOW_IDENTITY`. The workspace root is the backend
+          # checkout, which is this run's own commit - but the identity must still be resolved
+          # from the ref the run used and checked against the API's own bytes, because that is
+          # the definition GitHub registered for this run, and a later edit to it must move the
+          # digest (CCV1-145B D-2). Resolve it from GITHUB_SHA. The helper re-hashes the
+          # returned bytes into git's own blob SHA and exits non-zero on any mismatch, because an
+          # unbound workflow identity must stop the round, never fall back to something plausible.
+          echo "LITE_WORKFLOW_SHA=$(python control-plane/c13-c14-lite/lite_cli.py workflow-identity \
+            --path "$LITE_WORKFLOW_IDENTITY" --ref "${GITHUB_SHA}")" >> "$GITHUB_ENV"
+
+      - name: Freeze the rule-review scope digest
+        run: |
+          set -euo pipefail
+          {
+            echo "LITE_CANDIDATE_SHA=${{ inputs.candidate_sha }}"
+            echo "LITE_APPLICATION_TREE=${{ inputs.application_tree }}"
+            echo "LITE_ISSUE_NUMBER=${{ inputs.issue_number }}"
+            echo "LITE_REQUEST_ID=${{ inputs.request_id }}"
+            echo "LITE_LEDGER_ROUND_ID=${{ inputs.ledger_round_id }}"
+            echo "LITE_C14_TASK_ID=${{ inputs.c14_task_id }}"
+            echo "LITE_C13_TASK_ID=${{ inputs.c13_task_id }}"
+            echo "LITE_WORKFLOW_SHA=$LITE_WORKFLOW_SHA"
+            echo "LITE_NONCE=c14-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-$RANDOM"
+            echo "LITE_RUN_ID=${GITHUB_RUN_ID}"
+            echo "LITE_RUN_ATTEMPT=${GITHUB_RUN_ATTEMPT}"
+            echo "LITE_PRINCIPAL_ID=${GITHUB_ACTOR}"
+            echo "LITE_ISSUED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "LITE_EXPIRES_AT=$(date -u -d '+55 minutes' +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_ENV"
+          # The frozen scope binds the RESOLVED RULE INPUT rather than a list of names, so
+          # scope.json now carries two 64-hex digests. Read the digest from the command's own
+          # stdout, which carries exactly one, instead of from the file - grepping the file
+          # would silently pick up the rule digest (they sort before the scope digest).
+          SCOPE_OUT="$RUNNER_TEMP/scope_stdout.json"
+          python control-plane/c13-c14-lite/lite_cli.py scope \
+            --role c14 \
+            --rule-input "$LITE_RULE_INPUT" \
+            --changed-paths "$RUNNER_TEMP/changed_paths.txt" \
+            --out "$RUNNER_TEMP/scope.json" > "$SCOPE_OUT"
+          echo "LITE_SCOPE_SHA256=$(grep -o '[0-9a-f]\{64\}' "$SCOPE_OUT" | head -1)" >> "$GITHUB_ENV"
+
+      - name: Build the frozen candidate contract
+        run: |
+          set -euo pipefail
+          # The reviewer gets the change surface AND the content the round already froze; both
+          # are files this run produced, so neither became a dispatch input. Without them the
+          # facts carried an empty change surface and an empty diff (CCV1-147B).
+          python control-plane/c13-c14-lite/lite_cli.py spec --role c14 \
+            --scope "$RUNNER_TEMP/scope.json" \
+            --candidate-diff "$RUNNER_TEMP/candidate.diff" \
+            --review-brief "$RUNNER_TEMP/review_brief.json" \
+            --spec "$RUNNER_TEMP/c14.spec.json" \
+            --facts "$RUNNER_TEMP/c14.facts.json" \
+            --contract "$RUNNER_TEMP/c14.contract.json"
+
+      - name: Run one fresh AI rule review (read-only reviewer)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/artifacts"
+          python control-plane/c13-c14-lite/lite_cli.py review \
+            --spec "$RUNNER_TEMP/c14.spec.json" \
+            --facts "$RUNNER_TEMP/c14.facts.json" \
+            --out "$RUNNER_TEMP/c14.outcome.json" \
+            --allow-blocked
+
+      - name: Seal the C14 bundle
+        run: |
+          set -uo pipefail
+          mkdir -p "$RUNNER_TEMP/artifacts"
+          # The seal is allowed to refuse. What it is NOT allowed to do is refuse and take the
+          # only copy of the reviewer's reasoning with it: a refusal has to stay explainable
+          # after the run (CCV1-145B D-4). So the output is captured either way and the refusal
+          # is recorded in seal_result.json, which the raw-evidence step below publishes. A
+          # refusal still fails this step, and therefore the job.
+          if python control-plane/c13-c14-lite/lite_cli.py seal \
+               --spec "$RUNNER_TEMP/c14.spec.json" \
+               --contract "$RUNNER_TEMP/c14.contract.json" \
+               --outcome "$RUNNER_TEMP/c14.outcome.json" \
+               --out "$RUNNER_TEMP/artifacts/c14_bundle.json" \
+               > "$RUNNER_TEMP/seal_stdout.txt" 2> "$RUNNER_TEMP/seal_stderr.txt"; then
+            printf '{"step":"seal","status":"SEALED","exit_code":0}\n' > "$RUNNER_TEMP/seal_result.json"
+            cp "$RUNNER_TEMP/c14.outcome.json" "$RUNNER_TEMP/artifacts/c14_opinion.json"
+            cp "$RUNNER_TEMP/c14.contract.json" "$RUNNER_TEMP/artifacts/c14_contract.json"
+            cat "$RUNNER_TEMP/seal_stdout.txt"
+          else
+            code=$?
+            printf '{"step":"seal","status":"REFUSED","exit_code":%s}\n' "$code" > "$RUNNER_TEMP/seal_result.json"
+            cat "$RUNNER_TEMP/seal_stdout.txt" "$RUNNER_TEMP/seal_stderr.txt"
+            exit "$code"
+          fi
+
+      - name: Preserve the raw review evidence whatever the seal decided
+        if: always()
+        run: |
+          set -euo pipefail
+          # Independent of the seal, and it deliberately does NOT publish the sealed bundle:
+          # raw review evidence is not sealed evidence. No credential is passed to this step,
+          # because the leak guard is shape-based and passing the key would widen its blast
+          # radius for nothing (the artefacts have no credential field to begin with).
+          python control-plane/c13-c14-lite/lite_cli.py raw-evidence \
+            --out "$RUNNER_TEMP/raw" \
+            --spec "$RUNNER_TEMP/c14.spec.json" \
+            --facts "$RUNNER_TEMP/c14.facts.json" \
+            --contract "$RUNNER_TEMP/c14.contract.json" \
+            --outcome "$RUNNER_TEMP/c14.outcome.json" \
+            --scope "$RUNNER_TEMP/scope.json" \
+            --review-brief "$RUNNER_TEMP/review_brief.json" \
+            --seal-result "$RUNNER_TEMP/seal_result.json" \
+            --seal-stdout "$RUNNER_TEMP/seal_stdout.txt" \
+            --seal-stderr "$RUNNER_TEMP/seal_stderr.txt"
+
+      - name: Publish the raw review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c14-raw-${{ inputs.candidate_sha }}
+          path: ${{ runner.temp }}/raw
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Publish the sealed C14 bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c14-${{ inputs.candidate_sha }}
+          path: ${{ runner.temp }}/artifacts
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Read back run and artifact identity through the GitHub API
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python control-plane/c13-c14-lite/lite_readback.py \
+            --role c14 \
+            --candidate-sha "${{ inputs.candidate_sha }}" \
+            --expected-head-sha "${GITHUB_SHA}" \
+            --workflow-path "$LITE_WORKFLOW_IDENTITY" \
+            --run-id "${GITHUB_RUN_ID}" \
+            --out "$RUNNER_TEMP/artifacts/readback.json"
+
+      - name: Publish the run/artifact readback record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c14-readback-${{ inputs.candidate_sha }}
+          path: ${{ runner.temp }}/artifacts/readback.json
+          if-no-files-found: warn
+          retention-days: 90

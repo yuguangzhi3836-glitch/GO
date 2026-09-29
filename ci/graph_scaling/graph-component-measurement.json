@@ -1,0 +1,110 @@
+{
+  "baseline_source": "886e1e90a2e5ff10873e06e81e5ac4442c3c93ab:application/src/go_hotel/services/order_supplier_fulfillment.py",
+  "scope": "Local in-memory bound graph component only; no database latency or full transaction CPU claim. Four samples per label after both functions warm; plain lists during timing. Counted list row visits collected separately are deterministic complexity evidence. Same process and prebuilt row objects.",
+  "rows": [
+    {
+      "rows": 2,
+      "row_visits": {
+        "baseline": 22,
+        "candidate": 18
+      },
+      "cpu_samples_seconds": {
+        "baseline": [
+          4.4776e-05,
+          2.9644e-05,
+          2.6789e-05,
+          2.9013e-05
+        ],
+        "candidate": [
+          3.7285e-05,
+          3.1777e-05,
+          2.675e-05,
+          2.4286e-05
+        ]
+      },
+      "median_cpu_seconds": {
+        "baseline": 2.9328500000000002e-05,
+        "candidate": 2.92635e-05
+      },
+      "cpu_ratio": 0.9977837257275345
+    },
+    {
+      "rows": 200,
+      "row_visits": {
+        "baseline": 41800,
+        "candidate": 1800
+      },
+      "cpu_samples_seconds": {
+        "baseline": [
+          0.001936326,
+          0.001826423,
+          0.002079919,
+          0.001833403
+        ],
+        "candidate": [
+          0.000190403,
+          0.000168821,
+          0.000214518,
+          0.000164455
+        ]
+      },
+      "median_cpu_seconds": {
+        "baseline": 0.0018848645,
+        "candidate": 0.000179612
+      },
+      "cpu_ratio": 0.0952917305196209
+    },
+    {
+      "rows": 2000,
+      "row_visits": {
+        "baseline": 4018000,
+        "candidate": 18000
+      },
+      "cpu_samples_seconds": {
+        "baseline": [
+          0.168573783,
+          0.191455311,
+          0.170442256,
+          0.165293451
+        ],
+        "candidate": [
+          0.001517734,
+          0.001464134,
+          0.001639625,
+          0.001395081
+        ]
+      },
+      "median_cpu_seconds": {
+        "baseline": 0.1695080195,
+        "candidate": 0.001490934
+      },
+      "cpu_ratio": 0.008795654650427911
+    },
+    {
+      "rows": 4000,
+      "row_visits": {
+        "baseline": 16036000,
+        "candidate": 36000
+      },
+      "cpu_samples_seconds": {
+        "baseline": [
+          0.681959149,
+          0.650215936,
+          0.645125801,
+          0.643610281
+        ],
+        "candidate": [
+          0.00340048,
+          0.002855,
+          0.002865446,
+          0.002723925
+        ]
+      },
+      "median_cpu_seconds": {
+        "baseline": 0.6476708685000001,
+        "candidate": 0.002860223
+      },
+      "cpu_ratio": 0.0044161674379832
+    }
+  ]
+}

@@ -52,3 +52,34 @@ async def test_concurrent_confirmation_has_one_connector_book(client):
     assert current["status"] == "CONFIRMED"
     with SessionLocal() as s:
         assert s.scalar(select(func.count()).select_from(EventRow).where(EventRow.aggregate_id == order["order_id"], EventRow.event_type == "ORDER_CONFIRMED")) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.concurrency
+async def test_cancel_after_provider_success_commits_once_and_replays(client, monkeypatch):
+    """Offloading must not drop the durable receipt at its new await boundary."""
+    from go_hotel.db.models import OrderRow, ExternalOperationRow
+    order = seed_order(client)
+    authorize = payment_provider.authorize
+    async def cancel_after_success(*args, **kwargs):
+        payment = await authorize(*args, **kwargs)
+        asyncio.current_task().cancel()
+        return payment
+    monkeypatch.setattr(payment_provider, 'authorize', cancel_after_success)
+    task = asyncio.create_task(booking_service.pay(order['order_id'], order['total_amount_minor'], 'CNY', 'pm_success'))
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    with SessionLocal() as s:
+        payments = list(s.scalars(select(PaymentRow).where(PaymentRow.order_id == order['order_id'])))
+        operations = list(s.scalars(select(ExternalOperationRow).where(
+            ExternalOperationRow.aggregate_id == order['order_id'],
+            ExternalOperationRow.operation_type == 'PAYMENT_AUTHORIZE')))
+        assert len(payments) == len(operations) == 1
+        assert payments[0].status == 'AUTHORIZED' and operations[0].status == 'COMPLETED'
+        assert s.get(OrderRow, order['order_id']).status == 'PAYMENT_AUTHORIZED'
+        assert s.scalar(select(func.count()).select_from(EventRow).where(
+            EventRow.aggregate_id == order['order_id'], EventRow.event_type == 'PAYMENT_AUTHORIZED')) == 1
+        payment_id = payments[0].payment_id
+    replay = await booking_service.pay(order['order_id'], order['total_amount_minor'], 'CNY', 'pm_success')
+    assert replay.payment_id == payment_id
+    assert payment_provider.authorize_calls == 1 and payment_provider.capture_calls == 0

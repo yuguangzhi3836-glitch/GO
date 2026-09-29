@@ -1,0 +1,110 @@
+{
+  "source_head": "aea10bea01e0bd2cc6edd71ff25945fbf6ea757f",
+  "application_tree": "fd0122ada33d5351c533fb86152b5b230b45f74b",
+  "source_artifact": 11017750990,
+  "source_sha256": "44cbee7a2c50fce329e7798637733be668f5b14209f10f0bf9b4dc643964a5b6",
+  "actors": 100,
+  "process_cpu_seconds": 10.518006,
+  "successful_cursor_statements": 11400,
+  "rows": [
+    {
+      "service": "bridge._confirm_contract_payment",
+      "calls": 100,
+      "inclusive_thread_cpu_seconds": 1.168398053,
+      "direct_sql_count": 100,
+      "pool_queue_wall_sum_seconds": 0.000597446000938362
+    },
+    {
+      "service": "bridge.checkout_contract",
+      "calls": 100,
+      "inclusive_thread_cpu_seconds": 4.196803021999999,
+      "direct_sql_count": 1100,
+      "pool_queue_wall_sum_seconds": 0.0018967930013786827
+    },
+    {
+      "service": "idempotency.claim_idempotency",
+      "calls": 200,
+      "inclusive_thread_cpu_seconds": 0.34287976499999995,
+      "direct_sql_count": 300,
+      "pool_queue_wall_sum_seconds": 5.953053648999685
+    },
+    {
+      "service": "idempotency.complete_idempotency",
+      "calls": 100,
+      "inclusive_thread_cpu_seconds": 0.13382196700000004,
+      "direct_sql_count": 100,
+      "pool_queue_wall_sum_seconds": 0.0006750129984993691
+    },
+    {
+      "service": "money.create",
+      "calls": 500,
+      "inclusive_thread_cpu_seconds": 1.661991839,
+      "direct_sql_count": 2000,
+      "pool_queue_wall_sum_seconds": 358.08692093400145
+    },
+    {
+      "service": "payment.create_intent",
+      "calls": 100,
+      "inclusive_thread_cpu_seconds": 0.805660643,
+      "direct_sql_count": 1200,
+      "pool_queue_wall_sum_seconds": 0.0006746170024598541
+    },
+    {
+      "service": "payment.execute",
+      "calls": 100,
+      "inclusive_thread_cpu_seconds": 0.37494862400000006,
+      "direct_sql_count": 500,
+      "pool_queue_wall_sum_seconds": 0.0007091160002801189
+    },
+    {
+      "service": "payment.select_channel",
+      "calls": 100,
+      "inclusive_thread_cpu_seconds": 0.179528268,
+      "direct_sql_count": 200,
+      "pool_queue_wall_sum_seconds": 0.0008565850021113874
+    },
+    {
+      "service": "payment.simulate_result",
+      "calls": 100,
+      "inclusive_thread_cpu_seconds": 0.4936264809999999,
+      "direct_sql_count": 800,
+      "pool_queue_wall_sum_seconds": 0.0012476590009100619
+    },
+    {
+      "service": "ride.create",
+      "calls": 100,
+      "inclusive_thread_cpu_seconds": 2.420385853,
+      "direct_sql_count": 1500,
+      "pool_queue_wall_sum_seconds": 217.3197229899995
+    },
+    {
+      "service": "ride.fulfill",
+      "calls": 200,
+      "inclusive_thread_cpu_seconds": 1.451255343,
+      "direct_sql_count": 2000,
+      "pool_queue_wall_sum_seconds": 0.0017630829995596287
+    },
+    {
+      "service": "route.run_idempotent",
+      "calls": 200,
+      "inclusive_thread_cpu_seconds": 2.9045738099999996,
+      "direct_sql_count": 0,
+      "pool_queue_wall_sum_seconds": 0
+    },
+    {
+      "service": "source.decide_in",
+      "calls": 100,
+      "inclusive_thread_cpu_seconds": 0.1923931789999999,
+      "direct_sql_count": 200,
+      "pool_queue_wall_sum_seconds": 0
+    },
+    {
+      "service": "supplier.record_supplier_fact",
+      "calls": 100,
+      "inclusive_thread_cpu_seconds": 0.8989433330000002,
+      "direct_sql_count": 1300,
+      "pool_queue_wall_sum_seconds": 0.0012168570001449552
+    }
+  ],
+  "note": "Existing service-boundary diagnostic, not full Yappi. Nested CPU values overlap and cannot be summed; SQL counts attributed to innermost tracked scope. Concurrent queue wall sums are not CPU. Payment money.create also includes outside-checkout replays. No before/after optimization claim."
+}

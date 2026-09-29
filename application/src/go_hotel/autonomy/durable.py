@@ -60,10 +60,15 @@ def digest(value) -> str:
     return hashlib.sha256(canonical(value).encode()).hexdigest()
 
 
+_PG_CLOCK = select(func.extract('epoch', func.clock_timestamp()))
+_SQLITE_CLOCK = select((func.julianday('now') - 2440587.5) * 86400000)
+
 def db_now_ms(s: Session) -> int:
+    # Cache the expression, not database time. Each call executes the clock
+    # again; leases and reservation deadlines must never reuse an earlier value.
     if s.bind.dialect.name == 'postgresql':
-        return int(s.scalar(select(func.extract('epoch', func.clock_timestamp()))) * 1000)
-    return int(s.scalar(select((func.julianday('now') - 2440587.5) * 86400000)))
+        return int(s.scalar(_PG_CLOCK) * 1000)
+    return int(s.scalar(_SQLITE_CLOCK))
 
 
 def utc_ms(value):

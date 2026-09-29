@@ -1,0 +1,91 @@
+name: Multi-instance transaction correctness and staircase
+on:
+  pull_request:
+    paths:
+      - 'ci/multi_instance/**'
+      - '.github/workflows/multi-instance-transactions.yml'
+      - 'application/**'
+permissions:
+  contents: read
+concurrency:
+  group: multi-instance-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  isolated:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_multi_only
+          POSTGRES_DB: go_c11_isolated
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U go_ci -d go_c11_isolated" --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      GO_MULTI_DATABASE_URL: postgresql+psycopg://go_ci:isolated_multi_only@127.0.0.1:5432/go_c11_isolated
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Detect admission experiment definition changes
+        id: admission
+        run: |
+          if git diff --quiet HEAD^ HEAD -- ci/multi_instance/admission_experiment.py; then
+            echo 'run=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e './application[dev]'
+      - name: Validate diagnostic calling-thread CPU accounting
+        run: python -m pytest ci/multi_instance/test_profiling_cost.py -q
+      - name: Payment recovery and payment-inventory boundary regressions
+        id: regressions
+        working-directory: application
+        env:
+          GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_multi_only@127.0.0.1:5432/go_c11_isolated
+          APP_ENV: test
+          MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED: 'false'
+        run: |
+          mkdir -p ../multi-regression-evidence
+          python -m pytest -x tests/test_supplier_money_graph_scaling.py tests/test_supplier_money_graph_history_db.py tests/test_c10_supplier_money_projection.py tests/test_legacy_booking_async_isolation.py tests/test_concurrency.py tests/test_saga_recovery.py tests/test_reconciliation.py tests/test_sprint1l_payment_orchestration.py tests/test_payment_failure.py tests/test_final_depth_vault_booking_entry.py tests/test_depth13_catalog_fare.py tests/test_depth13_catalog_fare_api.py tests/test_source_history_reads.py tests/test_multi_instance_payment_regressions.py tests/test_transaction_read_optimization.py tests/test_idempotency_atomic_mutation.py tests/test_payment_transition_read_optimization.py tests/test_omnichannel_payment_finance_os.py tests/test_p0_0100_real_external_execution.py tests/test_next_depth_c03_payment_inventory_races.py tests/test_depth33_mobility_refund_consent.py tests/test_c11_idempotency_completion_guard.py tests/payments/test_c11_flight_idempotency_recovery.py tests/test_vertical_source_atomicity.py tests/test_credit_source_intent_index_migration.py -o junit_family=xunit1 --junitxml=../multi-regression-evidence/results.xml
+      - name: Correctness before 20-100-250-500-1000 concurrent transactions
+        run: python ci/multi_instance/run.py
+      - name: Preserve normal gate evidence before diagnostics
+        uses: actions/upload-artifact@v4
+        if: always() && steps.regressions.outcome == 'success'
+        with:
+          name: multi-normal-${{ github.event.pull_request.head.sha }}
+          path: |
+            multi-instance-evidence/
+            multi-regression-evidence/
+          retention-days: 30
+      - name: Separate diagnostic measurement after correctness gate
+        if: always() && steps.regressions.outcome == 'success'
+        run: |
+          python -c "import json; assert json.load(open('multi-instance-evidence/result.json'))['correctness']=='PASS'"
+          python ci/multi_instance/run.py --diagnostic --out multi-profile-evidence
+      - name: Bounded admission experiments with queue time included
+        if: always() && steps.regressions.outcome == 'success' && steps.admission.outputs.run == 'true'
+        run: python ci/multi_instance/admission_experiment.py
+      - name: Source snapshot for reproducible local diagnosis
+        if: always()
+        run: git archive --format=tar.gz --output=diagnostic-source.tar.gz HEAD application
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: multi-instance-${{ github.event.pull_request.head.sha }}
+          path: |
+            multi-instance-evidence/
+            multi-regression-evidence/
+            multi-profile-evidence/
+            multi-admission-evidence/
+            diagnostic-source.tar.gz
+          retention-days: 30

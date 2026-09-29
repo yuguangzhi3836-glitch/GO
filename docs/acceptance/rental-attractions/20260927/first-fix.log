@@ -789,7 +789,7 @@ client = <starlette.testclient.TestClient object at 0x7f6a41eac920>
 >       assert client.post(f"/v1/attractions/orders/{o['order_id']}/redeem",headers=h,json={'evidence_reference':'gate-scan'}).status_code==200
 E       AssertionError: assert 404 == 200
 E        +  where 404 = <Response [404 Not Found]>.status_code
-E        +    where <Response [404 Not Found]> = post('/v1/attractions/orders/attr_ord_87f7cc01576e481b/redeem', headers={'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY3Rvcl90eXBlIjoiQ09OU1VNRVIiLCJleHAiOjE3OTA0NDcwNTg...XBwbGllcl9pZCI6bnVsbCwidXNlcm5hbWUiOiJhdHRyQGV4YW1wbGUuY29tIiwidmVyIjoxfQ.b_RmOYtssib1JvCQpoB8Mj1Y3ZxB1dhpQEnMnrrZKb8'}, json={'evidence_reference': 'gate-scan'})
+E        +    where <Response [404 Not Found]> = post('/v1/attractions/orders/attr_ord_87f7cc01576e481b/redeem', headers={'Authorization': 'Bearer [REDACTED_TEST_SESSION_TOKEN]'}, json={'evidence_reference': 'gate-scan'})
 E        +      where post = <starlette.testclient.TestClient object at 0x7f6a41eac920>.post
 
 tests/test_final_depth_terminal_hardening.py:96: AssertionError

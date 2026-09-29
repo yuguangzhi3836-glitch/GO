@@ -6975,6 +6975,7 @@ class VerticalSourceDecisionRow(Base):
     reason_codes_json: Mapped[list]=mapped_column(JSON,nullable=False)
     decision_hash: Mapped[str]=mapped_column(String(64),nullable=False,unique=True)
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False,index=True)
+    __table_args__=(Index('ix_vertical_source_latest', 'vertical', 'business_id', 'created_at'),)
 
 # P0 remediation 0098 — server-resolved payment truth and scoped financial close.
 class PaymentOrderFactBindingRow(Base):
@@ -7989,7 +7990,9 @@ class CatalogCreditSourceRow(Base):
     __tablename__ = 'catalog_credit_source'
     capture_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     credit_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    payment_intent_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    # Every movement checks whether its root payment funds a catalog credit.
+    # Without this index an unrelated large credit ledger scans on money ingress.
+    payment_intent_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     funded_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
     prior_refund_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
     excluded_minor: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
@@ -8141,3 +8144,52 @@ class HostedPublicationReviewRow(Base):
     decision: Mapped[str] = mapped_column(String(24), nullable=False)
     evidence_reference: Mapped[str] = mapped_column(String(512), nullable=False)
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+class RegistrationChallengeRow(Base):
+    __tablename__ = 'registration_challenge'
+    subject_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    challenge_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    code_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    policy_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    state: Mapped[str] = mapped_column(String(16), nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False)
+    expires_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    consumed_by: Mapped[str | None] = mapped_column(String(64))
+
+
+class RegistrationRateRow(Base):
+    __tablename__ = 'registration_rate'
+    bucket_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    count: Mapped[int] = mapped_column(Integer, nullable=False)
+    expires_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+
+class RegistrationDecisionRow(Base):
+    __tablename__ = 'registration_decision'
+    decision_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    audience: Mapped[str] = mapped_column(String(16), nullable=False)
+    decisions: Mapped[dict] = mapped_column(JSON, nullable=False)
+    versions: Mapped[dict] = mapped_column(JSON, nullable=False)
+    hashes: Mapped[dict] = mapped_column(JSON, nullable=False)
+    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    expires_ms: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+
+
+class RegistrationMaintenanceRow(Base):
+    __tablename__ = 'registration_maintenance'
+    key: Mapped[str] = mapped_column(String(40), primary_key=True)
+    success_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+
+class PrivacyRequestRow(Base):
+    __tablename__ = 'privacy_request'
+    request_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False)
+    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    due_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    updated_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    resolution: Mapped[dict] = mapped_column(JSON, nullable=False)

@@ -117,7 +117,7 @@ class AttractionService:
    s.add(o);s.flush();reservation_expiry.issue_in(s,'ATTRACTION',o);contracts.consume_in(s,contract,account,o.order_id,request)
    append_vertical_evidence(s,'ATTRACTION',o.order_id,'ORDER_CREATED',o.status,{'prebook_id':contract.prebook_id,'terms_hash':contract.terms_hash,'external_live':False})
    result=self.out(o)
-  vertical_source_runtime_service.decide('ATTRACTION',result['order_id'],[{'source_id':'attraction-engineering-source','source_type':'ATTRACTION_OFFICIAL','authorized':True,'available':True,'evidence_reference':f"attraction-prebook://{b['prebook_id']}"}])
+   vertical_source_runtime_service.decide_in(s,'ATTRACTION',result['order_id'],[{'source_id':'attraction-engineering-source','source_type':'ATTRACTION_OFFICIAL','authorized':True,'available':True,'evidence_reference':f"attraction-prebook://{b['prebook_id']}"}])
   return result
  def _window_in(self,s,o):
   if s is None:return {'state':'LEGACY_UNVERIFIED'}
@@ -208,40 +208,42 @@ class AttractionService:
    voucher_code=o.voucher_code; supplier_reference=o.supplier_reference
    o.status="FULFILLED";o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",order_id,"VOUCHER_REDEEMED",o.status,{"evidence_reference":evidence_reference,"voucher_code":voucher_code,"supplier_reference":supplier_reference,"redemption_window":window,"external_live":False});project_vertical_lifecycle(s,"ATTRACTION",o,evidence_reference,facts={"voucher_code":voucher_code,"supplier_reference":supplier_reference});return self.out(o)
  def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,voucher_code=None,quote_id=None):
+  with transaction(SessionLocal) as s:
+   return self.admin_external_state_in(s,order_id,state,evidence_reference,actor,supplier_reference,voucher_code,quote_id)
+ def admin_external_state_in(self,s,order_id,state,evidence_reference,actor,supplier_reference=None,voucher_code=None,quote_id=None):
   if not str(evidence_reference or '').strip() or not str(actor or '').strip(): raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
   state=state.upper()
-  with transaction(SessionLocal) as s:
-   o=s.get(AttractionOrderRow,order_id,with_for_update=True)
-   if not o: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
-   pending=s.scalar(select(AttractionChangeQuoteRow).where(AttractionChangeQuoteRow.order_id==order_id,AttractionChangeQuoteRow.status=='PENDING_SUPPLIER').order_by(AttractionChangeQuoteRow.created_at.desc()))
-   if quote_id is not None and (not pending or pending.quote_id!=quote_id):
-    raise ValueError('ATTRACTION_RESOLUTION_QUOTE_INVALID')
-   if pending and quote_id is None:
-    # Even the first change may follow an ordinary UNKNOWN recovery. Require
-    # its identity so that an old unbound recovery cannot confirm this change.
-    raise ValueError('ATTRACTION_RESOLUTION_QUOTE_ID_REQUIRED')
-   if state=="UNKNOWN_EXTERNAL_STATE":
-    if o.status!="CONFIRMED": raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
-    o.status=state;kind="EXTERNAL_STATE_UNKNOWN"
-   elif state=="CLOSED_BY_SUPPLIER":
-    if o.status not in {"CONFIRMED","UNKNOWN_EXTERNAL_STATE"}: raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
-    if pending:pending.status='FAILED'
-    capacity.release_all_in(s,'ATTRACTION',order_id)
-    o.status=state;kind="SUPPLIER_CLOSED"
-   elif state=="CONFIRMED":
-    if o.status!="UNKNOWN_EXTERNAL_STATE": raise ValueError("ATTRACTION_RECONCILIATION_NOT_REQUIRED")
-    resolved_supplier=supplier_reference if supplier_reference is not None else o.supplier_reference
-    resolved_voucher=voucher_code if voucher_code is not None else o.voucher_code
-    if not str(resolved_supplier or '').strip() or not str(resolved_voucher or '').strip():
-     raise ValueError('ATTRACTION_RECONCILIATION_VOUCHER_REQUIRED')
-    if pending:
-     if not str(supplier_reference or '').strip() or not str(voucher_code or '').strip(): raise ValueError('ATTRACTION_RECONCILIATION_VOUCHER_REQUIRED')
-     capacity.complete_change_in(s,'ATTRACTION',order_id,pending.quote_id,True)
-     o.visit_date=pending.new_visit_date;o.session_time=pending.new_session_time;pending.status='APPLIED';o.supplier_reference=supplier_reference;o.voucher_code=voucher_code;kind='CHANGE_RECONCILED_TO_CONFIRMED'
-    else:
-     kind="RECONCILED_TO_CONFIRMED";o.supplier_reference=resolved_supplier;o.voucher_code=resolved_voucher
-    o.status=state
-   else: raise ValueError("ATTRACTION_EXTERNAL_STATE_INVALID")
-   o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",order_id,kind,o.status,{"evidence_reference":evidence_reference,"actor":actor,"supplier_reference":o.supplier_reference,"voucher_code":o.voucher_code,"quote_id":pending.quote_id if pending else None,"external_live":False});project_vertical_lifecycle(s,"ATTRACTION",o,evidence_reference,facts={"actor":actor,"supplier_reference":o.supplier_reference,"voucher_code":o.voucher_code,"quote_id":pending.quote_id if pending else None});return self.out(o)
+  o=s.get(AttractionOrderRow,order_id,with_for_update=True)
+  if not o: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
+  pending=s.scalar(select(AttractionChangeQuoteRow).where(AttractionChangeQuoteRow.order_id==order_id,AttractionChangeQuoteRow.status=='PENDING_SUPPLIER').order_by(AttractionChangeQuoteRow.created_at.desc()))
+  if quote_id is not None and (not pending or pending.quote_id!=quote_id):
+   raise ValueError('ATTRACTION_RESOLUTION_QUOTE_INVALID')
+  if pending and quote_id is None:
+   # Even the first change may follow an ordinary UNKNOWN recovery. Require
+   # its identity so that an old unbound recovery cannot confirm this change.
+   raise ValueError('ATTRACTION_RESOLUTION_QUOTE_ID_REQUIRED')
+  if state=="UNKNOWN_EXTERNAL_STATE":
+   if o.status!="CONFIRMED": raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
+   o.status=state;kind="EXTERNAL_STATE_UNKNOWN"
+  elif state=="CLOSED_BY_SUPPLIER":
+   if o.status not in {"CONFIRMED","UNKNOWN_EXTERNAL_STATE"}: raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
+   if pending:pending.status='FAILED'
+   capacity.release_all_in(s,'ATTRACTION',order_id)
+   o.status=state;kind="SUPPLIER_CLOSED"
+  elif state=="CONFIRMED":
+   if o.status!="UNKNOWN_EXTERNAL_STATE": raise ValueError("ATTRACTION_RECONCILIATION_NOT_REQUIRED")
+   resolved_supplier=supplier_reference if supplier_reference is not None else o.supplier_reference
+   resolved_voucher=voucher_code if voucher_code is not None else o.voucher_code
+   if not str(resolved_supplier or '').strip() or not str(resolved_voucher or '').strip():
+    raise ValueError('ATTRACTION_RECONCILIATION_VOUCHER_REQUIRED')
+   if pending:
+    if not str(supplier_reference or '').strip() or not str(voucher_code or '').strip(): raise ValueError('ATTRACTION_RECONCILIATION_VOUCHER_REQUIRED')
+    capacity.complete_change_in(s,'ATTRACTION',order_id,pending.quote_id,True)
+    o.visit_date=pending.new_visit_date;o.session_time=pending.new_session_time;pending.status='APPLIED';o.supplier_reference=supplier_reference;o.voucher_code=voucher_code;kind='CHANGE_RECONCILED_TO_CONFIRMED'
+   else:
+    kind="RECONCILED_TO_CONFIRMED";o.supplier_reference=resolved_supplier;o.voucher_code=resolved_voucher
+   o.status=state
+  else: raise ValueError("ATTRACTION_EXTERNAL_STATE_INVALID")
+  o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",order_id,kind,o.status,{"evidence_reference":evidence_reference,"actor":actor,"supplier_reference":o.supplier_reference,"voucher_code":o.voucher_code,"quote_id":pending.quote_id if pending else None,"external_live":False});project_vertical_lifecycle(s,"ATTRACTION",o,evidence_reference,facts={"actor":actor,"supplier_reference":o.supplier_reference,"voucher_code":o.voucher_code,"quote_id":pending.quote_id if pending else None});return self.out(o)
 
 attraction_service=AttractionService()

@@ -4,6 +4,8 @@ import json
 from datetime import timedelta
 from sqlalchemy import select, or_, text
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from go_hotel.db.models import (
     OfferRow, PrebookRow, OrderRow, PaymentRow, EventRow, OutboxRow, IdempotencyRow,
     ExternalOperationRow, WebhookInboxRow, ConnectorCursorRow, ConnectorCertificationRow, ConnectorHealthRow, ReconciliationRunRow,
@@ -335,6 +337,27 @@ class SqlRepository:
         digest = self.hash_payload(payload)
         try:
             with SessionLocal.begin() as s:
+                dialect = s.get_bind().dialect.name
+                if dialect in {'postgresql', 'sqlite'}:
+                    # Expected duplicate keys are a normal result, not a failed
+                    # transaction followed by another connection acquisition.
+                    # Only this composite key is ignored; other integrity errors
+                    # must still propagate. The database chooses the sole winner.
+                    factory = pg_insert if dialect == 'postgresql' else sqlite_insert
+                    stmt = factory(IdempotencyRow.__table__).values(
+                        idempotency_key=key, operation=operation, request_hash=digest,
+                        response_code=102, response_body={'status': 'IN_PROGRESS'},
+                        resource_id=None, created_at=now_utc(),
+                    ).on_conflict_do_nothing(index_elements=['idempotency_key', 'operation'])
+                    inserted = s.scalar(stmt.returning(IdempotencyRow.idempotency_key))
+                    if inserted is not None:
+                        return 'CLAIMED', None
+                    r = s.get(IdempotencyRow, {'idempotency_key': key, 'operation': operation})
+                    if not r or r.request_hash != digest:
+                        raise ValueError('IDEMPOTENCY_CONFLICT')
+                    rec = {'request_hash': r.request_hash, 'response_code': r.response_code,
+                           'response': r.response_body, 'resource_id': r.resource_id}
+                    return ('IN_PROGRESS' if r.response_code == 102 else 'REPLAY'), rec
                 s.add(IdempotencyRow(
                     idempotency_key=key, operation=operation, request_hash=digest,
                     response_code=102, response_body={"status":"IN_PROGRESS"},
@@ -342,6 +365,8 @@ class SqlRepository:
                 ))
             return "CLAIMED", None
         except IntegrityError:
+            if dialect in {'postgresql', 'sqlite'}:
+                raise
             rec = self.get_idempotency(operation, key)
             if not rec or rec["request_hash"] != digest:
                 raise ValueError("IDEMPOTENCY_CONFLICT")
@@ -351,22 +376,32 @@ class SqlRepository:
 
     def complete_idempotency(self, operation: str, key: str, payload: dict, response: dict, resource_id: str | None = None, response_code: int = 200) -> dict:
         digest = self.hash_payload(payload)
+        table = IdempotencyRow.__table__
         with SessionLocal.begin() as s:
-            r = s.get(IdempotencyRow, {"idempotency_key": key, "operation": operation})
-            if not r or r.request_hash != digest:
+            # Recheck ownership in the write itself: a preceding read can become
+            # stale if another transaction releases and replaces the claim.
+            changed = s.execute(table.update().where(
+                table.c.operation == operation,
+                table.c.idempotency_key == key,
+                table.c.request_hash == digest,
+            ).values(response_code=response_code, response_body=response,
+                     resource_id=resource_id)).rowcount
+            if changed != 1:
                 raise ValueError("IDEMPOTENCY_CLAIM_LOST")
-            r.response_code = response_code
-            r.response_body = response
-            r.resource_id = resource_id
         return response
 
     def release_idempotency_claim(self, operation: str, key: str, payload: dict) -> None:
         """Release only an unfinished claim owned by the same request fingerprint."""
         digest = self.hash_payload(payload)
+        table = IdempotencyRow.__table__
         with SessionLocal.begin() as s:
-            r = s.get(IdempotencyRow, {"idempotency_key": key, "operation": operation})
-            if r and r.request_hash == digest and r.response_code == 102:
-                s.delete(r)
+            # A concurrent completion must leave its receipt replayable.
+            s.execute(table.delete().where(
+                table.c.operation == operation,
+                table.c.idempotency_key == key,
+                table.c.request_hash == digest,
+                table.c.response_code == 102,
+            ))
 
     def bind_idempotency_resource(self, operation, key, payload, resource_id, token, *, new_claim):
         """Bind a Flight recovery command to a fenced, renewable local lease.

@@ -1,0 +1,120 @@
+{
+  "$id": "https://go.local/c13c14-lite/frozen-candidate-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Frozen candidate contract. Never a branch head; always an exact commit.",
+  "properties": {
+    "application_tree": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "candidate_commit_sha": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    },
+    "cell_id": {
+      "enum": [
+        "C13",
+        "C14"
+      ]
+    },
+    "expires_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "issue_number": {
+      "minimum": 1,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "issued_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "ledger_reference": {
+      "additionalProperties": false,
+      "properties": {
+        "cell_id": {
+          "enum": [
+            "C13",
+            "C14"
+          ]
+        },
+        "round_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "task_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "round_id",
+        "cell_id",
+        "task_id"
+      ],
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "nonce": {
+      "minLength": 16,
+      "type": "string"
+    },
+    "prompt_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "repository": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "request_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "review_scope_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "go.c13c14.lite.frozen_candidate.v1"
+    },
+    "task_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "workflow_identity": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "workflow_sha": {
+      "pattern": "^[0-9a-f]{40}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "application_tree",
+    "candidate_commit_sha",
+    "cell_id",
+    "expires_at",
+    "issue_number",
+    "issued_at",
+    "ledger_reference",
+    "nonce",
+    "prompt_sha256",
+    "repository",
+    "request_id",
+    "review_scope_sha256",
+    "schema_version",
+    "task_id",
+    "workflow_identity",
+    "workflow_sha"
+  ],
+  "title": "frozen-candidate-v1",
+  "type": "object"
+}

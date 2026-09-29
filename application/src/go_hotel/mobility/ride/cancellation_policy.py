@@ -14,7 +14,7 @@ from sqlalchemy import select
 from go_hotel.autonomy.durable import digest, db_now_ms
 from go_hotel.db.models import JourneyRecoveryEvidenceChainRow as Evidence
 from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence
-from go_hotel.services.mobility_refund_consent import records as validate_chain
+from go_hotel.services.mobility_refund_consent import verified_records
 from go_hotel.services.travel_operational_facts import environment_allowed
 
 KIND = 'RIDE_CANCELLATION_ACCEPTED'
@@ -124,9 +124,9 @@ def freeze_in(s, order, offer_id, accepted_hash):
 
 
 def accepted_in(s, order):
-    validate_chain(s, order, 'RIDE')
-    rows = list(s.scalars(select(Evidence).where(
-        Evidence.execution_id == 'rc20:RIDE:' + order.order_id, Evidence.evidence_kind == KIND)))
+    # The policy is already present in the validated chain. A second SELECT
+    # adds a round trip and can observe a different snapshot under READ COMMITTED.
+    rows = [row for row in verified_records(s, order, 'RIDE') if row.evidence_kind == KIND]
     if not rows:
         raise ValueError('RIDE_CANCELLATION_BOOKING_POLICY_REQUIRED')
     if len(rows) != 1:

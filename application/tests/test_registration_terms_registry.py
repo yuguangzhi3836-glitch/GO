@@ -24,6 +24,8 @@ def approve_fixture(path):
     registry = json.loads(path.read_text())
     registry.update(release_status='APPROVED', unresolved=[])
     for key in service._REQUIRED_RELEASE_FIELDS: registry[key] = {'test_only': True}
+    registry['operator'] = {'legal_name':'TEST ONLY','registration_address':'TEST ONLY','unified_social_credit_code':'TEST ONLY'}
+    registry['contact_channels'] = {'privacy_email':'test@example.test','delivery_verified':True}
     version = '2099-test-fixture-v1'
     folder = path.parent.parent / version; folder.mkdir()
     for item in registry['documents']:

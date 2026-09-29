@@ -5,7 +5,7 @@ const path=new URL('../../frontend/shared/app.js',import.meta.url);const text=fs
 const functions=text.slice(text.indexOf('async function supplierCommandCenter(){'),text.indexOf('\nfunction cashAfterSalesCard('));
 function fixture(){
  let currentView={isConnected:true,innerHTML:'INITIAL',appendChild:()=>{},querySelector:()=>({})};const requests=[];const buttons={};
- const ctx={location:{hash:'#/orders'},currentSupplierRoute:'',document:{createElement:()=>({isConnected:true,className:''})},window:{GORentalOperations:{render:async()=>{}},GOTicketOperations:{mount:async()=>{}}},
+ const ctx={URLSearchParams,location:{hash:'#/orders'},currentSupplierRoute:'',document:{createElement:()=>({isConnected:true,className:''})},window:{GORentalOperations:{render:async()=>{}},GOTicketOperations:{mount:async()=>{}}},
   $:q=>q==='#view'?currentView:(buttons[q]??={}),unwrap:x=>x,esc:x=>String(x),money:x=>String(x),supplierFriendlyValue:x=>String(x),metrics:()=>'',table:x=>JSON.stringify(x),supplierStructuredShell:(route,body)=>route+body,supplierObjectCard:(label,o)=>JSON.stringify(o),bindRows:()=>{},notice:()=>{},
   api:{request:path=>new Promise((resolve,reject)=>requests.push({path,resolve,reject}))}};
  vm.createContext(ctx);vm.runInContext(functions,ctx);
