@@ -3,29 +3,19 @@
 Caller holds the order lock. Validate the chain and exact refund identity before
 every retry; never fabricate consent for a historical refund.
 """
-from functools import cache
 from sqlalchemy import select, bindparam
-from sqlalchemy.orm import load_only
 from go_hotel.db.models import JourneyRecoveryEvidenceChainRow as Evidence
 from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence, _stable_hash
 from go_hotel.services import refund_consent
 
 KIND='REFUND_CONSENT_FROZEN'
-@cache
-def _chain_query():
-    # load_only configures mappers. Build on first real use so cold-start costs
-    # remain inside the operation, and cache only immutable query structure.
-    return (select(Evidence).options(load_only(
-                  Evidence.execution_item_id, Evidence.sequence_no, Evidence.evidence_kind,
-                  Evidence.observed_status, Evidence.evidence_hash, Evidence.previous_hash,
-                  Evidence.entry_hash, Evidence.evidence_json))
-              .where(Evidence.execution_id==bindparam('execution_id'))
-              .order_by(Evidence.sequence_no))
+_CHAIN = (select(Evidence).where(Evidence.execution_id==bindparam('execution_id'))
+          .order_by(Evidence.sequence_no))
 
 
 def verified_records(s, order, vertical):
     """Return this transaction's fully validated chain, without cross-call caching."""
-    rows=list(s.scalars(_chain_query(),{'execution_id':'rc20:'+vertical+':'+order.order_id}))
+    rows=list(s.scalars(_CHAIN,{'execution_id':'rc20:'+vertical+':'+order.order_id}))
     previous='GENESIS'
     for sequence,entry in enumerate(rows,1):
         body=entry.evidence_json

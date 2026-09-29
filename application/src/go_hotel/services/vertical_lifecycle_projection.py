@@ -1,16 +1,8 @@
 from __future__ import annotations
 from datetime import datetime, timezone
 from go_hotel.services.consumer_unified_lifecycle import consumer_unified_lifecycle_service
-from sqlalchemy import select, bindparam
+from sqlalchemy import select
 from go_hotel.db.models import OrderSupplierFulfillmentRow as Fulfillment, OmnichannelPaymentIntentRow as Intent, PaymentOrderRootRow as Root
-
-_BOUND_SUPPLIER = (select(Fulfillment.supplier_id).join(Intent,
- Intent.payment_intent_id == Fulfillment.payment_intent_id).join(Root,
- Root.payment_intent_id == Intent.payment_intent_id).where(
- Root.business_type == bindparam('business_type'), Root.business_id == bindparam('order_id'),
- Intent.business_type == Root.business_type, Intent.business_id == Root.business_id,
- Intent.payer_id == bindparam('account_id'), Intent.payee_id == Fulfillment.supplier_id,
- Fulfillment.business_type == Root.business_type, Fulfillment.business_id == Root.business_id))
 
 
 def _life_state(native: str) -> str:
@@ -30,9 +22,13 @@ def project_vertical_lifecycle(session, vertical: str, order, evidence_reference
     paid=not (facts or {}).get('unpaid',False) and native not in {'PAYMENT_PENDING','PAYMENT_AUTHORIZED','PAYMENT_CONFIRMED_AWAITING_SUPPLIER','FAILED'}
     supplier_id = getattr(order, 'supplier_id', None)
     if vertical != 'HOTEL':
-        supplier_id = session.scalar(_BOUND_SUPPLIER, {
-            'business_type':vertical + '_ORDER', 'order_id':order.order_id,
-            'account_id':order.account_id})
+        supplier_id = session.scalar(select(Fulfillment.supplier_id).join(Intent,
+            Intent.payment_intent_id == Fulfillment.payment_intent_id).join(Root,
+            Root.payment_intent_id == Intent.payment_intent_id).where(
+            Root.business_type == vertical + '_ORDER', Root.business_id == order.order_id,
+            Intent.business_type == Root.business_type, Intent.business_id == Root.business_id,
+            Intent.payer_id == order.account_id, Intent.payee_id == Fulfillment.supplier_id,
+            Fulfillment.business_type == Root.business_type, Fulfillment.business_id == Root.business_id))
     payment_state='UNKNOWN_EXTERNAL_STATE' if native=='UNKNOWN_EXTERNAL_STATE' else 'PAID' if paid else 'PENDING'
     refund_state='REFUND_COMPLETED' if native=='REFUNDED' else 'REFUND_PROCESSING' if native=='REFUND_PENDING' else 'NOT_REQUESTED'
     projected_facts=dict(facts or {'native_status':native})
