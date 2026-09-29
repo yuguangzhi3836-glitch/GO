@@ -122,6 +122,11 @@ class Runner(base.Runner):
                     proc.wait()
 
 
+def round_record(number, observation_mode, schema, result):
+    return {**result, 'diagnostic_mode': result['mode'], 'number': number,
+            'mode': observation_mode, 'schema': schema}
+
+
 def stage_summary(rows):
     n = len(rows)
     latency = sorted(r['duration_ms'] for r in rows)
@@ -235,6 +240,7 @@ def main():
         'python': sys.version, 'platform': platform.platform(), 'cpu_count': os.cpu_count(),
         'packages': {p: version(p) for p in ('sqlalchemy', 'psycopg', 'fastapi')},
         'pool_per_instance': 5, 'max_overflow': 0, 'service_instances': 2,
+        'clock_ticks_per_second': os.sysconf('SC_CLK_TCK'),
         'scope': 'Complete cold synthetic RIDE actors; two processes, loopback PostgreSQL. '
             'pg_stat_statements is enabled in BOTH control and observed rounds. '
             'Observer overhead comparison is exploratory; formal gate uses its unchanged server configuration.'}
@@ -266,7 +272,7 @@ def main():
                                    env=env, cwd=folder, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=420)
                 result = read(folder / 'result.json')
                 assert result['correctness'] == 'PASS'
-                summary['rounds'].append({'number': number, 'mode': mode, 'schema': schema, **result})
+                summary['rounds'].append(round_record(number, mode, schema, result))
                 write(out / 'summary.json', summary)
                 print(json.dumps(summary['rounds'][-1]), flush=True)
             finally:

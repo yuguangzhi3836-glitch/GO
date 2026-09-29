@@ -53,3 +53,12 @@ def test_proc_stat_parses_names_containing_spaces_or_parentheses(monkeypatch):
     row = proc_stat(77)
     assert row == {'pid': 77, 'ppid': 2, 'state': 'R', 'user_ticks': 4,
                    'system_ticks': 5, 'start_ticks': 100, 'rss_pages': 42}
+
+
+@pytest.mark.parametrize('mode', ['control', 'observed'])
+def test_round_observation_mode_cannot_be_overwritten_by_diagnostic_status(mode):
+    result = {'mode': 'SAME_WINDOW_DIAGNOSTIC_NOT_ACCEPTANCE', 'correctness': 'PASS'}
+    row = run.round_record(1, mode, 'mi_test', result)
+    assert row['mode'] == mode
+    assert row['diagnostic_mode'] == result['mode']
+    assert result['mode'] == 'SAME_WINDOW_DIAGNOSTIC_NOT_ACCEPTANCE'
