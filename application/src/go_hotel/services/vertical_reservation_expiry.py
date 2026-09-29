@@ -5,7 +5,7 @@ failed attempt, retains its allocation for money reconciliation. Database time
 and transactions determine the winner; the browser clock never releases seats.
 """
 from datetime import datetime, UTC
-from sqlalchemy import select
+from sqlalchemy import bindparam, select
 from sqlalchemy.orm import object_session
 from go_hotel.autonomy.durable import db_now_ms, digest, transaction
 from go_hotel.db.session import SessionLocal
@@ -16,6 +16,10 @@ from go_hotel.db.models import (
 
 HOLD_MS = 15 * 60 * 1000
 MODELS = {'RAIL': RailOrderRow, 'ATTRACTION': AttractionOrderRow, 'RIDE': MobilityRideOrderRow, 'RENTAL': MobilityRentalOrderRow}
+
+_PAYMENT_ID = select(Intent.payment_intent_id).where(
+    Intent.business_type == bindparam('business_type'),
+    Intent.business_id == bindparam('business_id')).limit(1)
 
 
 def terms(row):
@@ -50,8 +54,7 @@ def projection(vertical, order):
 
 
 def payment_in(s, vertical, order_id):
-    return s.scalar(select(Intent.payment_intent_id).where(
-        Intent.business_type == vertical + '_ORDER', Intent.business_id == order_id).limit(1))
+    return s.scalar(_PAYMENT_ID, {'business_type': vertical + '_ORDER', 'business_id': order_id})
 
 
 def guard_payment_in(s, vertical, order):
@@ -101,13 +104,18 @@ def payment_started(vertical, order_id, account_id):
     if vertical not in {'RIDE','RENTAL'}: return
     with transaction(SessionLocal) as s:
         order = s.get(MODELS[vertical], order_id, with_for_update=True)
-        if not order or order.account_id != account_id: raise ValueError('MOBILITY_ORDER_NOT_FOUND')
-        if order.status != 'PAYMENT_PENDING': raise ValueError('MOBILITY_ORDER_NOT_PAYABLE')
-        row = checked_in(s, vertical, order)
-        if not row: raise ValueError('PAYMENT_DEADLINE_ROOT_REQUIRED')
-        if row.state in {'CANCELLED','EXPIRED','REVIEW'}: raise ValueError('RESERVATION_' + row.state + '_NOT_PAYABLE')
-        if not payment_in(s, vertical, order_id): raise ValueError('PAYMENT_DEADLINE_ROOT_REQUIRED')
-        if row.state == 'OPEN': finish_in(s, row, 'PAYMENT_STARTED', 'PAYMENT_INTENT_COMMITTED')
+        confirm_payment_started_in(s, vertical, order, account_id)
+
+
+def confirm_payment_started_in(s, vertical, order, account_id):
+    """Same checks as payment_started; caller holds the native order lock."""
+    if not order or order.account_id != account_id: raise ValueError('MOBILITY_ORDER_NOT_FOUND')
+    if order.status != 'PAYMENT_PENDING': raise ValueError('MOBILITY_ORDER_NOT_PAYABLE')
+    row = checked_in(s, vertical, order)
+    if not row: raise ValueError('PAYMENT_DEADLINE_ROOT_REQUIRED')
+    if row.state in {'CANCELLED','EXPIRED','REVIEW'}: raise ValueError('RESERVATION_' + row.state + '_NOT_PAYABLE')
+    if not payment_in(s, vertical, order.order_id): raise ValueError('PAYMENT_DEADLINE_ROOT_REQUIRED')
+    if row.state == 'OPEN': finish_in(s, row, 'PAYMENT_STARTED', 'PAYMENT_INTENT_COMMITTED')
 
 
 def cancelled_in(s, vertical, order):
