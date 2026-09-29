@@ -3,7 +3,7 @@ import hashlib, json, re
 import uuid
 from urllib.parse import urlparse
 
-from sqlalchemy import select
+from sqlalchemy import select, bindparam
 from sqlalchemy.exc import IntegrityError
 
 from go_hotel.db.session import SessionLocal
@@ -23,7 +23,10 @@ SAFE_EXTERNAL_FACTS = {'check_in','check_out','departure_at','arrival_at','origi
 
 def now(): return datetime.now(timezone.utc)
 def ident(prefix): return f'{prefix}_{uuid.uuid4().hex}'
-def out(row): return {column.name: (getattr(row, column.name).isoformat() if isinstance(getattr(row, column.name), datetime) else getattr(row, column.name)) for column in row.__table__.columns}
+def out(row): return {column.name: (value.isoformat() if isinstance(value, datetime) else value) for column in row.__table__.columns for value in (getattr(row, column.name),)}
+
+_LIFECYCLE_LOCK = select(Life).where(
+ Life.vertical==bindparam('vertical'), Life.order_id==bindparam('order_id')).with_for_update()
 
 
 def _external_order_key(account_id, provider, external_id):
@@ -106,7 +109,7 @@ class ConsumerUnifiedLifecycleService:
   if b['vertical'] not in VERTICALS or b['lifecycle_state'] not in STATES:raise ValueError('INVALID_VERTICAL_OR_LIFECYCLE_STATE')
   source_raw=b['source_updated_at'];source_at=source_raw if isinstance(source_raw,datetime) else datetime.fromisoformat(str(source_raw).replace('Z','+00:00'))
   if source_at.tzinfo is None:source_at=source_at.replace(tzinfo=timezone.utc)
-  r=s.scalar(select(Life).where(Life.vertical==b['vertical'],Life.order_id==b['order_id']).with_for_update())
+  r=s.scalar(_LIFECYCLE_LOCK,{'vertical':b['vertical'],'order_id':b['order_id']})
   if r:
    if r.account_id!=b['account_id']:raise ValueError('UNIFIED_LIFECYCLE_ACCOUNT_IMMUTABLE')
    # A later fact (or replay) cannot reassign the order's supplier. Missing

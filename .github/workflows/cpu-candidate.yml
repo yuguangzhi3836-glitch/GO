@@ -68,7 +68,7 @@ jobs:
           TRAVEL_INTELLIGENCE_ENABLED: 'false'
         run: |
           mkdir -p cpu-candidate-qualification
-          python -m pytest application/tests/test_payment_query_reuse.py -q --junitxml=cpu-candidate-qualification/payment.xml
+          python -m pytest application/tests/test_payment_query_reuse.py application/tests/test_capacity_projection_reads.py -q --junitxml=cpu-candidate-qualification/payment.xml
       - name: Baseline-candidate-candidate-baseline; identical harness, no profiler
         if: steps.change.outputs.run == 'true'
         run: python ci/cpu_candidate.py

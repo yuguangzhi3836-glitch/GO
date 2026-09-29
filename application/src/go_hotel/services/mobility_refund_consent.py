@@ -4,12 +4,17 @@ Caller holds the order lock. Validate the chain and exact refund identity before
 every retry; never fabricate consent for a historical refund.
 """
 from sqlalchemy import select, bindparam
+from sqlalchemy.orm import load_only
 from go_hotel.db.models import JourneyRecoveryEvidenceChainRow as Evidence
 from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence, _stable_hash
 from go_hotel.services import refund_consent
 
 KIND='REFUND_CONSENT_FROZEN'
-_CHAIN = (select(Evidence).where(Evidence.execution_id==bindparam('execution_id'))
+_CHAIN = (select(Evidence).options(load_only(
+              Evidence.execution_item_id, Evidence.sequence_no, Evidence.evidence_kind,
+              Evidence.observed_status, Evidence.evidence_hash, Evidence.previous_hash,
+              Evidence.entry_hash, Evidence.evidence_json))
+          .where(Evidence.execution_id==bindparam('execution_id'))
           .order_by(Evidence.sequence_no))
 
 

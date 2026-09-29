@@ -21,6 +21,19 @@ ORDER_TYPES={
  'RIDE_ORDER':('RIDE',MobilityRideOrderRow),'RENTAL_ORDER':('RENTAL',MobilityRentalOrderRow),'ATTRACTION_ORDER':('ATTRACTION',AttractionOrderRow),
 }
 TERMINAL={'SUCCEEDED','FAILED'}
+# Reuse immutable SQL expression shapes, keeping the existing execution order,
+# row locks, transaction boundaries and fresh per-request database results.
+_ORDER_LOCKS = {kind: select(model).where(model.order_id == bindparam('order_id')).with_for_update()
+ for kind, (_, model) in ORDER_TYPES.items()}
+_INTENT_KEY_LOCK = select(Intent).where(Intent.idempotency_key == bindparam('key')).with_for_update()
+_INTENT_LOCK = select(Intent).where(Intent.payment_intent_id == bindparam('intent_id')).with_for_update()
+_ATTEMPT_LOCK = select(Attempt).where(Attempt.payment_attempt_id == bindparam('attempt_id')).with_for_update()
+_BINDING = select(FactBinding).where(FactBinding.payment_intent_id == bindparam('intent_id'))
+_ROOT_LOCK = select(OrderRoot).where(OrderRoot.business_type == bindparam('business_type'),
+ OrderRoot.business_id == bindparam('business_id')).with_for_update()
+_ACTIVE_ATTEMPT_LOCK = select(Attempt).where(Attempt.payment_intent_id == bindparam('intent_id'),
+ Attempt.state.in_(['PROCESSING','UNKNOWN_EXTERNAL_STATE'])).with_for_update()
+_MAX_ATTEMPT = select(func.max(Attempt.attempt_no)).where(Attempt.payment_intent_id == bindparam('intent_id'))
 # Preserve the existing available-source filter, while bounding ORM hydration
 # even when an order has a long source-decision history.
 _LATEST_AVAILABLE_SOURCE = (select(SourceDecision).where(
@@ -63,7 +76,7 @@ class OmnichannelPaymentService:
  def _resolve_order_fact(self,s,b,payer):
   business_type=b['business_type'];business_id=b['business_id']
   vertical,model=ORDER_TYPES[business_type]
-  order=s.scalar(select(model).where(model.order_id==business_id).with_for_update())
+  order=s.scalar(_ORDER_LOCKS[business_type],{'order_id':business_id})
   if not order:raise ValueError('AUTHORITATIVE_ORDER_FACT_REQUIRED')
   if order.account_id!=payer:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
   if vertical=='RIDE':
@@ -80,15 +93,15 @@ class OmnichannelPaymentService:
   channels=b.get('channel_priority',[])
   if not channels or any(x not in CHANNELS for x in channels):raise ValueError('VALID_CHANNEL_PRIORITY_REQUIRED')
   with transaction(SessionLocal) as s:
-   old=s.scalar(select(Intent).where(Intent.idempotency_key==key).with_for_update())
+   old=s.scalar(_INTENT_KEY_LOCK,{'key':key})
    if b['business_type'] in ORDER_TYPES:
     fact,decision=self._resolve_order_fact(s,b,payer);operation='PAY'
     fp=digest({'fact':fact,'operation':operation,'channels':channels,'automatic_fallback_allowed':bool(b.get('automatic_fallback_allowed',False))})
     if old:
-     binding=s.scalar(select(FactBinding).where(FactBinding.payment_intent_id==old.payment_intent_id))
+     binding=s.scalar(_BINDING,{'intent_id':old.payment_intent_id})
      if not binding or binding.request_fingerprint!=fp:raise ValueError('IDEMPOTENCY_KEY_REQUEST_FINGERPRINT_MISMATCH')
      return out(old)
-    existing_root=s.scalar(select(OrderRoot).where(OrderRoot.business_type==fact['business_type'],OrderRoot.business_id==fact['business_id']).with_for_update())
+    existing_root=s.scalar(_ROOT_LOCK,{'business_type':fact['business_type'],'business_id':fact['business_id']})
     if existing_root:
      existing=s.get(Intent,existing_root.payment_intent_id)
      if existing:raise ValueError('ORDER_PAYMENT_ROOT_ALREADY_EXISTS')
@@ -103,7 +116,7 @@ class OmnichannelPaymentService:
    r=Intent(payment_intent_id=ident('opi'),business_type=b['business_type'],business_id=b['business_id'],payer_id=payer,payee_id=b['payee_id'],operation=b['operation'],amount_minor=int(b['amount_minor']),currency=b.get('currency','CNY'),channel_priority_json=channels,selected_channel=None,state='REQUIRES_CHANNEL_SELECTION',idempotency_key=key,automatic_fallback_allowed=bool(b.get('automatic_fallback_allowed',False)),created_at=now(),updated_at=now());s.add(r);s.commit();return out(r)
  def select_channel(self,iid,channel,actor,consent=True):
   with SessionLocal() as s:
-   i=s.scalar(select(Intent).where(Intent.payment_intent_id==iid).with_for_update())
+   i=s.scalar(_INTENT_LOCK,{'intent_id':iid})
    if i and i.payer_id!=actor:raise ValueError('PAYMENT_INTENT_ACCESS_DENIED')
    if not i or channel not in i.channel_priority_json:raise ValueError('CHANNEL_NOT_ALLOWED_FOR_INTENT')
    if i.state not in {'REQUIRES_CHANNEL_SELECTION','READY','FAILED'}:raise ValueError('CHANNEL_SWITCH_BLOCKED_BY_PAYMENT_STATE')
@@ -116,11 +129,11 @@ class OmnichannelPaymentService:
    return {'payment_intent_id':iid,'channel':i.selected_channel,'state':'READY_FOR_EXTERNAL_EXECUTOR' if binding else 'BLOCKED','blockers':[] if binding else ['CERTIFIED_CHANNEL_MERCHANT_BINDING_REQUIRED','EXTERNAL_PAYMENT_EXECUTOR_NOT_CONFIGURED'],'payment_completed':i.state=='SUCCEEDED','booking_confirmed':False,'external_live':False}
  def execute(self,iid,mode='CONTRACT_SIMULATOR'):
   with SessionLocal() as s:
-   i=s.scalar(select(Intent).where(Intent.payment_intent_id==iid).with_for_update())
+   i=s.scalar(_INTENT_LOCK,{'intent_id':iid})
    if not i or i.state!='READY':raise ValueError('PAYMENT_INTENT_NOT_READY')
-   active=s.scalar(select(Attempt).where(Attempt.payment_intent_id==iid,Attempt.state.in_(['PROCESSING','UNKNOWN_EXTERNAL_STATE'])).with_for_update())
+   active=s.scalar(_ACTIVE_ATTEMPT_LOCK,{'intent_id':iid})
    if active:raise ValueError('ACTIVE_OR_UNKNOWN_ATTEMPT_BLOCKS_RESEND')
-   n=(s.scalar(select(func.max(Attempt.attempt_no)).where(Attempt.payment_intent_id==iid)) or 0)+1
+   n=(s.scalar(_MAX_ATTEMPT,{'intent_id':iid}) or 0)+1
    if mode!='CONTRACT_SIMULATOR':raise ValueError('EXTERNAL_PAYMENT_EXECUTOR_NOT_CONFIGURED')
    a=Attempt(payment_attempt_id=ident('opa'),payment_intent_id=iid,channel=i.selected_channel,attempt_no=n,external_operation_id=None,channel_idempotency_key=f'{i.idempotency_key}:{n}',state='CONTRACT_READY_NOT_EXTERNAL',external_invoked=False,created_at=now(),updated_at=now());s.add(a);i.state='CONTRACT_READY_NOT_EXTERNAL';i.updated_at=now();s.commit();return out(a)
  def _transition(self,s,a,i,mapped,external_operation_id=None):
@@ -140,7 +153,7 @@ class OmnichannelPaymentService:
  def simulate_result(self,aid,result):
   if result not in {'SUCCEEDED','FAILED','TIMEOUT'}:raise ValueError('INVALID_SIMULATOR_RESULT')
   with SessionLocal() as s:
-   a=s.scalar(select(Attempt).where(Attempt.payment_attempt_id==aid).with_for_update());i=s.scalar(select(Intent).where(Intent.payment_intent_id==a.payment_intent_id).with_for_update()) if a else None
+   a=s.scalar(_ATTEMPT_LOCK,{'attempt_id':aid});i=s.scalar(_INTENT_LOCK,{'intent_id':a.payment_intent_id}) if a else None
    if not a or a.external_invoked:raise ValueError('SIMULATOR_ATTEMPT_REQUIRED')
    mapped='UNKNOWN_EXTERNAL_STATE' if result=='TIMEOUT' else result;self._transition(s,a,i,mapped);s.commit();return {'intent':out(i),'attempt':out(a)}
  def fallback(self,iid,channel,actor):

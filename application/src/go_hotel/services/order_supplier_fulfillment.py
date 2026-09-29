@@ -1,6 +1,7 @@
 from datetime import datetime,timezone
 import hashlib,json,uuid
 from sqlalchemy import select,bindparam
+from sqlalchemy.orm import load_only
 from go_hotel.db.session import SessionLocal
 from go_hotel.autonomy.durable import transaction
 from go_hotel.services.vertical_prebook_contract import rail_tickets
@@ -18,9 +19,23 @@ MODELS={'HOTEL_ORDER':('HOTEL',OrderRow),'FLIGHT_ORDER':('FLIGHT',FlightOrderRow
 # All three rows are unique for a payment intent. An inner join requires the
 # complete durable binding before any supplier fact can project money as paid.
 _BOUND_PAYMENT = (select(Intent,Root,Binding)
+ .options(load_only(Intent.payment_intent_id, Intent.state, Intent.business_type,
+   Intent.business_id, Intent.payer_id, Intent.payee_id, Intent.amount_minor, Intent.currency),
+  load_only(Root.business_type, Root.business_id, Root.legal_entity_id),
+  load_only(Binding.business_type, Binding.business_id, Binding.payer_id,
+   Binding.payee_id, Binding.amount_minor, Binding.currency, Binding.legal_entity_id))
  .join(Root,Root.payment_intent_id==Intent.payment_intent_id)
  .join(Binding,Binding.payment_intent_id==Intent.payment_intent_id)
  .where(Intent.payment_intent_id==bindparam('intent_id')))
+_BOUND_MOVEMENTS = (select(Movement).options(load_only(
+ Movement.money_movement_id, Movement.parent_movement_id, Movement.movement_type,
+ Movement.state, Movement.business_type, Movement.business_id, Movement.currency,
+ Movement.amount_minor)).where(Movement.root_payment_intent_id==bindparam('intent_id')))
+_FULFILLMENT_BY_ID = select(Fulfillment).where(
+ Fulfillment.order_supplier_fulfillment_id==bindparam('fulfillment_id')).with_for_update()
+_ORDER_LOCKS = {kind:select(model).where(model.order_id==bindparam('order_id')).with_for_update()
+ for kind,(_,model) in MODELS.items()}
+_EXISTING_LIFE = select(Life).where(Life.vertical==bindparam('vertical'),Life.order_id==bindparam('order_id'))
 def now():return datetime.now(timezone.utc)
 def ident(p):return f'{p}_{uuid.uuid4().hex}'
 def digest(x):return hashlib.sha256(json.dumps(x,sort_keys=True,separators=(',',':'),default=str).encode()).hexdigest()
@@ -37,7 +52,7 @@ def _payment_state(s, f, order):
  if (i.business_type,i.business_id,i.payer_id,i.payee_id,i.amount_minor,i.currency)!=expected:return unknown
  if (binding.business_type,binding.business_id,binding.payer_id,binding.payee_id,binding.amount_minor,binding.currency)!=expected:return unknown
  if (root.business_type,root.business_id,root.legal_entity_id)!=(f.business_type,f.business_id,binding.legal_entity_id):return unknown
- rows=s.scalars(select(Movement).where(Movement.root_payment_intent_id==i.payment_intent_id)).all()
+ rows=s.scalars(_BOUND_MOVEMENTS,{'intent_id':i.payment_intent_id}).all()
  if any(x.state!='CONFIRMED' for x in rows):return unknown
  if any((x.business_type,x.business_id,x.currency)!=(f.business_type,f.business_id,i.currency)
         or type(x.amount_minor) is not int or x.amount_minor<=0 for x in rows):return unknown
@@ -80,10 +95,10 @@ class OrderSupplierFulfillmentService:
   if not b.get('evidence_reference'):raise ValueError('SUPPLIER_FACT_EVIDENCE_REQUIRED')
   if state=='SUPPLIER_CONFIRMED' and not b.get('supplier_confirmation_reference'):raise ValueError('SUPPLIER_CONFIRMATION_REFERENCE_REQUIRED')
   with transaction(SessionLocal) as s:
-   f=s.scalar(select(Fulfillment).where(Fulfillment.order_supplier_fulfillment_id==fid).with_for_update())
+   f=s.scalar(_FULFILLMENT_BY_ID,{'fulfillment_id':fid})
    if not f:raise ValueError('SUPPLIER_FULFILLMENT_NOT_FOUND')
    if f.state=='SUPPLIER_CONFIRMED' and state!='SUPPLIER_CONFIRMED':raise ValueError('SUPPLIER_CONFIRMATION_IMMUTABLE')
-   vertical,model=MODELS[f.business_type];order=s.scalar(select(model).where(model.order_id==f.business_id).with_for_update())
+   vertical,model=MODELS[f.business_type];order=s.scalar(_ORDER_LOCKS[f.business_type],{'order_id':f.business_id})
    if not order:raise ValueError('AUTHORITATIVE_ORDER_FACT_REQUIRED')
    terminal_by_vertical={
     'HOTEL':{'CANCELLED','CONVERTED_TO_CREDIT','FAILED'},
@@ -98,7 +113,7 @@ class OrderSupplierFulfillmentService:
     # A delayed initial issuance receipt cannot settle a later change/refund
     # episode or refresh its read model back to an apparent success.
     raise ValueError('TICKET_OPERATION_RECONCILIATION_REQUIRED')
-   existing_life=s.scalar(select(Life).where(Life.vertical==vertical,Life.order_id==f.business_id))
+   existing_life=s.scalar(_EXISTING_LIFE,{'vertical':vertical,'order_id':f.business_id})
    projected_life='CONFIRMED' if state=='SUPPLIER_CONFIRMED' else ('FAILED' if state=='SUPPLIER_FAILED' else 'UNKNOWN_EXTERNAL_STATE')
    if existing_life and existing_life.lifecycle_state in {'COMPLETED','CANCELLED','FAILED'} and projected_life!=existing_life.lifecycle_state:
     raise ValueError('TERMINAL_LIFECYCLE_SUPPLIER_FACT_REJECTED')

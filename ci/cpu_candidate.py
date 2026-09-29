@@ -10,7 +10,7 @@ import subprocess
 import sys
 
 ROOT=Path(__file__).resolve().parents[1]
-BASELINE='ae2c3f99c8a455f7f60dab5c967a7af71b75536f'
+BASELINE='059ebec3ab379099ef258effc3ab0a9833d52c35'
 sys.path.insert(0,str(ROOT/'ci/multi_instance'))
 from thread_switch_experiment import validate_round
 
