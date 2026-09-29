@@ -387,6 +387,23 @@ jobs:
             --scope "$RUNNER_TEMP/scope.json" \
             --review-brief "$RUNNER_TEMP/review_brief.json"
 
+      - name: Preserve allowlisted failure diagnostics even when raw publication refuses
+        if: always()
+        run: |
+          python control-plane/c13-c14-lite/lite_failure_diagnostic.py \
+            --spec "$RUNNER_TEMP/c13.spec.json" \
+            --outcome "$RUNNER_TEMP/c13.outcome.json" \
+            --out "$RUNNER_TEMP/c13-diagnostic/failure_diagnostic.json"
+
+      - name: Publish diagnostic metadata (not acceptance evidence)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c13-diagnostic-${{ inputs.candidate_sha }}
+          path: ${{ runner.temp }}/c13-diagnostic
+          if-no-files-found: warn
+          retention-days: 90
+
       - name: Publish C13 raw review evidence
         if: always()
         uses: actions/upload-artifact@v4

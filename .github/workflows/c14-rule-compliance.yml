@@ -296,6 +296,24 @@ jobs:
             --seal-stdout "$RUNNER_TEMP/seal_stdout.txt" \
             --seal-stderr "$RUNNER_TEMP/seal_stderr.txt"
 
+      - name: Preserve allowlisted failure diagnostics even when raw publication refuses
+        if: always()
+        run: |
+          python control-plane/c13-c14-lite/lite_failure_diagnostic.py \
+            --spec "$RUNNER_TEMP/c14.spec.json" \
+            --outcome "$RUNNER_TEMP/c14.outcome.json" \
+            --seal-result "$RUNNER_TEMP/seal_result.json" \
+            --out "$RUNNER_TEMP/c14-diagnostic/failure_diagnostic.json"
+
+      - name: Publish diagnostic metadata (not acceptance evidence)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c14-diagnostic-${{ inputs.candidate_sha }}
+          path: ${{ runner.temp }}/c14-diagnostic
+          if-no-files-found: warn
+          retention-days: 90
+
       - name: Publish the raw review evidence
         if: always()
         uses: actions/upload-artifact@v4
