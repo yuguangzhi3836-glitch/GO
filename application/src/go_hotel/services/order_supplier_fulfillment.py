@@ -43,16 +43,19 @@ def _payment_state(s, f, order):
         or type(x.amount_minor) is not int or x.amount_minor<=0 for x in rows):return unknown
  by_id={x.money_movement_id:x for x in rows}
  parents={'CAPTURE':'AUTHORIZATION','RELEASE':'AUTHORIZATION','REFUND':'CAPTURE','COMPENSATION':'CAPTURE','PAYOUT':'CAPTURE'}
+ parent_spent={}
  for movement in rows:
   if movement.movement_type=='AUTHORIZATION':
    if movement.parent_movement_id:return unknown
   else:
    parent=by_id.get(movement.parent_movement_id)
    if movement.movement_type not in parents or not parent or parent.movement_type!=parents[movement.movement_type]:return unknown
+   # Each edge contributes once. Parent-type validation above keeps authorization
+   # spending and capture refunds distinct; payouts retain their existing rules.
+   if movement.movement_type in {'CAPTURE','RELEASE','REFUND','COMPENSATION'}:
+    parent_spent[movement.parent_movement_id]=parent_spent.get(movement.parent_movement_id,0)+movement.amount_minor
  for parent in rows:
-  children=[x for x in rows if x.parent_movement_id==parent.money_movement_id]
-  if parent.movement_type=='AUTHORIZATION' and sum(x.amount_minor for x in children if x.movement_type in {'CAPTURE','RELEASE'})>parent.amount_minor:return unknown
-  if parent.movement_type=='CAPTURE' and sum(x.amount_minor for x in children if x.movement_type in {'REFUND','COMPENSATION'})>parent.amount_minor:return unknown
+  if parent.movement_type in {'AUTHORIZATION','CAPTURE'} and parent_spent.get(parent.money_movement_id,0)>parent.amount_minor:return unknown
  auth=sum(x.amount_minor for x in rows if x.movement_type=='AUTHORIZATION')
  captured=sum(x.amount_minor for x in rows if x.movement_type=='CAPTURE')
  released=sum(x.amount_minor for x in rows if x.movement_type=='RELEASE')
