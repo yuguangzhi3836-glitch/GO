@@ -66,24 +66,22 @@ def _page():
     return asyncio.run(request())
 
 
-def test_create_disable_create_cycle_is_idempotent_and_published(monkeypatch):
+def test_create_disable_create_cycle_is_idempotent_and_requires_publication_review(monkeypatch):
     monkeypatch.setenv("APP_ENV", "staging")
     boot = _bootstrap_module()
 
     assert boot.inspect()["exists"] is False
 
     created = boot.create()["status"]
-    assert created["state"] == "PUBLISHED_REQUEST_ONLY"
+    assert created["state"] == "DRAFT"
     assert created["pools"] == 5
     assert created["offers"] == 9
     assert created["active_offers"] == 9
     assert created["payment_available"] is False
-    assert _counts() == {"hotels": 1, "pools": 5, "offers": 9, "active_offers": 9, "state": "PUBLISHED_REQUEST_ONLY"}
+    assert _counts() == {"hotels": 1, "pools": 5, "offers": 9, "active_offers": 9, "state": "DRAFT"}
 
     status, page = _page()
-    assert status == 200
-    assert page["data"]["payment_available"] is False
-    assert len(page["data"]["offers"]) == 9
+    assert status == 409
 
     disabled = boot.disable()["status"]
     assert disabled["state"] == "DRAFT"
@@ -91,17 +89,17 @@ def test_create_disable_create_cycle_is_idempotent_and_published(monkeypatch):
     assert _page()[0] == 409
 
     recreated = boot.create()["status"]
-    assert recreated["state"] == "PUBLISHED_REQUEST_ONLY"
+    assert recreated["state"] == "DRAFT"
     assert recreated["pools"] == 5
     assert recreated["offers"] == 9
     assert recreated["active_offers"] == 9
     assert recreated["payment_available"] is False
-    assert _counts() == {"hotels": 1, "pools": 5, "offers": 9, "active_offers": 9, "state": "PUBLISHED_REQUEST_ONLY"}
-    assert _page()[0] == 200
+    assert _counts() == {"hotels": 1, "pools": 5, "offers": 9, "active_offers": 9, "state": "DRAFT"}
+    assert _page()[0] == 409
 
     # Third create proves no duplicate graph is created on a normal repeat either.
     boot.create()
-    assert _counts() == {"hotels": 1, "pools": 5, "offers": 9, "active_offers": 9, "state": "PUBLISHED_REQUEST_ONLY"}
+    assert _counts() == {"hotels": 1, "pools": 5, "offers": 9, "active_offers": 9, "state": "DRAFT"}
 
 
 def test_rollback_refuses_when_reservation_references_bootstrap_offer(monkeypatch):
@@ -111,18 +109,13 @@ def test_rollback_refuses_when_reservation_references_bootstrap_offer(monkeypatc
     with SessionLocal() as s:
         offer_id = s.scalar(select(HostedDirectRoomOfferRow.hosted_offer_id).limit(1))
 
-    reserved = hosted_direct_booking_service.reserve(
-        "aoluguya-harbin",
-        {
-            "hosted_offer_id": offer_id,
-            "guest_name": "Staging Bootstrap Test",
-            "guest_contact": "staging-test@example.invalid",
-            "check_in": "2026-08-24",
-            "check_out": "2026-08-25",
-        },
-        "r82-bootstrap-rollback-protection-test",
-    )
-    assert reserved["payment_state"] == "ALIPAY_APPLICATION_PENDING_NO_CHARGE"
+    # Historical reference fixture: blocked drafts cannot accept a new request.
+    with SessionLocal.begin() as session:
+        session.add(HostedDirectReservationRow(hosted_reservation_id='historic-bootstrap-request',
+            hosted_offer_id=offer_id,idempotency_key='historic-bootstrap-request',guest_name='Synthetic',
+            guest_contact='synthetic@example.invalid',check_in='2026-08-24',check_out='2026-08-25',
+            amount_minor=1,currency='CNY',reservation_state='CANCELLED',
+            payment_state='NO_PAYMENT_NO_REFUND_REQUIRED',created_at=now(),updated_at=now()))
     with pytest.raises(SystemExit, match="REFUSED_ROLLBACK_RESERVATIONS_EXIST"):
         boot.rollback()
     assert _counts()["hotels"] == 1

@@ -1,14 +1,17 @@
 from __future__ import annotations
 from datetime import datetime, timezone, timedelta
-import uuid
-from sqlalchemy import select, func
+import hashlib, hmac, json, os, secrets, uuid
+from urllib.parse import urlencode
+from sqlalchemy import select, func, update
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (
  HotelPartnerPropertyRow,HotelPartnerChangeRequestRow,HotelPartnerRoomTypeRow,
  HotelPartnerSellableProductRow,HotelPartnerRatePlanRow,HotelPartnerFacilityDefinitionRow,
  HotelPartnerFacilityAssignmentRow,HotelPartnerPolicyRow,HotelPartnerAriOverrideRow,
  HotelPartnerOperationalInboxRow,HotelPartnerGoOfferAuthorityRow,HotelPartnerAuditEventRow,
- HotelRegistrationDirectRow,HotelCanonicalProfileRow,HotelAutoPageVersionRow)
+ HotelRegistrationDirectRow,HotelCanonicalProfileRow,HotelAutoPageVersionRow,
+ HotelPartnerImportAuthorizationRow,HotelPartnerImportJobRow)
+from go_hotel.security.external_navigation import validate_external_navigation_url
 
 def now(): return datetime.now(timezone.utc)
 def ident(prefix): return f'{prefix}_{uuid.uuid4().hex}'
@@ -19,19 +22,246 @@ def out(row):
 class HotelPartnerCoreService:
     HIGH_RISK={'LEGAL','ADDRESS','BRAND','QUALIFICATION'}
     FOUR_STATE={'YES','NO','UNKNOWN','NOT_APPLICABLE'}
+    IMPORT_PROVIDERS={
+        'CTRIP':{'label':'携程','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD'],'authorization_env':'GO_CTRIP_SUPPLIER_AUTHORIZATION_URL'},
+        'MEITUAN':{'label':'美团','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD'],'authorization_env':'GO_MEITUAN_SUPPLIER_AUTHORIZATION_URL'},
+        'FLIGGY':{'label':'飞猪','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD'],'authorization_env':'GO_FLIGGY_SUPPLIER_AUTHORIZATION_URL'},
+        'BOOKING':{'label':'Booking.com','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD'],'authorization_env':'GO_BOOKING_SUPPLIER_AUTHORIZATION_URL'},
+        'OTHER_OTA':{'label':'其他 OTA','methods':['OFFICIAL_AUTHORIZATION','DATA_EXPORT','FILE_UPLOAD'],'authorization_env':'GO_OTHER_OTA_SUPPLIER_AUTHORIZATION_URL'},
+    }
+    FORBIDDEN_CREDENTIAL_KEYS={'password','passwd','otp','captcha','cookie','cookies','session','session_id','access_token','refresh_token'}
+    IMPORT_HOTEL_FIELDS={'name_zh','name_en','property_type','group_name','brand_name','address','contacts','legal','poi'}
     def _property(self,s,pid,supplier_id):
         r=s.get(HotelPartnerPropertyRow,pid)
         if not r or r.supplier_id!=supplier_id: raise ValueError('PROPERTY_NOT_FOUND')
         return r
     def _audit(self,s,pid,event,typ,aid,payload,actor):
         s.add(HotelPartnerAuditEventRow(audit_event_id=ident('hpa'),property_id=pid,event_type=event,aggregate_type=typ,aggregate_id=aid,payload_json=payload,actor_id=actor,created_at=now()))
+    def import_providers(self):
+        providers={key:{'label':value['label'],'methods':value['methods'],'official_authorization_available':bool(os.getenv(value['authorization_env']))} for key,value in self.IMPORT_PROVIDERS.items()}
+        return {'providers':providers,'credential_policy':'PROVIDER_HOSTED_LOGIN_ONLY','fallback':'DATA_EXPORT_OR_FILE_UPLOAD'}
+    def _reject_credentials(self,value):
+        if isinstance(value,dict):
+            for key,item in value.items():
+                if str(key).lower() in self.FORBIDDEN_CREDENTIAL_KEYS:raise ValueError('OTA_CREDENTIALS_NOT_ACCEPTED')
+                self._reject_credentials(item)
+        elif isinstance(value,list):
+            for item in value:self._reject_credentials(item)
+    def _request_hash(self,b):
+        safe={k:v for k,v in b.items() if k not in {'authorization_code','authorization_state'}}
+        return hashlib.sha256(json.dumps(safe,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
+    def _select_import_package(self,package,selection):
+        """Select whole hotel fields before validation or writes; omitted means legacy full import.
+
+        Selection never grants ownership or publication authority. Room and media
+        collections are opt-in as a whole when an explicit selection is supplied.
+        """
+        if selection is None:return package
+        if not isinstance(selection,list) or not selection:raise ValueError('IMPORT_SELECTION_REQUIRED')
+        allowed={f'hotel.{field}' for field in self.IMPORT_HOTEL_FIELDS}|{'room_types','media'}
+        if any(not isinstance(field,str) or field not in allowed for field in selection):raise ValueError('INVALID_IMPORT_SELECTION')
+        if not isinstance(package,dict):raise ValueError('HOTEL_DATA_PACKAGE_REQUIRED')
+        selected={}
+        for field in selection:
+            if field.startswith('hotel.'):
+                name=field.split('.',1)[1];hotel=package.get('hotel')
+                if not isinstance(hotel,dict) or name not in hotel:raise ValueError('IMPORT_SELECTED_FIELD_MISSING')
+                selected.setdefault('hotel',{})[name]=hotel[name]
+            else:
+                if field not in package:raise ValueError('IMPORT_SELECTED_FIELD_MISSING')
+                selected[field]=package[field]
+        return selected
+    def _validate_media_rights(self,media,rights):
+        if not media:return
+        if rights.get('status') not in {'HOTEL_SUBMITTED','DISTRIBUTION_LICENSE'}:raise ValueError('MEDIA_RIGHTS_EVIDENCE_REQUIRED')
+        if not all(str(rights.get(k) or '').strip() for k in ('rights_holder','evidence_reference')):raise ValueError('MEDIA_RIGHTS_EVIDENCE_REQUIRED')
+        scopes=set(rights.get('usage_scope') or [])
+        if 'DISTRIBUTE_ON_GO' not in scopes:raise ValueError('MEDIA_DISTRIBUTION_SCOPE_REQUIRED')
+        if rights.get('expires_at'):
+            try:expires=datetime.fromisoformat(str(rights['expires_at']).replace('Z','+00:00'))
+            except (TypeError,ValueError):raise ValueError('MEDIA_RIGHTS_EXPIRY_INVALID')
+            if expires.tzinfo is None:expires=expires.replace(tzinfo=timezone.utc)
+            if expires<=now():raise ValueError('MEDIA_RIGHTS_EXPIRED')
+        if not rights.get('applies_to_all_assets'):
+            declared=set(rights.get('asset_references') or [])
+            actual={str(x.get('source_reference') or x.get('url') or '') for x in media if isinstance(x,dict)}
+            if not actual or '' in actual or not actual.issubset(declared):raise ValueError('MEDIA_ASSET_RIGHTS_INCOMPLETE')
+    def _normalize_package(self,package):
+        if not isinstance(package,dict):raise ValueError('HOTEL_DATA_PACKAGE_REQUIRED')
+        hotel=package.get('hotel') or {};rooms=package.get('room_types') or [];media=package.get('media') or []
+        if not isinstance(hotel,dict) or not isinstance(rooms,list) or not isinstance(media,list):raise ValueError('HOTEL_DATA_PACKAGE_INVALID')
+        if len(rooms)>500 or len(media)>2000:raise ValueError('HOTEL_DATA_PACKAGE_LIMIT')
+        allowed=self.IMPORT_HOTEL_FIELDS
+        patch={k:hotel[k] for k in allowed if k in hotel}
+        normalized=[]
+        for raw in rooms:
+            if not isinstance(raw,dict):raise ValueError('INVALID_ROOM_TYPE')
+            room={k:raw[k] for k in ('name_zh','name_en','sale_unit','physical_room_count','occupancy','bed_configurations','attributes','source_room_id') if k in raw}
+            if not str(room.get('name_zh') or '').strip() or not isinstance(room.get('physical_room_count'),int) or room['physical_room_count']<0:raise ValueError('INVALID_ROOM_TYPE')
+            occ=room.get('occupancy')
+            if not isinstance(occ,dict):raise ValueError('INVALID_OCCUPANCY_CONSTRAINT')
+            m=int(occ.get('max_occupancy',0));a=int(occ.get('max_adults',0));c=int(occ.get('max_children',0))
+            if min(m,a,c)<0 or m==0 or a>m or c>m or a+c<m:raise ValueError('INVALID_OCCUPANCY_CONSTRAINT')
+            normalized.append(room)
+        for asset in media:
+            if not isinstance(asset,dict) or not str(asset.get('source_reference') or asset.get('url') or '').strip():raise ValueError('INVALID_MEDIA_ASSET')
+            if asset.get('url'):
+                try:validate_external_navigation_url(asset['url'])
+                except ValueError as exc:raise ValueError('INVALID_MEDIA_ASSET') from exc
+        return patch,normalized,media
+    def _room_import_plan(self,s,prop,provider,rooms,mappings):
+        """Resolve only owner-confirmed source identities, never room names.
+
+        Each mapped batch requires confirmation again. Legacy ID-less imports
+        retain append semantics and do not promise cross-batch deduplication.
+        Caller holds the property row lock until this plan and writes commit.
+        """
+        if mappings is None and not any('source_room_id' in room for room in rooms):
+            return [(room,None,None) for room in rooms],None
+        if not isinstance(mappings,list) or len(mappings)!=len(rooms):
+            raise ValueError('ROOM_MAPPING_CONFIRMATION_REQUIRED')
+        def source_id(value):
+            if not isinstance(value,str) or not value or value!=value.strip() or len(value)>160:
+                raise ValueError('INVALID_SOURCE_ROOM_ID')
+            return value
+        room_ids=[source_id(room.get('source_room_id')) for room in rooms]
+        if len(set(room_ids))!=len(room_ids):raise ValueError('DUPLICATE_SOURCE_ROOM_ID')
+        declared={}
+        for mapping in mappings:
+            if not isinstance(mapping,dict) or mapping.get('confirmed') is not True:
+                raise ValueError('ROOM_MAPPING_CONFIRMATION_REQUIRED')
+            sid=source_id(mapping.get('source_room_id'))
+            if sid in declared:raise ValueError('DUPLICATE_SOURCE_ROOM_ID')
+            declared[sid]=mapping
+        if set(declared)!=set(room_ids):raise ValueError('ROOM_MAPPING_SOURCE_MISMATCH')
+        all_bindings=dict((prop.operations_json or {}).get('import_room_bindings') or {})
+        bindings=dict(all_bindings.get(provider) or {})
+        plan=[];targets=set()
+        for room,sid in zip(rooms,room_ids):
+            mapping=declared[sid];target=mapping.get('target_room_type_id')
+            action=mapping.get('action','UPDATE')
+            if action=='CREATE':
+                if target or sid in bindings:raise ValueError('ROOM_MAPPING_CONFLICT')
+                plan.append((room,None,sid));continue
+            if action!='UPDATE' or not isinstance(target,str) or not target:
+                raise ValueError('INVALID_ROOM_MAPPING')
+            if target in targets:raise ValueError('ROOM_MAPPING_TARGET_CONFLICT')
+            targets.add(target)
+            if sid in bindings and bindings[sid]!=target:raise ValueError('ROOM_MAPPING_CONFLICT')
+            if any(key!=sid and value==target for key,value in bindings.items()):
+                raise ValueError('ROOM_MAPPING_TARGET_CONFLICT')
+            existing=s.get(HotelPartnerRoomTypeRow,target)
+            if not existing or existing.property_id!=prop.property_id:raise ValueError('ROOM_TYPE_NOT_FOUND')
+            bindings[sid]=target;plan.append((room,existing,sid))
+        all_bindings[provider]=bindings
+        return plan,all_bindings
+    def _verify_provider_authorization(self,provider,b):
+        """Verify the result produced by GO's server-side provider adapter.
+
+        The browser authorization code is never treated as proof by itself.  The
+        adapter exchanges it with the provider and signs the minimal result; no
+        provider token or account credential is persisted in the hotel library.
+        """
+        proof=b.get('authorization_proof') or {};signature=str(b.get('authorization_signature') or '')
+        secret=os.getenv(f'GO_{provider}_SUPPLIER_CALLBACK_SECRET')
+        if not secret:raise ValueError('SUPPLIER_PROVIDER_VERIFIER_UNAVAILABLE')
+        required=('provider_account_subject','authorization_evidence_reference','state')
+        if not isinstance(proof,dict) or not all(str(proof.get(k) or '').strip() for k in required):raise ValueError('SUPPLIER_PROVIDER_AUTHORIZATION_UNVERIFIED')
+        if proof.get('state')!=b.get('authorization_state'):raise ValueError('SUPPLIER_PROVIDER_STATE_INVALID')
+        raw=json.dumps(proof,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()
+        expected=hmac.new(secret.encode(),raw,hashlib.sha256).hexdigest()
+        if not signature or not hmac.compare_digest(expected,signature):raise ValueError('SUPPLIER_PROVIDER_AUTHORIZATION_UNVERIFIED')
+        return {'provider_account_subject_hash':hashlib.sha256(str(proof['provider_account_subject']).encode()).hexdigest(),'authorization_evidence_reference':proof['authorization_evidence_reference']}
+    def one_click_import(self,supplier_id,actor,pid,b,idempotency_key=None):
+        provider=str(b.get('provider') or '').upper();method=str(b.get('method') or '').upper()
+        if provider not in self.IMPORT_PROVIDERS:raise ValueError('UNSUPPORTED_OTA_PROVIDER')
+        if method not in self.IMPORT_PROVIDERS[provider]['methods']:raise ValueError('UNSUPPORTED_IMPORT_METHOD')
+        self._reject_credentials(b)
+        if method=='OFFICIAL_AUTHORIZATION' and not b.get('authorization_code'):
+            authorization_base=os.getenv(self.IMPORT_PROVIDERS[provider]['authorization_env'])
+            if not authorization_base:return {'status':'AUTHORIZATION_UNAVAILABLE','provider':provider,'login_surface':'PROVIDER_HOSTED','credentials_received_by_go':False,'fallback':'DATA_EXPORT'}
+            try:authorization_base=validate_external_navigation_url(authorization_base,reject_sensitive_query=False)
+            except ValueError as exc:raise ValueError('SUPPLIER_PROVIDER_AUTHORIZATION_URL_INVALID') from exc
+            state=secrets.token_urlsafe(32)
+            with SessionLocal() as s:
+                self._property(s,pid,supplier_id);t=now();s.add(HotelPartnerImportAuthorizationRow(authorization_id=ident('hpia'),property_id=pid,supplier_id=supplier_id,provider=provider,state_hash=hashlib.sha256(state.encode()).hexdigest(),status='PENDING',requested_by=actor,created_at=t,expires_at=t+timedelta(minutes=10),consumed_at=None));s.commit()
+            query=urlencode({'state':state,'property_id':pid})
+            return {'status':'AUTHORIZATION_REQUIRED','provider':provider,'authorization_url':authorization_base+('&' if '?' in authorization_base else '?')+query,'login_surface':'PROVIDER_HOSTED','credentials_received_by_go':False,'fallback':'DATA_EXPORT'}
+        authorization_evidence=self._verify_provider_authorization(provider,b) if method=='OFFICIAL_AUTHORIZATION' else None
+        package=self._select_import_package(b.get('hotel_package'),b.get('selected_fields'))
+        patch,rooms,media=self._normalize_package(package)
+        self._validate_media_rights(media,b.get('media_rights') or {})
+        request_hash=self._request_hash(b);key=str(idempotency_key or b.get('idempotency_key') or request_hash)
+        if not key or len(key)>160:raise ValueError('INVALID_IDEMPOTENCY_KEY')
+        with SessionLocal() as s:
+            prop=s.scalar(select(HotelPartnerPropertyRow).where(HotelPartnerPropertyRow.property_id==pid,HotelPartnerPropertyRow.supplier_id==supplier_id).with_for_update())
+            if prop is None:raise ValueError('PROPERTY_NOT_FOUND')
+            existing=s.scalar(select(HotelPartnerImportJobRow).where(HotelPartnerImportJobRow.supplier_id==supplier_id,HotelPartnerImportJobRow.property_id==pid,HotelPartnerImportJobRow.idempotency_key==key))
+            if existing:
+                if existing.request_hash!=request_hash:raise ValueError('IDEMPOTENCY_PAYLOAD_MISMATCH')
+                if existing.status=='COMPLETED':return dict(existing.result_json)|{'idempotent_replay':True,'import_job_id':existing.import_job_id}
+                raise ValueError('IMPORT_ALREADY_IN_PROGRESS')
+            room_plan,room_bindings=self._room_import_plan(s,prop,provider,rooms,b.get('room_mappings') if 'room_types' in package else None)
+            authorization=None
+            if method=='OFFICIAL_AUTHORIZATION':
+                state_hash=hashlib.sha256(str(b.get('authorization_state') or '').encode()).hexdigest()
+                authorization=s.scalar(select(HotelPartnerImportAuthorizationRow).where(HotelPartnerImportAuthorizationRow.property_id==pid,HotelPartnerImportAuthorizationRow.supplier_id==supplier_id,HotelPartnerImportAuthorizationRow.provider==provider,HotelPartnerImportAuthorizationRow.state_hash==state_hash))
+                if not authorization or authorization.status!='PENDING':raise ValueError('SUPPLIER_PROVIDER_STATE_INVALID')
+                if not hmac.compare_digest(authorization.state_hash,state_hash):raise ValueError('SUPPLIER_PROVIDER_STATE_INVALID')
+                expires=authorization.expires_at if authorization.expires_at.tzinfo else authorization.expires_at.replace(tzinfo=timezone.utc)
+                if expires<=now():authorization.status='EXPIRED';s.commit();raise ValueError('SUPPLIER_PROVIDER_STATE_EXPIRED')
+                consumed=s.execute(update(HotelPartnerImportAuthorizationRow).where(HotelPartnerImportAuthorizationRow.authorization_id==authorization.authorization_id,HotelPartnerImportAuthorizationRow.status=='PENDING').values(status='CONSUMED',consumed_at=now())).rowcount
+                if consumed!=1:raise ValueError('SUPPLIER_PROVIDER_STATE_ALREADY_USED')
+            t=now();job=HotelPartnerImportJobRow(import_job_id=ident('hpij'),property_id=pid,supplier_id=supplier_id,provider=provider,method=method,idempotency_key=key,request_hash=request_hash,status='PROCESSING',result_json={},error_code=None,created_by=actor,created_at=t,completed_at=None);s.add(job)
+            mapping={'name_zh':'name_zh','name_en':'name_en','property_type':'property_type','group_name':'group_name','brand_name':'brand_name','address':'address_json','contacts':'contacts_json','legal':'legal_json','poi':'poi_json'}
+            for k,v in patch.items():setattr(prop,mapping[k],v)
+            source={'provider':provider,'method':method,'source_kind':'OTA_IMPORT','import_job_id':job.import_job_id,'imported_at':t.isoformat()}
+            ops=dict(prop.operations_json or {});sources=dict(ops.get('import_field_sources') or {})
+            for field in patch:sources[f'hotel.{field}']=dict(source)
+            if rooms:sources['room_types']=dict(source)
+            if media:sources['media']=dict(source)
+            ops['import_field_sources']=sources
+            if media:
+                ops['import_provider']=provider;ops['media_candidates']=media;ops['media_rights']=b['media_rights']
+            prop.version+=1;prop.updated_at=t
+            created=0;updated=0;resolved=[]
+            for room,r,sid in room_plan:
+                if r is None:
+                    r=HotelPartnerRoomTypeRow(room_type_id=ident('room'),property_id=pid,name_zh=room['name_zh'],name_en=room.get('name_en'),sale_unit=room.get('sale_unit','WHOLE_ROOM'),physical_room_count=room['physical_room_count'],occupancy_json=room['occupancy'],bed_configurations_json=room.get('bed_configurations',[]),attributes_json=room.get('attributes',{}),media_json=[],state='ACTIVE',created_at=t,updated_at=t);s.add(r);created+=1
+                else:
+                    fields={'name_zh':'name_zh','name_en':'name_en','sale_unit':'sale_unit','physical_room_count':'physical_room_count','occupancy':'occupancy_json','bed_configurations':'bed_configurations_json'}
+                    for field,column in fields.items():
+                        if field in room:setattr(r,column,room[field])
+                    if 'attributes' in room:
+                        if not isinstance(room['attributes'],dict):raise ValueError('INVALID_ROOM_ATTRIBUTES')
+                        r.attributes_json=dict(r.attributes_json or {})|room['attributes']
+                    r.updated_at=t;updated+=1
+                if sid is not None:
+                    room_bindings[provider][sid]=r.room_type_id
+                    resolved.append({'source_room_id':sid,'target_room_type_id':r.room_type_id})
+            if room_bindings is not None:ops['import_room_bindings']=room_bindings
+            prop.operations_json=ops
+            result={'status':'IMPORTED','property_id':pid,'provider':provider,'method':method,'source_kind':'OTA_IMPORT','room_types_created':created,'room_types_updated':updated,'media_candidates':len(media),'publication_state':prop.publication_state,'mapping':{'hotel_fields':sorted(patch),'room_types':len(rooms),'resolved_rooms':resolved,'cross_batch_room_deduplication':room_bindings is not None,'ignored_unknown_fields':True}}
+            job.status='COMPLETED';job.result_json=result;job.completed_at=t
+            audit_payload={'provider':provider,'method':method,'room_count':len(rooms),'media_count':len(media),'request_hash':request_hash}
+            if authorization_evidence:audit_payload|=authorization_evidence
+            self._audit(s,pid,'HOTEL_LIBRARY_IMPORTED','IMPORT_JOB',job.import_job_id,audit_payload,actor);s.commit()
+            return result|{'import_job_id':job.import_job_id,'idempotent_replay':False}
     def create_property(self,supplier_id,actor,b):
+        operations=b.get('operations') or {}
+        if not isinstance(operations,dict):raise ValueError('PROPERTY_OPERATIONS_INVALID')
+        operation_media=operations.get('media_candidates') or operations.get('media') or []
+        self._validate_media_rights(operation_media,operations.get('media_rights') or b.get('media_rights') or {})
         t=now(); r=HotelPartnerPropertyRow(property_id=ident('prop'),supplier_id=supplier_id,name_zh=b['name_zh'],name_en=b.get('name_en'),property_type=b['property_type'],group_name=b.get('group_name'),brand_name=b.get('brand_name'),address_json=b.get('address',{}),latitude=b.get('latitude'),longitude=b.get('longitude'),contacts_json=b.get('contacts',{}),legal_json=b.get('legal',{}),operations_json=b.get('operations',{}),poi_json=b.get('poi',[]),publication_state='DRAFT',version=1,created_at=t,updated_at=t)
         with SessionLocal() as s:s.add(r);self._audit(s,r.property_id,'PROPERTY_CREATED','PROPERTY',r.property_id,{},actor);s.commit();return out(r)
     def properties(self,supplier_id):
         with SessionLocal() as s:return [out(x) for x in s.scalars(select(HotelPartnerPropertyRow).where(HotelPartnerPropertyRow.supplier_id==supplier_id)).all()]
     def patch_property(self,supplier_id,actor,pid,b):
         risk=set(b)&self.HIGH_RISK
+        operations=b.get('operations') or {}
+        if not isinstance(operations,dict):raise ValueError('PROPERTY_OPERATIONS_INVALID')
+        operation_media=operations.get('media_candidates') or operations.get('media') or []
+        if operation_media:self._validate_media_rights(operation_media,operations.get('media_rights') or b.get('media_rights') or {})
         with SessionLocal() as s:
             r=self._property(s,pid,supplier_id)
             if risk:
@@ -44,9 +274,13 @@ class HotelPartnerCoreService:
     def create_room_type(self,supplier_id,actor,pid,b):
         occ=b['occupancy'];m=int(occ.get('max_occupancy',0));a=int(occ.get('max_adults',0));c=int(occ.get('max_children',0))
         if min(m,a,c)<0 or m==0 or a>m or c>m or a+c<m: raise ValueError('INVALID_OCCUPANCY_CONSTRAINT')
+        self._validate_media_rights(b.get('media') or [],b.get('media_rights') or {})
         with SessionLocal() as s:
             self._property(s,pid,supplier_id);t=now();r=HotelPartnerRoomTypeRow(room_type_id=ident('room'),property_id=pid,name_zh=b['name_zh'],name_en=b.get('name_en'),sale_unit=b.get('sale_unit','WHOLE_ROOM'),physical_room_count=b['physical_room_count'],occupancy_json=occ,bed_configurations_json=b.get('bed_configurations',[]),attributes_json=b.get('attributes',{}),media_json=b.get('media',[]),state='ACTIVE',created_at=t,updated_at=t)
-            s.add(r);self._audit(s,pid,'ROOM_TYPE_CREATED','ROOM_TYPE',r.room_type_id,{},actor);s.commit();return out(r)
+            rights=b.get('media_rights') or {}
+            rights_audit={'media_count':len(b.get('media') or []),'rights_status':rights.get('status'),
+                'rights_evidence_hash':hashlib.sha256(str(rights.get('evidence_reference') or '').encode()).hexdigest() if rights else None}
+            s.add(r);self._audit(s,pid,'ROOM_TYPE_CREATED','ROOM_TYPE',r.room_type_id,rights_audit,actor);s.commit();return out(r)
     def create_product(self,supplier_id,actor,pid,b):
         with SessionLocal() as s:
             self._property(s,pid,supplier_id);rt=s.get(HotelPartnerRoomTypeRow,b['room_type_id'])
@@ -126,12 +360,21 @@ class HotelPartnerCoreService:
             self._property(s,pid,supplier_id)
             def rows(model):return [out(x) for x in s.scalars(select(model).where(model.property_id==pid)).all()]
             return {'product_graph':self.graph(supplier_id,pid),'facility_assignments':rows(HotelPartnerFacilityAssignmentRow),'policies':rows(HotelPartnerPolicyRow),'ari_date_overrides':rows(HotelPartnerAriOverrideRow),'operational_inbox':rows(HotelPartnerOperationalInboxRow),'go_offer_authorities':rows(HotelPartnerGoOfferAuthorityRow),'change_requests':rows(HotelPartnerChangeRequestRow)}
-    def webpage_workspace(self,supplier_id):
+    def webpage_workspace(self,supplier_id,property_id=None):
         with SessionLocal() as s:
-            prop=s.scalar(select(HotelPartnerPropertyRow).where(HotelPartnerPropertyRow.supplier_id==supplier_id).order_by(HotelPartnerPropertyRow.updated_at.desc()))
-            reg=s.scalar(select(HotelRegistrationDirectRow).where(HotelRegistrationDirectRow.supplier_id==supplier_id).order_by(HotelRegistrationDirectRow.created_at.desc()))
+            if property_id:
+                prop=self._property(s,property_id,supplier_id)
+            else:
+                props=s.scalars(select(HotelPartnerPropertyRow).where(HotelPartnerPropertyRow.supplier_id==supplier_id)).all()
+                if len(props)>1:raise ValueError('PROPERTY_SELECTION_REQUIRED')
+                prop=props[0] if props else None
+            # A supplier account can own multiple hotels. A registration belongs
+            # to this property only when its explicit property identity matches.
+            registrations=s.scalars(select(HotelRegistrationDirectRow).where(HotelRegistrationDirectRow.supplier_id==supplier_id).order_by(HotelRegistrationDirectRow.created_at.desc())).all()
+            reg=next((r for r in registrations if prop is not None and
+                (r.official_supplement_json or {}).get('property_id')==prop.property_id),None)
             if not reg:
-                return {'mapped':False,'property':out(prop),'message':'酒店网页尚未与 Canonical Hotel 绑定；酒店资料仍可继续维护。','publication_state':'NOT_MAPPED','page':None}
+                return {'mapped':False,'property':out(prop),'message':'该酒店尚未完成官方网页身份绑定；酒店资料仍可继续维护。','publication_state':'NOT_MAPPED','page':None}
             profile=s.get(HotelCanonicalProfileRow,reg.hotel_id)
             latest=s.scalar(select(HotelAutoPageVersionRow).where(HotelAutoPageVersionRow.hotel_id==reg.hotel_id).order_by(HotelAutoPageVersionRow.version.desc())) if profile else None
             return {'mapped':bool(profile),'property':out(prop),'registration':out(reg),'hotel_id':reg.hotel_id,'profile':out(profile),'publication_state':profile.page_state if profile else 'NOT_MAPPED','go_direct_state':profile.go_direct_state if profile else 'NOT_REGISTERED','page':(latest.page_json if latest else None),'page_version':(latest.version if latest else None),'page_hash':(latest.page_hash if latest else None),'supplier_can_edit_facts':True,'supplier_can_bypass_rights_gate':False}

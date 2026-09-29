@@ -5,7 +5,7 @@ import hashlib
 import json
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, or_, cast, Text, update, false, text
 
 from go_hotel.connectors.payment_sandbox import payment_sandbox_executor
 from go_hotel.db.models import (
@@ -71,14 +71,104 @@ class PaymentSandboxCutoverService:
         return s.scalar(q)
 
     def _events(self, s, channel: str):
-        return s.scalars(
+        candidates = s.scalars(
             select(AuditEventRow)
             .where(
-                AuditEventRow.resource_type == RESOURCE_TYPE,
-                AuditEventRow.resource_id == channel,
+                or_(AuditEventRow.resource_type == RESOURCE_TYPE,
+                    cast(AuditEventRow.roles, Text).contains('"PAYMENT_SANDBOX_CONTROL"')),
             )
             .order_by(AuditEventRow.created_at.asc(), AuditEventRow.audit_id.asc())
         ).all()
+        # Membership cannot rely solely on fields that are themselves being
+        # verified. Recover linked predecessors/successors even if their resource
+        # identity was altered; validation will then reject the damaged record.
+        by_hash = {}
+        by_previous = {}
+        for event in candidates:
+            meta = event.metadata_json if isinstance(event.metadata_json, dict) else {}
+            for index, key in ((by_hash, "entry_hash"), (by_previous, "previous_hash")):
+                value = meta.get(key)
+                if isinstance(value, str):
+                    index.setdefault(value, []).append(event)
+        selected = {}
+        pending = []
+        for event in candidates:
+            meta = event.metadata_json if isinstance(event.metadata_json, dict) else {}
+            state = event.after_state if isinstance(event.after_state, dict) else {}
+            bound_hash = _digest({
+                "channel": channel, "action": event.action, "actor": event.actor_id,
+                "payload": state.get("immutable_payload"),
+                "evidence_reference": meta.get("evidence_reference"),
+                "approval_id": event.approval_id, "previous_hash": meta.get("previous_hash"),
+            })
+            if event.resource_id == channel or meta.get("entry_hash") == bound_hash:
+                pending.append(event)
+        while pending:
+            event = pending.pop()
+            if event.audit_id in selected:
+                continue
+            selected[event.audit_id] = event
+            meta = event.metadata_json if isinstance(event.metadata_json, dict) else {}
+            previous, entry = meta.get("previous_hash"), meta.get("entry_hash")
+            if isinstance(previous, str):
+                pending.extend(by_hash.get(previous, []))
+            if isinstance(entry, str):
+                pending.extend(by_previous.get(entry, []))
+        events = [event for event in candidates if event.audit_id in selected]
+        # Timestamp ties (including a frozen business clock) must not reorder
+        # a valid chain by random audit IDs. Follow the persisted hash links.
+        successors = {}
+        for event in events:
+            meta = event.metadata_json
+            if not isinstance(meta, dict):
+                return events
+            previous = meta.get("previous_hash")
+            if previous is not None and not isinstance(previous, str):
+                return events
+            if previous in successors:
+                return events  # A fork is rejected by content validation below.
+            successors[previous] = event
+        ordered = []
+        previous = None
+        seen = set()
+        while previous in successors:
+            event = successors[previous]
+            if event.audit_id in seen:
+                return events
+            seen.add(event.audit_id)
+            ordered.append(event)
+            previous = event.metadata_json.get("entry_hash")
+            if not isinstance(previous, str):
+                return events
+        return ordered if len(ordered) == len(events) else events
+
+    def _chain_valid(self, events, channel: str) -> bool:
+        previous_hash = None
+        seen_hashes = set()
+        for event in events:
+            meta = event.metadata_json
+            state = event.after_state
+            if not isinstance(meta, dict) or not isinstance(state, dict):
+                return False
+            payload = state.get("immutable_payload")
+            if not isinstance(payload, dict):
+                return False
+            normalized = {
+                "channel": channel, "action": event.action,
+                "actor": event.actor_id, "payload": payload,
+                "evidence_reference": meta.get("evidence_reference"),
+                "approval_id": event.approval_id, "previous_hash": previous_hash,
+            }
+            expected = _digest(normalized)
+            if (event.resource_type != RESOURCE_TYPE or event.resource_id != channel
+                    or meta.get("append_only") is not True
+                    or meta.get("previous_hash") != previous_hash
+                    or meta.get("content_hash") != _digest(payload)
+                    or meta.get("entry_hash") != expected or expected in seen_hashes):
+                return False
+            seen_hashes.add(expected)
+            previous_hash = expected
+        return True
 
     def _append_event(
         self,
@@ -91,7 +181,22 @@ class PaymentSandboxCutoverService:
         evidence_reference: str | None = None,
         approval_id: str | None = None,
     ) -> AuditEventRow:
+        # Serialize every writer before reading the chain tip. PostgreSQL uses
+        # a transaction-scoped channel lock; SQLite takes its database write
+        # lock via a zero-row update. Neither creates a business/audit fact.
+        dialect = s.get_bind().dialect.name
+        if dialect == "postgresql":
+            lock_key = int.from_bytes(hashlib.sha256(
+                (RESOURCE_TYPE + ":" + channel).encode()).digest()[:8], "big", signed=True)
+            s.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": lock_key})
+        elif dialect == "sqlite":
+            s.execute(update(AuditEventRow).where(false()).values(action=AuditEventRow.action)
+                      .execution_options(synchronize_session=False, autoflush=False))
+        else:
+            raise ValueError("PAYMENT_SANDBOX_AUDIT_DATABASE_UNSUPPORTED")
         events = self._events(s, channel)
+        if not self._chain_valid(events, channel):
+            raise ValueError("PAYMENT_SANDBOX_EVIDENCE_CHAIN_INVALID")
         previous_hash = events[-1].metadata_json.get("entry_hash") if events else None
         normalized = {
             "channel": channel,
@@ -109,7 +214,9 @@ class PaymentSandboxCutoverService:
             for event in events:
                 meta = event.metadata_json or {}
                 if meta.get("evidence_reference") == evidence_reference:
-                    if meta.get("content_hash") != content_hash:
+                    if (meta.get("content_hash") != content_hash
+                            or event.action != action or event.actor_id != actor
+                            or event.approval_id != approval_id):
                         raise ValueError("PAYMENT_SANDBOX_EVIDENCE_REFERENCE_CONFLICT")
                     return event
         else:
@@ -185,9 +292,10 @@ class PaymentSandboxCutoverService:
 
     def _latest_control_state(self, s, channel: str) -> dict[str, Any]:
         events = self._events(s, channel)
+        chain_valid = self._chain_valid(events, channel)
         grant = None
         invalidator = None
-        for event in events:
+        for event in events if chain_valid else []:
             if event.action == "PAYMENT_SANDBOX_CERTIFICATION_GRANTED":
                 grant = event
                 invalidator = None
@@ -200,10 +308,14 @@ class PaymentSandboxCutoverService:
         expires_at = None
         if grant:
             raw = (grant.after_state or {}).get("immutable_payload", {}).get("expires_at")
-            if raw:
+            try:
                 expires_at = datetime.fromisoformat(raw)
+                if expires_at.tzinfo is None:
+                    expires_at = None
+            except (ValueError, TypeError):
+                expires_at = None
         expired = bool(expires_at and expires_at <= now())
-        valid = bool(grant and not invalidator and not expired)
+        valid = bool(chain_valid and grant and expires_at and not invalidator and not expired)
         return {
             "grant": grant,
             "invalidator": invalidator,
@@ -211,6 +323,7 @@ class PaymentSandboxCutoverService:
             "expired": expired,
             "valid": valid,
             "events": events,
+            "chain_valid": chain_valid,
         }
 
     def status(self, channel: str = "ALIPAY") -> dict[str, Any]:
@@ -243,7 +356,9 @@ class PaymentSandboxCutoverService:
                 "production_cutover_available": False,
                 "real_money_moved": False,
                 "evidence_chain_length": len(ctl["events"]),
-                "latest_entry_hash": (ctl["events"][-1].metadata_json or {}).get("entry_hash") if ctl["events"] else None,
+                "evidence_chain_valid": ctl["chain_valid"],
+                "latest_entry_hash": (ctl["events"][-1].metadata_json.get("entry_hash")
+                    if ctl["events"] and isinstance(ctl["events"][-1].metadata_json, dict) else None),
             }
 
     def assert_sandbox_execution_allowed(self, channel: str) -> None:
@@ -477,14 +592,10 @@ class PaymentSandboxCutoverService:
         channel = str(channel or "").upper()
         with SessionLocal() as s:
             events = self._events(s, channel)
-            chain_ok = True
-            previous_hash = None
+            chain_ok = self._chain_valid(events, channel)
             rendered = []
             for event in events:
-                meta = event.metadata_json or {}
-                if meta.get("previous_hash") != previous_hash or not meta.get("entry_hash"):
-                    chain_ok = False
-                previous_hash = meta.get("entry_hash")
+                meta = event.metadata_json if isinstance(event.metadata_json, dict) else {}
                 rendered.append({
                     "audit_id": event.audit_id,
                     "action": event.action,

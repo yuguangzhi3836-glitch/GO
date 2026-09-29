@@ -9,7 +9,7 @@ const output=x=>fs.writeSync(1,JSON.stringify(x)+'\n');
 const request=async(path,init={})=>{output({request:{path,method:init.method||'GET',headers:init.headers||{},body:init.body?JSON.parse(init.body):null}});const r=line();if(r.status>=400)throw Object.assign(Error(JSON.stringify(r.body)),{status:r.status,uncertain:r.status>=500});return r.body;};
 try{
  const task=line();let result;
- if(task.action==='create'){const intent=bookingIntent(task.vertical,task.params,task.userId,[task.travelerId],true,true);result=await request(intent.path,intent.init);}
+ if(task.action==='create'){const intent=bookingIntent(task.vertical,task.params,task.userId,[task.travelerId],true,true,task.cancellationAcceptedHash??null);result=await request(intent.path,intent.init);}
  else if(task.action==='credit'){const actions=createStayCreditActions(request),q=await actions.quote(task.orderId);result=await actions.convert(task.orderId,q,true);}
  else{
    const ref=orderRef(task.vertical,task.orderId),actions=createOrderActions(request);

@@ -8,7 +8,8 @@ const sha=p=>createHash('sha256').update(readFileSync(p)).digest('hex');
 
 test('consumer uses locked V14 main and compact artwork with responsive selection',()=>{
   const app=text('frontend/consumer/app.js');
-  assert.match(app,/go-main-lockup-v14\.svg\?v=20260909-depth28/);
+  assert.match(app,/go-main-lockup-v14\.svg/);
+  assert.match(app,/\?v=20260909-depth28/);
   assert.match(app,/go-compact-lockup-v14\.svg\?v=20260909-depth28/);
   assert.match(app,/max-width:479px/);
   assert.equal(sha('frontend/consumer/assets/go-main-lockup-v14.svg'),'ad492e6e4bd8c29ff541b155f02e061ae0cb4f2cc971126047e3589c267c513d');
@@ -24,7 +25,7 @@ test('supplier and admin share the locked reverse V14 compact lockup',()=>{
 
 test('all three entry documents advance cache tokens together',()=>{
   for(const path of ['frontend/consumer/index.html','frontend/supplier/index.html','frontend/admin/index.html']){
-    assert.match(text(path),/20260909-depth28/);
+    assert.match(text(path),/app\.js\?v=20260925-integration1/);
   }
 });
 

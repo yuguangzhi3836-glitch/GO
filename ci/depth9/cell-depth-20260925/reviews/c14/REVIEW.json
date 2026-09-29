@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "reviewer": "C14 independent rules review",
+  "review_type": "READ_ONLY_STATIC_SCOPE",
+  "status": "FINDINGS_AND_ACCEPTANCE_CRITERIA_NOT_FORMAL_PASS",
+  "main_sha": "aa2ec62b68b49679c6d54217c7cb75f63a9c3ef0",
+  "candidate_pr": 246,
+  "candidate_sha": "6acf9fdcde4b208b12a8c9d57ef74497e745faae",
+  "application_tree_from_parent": "9cc68fa3a805f9f0df09b937a7c2df618cf6795f",
+  "bindings": [
+    {
+      "path": "application/src/go_hotel/autonomy/definitions.py",
+      "main_blob_sha": "4bc7bdd8158d7fe2618f41066464766bb4e1eaef",
+      "candidate_blob_sha": "4bc7bdd8158d7fe2618f41066464766bb4e1eaef",
+      "identical": true
+    },
+    {
+      "path": "application/src/go_hotel/autonomy/action_control.py",
+      "main_blob_sha": "0679c035718801c387e6c424426ce3501d4382c6",
+      "candidate_blob_sha": "0679c035718801c387e6c424426ce3501d4382c6",
+      "identical": true
+    },
+    {
+      "path": "application/src/go_hotel/autonomy/release.py",
+      "main_blob_sha": "1d5bb7efd29697c554b878a2777b6e5661b83a5e",
+      "candidate_blob_sha": "1d5bb7efd29697c554b878a2777b6e5661b83a5e",
+      "identical": true
+    },
+    {
+      "path": "application/src/go_hotel/autonomy/operations.py",
+      "main_blob_sha": "fafc2e9391fa280ce42715f2468c27291c336b46",
+      "candidate_blob_sha": "fafc2e9391fa280ce42715f2468c27291c336b46",
+      "identical": true
+    },
+    {
+      "path": "application/src/go_hotel/autonomy/durable.py",
+      "main_blob_sha": "f133f861ebd933c851a16083ae8c47ee88866e67",
+      "candidate_blob_sha": "f133f861ebd933c851a16083ae8c47ee88866e67",
+      "identical": true
+    }
+  ],
+  "external_policy_status": "HOLD_UNTIL_APPROVED_POLICY_AND_CONTRACT_PROVENANCE",
+  "constraints": {
+    "no_product_edits": true,
+    "no_pr247_edits": true,
+    "no_deployment": true,
+    "no_hk_or_eason_access": true,
+    "no_real_supplier_or_psp": true
+  },
+  "findings": [
+    {
+      "id": "C14-OPS-01",
+      "path": "application/src/go_hotel/autonomy/operations.py",
+      "scope": "observation_handlers/application_executor",
+      "finding": "All 14 default operational handlers only observe aggregate state; not development execution or business remediation.",
+      "acceptance": "Keep observation status separate from owned business actions and closure evidence."
+    },
+    {
+      "id": "C14-GOV-02",
+      "path": "application/src/go_hotel/autonomy/definitions.py",
+      "scope": "C12 capabilities",
+      "finding": "Explicit operational scope mapping absent for new preflight/capacity/recovery responsibilities.",
+      "acceptance": "Responsibility implementation belongs to existing #247/Eason line; do not add parallel review system."
+    },
+    {
+      "id": "C14-REL-03",
+      "path": "application/src/go_hotel/autonomy/release.py",
+      "scope": "ReleaseEvidence/authorize_promotion",
+      "finding": "Qualification helper accepts any distinct registered releaser cell, bool flags, nonempty candidate ID, empty evidence list. Not proof of actual deployment bypass.",
+      "acceptance": "Must never substitute for human Command Center deployment authorization; C14 cannot grant deployment."
+    },
+    {
+      "id": "C14-POL-04",
+      "path": "application/src/go_hotel/autonomy/action_control.py",
+      "scope": "LegalPolicyRule/AILegalPolicyRegistry.review",
+      "finding": "Rule object has no approval provenance/version/effective interval/revocation lifecycle; review has no time parameter.",
+      "acceptance": "Unapproved real policy stays HOLD; no invented law or claimed legal completeness. Version/provenance/validity must be enforceable for real operational rules."
+    },
+    {
+      "id": "C14-IND-05",
+      "path": "application/src/go_hotel/autonomy/durable.py",
+      "scope": "_authorize lines 323-334",
+      "finding": "C14_REVIEW is a deterministic gate event attributed to submitter; it is not independent AI reviewer opinion.",
+      "acceptance": "Automated check and independent C14 opinion must not be conflated; implementation on existing owner-aligned review line."
+    }
+  ],
+  "rental_minimum_acceptance": [
+    "Supplier can propose a damage claim with evidence, not unilaterally authorize deduction.",
+    "Evidence binds order, vehicle, pickup/return condition, amount/currency, contract-policy version and provenance; reject missing or mismatched evidence.",
+    "Customer challenge creates/maintains dispute hold; silence, timeout or supplier assertion alone is not acceptance.",
+    "Decision authority is separately authorized and scoped; supplier or claim creator cannot self-adjudicate; cross-tenant actors denied.",
+    "C04 records reasoned case decision and authorized amount only; C11 owns money instructions, execution facts, ledger and refund.",
+    "Payment facts must bind case, decision revision, order, operation key, amount/currency; no amount derived solely from callback assertions.",
+    "Duplicate same command returns prior result; conflicting payload, stale revision, replay and out-of-order completion rejected without double debit/refund.",
+    "Unknown external outcome remains unknown and reconciled; never speculative resend.",
+    "Appeal or reversal creates linked compensating decision; cannot erase old evidence or rewrite booked money truth.",
+    "Before real supplier/PSP integration, tests use synthetic contracts and isolated state; policy absence is explicit external HOLD."
+  ],
+  "tests_executed": [],
+  "limitations": [
+    "Static review only; no claim of runtime heartbeat, C13 PASS or C14 PASS.",
+    "Application tree identity supplied by parent; five file blobs independently fetched and compared.",
+    "#247 LiteV2 alignment reported by parent and not independently inspected in this pass."
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "status": "READ_ONLY_IMPACT_ASSESSMENT_NOT_IMPLEMENTED",
+  "direct_test_file_count": 7,
+  "transitive_test_file_count": 7,
+  "method": "root test modules containing hosted_reservation_operations or configure_aoluguya_legacy_fixture, plus transitive AST from-import test helpers; this is candidate inspection scope, not confirmed failing count",
+  "direct_tests": [
+    "application/tests/test_depth06_direct_checkout.py",
+    "application/tests/test_hosted_content_operations_acceptance.py",
+    "application/tests/test_hosted_direct_inventory_matrix.py",
+    "application/tests/test_hosted_direct_reservation_operations.py",
+    "application/tests/test_hosted_frontdesk_uat_daily_close.py",
+    "application/tests/test_master03_inventory_security.py",
+    "application/tests/test_rc15_aoluguya_supply_truth.py"
+  ],
+  "transitive_tests": [
+    "application/tests/test_depth06_direct_checkout.py",
+    "application/tests/test_hosted_content_operations_acceptance.py",
+    "application/tests/test_hosted_direct_inventory_matrix.py",
+    "application/tests/test_hosted_direct_reservation_operations.py",
+    "application/tests/test_hosted_frontdesk_uat_daily_close.py",
+    "application/tests/test_master03_inventory_security.py",
+    "application/tests/test_rc15_aoluguya_supply_truth.py"
+  ],
+  "read_source_hashes": [
+    {
+      "path": "application/src/go_hotel/services/hotel_partner_core.py",
+      "sha256": "04504f8253ff9b2ae75a017a9305dfea0ab26fe9791573fe1e9e6aa18d2dbc0b"
+    },
+    {
+      "path": "application/src/go_hotel/services/hosted_reservation_operations.py",
+      "sha256": "ae66ff2c25a100c6c2e9d92525be318d01f643c23d86bbde52219b8ac4560a0a"
+    },
+    {
+      "path": "application/src/go_hotel/services/hosted_fare_change.py",
+      "sha256": "1967419f09782ee95bf82a660cc9e584c79bb5ba3b85800dd4586de6ab7757b1"
+    },
+    {
+      "path": "application/src/go_hotel/services/hosted_stay_credit.py",
+      "sha256": "d656fc60b833f2d86081f64cf8f1e8993cf1b57d4957fa31caaf74cb7b1fbb08"
+    },
+    {
+      "path": "application/src/go_hotel/services/hosted_content_acceptance.py",
+      "sha256": "55c3e08c1eccefc945f77a143a9c454e9bcaee78de54a81dcb8a8cb4da04615e"
+    },
+    {
+      "path": "application/src/go_hotel/services/hosted_direct_booking.py",
+      "sha256": "ac3f1fd48362ec65add58b19a4998357989369932c7e463919d9acfe2b3ecbd8"
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/hosted_direct_booking.py",
+      "sha256": "c9b595924c927874ff3711f3701873c99aae3e1f407c9c41bca3663e0c2aff98"
+    },
+    {
+      "path": "application/src/go_hotel/db/models.py",
+      "sha256": "97bb7e954a74460d88457bc0755e2e33789fc67f1dfe9ab79105cac08c27781c"
+    }
+  ],
+  "proposed_new_tests": [
+    "test_c01_hosted_occupancy_policy.py",
+    "test_c01_hosted_occupancy_ingress.py",
+    "test_c01_hosted_occupancy_concurrency_pg.py",
+    "tests_frontend/hosted_occupancy_policy.test.mjs"
+  ],
+  "migration_constraints": [
+    "Explicit engineer fixture authority and physical room binding, no autouse source approval",
+    "Keep existing money/inventory/permission assertions",
+    "Fix historical date fixtures with explicit test clock rather than loosening date checks",
+    "Do not give legacy real orders new synthetic consent or capacity facts"
+  ],
+  "broader_caller_test_file_count": 23,
+  "broader_caller_tests": [
+    "application/tests/test_alipay_safeguarded_settlement_activation.py",
+    "application/tests/test_aoluguya_staging_bootstrap_cycle.py",
+    "application/tests/test_c01_hosted_fare_value_integrity.py",
+    "application/tests/test_depth06_direct_checkout.py",
+    "application/tests/test_depth08_hosted_change.py",
+    "application/tests/test_depth08_hosted_fare.py",
+    "application/tests/test_depth09_credit_boundaries.py",
+    "application/tests/test_depth09_migration.py",
+    "application/tests/test_depth09_stay_credit.py",
+    "application/tests/test_depth10_migration.py",
+    "application/tests/test_depth45_hotel_free_change.py",
+    "application/tests/test_depth47_credit_original_deadline.py",
+    "application/tests/test_depth48_hosted_forfeiture.py",
+    "application/tests/test_first_go_hosted_direct_booking_pilot.py",
+    "application/tests/test_guest_stay_fulfillment_settlement_eligibility.py",
+    "application/tests/test_hosted_content_operations_acceptance.py",
+    "application/tests/test_hosted_direct_inventory_matrix.py",
+    "application/tests/test_hosted_direct_reservation_operations.py",
+    "application/tests/test_hosted_frontdesk_uat_daily_close.py",
+    "application/tests/test_hotel_cancellation_clock.py",
+    "application/tests/test_master03_inventory_security.py",
+    "application/tests/test_post_stay_dispute_refund_reconciliation.py",
+    "application/tests/test_rc15_aoluguya_supply_truth.py"
+  ],
+  "broader_scope_note": "Imported affected hosted modules, not failing count; fixture/test-helper dynamic imports can add more during implementation."
+}

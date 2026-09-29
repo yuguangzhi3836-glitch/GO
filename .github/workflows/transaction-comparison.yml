@@ -1,0 +1,58 @@
+name: Same-runner transaction ABBA comparison
+on:
+  pull_request:
+    paths:
+      - 'ci/transaction_comparison.py'
+      - '.github/workflows/transaction-comparison.yml'
+permissions:
+  contents: read
+concurrency:
+  # Preserve the pinned four-round experiment when a follow-up repair is pushed.
+  # Later unchanged experiment definitions still skip through the guard below.
+  group: transaction-comparison-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: true
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_multi_only
+          POSTGRES_DB: go_c11_isolated
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U go_ci -d go_c11_isolated" --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      GO_MULTI_DATABASE_URL: postgresql+psycopg://go_ci:isolated_multi_only@127.0.0.1:5432/go_c11_isolated
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Run frozen comparison only when its experiment definition changes
+        id: change
+        run: |
+          if git diff --quiet HEAD^ HEAD -- ci/transaction_comparison.py; then
+            echo 'run=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@v5
+        if: steps.change.outputs.run == 'true'
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e './application[dev]'
+        if: steps.change.outputs.run == 'true'
+      - name: Baseline-candidate-candidate-baseline; identical harness, no profiler
+        if: steps.change.outputs.run == 'true'
+        run: python ci/transaction_comparison.py
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.change.outputs.run == 'true'
+        with:
+          name: transaction-comparison-${{ github.event.pull_request.head.sha }}
+          path: transaction-comparison-evidence/
+          retention-days: 30

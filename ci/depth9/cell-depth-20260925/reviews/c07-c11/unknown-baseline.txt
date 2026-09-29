@@ -1,0 +1,149 @@
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+_____ test_unknown_external_state_does_not_assert_payment_success[FLIGHT] ______
+
+vertical = 'FLIGHT'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT', 'RAIL', 'HOTEL', 'RIDE', 'RENTAL', 'ATTRACTION'])
+    def test_unknown_external_state_does_not_assert_payment_success(vertical):
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='unknown-order', supplier_id=None)
+        with SessionLocal() as session:
+            projected = project_vertical_lifecycle(session, vertical, order, 'recovery://unknown')
+            session.commit()
+        item = svc.detail('owner', projected['consumer_unified_lifecycle_id'])['item']
+        assert item['lifecycle_state'] == 'UNKNOWN_EXTERNAL_STATE'
+>       assert item['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:19: AssertionError
+______ test_unknown_external_state_does_not_assert_payment_success[RAIL] _______
+
+vertical = 'RAIL'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT', 'RAIL', 'HOTEL', 'RIDE', 'RENTAL', 'ATTRACTION'])
+    def test_unknown_external_state_does_not_assert_payment_success(vertical):
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='unknown-order', supplier_id=None)
+        with SessionLocal() as session:
+            projected = project_vertical_lifecycle(session, vertical, order, 'recovery://unknown')
+            session.commit()
+        item = svc.detail('owner', projected['consumer_unified_lifecycle_id'])['item']
+        assert item['lifecycle_state'] == 'UNKNOWN_EXTERNAL_STATE'
+>       assert item['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:19: AssertionError
+______ test_unknown_external_state_does_not_assert_payment_success[HOTEL] ______
+
+vertical = 'HOTEL'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT', 'RAIL', 'HOTEL', 'RIDE', 'RENTAL', 'ATTRACTION'])
+    def test_unknown_external_state_does_not_assert_payment_success(vertical):
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='unknown-order', supplier_id=None)
+        with SessionLocal() as session:
+            projected = project_vertical_lifecycle(session, vertical, order, 'recovery://unknown')
+            session.commit()
+        item = svc.detail('owner', projected['consumer_unified_lifecycle_id'])['item']
+        assert item['lifecycle_state'] == 'UNKNOWN_EXTERNAL_STATE'
+>       assert item['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:19: AssertionError
+______ test_unknown_external_state_does_not_assert_payment_success[RIDE] _______
+
+vertical = 'RIDE'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT', 'RAIL', 'HOTEL', 'RIDE', 'RENTAL', 'ATTRACTION'])
+    def test_unknown_external_state_does_not_assert_payment_success(vertical):
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='unknown-order', supplier_id=None)
+        with SessionLocal() as session:
+            projected = project_vertical_lifecycle(session, vertical, order, 'recovery://unknown')
+            session.commit()
+        item = svc.detail('owner', projected['consumer_unified_lifecycle_id'])['item']
+        assert item['lifecycle_state'] == 'UNKNOWN_EXTERNAL_STATE'
+>       assert item['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:19: AssertionError
+_____ test_unknown_external_state_does_not_assert_payment_success[RENTAL] ______
+
+vertical = 'RENTAL'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT', 'RAIL', 'HOTEL', 'RIDE', 'RENTAL', 'ATTRACTION'])
+    def test_unknown_external_state_does_not_assert_payment_success(vertical):
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='unknown-order', supplier_id=None)
+        with SessionLocal() as session:
+            projected = project_vertical_lifecycle(session, vertical, order, 'recovery://unknown')
+            session.commit()
+        item = svc.detail('owner', projected['consumer_unified_lifecycle_id'])['item']
+        assert item['lifecycle_state'] == 'UNKNOWN_EXTERNAL_STATE'
+>       assert item['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:19: AssertionError
+___ test_unknown_external_state_does_not_assert_payment_success[ATTRACTION] ____
+
+vertical = 'ATTRACTION'
+
+    @pytest.mark.parametrize('vertical', ['FLIGHT', 'RAIL', 'HOTEL', 'RIDE', 'RENTAL', 'ATTRACTION'])
+    def test_unknown_external_state_does_not_assert_payment_success(vertical):
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='unknown-order', supplier_id=None)
+        with SessionLocal() as session:
+            projected = project_vertical_lifecycle(session, vertical, order, 'recovery://unknown')
+            session.commit()
+        item = svc.detail('owner', projected['consumer_unified_lifecycle_id'])['item']
+        assert item['lifecycle_state'] == 'UNKNOWN_EXTERNAL_STATE'
+>       assert item['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:19: AssertionError
+___ test_unknown_can_recover_to_confirmed_on_later_authoritative_projection ____
+
+    def test_unknown_can_recover_to_confirmed_on_later_authoritative_projection():
+        order = SimpleNamespace(status='UNKNOWN_EXTERNAL_STATE', account_id='owner',
+                                order_id='recovering-order', supplier_id=None)
+        with SessionLocal() as session:
+            first = project_vertical_lifecycle(session, 'FLIGHT', order, 'recovery://unknown')
+            session.commit()
+            order.status = 'TICKETED'
+            second = project_vertical_lifecycle(session, 'FLIGHT', order, 'supplier://ticketed')
+            session.commit()
+>       assert first['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_unknown_payment_projection.py:32: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_c10_unknown_payment_projection.py::test_unknown_external_state_does_not_assert_payment_success[FLIGHT]
+FAILED tests/test_c10_unknown_payment_projection.py::test_unknown_external_state_does_not_assert_payment_success[RAIL]
+FAILED tests/test_c10_unknown_payment_projection.py::test_unknown_external_state_does_not_assert_payment_success[HOTEL]
+FAILED tests/test_c10_unknown_payment_projection.py::test_unknown_external_state_does_not_assert_payment_success[RIDE]
+FAILED tests/test_c10_unknown_payment_projection.py::test_unknown_external_state_does_not_assert_payment_success[RENTAL]
+FAILED tests/test_c10_unknown_payment_projection.py::test_unknown_external_state_does_not_assert_payment_success[ATTRACTION]
+FAILED tests/test_c10_unknown_payment_projection.py::test_unknown_can_recover_to_confirmed_on_later_authoritative_projection
+7 failed in 3.49s

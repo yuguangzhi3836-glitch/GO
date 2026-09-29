@@ -1,0 +1,15 @@
+{
+  "scope": "Retrieved historical user-message excerpts; tool retrieval is not new hotel authority",
+  "confirmed": [
+    {
+      "author_role": "tool",
+      "content": "[convo search]\n- [USER_CONSTRAINT] [c0] U@2026-08-18T01:01:34Z, +1mo: “每个房型50间，单个房型（好几个子房型，无早、单早、双早之间共享库存）；0451-88800808;14:00-次日12:00”\n- [USER_CONSTRAINT] [c0] U@2026-08-18T01:05:40Z, +1mo: “30分钟内免费取消；可以作为前台及预订电话”\n- [USER_CONSTRAINT] [c0] U@2026-08-18T01:06:56Z, +1mo: “圆梦双床与大床同价”；原始价格确认链：圆梦大床/双床无早698、单早798、双早898（每房型50间共享池）；另用户确认“是：枕月大床房、枕月双床房为两个独立物理房型，分别各50间库存” U@2026-08-18T01:08:20Z, +1mo"
+    }
+  ],
+  "anchor_ambiguity": [
+    {
+      "author_role": "tool",
+      "content": "[convo search]\n- [USER_CONSTRAINT] [c0] U@2026-08-18T01:05:40Z, -39d: 用户原话仅为“30分钟内免费取消”；未写起算点；同句确认 `0451-88800808` 可作前台及预订电话。\n- [PRIOR_ASSISTANT_OUTPUT] [c0] A@2026-08-18T01:05:52Z, -39d: 助手明确锁定为“酒店确认订单后30分钟内可免费取消”。\n- [PRIOR_ASSISTANT_OUTPUT] [c0] A@2026-08-18T01:06:56Z, -39d: 后续再次表述为“酒店确认后30分钟内免费取消”。\n\n- [USER_FACT] [c1] U@2026-08-19T03:03:45Z, -1mo: 用户明确采纳并给出规则：消费者付款后，资金在履约/取消规则满足前不结算至酒店；结算前取消由支付机构直接原路退款；履约条件满足后才结算至酒店。\n- [PRIOR_ASSISTANT_OUTPUT] [c1] A@2026-08-19T03:01:08Z, -1mo: 助手将免费取消截止后作为建议的酒店结算节点之一，但未给出“30分钟”起算事件，不能据此确认起点。\n- [PRIOR_ASSISTANT_OUTPUT] [c1] A@2026-08-19T03:03:48Z, -1mo: 已明确规则仅涉及结算前退款和酒店结算条件；未明确“酒店确认后、下单后或支付后”哪一事件开始30分钟。\n\n- [USER_CONSTRAINT] [c2] U@2026-08-18T01:05:40Z, -39d: “30分钟内免费取消；可以作为前台及预订电话”——原话未写30分钟起算事件。"
+    }
+  ]
+}

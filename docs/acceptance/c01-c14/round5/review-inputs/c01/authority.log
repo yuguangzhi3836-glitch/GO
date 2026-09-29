@@ -1,0 +1,174 @@
+.EEEEEEEEEEEEEEEEEEE.....                                                [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_isolated_success_binds_snapshot_actor_and_role_not_caller_label _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_ ERROR at setup of test_service_rechecks_persistent_identity_and_session[readonly] _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_ ERROR at setup of test_service_rechecks_persistent_identity_and_session[disabled] _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_ ERROR at setup of test_service_rechecks_persistent_identity_and_session[session] _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_ ERROR at setup of test_service_rechecks_persistent_identity_and_session[forged] _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_____ ERROR at setup of test_unbound_wrong_hotel_and_maker_cannot_approve ______
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_ ERROR at setup of test_no_public_assign_role_can_self_grant_reserved_binding _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_ ERROR at setup of test_missing_real_authority_and_nonisolated_environment_hold[disabled_flag] _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_ ERROR at setup of test_missing_real_authority_and_nonisolated_environment_hold[production] _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_ ERROR at setup of test_missing_real_authority_and_nonisolated_environment_hold[wrong_source] _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_ ERROR at setup of test_latest_reject_blocks_prior_approve_even_at_same_clock _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_ ERROR at setup of test_gate_does_not_reanimate_old_approval[binding_replaced] _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_ ERROR at setup of test_gate_does_not_reanimate_old_approval[binding_revoked] _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_ ERROR at setup of test_gate_does_not_reanimate_old_approval[snapshot_rehashed] _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+__ ERROR at setup of test_gate_does_not_reanimate_old_approval[actor_revoked] __
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+__ ERROR at setup of test_old_snapshot_wrong_hash_and_changed_source_rejected __
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+__ ERROR at setup of test_legacy_snapshot_and_weak_approval_are_not_upgraded ___
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+_ ERROR at setup of test_session_expiry_does_not_retroactively_revoke_valid_approval _
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+________ ERROR at setup of test_concurrent_snapshot_versions_are_unique ________
+tests/test_c01_hosted_content_authority.py:47: in context
+    hotel=booking.create_hotel({'supplier_name':'Isolated hotel','page_slug':'isolated-content'},'fixture')['hosted_hotel_id']
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/hosted_direct_booking.py:15: in create_hotel
+    if b.get('supplier_name')!='哈尔滨敖麓谷雅酒店':raise ValueError('FIRST_PILOT_SUPPLIER_LOCKED')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ValueError: FIRST_PILOT_SUPPLIER_LOCKED
+=========================== short test summary info ============================
+ERROR tests/test_c01_hosted_content_authority.py::test_isolated_success_binds_snapshot_actor_and_role_not_caller_label
+ERROR tests/test_c01_hosted_content_authority.py::test_service_rechecks_persistent_identity_and_session[readonly]
+ERROR tests/test_c01_hosted_content_authority.py::test_service_rechecks_persistent_identity_and_session[disabled]
+ERROR tests/test_c01_hosted_content_authority.py::test_service_rechecks_persistent_identity_and_session[session]
+ERROR tests/test_c01_hosted_content_authority.py::test_service_rechecks_persistent_identity_and_session[forged]
+ERROR tests/test_c01_hosted_content_authority.py::test_unbound_wrong_hotel_and_maker_cannot_approve
+ERROR tests/test_c01_hosted_content_authority.py::test_no_public_assign_role_can_self_grant_reserved_binding
+ERROR tests/test_c01_hosted_content_authority.py::test_missing_real_authority_and_nonisolated_environment_hold[disabled_flag]
+ERROR tests/test_c01_hosted_content_authority.py::test_missing_real_authority_and_nonisolated_environment_hold[production]
+ERROR tests/test_c01_hosted_content_authority.py::test_missing_real_authority_and_nonisolated_environment_hold[wrong_source]
+ERROR tests/test_c01_hosted_content_authority.py::test_latest_reject_blocks_prior_approve_even_at_same_clock
+ERROR tests/test_c01_hosted_content_authority.py::test_gate_does_not_reanimate_old_approval[binding_replaced]
+ERROR tests/test_c01_hosted_content_authority.py::test_gate_does_not_reanimate_old_approval[binding_revoked]
+ERROR tests/test_c01_hosted_content_authority.py::test_gate_does_not_reanimate_old_approval[snapshot_rehashed]
+ERROR tests/test_c01_hosted_content_authority.py::test_gate_does_not_reanimate_old_approval[actor_revoked]
+ERROR tests/test_c01_hosted_content_authority.py::test_old_snapshot_wrong_hash_and_changed_source_rejected
+ERROR tests/test_c01_hosted_content_authority.py::test_legacy_snapshot_and_weak_approval_are_not_upgraded
+ERROR tests/test_c01_hosted_content_authority.py::test_session_expiry_does_not_retroactively_revoke_valid_approval
+ERROR tests/test_c01_hosted_content_authority.py::test_concurrent_snapshot_versions_are_unique

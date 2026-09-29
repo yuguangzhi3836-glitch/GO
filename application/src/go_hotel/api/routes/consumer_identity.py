@@ -1,11 +1,15 @@
 from __future__ import annotations
+from go_hotel.services import registration_privacy
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, Header
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+import re
 from sqlalchemy import select
 from go_hotel.core.config import settings
+from go_hotel.services import registration_verification as registration_verification_service
 from go_hotel.security.service import identity_service, Principal
 from go_hotel.security.deps import consumer_principal, assert_consumer_order
 from go_hotel.consumer.service import consumer_service
+from go_hotel.services import registration_terms as registration_terms_service
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import OrderRow, AuditEventRow
 from go_hotel.services.booking import booking_service
@@ -18,12 +22,26 @@ from datetime import datetime, timezone
 router=APIRouter(tags=["sprint1y-consumer-identity"])
 CONSUMER_REGISTRATION_TERMS={"consumer_service_terms":"2026-08-25-v1","privacy_policy":"2026-08-25-v1","personal_vault_terms":"2026-08-25-v1"}
 class RegisterBody(BaseModel):
-    email:str
-    password:str=Field(min_length=10)
-    display_name:str|None=None
-    phone:str|None=None
-    accepted_terms:bool|None=None
-    term_versions:dict[str,str]|None=None
+    model_config = ConfigDict(extra="forbid")
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=10, max_length=128)
+    display_name: str | None = Field(default=None, max_length=100)
+    phone: str | None = Field(default=None, max_length=32)
+    accepted_terms: bool = Field(strict=True)
+    term_versions: dict[str, str]
+    term_hashes: dict[str, str] = Field(default_factory=dict)
+    registration_decisions: dict[str, str] = Field(default_factory=dict)
+    challenge_id: str = Field(default="", max_length=64)
+    verification_code: str = Field(default="", max_length=6)
+
+    @field_validator("email")
+    @classmethod
+    def valid_email(cls, value):
+        value = value.strip().lower()
+        if not re.fullmatch(r"[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+", value):
+            raise ValueError("INVALID_EMAIL")
+        return value
+
 class LoginBody(BaseModel): email:str; password:str
 class TravelerBody(BaseModel):
     full_name:str; date_of_birth:str|None=None; nationality:str|None=None; document_type:str|None=None; document_number:str|None=None; is_primary:bool=False
@@ -44,17 +62,36 @@ def _set(response,t):
 def _clear(response):
     for n in [settings.consumer_access_cookie_name,settings.consumer_refresh_cookie_name,settings.consumer_csrf_cookie_name]: response.delete_cookie(n,path="/",domain=settings.cookie_domain)
 
+@router.get("/v1/consumer/auth/registration")
+def registration_options():
+    try:
+        policy = registration_terms_service.registration_terms_status("consumer")
+    except (ValueError, OSError, KeyError) as exc:
+        raise HTTPException(503, detail="REGISTRATION_TERMS_UNAVAILABLE") from exc
+    verification_ready = registration_verification_service.ready()
+    return {"data": {**policy, "enabled": bool(policy["acceptance_enabled"] and verification_ready), "coverage": "CN_NATIONWIDE", "method": "EMAIL_PASSWORD", "terms": policy["versions"], "phone_verified": False, "release_gate": {"registration_verification": {"required": True, "implemented": verification_ready, "status": "READY" if verification_ready else "BLOCKED", "reason": None if verification_ready else "LIVE_EMAIL_OR_PHONE_VERIFICATION_EVIDENCE_REQUIRED"}, "candidate_runtime": {"required": True, "status": "BLOCKED", "reason": "SIGNED_HK_STAGING_TEST_PR_EVIDENCE_REQUIRED"}, "page_acceptance": {"required": True, "status": "BLOCKED", "reason": "EXACT_CANDIDATE_C_B_MOBILE_ACCEPTANCE_REQUIRED"}}}}
+
 @router.post("/v1/consumer/auth/register")
 def register(body:RegisterBody,request:Request,response:Response):
     try:
-        if body.accepted_terms is True and body.term_versions and any(body.term_versions.get(k)!=v for k,v in CONSUMER_REGISTRATION_TERMS.items()):
+        if body.accepted_terms is not True:
+            raise HTTPException(422, detail="CONSUMER_TERMS_ACCEPTANCE_REQUIRED")
+        try:
+            policy = registration_terms_service.require_registration_terms_ready("consumer")
+        except (ValueError, OSError, KeyError) as exc:
+            raise HTTPException(503, detail="REGISTRATION_TERMS_NOT_READY") from exc
+        if not registration_verification_service.ready():
+            raise HTTPException(503, detail="REGISTRATION_VERIFICATION_NOT_READY")
+        if body.term_versions != policy["versions"]:
             raise HTTPException(409,detail="CONSUMER_TERMS_VERSION_MISMATCH")
-        profile=consumer_service.register(body.email,body.password,body.display_name,body.phone)
-        if body.accepted_terms is True:
-            with SessionLocal() as s:
-                s.add(AuditEventRow(audit_id=new_id("aud"),actor_id=profile["user_id"],actor_type="CONSUMER",supplier_id=None,roles=["CONSUMER"],session_id=None,action="CONSUMER_REGISTRATION_TERMS_ACCEPTED",resource_type="CONSUMER_REGISTRATION",resource_id=profile["user_id"],request_id=getattr(request.state,"request_id",None),client_ip=request.client.host if request.client else None,http_method="POST",path="/v1/consumer/auth/register",before_state=None,after_state={"registration_state":"ACCOUNT_CREATED"},decision_id=None,evidence_id=None,approval_id=None,metadata_json={"term_versions":CONSUMER_REGISTRATION_TERMS,"accepted_once":True,"personal_vault_opt_in":False},created_at=datetime.now(timezone.utc)));s.commit()
+        if body.term_hashes != policy["term_hashes"]:
+            raise HTTPException(409,detail="CONSUMER_TERMS_CONTENT_MISMATCH")
+        registration_privacy.validate_decisions(policy,body.registration_decisions)
+        proof = registration_verification_service.check("consumer", body.email, body.challenge_id, body.verification_code, policy)
+        proof.update(audience="consumer",policy=policy,registration_decisions=body.registration_decisions)
+        profile=consumer_service.register(body.email,body.password,body.display_name,body.phone,verification_proof=proof,registration_audit={"request_id":getattr(request.state,"request_id",None),"client_ip":request.client.host if request.client else None,"term_versions":policy["versions"],"term_hashes":policy["term_hashes"]})
         t=consumer_service.login(body.email,body.password,request.client.host if request.client else None,request.headers.get("user-agent")); _set(response,t)
-        return {"data":{"authenticated":True,"profile":profile,"terms":CONSUMER_REGISTRATION_TERMS}}
+        return {"data":{"authenticated":True,"profile":profile,"terms":policy["versions"],"term_hashes":policy["term_hashes"]}}
     except ValueError as e: raise HTTPException(409,detail=str(e))
 
 @router.post("/v1/consumer/auth/login")

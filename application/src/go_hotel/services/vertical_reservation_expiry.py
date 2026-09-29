@@ -83,13 +83,18 @@ def payment_started_in(s, vertical, order_id):
         finish_in(s, row, 'PAYMENT_STARTED', 'PAYMENT_INTENT_COMMITTED')
 
 
+def guard_checkout_payment_in(s, vertical, order, account_id):
+    """Caller holds the native order lock; reuse its transaction and connection."""
+    if not order or order.account_id != account_id: raise ValueError('MOBILITY_ORDER_NOT_FOUND')
+    if order.status != 'PAYMENT_PENDING': raise ValueError('MOBILITY_ORDER_NOT_PAYABLE')
+    guard_payment_in(s, vertical, order)
+
+
 def guard_checkout_payment(vertical, order_id, account_id):
     if vertical not in {'RIDE','RENTAL'}: return
     with transaction(SessionLocal) as s:
         order = s.get(MODELS[vertical], order_id, with_for_update=True)
-        if not order or order.account_id != account_id: raise ValueError('MOBILITY_ORDER_NOT_FOUND')
-        if order.status != 'PAYMENT_PENDING': raise ValueError('MOBILITY_ORDER_NOT_PAYABLE')
-        guard_payment_in(s, vertical, order)
+        guard_checkout_payment_in(s, vertical, order, account_id)
 
 
 def payment_started(vertical, order_id, account_id):

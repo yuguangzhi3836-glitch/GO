@@ -1,0 +1,96 @@
+{
+  "review": "Round4 post-settlement rental appeal decrease compensation design",
+  "baseline_head": "cb8928f2ce915825f7c95321a0fc26ed0b5530e6",
+  "status": "DESIGN_CONSTRAINTS_PENDING_FROZEN_IMPLEMENTATION",
+  "scope": "Isolated engineering only; no real PSP/commercial fee/legal policy change",
+  "constraints": [
+    {
+      "id": "R4-01",
+      "title": "当前独立申诉决定来源",
+      "criterion": "C04返回原义务/合同hash、owner、case最新version/decision hash、独立reviewer、目标保留额及isolated来源；旧/held/无历史lineage拒绝。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    },
+    {
+      "id": "R4-02",
+      "title": "非客户端金额授权",
+      "criterion": "C11以当前C04决定与原root/capture决定差额；客户端只能传引用版本/摘要，无金额、payee、币种覆盖。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    },
+    {
+      "id": "R4-03",
+      "title": "仅减收不追收",
+      "criterion": "目标高于当前净收HOLD；等于净收返回只读no-op，不建零movement；更高决定不得回收已返补偿或新扣款。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    },
+    {
+      "id": "R4-04",
+      "title": "净收预算",
+      "criterion": "净收=原已确认capture−该capture已确认refund/compensation；多个申诉按当前净额，不能按原capture重复退。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    },
+    {
+      "id": "R4-05",
+      "title": "原资金图不改",
+      "criterion": "追加COMPENSATION/REFUND引用原capture并归同deposit root；原capture/release及accepted合同不改。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    },
+    {
+      "id": "R4-06",
+      "title": "账项严格反向",
+      "criterion": "新增反向分录对应原capture账户、币种和方向并同事务；legacy完整BUSINESS账户需匹配原账冲销，或受权治理前明确HOLD，不能误用RD账户冒充冲销。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    },
+    {
+      "id": "R4-07",
+      "title": "授权余额不复活",
+      "criterion": "补偿不增加remaining authorization；展示原扣款、累计补偿、净收、已释放分别计算，不让退款再次可扣。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    },
+    {
+      "id": "R4-08",
+      "title": "UNKNOWN不造可信回执",
+      "criterion": "存在未确认movement、独立receipt缺失、orphan或账图损坏时HOLD；新补偿不是修复原UNKNOWN的手段。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    },
+    {
+      "id": "R4-09",
+      "title": "当前版本和并发",
+      "criterion": "同order锁下重验source/case/graph；review→execute变更拒绝；同决定重复仅一次资金，旧决定不能在新申诉后补执行。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    },
+    {
+      "id": "R4-10",
+      "title": "幂等不冲淡权限",
+      "criterion": "相同业务决定key绑定原capture+case/version/hash；不同参数冲突。Generic money入口仍须本域verified scope，不凭幂等历史绕过新动作许可。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    },
+    {
+      "id": "R4-11",
+      "title": "原子恢复",
+      "criterion": "money movement/反向ledger/决定执行绑定同事务；故障/重启不留半确认或重复补偿。PG约束与锁需真实隔离PG举证。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    },
+    {
+      "id": "R4-12",
+      "title": "可用界面真实状态",
+      "criterion": "有权admin显式确认服务端只读差额，owner读真实money结果；丢回执先权威读回，未知不报已退，补偿完成不自动声称真实银行到账。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    },
+    {
+      "id": "R4-13",
+      "title": "独立权限维持",
+      "criterion": "供应商/owner/原裁决者不能自行产生所需独立申诉批准；C14/C13意见与admin按钮不替代来源及资金执行授权。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    },
+    {
+      "id": "R4-14",
+      "title": "既有来源过期处理",
+      "criterion": "已确认原capture的减收返还可以按明确安全释放规则处理已过期fixture，但不得因此允许新授权/正向扣款/复活撤销来源；历史合同绑定完整保留。",
+      "status": "PENDING_SOURCE_AND_EVIDENCE"
+    }
+  ],
+  "rule": "These are scoped required checks linked to existing frozen obligations, not an unapproved replacement or denominator change of v1.1 305/1009.",
+  "source_observation": "Existing rental_deposit_money._graph supports only AUTHORIZATION/CAPTURE/RELEASE and legacy capture-account read compatibility; unified_money_movement supports bounded cumulative refunds/compensation. New graph/UI must preserve source and account truth while extending this mechanism.",
+  "unknown_recovery": "HOLD until independent trusted receipt source exists; never convert unknown to success by synthetic compensation.",
+  "independence": "C14 read-only source/rules reviewer; C13 independent quality; final human deployment and C12 HK preflight roles unchanged."
+}

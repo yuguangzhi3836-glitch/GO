@@ -1,4 +1,5 @@
 """C07 preferences: owner intent, durable consent, purpose isolation and withdrawal."""
+from registration_terms_test_support import register_synthetic_consumer
 from datetime import datetime, timedelta, timezone
 import json
 
@@ -91,13 +92,26 @@ def test_no_implicit_promotion_and_graph_scopes_are_independent():
     assert graph["identity"] == {}
     with SessionLocal() as s:
         assert not list(s.scalars(select(ProfileFactRow)))
-    consent(consent_type="TRAVELER_CONTEXT",scope=["TRAVELER_IDENTITY","TRAVEL_INTENTS"])
+    consent(consent_type="TRAVELER_CONTEXT",scope=["TRAVELER_IDENTITY","TRAVEL_INTENTS","TRAVEL_PREFERENCES"])
     graph=svc.traveler_graph("traveler",purpose=PURPOSE)
     assert graph["identity"]["nationality"] == "CHN"
     assert len(graph["recent_intents"]) == 1
     assert graph["durable_preferences"] == []
     saved=save(cid)
     assert svc.traveler_graph("traveler",purpose=PURPOSE)["durable_preferences"] == [saved]
+
+
+def test_graph_requires_preference_context_for_same_purpose_journey():
+    traveler(); saved=save(consent())
+    # The explicit-preference grant authorizes the dedicated projection only.
+    # It cannot silently broaden a traveler-context graph for this journey.
+    assert read()["preferences"] == [saved]
+    assert svc.traveler_graph("traveler",purpose=PURPOSE)["durable_preferences"] == []
+    consent(consent_type="TRAVELER_CONTEXT",scope=["TRAVEL_PREFERENCES"])
+    assert svc.traveler_graph("traveler",purpose=PURPOSE)["durable_preferences"] == [saved]
+    # A context grant for another journey cannot release this purpose's value.
+    consent(consent_type="TRAVELER_CONTEXT",purpose="FLIGHT_PLANNING",scope=["TRAVEL_PREFERENCES"])
+    assert svc.traveler_graph("traveler",purpose="FLIGHT_PLANNING")["durable_preferences"] == []
 
 
 def test_save_retry_revision_conflict_and_withdrawal_are_durable():
@@ -214,7 +228,7 @@ def test_invalid_payload_does_not_persist_or_enter_audit(value):
 
 def test_preferences_http_authenticated_owner_internal_read_and_no_cache(client, monkeypatch):
     monkeypatch.setattr(settings,"travel_intelligence_enabled",True)
-    reg=client.post("/v1/consumer/auth/register",json={"email":"c07@example.test","password":"StrongPass123!","display_name":"C07"})
+    reg=register_synthetic_consumer(client, json={"email":"c07@example.test","password":"StrongPass123!","display_name":"C07"})
     assert reg.status_code==200,reg.text
     user=reg.json()["data"]["profile"]["user_id"]
     token=client.post("/v1/mobile/auth/login",json={"email":"c07@example.test","password":"StrongPass123!"}).json()["data"]["access_token"]

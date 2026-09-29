@@ -54,8 +54,10 @@ class MobilityService:
     def fulfill(self, account, order_id, action, evidence_reference):
         return (ride_service if self._vertical(order_id) == "RIDE" else rental_service).fulfill(account, order_id, action, evidence_reference)
 
-    def admin_external_state(self, order_id, state, evidence_reference, actor):
-        return (ride_service if self._vertical(order_id) == "RIDE" else rental_service).admin_external_state(order_id, state, evidence_reference, actor)
+    def admin_external_state(self, order_id, state, evidence_reference, actor, confirmation_episode_reference=None):
+        if self._vertical(order_id) == "RIDE":
+            return ride_service.admin_external_state(order_id, state, evidence_reference, actor, confirmation_episode_reference)
+        return rental_service.admin_external_state(order_id, state, evidence_reference, actor)
 
 
 mobility_service = MobilityService()

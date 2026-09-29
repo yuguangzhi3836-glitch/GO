@@ -26,7 +26,21 @@ def test_plain_credentials_and_real_executor_are_blocked():
  with pytest.raises(ValueError,match='EXTERNAL_CREDENTIAL'):svc.bind({'owner_type':'GO','owner_id':'GO','channel':'ALIPAY','merchant_reference':'m','credential_reference':'secret','webhook_key_reference':'secret'})
  i=intent();svc.select_channel(i['payment_intent_id'],'ALIPAY','supplier1')
  with pytest.raises(ValueError,match='EXTERNAL_PAYMENT_EXECUTOR'):svc.execute(i['payment_intent_id'],'EXTERNAL_SANDBOX')
+def signed_callback(body):
+ raw=json.dumps(body,sort_keys=True,separators=(',',':'))
+ return hmac.new(b'k',raw.encode(),hashlib.sha256).hexdigest()
+
 def test_signed_webhook_converges_once_and_replay_is_idempotent():
  i=intent();svc.select_channel(i['payment_intent_id'],'ALIPAY','supplier1');a=svc.execute(i['payment_intent_id']);os.environ['GO_PAYMENT_WEBHOOK_KEY_ALIPAY']='k'
- b={'external_event_id':'evt1','payment_attempt_id':a['payment_attempt_id'],'external_operation_id':'trade1','state':'SUCCEEDED','occurred_at':datetime.now(timezone.utc).isoformat()};raw=json.dumps(b,sort_keys=True,separators=(',',':'));sig=hmac.new(b'k',raw.encode(),hashlib.sha256).hexdigest();x=svc.webhook('ALIPAY',b,sig);y=svc.webhook('ALIPAY',b,sig);assert not x['duplicate'] and y['duplicate']
+ b={'external_event_id':'evt1','payment_attempt_id':a['payment_attempt_id'],'external_operation_id':'trade1','state':'SUCCEEDED','operation':'PAY','amount_minor':69900,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ x=svc.webhook('ALIPAY',b,signed_callback(b));y=svc.webhook('ALIPAY',b,signed_callback(b));assert not x['duplicate'] and y['duplicate']
  with pytest.raises(ValueError,match='SIGNATURE_INVALID'):svc.webhook('ALIPAY',{**b,'external_event_id':'evt2'},'bad')
+
+def test_callback_fact_binding_and_conflicting_duplicate_are_refused():
+ i=intent();svc.select_channel(i['payment_intent_id'],'ALIPAY','supplier1');a=svc.execute(i['payment_intent_id']);os.environ['GO_PAYMENT_WEBHOOK_KEY_ALIPAY']='k'
+ b={'external_event_id':'evt-facts','payment_attempt_id':a['payment_attempt_id'],'external_operation_id':'trade-facts','state':'SUCCEEDED','operation':'PAY','amount_minor':69900,'currency':'CNY','occurred_at':datetime.now(timezone.utc).isoformat()}
+ with pytest.raises(ValueError,match='AMOUNT_MISMATCH'):
+  wrong={**b,'amount_minor':1};svc.webhook('ALIPAY',wrong,signed_callback(wrong))
+ svc.webhook('ALIPAY',b,signed_callback(b))
+ changed={**b,'state':'FAILED'}
+ with pytest.raises(ValueError,match='EVENT_PAYLOAD_CONFLICT'):svc.webhook('ALIPAY',changed,signed_callback(changed))

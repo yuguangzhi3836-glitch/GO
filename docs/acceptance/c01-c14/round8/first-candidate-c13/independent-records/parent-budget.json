@@ -1,0 +1,136 @@
+{
+  "daily_close_id": null,
+  "hosted_hotel_id": "hdh_deff5154b5ce4863ba9cfe17ff4d1aa3",
+  "business_date": "2026-09-28",
+  "inventory_snapshot_json": {
+    "total": 250,
+    "available": 248,
+    "days": [
+      {
+        "inventory_day_id": "hid_12a9cedcbff64199adeb53b157261bd0",
+        "total": 50,
+        "available": 48,
+        "held": 2,
+        "difference": 0
+      },
+      {
+        "inventory_day_id": "hid_77b69a3ccb2849498f5d4ee3f9ac95da",
+        "total": 50,
+        "available": 50,
+        "held": 0,
+        "difference": 0
+      },
+      {
+        "inventory_day_id": "hid_956f172b132340a382995146e6070075",
+        "total": 50,
+        "available": 50,
+        "held": 0,
+        "difference": 0
+      },
+      {
+        "inventory_day_id": "hid_df715ff9e0cd434f8ecec727bf336306",
+        "total": 50,
+        "available": 50,
+        "held": 0,
+        "difference": 0
+      },
+      {
+        "inventory_day_id": "hid_f46e6838bd014a658faa7a4903899307",
+        "total": 50,
+        "available": 50,
+        "held": 0,
+        "difference": 0
+      }
+    ]
+  },
+  "reservation_summary_json": {
+    "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING": 2
+  },
+  "exception_summary_json": {
+    "schema": "HOSTED_BUSINESS_DAY_V1",
+    "timezone": "Asia/Shanghai",
+    "window_start": "2026-09-27T16:00:00+00:00",
+    "window_end_exclusive": "2026-09-28T16:00:00+00:00",
+    "pending": 0,
+    "payment_transactions": 1,
+    "refund_transactions": 0,
+    "currencies": {
+      "CNY": {
+        "authorization_minor": 139600,
+        "capture_minor": 69801,
+        "release_minor": 0,
+        "refund_minor": 0,
+        "debit_minor": 69801,
+        "credit_minor": 69801,
+        "difference_minor": 0,
+        "net_capture_minor": 69801,
+        "opening_held_minor": 0,
+        "opening_net_capture_minor": 0,
+        "closing_held_minor": 69799,
+        "closing_net_capture_minor": 69801
+      }
+    },
+    "blockers": [
+      "PARENT_MONEY_BUDGET_DIFFERENCE:omm_e1e9e66887604277a97f0ef0f295f698"
+    ],
+    "unresolved_reservations": [],
+    "reservations": [
+      {
+        "reservation_id": "hdr_75f84d5dda0f4194b43e81168f6604a2",
+        "state": "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING",
+        "payment_state": "CONTRACT_CAPTURED_NOT_ALIPAY"
+      },
+      {
+        "reservation_id": "hdr_c98183870d1f47eb9a32c43b25482f37",
+        "state": "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING",
+        "payment_state": "CONTRACT_AUTHORIZED_NOT_ALIPAY"
+      }
+    ],
+    "order_facts": [
+      {
+        "hosted_reservation_id": "hdr_75f84d5dda0f4194b43e81168f6604a2",
+        "hosted_offer_id": "hdo_f384ff106f944826b8e21ad48612918b",
+        "check_in": "2026-09-28",
+        "check_out": "2026-09-29",
+        "amount_minor": 69800,
+        "currency": "CNY",
+        "created_at": "2026-09-28 00:00:00",
+        "updated_at": "2026-09-28 10:00:00"
+      },
+      {
+        "hosted_reservation_id": "hdr_c98183870d1f47eb9a32c43b25482f37",
+        "hosted_offer_id": "hdo_f384ff106f944826b8e21ad48612918b",
+        "check_in": "2026-09-28",
+        "check_out": "2026-09-29",
+        "amount_minor": 69800,
+        "currency": "CNY",
+        "created_at": "2026-09-28 00:00:00",
+        "updated_at": "2026-09-28 00:00:00"
+      }
+    ],
+    "stays": [
+      {
+        "stay_id": "gsl_250107b9c1b847bea88da10596c3e81a",
+        "state": "CHECKED_OUT",
+        "check_in_at": "2026-09-28 06:00:00",
+        "check_out_at": "2026-09-28 10:00:00"
+      }
+    ],
+    "movement_ids": [
+      "omm_101d511005104b058d359c0d50e4021b",
+      "omm_4b1ff6c7615e46b7bc02c30de8ca28ac",
+      "omm_e1e9e66887604277a97f0ef0f295f698"
+    ],
+    "ledger_ids": [
+      "ole_45d1fcc425ed41c0a49d0d4be51d1ced",
+      "ole_5ce4b14a14154192a7062b99b100fad6"
+    ],
+    "source_facts_hash": "20c50b36e12f28b0b30e1ba83504e6cf5f9bed17aa96a88f299848b4cbbd5cc8",
+    "external_reconciliation": "NOT_PERFORMED",
+    "production_live": false,
+    "state": "BLOCKED",
+    "immutable_facts_hash": "e496e688c15dd7365c2dc9d6ed7d897d7bf981eafb1acb0dc4fedfc082ec7bc7",
+    "snapshot_cutoff_at": "2026-09-28T10:00:00+00:00"
+  },
+  "evidence_hash": "df497aa5ebc20b669b02b9f6258800e5d32c6f8568fb3e8c704246e7ca242947"
+}

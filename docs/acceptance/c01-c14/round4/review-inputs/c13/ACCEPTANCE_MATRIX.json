@@ -1,0 +1,1170 @@
+{
+  "schema": "go.c13.round4.review-plan.v1",
+  "baseline_head": "cb8928f2ce915825f7c95321a0fc26ed0b5530e6",
+  "baseline_result": "SCOPED_ONLY_NO_AUTOMATIC_TRANSFER",
+  "requirements_path": "go/docs/acceptance/c01-c14/v1.1/requirements.json",
+  "requirements_file_sha256": "c754445029fd55ad8ff9cc94be6386408d0109a42e75fb9a67866a32c4e9fed2",
+  "checklist_version": "1.1.0",
+  "scope_hash": "f120a868a71b242ee7f99a0076c694b137fbbe0a7d988154f3747e88d0b1145a",
+  "frozen_denominator": {
+    "items": 305,
+    "required_cases": 1009
+  },
+  "definitions_mutated": false,
+  "candidate_binding": null,
+  "status": "NOT_ASSESSED",
+  "selected_requirements": [
+    {
+      "id": "C04-12",
+      "title": "未知资金交接",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-12-CASE-1",
+          "description": "响应超时",
+          "required": true
+        },
+        {
+          "id": "C04-12-CASE-2",
+          "description": "事实不一致",
+          "required": true
+        },
+        {
+          "id": "C04-12-CASE-3",
+          "description": "确认收据后更新可见结果",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-14",
+      "title": "独立裁决权限",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-14-CASE-1",
+          "description": "开案人自裁拒绝",
+          "required": true
+        },
+        {
+          "id": "C04-14-CASE-2",
+          "description": "无权限管理员拒绝",
+          "required": true
+        },
+        {
+          "id": "C04-14-CASE-3",
+          "description": "前裁决人复核拒绝",
+          "required": true
+        },
+        {
+          "id": "C04-14-CASE-4",
+          "description": "独立审核通过",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-15",
+      "title": "来源与证据完整性",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-15-CASE-1",
+          "description": "execution_item错绑",
+          "required": true
+        },
+        {
+          "id": "C04-15-CASE-2",
+          "description": "payload owner错绑",
+          "required": true
+        },
+        {
+          "id": "C04-15-CASE-3",
+          "description": "断链或哈希错误",
+          "required": true
+        },
+        {
+          "id": "C04-15-CASE-4",
+          "description": "伪造证据statement",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-16",
+      "title": "命令幂等",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-16-CASE-1",
+          "description": "丢响应重复提交",
+          "required": true
+        },
+        {
+          "id": "C04-16-CASE-2",
+          "description": "文本不同",
+          "required": true
+        },
+        {
+          "id": "C04-16-CASE-3",
+          "description": "版本不同",
+          "required": true
+        },
+        {
+          "id": "C04-16-CASE-4",
+          "description": "跨动作同key",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-17",
+      "title": "竞争决议与释放",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-17-CASE-1",
+          "description": "开案与无损检查竞态",
+          "required": true
+        },
+        {
+          "id": "C04-17-CASE-2",
+          "description": "双审核竞态",
+          "required": true
+        },
+        {
+          "id": "C04-17-CASE-3",
+          "description": "双押金义务竞态",
+          "required": true
+        },
+        {
+          "id": "C04-17-CASE-4",
+          "description": "并发PG证明",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-18",
+      "title": "中断重启",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-18-CASE-1",
+          "description": "证据flush后崩溃",
+          "required": true
+        },
+        {
+          "id": "C04-18-CASE-2",
+          "description": "提交后响应丢失",
+          "required": true
+        },
+        {
+          "id": "C04-18-CASE-3",
+          "description": "进程重启",
+          "required": true
+        },
+        {
+          "id": "C04-18-CASE-4",
+          "description": "隔离PG恢复",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-20",
+      "title": "车损决定交接",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-20-CASE-1",
+          "description": "未绑定历史案拒绝",
+          "required": true
+        },
+        {
+          "id": "C04-20-CASE-2",
+          "description": "陈旧判决拒绝",
+          "required": true
+        },
+        {
+          "id": "C04-20-CASE-3",
+          "description": "申诉hold拒绝",
+          "required": true
+        },
+        {
+          "id": "C04-20-CASE-4",
+          "description": "金额越界拒绝",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-22",
+      "title": "已结算后的更正",
+      "dependencies": [
+        "C11-21"
+      ],
+      "verification_cases": [
+        {
+          "id": "C04-22-CASE-1",
+          "description": "降额须补偿",
+          "required": true
+        },
+        {
+          "id": "C04-22-CASE-2",
+          "description": "零额撤销",
+          "required": true
+        },
+        {
+          "id": "C04-22-CASE-3",
+          "description": "原捕获不足/冲突拒绝",
+          "required": true
+        },
+        {
+          "id": "C04-22-CASE-4",
+          "description": "补偿重放一次",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-23",
+      "title": "消费者完整旅程",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-23-CASE-1",
+          "description": "响应与异议",
+          "required": true
+        },
+        {
+          "id": "C04-23-CASE-2",
+          "description": "已裁决申诉",
+          "required": true
+        },
+        {
+          "id": "C04-23-CASE-3",
+          "description": "手机可用",
+          "required": true
+        },
+        {
+          "id": "C04-23-CASE-4",
+          "description": "重载核最新状态",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-24",
+      "title": "管理员完整旅程",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-24-CASE-1",
+          "description": "独立身份切换",
+          "required": true
+        },
+        {
+          "id": "C04-24-CASE-2",
+          "description": "金额/理由明确确认",
+          "required": true
+        },
+        {
+          "id": "C04-24-CASE-3",
+          "description": "无权限按钮及API拒绝",
+          "required": true
+        },
+        {
+          "id": "C04-24-CASE-4",
+          "description": "正常最终检查",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-26",
+      "title": "未知提交界面",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-26-CASE-1",
+          "description": "超时无回执",
+          "required": true
+        },
+        {
+          "id": "C04-26-CASE-2",
+          "description": "已提交丢响应读回",
+          "required": true
+        },
+        {
+          "id": "C04-26-CASE-3",
+          "description": "同key精确重试",
+          "required": true
+        },
+        {
+          "id": "C04-26-CASE-4",
+          "description": "会话切换隔离",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-27",
+      "title": "异常发现登记",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-27-CASE-1",
+          "description": "待处理车损",
+          "required": true
+        },
+        {
+          "id": "C04-27-CASE-2",
+          "description": "过期未接受义务",
+          "required": true
+        },
+        {
+          "id": "C04-27-CASE-3",
+          "description": "未知履约/资金",
+          "required": true
+        },
+        {
+          "id": "C04-27-CASE-4",
+          "description": "重复扫描不重复任务",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-28",
+      "title": "派发与接管",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-28-CASE-1",
+          "description": "领取冲突",
+          "required": true
+        },
+        {
+          "id": "C04-28-CASE-2",
+          "description": "心跳到期",
+          "required": true
+        },
+        {
+          "id": "C04-28-CASE-3",
+          "description": "接管后旧worker拒绝",
+          "required": true
+        },
+        {
+          "id": "C04-28-CASE-4",
+          "description": "权限拒绝",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-29",
+      "title": "处理验收与复查",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-29-CASE-1",
+          "description": "处置成功回读",
+          "required": true
+        },
+        {
+          "id": "C04-29-CASE-2",
+          "description": "失败不关闭",
+          "required": true
+        },
+        {
+          "id": "C04-29-CASE-3",
+          "description": "独立验证",
+          "required": true
+        },
+        {
+          "id": "C04-29-CASE-4",
+          "description": "复发重开关联任务",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C04-30",
+      "title": "可查询运营诊断",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C04-30-CASE-1",
+          "description": "分页稳定",
+          "required": true
+        },
+        {
+          "id": "C04-30-CASE-2",
+          "description": "单订单追踪",
+          "required": true
+        },
+        {
+          "id": "C04-30-CASE-3",
+          "description": "错误来源定位",
+          "required": true
+        },
+        {
+          "id": "C04-30-CASE-4",
+          "description": "只读零写入",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C11-04",
+      "title": "执行退款",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C11-04-CASE-1",
+          "description": "全额",
+          "required": true
+        },
+        {
+          "id": "C11-04-CASE-2",
+          "description": "部分",
+          "required": true
+        },
+        {
+          "id": "C11-04-CASE-3",
+          "description": "累计超额",
+          "required": true
+        },
+        {
+          "id": "C11-04-CASE-4",
+          "description": "跨币种",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C11-06",
+      "title": "读取或写入资金操作",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C11-06-CASE-1",
+          "description": "消费者他人",
+          "required": true
+        },
+        {
+          "id": "C11-06-CASE-2",
+          "description": "跨租户",
+          "required": true
+        },
+        {
+          "id": "C11-06-CASE-3",
+          "description": "supplier写",
+          "required": true
+        },
+        {
+          "id": "C11-06-CASE-4",
+          "description": "admin无权限",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C11-07",
+      "title": "处理返回",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C11-07-CASE-1",
+          "description": "超时",
+          "required": true
+        },
+        {
+          "id": "C11-07-CASE-2",
+          "description": "未知",
+          "required": true
+        },
+        {
+          "id": "C11-07-CASE-3",
+          "description": "坏收据",
+          "required": true
+        },
+        {
+          "id": "C11-07-CASE-4",
+          "description": "断连",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C11-08",
+      "title": "获取可信收据并核对",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C11-08-CASE-1",
+          "description": "匹配成功",
+          "required": true
+        },
+        {
+          "id": "C11-08-CASE-2",
+          "description": "矛盾收据",
+          "required": true
+        },
+        {
+          "id": "C11-08-CASE-3",
+          "description": "缺收据继续HOLD",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C11-09",
+      "title": "同键及并发重试资金动作",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C11-09-CASE-1",
+          "description": "同键相同体",
+          "required": true
+        },
+        {
+          "id": "C11-09-CASE-2",
+          "description": "同键异体",
+          "required": true
+        },
+        {
+          "id": "C11-09-CASE-3",
+          "description": "并发双执行",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C11-10",
+      "title": "崩溃恢复",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C11-10-CASE-1",
+          "description": "提交前崩溃",
+          "required": true
+        },
+        {
+          "id": "C11-10-CASE-2",
+          "description": "提交后丢响应",
+          "required": true
+        },
+        {
+          "id": "C11-10-CASE-3",
+          "description": "worker重启",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C11-13",
+      "title": "结算裁决",
+      "dependencies": [
+        "C04-20"
+      ],
+      "verification_cases": [
+        {
+          "id": "C11-13-CASE-1",
+          "description": "有效决定",
+          "required": true
+        },
+        {
+          "id": "C11-13-CASE-2",
+          "description": "陈旧",
+          "required": true
+        },
+        {
+          "id": "C11-13-CASE-3",
+          "description": "申诉hold",
+          "required": true
+        },
+        {
+          "id": "C11-13-CASE-4",
+          "description": "越权",
+          "required": true
+        },
+        {
+          "id": "C11-13-CASE-5",
+          "description": "部分capture",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C11-15",
+      "title": "读取余额",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C11-15-CASE-1",
+          "description": "orphan",
+          "required": true
+        },
+        {
+          "id": "C11-15-CASE-2",
+          "description": "坏parent",
+          "required": true
+        },
+        {
+          "id": "C11-15-CASE-3",
+          "description": "mixed ledger",
+          "required": true
+        },
+        {
+          "id": "C11-15-CASE-4",
+          "description": "超列宽",
+          "required": true
+        },
+        {
+          "id": "C11-15-CASE-5",
+          "description": "外国capture",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C11-17",
+      "title": "确认结算按钮",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C11-17-CASE-1",
+          "description": "正常",
+          "required": true
+        },
+        {
+          "id": "C11-17-CASE-2",
+          "description": "陈旧",
+          "required": true
+        },
+        {
+          "id": "C11-17-CASE-3",
+          "description": "申诉后HOLD",
+          "required": true
+        },
+        {
+          "id": "C11-17-CASE-4",
+          "description": "结果未知",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C11-19",
+      "title": "核对及重试",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C11-19-CASE-1",
+          "description": "丢响应",
+          "required": true
+        },
+        {
+          "id": "C11-19-CASE-2",
+          "description": "unknown禁重试",
+          "required": true
+        },
+        {
+          "id": "C11-19-CASE-3",
+          "description": "source改变禁重试",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C11-20",
+      "title": "跨端查询支付售后对账",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C11-20-CASE-1",
+          "description": "消费者桌面移动",
+          "required": true
+        },
+        {
+          "id": "C11-20-CASE-2",
+          "description": "供应商范围",
+          "required": true
+        },
+        {
+          "id": "C11-20-CASE-3",
+          "description": "管理员账期",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C11-21",
+      "title": "申请独立补偿",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C11-21-CASE-1",
+          "description": "支持申诉",
+          "required": true
+        },
+        {
+          "id": "C11-21-CASE-2",
+          "description": "无权限",
+          "required": true
+        },
+        {
+          "id": "C11-21-CASE-3",
+          "description": "重复补偿",
+          "required": true
+        },
+        {
+          "id": "C11-21-CASE-4",
+          "description": "补偿unknown",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    },
+    {
+      "id": "C11-22",
+      "title": "登记派发处理验证复查",
+      "dependencies": [],
+      "verification_cases": [
+        {
+          "id": "C11-22-CASE-1",
+          "description": "发现",
+          "required": true
+        },
+        {
+          "id": "C11-22-CASE-2",
+          "description": "派发",
+          "required": true
+        },
+        {
+          "id": "C11-22-CASE-3",
+          "description": "接管",
+          "required": true
+        },
+        {
+          "id": "C11-22-CASE-4",
+          "description": "修复失败",
+          "required": true
+        },
+        {
+          "id": "C11-22-CASE-5",
+          "description": "验证",
+          "required": true
+        },
+        {
+          "id": "C11-22-CASE-6",
+          "description": "复查",
+          "required": true
+        }
+      ],
+      "review_status": "NOT_ASSESSED"
+    }
+  ],
+  "review_probes": [
+    {
+      "review_probe": "R4-U01",
+      "frozen_case_refs": [
+        "C11-07-CASE-1",
+        "C11-07-CASE-2",
+        "C11-07-CASE-4",
+        "C04-12-CASE-1"
+      ],
+      "setup": "原资金操作已有稳定ID/key，适配响应超时/断连/UNKNOWN",
+      "action": "刷新、重复点击、worker重启",
+      "expected": "保持同一原操作和UNKNOWN；不得另造成功movement、授权或盲重发外部效果；UI不写已完成",
+      "evidence": [
+        "适配调用计数及原操作ID",
+        "前后DB/movement/ledger",
+        "真实UI未知提示及按钮状态"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-U02",
+      "frozen_case_refs": [
+        "C11-08-CASE-1",
+        "C04-12-CASE-3"
+      ],
+      "setup": "原操作身份及钱图可完整核对；隔离适配器持久化权威收据",
+      "action": "受权读取原操作收据并恢复",
+      "expected": "收据匹配环境/来源/操作ID/type/root/业务义务/owner/金额币种/parent及结果；一次受权恢复，前未知证据保留；不靠客户端成功标记",
+      "evidence": [
+        "收据原字节与来源绑定",
+        "resolver/server复验",
+        "恢复审计与DB原件"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-U03",
+      "frozen_case_refs": [
+        "C11-08-CASE-2",
+        "C11-08-CASE-3",
+        "C11-07-CASE-3",
+        "C04-12-CASE-2"
+      ],
+      "setup": "准备缺失、伪造、自签hash、冲突、陈旧及其他订单收据",
+      "action": "尝试恢复为确认或失败",
+      "expected": "全部缺证/冲突维持HOLD；拒绝零资金副作用；管理员有权限也不能以手填状态替代收据权威",
+      "evidence": [
+        "各字段篡改负例矩阵",
+        "每次拒绝前后count/hash不变",
+        "审计记录拒绝原因"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-U04",
+      "frozen_case_refs": [
+        "C11-15-CASE-1",
+        "C11-15-CASE-2",
+        "C11-15-CASE-3",
+        "C11-15-CASE-5"
+      ],
+      "setup": "缺root/fact、orphan parent、别单capture、混合/不平衡ledger",
+      "action": "调用恢复及review投影",
+      "expected": "结构损坏继续UNKNOWN金额null；不根据UI或new receipt猜造缺失账本。若支持重建，必须另有冻结来源及唯一原写入证明，单列独立审核",
+      "evidence": [
+        "原坏图SQL",
+        "恢复后无伪新增/改账",
+        "跨域投影null与HOLD"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-U05",
+      "frozen_case_refs": [
+        "C11-09-CASE-1",
+        "C11-09-CASE-2",
+        "C11-09-CASE-3",
+        "C11-10-CASE-1",
+        "C11-10-CASE-2",
+        "C11-10-CASE-3"
+      ],
+      "setup": "两个进程面对同unknown原操作、相同或冲突恢复证据",
+      "action": "PG并发恢复；提交前杀进程、提交后丢回执再接管",
+      "expected": "同operation仅一次终态效果；同键同体回同事实，同键异体拒绝；冲突不得last-write-wins；审计和账本原子恢复",
+      "evidence": [
+        "PG实际多进程exit/SQL",
+        "故障注入点前后证据",
+        "适配器effect唯一计数"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-U06",
+      "frozen_case_refs": [
+        "C11-06-CASE-1",
+        "C11-06-CASE-2",
+        "C11-06-CASE-3",
+        "C11-06-CASE-4",
+        "C04-26-CASE-4"
+      ],
+      "setup": "owner、他人consumer、supplier/跨tenant、readonly和失效admin会话",
+      "action": "读取收据/恢复列表/详情/附件及提交恢复",
+      "expected": "对象及动作授权同时复验；失效会话旧页面不可写，列表不可泄露其他tenant。真正内部模拟权限不外推成真实PSP许可",
+      "evidence": [
+        "真实认证API负例",
+        "UI角色与session切换",
+        "零资金副作用"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-C01",
+      "frozen_case_refs": [
+        "C04-22-CASE-1",
+        "C11-21-CASE-1"
+      ],
+      "setup": "既有完整确认capture/释放/ledger，申诉获不同合格reviewer支持，当前裁决低于已净扣收",
+      "action": "生成独立补偿义务并受权执行退款",
+      "expected": "金额由当前决定与原capture/已确认refund净额服务端导出；新补偿事实关联旧capture/决定，保留原账；不重跑settle或重开已释放授权",
+      "evidence": [
+        "C04新决定resolver",
+        "补偿source/approval/唯一原capture",
+        "新refund及平衡分录",
+        "UI结果与独立SQL"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-C02",
+      "frozen_case_refs": [
+        "C04-22-CASE-2",
+        "C11-04-CASE-1",
+        "C11-04-CASE-2"
+      ],
+      "setup": "当前最终award为0或进一步下降；先前有/无补偿退款",
+      "action": "执行零award全额可退或第二轮差额补偿",
+      "expected": "只退尚未返还的已capture余额；原先0capture则不造0元movement；多轮净额守恒，不按每次新award重复退原总额",
+      "evidence": [
+        "至少两轮决定/补偿链",
+        "remaining_refundable计算",
+        "原capture/所有refund/ledger SQL"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-C03",
+      "frozen_case_refs": [
+        "C04-22-CASE-3",
+        "C11-04-CASE-3",
+        "C11-04-CASE-4",
+        "C11-15-CASE-5"
+      ],
+      "setup": "无/不足capture、原资金UNKNOWN、外来capture、跨币种或目标收款人被篡改",
+      "action": "申请/批准/执行补偿",
+      "expected": "HOLD或拒绝；不把未capture授权或已release金额当退款资金。退款绑定原capture同币种原付款人，不允许自填另账户",
+      "evidence": [
+        "边界金额/币种/身份负例",
+        "资金图前后不变",
+        "可读拒绝/HOLD"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-C04",
+      "frozen_case_refs": [
+        "C04-20-CASE-2",
+        "C04-20-CASE-3",
+        "C11-13-CASE-2",
+        "C11-13-CASE-3",
+        "C11-21-CASE-2"
+      ],
+      "setup": "旧页面补偿依据已被新申诉/裁决版本/权限撤销替代",
+      "action": "提交旧hash/version或无审批/自审补偿",
+      "expected": "最新C04 version/hash及申诉状态在执行锁内重验；独立受权补偿依据不可被旧历史幂等回复替代。增加award/补偿后追补扣款不自动推导授权",
+      "evidence": [
+        "race时序/PG锁证据",
+        "真实权限/审批身份",
+        "无额外capture或refund"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-C05",
+      "frozen_case_refs": [
+        "C04-22-CASE-4",
+        "C11-21-CASE-3",
+        "C11-09-CASE-3",
+        "C04-18-CASE-3",
+        "C04-18-CASE-4"
+      ],
+      "setup": "同一新裁决补偿同时由两人提交，或旧命令重启重放",
+      "action": "相同key/不同key并发、进程kill、补偿提交后丢响应",
+      "expected": "业务唯一补偿义务与可退余额共同防重，不仅key唯一；成功仅一次refund，重试回读当前事实，旧账及新审计一致",
+      "evidence": [
+        "真实PG两个worker",
+        "原命令/义务/receipt唯一性",
+        "崩溃点+恢复后SQL"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-C06",
+      "frozen_case_refs": [
+        "C11-21-CASE-4",
+        "C11-07-CASE-2",
+        "C11-08-CASE-3",
+        "C11-19-CASE-2"
+      ],
+      "setup": "补偿退款适配器返回UNKNOWN",
+      "action": "用户刷新/再次申请补偿/更换key/新申诉",
+      "expected": "原补偿保持待核验并冻结相关可退额度；不再新退款；只有原操作可信最终收据可解除，缺证继续HOLD",
+      "evidence": [
+        "适配effect次数",
+        "预留/剩余金额与ledger",
+        "消费者管理员真实未知状态"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-I01",
+      "frozen_case_refs": [
+        "C04-15-CASE-1",
+        "C04-15-CASE-2",
+        "C04-15-CASE-3",
+        "C04-15-CASE-4",
+        "C04-20-CASE-1",
+        "C04-20-CASE-4"
+      ],
+      "setup": "C04历史链或新补偿来源被改owner/order/hash/amount",
+      "action": "C11读取当前更正resolver或执行恢复",
+      "expected": "先验链/业务/身份再计算金额，原陈述哈希只是完整性不是真实性；未绑定历史case不可被补偿绕过",
+      "evidence": [
+        "字段损坏probes",
+        "读API零写入",
+        "server authority证明"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-UI01",
+      "frozen_case_refs": [
+        "C04-23-CASE-2",
+        "C04-23-CASE-3",
+        "C04-23-CASE-4",
+        "C04-24-CASE-1",
+        "C04-24-CASE-2",
+        "C11-19-CASE-1",
+        "C11-19-CASE-3"
+      ],
+      "setup": "已结算订单、可用补偿或UNKNOWN调查；不同consumer/reviewer/finance角色",
+      "action": "正常入口手机/桌面查看→申诉→独立复核→财务确认→刷新/重入",
+      "expected": "不要求客户手填hash或财务自填金额；区分原扣收、补偿获准、执行未知、确认退款和到账未验。旧请求/切订单/迟回不覆盖当前输入",
+      "evidence": [
+        "实际浏览器非API替代正向写入",
+        "原POST+受权actor/当前hidden source",
+        "截图/网络/最终SQL"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-O01",
+      "frozen_case_refs": [
+        "C04-27-CASE-3",
+        "C04-27-CASE-4",
+        "C04-28-CASE-1",
+        "C04-28-CASE-2",
+        "C04-28-CASE-3",
+        "C04-28-CASE-4",
+        "C11-22-CASE-1",
+        "C11-22-CASE-2",
+        "C11-22-CASE-3"
+      ],
+      "setup": "真实资金异常或结算后申诉需财务处理",
+      "action": "发现→登记→派发/领取→心跳到期接管",
+      "expected": "同异常不重复工单；登记、派发、执行分别显示；权限及lease token复验，旧worker不能继续写；无自动成功/自动结案",
+      "evidence": [
+        "异常到任务可追溯ID",
+        "PG领取竞争/旧worker拒绝",
+        "真实运营页面/审计"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-O02",
+      "frozen_case_refs": [
+        "C04-29-CASE-1",
+        "C04-29-CASE-2",
+        "C04-29-CASE-3",
+        "C04-29-CASE-4",
+        "C11-22-CASE-4",
+        "C11-22-CASE-5",
+        "C11-22-CASE-6"
+      ],
+      "setup": "一次调查/补偿处置完成或失败",
+      "action": "独立核验结果、延后复查、同问题复发",
+      "expected": "失败不结案，完成需当前钱事实回读及独立核验；复查不同于执行，复发关联原任务重开且不重发资金动作",
+      "evidence": [
+        "处理人/核验人及时间",
+        "动作→SQL/receipt→verification映射",
+        "复发/失败测试"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    },
+    {
+      "review_probe": "R4-O03",
+      "frozen_case_refs": [
+        "C04-30-CASE-1",
+        "C04-30-CASE-2",
+        "C04-30-CASE-3",
+        "C04-30-CASE-4",
+        "C11-20-CASE-1",
+        "C11-20-CASE-2",
+        "C11-20-CASE-3"
+      ],
+      "setup": "异常/补偿列表和跨端读模型",
+      "action": "分页、按订单追踪、切角色读取",
+      "expected": "分页稳定，来源错误定位明确，所有GET零写入；消费者/供应商只见所属数据且钱事实取同C11，不以Trips已取消推资金已退",
+      "evidence": [
+        "SQL GET前后计数",
+        "角色API/browser",
+        "投影与ledger对照"
+      ],
+      "status": "NOT_ASSESSED",
+      "candidate_binding": null,
+      "evidence_refs": []
+    }
+  ],
+  "notes": [
+    "review probes elaborate execution evidence; they do not create/replace frozen obligations or cases",
+    "selected requirement may be only partly covered by this batch; every unaddressed required case remains NOT_ASSESSED",
+    "supplier-tenant direct rental operations, other movement types, external PSP and C01 hotel extension are not implicitly passed by this rental scope"
+  ],
+  "implementation_scope_notice": {
+    "supported_proposed": "settled rental same-case independent appeal reduction/full reversal compensation; repeated differential and zero no-op",
+    "hold_not_implemented": [
+      "UNKNOWN trusted recovery without independent authoritative receipt",
+      "upward award requiring new charge authorization",
+      "legacy account code reversal"
+    ],
+    "author_source": "/root/c07_c11_depth round4 scope message",
+    "acceptance_status": "NOT_ASSESSED"
+  }
+}

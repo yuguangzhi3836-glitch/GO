@@ -1,0 +1,11 @@
+{
+  "candidate": "8137d49d004860e0340f3291c7a65b1c7025d2c5",
+  "application_tree": "80565ed9ae99a549ea059b2ce116714bb6b3ceaf",
+  "browser_run": 36271220119,
+  "artifact_id": 10915312863,
+  "zip_sha256": "1cf01966bb7a23cccc675089317a0efdea0d02d0cdf668f1f9b9a19f634b28a1",
+  "automated_browser": "29_PASS",
+  "independent_finding": "Screenshot29 admin order table displays historical voucher as current after REFUNDED; workbench calls it pending verification. Consumer has voucher=null. No evidence of backend redemption bypass.",
+  "fix": "Align admin list with CONFIRMED-only voucher/supplier reference. Preserve database evidence and distinguish terminal nonusable voucher text. Independent API and step29 DOM assertions added; new candidate CI required.",
+  "scope": "FULL_44_152_NOT_COMPLETE"
+}

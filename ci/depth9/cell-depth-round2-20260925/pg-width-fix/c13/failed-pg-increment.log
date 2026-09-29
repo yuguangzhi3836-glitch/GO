@@ -1,0 +1,1243 @@
+........................................................................ [ 43%]
+...............................................FF...........FF..F....... [ 86%]
+.......................                                                  [100%]
+=================================== FAILURES ===================================
+_____ test_award_capture_and_remainder_release_are_atomic_idempotent[4000] _____
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f4da50fe690>
+dialect = <sqlalchemy.dialects.postgresql.psycopg.PGDialect_psycopg object at 0x7f4db3fef4d0>
+context = <sqlalchemy.dialects.postgresql.psycopg.PGExecutionContext_psycopg object at 0x7f4dad8bec50>
+statement = <sqlalchemy.dialects.postgresql.psycopg.PGCompiler_psycopg object at 0x7f4daf9e8190>
+parameters = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 4000, 'created_at': datetime.datetime(2026, 9, 25, ...'created_at': datetime.datetime(2026, 9, 25, 9, 19, 46, 899931, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py:949: in do_executemany
+    cursor.executemany(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [IDLE] (host=127.0.0.1 user=go_ci database=go_c11_isolated) at 0x7f4da50fd850>
+query = 'INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, am... %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)'
+params_seq = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 4000, 'created_at': datetime.datetime(2026, 9, 25, ...'created_at': datetime.datetime(2026, 9, 25, 9, 19, 46, 899931, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def executemany(
+        self, query: Query, params_seq: Iterable[Params], *, returning: bool = False
+    ) -> None:
+        """
+        Execute the same command with a sequence of input data.
+        """
+        try:
+            with self._conn.lock:
+                if Pipeline.is_supported():
+                    # If there is already a pipeline, ride it, in order to avoid
+                    # sending unnecessary Sync.
+                    if self._conn._pipeline:
+                        self._conn.wait(
+                            self._executemany_gen_pipeline(query, params_seq, returning)
+                        )
+                    else:
+                        # Otherwise, make a new one
+                        with self._conn._pipeline_nolock():
+                            self._conn.wait(
+                                self._executemany_gen_pipeline(
+                                    query, params_seq, returning
+                                )
+                            )
+                else:
+                    self._conn.wait(
+                        self._executemany_gen_no_pipeline(query, params_seq, returning)
+                    )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.StringDataRightTruncation: value too long for type character varying(64)
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py:128: StringDataRightTruncation
+
+The above exception was the direct cause of the following exception:
+
+obligation = {'consent': {'accepted': True, 'accepted_at': '2026-09-25T09:19:46.817905', 'actor_id': 'customer', 'source_hash': 'c9...'NO_FINANCIAL_FACT_ASSERTED', 'obligation_id': 'rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'revision': 2, ...}
+award = 4000
+
+    @pytest.mark.parametrize('award', [0, 4000, 10000])
+    def test_award_capture_and_remainder_release_are_atomic_idempotent(obligation, award):
+        service.authorize(CHECKER, *args(obligation))
+        decision = decide(obligation, award)
+>       result = settle(obligation, decision)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/payments/test_c11_rental_deposit_money.py:73: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/payments/test_c11_rental_deposit_money.py:50: in settle
+    return service.settle(CHECKER, *args(obligation), decision['case_id'], decision['case_version'], decision['decision_hash'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/rental_deposit_money.py:211: in settle
+    money.create_in_session(session, intent.payment_intent_id, {'movement_type': kind,
+src/go_hotel/services/unified_money_movement.py:102: in create_in_session
+    s.flush();return out(r)
+    ^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4352: in flush
+    self._flush(objects)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4487: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4448: in _flush
+    flush_context.execute()
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py:949: in do_executemany
+    cursor.executemany(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [IDLE] (host=127.0.0.1 user=go_ci database=go_c11_isolated) at 0x7f4da50fd850>
+query = 'INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, am... %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)'
+params_seq = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 4000, 'created_at': datetime.datetime(2026, 9, 25, ...'created_at': datetime.datetime(2026, 9, 25, 9, 19, 46, 899931, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def executemany(
+        self, query: Query, params_seq: Iterable[Params], *, returning: bool = False
+    ) -> None:
+        """
+        Execute the same command with a sequence of input data.
+        """
+        try:
+            with self._conn.lock:
+                if Pipeline.is_supported():
+                    # If there is already a pipeline, ride it, in order to avoid
+                    # sending unnecessary Sync.
+                    if self._conn._pipeline:
+                        self._conn.wait(
+                            self._executemany_gen_pipeline(query, params_seq, returning)
+                        )
+                    else:
+                        # Otherwise, make a new one
+                        with self._conn._pipeline_nolock():
+                            self._conn.wait(
+                                self._executemany_gen_pipeline(
+                                    query, params_seq, returning
+                                )
+                            )
+                else:
+                    self._conn.wait(
+                        self._executemany_gen_no_pipeline(query, params_seq, returning)
+                    )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           sqlalchemy.exc.DataError: (psycopg.errors.StringDataRightTruncation) value too long for type character varying(64)
+E           [SQL: INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, amount_minor, currency, entry_type, evidence_hash, created_at) VALUES (%(ledger_entry_id)s::VARCHAR, %(transaction_id)s::VARCHAR, %(payment_intent_id)s::VARCHAR, %(account_code)s::VARCHAR, %(direction)s::VARCHAR, %(amount_minor)s::BIGINT, %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)]
+E           [parameters: [{'ledger_entry_id': 'ole_478e070ba2984e50b70b4af909a4e154', 'transaction_id': 'omm_c221645626094df29f7e5dc5baee3708', 'payment_intent_id': 'opi_93d40831876f4ea7b1eea084c3bf3f2d', 'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'direction': 'DEBIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': 'def684d68f095039a77ecc31930e9f7685b30cecbac64764941279438a41195f', 'created_at': datetime.datetime(2026, 9, 25, 9, 19, 46, 899867, tzinfo=datetime.timezone.utc)}, {'ledger_entry_id': 'ole_eda5133b7c8c4d9fb5e3d08bb60f66fd', 'transaction_id': 'omm_c221645626094df29f7e5dc5baee3708', 'payment_intent_id': 'opi_93d40831876f4ea7b1eea084c3bf3f2d', 'account_code': 'BUSINESS:RENTAL_DEPOSIT:rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'direction': 'CREDIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': 'def684d68f095039a77ecc31930e9f7685b30cecbac64764941279438a41195f', 'created_at': datetime.datetime(2026, 9, 25, 9, 19, 46, 899931, tzinfo=datetime.timezone.utc)}]]
+E           (Background on this error at: https://sqlalche.me/e/20/9h9h)
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py:128: DataError
+____ test_award_capture_and_remainder_release_are_atomic_idempotent[10000] _____
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f4da50fd6d0>
+dialect = <sqlalchemy.dialects.postgresql.psycopg.PGDialect_psycopg object at 0x7f4db3fef4d0>
+context = <sqlalchemy.dialects.postgresql.psycopg.PGExecutionContext_psycopg object at 0x7f4da72bfb50>
+statement = <sqlalchemy.dialects.postgresql.psycopg.PGCompiler_psycopg object at 0x7f4daf9e8190>
+parameters = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 10000, 'created_at': datetime.datetime(2026, 9, 25,...'created_at': datetime.datetime(2026, 9, 25, 9, 19, 51, 131623, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py:949: in do_executemany
+    cursor.executemany(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [IDLE] (host=127.0.0.1 user=go_ci database=go_c11_isolated) at 0x7f4da50ffad0>
+query = 'INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, am... %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)'
+params_seq = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 10000, 'created_at': datetime.datetime(2026, 9, 25,...'created_at': datetime.datetime(2026, 9, 25, 9, 19, 51, 131623, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def executemany(
+        self, query: Query, params_seq: Iterable[Params], *, returning: bool = False
+    ) -> None:
+        """
+        Execute the same command with a sequence of input data.
+        """
+        try:
+            with self._conn.lock:
+                if Pipeline.is_supported():
+                    # If there is already a pipeline, ride it, in order to avoid
+                    # sending unnecessary Sync.
+                    if self._conn._pipeline:
+                        self._conn.wait(
+                            self._executemany_gen_pipeline(query, params_seq, returning)
+                        )
+                    else:
+                        # Otherwise, make a new one
+                        with self._conn._pipeline_nolock():
+                            self._conn.wait(
+                                self._executemany_gen_pipeline(
+                                    query, params_seq, returning
+                                )
+                            )
+                else:
+                    self._conn.wait(
+                        self._executemany_gen_no_pipeline(query, params_seq, returning)
+                    )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.StringDataRightTruncation: value too long for type character varying(64)
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py:128: StringDataRightTruncation
+
+The above exception was the direct cause of the following exception:
+
+obligation = {'consent': {'accepted': True, 'accepted_at': '2026-09-25T09:19:51.060668', 'actor_id': 'customer', 'source_hash': 'b9...'NO_FINANCIAL_FACT_ASSERTED', 'obligation_id': 'rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'revision': 2, ...}
+award = 10000
+
+    @pytest.mark.parametrize('award', [0, 4000, 10000])
+    def test_award_capture_and_remainder_release_are_atomic_idempotent(obligation, award):
+        service.authorize(CHECKER, *args(obligation))
+        decision = decide(obligation, award)
+>       result = settle(obligation, decision)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/payments/test_c11_rental_deposit_money.py:73: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/payments/test_c11_rental_deposit_money.py:50: in settle
+    return service.settle(CHECKER, *args(obligation), decision['case_id'], decision['case_version'], decision['decision_hash'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/rental_deposit_money.py:211: in settle
+    money.create_in_session(session, intent.payment_intent_id, {'movement_type': kind,
+src/go_hotel/services/unified_money_movement.py:102: in create_in_session
+    s.flush();return out(r)
+    ^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4352: in flush
+    self._flush(objects)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4487: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4448: in _flush
+    flush_context.execute()
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py:949: in do_executemany
+    cursor.executemany(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [IDLE] (host=127.0.0.1 user=go_ci database=go_c11_isolated) at 0x7f4da50ffad0>
+query = 'INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, am... %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)'
+params_seq = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 10000, 'created_at': datetime.datetime(2026, 9, 25,...'created_at': datetime.datetime(2026, 9, 25, 9, 19, 51, 131623, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def executemany(
+        self, query: Query, params_seq: Iterable[Params], *, returning: bool = False
+    ) -> None:
+        """
+        Execute the same command with a sequence of input data.
+        """
+        try:
+            with self._conn.lock:
+                if Pipeline.is_supported():
+                    # If there is already a pipeline, ride it, in order to avoid
+                    # sending unnecessary Sync.
+                    if self._conn._pipeline:
+                        self._conn.wait(
+                            self._executemany_gen_pipeline(query, params_seq, returning)
+                        )
+                    else:
+                        # Otherwise, make a new one
+                        with self._conn._pipeline_nolock():
+                            self._conn.wait(
+                                self._executemany_gen_pipeline(
+                                    query, params_seq, returning
+                                )
+                            )
+                else:
+                    self._conn.wait(
+                        self._executemany_gen_no_pipeline(query, params_seq, returning)
+                    )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           sqlalchemy.exc.DataError: (psycopg.errors.StringDataRightTruncation) value too long for type character varying(64)
+E           [SQL: INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, amount_minor, currency, entry_type, evidence_hash, created_at) VALUES (%(ledger_entry_id)s::VARCHAR, %(transaction_id)s::VARCHAR, %(payment_intent_id)s::VARCHAR, %(account_code)s::VARCHAR, %(direction)s::VARCHAR, %(amount_minor)s::BIGINT, %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)]
+E           [parameters: [{'ledger_entry_id': 'ole_b10739ea5bd9443ab18f28fc6385a2bc', 'transaction_id': 'omm_be33257f16164969a37044c06d47b5ac', 'payment_intent_id': 'opi_4ac310c4e4714b03aeee79259b225f70', 'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'direction': 'DEBIT', 'amount_minor': 10000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': '6b1b06db858b52d08a97c614b41440f58f5fc9305dcec42b100e674a5316c8fe', 'created_at': datetime.datetime(2026, 9, 25, 9, 19, 51, 131539, tzinfo=datetime.timezone.utc)}, {'ledger_entry_id': 'ole_c7ccfcf6c5ff4260a7943964041fa15b', 'transaction_id': 'omm_be33257f16164969a37044c06d47b5ac', 'payment_intent_id': 'opi_4ac310c4e4714b03aeee79259b225f70', 'account_code': 'BUSINESS:RENTAL_DEPOSIT:rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'direction': 'CREDIT', 'amount_minor': 10000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': '6b1b06db858b52d08a97c614b41440f58f5fc9305dcec42b100e674a5316c8fe', 'created_at': datetime.datetime(2026, 9, 25, 9, 19, 51, 131623, tzinfo=datetime.timezone.utc)}]]
+E           (Background on this error at: https://sqlalche.me/e/20/9h9h)
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py:128: DataError
+___ test_failure_between_capture_and_release_rolls_back_both_and_retry_once ____
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f4db7913110>
+dialect = <sqlalchemy.dialects.postgresql.psycopg.PGDialect_psycopg object at 0x7f4db3fef4d0>
+context = <sqlalchemy.dialects.postgresql.psycopg.PGExecutionContext_psycopg object at 0x7f4db80a1450>
+statement = <sqlalchemy.dialects.postgresql.psycopg.PGCompiler_psycopg object at 0x7f4daf9e8190>
+parameters = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 4000, 'created_at': datetime.datetime(2026, 9, 25, ... 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 39, 60718, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py:949: in do_executemany
+    cursor.executemany(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [IDLE] (host=127.0.0.1 user=go_ci database=go_c11_isolated) at 0x7f4db7912ed0>
+query = 'INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, am... %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)'
+params_seq = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 4000, 'created_at': datetime.datetime(2026, 9, 25, ... 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 39, 60718, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def executemany(
+        self, query: Query, params_seq: Iterable[Params], *, returning: bool = False
+    ) -> None:
+        """
+        Execute the same command with a sequence of input data.
+        """
+        try:
+            with self._conn.lock:
+                if Pipeline.is_supported():
+                    # If there is already a pipeline, ride it, in order to avoid
+                    # sending unnecessary Sync.
+                    if self._conn._pipeline:
+                        self._conn.wait(
+                            self._executemany_gen_pipeline(query, params_seq, returning)
+                        )
+                    else:
+                        # Otherwise, make a new one
+                        with self._conn._pipeline_nolock():
+                            self._conn.wait(
+                                self._executemany_gen_pipeline(
+                                    query, params_seq, returning
+                                )
+                            )
+                else:
+                    self._conn.wait(
+                        self._executemany_gen_no_pipeline(query, params_seq, returning)
+                    )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.StringDataRightTruncation: value too long for type character varying(64)
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py:128: StringDataRightTruncation
+
+The above exception was the direct cause of the following exception:
+
+obligation = {'consent': {'accepted': True, 'accepted_at': '2026-09-25T09:20:38.991214', 'actor_id': 'customer', 'source_hash': '52...'NO_FINANCIAL_FACT_ASSERTED', 'obligation_id': 'rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'revision': 2, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4db0f738c0>
+
+    def test_failure_between_capture_and_release_rolls_back_both_and_retry_once(obligation, monkeypatch):
+        service.authorize(CHECKER, *args(obligation))
+        decision = decide(obligation)
+        original = money.create_in_session
+        def failure(session, iid, body, key, actor):
+            if body['movement_type'] == 'RELEASE': raise RuntimeError('isolated-crash-before-release')
+            return original(session, iid, body, key, actor)
+        with monkeypatch.context() as patch:
+            patch.setattr(money, 'create_in_session', failure)
+>           with pytest.raises(RuntimeError): settle(obligation, decision)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/payments/test_c11_rental_deposit_money.py:140: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/payments/test_c11_rental_deposit_money.py:50: in settle
+    return service.settle(CHECKER, *args(obligation), decision['case_id'], decision['case_version'], decision['decision_hash'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/rental_deposit_money.py:211: in settle
+    money.create_in_session(session, intent.payment_intent_id, {'movement_type': kind,
+tests/payments/test_c11_rental_deposit_money.py:137: in failure
+    return original(session, iid, body, key, actor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/unified_money_movement.py:102: in create_in_session
+    s.flush();return out(r)
+    ^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4352: in flush
+    self._flush(objects)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4487: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4448: in _flush
+    flush_context.execute()
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py:949: in do_executemany
+    cursor.executemany(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [IDLE] (host=127.0.0.1 user=go_ci database=go_c11_isolated) at 0x7f4db7912ed0>
+query = 'INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, am... %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)'
+params_seq = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 4000, 'created_at': datetime.datetime(2026, 9, 25, ... 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 39, 60718, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def executemany(
+        self, query: Query, params_seq: Iterable[Params], *, returning: bool = False
+    ) -> None:
+        """
+        Execute the same command with a sequence of input data.
+        """
+        try:
+            with self._conn.lock:
+                if Pipeline.is_supported():
+                    # If there is already a pipeline, ride it, in order to avoid
+                    # sending unnecessary Sync.
+                    if self._conn._pipeline:
+                        self._conn.wait(
+                            self._executemany_gen_pipeline(query, params_seq, returning)
+                        )
+                    else:
+                        # Otherwise, make a new one
+                        with self._conn._pipeline_nolock():
+                            self._conn.wait(
+                                self._executemany_gen_pipeline(
+                                    query, params_seq, returning
+                                )
+                            )
+                else:
+                    self._conn.wait(
+                        self._executemany_gen_no_pipeline(query, params_seq, returning)
+                    )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           sqlalchemy.exc.DataError: (psycopg.errors.StringDataRightTruncation) value too long for type character varying(64)
+E           [SQL: INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, amount_minor, currency, entry_type, evidence_hash, created_at) VALUES (%(ledger_entry_id)s::VARCHAR, %(transaction_id)s::VARCHAR, %(payment_intent_id)s::VARCHAR, %(account_code)s::VARCHAR, %(direction)s::VARCHAR, %(amount_minor)s::BIGINT, %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)]
+E           [parameters: [{'ledger_entry_id': 'ole_c817c8b9af2c40a4a5946ee2ef7a5913', 'transaction_id': 'omm_02ec0e9ca5244a4d9cd133abc25bc483', 'payment_intent_id': 'opi_d2bcd702004a4f6582d9b4408e212a33', 'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'direction': 'DEBIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': '4a594b0f0bcb6f02e116352e0e55207842b9468267869668c5ea6cd4785b955d', 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 39, 60631, tzinfo=datetime.timezone.utc)}, {'ledger_entry_id': 'ole_3a3fcc658fcc46c990e0dd4256dfa8e6', 'transaction_id': 'omm_02ec0e9ca5244a4d9cd133abc25bc483', 'payment_intent_id': 'opi_d2bcd702004a4f6582d9b4408e212a33', 'account_code': 'BUSINESS:RENTAL_DEPOSIT:rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'direction': 'CREDIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': '4a594b0f0bcb6f02e116352e0e55207842b9468267869668c5ea6cd4785b955d', 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 39, 60718, tzinfo=datetime.timezone.utc)}]]
+E           (Background on this error at: https://sqlalche.me/e/20/9h9h)
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py:128: DataError
+_____ test_concurrent_authorization_and_settlement_retries_share_one_graph _____
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f4da50fc410>
+dialect = <sqlalchemy.dialects.postgresql.psycopg.PGDialect_psycopg object at 0x7f4db3fef4d0>
+context = <sqlalchemy.dialects.postgresql.psycopg.PGExecutionContext_psycopg object at 0x7f4da72bea50>
+statement = <sqlalchemy.dialects.postgresql.psycopg.PGCompiler_psycopg object at 0x7f4daf9e8190>
+parameters = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 4000, 'created_at': datetime.datetime(2026, 9, 25, ...'created_at': datetime.datetime(2026, 9, 25, 9, 20, 43, 236814, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py:949: in do_executemany
+    cursor.executemany(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [IDLE] (host=127.0.0.1 user=go_ci database=go_c11_isolated) at 0x7f4db7912510>
+query = 'INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, am... %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)'
+params_seq = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 4000, 'created_at': datetime.datetime(2026, 9, 25, ...'created_at': datetime.datetime(2026, 9, 25, 9, 20, 43, 236814, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def executemany(
+        self, query: Query, params_seq: Iterable[Params], *, returning: bool = False
+    ) -> None:
+        """
+        Execute the same command with a sequence of input data.
+        """
+        try:
+            with self._conn.lock:
+                if Pipeline.is_supported():
+                    # If there is already a pipeline, ride it, in order to avoid
+                    # sending unnecessary Sync.
+                    if self._conn._pipeline:
+                        self._conn.wait(
+                            self._executemany_gen_pipeline(query, params_seq, returning)
+                        )
+                    else:
+                        # Otherwise, make a new one
+                        with self._conn._pipeline_nolock():
+                            self._conn.wait(
+                                self._executemany_gen_pipeline(
+                                    query, params_seq, returning
+                                )
+                            )
+                else:
+                    self._conn.wait(
+                        self._executemany_gen_no_pipeline(query, params_seq, returning)
+                    )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.StringDataRightTruncation: value too long for type character varying(64)
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py:128: StringDataRightTruncation
+
+The above exception was the direct cause of the following exception:
+
+obligation = {'consent': {'accepted': True, 'accepted_at': '2026-09-25T09:20:43.121059', 'actor_id': 'customer', 'source_hash': '6d...'NO_FINANCIAL_FACT_ASSERTED', 'obligation_id': 'rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'revision': 2, ...}
+
+    def test_concurrent_authorization_and_settlement_retries_share_one_graph(obligation):
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            results = list(pool.map(lambda _: service.authorize(CHECKER, *args(obligation)), range(3)))
+        assert len({item['payment_intent_id'] for item in results}) == 1
+        decision = decide(obligation)
+        with ThreadPoolExecutor(max_workers=3) as pool:
+>           results = list(pool.map(lambda _: settle(obligation, decision), range(3)))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/payments/test_c11_rental_deposit_money.py:151: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/concurrent/futures/_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/concurrent/futures/_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/payments/test_c11_rental_deposit_money.py:151: in <lambda>
+    results = list(pool.map(lambda _: settle(obligation, decision), range(3)))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/payments/test_c11_rental_deposit_money.py:50: in settle
+    return service.settle(CHECKER, *args(obligation), decision['case_id'], decision['case_version'], decision['decision_hash'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/rental_deposit_money.py:211: in settle
+    money.create_in_session(session, intent.payment_intent_id, {'movement_type': kind,
+src/go_hotel/services/unified_money_movement.py:102: in create_in_session
+    s.flush();return out(r)
+    ^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4352: in flush
+    self._flush(objects)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4487: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4448: in _flush
+    flush_context.execute()
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py:949: in do_executemany
+    cursor.executemany(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [IDLE] (host=127.0.0.1 user=go_ci database=go_c11_isolated) at 0x7f4db7912510>
+query = 'INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, am... %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)'
+params_seq = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 4000, 'created_at': datetime.datetime(2026, 9, 25, ...'created_at': datetime.datetime(2026, 9, 25, 9, 20, 43, 236814, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def executemany(
+        self, query: Query, params_seq: Iterable[Params], *, returning: bool = False
+    ) -> None:
+        """
+        Execute the same command with a sequence of input data.
+        """
+        try:
+            with self._conn.lock:
+                if Pipeline.is_supported():
+                    # If there is already a pipeline, ride it, in order to avoid
+                    # sending unnecessary Sync.
+                    if self._conn._pipeline:
+                        self._conn.wait(
+                            self._executemany_gen_pipeline(query, params_seq, returning)
+                        )
+                    else:
+                        # Otherwise, make a new one
+                        with self._conn._pipeline_nolock():
+                            self._conn.wait(
+                                self._executemany_gen_pipeline(
+                                    query, params_seq, returning
+                                )
+                            )
+                else:
+                    self._conn.wait(
+                        self._executemany_gen_no_pipeline(query, params_seq, returning)
+                    )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           sqlalchemy.exc.DataError: (psycopg.errors.StringDataRightTruncation) value too long for type character varying(64)
+E           [SQL: INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, amount_minor, currency, entry_type, evidence_hash, created_at) VALUES (%(ledger_entry_id)s::VARCHAR, %(transaction_id)s::VARCHAR, %(payment_intent_id)s::VARCHAR, %(account_code)s::VARCHAR, %(direction)s::VARCHAR, %(amount_minor)s::BIGINT, %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)]
+E           [parameters: [{'ledger_entry_id': 'ole_4d51f563304f4aa99e6432fd4031babb', 'transaction_id': 'omm_e9223bd3ae714ba291cfcb04df2baeff', 'payment_intent_id': 'opi_6ceeaf5138804739b7240be5f3d4324d', 'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'direction': 'DEBIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': '54c6f668349f7c0120b3e483bbc40eca9c0b4b28428ba5b0759178d4380f8b1c', 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 43, 236753, tzinfo=datetime.timezone.utc)}, {'ledger_entry_id': 'ole_927e63eefb2644d78792e9c77385fa9c', 'transaction_id': 'omm_e9223bd3ae714ba291cfcb04df2baeff', 'payment_intent_id': 'opi_6ceeaf5138804739b7240be5f3d4324d', 'account_code': 'BUSINESS:RENTAL_DEPOSIT:rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'direction': 'CREDIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': '54c6f668349f7c0120b3e483bbc40eca9c0b4b28428ba5b0759178d4380f8b1c', 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 43, 236814, tzinfo=datetime.timezone.utc)}]]
+E           (Background on this error at: https://sqlalche.me/e/20/9h9h)
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py:128: DataError
+_______ test_missing_capture_ledger_cannot_claim_settled_or_repeat_money _______
+
+self = <sqlalchemy.engine.base.Connection object at 0x7f4da50fd0d0>
+dialect = <sqlalchemy.dialects.postgresql.psycopg.PGDialect_psycopg object at 0x7f4db3fef4d0>
+context = <sqlalchemy.dialects.postgresql.psycopg.PGExecutionContext_psycopg object at 0x7f4da72bd350>
+statement = <sqlalchemy.dialects.postgresql.psycopg.PGCompiler_psycopg object at 0x7f4daf9e8190>
+parameters = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 4000, 'created_at': datetime.datetime(2026, 9, 25, ... 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 55, 26743, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1938: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py:949: in do_executemany
+    cursor.executemany(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [IDLE] (host=127.0.0.1 user=go_ci database=go_c11_isolated) at 0x7f4db7913dd0>
+query = 'INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, am... %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)'
+params_seq = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 4000, 'created_at': datetime.datetime(2026, 9, 25, ... 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 55, 26743, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def executemany(
+        self, query: Query, params_seq: Iterable[Params], *, returning: bool = False
+    ) -> None:
+        """
+        Execute the same command with a sequence of input data.
+        """
+        try:
+            with self._conn.lock:
+                if Pipeline.is_supported():
+                    # If there is already a pipeline, ride it, in order to avoid
+                    # sending unnecessary Sync.
+                    if self._conn._pipeline:
+                        self._conn.wait(
+                            self._executemany_gen_pipeline(query, params_seq, returning)
+                        )
+                    else:
+                        # Otherwise, make a new one
+                        with self._conn._pipeline_nolock():
+                            self._conn.wait(
+                                self._executemany_gen_pipeline(
+                                    query, params_seq, returning
+                                )
+                            )
+                else:
+                    self._conn.wait(
+                        self._executemany_gen_no_pipeline(query, params_seq, returning)
+                    )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.StringDataRightTruncation: value too long for type character varying(64)
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py:128: StringDataRightTruncation
+
+The above exception was the direct cause of the following exception:
+
+obligation = {'consent': {'accepted': True, 'accepted_at': '2026-09-25T09:20:54.957106', 'actor_id': 'customer', 'source_hash': 'e4...'NO_FINANCIAL_FACT_ASSERTED', 'obligation_id': 'rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'revision': 2, ...}
+
+    def test_missing_capture_ledger_cannot_claim_settled_or_repeat_money(obligation):
+        service.authorize(CHECKER, *args(obligation))
+        decision = decide(obligation)
+>       settle(obligation, decision)
+
+tests/payments/test_c11_rental_deposit_money.py:173: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/payments/test_c11_rental_deposit_money.py:50: in settle
+    return service.settle(CHECKER, *args(obligation), decision['case_id'], decision['case_version'], decision['decision_hash'])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/rental_deposit_money.py:211: in settle
+    money.create_in_session(session, intent.payment_intent_id, {'movement_type': kind,
+src/go_hotel/services/unified_money_movement.py:102: in create_in_session
+    s.flush();return out(r)
+    ^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4352: in flush
+    self._flush(objects)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4487: in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/util/langhelpers.py:122: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/session.py:4448: in _flush
+    flush_context.execute()
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:465: in execute
+    rec.execute(self)
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/unitofwork.py:641: in execute
+    util.preloaded.orm_persistence.save_obj(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:94: in save_obj
+    _emit_insert_statements(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/orm/persistence.py:1049: in _emit_insert_statements
+    result = connection.execute(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1421: in execute
+    return meth(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/sql/elements.py:526: in _execute_on_connection
+    return connection._execute_clauseelement(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1643: in _execute_clauseelement
+    ret = self._execute_context(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1848: in _execute_context
+    return self._exec_single_context(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1988: in _exec_single_context
+    self._handle_dbapi_exception(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:2365: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/base.py:1938: in _exec_single_context
+    self.dialect.do_executemany(
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/sqlalchemy/engine/default.py:949: in do_executemany
+    cursor.executemany(statement, parameters)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [closed] [IDLE] (host=127.0.0.1 user=go_ci database=go_c11_isolated) at 0x7f4db7913dd0>
+query = 'INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, am... %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)'
+params_seq = [{'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'amount_minor': 4000, 'created_at': datetime.datetime(2026, 9, 25, ... 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 55, 26743, tzinfo=datetime.timezone.utc), 'currency': 'CNY', ...}]
+
+    def executemany(
+        self, query: Query, params_seq: Iterable[Params], *, returning: bool = False
+    ) -> None:
+        """
+        Execute the same command with a sequence of input data.
+        """
+        try:
+            with self._conn.lock:
+                if Pipeline.is_supported():
+                    # If there is already a pipeline, ride it, in order to avoid
+                    # sending unnecessary Sync.
+                    if self._conn._pipeline:
+                        self._conn.wait(
+                            self._executemany_gen_pipeline(query, params_seq, returning)
+                        )
+                    else:
+                        # Otherwise, make a new one
+                        with self._conn._pipeline_nolock():
+                            self._conn.wait(
+                                self._executemany_gen_pipeline(
+                                    query, params_seq, returning
+                                )
+                            )
+                else:
+                    self._conn.wait(
+                        self._executemany_gen_no_pipeline(query, params_seq, returning)
+                    )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           sqlalchemy.exc.DataError: (psycopg.errors.StringDataRightTruncation) value too long for type character varying(64)
+E           [SQL: INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, amount_minor, currency, entry_type, evidence_hash, created_at) VALUES (%(ledger_entry_id)s::VARCHAR, %(transaction_id)s::VARCHAR, %(payment_intent_id)s::VARCHAR, %(account_code)s::VARCHAR, %(direction)s::VARCHAR, %(amount_minor)s::BIGINT, %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)]
+E           [parameters: [{'ledger_entry_id': 'ole_e5e7509935f841aabe98989540248b4a', 'transaction_id': 'omm_d2f7c5e4e7ce403c8831ad86fb8ae015', 'payment_intent_id': 'opi_e4e1845d67124198a8286da53272a578', 'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'direction': 'DEBIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': 'bbb78714ddc6d2d08babb7f65d1229718d5e4daf68053874c9e5e14d5d44a914', 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 55, 26680, tzinfo=datetime.timezone.utc)}, {'ledger_entry_id': 'ole_f7703685dafe4519a8d2085d9677d7ea', 'transaction_id': 'omm_d2f7c5e4e7ce403c8831ad86fb8ae015', 'payment_intent_id': 'opi_e4e1845d67124198a8286da53272a578', 'account_code': 'BUSINESS:RENTAL_DEPOSIT:rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'direction': 'CREDIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': 'bbb78714ddc6d2d08babb7f65d1229718d5e4daf68053874c9e5e14d5d44a914', 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 55, 26743, tzinfo=datetime.timezone.utc)}]]
+E           (Background on this error at: https://sqlalche.me/e/20/9h9h)
+
+/opt/hostedtoolcache/Python/3.13.5/x64/lib/python3.13/site-packages/psycopg/cursor.py:128: DataError
+=========================== short test summary info ============================
+FAILED tests/payments/test_c11_rental_deposit_money.py::test_award_capture_and_remainder_release_are_atomic_idempotent[4000] - sqlalchemy.exc.DataError: (psycopg.errors.StringDataRightTruncation) value too long for type character varying(64)
+[SQL: INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, amount_minor, currency, entry_type, evidence_hash, created_at) VALUES (%(ledger_entry_id)s::VARCHAR, %(transaction_id)s::VARCHAR, %(payment_intent_id)s::VARCHAR, %(account_code)s::VARCHAR, %(direction)s::VARCHAR, %(amount_minor)s::BIGINT, %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)]
+[parameters: [{'ledger_entry_id': 'ole_478e070ba2984e50b70b4af909a4e154', 'transaction_id': 'omm_c221645626094df29f7e5dc5baee3708', 'payment_intent_id': 'opi_93d40831876f4ea7b1eea084c3bf3f2d', 'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'direction': 'DEBIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': 'def684d68f095039a77ecc31930e9f7685b30cecbac64764941279438a41195f', 'created_at': datetime.datetime(2026, 9, 25, 9, 19, 46, 899867, tzinfo=datetime.timezone.utc)}, {'ledger_entry_id': 'ole_eda5133b7c8c4d9fb5e3d08bb60f66fd', 'transaction_id': 'omm_c221645626094df29f7e5dc5baee3708', 'payment_intent_id': 'opi_93d40831876f4ea7b1eea084c3bf3f2d', 'account_code': 'BUSINESS:RENTAL_DEPOSIT:rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'direction': 'CREDIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': 'def684d68f095039a77ecc31930e9f7685b30cecbac64764941279438a41195f', 'created_at': datetime.datetime(2026, 9, 25, 9, 19, 46, 899931, tzinfo=datetime.timezone.utc)}]]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+FAILED tests/payments/test_c11_rental_deposit_money.py::test_award_capture_and_remainder_release_are_atomic_idempotent[10000] - sqlalchemy.exc.DataError: (psycopg.errors.StringDataRightTruncation) value too long for type character varying(64)
+[SQL: INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, amount_minor, currency, entry_type, evidence_hash, created_at) VALUES (%(ledger_entry_id)s::VARCHAR, %(transaction_id)s::VARCHAR, %(payment_intent_id)s::VARCHAR, %(account_code)s::VARCHAR, %(direction)s::VARCHAR, %(amount_minor)s::BIGINT, %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)]
+[parameters: [{'ledger_entry_id': 'ole_b10739ea5bd9443ab18f28fc6385a2bc', 'transaction_id': 'omm_be33257f16164969a37044c06d47b5ac', 'payment_intent_id': 'opi_4ac310c4e4714b03aeee79259b225f70', 'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'direction': 'DEBIT', 'amount_minor': 10000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': '6b1b06db858b52d08a97c614b41440f58f5fc9305dcec42b100e674a5316c8fe', 'created_at': datetime.datetime(2026, 9, 25, 9, 19, 51, 131539, tzinfo=datetime.timezone.utc)}, {'ledger_entry_id': 'ole_c7ccfcf6c5ff4260a7943964041fa15b', 'transaction_id': 'omm_be33257f16164969a37044c06d47b5ac', 'payment_intent_id': 'opi_4ac310c4e4714b03aeee79259b225f70', 'account_code': 'BUSINESS:RENTAL_DEPOSIT:rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'direction': 'CREDIT', 'amount_minor': 10000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': '6b1b06db858b52d08a97c614b41440f58f5fc9305dcec42b100e674a5316c8fe', 'created_at': datetime.datetime(2026, 9, 25, 9, 19, 51, 131623, tzinfo=datetime.timezone.utc)}]]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+FAILED tests/payments/test_c11_rental_deposit_money.py::test_failure_between_capture_and_release_rolls_back_both_and_retry_once - sqlalchemy.exc.DataError: (psycopg.errors.StringDataRightTruncation) value too long for type character varying(64)
+[SQL: INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, amount_minor, currency, entry_type, evidence_hash, created_at) VALUES (%(ledger_entry_id)s::VARCHAR, %(transaction_id)s::VARCHAR, %(payment_intent_id)s::VARCHAR, %(account_code)s::VARCHAR, %(direction)s::VARCHAR, %(amount_minor)s::BIGINT, %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)]
+[parameters: [{'ledger_entry_id': 'ole_c817c8b9af2c40a4a5946ee2ef7a5913', 'transaction_id': 'omm_02ec0e9ca5244a4d9cd133abc25bc483', 'payment_intent_id': 'opi_d2bcd702004a4f6582d9b4408e212a33', 'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'direction': 'DEBIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': '4a594b0f0bcb6f02e116352e0e55207842b9468267869668c5ea6cd4785b955d', 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 39, 60631, tzinfo=datetime.timezone.utc)}, {'ledger_entry_id': 'ole_3a3fcc658fcc46c990e0dd4256dfa8e6', 'transaction_id': 'omm_02ec0e9ca5244a4d9cd133abc25bc483', 'payment_intent_id': 'opi_d2bcd702004a4f6582d9b4408e212a33', 'account_code': 'BUSINESS:RENTAL_DEPOSIT:rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'direction': 'CREDIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': '4a594b0f0bcb6f02e116352e0e55207842b9468267869668c5ea6cd4785b955d', 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 39, 60718, tzinfo=datetime.timezone.utc)}]]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+FAILED tests/payments/test_c11_rental_deposit_money.py::test_concurrent_authorization_and_settlement_retries_share_one_graph - sqlalchemy.exc.DataError: (psycopg.errors.StringDataRightTruncation) value too long for type character varying(64)
+[SQL: INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, amount_minor, currency, entry_type, evidence_hash, created_at) VALUES (%(ledger_entry_id)s::VARCHAR, %(transaction_id)s::VARCHAR, %(payment_intent_id)s::VARCHAR, %(account_code)s::VARCHAR, %(direction)s::VARCHAR, %(amount_minor)s::BIGINT, %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)]
+[parameters: [{'ledger_entry_id': 'ole_4d51f563304f4aa99e6432fd4031babb', 'transaction_id': 'omm_e9223bd3ae714ba291cfcb04df2baeff', 'payment_intent_id': 'opi_6ceeaf5138804739b7240be5f3d4324d', 'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'direction': 'DEBIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': '54c6f668349f7c0120b3e483bbc40eca9c0b4b28428ba5b0759178d4380f8b1c', 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 43, 236753, tzinfo=datetime.timezone.utc)}, {'ledger_entry_id': 'ole_927e63eefb2644d78792e9c77385fa9c', 'transaction_id': 'omm_e9223bd3ae714ba291cfcb04df2baeff', 'payment_intent_id': 'opi_6ceeaf5138804739b7240be5f3d4324d', 'account_code': 'BUSINESS:RENTAL_DEPOSIT:rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'direction': 'CREDIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': '54c6f668349f7c0120b3e483bbc40eca9c0b4b28428ba5b0759178d4380f8b1c', 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 43, 236814, tzinfo=datetime.timezone.utc)}]]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+FAILED tests/payments/test_c11_rental_deposit_money.py::test_missing_capture_ledger_cannot_claim_settled_or_repeat_money - sqlalchemy.exc.DataError: (psycopg.errors.StringDataRightTruncation) value too long for type character varying(64)
+[SQL: INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, amount_minor, currency, entry_type, evidence_hash, created_at) VALUES (%(ledger_entry_id)s::VARCHAR, %(transaction_id)s::VARCHAR, %(payment_intent_id)s::VARCHAR, %(account_code)s::VARCHAR, %(direction)s::VARCHAR, %(amount_minor)s::BIGINT, %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)]
+[parameters: [{'ledger_entry_id': 'ole_e5e7509935f841aabe98989540248b4a', 'transaction_id': 'omm_d2f7c5e4e7ce403c8831ad86fb8ae015', 'payment_intent_id': 'opi_e4e1845d67124198a8286da53272a578', 'account_code': 'PAYMENT_CLEARING:LOCAL_MARKET', 'direction': 'DEBIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': 'bbb78714ddc6d2d08babb7f65d1229718d5e4daf68053874c9e5e14d5d44a914', 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 55, 26680, tzinfo=datetime.timezone.utc)}, {'ledger_entry_id': 'ole_f7703685dafe4519a8d2085d9677d7ea', 'transaction_id': 'omm_d2f7c5e4e7ce403c8831ad86fb8ae015', 'payment_intent_id': 'opi_e4e1845d67124198a8286da53272a578', 'account_code': 'BUSINESS:RENTAL_DEPOSIT:rent_dep_054ea871d76d7e6615a55164c4c6ad388a64320a', 'direction': 'CREDIT', 'amount_minor': 4000, 'currency': 'CNY', 'entry_type': 'CAPTURE', 'evidence_hash': 'bbb78714ddc6d2d08babb7f65d1229718d5e4daf68053874c9e5e14d5d44a914', 'created_at': datetime.datetime(2026, 9, 25, 9, 20, 55, 26743, tzinfo=datetime.timezone.utc)}]]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)

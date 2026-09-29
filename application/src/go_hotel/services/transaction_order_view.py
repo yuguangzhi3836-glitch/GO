@@ -45,19 +45,22 @@ def summary(vertical, row):
             'updated_at': row.updated_at.isoformat()}
 
 
-def supplier_orders(supplier_id, limit=50, offset=0):
+def supplier_orders(supplier_id, limit=50, offset=0, vertical=None):
+    if vertical is not None and vertical not in ORDERS:
+        raise ValueError('UNSUPPORTED_VERTICAL')
     if not supplier_id:
         return {'items': [], 'count': 0, 'limit': limit, 'offset': offset}
     # Filter tenant identity in SQL before global ordering/pagination.
     queries = [supplier_query(v, supplier_id).with_only_columns(
         literal(v).label('vertical'), model.order_id.label('order_id'),
-        model.updated_at.label('updated_at')) for v, model in ORDERS.items()]
+        model.updated_at.label('updated_at')) for v, model in ORDERS.items() if vertical is None or vertical==v]
     combined = union_all(*queries).subquery()
     with SessionLocal() as s:
         keys = s.execute(select(combined).order_by(combined.c.updated_at.desc(),
             combined.c.vertical, combined.c.order_id).offset(offset).limit(limit)).all()
         items = [summary(x.vertical, s.get(ORDERS[x.vertical], x.order_id)) for x in keys]
-        return {'items': items, 'count': len(items), 'limit': limit, 'offset': offset}
+        total=s.scalar(select(func.count()).select_from(combined))
+        return {'items': items, 'count': len(items), 'total':total,'limit': limit, 'offset': offset,'has_more':offset+len(items)<total}
 
 
 def refund_query(vertical, supplier_id):
@@ -82,11 +85,15 @@ def supplier_counts(supplier_id):
     return orders, refunds
 
 
-def supplier_refunds(supplier_id, status=None, limit=50, offset=0):
+def supplier_refunds(supplier_id, status=None, limit=50, offset=0, vertical=None):
+    if vertical is not None and vertical not in ORDERS:
+        raise ValueError('UNSUPPORTED_VERTICAL')
     if not supplier_id:
         return {'items': [], 'count': 0, 'limit': limit, 'offset': offset}
     queries=[]
     for v,model in REFUNDS.items():
+        if vertical is not None and v!=vertical:
+            continue
         q=refund_query(v,supplier_id)
         if status:
             q=q.where(model.status==status)
@@ -97,7 +104,8 @@ def supplier_refunds(supplier_id, status=None, limit=50, offset=0):
     with SessionLocal() as s:
         items=[dict(x) for x in s.execute(select(rows).order_by(rows.c.created_at.desc(),
             rows.c.vertical,rows.c.refund_id).offset(offset).limit(limit)).mappings()]
-        return {'items':items,'count':len(items),'limit':limit,'offset':offset}
+        total=s.scalar(select(func.count()).select_from(rows))
+        return {'items':items,'count':len(items),'total':total,'limit':limit,'offset':offset,'has_more':offset+len(items)<total}
 
 
 def snapshot(vertical, order_id, *, supplier_id=None, account_id=None, admin=False):

@@ -3,12 +3,14 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from sqlalchemy import select
+from sqlalchemy.orm import object_session
 
 from go_hotel.core.production_truth_gate import production_truth_required
 from go_hotel.db.models import MobilityRefundRow, MobilityRideOrderRow
 from go_hotel.mobility.ride.flight_sync import engineering_policy, reject_client_rules, snapshot_policy, flight_ride_sync
 from go_hotel.db.session import SessionLocal
-from go_hotel.autonomy.durable import transaction
+from go_hotel.autonomy.durable import transaction, db_now_ms
+from go_hotel.mobility.ride import cancellation_policy
 from go_hotel.domain.models import new_id
 from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence, list_vertical_evidence
 from go_hotel.services.vertical_lifecycle_projection import project_vertical_lifecycle
@@ -23,14 +25,27 @@ def now() -> datetime:
 class RideService:
     def search(self, pickup: str, dropoff: str, pickup_at: str, currency: str = "CNY"):
         production_truth_required("RIDE", "SEARCH")
-        return [
-            {"offer_id": "ride_standard", "vehicle_class": "COMFORT", "total_amount_minor": 16800, "currency": currency, "included_wait_minutes": 60, "service_policy": engineering_policy("ride_standard"), "meet_and_greet": True, "cancellation": {"free_until_hours": 24, "late_fee_minor": 8400}, "external_live": False},
-            {"offer_id": "ride_premium", "vehicle_class": "PREMIUM", "total_amount_minor": 26800, "currency": currency, "included_wait_minutes": 90, "service_policy": engineering_policy("ride_premium"), "meet_and_greet": True, "cancellation": {"free_until_hours": 24, "late_fee_minor": 13400}, "external_live": False},
-        ]
+        if currency != "CNY":
+            raise ValueError("RIDE_ENGINEERING_CURRENCY_INVALID")
+        with SessionLocal() as s:
+            current_ms = db_now_ms(s)
+        return [{"offer_id": offer, "vehicle_class": vehicle, "total_amount_minor": amount,
+                 "currency": currency, "included_wait_minutes": waiting,
+                 "service_policy": engineering_policy(offer), "meet_and_greet": True,
+                 "cancellation": cancellation_policy.offer_terms(offer, amount, currency,
+                     pickup, dropoff, pickup_at, current_ms), "external_live": False}
+                for offer, vehicle, amount, waiting in [
+                    ('ride_standard', 'COMFORT', 16800, 60), ('ride_premium', 'PREMIUM', 26800, 90)]]
 
     def create(self, account: str, body: dict):
         production_truth_required("RIDE", "CREATE_ORDER")
+        # These engineering offers have fixed CNY prices; accepting another
+        # currency would relabel the amount without a supplier fare or FX quote.
+        if body.get("currency", "CNY") != "CNY":
+            raise ValueError("RIDE_ENGINEERING_CURRENCY_INVALID")
         reject_client_rules(body)
+        if {'cancellation_policy', 'cancellation_fee_minor', 'cancellation_source'}.intersection(body):
+            raise ValueError('RIDE_CANCELLATION_CLIENT_POLICY_FORBIDDEN')
         prices = {"ride_standard": 16800, "ride_premium": 26800}
         total = prices.get(body["offer_id"])
         if total is None:
@@ -49,6 +64,7 @@ class RideService:
             from go_hotel.services.vertical_reservation_expiry import issue_in
             issue_in(s, "RIDE", o)
             append_vertical_evidence(s, "RIDE", o.order_id, "ORDER_CREATED", o.status, {"offer_id": body["offer_id"], "external_live": False})
+            cancellation_policy.freeze_in(s, o, body['offer_id'], body.get('cancellation_policy_hash'))
             snapshot_policy(s, o, body['offer_id'])
             if body.get('flight_tracking_enabled'):
                 flight_ride_sync.bind_in(s, account, o.order_id, {
@@ -57,7 +73,9 @@ class RideService:
                     'expected_revision': 0}, creating=True)
             result=self.out(o)
             result["service_policy"]=engineering_policy(body["offer_id"])
-        vertical_source_runtime_service.decide("RIDE",result["order_id"],[{"source_id":"ride-engineering-source","source_type":"FLEET_OFFICIAL","authorized":True,"available":True,"evidence_reference":f"ride-offer://{body['offer_id']}"}])
+            # Failure must roll back both facts before the API releases its
+            # idempotency claim; a retry must not create a second native order.
+            vertical_source_runtime_service.decide_in(s,"RIDE",result["order_id"],[{"source_id":"ride-engineering-source","source_type":"FLEET_OFFICIAL","authorized":True,"available":True,"evidence_reference":f"ride-offer://{body['offer_id']}"}])
         return result
 
     def out(self, o):
@@ -65,6 +83,7 @@ class RideService:
                 "dropoff": o.dropoff, "pickup_at": o.pickup_at, "vehicle_class": o.vehicle_class,
                 "total_amount_minor": o.total_amount_minor, "currency": o.currency,
                 "passengers": o.passengers, "flight_no": o.flight_no,
+                "cancellation": cancellation_policy.projection(object_session(o), o),
                 "supplier_reference": o.supplier_reference if o.status in {"CONFIRMED","IN_PROGRESS"} else None,
                 **__import__("go_hotel.services.vertical_reservation_expiry", fromlist=["projection"]).projection("RIDE", o), "external_live": False}
 
@@ -85,6 +104,7 @@ class RideService:
             o = s.get(MobilityRideOrderRow, order_id, with_for_update=True)
             if not o or o.account_id != account or o.status != "CONFIRMED":
                 raise ValueError("MOBILITY_ORDER_NOT_CHANGEABLE")
+            cancellation_policy.instant(new_time)
             o.pickup_at = new_time; o.updated_at = now()
             append_vertical_evidence(s, "RIDE", order_id, "MODIFIED", o.status, {"new_time": new_time})
             return self.out(o)
@@ -114,7 +134,7 @@ class RideService:
             append_vertical_evidence(s, "RIDE", order_id, f"FULFILLMENT_{action}", target, {"evidence_reference": evidence_reference, "supplier_reference": o.supplier_reference}); project_vertical_lifecycle(s,"RIDE",o,evidence_reference,facts={"action":action,"supplier_reference":o.supplier_reference})
             return self.out(o)
 
-    def admin_external_state(self, order_id: str, state: str, evidence_reference: str, actor: str):
+    def admin_external_state(self, order_id: str, state: str, evidence_reference: str, actor: str, confirmation_episode_reference: str | None = None):
         if not str(evidence_reference or '').strip() or not str(actor or '').strip(): raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
         state = state.upper()
         if state not in {"UNKNOWN_EXTERNAL_STATE", "CONFIRMED", "FAILED"}:
@@ -124,23 +144,38 @@ class RideService:
             if not o:
                 raise ValueError("MOBILITY_ORDER_NOT_FOUND")
             if state == "UNKNOWN_EXTERNAL_STATE":
+                # The transaction acquires the order row before checking state
+                # (and BEGIN IMMEDIATE serializes SQLite test writers). A second
+                # concurrent opener therefore observes the committed UNKNOWN and
+                # loses without appending evidence or mutating the order.
+                if o.status == "UNKNOWN_EXTERNAL_STATE":
+                    raise ValueError("RIDE_UNKNOWN_EPISODE_ALREADY_OPEN")
                 if o.status not in {"CONFIRMED", "IN_PROGRESS"}:
                     raise ValueError("MOBILITY_ILLEGAL_STATE_TRANSITION")
+                from go_hotel.mobility.ride.recovery_evidence import reject_reused_unknown_episode
+                reject_reused_unknown_episode(s, o, evidence_reference)
                 previous_status=o.status
                 o.status = state; kind = "EXTERNAL_STATE_UNKNOWN"
                 payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference, "previous_status": previous_status}
             elif state == "FAILED":
                 if o.status != "UNKNOWN_EXTERNAL_STATE":
                     raise ValueError("MOBILITY_RECONCILIATION_NOT_REQUIRED")
+                # A terminal fleet decision must identify the current UNKNOWN
+                # episode just like CONFIRMED. Otherwise a delayed failure from
+                # an older episode could terminate a newer recovery attempt.
+                from go_hotel.mobility.ride.recovery_evidence import previous_phase
+                previous_phase(s, o, confirmation_episode_reference)
                 o.status = "FAILED"; kind = "RECONCILED_TO_FAILED"
-                payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference}
+                payload={"evidence_reference": evidence_reference, "actor": actor,
+                    "supplier_reference": o.supplier_reference,
+                    "confirmation_episode_reference": confirmation_episode_reference}
             else:
                 if o.status != "UNKNOWN_EXTERNAL_STATE":
                     raise ValueError("MOBILITY_RECONCILIATION_NOT_REQUIRED")
                 from go_hotel.mobility.ride.recovery_evidence import previous_phase
-                previous_status=previous_phase(s,o)
+                previous_status=previous_phase(s,o,confirmation_episode_reference)
                 o.status = previous_status; kind = "RECONCILED_TO_"+previous_status
-                payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference, "restored_status": previous_status}
+                payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference, "restored_status": previous_status, "confirmation_episode_reference": confirmation_episode_reference}
             o.updated_at = now(); append_vertical_evidence(s, "RIDE", order_id, kind, o.status, payload); project_vertical_lifecycle(s,"RIDE",o,evidence_reference,facts={"actor":actor,"native_status":o.status})
             return self.out(o)
 

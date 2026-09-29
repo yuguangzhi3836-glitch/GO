@@ -1,0 +1,258 @@
+{
+  "database": "sqlite",
+  "scope": "ISOLATED_CNY_HTTP_NO_PSP",
+  "capture": {
+    "reservation_id": "hdr_94b6015352bd4da7b3e44c0095cf1f14",
+    "amount_minor": 69800,
+    "currency": "CNY",
+    "movement_ids": [
+      "omm_cc3a8796ed6b4fed8ee3f966df17e64d",
+      "omm_9629ce2d7f004e7c81aa43e7f808cdb4"
+    ],
+    "ledger_ids": [
+      "ole_1194eb694fd44c01ae5fde72725dbb74",
+      "ole_99e9045b82e84f3da561814d88ca57e9"
+    ]
+  },
+  "previous_close": {
+    "daily_close_id": "hdc_471b0136f882427db5fd968f06f4b9cd",
+    "hosted_hotel_id": "hdh_b3e004aeb0ad4083a2f9704e81a77c88",
+    "business_date": "2026-09-28",
+    "inventory_snapshot_json": {
+      "total": 250,
+      "available": 249,
+      "days": [
+        {
+          "inventory_day_id": "hid_09e1863a7ccb4c44a8d0382c93f18957",
+          "total": 50,
+          "available": 50,
+          "held": 0,
+          "difference": 0
+        },
+        {
+          "inventory_day_id": "hid_45e317a226004ea1b3f1e397b818b6ae",
+          "total": 50,
+          "available": 49,
+          "held": 1,
+          "difference": 0
+        },
+        {
+          "inventory_day_id": "hid_98f3e5f4102e467bb878840a534c7874",
+          "total": 50,
+          "available": 50,
+          "held": 0,
+          "difference": 0
+        },
+        {
+          "inventory_day_id": "hid_9ed2f5bd8b394788be3b6f9333311654",
+          "total": 50,
+          "available": 50,
+          "held": 0,
+          "difference": 0
+        },
+        {
+          "inventory_day_id": "hid_f5afb2d19f764dd2891667b2f96185d5",
+          "total": 50,
+          "available": 50,
+          "held": 0,
+          "difference": 0
+        }
+      ]
+    },
+    "reservation_summary_json": {
+      "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING": 1
+    },
+    "exception_summary_json": {
+      "schema": "HOSTED_BUSINESS_DAY_V1",
+      "timezone": "Asia/Shanghai",
+      "window_start": "2026-09-27T16:00:00+00:00",
+      "window_end_exclusive": "2026-09-28T16:00:00+00:00",
+      "pending": 0,
+      "payment_transactions": 1,
+      "refund_transactions": 0,
+      "currencies": {
+        "CNY": {
+          "authorization_minor": 69800,
+          "capture_minor": 69800,
+          "release_minor": 0,
+          "refund_minor": 0,
+          "debit_minor": 69800,
+          "credit_minor": 69800,
+          "difference_minor": 0,
+          "net_capture_minor": 69800,
+          "opening_held_minor": 0,
+          "opening_net_capture_minor": 0,
+          "closing_held_minor": 0,
+          "closing_net_capture_minor": 69800
+        }
+      },
+      "blockers": [],
+      "unresolved_reservations": [],
+      "reservations": [
+        {
+          "reservation_id": "hdr_94b6015352bd4da7b3e44c0095cf1f14",
+          "state": "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING",
+          "payment_state": "CONTRACT_CAPTURED_NOT_ALIPAY"
+        }
+      ],
+      "order_facts": [
+        {
+          "hosted_reservation_id": "hdr_94b6015352bd4da7b3e44c0095cf1f14",
+          "hosted_offer_id": "hdo_920e915e1a31412c89715001d518674d",
+          "check_in": "2026-09-28",
+          "check_out": "2026-09-29",
+          "amount_minor": 69800,
+          "currency": "CNY",
+          "created_at": "2026-09-28 00:00:00",
+          "updated_at": "2026-09-28 07:00:00"
+        }
+      ],
+      "stays": [
+        {
+          "stay_id": "gsl_762ef53c09c64d87bab800449aa1a7fa",
+          "state": "CHECKED_OUT",
+          "check_in_at": "2026-09-28 06:00:00",
+          "check_out_at": "2026-09-28 07:00:00"
+        }
+      ],
+      "movement_ids": [
+        "omm_9629ce2d7f004e7c81aa43e7f808cdb4",
+        "omm_cc3a8796ed6b4fed8ee3f966df17e64d"
+      ],
+      "ledger_ids": [
+        "ole_1194eb694fd44c01ae5fde72725dbb74",
+        "ole_99e9045b82e84f3da561814d88ca57e9"
+      ],
+      "source_facts_hash": "fc77ba064a7743ee9e79e053f796a2eb0aecb497afc51d893fee6f8fca64d933",
+      "external_reconciliation": "NOT_PERFORMED",
+      "production_live": false,
+      "state": "OPERATIONAL_SNAPSHOT_RECONCILED",
+      "immutable_facts_hash": "6395122a2de7aa9eb685f332239d8d2955199259b57c01daf41dd4e3800d39bf",
+      "snapshot_cutoff_at": "2026-09-28T16:00:00+00:00"
+    },
+    "closed_by": "usr_d90ad3ca4a014179bfc6cf73927afd0e",
+    "evidence_hash": "7a22e1e2ce30dd7f43f0719180226d22a20fad055b74b32918438b76e8277319",
+    "closed_at": "2026-09-28T16:00:00+00:00"
+  },
+  "current_close": {
+    "daily_close_id": "hdc_0ea7332e74bb4a56920a7e0dee136a2b",
+    "hosted_hotel_id": "hdh_b3e004aeb0ad4083a2f9704e81a77c88",
+    "business_date": "2026-09-29",
+    "inventory_snapshot_json": {
+      "total": 250,
+      "available": 250,
+      "days": [
+        {
+          "inventory_day_id": "hid_04c7d2d2e16e4be5adbb075f22bcf9e2",
+          "total": 50,
+          "available": 50,
+          "held": 0,
+          "difference": 0
+        },
+        {
+          "inventory_day_id": "hid_503cad033ebe40be81f16dff20d63b32",
+          "total": 50,
+          "available": 50,
+          "held": 0,
+          "difference": 0
+        },
+        {
+          "inventory_day_id": "hid_963740950e1d4f23921729ddb4f0dd3a",
+          "total": 50,
+          "available": 50,
+          "held": 0,
+          "difference": 0
+        },
+        {
+          "inventory_day_id": "hid_9da8701fe1d14f598632bc63d5ab119a",
+          "total": 50,
+          "available": 50,
+          "held": 0,
+          "difference": 0
+        },
+        {
+          "inventory_day_id": "hid_e14684d60e2f474c8306fa6aab812076",
+          "total": 50,
+          "available": 50,
+          "held": 0,
+          "difference": 0
+        }
+      ]
+    },
+    "reservation_summary_json": {
+      "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING": 1
+    },
+    "exception_summary_json": {
+      "schema": "HOSTED_BUSINESS_DAY_V1",
+      "timezone": "Asia/Shanghai",
+      "window_start": "2026-09-28T16:00:00+00:00",
+      "window_end_exclusive": "2026-09-29T16:00:00+00:00",
+      "pending": 0,
+      "payment_transactions": 0,
+      "refund_transactions": 1,
+      "currencies": {
+        "CNY": {
+          "authorization_minor": 0,
+          "capture_minor": 0,
+          "release_minor": 0,
+          "refund_minor": 9800,
+          "debit_minor": 9800,
+          "credit_minor": 9800,
+          "difference_minor": 0,
+          "net_capture_minor": -9800,
+          "opening_held_minor": 0,
+          "opening_net_capture_minor": 69800,
+          "closing_held_minor": 0,
+          "closing_net_capture_minor": 60000
+        }
+      },
+      "blockers": [],
+      "unresolved_reservations": [],
+      "reservations": [
+        {
+          "reservation_id": "hdr_94b6015352bd4da7b3e44c0095cf1f14",
+          "state": "HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING",
+          "payment_state": "CONTRACT_CAPTURED_NOT_ALIPAY"
+        }
+      ],
+      "order_facts": [
+        {
+          "hosted_reservation_id": "hdr_94b6015352bd4da7b3e44c0095cf1f14",
+          "hosted_offer_id": "hdo_920e915e1a31412c89715001d518674d",
+          "check_in": "2026-09-28",
+          "check_out": "2026-09-29",
+          "amount_minor": 69800,
+          "currency": "CNY",
+          "created_at": "2026-09-28 00:00:00",
+          "updated_at": "2026-09-28 07:00:00"
+        }
+      ],
+      "stays": [
+        {
+          "stay_id": "gsl_762ef53c09c64d87bab800449aa1a7fa",
+          "state": "CHECKED_OUT",
+          "check_in_at": "2026-09-28 06:00:00",
+          "check_out_at": "2026-09-28 07:00:00"
+        }
+      ],
+      "movement_ids": [
+        "omm_0efff64bb176435b97ab314b7f30236e"
+      ],
+      "ledger_ids": [
+        "ole_b65b80a634d142da9bd1a4e099cf3fa0",
+        "ole_d25583a789394ea7a0b9458d886c33b8"
+      ],
+      "source_facts_hash": "4a63b3a273b28c1f983bc667292d79a7ea7507d3a978ea350aa3e5d726bcde7e",
+      "external_reconciliation": "NOT_PERFORMED",
+      "production_live": false,
+      "state": "OPERATIONAL_SNAPSHOT_RECONCILED",
+      "immutable_facts_hash": "0b548faf9b414b55edf37dea38be2a1121e7e567e2cce9674e35b1fda343561a",
+      "snapshot_cutoff_at": "2026-09-29T16:00:00+00:00"
+    },
+    "closed_by": "usr_d90ad3ca4a014179bfc6cf73927afd0e",
+    "evidence_hash": "751fce39f25d510ee344ffea8548fdc9d94835891a60bbce5bb3704977724b48",
+    "closed_at": "2026-09-29T16:00:00+00:00"
+  },
+  "prior_replay_unchanged": true,
+  "refund_replay_unchanged": true
+}

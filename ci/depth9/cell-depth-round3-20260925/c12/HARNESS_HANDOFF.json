@@ -1,0 +1,43 @@
+{
+  "status": "READY_FOR_EXACT_CANDIDATE_CI_NOT_BROWSER_PASS",
+  "baseline": "ecab110746760ac46acec60f0c96545e02b90a66",
+  "files": {
+    "ci/journey-v2/operations-depth.mjs": "661e1de583a3bbc954de2298fe89e63ca5d46ae7f7c785031691c028111dbdaa",
+    "ci/journey-v2/operations-ledger.py": "1bea0dd50c1bfc7cba6754164a871885ed50d3c272d1f7709af85535a9ab3f76",
+    "ci/journey-v2/browser.mjs": "6b2c48e476e13b92df5ed3fa0fbb2fba1b93e235ea56f52945d2e62e6f0978dc",
+    "ci/journey-v2/run.py": "77c1c704c4e41ab4040f164105be0a3695557d8fc28cec18a3a86737eb5396d8",
+    "application/scripts/acceptance_runtime.py": "8379007b0148a82084a6a5880433f4064466002129836c2c7876212352ac194a"
+  },
+  "checks": {
+    "node_syntax": [
+      "ci/journey-v2/browser.mjs",
+      "ci/journey-v2/operations-depth.mjs"
+    ],
+    "python_ast": [
+      "ci/journey-v2/run.py",
+      "ci/journey-v2/operations-ledger.py",
+      "application/scripts/acceptance_runtime.py"
+    ],
+    "packaging_regression": {
+      "command": "go-venv/bin/python -m pytest -p no:cacheprovider -q application/tests/test_depth36_acceptance_packaging.py",
+      "passed": 10,
+      "exit_code": 0
+    }
+  },
+  "browser_executed": false,
+  "new_pg_executed": false,
+  "included_widget": "ci/journey-v2/rental-operations-widget.mjs (C04; mocked request, separately logged and mandatory exit status)",
+  "private_artifacts_excluded": [
+    "operations.private.json",
+    "credentials.private.json",
+    "suppliers.private.json",
+    "acceptance.db"
+  ],
+  "original_six_domain_sql_audit": "UNCHANGED",
+  "operations_outputs": [
+    "operations-order-checks.json",
+    "operations-ledger-audit.json",
+    "rental-widget.log"
+  ],
+  "required_ci": "existing browser/PG16 workflow exact new head"
+}

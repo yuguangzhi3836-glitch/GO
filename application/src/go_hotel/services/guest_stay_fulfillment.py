@@ -4,6 +4,7 @@ from go_hotel.db.session import SessionLocal
 from go_hotel.services.alipay_safeguarded_settlement import transaction
 from go_hotel.db.models import HostedDirectReservationRow,HostedReservationStayRow,GuestStayLifecycleRow,GuestIdentityEvidenceRow,GuestStayEventRow,StayFulfillmentEvidenceRow,StayDisputeRow,SettlementEligibilityDecisionRow,AlipayAuthorizationRow,AlipayAdjustmentApprovalRow
 from go_hotel.services.hosted_direct_booking import ident,now,out
+from go_hotel.services.hosted_room_registry import validate_room,normalized_reference
 def digest(v):return hashlib.sha256(json.dumps(v,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 def locked_stay(s,stay_id,allow_terminal=False):
  probe=s.get(GuestStayLifecycleRow,stay_id)
@@ -14,6 +15,34 @@ def locked_stay(s,stay_id,allow_terminal=False):
  s.get(HostedDirectReservationRow,probe.hosted_reservation_id,with_for_update=True)
  if managed and managed.operational_state!='CONFIRMED' and not (allow_terminal and managed.operational_state in {'CANCELLED','CONVERTED_TO_CREDIT'}):raise ValueError('CONFIRMED_RESERVATION_REQUIRED')
  return s.get(GuestStayLifecycleRow,stay_id,with_for_update=True,populate_existing=True)
+
+def hotel_context(s,stay):
+ from go_hotel.db.models import HostedDirectRoomOfferRow,HostedDirectHotelRow
+ reservation=s.get(HostedDirectReservationRow,stay.hosted_reservation_id)
+ offer=s.get(HostedDirectRoomOfferRow,reservation.hosted_offer_id)
+ return reservation,s.get(HostedDirectHotelRow,offer.hosted_hotel_id,with_for_update=True)
+
+def check_arrival_clock(s,stay):
+ from datetime import datetime
+ from zoneinfo import ZoneInfo
+ reservation,hotel=hotel_context(s,stay)
+ policy=(hotel.contact_json or {}).get('operating_clock_policy')
+ if not policy:return
+ try:
+  zone=ZoneInfo(policy['timezone'])
+  start=datetime.fromisoformat(reservation.check_in+'T'+policy['check_in_after']).replace(tzinfo=zone)
+  end=datetime.fromisoformat(stay.planned_check_out+'T'+policy['check_out_before']).replace(tzinfo=zone)
+ except (KeyError,ValueError,TypeError):raise ValueError('VALID_HOTEL_OPERATING_CLOCK_REQUIRED') from None
+ if not start<=now().astimezone(zone)<end:raise ValueError('CHECK_IN_OUTSIDE_CONFIRMED_STAY_WINDOW')
+
+
+def assert_room_unoccupied(s,x,reservation,hotel,reference):
+ from go_hotel.db.models import HostedDirectRoomOfferRow
+ others=s.scalars(select(GuestStayLifecycleRow).join(HostedDirectReservationRow,HostedDirectReservationRow.hosted_reservation_id==GuestStayLifecycleRow.hosted_reservation_id).join(HostedDirectRoomOfferRow,HostedDirectRoomOfferRow.hosted_offer_id==HostedDirectReservationRow.hosted_offer_id).where(HostedDirectRoomOfferRow.hosted_hotel_id==hotel.hosted_hotel_id,GuestStayLifecycleRow.stay_lifecycle_id!=x.stay_lifecycle_id,GuestStayLifecycleRow.state.in_(['ARRIVED','IN_HOUSE']))).all()
+ for other in others:
+  if other.assigned_room_reference is None or normalized_reference(other.assigned_room_reference)!=normalized_reference(reference):continue
+  prior=s.get(HostedDirectReservationRow,other.hosted_reservation_id)
+  if prior.check_in<x.planned_check_out and reservation.check_in<other.planned_check_out:raise ValueError('ROOM_ALREADY_ASSIGNED_FOR_STAY')
 
 class Service:
  def create(self,reservation_id,actor):
@@ -38,16 +67,26 @@ class Service:
    if not x or x.state!='PRE_ARRIVAL':raise ValueError('STAY_NOT_PRE_ARRIVAL')
    x.state='ARRIVED';x.updated_at=now();self._event(s,x,'GUEST_ARRIVED',actor,{});s.commit();return out(x)
  def assign_room(self,stay_id,b,actor):
-  if not b.get('room_reference'):raise ValueError('ROOM_REFERENCE_REQUIRED')
+  if not isinstance(b.get('room_reference'),str) or not b['room_reference'].strip():raise ValueError('ROOM_REFERENCE_REQUIRED')
   with transaction() as s:
    x=locked_stay(s,stay_id)
    if not x or x.state not in ('ARRIVED','IN_HOUSE'):raise ValueError('ROOM_ASSIGNMENT_STATE_INVALID')
-   typ='ROOM_CHANGED' if x.assigned_room_reference else 'ROOM_ASSIGNED';old=x.assigned_room_reference;x.assigned_room_reference=b['room_reference'];x.updated_at=now();self._event(s,x,typ,actor,{'previous':old,'current':x.assigned_room_reference,'evidence_reference':b.get('evidence_reference')});s.commit();return out(x)
+   from go_hotel.db.models import HostedDirectRoomOfferRow
+   reservation,hotel=hotel_context(s,x)
+   room_binding=validate_room(s,reservation,hotel,b['room_reference'])
+   reference=room_binding['room_reference']
+   assert_room_unoccupied(s,x,reservation,hotel,reference)
+   b={**b,'room_reference':reference}
+   typ='ROOM_CHANGED' if x.assigned_room_reference else 'ROOM_ASSIGNED';old=x.assigned_room_reference;x.assigned_room_reference=b['room_reference'];x.updated_at=now();self._event(s,x,typ,actor,{'previous':old,'current':x.assigned_room_reference,'evidence_reference':b.get('evidence_reference'),**room_binding});s.commit();return out(x)
  def check_in(self,stay_id,b,actor):
   with transaction() as s:
    x=locked_stay(s,stay_id);identity=s.scalar(select(GuestIdentityEvidenceRow).where(GuestIdentityEvidenceRow.stay_lifecycle_id==stay_id,GuestIdentityEvidenceRow.state=='VERIFIED_REFERENCE_ONLY'))
    if not x or x.state!='ARRIVED' or not x.assigned_room_reference or not identity or not b.get('registration_evidence_reference'):raise ValueError('IDENTITY_ROOM_AND_REGISTRATION_REQUIRED')
-   x.state='IN_HOUSE';x.actual_check_in_at=now();x.updated_at=now();self._event(s,x,'CHECKED_IN',actor,b);s.commit();return out(x)
+   reservation,hotel=hotel_context(s,x)
+   room_binding=validate_room(s,reservation,hotel,x.assigned_room_reference)
+   assert_room_unoccupied(s,x,reservation,hotel,room_binding['room_reference'])
+   check_arrival_clock(s,x)
+   x.state='IN_HOUSE';x.actual_check_in_at=now();x.updated_at=now();self._event(s,x,'CHECKED_IN',actor,{**b,**room_binding});s.commit();return out(x)
  def extend(self,stay_id,b,actor):
   if not b.get('new_check_out') or not b.get('inventory_extension_reference'):raise ValueError('EXTENSION_INVENTORY_EVIDENCE_REQUIRED')
   with transaction() as s:

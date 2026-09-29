@@ -1,3 +1,4 @@
+from ride_cancellation_fixture import reserve_agent
 import asyncio
 
 import pytest
@@ -20,6 +21,7 @@ def ctx():
 def run(x): return asyncio.run(x)
 
 def reserve(gw, vertical, search, booking, key):
+    if vertical=='RIDE':return reserve_agent(gw,ctx(),vertical,search,booking,key)
     c=ctx(); offer=run(gw.offers(c,OfferRequest(vertical,search))).data['items'][0]
     return run(gw.reserve(c,ReserveRequest(offer['offer_id'],offer['quote_hash'],search,booking,key))).data
 

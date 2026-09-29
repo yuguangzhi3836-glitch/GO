@@ -54,7 +54,7 @@ def ticket(client,offer,h):
     checkout=client.post(f'/v1/flights/orders/{oid}/checkout',headers=h,json={'payment_method_id':'pm_test_token'})
     assert checkout.status_code==200,checkout.text
     assert checkout.json()['data']['status']=='PAYMENT_CONFIRMED_AWAITING_SUPPLIER'
-    confirm_existing_fulfillment(client,oid,'TESTPNR',['TEST-TICKET'])
+    confirm_existing_fulfillment(client,oid,'TESTPNR',[f'TEST-TICKET-{i}' for i in range(len(offer['segments']))])
     return oid
 
 

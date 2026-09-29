@@ -12,7 +12,9 @@ from go_hotel.db.models import (
     JudgmentEvidencePackageRow, JudgmentHookRow, JudgmentRuntimeRow,
     RecommendationDecisionRow, RiskEventRuntimeRow,
     GoodHotelStandardVersionRow, GoodHotelStandardGovernanceEventRow,
+    EventRow, OutboxRow,
 )
+from go_hotel.repositories.sql import repo
 from go_hotel.db.session import SessionLocal
 from go_hotel.judgment.service import judgment_service as svc
 from go_hotel.judgment.good_hotel_standard import good_hotel_standard_service
@@ -187,3 +189,31 @@ def test_invalid_evidence_supplement_cannot_initialize_standard_or_write_events(
     assert rows(GoodHotelStandardVersionRow) == []
     assert rows(GoodHotelStandardGovernanceEventRow) == []
     assert rows(JudgmentRuntimeRow) == []
+
+
+def test_judgment_events_and_outbox_commit_with_the_judgment():
+    result = svc.reevaluate('atomic-events-hotel')
+    events = [x for x in rows(EventRow) if x.aggregate_id == 'atomic-events-hotel']
+    outbox = [x for x in rows(OutboxRow) if x.aggregate_id == 'atomic-events-hotel']
+    assert {x.event_type for x in events} == {
+        'JUDGMENT_CREATED', 'GO_SCORE_UPDATED', 'RECOMMENDATION_STATUS_CHANGED'}
+    assert {x.event_id for x in events} == {x.event_id for x in outbox}
+    assert len(events) == len(outbox) == 3
+    assert all(x.status == 'PENDING' for x in outbox)
+    assert any(x.payload['payload'].get('judgment_id') == result['judgment_id'] for x in outbox)
+
+
+def test_process_exit_during_event_staging_rolls_back_judgment_and_outbox(monkeypatch):
+    good_hotel_standard_service.active()
+
+    def process_exit(_session, _event):
+        raise SystemExit(91)
+
+    monkeypatch.setattr(repo, 'append_event_in_session', process_exit)
+    with pytest.raises(SystemExit) as caught:
+        svc.reevaluate('interrupted-events-hotel')
+    assert caught.value.code == 91
+    assert [x for x in rows(JudgmentRuntimeRow) if x.hotel_id == 'interrupted-events-hotel'] == []
+    assert [x for x in rows(RecommendationDecisionRow) if x.hotel_id == 'interrupted-events-hotel'] == []
+    assert [x for x in rows(EventRow) if x.aggregate_id == 'interrupted-events-hotel'] == []
+    assert [x for x in rows(OutboxRow) if x.aggregate_id == 'interrupted-events-hotel'] == []

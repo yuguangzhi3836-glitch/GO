@@ -1,0 +1,204 @@
+{
+  "baseline_product": "d838f05d0d180a621f8e4cbd7b23074c9cd71e4d",
+  "baseline_gate": "c7c3bfd24821f8fe9d5b1da7b74f6c6949dc4610",
+  "new_currency_and_authority_changes": "FROZEN_SIX_LOCAL_HASHES_VERIFIED",
+  "verdict": "PENDING_CURRENT_CI",
+  "groups": [
+    {
+      "id": "R8-01",
+      "scope": "五池六价/日历",
+      "nodes": [
+        "tests/test_c13_aoluguya_independent_day.py::test_confirmed_six_prices_share_only_two_of_five_physical_pools",
+        "tests/test_c01_aoluguya_business_day.py::test_missing_pool_calendar_blocks_whole_day"
+      ],
+      "assessment": "真实未确认价格/原图仍HOLD；当前候选CI结果待绑定。"
+    },
+    {
+      "id": "R8-02",
+      "scope": "maker/checker开卖",
+      "nodes": [
+        "tests/test_c01_hosted_operating_journey.py::test_gate_blocks_every_sale_entry_then_independent_review_opens_full_journey",
+        "tests/test_c01_hosted_operating_journey.py::test_approved_version_invalidates_across_public_page_availability_and_reservation",
+        "tests/test_c01_hosted_operating_journey.py::test_media_submitter_cannot_self_review_or_claim_another_identity"
+      ],
+      "assessment": "参数覆盖拒绝、content、bytes、reviewer_revoked、fare_changed；不等于199张原图已确认。"
+    },
+    {
+      "id": "R8-03",
+      "scope": "四操作×权限拒绝",
+      "nodes": [
+        "tests/test_c01_money_authority_matrix.py::test_executable_operation_rejects_invalid_authority_without_business_writes"
+      ],
+      "assessment": "新增16节点已由C13独立SQLite复跑；4操作×readonly/other_hotel/revoked_grant/revoked_session，22表逐字段不变，每例随后合法角色成功。新冻结/CI待绑定。"
+    },
+    {
+      "id": "R8-04",
+      "scope": "50间消耗后跨餐别最后1间",
+      "nodes": [
+        "tests/test_c01_room_registry_journey.py::test_fifty_room_pool_is_consumed_by_orders_before_cross_rate_last_room_race",
+        "tests/test_depth07_hosted_money.py::test_cancel_reject_expiry_release_graph_and_nightly_inventory_without_cash_refund",
+        "tests/test_depth07_hosted_money.py::test_release_and_inventory_rollback_if_projection_fails_then_retry_once"
+      ],
+      "assessment": "49真实订单后两个餐别并发200/409、另一池不变已有独立SQLite实跑；PG待新候选。"
+    },
+    {
+      "id": "R8-05",
+      "scope": "页面/电话及同key",
+      "nodes": [
+        "tests/test_hosted_direct_reservation_operations.py::test_go_page_and_phone_orders_share_inbox_notifications_and_audit_chain",
+        "tests/test_c01_aoluguya_business_day.py::test_complete_business_day_with_cancel_refund_difference_repair_and_replay",
+        "tests/test_c13_currency_day_scope.py::test_availability_truthful_currency_and_unsupported_sale_is_zero_write",
+        "tests/test_c01_booking_replay_matrix.py::test_same_booking_key_replays_without_new_nights_events_or_notifications_and_changed_body_fails"
+      ],
+      "assessment": "四入口真实HTTP各自原请求重放结果相同，22类业务表逐字段不变；同key改guest及日期分别409且零写入。新增4节点独立SQLitePASS；新冻结与PG/全量CI待绑定。"
+    },
+    {
+      "id": "R8-06",
+      "scope": "明确金额/授权非收入",
+      "nodes": [
+        "tests/test_depth06_direct_checkout.py::test_checkout_binds_owner_amount_currency_and_requires_explicit_mode",
+        "tests/test_depth07_hosted_money.py::test_authorization_binds_selected_room_owner_hotel_and_has_no_cash_posting",
+        "tests/test_depth06_direct_checkout.py::test_simultaneous_checkout_retries_have_one_authorization"
+      ],
+      "assessment": "CNY顾客产品边界保留；客户USD不能下单或checkout。"
+    },
+    {
+      "id": "R8-07",
+      "scope": "取消秒边界/冻结规则",
+      "nodes": [
+        "tests/test_hotel_cancellation_clock.py::CancellationClockTests::test_confirmed_anchor_29_30_31_minutes",
+        "tests/test_hotel_cancellation_clock.py::CancellationClockTests::test_exact_local_deadline_second_boundary",
+        "tests/test_hotel_cancellation_clock.py::CancellationClockTests::test_exact_cutoff_quote_expiry_is_not_ten_minutes_late",
+        "tests/test_c01_aoluguya_business_day.py::test_confirmed_cooling_period_survives_nominal_checkin_boundary",
+        "tests/test_c01_cancellation_second_boundary.py::test_confirmed_anchor_second_boundaries_display_quote_execution",
+        "tests/test_c01_cancellation_second_boundary.py::test_quote_from_last_free_second_expires_at_exact_confirmed_cutoff"
+      ],
+      "assessment": "新增4节点独立SQLitePASS：下单等1小时再确认，确认后29:59/30:00/30:01跨14点，GET冻结规则/hash与quote/execute一致；旧FREE quote精确截止409且22表不变，release非refund；三个执行分支均重放不写入。规则显式隔离合成，不冒认真实酒店政策。"
+    },
+    {
+      "id": "R8-08",
+      "scope": "拒绝/超时/未收费退出",
+      "nodes": [
+        "tests/test_depth07_hosted_money.py::test_cancel_reject_expiry_release_graph_and_nightly_inventory_without_cash_refund",
+        "tests/test_depth06_direct_checkout.py::test_unknown_funds_keep_inventory_and_block_cancel_and_timeout",
+        "tests/test_c01_hosted_operating_journey.py::test_confirmed_uncharged_request_can_withdraw_and_updates_trips",
+        "tests/test_c01_hosted_operating_journey.py::test_uncharged_exit_does_not_bypass_unknown_or_fulfilled_stay"
+      ],
+      "assessment": "UNKNOWN与IN_HOUSE反例存在；受保护资金/库存重试不重复仍须当前相关JUnit。"
+    },
+    {
+      "id": "R8-09",
+      "scope": "改期审批/故障恢复",
+      "nodes": [
+        "tests/test_c01_hosted_operating_journey.py::test_approval_failure_and_retry_are_truthful_atomic_and_idempotent",
+        "tests/test_depth08_hosted_change.py::test_change_high_supplement_low_no_refund_and_immutable_original_authorization",
+        "tests/test_depth08_hosted_change.py::test_stale_quote_price_change_last_night_sold_out_and_ledger_fault_keep_old_stay",
+        "tests/test_depth08_hosted_change.py::test_multiple_changes_keep_prior_roots_and_refund_final_original_capture",
+        "tests/test_depth08_hosted_change.py::test_parallel_changes_owner_and_currency_never_double_release"
+      ],
+      "assessment": "三审批故障及价格/售罄/ledger故障、旧新root/原授权/并发变更有确切节点；当前候选全量JUnit须绑定这些节点。"
+    },
+    {
+      "id": "R8-10",
+      "scope": "身份/分房/入住",
+      "nodes": [
+        "tests/test_c01_aoluguya_business_day.py::test_same_hotel_room_cannot_be_assigned_to_two_overlapping_stays",
+        "tests/test_c01_room_registry_journey.py::test_wrong_pool_room_rejected_without_assignment_or_event",
+        "tests/test_c01_room_registry_journey.py::test_room_registry_revocation_between_assignment_and_checkin_blocks_entry",
+        "tests/test_c13_room_registry_authority.py::test_occupied_room_registry_rejection_has_zero_business_writes",
+        "tests/test_c01_room_registry_journey.py::test_equivalent_registry_spelling_cannot_assign_an_occupied_room"
+      ],
+      "assessment": "房池绑定缺口已修并有真实HTTP反例；真实房号来源不冒认。跨酒店同编号/登记CAS实际PG待当前门禁。"
+    },
+    {
+      "id": "R8-11",
+      "scope": "离店/部分履约",
+      "nodes": [
+        "tests/test_c01_aoluguya_business_day.py::test_overnight_checkout_next_day_preserves_prior_close_and_opening_balance",
+        "tests/test_depth07_hosted_money.py::test_capture_only_dual_confirmed_fulfillment_and_release_unused_amount",
+        "tests/test_depth07_hosted_money.py::test_pending_hotel_has_no_guest_stay_and_graph_extension_cannot_fake_inventory"
+      ],
+      "assessment": "同住客双证据/金额上限与延住阻断存在；早离真实商业计价未获确认。"
+    },
+    {
+      "id": "R8-12",
+      "scope": "履约/捕获/对账",
+      "nodes": [
+        "tests/test_depth07_hosted_money.py::test_fulfillment_cannot_bypass_stay_or_change_proof_and_dispute_rechecks_at_capture",
+        "tests/test_depth07_hosted_money.py::test_capture_ledger_fault_rolls_back_cash_release_and_order_then_retries",
+        "tests/test_depth07_hosted_money.py::test_simultaneous_capture_retries_post_once"
+      ],
+      "assessment": "共享资金图、原授权父子和事务回滚，不以沙箱配置当银行实收。"
+    },
+    {
+      "id": "R8-13",
+      "scope": "部分退款/独立裁决",
+      "nodes": [
+        "tests/test_depth07_hosted_money.py::test_partial_refund_is_durable_original_capture_and_only_closes_its_case",
+        "tests/test_depth07_hosted_money.py::test_parallel_refund_approvals_cannot_overcommit_actual_capture",
+        "tests/test_depth07_hosted_money.py::test_approval_checks_independent_actor_actual_cash_full_amount_and_closed_case",
+        "tests/test_depth07_hosted_money.py::test_owner_after_sales_api_idempotency_and_refund_permissions"
+      ],
+      "assessment": "授权/原capture/本订单/预算及owner边界节点存在；当前全量结果待绑定。"
+    },
+    {
+      "id": "R8-14",
+      "scope": "退款故障/第二周期",
+      "nodes": [
+        "tests/test_depth07_hosted_money.py::test_partial_refund_is_durable_original_capture_and_only_closes_its_case",
+        "tests/test_depth07_hosted_money.py::test_two_partial_refunds_start_distinct_cycles_without_resetting_trip_completion"
+      ],
+      "assessment": "真实本地ledger故障注入与不同退款周期，不能用其他行业退款套件替代。"
+    },
+    {
+      "id": "R8-15",
+      "scope": "UNKNOWN与跨日",
+      "nodes": [
+        "tests/test_v70_r4_c01_unknown_episode.py::test_episode_digest_fences_resolution_and_mixed_settlement",
+        "tests/test_v70_r4_c01_unknown_episode.py::test_unknown_movement_without_open_episode_fails_closed_without_writes",
+        "tests/test_v70_r4_c01_unknown_episode.py::test_episode_and_movement_rollback_when_audit_write_fails",
+        "tests/test_c01_aoluguya_business_day.py::test_complete_business_day_with_cancel_refund_difference_repair_and_replay"
+      ],
+      "assessment": "新旧generation证据隔离/异常留存；当前门禁仍须实际collect/execute。"
+    },
+    {
+      "id": "R8-16",
+      "scope": "日期/酒店/币种",
+      "nodes": [
+        "tests/test_c13_aoluguya_independent_day.py::test_economic_date_uses_movement_across_midnight",
+        "tests/test_c01_aoluguya_business_day.py::test_overnight_checkout_next_day_preserves_prior_close_and_opening_balance",
+        "tests/test_c13_currency_day_scope.py::test_daily_close_separates_currency_foreign_hotel_and_old_order",
+        "tests/test_c13_currency_day_scope.py::test_today_booking_for_future_stay_moves_only_future_inventory",
+        "tests/test_c13_currency_day_scope.py::test_prior_day_capture_refunded_today_keeps_prior_close_and_opening_balance"
+      ],
+      "assessment": "新增4项已独立SQLitePASS（含币种守卫）：CNY顾客HTTP；USD/外酒店为明确内部历史obligation并经ensure_authorization形成规范资金图；旧订单opening保留且排除当日计数；未来入住仅减未来库存；旧capture次日refund9800双分录、opening69800/closing60000、昨日replay不变。顾客CNY/首试点边界未扩大。待新候选PG。"
+    },
+    {
+      "id": "R8-17",
+      "scope": "日结封账/并发/晚到",
+      "nodes": [
+        "tests/test_c01_aoluguya_business_day.py::test_concurrent_day_close_has_one_durable_result",
+        "tests/test_c13_aoluguya_independent_day.py::test_archived_order_source_tamper_rejected",
+        "tests/test_c13_aoluguya_independent_day.py::test_archive_payload_hash_is_rechecked",
+        "tests/test_c13_aoluguya_independent_day.py::test_independent_normal_overnight_funds_inventory_replay"
+      ],
+      "assessment": "旧成功源变更拒绝、正常次日行为不破坏前日；PG当前候选结果待绑定。"
+    },
+    {
+      "id": "R8-18",
+      "scope": "交班/Trips/通知/联合SQL",
+      "nodes": [
+        "tests/test_c13_aoluguya_independent_day.py::test_independent_short_stay_refund_and_free_cancel",
+        "tests/test_c13_aoluguya_independent_day.py::test_captured_arrival_voucher_truthful",
+        "tests/test_depth07_hosted_money.py::test_owner_after_sales_api_idempotency_and_refund_permissions",
+        "tests/test_hosted_direct_reservation_operations.py::test_go_page_and_phone_orders_share_inbox_notifications_and_audit_chain",
+        "tests/test_hosted_frontdesk_uat_daily_close.py::test_shift_handover_captures_unresolved_inbox",
+        "tests/test_hosted_frontdesk_uat_daily_close.py::test_guest_data_is_masked_and_unmask_is_manager_audited"
+      ],
+      "assessment": "独立day原始graph/ledger/inventory/close记录可核；交班和PII审计确切源节点已补。QUEUED只证明排队，实际通知送达仍属外部边界。"
+    }
+  ],
+  "new_local_independent_nodes": 28,
+  "candidate_product": "55ea39cd41d39e50abc221e73812ab01fec1c5ce",
+  "candidate_application_tree": "c98e58256d29062a1026bc5ff64f22c99dbac92b"
+}

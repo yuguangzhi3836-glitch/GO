@@ -3,19 +3,20 @@
 Caller holds the order lock. Validate the chain and exact refund identity before
 every retry; never fabricate consent for a historical refund.
 """
-from sqlalchemy import select
+from sqlalchemy import select, bindparam
 from go_hotel.db.models import JourneyRecoveryEvidenceChainRow as Evidence
 from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence, _stable_hash
 from go_hotel.services import refund_consent
 
 KIND='REFUND_CONSENT_FROZEN'
+_CHAIN = (select(Evidence).where(Evidence.execution_id==bindparam('execution_id'))
+          .order_by(Evidence.sequence_no))
 
 
-def records(s, order, vertical):
-    rows=list(s.scalars(select(Evidence).where(
-        Evidence.execution_id=='rc20:'+vertical+':'+order.order_id).order_by(Evidence.sequence_no)))
+def verified_records(s, order, vertical):
+    """Return this transaction's fully validated chain, without cross-call caching."""
+    rows=list(s.scalars(_CHAIN,{'execution_id':'rc20:'+vertical+':'+order.order_id}))
     previous='GENESIS'
-    found=[]
     for sequence,entry in enumerate(rows,1):
         body=entry.evidence_json
         if (not isinstance(body,dict) or entry.sequence_no!=sequence
@@ -29,8 +30,12 @@ def records(s, order, vertical):
                     'previous_hash':previous,'sequence_no':sequence})):
             raise ValueError('REFUND_OPERATION_INTEGRITY_INVALID')
         previous=entry.entry_hash
-        if entry.evidence_kind==KIND:found.append(body['payload'])
-    return found
+    return rows
+
+
+def records(s, order, vertical):
+    return [row.evidence_json['payload'] for row in verified_records(s,order,vertical)
+            if row.evidence_kind==KIND]
 
 
 def existing(s, order, row, accepted_hash, vertical):

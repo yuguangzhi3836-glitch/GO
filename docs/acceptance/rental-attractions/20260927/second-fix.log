@@ -1,0 +1,76 @@
+F....................................................................... [ 53%]
+...............................................................          [100%]
+=================================== FAILURES ===================================
+_______ test_supplier_closure_refunds_even_customer_nonrefundable_policy _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f09c492b110>
+
+    def test_supplier_closure_refunds_even_customer_nonrefundable_policy(monkeypatch):
+        monkeypatch.setitem(CATALOG['tokyo_skytree'],'refundable',False)
+        svc,owner,oid=booked('ATTRACTION')
+        assert svc.refund_quote(owner,oid)['refund_amount_minor']==0
+        svc.admin_external_state(oid,'CLOSED_BY_SUPPLIER','isolated://closure','ops')
+        quote=svc.refund_quote(owner,oid)
+        assert quote['reason']=='SUPPLIER_CLOSED' and quote['refund_amount_minor']==36000
+>       receipt=svc.refund(owner,oid,quote['quote_hash'])
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_rental_attraction_preinventory.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/go_hotel/attractions/service.py:182: in refund
+    return vertical_refund_recovery.refund('ATTRACTION',account,order_id,self._refund_quote_in,accepted_hash)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/go_hotel/services/vertical_refund_recovery.py:180: in refund
+    project_vertical_lifecycle(s, vertical, order, f'{vertical.lower()}-refund-pending://{order_id}')
+src/go_hotel/services/vertical_lifecycle_projection.py:50: in project_vertical_lifecycle
+    return consumer_unified_lifecycle_service.project_in_session(session,{
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <go_hotel.services.consumer_unified_lifecycle.ConsumerUnifiedLifecycleService object at 0x7f09c0ea91c0>
+s = <sqlalchemy.orm.session.Session object at 0x7f09be41fef0>
+b = {'account_id': 'refund-owner', 'cancel_allowed': False, 'change_allowed': False, 'event_type': 'VERTICAL_STATE_SYNC', ...}
+
+    def project_in_session(self,s,b,*,allow_new_refund_cycle=False,idempotent_if_exists=False,allow_external_verification_upgrade=False):
+     required=('account_id','vertical','order_id','title','lifecycle_state','payment_state','refund_state','evidence_reference','source_updated_at')
+     if any(b.get(x) in (None,'') for x in required):raise ValueError('COMPLETE_VERTICAL_LIFECYCLE_FACT_REQUIRED')
+     if b['vertical'] not in VERTICALS or b['lifecycle_state'] not in STATES:raise ValueError('INVALID_VERTICAL_OR_LIFECYCLE_STATE')
+     source_raw=b['source_updated_at'];source_at=source_raw if isinstance(source_raw,datetime) else datetime.fromisoformat(str(source_raw).replace('Z','+00:00'))
+     if source_at.tzinfo is None:source_at=source_at.replace(tzinfo=timezone.utc)
+     r=s.scalar(select(Life).where(Life.vertical==b['vertical'],Life.order_id==b['order_id']).with_for_update())
+     if r:
+      if r.account_id!=b['account_id']:raise ValueError('UNIFIED_LIFECYCLE_ACCOUNT_IMMUTABLE')
+      # A later fact (or replay) cannot reassign the order's supplier. Missing
+      # historical identity needs an explicit repair, not an ordinary projection.
+      if r.supplier_id!=b.get('supplier_id'):raise ValueError('UNIFIED_LIFECYCLE_SUPPLIER_IMMUTABLE')
+      if idempotent_if_exists:return out(r)|{'stale_ignored':True}
+      existing_at=r.source_updated_at
+      if existing_at.tzinfo is None:existing_at=existing_at.replace(tzinfo=timezone.utc)
+      # A user-import timestamp records receipt of an unverified claim, not the
+      # provider's event clock. The first authenticated provider fact may predate
+      # that receipt. Promote it once, retaining its true source timestamp; normal
+      # stale-event protection resumes for all subsequent provider updates.
+      old_facts=r.facts_json or {};new_facts=b.get('facts') or {}
+      verification_upgrade=(allow_external_verification_upgrade
+       and r.lifecycle_state=='MANUAL_REVIEW'
+       and old_facts.get('order_origin')=='EXTERNAL_OTA'
+       and old_facts.get('source_verification')=='USER_SUBMITTED_PENDING_VERIFICATION'
+       and new_facts.get('source_verification')=='OFFICIAL_PROVIDER'
+       and new_facts.get('transaction_platform')==old_facts.get('transaction_platform')
+       and OFFICIAL_ADAPTERS.get(new_facts.get('source_adapter_id'))==old_facts.get('transaction_platform'))
+      if source_at<=existing_at and not verification_upgrade:return out(r)|{'stale_ignored':True}
+      terminal={'CONVERTED_TO_CREDIT','COMPLETED','CANCELLED','FAILED'}
+>     if r.lifecycle_state in terminal and b['lifecycle_state']!=r.lifecycle_state:raise ValueError('UNIFIED_LIFECYCLE_TERMINAL_STATE_IMMUTABLE')
+                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     ValueError: UNIFIED_LIFECYCLE_TERMINAL_STATE_IMMUTABLE
+
+src/go_hotel/services/consumer_unified_lifecycle.py:132: ValueError
+=============================== warnings summary ===============================
+tests/test_depth21_refund_recovery.py: 5 warnings
+tests/test_depth23_capacity.py: 5 warnings
+  /workspace/scratch/1ca5fb2bbbf4/go-venv/lib/python3.12/site-packages/alembic/config.py:598: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.
+    util.warn_deprecated(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_rental_attraction_preinventory.py::test_supplier_closure_refunds_even_customer_nonrefundable_policy
+1 failed, 134 passed, 10 warnings in 29.27s

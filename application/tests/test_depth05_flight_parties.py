@@ -1,3 +1,4 @@
+from registration_terms_test_support import register_synthetic_consumer
 from datetime import date,timedelta
 import pytest
 from sqlalchemy import select,func
@@ -99,7 +100,7 @@ def test_nine_adult_boundary_and_server_count_cannot_be_changed_at_order_time(cl
 
 
 def test_vault_party_rejects_duplicate_and_revoked_travelers(client):
-    r=client.post('/v1/consumer/auth/register',json={'email':'party@example.test','password':'StrongPass123!','display_name':'NICKNAME'})
+    r=register_synthetic_consumer(client, json={'email':'party@example.test','password':'StrongPass123!','display_name':'NICKNAME'})
     uid=r.json()['data']['profile']['user_id']
     token=client.post('/v1/mobile/auth/login',json={'email':'party@example.test','password':'StrongPass123!'}).json()['data']['access_token']
     client.cookies.clear();headers={'Authorization':'Bearer '+token};ids=[]

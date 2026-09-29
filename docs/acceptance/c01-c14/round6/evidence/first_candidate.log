@@ -1,0 +1,38 @@
+..........................F...............................               [100%]
+=================================== FAILURES ===================================
+___________ test_scoped_http_registration_returns_only_pending_claim ___________
+
+context = ('hdh_ada4230052ea4ad9aae506a61306e93b', Principal(user_id='usr_2c9999d0e94942bb879da9d303b42f74', username='content-m... 'content_snapshot_id': 'hcs_af265688ed49437e856ccce924774c51', 'created_at': '2026-09-26T02:12:43.092411+00:00', ...})
+
+    def test_scoped_http_registration_returns_only_pending_claim(context):
+        hotel, _, checker, _, _ = context
+        # Authenticate the same persisted identity through the real JWT/session dependency.
+>       _, token = authenticated('content-checker')
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+application/tests/test_c01_hosted_media_authority.py:118: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+application/tests/test_c01_hosted_content_authority.py:22: in authenticated
+    enrollment=identity_service.begin_admin_mfa_enrollment(name,password)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <go_hotel.security.service.IdentityService object at 0x7f7709f54860>
+username = 'content-checker', password = 'isolated-content-test-password'
+
+    def begin_admin_mfa_enrollment(self, username:str, password:str):
+        """Password-gated, least-privilege bootstrap for an admin's first MFA binding.
+        The returned token is purpose-bound and cannot be used as an application session.
+        """
+        with SessionLocal() as s:
+            u=s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==username))
+            if not u or u.status!='ACTIVE' or not verify_password(password,u.password_hash): raise ValueError('INVALID_CREDENTIALS')
+            if u.actor_type!='GO_ADMIN': raise ValueError('ADMIN_MFA_ENROLLMENT_ONLY')
+>           if u.mfa_enabled_at: raise ValueError('MFA_ALREADY_ENABLED')
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           ValueError: MFA_ALREADY_ENABLED
+
+application/src/go_hotel/security/service.py:63: ValueError
+=========================== short test summary info ============================
+FAILED application/tests/test_c01_hosted_media_authority.py::test_scoped_http_registration_returns_only_pending_claim
+1 failed, 57 passed in 15.86s

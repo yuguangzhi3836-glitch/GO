@@ -1,3 +1,5 @@
+from ride_cancellation_fixture import post_ride_order
+from registration_terms_test_support import register_synthetic_consumer
 from tests.attraction_fixtures import quoted_attraction
 from pathlib import Path
 from go_hotel.mobility.service import mobility_service
@@ -6,7 +8,7 @@ from tests.vertical_transaction_helpers import pay_and_confirm, confirm_existing
 
 
 def auth(client,email):
-    r=client.post('/v1/consumer/auth/register',json={'email':email,'password':'StrongPass123!','display_name':'RC20 Tester'})
+    r=register_synthetic_consumer(client, json={'email':email,'password':'StrongPass123!','display_name':'RC20 Tester'})
     assert r.status_code==200,r.text
     t=client.post('/v1/mobile/auth/login',json={'email':email,'password':'StrongPass123!'}).json()['data']
     client.cookies.clear()
@@ -33,7 +35,7 @@ def test_ride_state_machine_recovery_illegal_transition_and_evidence(client):
     h=auth(client,'rc20-ride@example.com')
     s=client.post('/v1/mobility/rides/search',json={'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-01T10:00:00','currency':'CNY'})
     off=s.json()['data']['items'][0]
-    o=client.post('/v1/mobility/rides/orders',headers=h,json={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-01T10:00:00','currency':'CNY'}).json()['data']
+    o=post_ride_order(client,headers=h,body={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-01T10:00:00','currency':'CNY'}).json()['data']
     oid=o['order_id']
     pay_and_confirm(client,h,'RIDE_ORDER',oid,'RIDE-'+oid[-6:])
     bad=client.post(f'/v1/mobility/orders/{oid}/fulfillment',headers=h,json={'action':'COMPLETE','evidence_reference':'bad-order'})
@@ -42,7 +44,7 @@ def test_ride_state_machine_recovery_illegal_transition_and_evidence(client):
     assert unknown['status']=='UNKNOWN_EXTERNAL_STATE'
     blocked=client.post(f'/v1/mobility/orders/{oid}/modify',headers=h,json={'new_time':'2026-09-01T11:00:00'})
     assert blocked.status_code==422
-    rec=mobility_service.admin_external_state(oid,'CONFIRMED','provider-reconciled','expert-review')
+    rec=mobility_service.admin_external_state(oid,'CONFIRMED','provider-reconciled','expert-review','provider-timeout')
     assert rec['status']=='CONFIRMED'
     start=client.post(f'/v1/mobility/orders/{oid}/fulfillment',headers=h,json={'action':'START','evidence_reference':'driver-start'})
     assert start.status_code==200 and start.json()['data']['status']=='IN_PROGRESS'
@@ -50,7 +52,7 @@ def test_ride_state_machine_recovery_illegal_transition_and_evidence(client):
     assert done.status_code==200 and done.json()['data']['status']=='COMPLETED'
     detail=client.get(f'/v1/mobility/orders/{oid}',headers=h).json()['data']
     kinds=[x['kind'] for x in detail['evidence']]
-    assert kinds==['ORDER_CREATED','SUPPLIER_CONFIRMED','EXTERNAL_STATE_UNKNOWN','RECONCILED_TO_CONFIRMED','FULFILLMENT_START','FULFILLMENT_COMPLETE']
+    assert kinds==['ORDER_CREATED','RIDE_CANCELLATION_ACCEPTED','SUPPLIER_CONFIRMED','EXTERNAL_STATE_UNKNOWN','RECONCILED_TO_CONFIRMED','FULFILLMENT_START','FULFILLMENT_COMPLETE']
     assert all(detail['evidence'][i]['previous_hash']==('GENESIS' if i==0 else detail['evidence'][i-1]['entry_hash']) for i in range(len(detail['evidence'])))
 
 

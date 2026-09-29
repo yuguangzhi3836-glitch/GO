@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="4" time="7.888" timestamp="2026-09-26T22:31:49.762140+08:00" hostname="81f9726e8d4f"><testcase classname="independent-ticket-review.test_independent_money_view" name="test_unpaid_and_change_authorization_do_not_invent_captured_money" time="4.871" /><testcase classname="independent-ticket-review.test_independent_money_view" name="test_money_summary_reads_committed_refund_before_coupon_finalize" time="0.332" /><testcase classname="independent-ticket-review.test_independent_money_view" name="test_foreign_root_pointer_fails_closed" time="0.267"><failure message="ValueError: EMAIL_ALREADY_REGISTERED">../../independent-ticket-review/test_independent_money_view.py:38: in test_foreign_root_pointer_fails_closed
+    _,other,_=booked(client)
+              ^^^^^^^^^^^^^^
+tests/test_depth48_flight_changes.py:18: in booked
+    h=auth(client);o,_=create(client,h,party,kind);o=pay(client,h,o)
+      ^^^^^^^^^^^^
+tests/test_sprint3a_flight.py:8: in auth
+    consumer_service.register(email,'StrongPass123!','Flight Traveler')
+src/go_hotel/consumer/service.py:23: in register
+    raise ValueError("EMAIL_ALREADY_REGISTERED")
+E   ValueError: EMAIL_ALREADY_REGISTERED</failure></testcase><testcase classname="independent-ticket-review.test_independent_money_view" name="test_missing_original_root_does_not_certify_adjustment_only_money" time="0.308"><failure message="AssertionError: {'captured_minor': 40000, 'currency': 'CNY', 'has_pending': False, 'net_minor': 40000, ...}&#10;assert not True">../../independent-ticket-review/test_independent_money_view.py:55: in test_missing_original_root_does_not_certify_adjustment_only_money
+    assert not summary['verified'],summary
+E   AssertionError: {'captured_minor': 40000, 'currency': 'CNY', 'has_pending': False, 'net_minor': 40000, ...}
+E   assert not True</failure></testcase></testsuite></testsuites>

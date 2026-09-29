@@ -1,0 +1,41 @@
+{
+  "status": "NO_NEW_RULES_BLOCKER_FOUND_FOR_SCOPED_ISOLATED_INCREMENT",
+  "binding": "LOCAL_FROZEN_SHA256_PENDING_CANDIDATE",
+  "files": [
+    {
+      "path": "application/src/go_hotel/services/rental_deposit_review.py",
+      "sha256": "f887711c32bc218e3657bb8976ce1641cc6dbb25abbcb2def42139570b3b8b9f"
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/rental_deposit_money.py",
+      "sha256": "4fda08ea8b57bef5913b9e2739ce79148f302fc662224c6fb73e155c10d2be0c"
+    },
+    {
+      "path": "application/frontend/admin/rental-deposit-finance.js",
+      "sha256": "1675971165f637dc21d4aea01f0ed01d3a2eca92a27858a78b2295e007d6ded0"
+    },
+    {
+      "path": "application/tests/payments/test_c11_deposit_operations_review.py",
+      "sha256": "ef8f234a3d28dd9750f58d403f594870b4f71aaf87a16ed458c1a9333710c2b5"
+    },
+    {
+      "path": "application/tests_frontend/rental_deposit_operations.test.mjs",
+      "sha256": "0b5683a94e1143e85bebc0160b0fa96ff74728b60009b994b0da602181ce52e1"
+    }
+  ],
+  "verification": "All five frozen hashes independently checked against local bytes; service/routes/widget statically reviewed; test cases inspected, not run by C14.",
+  "scope": [
+    "Review read-only derives source, graph, decision and release capabilities from C04/C11 under order transaction; existing backend rechecks execution authority.",
+    "Admin role/admin:approve and isolated gate retained. No operator amount/payee/decision override.",
+    "Reconciliation-required money stays unknown; no authorize/settle/release choices. Missing root with existing intent/movement fails closed.",
+    "Consumer consent is distinct from authorization. Admin UI requires explicit confirmation, re-reads after response/lost response; exact body retained for retry. Old read failure snapshot visibly marked and disables actions.",
+    "Already settled appeal does not grant repeat capture or new compensation; remains independent review."
+  ],
+  "limitations": [
+    "No independent test execution or browser journey by C14; frontend unit doubles do not prove integrated real-role UI journey.",
+    "No new recovery/repair/compensation execution implemented; those internal obligations remain open.",
+    "No complete C14 checklist item PASS is assigned by this limited source review.",
+    "Real policy/legal/provider/PSP readiness and deployment authorization remain HOLD.",
+    "Final source candidate and integrated UI mount/routes await fixed candidate binding."
+  ]
+}

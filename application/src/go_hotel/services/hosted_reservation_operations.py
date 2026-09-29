@@ -32,23 +32,41 @@ def payment_clear_for_inventory_change(session, reservation):
  return auth is None
 
 
+def unfunded_request_cancellable(session, reservation, stay):
+ # An uncharged reservation request can be withdrawn before arrival. Once an
+ # authorization exists, the fare/funding settlement path owns cancellation.
+ from go_hotel.db.models import GuestStayLifecycleRow
+ if not stay or stay.operational_state != 'CONFIRMED' or not payment_clear_for_inventory_change(session,reservation):return False
+ if session.scalar(select(AlipayAuthorizationRow).where(AlipayAuthorizationRow.hosted_reservation_id==reservation.hosted_reservation_id)):return False
+ guest=session.scalar(select(GuestStayLifecycleRow).where(GuestStayLifecycleRow.hosted_reservation_id==reservation.hosted_reservation_id))
+ return guest is None or guest.state=='PRE_ARRIVAL'
+
+
 class HostedReservationOperationsService:
  def availability(self,slug,b):
   try:cin=date.fromisoformat(b['check_in']);cout=date.fromisoformat(b['check_out'])
   except Exception:raise ValueError('VALID_STAY_DATES_REQUIRED')
   if cin<date.today() or not 1<=(cout-cin).days<=30:raise ValueError('VALID_STAY_DATES_REQUIRED')
-  adults=int(b.get('adults',1));children=int(b.get('children',0))
+  adults=int(b.get('adults',1));children=int(b.get('children',0));extra_beds=b.get('extra_beds',0)
+  if type(extra_beds) is not int or extra_beds<0:raise ValueError('INVALID_EXTRA_BEDS')
   if adults<1 or children<0:raise ValueError('INVALID_OCCUPANCY_OR_STAY_LENGTH')
   with SessionLocal() as s:
    hotel=s.scalar(select(HostedDirectHotelRow).where(HostedDirectHotelRow.page_slug==slug))
    if not hotel:raise ValueError('HOSTED_HOTEL_NOT_FOUND')
+   from go_hotel.services.hosted_publication import require_publication
+   publication_reasons=[]
+   if hotel.state!='PUBLISHED_REQUEST_ONLY':publication_reasons.append('DIRECT_PAGE_NOT_PUBLISHED')
+   try:require_publication(s,hotel.hosted_hotel_id)
+   except ValueError as exc:publication_reasons.append(str(exc))
    offers=s.scalars(select(HostedDirectRoomOfferRow).where(HostedDirectRoomOfferRow.hosted_hotel_id==hotel.hosted_hotel_id,HostedDirectRoomOfferRow.state=='ACTIVE')).all()
    items=[]
    for offer in offers:
     variant=s.scalar(select(HostedDirectRateVariantRow).where(HostedDirectRateVariantRow.hosted_offer_id==offer.hosted_offer_id,HostedDirectRateVariantRow.state=='ACTIVE'))
     if not variant:continue
     pool=s.get(HostedDirectInventoryPoolRow,variant.inventory_pool_id)
-    prices=[];available=[];reasons=[]
+    prices=[];available=[];reasons=list(publication_reasons)
+    if offer.currency!='CNY':reasons.append('HOSTED_CHECKOUT_CURRENCY_UNSUPPORTED')
+    if extra_beds:reasons.append('STRUCTURED_EXTRA_BED_PRICE_REQUIRED')
     for day in dates(cin,cout):
      ds=day.isoformat()
      rate=s.scalar(select(HostedRateCalendarDayRow).where(HostedRateCalendarDayRow.rate_variant_id==variant.rate_variant_id,HostedRateCalendarDayRow.stay_date==ds))
@@ -61,12 +79,16 @@ class HostedReservationOperationsService:
     from go_hotel.db.models import HostedFareRuleVersionRow
     fare=s.scalar(select(HostedFareRuleVersionRow).where(HostedFareRuleVersionRow.hosted_offer_id==offer.hosted_offer_id).order_by(HostedFareRuleVersionRow.version.desc()))
     items.append({**out(offer),'fare_rule':{'rule_hash':fare.rule_hash,'rules':fare.rules_json} if fare else None,'room_code':pool.physical_room_key,'room':pool.room_details_json,'nights':prices,'total_amount_minor':sum(p['price_minor'] for p in prices) if len(prices)==(cout-cin).days else None,'inventory_available':min(available) if available else 0,'bookable':not reasons,'unavailable_reasons':sorted(set(reasons))})
-   return {'check_in':b['check_in'],'check_out':b['check_out'],'adults':adults,'children':children,'items':items,'data_mode':hotel.contact_json.get('inventory_data_mode','SUPPLIER_MANAGED'),'currency':'CNY'}
- def bootstrap_calendar(self,hotel_id,b):
+   currencies=sorted({item['currency'] for item in items})
+   return {'check_in':b['check_in'],'check_out':b['check_out'],'adults':adults,'children':children,'items':items,'data_mode':hotel.contact_json.get('inventory_data_mode','SUPPLIER_MANAGED'),'currency':currencies[0] if len(currencies)==1 else None,'currencies':currencies}
+ def bootstrap_calendar(self,hotel_id,b,principal=None):
   try:start=date.fromisoformat(b['start_date']);end=date.fromisoformat(b['end_date'])
   except Exception:raise ValueError('VALID_CALENDAR_DATE_RANGE_REQUIRED')
   if end<start or (end-start).days>370:raise ValueError('CALENDAR_RANGE_1_TO_371_DAYS_REQUIRED')
   with managed_session() as s:
+   if principal is not None:
+    from go_hotel.services.hosted_operation_authority import scoped
+    scoped(s,principal,hotel_id,'admin:rules')
    if not s.get(HostedDirectHotelRow,hotel_id):raise ValueError('HOSTED_HOTEL_NOT_FOUND')
    pools=s.scalars(select(HostedDirectInventoryPoolRow).where(HostedDirectInventoryPoolRow.hosted_hotel_id==hotel_id)).all();created_inventory=created_rates=0
    for pool in pools:
@@ -79,21 +101,28 @@ class HostedReservationOperationsService:
       if not rate:
        offer=s.get(HostedDirectRoomOfferRow,variant.hosted_offer_id);s.add(HostedRateCalendarDayRow(rate_calendar_day_id=ident('hrc'),rate_variant_id=variant.rate_variant_id,stay_date=ds,price_minor=offer.price_minor,sale_state='OPEN',min_stay=1,max_stay=30,advance_min_days=0,advance_max_days=365,max_adults=2,max_children=1,extra_bed_allowed=False,updated_at=now()));created_rates+=1
    s.commit();return {'inventory_days_created':created_inventory,'rate_days_created':created_rates,'payment_live':False}
- def set_inventory_day(self,pool_id,stay_date,b):
+ def set_inventory_day(self,pool_id,stay_date,b,principal=None):
   if b.get('sale_state') not in ('OPEN','CLOSED','SOLD_OUT','STOP_SELL'):raise ValueError('VALID_INVENTORY_SALE_STATE_REQUIRED')
   with managed_session() as s:
    r=s.scalar(select(HostedInventoryDayRow).where(HostedInventoryDayRow.inventory_pool_id==pool_id,HostedInventoryDayRow.stay_date==stay_date).with_for_update())
    if not r:raise ValueError('INVENTORY_DAY_NOT_FOUND')
+   if principal is not None:
+    from go_hotel.services.hosted_operation_authority import scoped
+    scoped(s,principal,s.get(HostedDirectInventoryPoolRow,pool_id).hosted_hotel_id,'admin:rules')
    total=int(b.get('capacity_total',r.capacity_total));available=int(b.get('capacity_available',r.capacity_available))
    if total<0 or available<0 or available>total:raise ValueError('VALID_DAILY_CAPACITY_REQUIRED')
    held=s.scalars(select(HostedReservationNightRow).where(HostedReservationNightRow.inventory_day_id==r.inventory_day_id,HostedReservationNightRow.state=='HELD')).all()
    if total<available+len(held):raise ValueError('CAPACITY_CONFLICTS_WITH_HELD_RESERVATIONS')
    r.capacity_total=total;r.capacity_available=available;r.sale_state=b['sale_state'];r.updated_at=now();s.commit();return out(r)
- def set_rate_day(self,variant_id,stay_date,b):
+ def set_rate_day(self,variant_id,stay_date,b,principal=None):
   if b.get('sale_state') not in ('OPEN','CLOSED','STOP_SELL'):raise ValueError('VALID_RATE_SALE_STATE_REQUIRED')
   with managed_session() as s:
    r=s.scalar(select(HostedRateCalendarDayRow).where(HostedRateCalendarDayRow.rate_variant_id==variant_id,HostedRateCalendarDayRow.stay_date==stay_date))
    if not r:raise ValueError('RATE_CALENDAR_DAY_NOT_FOUND')
+   if principal is not None:
+    from go_hotel.services.hosted_operation_authority import scoped
+    variant=s.get(HostedDirectRateVariantRow,variant_id)
+    scoped(s,principal,s.get(HostedDirectRoomOfferRow,variant.hosted_offer_id).hosted_hotel_id,'admin:rules')
    for k in ('price_minor','min_stay','max_stay','advance_min_days','advance_max_days','max_adults','max_children'):
     if k in b:setattr(r,k,int(b[k]))
    if r.price_minor<=0 or r.min_stay<1 or r.max_stay<r.min_stay or r.advance_min_days<0 or r.advance_max_days<r.advance_min_days or r.max_adults<1 or r.max_children<0:raise ValueError('INVALID_RATE_RESTRICTIONS')
@@ -114,12 +143,19 @@ class HostedReservationOperationsService:
     return out(old)
    h=s.scalar(select(HostedDirectHotelRow).where(HostedDirectHotelRow.page_slug==slug,HostedDirectHotelRow.state=='PUBLISHED_REQUEST_ONLY'));offer=s.get(HostedDirectRoomOfferRow,b['hosted_offer_id'],with_for_update=True)
    if not h or not offer or offer.hosted_hotel_id!=h.hosted_hotel_id or offer.state!='ACTIVE':raise ValueError('ACTIVE_HOSTED_OFFER_REQUIRED')
+   if offer.currency!='CNY':raise ValueError('HOSTED_CHECKOUT_CURRENCY_UNSUPPORTED')
+   s.refresh(h,with_for_update=True)
+   from go_hotel.services.hosted_publication import require_publication
+   publication=require_publication(s,h.hosted_hotel_id)
    variant=s.scalar(select(HostedDirectRateVariantRow).where(HostedDirectRateVariantRow.hosted_offer_id==offer.hosted_offer_id))
    if not variant or variant.state!='ACTIVE':raise ValueError('DATED_MANAGED_RATE_REQUIRED')
    from go_hotel.db.models import HostedFareRuleVersionRow
    current_rule=s.scalar(select(HostedFareRuleVersionRow).where(HostedFareRuleVersionRow.hosted_offer_id==offer.hosted_offer_id).order_by(HostedFareRuleVersionRow.version.desc()))
    if current_rule and b.get('expected_fare_rule_hash')!=current_rule.rule_hash:raise ValueError('FARE_RULE_CHANGED_RECONFIRM_REQUIRED')
-   adults=int(b.get('adults',1));children=int(b.get('children',0));extra_beds=int(b.get('extra_beds',0));nights=(cout-cin).days;advance=(cin-date.today()).days
+   adults=int(b.get('adults',1));children=int(b.get('children',0));extra_beds=b.get('extra_beds',0)
+   if type(extra_beds) is not int or extra_beds<0:raise ValueError('INVALID_EXTRA_BEDS')
+   if extra_beds:raise ValueError('STRUCTURED_EXTRA_BED_PRICE_REQUIRED')
+   nights=(cout-cin).days;advance=(cin-date.today()).days
    if adults<1 or children<0 or extra_beds<0 or nights>370:raise ValueError('INVALID_OCCUPANCY_OR_STAY_LENGTH')
    if not str(b.get('guest_name','')).strip() or not str(b.get('guest_contact','')).strip():raise ValueError('GUEST_NAME_AND_CONTACT_REQUIRED')
    timeout=int(b.get('confirmation_timeout_minutes',30))
@@ -142,22 +178,30 @@ class HostedReservationOperationsService:
    for rate,inv in zip(rates,inventory):s.add(HostedReservationNightRow(reservation_night_id=ident('hrn'),hosted_reservation_id=r.hosted_reservation_id,inventory_day_id=inv.inventory_day_id,stay_date=rate.stay_date,price_minor=rate.price_minor,state='HELD'))
    from go_hotel.services.hosted_fare_rules import snapshot_in_session
    snapshot_in_session(s,r)
-   self._event(s,r.hosted_reservation_id,'RESERVATION_REQUESTED',actor,{'source':source,'payment_attempted':False});self._notify(s,r.hosted_reservation_id,'HOTEL','RESERVATION_REQUESTED',{'source':source});self._notify(s,r.hosted_reservation_id,'GUEST','RESERVATION_RECEIVED',{'payment_captured':False});
+   self._event(s,r.hosted_reservation_id,'RESERVATION_REQUESTED',actor,{'source':source,'payment_attempted':False,'publication_hash':publication.manifest_hash});self._notify(s,r.hosted_reservation_id,'HOTEL','RESERVATION_REQUESTED',{'source':source});self._notify(s,r.hosted_reservation_id,'GUEST','RESERVATION_RECEIVED',{'payment_captured':False});
    if _session is None:s.commit()
    return out(r)
- def action(self,reservation_id,b,actor,expected_owner=None,pending_only=False,release_simulated=False):
+ def action(self,reservation_id,b,actor,expected_owner=None,pending_only=False,release_simulated=False,_session=None):
   action=b.get('action')
   if action not in ('CONFIRM','REJECT','CANCEL'):raise ValueError('VALID_RESERVATION_ACTION_REQUIRED')
-  with managed_session() as s:
+  with (nullcontext(_session) if _session is not None else managed_session()) as s:
+   from go_hotel.security.service import Principal
+   if isinstance(actor,Principal):
+    from go_hotel.services.hosted_operation_authority import scoped,reservation_hotel
+    scoped(s,actor,reservation_hotel(s,reservation_id),'admin:orders')
+    actor=actor.user_id
    stay=s.get(HostedReservationStayRow,reservation_id,with_for_update=True);r=s.get(HostedDirectReservationRow,reservation_id,with_for_update=True)
    if not r or not stay:raise ValueError('MANAGED_RESERVATION_NOT_FOUND')
    if expected_owner is not None and stay.created_by!=expected_owner:raise ValueError('MANAGED_RESERVATION_NOT_FOUND')
    terminal={'CANCEL':'CANCELLED','REJECT':'REJECTED','CONFIRM':'CONFIRMED'}[action]
    if stay.operational_state==terminal:return out(r)
    from go_hotel.db.models import HostedOrderFareSnapshotRow
-   if action=='CANCEL' and stay.operational_state=='CONFIRMED' and s.get(HostedOrderFareSnapshotRow,reservation_id):raise ValueError('CONFIRMED_CANCELLATION_FARE_QUOTE_REQUIRED')
-   if pending_only and stay.operational_state!='PENDING_HOTEL_CONFIRMATION':raise ValueError('RESERVATION_NOT_PENDING')
+   if action=='CANCEL' and stay.operational_state=='CONFIRMED' and not unfunded_request_cancellable(s,r,stay) and s.get(HostedOrderFareSnapshotRow,reservation_id):raise ValueError('CONFIRMED_CANCELLATION_FARE_QUOTE_REQUIRED')
+   if pending_only and stay.operational_state!='PENDING_HOTEL_CONFIRMATION':
+    legacy_free=action=='CANCEL' and unfunded_request_cancellable(s,r,stay)
+    if not legacy_free:raise ValueError('RESERVATION_NOT_PENDING')
    if stay.operational_state not in ('PENDING_HOTEL_CONFIRMATION','CONFIRMED'):raise ValueError('RESERVATION_ACTION_NOT_ALLOWED')
+   if action=='CANCEL' and stay.operational_state=='CONFIRMED' and not unfunded_request_cancellable(s,r,stay):raise ValueError('CONFIRMED_CANCELLATION_FARE_QUOTE_REQUIRED')
    if action=='REJECT' and stay.operational_state!='PENDING_HOTEL_CONFIRMATION':raise ValueError('RESERVATION_NOT_PENDING')
    if action=='CONFIRM' and aware(stay.confirmation_expires_at)<=now():raise ValueError('RESERVATION_CONFIRMATION_EXPIRED')
    if action=='CONFIRM':
@@ -169,7 +213,10 @@ class HostedReservationOperationsService:
      release_contract_in_session(s,r,'FREE_CANCELLATION' if action=='CANCEL' else 'HOTEL_REJECTED')
     if not payment_clear_for_inventory_change(s,r):raise ValueError('PAYMENT_RELEASE_OR_REFUND_REQUIRED')
     stay.operational_state='REJECTED' if action=='REJECT' else 'CANCELLED';r.reservation_state='HOTEL_REJECTED' if action=='REJECT' else 'CANCELLED';r.payment_state='NO_PAYMENT_NO_REFUND_REQUIRED';self._release(s,reservation_id);template='RESERVATION_'+stay.operational_state
-   stay.updated_at=r.updated_at=now();self._event(s,reservation_id,'HOTEL_'+action,actor,{'payment_captured':False,'refund_required':False});self._notify(s,reservation_id,'GUEST',template,{'payment_captured':False});s.commit();return out(r)
+   stay.updated_at=r.updated_at=now();self._event(s,reservation_id,'HOTEL_'+action,actor,{'payment_captured':False,'refund_required':False});self._notify(s,reservation_id,'GUEST',template,{'payment_captured':False})
+   s.flush()
+   if _session is None:s.commit()
+   return out(r)
  def expire_pending(self,actor='SYSTEM'):
   with managed_session() as s:
    rows=s.scalars(select(HostedReservationStayRow).where(HostedReservationStayRow.operational_state=='PENDING_HOTEL_CONFIRMATION',HostedReservationStayRow.confirmation_expires_at<now()).with_for_update()).all()
@@ -184,11 +231,16 @@ class HostedReservationOperationsService:
     processed+=1
     r=s.get(HostedDirectReservationRow,stay.hosted_reservation_id);stay.operational_state='EXPIRED';r.reservation_state='HOTEL_CONFIRMATION_TIMEOUT';r.payment_state='NO_PAYMENT_NO_REFUND_REQUIRED';stay.updated_at=r.updated_at=now();self._release(s,r.hosted_reservation_id);self._event(s,r.hosted_reservation_id,'CONFIRMATION_TIMEOUT',actor,{'inventory_released':True});self._notify(s,r.hosted_reservation_id,'GUEST','CONFIRMATION_TIMEOUT',{})
    s.commit();return {'expired_count':processed,'inventory_released':processed,'payment_reconciliation_required':blocked,'payment_live':False}
- def reschedule(self,reservation_id,b,actor):
+ def reschedule(self,reservation_id,b,actor,_session=None):
   try:cin=date.fromisoformat(b['check_in']);cout=date.fromisoformat(b['check_out'])
   except Exception:raise ValueError('VALID_STAY_DATES_REQUIRED')
   if cout<=cin:raise ValueError('CHECK_OUT_MUST_FOLLOW_CHECK_IN')
-  with managed_session() as s:
+  with (nullcontext(_session) if _session is not None else managed_session()) as s:
+   from go_hotel.security.service import Principal
+   if isinstance(actor,Principal):
+    from go_hotel.services.hosted_operation_authority import scoped,reservation_hotel
+    scoped(s,actor,reservation_hotel(s,reservation_id),'admin:orders')
+    actor=actor.user_id
    stay=s.get(HostedReservationStayRow,reservation_id,with_for_update=True);r=s.get(HostedDirectReservationRow,reservation_id,with_for_update=True)
    if not r or not stay or stay.operational_state not in ('PENDING_HOTEL_CONFIRMATION','CONFIRMED'):raise ValueError('RESERVATION_NOT_RESCHEDULABLE')
    if stay.operational_state=='PENDING_HOTEL_CONFIRMATION' and aware(stay.confirmation_expires_at)<=now():raise ValueError('RESERVATION_CONFIRMATION_EXPIRED')
@@ -210,7 +262,10 @@ class HostedReservationOperationsService:
     changed=s.execute(update(HostedInventoryDayRow).where(HostedInventoryDayRow.inventory_day_id==inv.inventory_day_id,HostedInventoryDayRow.sale_state=='OPEN',HostedInventoryDayRow.capacity_available>0).values(capacity_available=HostedInventoryDayRow.capacity_available-1,updated_at=now())).rowcount
     if changed!=1:raise ValueError('NO_DATED_INVENTORY')
     s.add(HostedReservationNightRow(reservation_night_id=ident('hrn'),hosted_reservation_id=reservation_id,inventory_day_id=inv.inventory_day_id,stay_date=rate.stay_date,price_minor=rate.price_minor,state='HELD'))
-   r.check_in=b['check_in'];r.check_out=b['check_out'];r.amount_minor=sum(x[0].price_minor for x in new);r.updated_at=stay.updated_at=now();self._event(s,reservation_id,'RESCHEDULED',actor,{'payment_attempted':False,'refund_required':False});self._notify(s,reservation_id,'GUEST','RESERVATION_RESCHEDULED',{'check_in':r.check_in,'check_out':r.check_out});s.commit();return out(r)
+   r.check_in=b['check_in'];r.check_out=b['check_out'];r.amount_minor=sum(x[0].price_minor for x in new);r.updated_at=stay.updated_at=now();self._event(s,reservation_id,'RESCHEDULED',actor,{'payment_attempted':False,'refund_required':False});self._notify(s,reservation_id,'GUEST','RESERVATION_RESCHEDULED',{'check_in':r.check_in,'check_out':r.check_out})
+   s.flush()
+   if _session is None:s.commit()
+   return out(r)
  def _release(self,s,reservation_id):
   nights=s.scalars(select(HostedReservationNightRow).where(HostedReservationNightRow.hosted_reservation_id==reservation_id,HostedReservationNightRow.state=='HELD')).all()
   for n in nights:

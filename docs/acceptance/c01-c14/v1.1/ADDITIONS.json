@@ -1,0 +1,1416 @@
+{
+  "schema": "go.acceptance.additions.v1",
+  "base_version": "1.0.0",
+  "next_version": "1.1.0",
+  "base_scope_sha256": "2a9ebac6832212e6118f2b1190f0d44b34a3bf814f17dddc244cd592d85df37e",
+  "status": "STANDARD_REVIEWED_PENDING_CANONICAL_HASH",
+  "base_items_mutated": false,
+  "source_pr": {
+    "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+    "head": "d66c860707793822757f099a329c7cec458d23eb",
+    "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+    "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+  },
+  "source_limit": "9/18,8/17,8/24细节来自root个人历史检索线索；PR218仅验证其明确写出的内容。尚未取回原eBooking截图/八域原定义，未宣称重访源站。",
+  "items": [
+    {
+      "id": "C01-CTRIP-RATE",
+      "cell": "C01",
+      "title": "方案身份及报价来源维度",
+      "category": "TRUTH_CROSS_DOMAIN",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-C01-01（PR218_EXPLICIT_REQUIREMENT；详见requirements_ref）",
+      "actor": "C01职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "方案身份及报价来源维度的数据提交、刷新或业务执行",
+      "expected_result": "同一房型不同付款、客群、取消、早餐条件的独立方案保留来源身份；不得按早餐数或名称合并。",
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-RATE-CASE-1",
+          "description": "同房同双早但付款模式/会员客群/取消条款不同，独立方案ID与完整来源快照往返不串绑",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-RATE-CASE-2",
+          "description": "来源19个售卖方案映射17个物理主档需显式组合关系；未知映射HOLD且同名不覆盖",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-RATE-CASE-3",
+          "description": "乱序/部分快照及重复导入保留已确认身份；重复来源ID冲突拒绝且无部分覆盖",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-RATE-CASE-4",
+          "description": "消费者切换方案后付款、客群、取消、总价同源读回；来源缺字段显式未知不默认补齐",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/aoluguya_supply_truth.py:116",
+        "application/tests/test_ctrip_rate_plan_identity.py:45"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-C01-01",
+        "proposal_id": "C01-CTRIP-PROPOSAL-01",
+        "source_confidence": "PR218_EXPLICIT_REQUIREMENT",
+        "historical_observation": "房型与售卖方案分层，早餐不是方案身份",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-01",
+        "C01-02",
+        "C01-06"
+      ]
+    },
+    {
+      "id": "C01-CTRIP-CLOCK",
+      "cell": "C01",
+      "title": "报价取消时间及宽限择优",
+      "category": "NORMAL",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-C01-02（PR218_EXPLICIT_REQUIREMENT；详见requirements_ref）",
+      "actor": "C01职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "报价取消时间及宽限择优的数据提交、刷新或业务执行",
+      "expected_result": "取消截止遵循当前成交规则的明确时间锚点、日期范围及优先级，基础更宽松时不因宽限结束变严。",
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-CLOCK-CASE-1",
+          "description": "显式30分钟夹具在确认后29/30/31分钟与晚确认一小时按规则边界执行；不得将30分钟设通用默认",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-CLOCK-CASE-2",
+          "description": "基础更宽松规则与确认宽限取约定对客有利结果；订单创建与酒店确认锚点不可互换，跨订单确认拒绝",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-CLOCK-CASE-3",
+          "description": "当地23:59、跨日、日期范围和特殊日期重叠按授权优先级；时区或DST歧义/优先级缺失HOLD",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-CLOCK-CASE-4",
+          "description": "新规则或特殊日期变更不修改旧成交快照；未知180天文字保留原文待核验，不生成可执行期限",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_cancellation_clock.py:6",
+        "application/src/go_hotel/services/hosted_fare_rules.py:124",
+        "application/tests/test_hotel_cancellation_clock.py:69"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-C01-02",
+        "proposal_id": "C01-CTRIP-PROPOSAL-02",
+        "source_confidence": "PR218_EXPLICIT_REQUIREMENT",
+        "historical_observation": "基础取消规则与确认后宽限择优，精确时间锚点",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-01",
+        "C01-05",
+        "C01-14"
+      ]
+    },
+    {
+      "id": "C01-CTRIP-IMPORT",
+      "cell": "C01",
+      "title": "酒店自主选择导入事实",
+      "category": "AUTH_TENANT",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-C01-03（PR218_EXPLICIT_REQUIREMENT；详见requirements_ref）",
+      "actor": "C01职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "酒店自主选择导入事实的数据提交、刷新或业务执行",
+      "expected_result": "授权酒店预览、选择、修改并确认导入静态事实；未选字段和供给授权不受影响。",
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-IMPORT-CASE-1",
+          "description": "只选地址和邮箱并修改预览后确认，仅对应字段更新并保留来源及确认者",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-IMPORT-CASE-2",
+          "description": "取消预览或越酒店确认零写入；重复同批次提交不增加重复事实",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-IMPORT-CASE-3",
+          "description": "Property和Room分开，组合售卖关系不生成新物理房型；未知不变NO",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-IMPORT-CASE-4",
+          "description": "静态资料导入不创建库存价格、不取得可售授权；界面确认与回读一致",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:33",
+        "application/tests/test_hotel_partner_selected_import.py:34",
+        "application/tests/test_hotel_source_room_mapping.py",
+        "application/frontend/shared/app.js:529"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-C01-03",
+        "proposal_id": "C01-CTRIP-PROPOSAL-03",
+        "source_confidence": "PR218_EXPLICIT_REQUIREMENT",
+        "historical_observation": "酒店自主选择导入，Property与Room事实分开",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-06",
+        "C01-07",
+        "C01-08",
+        "C01-12"
+      ]
+    },
+    {
+      "id": "C01-CTRIP-MEDIA",
+      "cell": "C01",
+      "title": "酒店原图绑定与发布资格",
+      "category": "ROLE_UI",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-C01-04（PR218_EXPLICIT_REQUIREMENT；详见requirements_ref）",
+      "actor": "C01职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "酒店原图绑定与发布资格的数据提交、刷新或业务执行",
+      "expected_result": "真实原图经所属酒店确认绑定和权利审核才取得发布资格；链接数量不替代资产事实。",
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-MEDIA-CASE-1",
+          "description": "酒店真实点击上传高清文件→私有回读→房型/公区绑定→审核→发布，字节SHA尺寸与展示一致",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-MEDIA-CASE-2",
+          "description": "275个URL/编号或重复缩略图不增加verified_asset_count；同字节重复上传去重",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-MEDIA-CASE-3",
+          "description": "跨酒店绑定拒绝；未知主档不得按同名自动绑定",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-MEDIA-CASE-4",
+          "description": "文件缺失/损坏/权利撤销后重新发布被阻断，已有发布进入撤回或明确治理状态，不能继续标有效",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_media_upload.py:55",
+        "application/tests/test_hotel_partner_media_upload.py:37",
+        "application/tests/test_hotel_partner_media_publication.py:19"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-C01-04",
+        "proposal_id": "C01-CTRIP-PROPOSAL-04",
+        "source_confidence": "PR218_EXPLICIT_REQUIREMENT",
+        "historical_observation": "275图片编号不是已上传资产；酒店直接提供高清原图",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-06",
+        "C01-08",
+        "C01-12"
+      ]
+    },
+    {
+      "id": "C12-CTRIP-ASSET",
+      "cell": "C12",
+      "title": "上传字节和私有资产隔离",
+      "category": "AUTH_TENANT",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-C01-04（PR218_EXPLICIT_REQUIREMENT；详见requirements_ref）",
+      "actor": "C12职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "上传字节和私有资产隔离的数据提交、刷新或业务执行",
+      "expected_result": "原图上传、存储、回读在字节校验和酒店授权范围内闭环。",
+      "verification_cases": [
+        {
+          "id": "C12-CTRIP-ASSET-CASE-1",
+          "description": "真实格式/尺寸/字节SHA检查并私有回读一致，不以用户声明MIME替代解码",
+          "required": true
+        },
+        {
+          "id": "C12-CTRIP-ASSET-CASE-2",
+          "description": "格式伪装、超限、损坏及路径越界被拒绝且不产生可发布资产",
+          "required": true
+        },
+        {
+          "id": "C12-CTRIP-ASSET-CASE-3",
+          "description": "其他酒店猜ID、旧撤销授权链接或列表不得读取私有原图",
+          "required": true
+        },
+        {
+          "id": "C12-CTRIP-ASSET-CASE-4",
+          "description": "写文件或元数据中途失败后重试不留可发布悬空记录，重复提交不重复资产",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_media_upload.py:55",
+        "application/tests/test_hotel_partner_media_upload.py:37",
+        "application/tests/test_hotel_partner_media_publication.py:19"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-C01-04",
+        "proposal_id": "C01-CTRIP-PROPOSAL-04",
+        "source_confidence": "PR218_EXPLICIT_REQUIREMENT",
+        "historical_observation": "275图片编号不是已上传资产；酒店直接提供高清原图",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-06",
+        "C01-08",
+        "C01-12"
+      ]
+    },
+    {
+      "id": "C01-CTRIP-OCCUPANCY",
+      "cell": "C01",
+      "title": "成人儿童总人数容量",
+      "category": "NORMAL",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-OCCUPANCY（HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED；详见requirements_ref）",
+      "actor": "C01职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "成人儿童总人数容量的数据提交、刷新或业务执行",
+      "expected_result": "预订与房型资料遵守成人、儿童、总人数分别定义的容量约束。",
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-OCCUPANCY-CASE-1",
+          "description": "成人上限、儿童上限、总数上限各恰等边界可订，任一超限或负数拒绝",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-OCCUPANCY-CASE-2",
+          "description": "成人儿童组合可达性与婴儿定义按授权规则；定义缺失HOLD而非猜算",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-OCCUPANCY-CASE-3",
+          "description": "组合售卖方案不改变物理房型容量；资料→报价→实际预订同一容量版本",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-OCCUPANCY-CASE-4",
+          "description": "超过容量的旧搜索结果在提交时拒绝并提示重新选择，零订单或费用副作用",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:274",
+        "application/tests/test_hotel_partner_self_operating_core.py:19"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-HISTORY-OCCUPANCY",
+        "proposal_id": "C01-CTRIP-PROPOSAL-05",
+        "source_confidence": "HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED",
+        "historical_observation": "成人/儿童/总人数独立约束",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-02",
+        "C01-12"
+      ]
+    },
+    {
+      "id": "C01-CTRIP-BREAKFAST",
+      "cell": "C01",
+      "title": "早餐价格身高和服务时间",
+      "category": "NORMAL",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-POLICIES（HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED；详见requirements_ref）",
+      "actor": "C01职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "早餐价格身高和服务时间的数据提交、刷新或业务执行",
+      "expected_result": "早餐政策结构化校验并在报价及消费者界面按成交版本展示。",
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-BREAKFAST-CASE-1",
+          "description": "身高区间上下端、单位、金额币种、营业日期和时区明确；端点按配置正确计价",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-BREAKFAST-CASE-2",
+          "description": "区间重叠/空隙/负数或未知时段明确拒绝或待核验，不套用历史168/84样本为默认",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-BREAKFAST-CASE-3",
+          "description": "成人儿童混合报价与所选含早方案不重复收费，明细和总额相符",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-BREAKFAST-CASE-4",
+          "description": "政策换版或停售只按约定作用于新报价，旧成交快照及服务时间可回读",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:306",
+        "application/src/go_hotel/services/aoluguya_inventory.py:10",
+        "application/tests/test_hotel_partner_self_operating_core.py:22"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-HISTORY-POLICIES",
+        "proposal_id": "C01-CTRIP-PROPOSAL-06",
+        "source_confidence": "HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED",
+        "historical_observation": "早餐身高价格时段、押金频次与原路退回、加床宠物等独立政策",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-01",
+        "C01-06",
+        "C01-12"
+      ]
+    },
+    {
+      "id": "C01-CTRIP-DEPOSIT_POLICY",
+      "cell": "C01",
+      "title": "酒店押金计费义务",
+      "category": "TRUTH_CROSS_DOMAIN",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-POLICIES（HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED；详见requirements_ref）",
+      "actor": "C01职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "酒店押金计费义务的数据提交、刷新或业务执行",
+      "expected_result": "酒店押金义务明确按晚或按次、金额币种及返还条件，并取得受权用户接受快照。",
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-DEPOSIT_POLICY-CASE-1",
+          "description": "多晚订单按晚与按次两规则产生不同准确义务，界面展示计算明细",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-DEPOSIT_POLICY-CASE-2",
+          "description": "缺授权规则/频次/币种/返还条件HOLD，1000样本不成为默认条款",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-DEPOSIT_POLICY-CASE-3",
+          "description": "接受绑定酒店订单所有者、规则版本、金额与期限，跨订单或陈旧版本拒绝",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-DEPOSIT_POLICY-CASE-4",
+          "description": "押金条款接受仅产生义务，不得显示已扣收或已退还",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:306",
+        "application/src/go_hotel/services/aoluguya_inventory.py:10",
+        "application/tests/test_hotel_partner_self_operating_core.py:22"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-HISTORY-POLICIES",
+        "proposal_id": "C01-CTRIP-PROPOSAL-06",
+        "source_confidence": "HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED",
+        "historical_observation": "早餐身高价格时段、押金频次与原路退回、加床宠物等独立政策",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-01",
+        "C01-06",
+        "C01-12"
+      ]
+    },
+    {
+      "id": "C11-CTRIP-HOTEL_DEPOSIT",
+      "cell": "C11",
+      "title": "酒店押金返还资金事实",
+      "category": "TRUTH_CROSS_DOMAIN",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-POLICIES（HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED；详见requirements_ref）",
+      "actor": "C11职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "酒店押金返还资金事实的数据提交、刷新或业务执行",
+      "expected_result": "押金资金状态由唯一绑定的支付和返还事实派生，业务释放与资金到账分别表达。",
+      "verification_cases": [
+        {
+          "id": "C11-CTRIP-HOTEL_DEPOSIT-CASE-1",
+          "description": "合法已接受义务绑定唯一资金root，实收/可返/已返金额币种及账本一致",
+          "required": true
+        },
+        {
+          "id": "C11-CTRIP-HOTEL_DEPOSIT-CASE-2",
+          "description": "只接受条款或酒店批准返还而无资金事实不得称已收/已退/到账",
+          "required": true
+        },
+        {
+          "id": "C11-CTRIP-HOTEL_DEPOSIT-CASE-3",
+          "description": "按原支付路径约定返还，错误账户/币种/超过可返余额和跨订单授权拒绝",
+          "required": true
+        },
+        {
+          "id": "C11-CTRIP-HOTEL_DEPOSIT-CASE-4",
+          "description": "部分返还、未知结果、重复并发和崩溃恢复不重复扣退；无银行证据到账仍未知",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:306",
+        "application/src/go_hotel/services/aoluguya_inventory.py:10",
+        "application/tests/test_hotel_partner_self_operating_core.py:22"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [
+        "C01-CTRIP-DEPOSIT_POLICY"
+      ],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-HISTORY-POLICIES",
+        "proposal_id": "C01-CTRIP-PROPOSAL-06",
+        "source_confidence": "HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED",
+        "historical_observation": "早餐身高价格时段、押金频次与原路退回、加床宠物等独立政策",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-01",
+        "C01-06",
+        "C01-12"
+      ]
+    },
+    {
+      "id": "C01-CTRIP-STAY_POLICY",
+      "cell": "C01",
+      "title": "加床儿童宠物准入政策",
+      "category": "ERROR_UNKNOWN",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-POLICIES（HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED；详见requirements_ref）",
+      "actor": "C01职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "加床儿童宠物准入政策的数据提交、刷新或业务执行",
+      "expected_result": "非早餐住宿准入和加床政策逐字段保持已准许、禁止、条件允许或未知，并用于订前确认。",
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-STAY_POLICY-CASE-1",
+          "description": "已确认的加床/儿童/宠物条件及费用在选房、确认和旧订单快照一致",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-STAY_POLICY-CASE-2",
+          "description": "未确认字段不得当作禁止，也不得自动允许；条件未知的受影响预订HOLD或转人工确认",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-STAY_POLICY-CASE-3",
+          "description": "已禁止或超条件请求在订单提交重验并拒绝，不能仅在资料页提示",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-STAY_POLICY-CASE-4",
+          "description": "换版不改历史条件；跨酒店政策引用拒绝且不覆盖原字段",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:306",
+        "application/src/go_hotel/services/aoluguya_inventory.py:10",
+        "application/tests/test_hotel_partner_self_operating_core.py:22"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-HISTORY-POLICIES",
+        "proposal_id": "C01-CTRIP-PROPOSAL-06",
+        "source_confidence": "HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED",
+        "historical_observation": "早餐身高价格时段、押金频次与原路退回、加床宠物等独立政策",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-01",
+        "C01-06",
+        "C01-12"
+      ]
+    },
+    {
+      "id": "C09-CTRIP-FACILITY",
+      "cell": "C09",
+      "title": "设施范围与未知真相",
+      "category": "TRUTH_CROSS_DOMAIN",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-FACILITIES（HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED；详见requirements_ref）",
+      "actor": "C09职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "设施范围与未知真相的数据提交、刷新或业务执行",
+      "expected_result": "酒店级和房型级设施断言分开，覆盖范围与事实状态分别验证。",
+      "verification_cases": [
+        {
+          "id": "C09-CTRIP-FACILITY-CASE-1",
+          "description": "酒店有泳池不推导每房有浴缸，酒店和房型来源/确认分别回读",
+          "required": true
+        },
+        {
+          "id": "C09-CTRIP-FACILITY-CASE-2",
+          "description": "全有/部分/无覆盖范围与YES/NO/UNKNOWN/NOT_APPLICABLE分别表示，部分范围可追溯房型集合",
+          "required": true
+        },
+        {
+          "id": "C09-CTRIP-FACILITY-CASE-3",
+          "description": "继承例外与显式房型否定优先级明确；未知不变NO，不进入已验证数量",
+          "required": true
+        },
+        {
+          "id": "C09-CTRIP-FACILITY-CASE-4",
+          "description": "来源冲突或确认撤销后消费者和商家页面显示待核验并保留原证据",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:25",
+        "application/src/go_hotel/services/hotel_partner_core.py:296",
+        "application/tests/test_hotel_partner_self_operating_core.py:22"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-HISTORY-FACILITIES",
+        "proposal_id": "C01-CTRIP-PROPOSAL-07",
+        "source_confidence": "HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED",
+        "historical_observation": "酒店级与房型级设施，全有/部分/无/未知",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-01",
+        "C01-06"
+      ]
+    },
+    {
+      "id": "C09-CTRIP-COMPLETENESS",
+      "cell": "C09",
+      "title": "资料完整性独立分母",
+      "category": "TRUTH_CROSS_DOMAIN",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-COMPLETENESS（PR218_EXPLICIT_REQUIREMENT；详见requirements_ref）",
+      "actor": "C09职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "资料完整性独立分母的数据提交、刷新或业务执行",
+      "expected_result": "资料完整性按GO逐字段及真实资产计算，明确发布必要字段、可选语言缺口及运营就绪区别。",
+      "verification_cases": [
+        {
+          "id": "C09-CTRIP-COMPLETENESS-CASE-1",
+          "description": "源站100%不得直接写GO完整度、跳过字段核查或赋发布许可",
+          "required": true
+        },
+        {
+          "id": "C09-CTRIP-COMPLETENESS-CASE-2",
+          "description": "必需字段缺失阻发布；英文简介等可选字段单列缺口，不能擅设所有酒店强制英文",
+          "required": true
+        },
+        {
+          "id": "C09-CTRIP-COMPLETENESS-CASE-3",
+          "description": "编号/缺失文件/未验证事实不得计入已验证完整度，报告可回到本酒店字段证据",
+          "required": true
+        },
+        {
+          "id": "C09-CTRIP-COMPLETENESS-CASE-4",
+          "description": "readiness100与完整性报告标签分开，分母变更有版本记录且缺项不隐藏",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_catalog_quality.py:148",
+        "application/src/go_hotel/services/hotel_partner_core.py:382",
+        "application/frontend/shared/app.js:635"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-HISTORY-COMPLETENESS",
+        "proposal_id": "C01-CTRIP-PROPOSAL-08",
+        "source_confidence": "PR218_EXPLICIT_REQUIREMENT",
+        "historical_observation": "后台100%仍英文简介缺项",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-01",
+        "C01-06",
+        "C01-13"
+      ]
+    },
+    {
+      "id": "C07-CTRIP-MEMBER",
+      "cell": "C07",
+      "title": "账号授权与会员资格时效",
+      "category": "AUTH_TENANT",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-MEMBER（PR218_EXPLICIT_REQUIREMENT；详见requirements_ref）",
+      "actor": "C07职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "账号授权与会员资格时效的数据提交、刷新或业务执行",
+      "expected_result": "会员上下文按账号授权、来源、有效范围与时效分别确认，撤销后不再作为当前有效资格。",
+      "verification_cases": [
+        {
+          "id": "C07-CTRIP-MEMBER-CASE-1",
+          "description": "同用户受权连接来源账号后保存会员范围/来源/更新时间/有效期，不保存密码OTP cookie token",
+          "required": true
+        },
+        {
+          "id": "C07-CTRIP-MEMBER-CASE-2",
+          "description": "跨账号会员身份或缺授权/过期/被撤销资格不得用于已验证会员报价",
+          "required": true
+        },
+        {
+          "id": "C07-CTRIP-MEMBER-CASE-3",
+          "description": "断开连接立即停止新使用，旧记录保持历史来源且不得仍标当前有效",
+          "required": true
+        },
+        {
+          "id": "C07-CTRIP-MEMBER-CASE-4",
+          "description": "优惠不适用产品不强制打折，历史15%观察不能成为GO通用优惠率",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/consumer_ota_comparison.py",
+        "application/tests/test_member_product_comparability.py:38",
+        "application/tests/test_member_comparison_quote_validity.py"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-HISTORY-MEMBER",
+        "proposal_id": "C01-CTRIP-PROPOSAL-09",
+        "source_confidence": "PR218_EXPLICIT_REQUIREMENT",
+        "historical_observation": "会员档位15%及部分不适用仅观察样本，不套GO费率",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-01"
+      ]
+    },
+    {
+      "id": "C08-CTRIP-COMPARE",
+      "cell": "C08",
+      "title": "同条件方案比较",
+      "category": "NORMAL",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-MEMBER（PR218_EXPLICIT_REQUIREMENT；详见requirements_ref）",
+      "actor": "C08职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "同条件方案比较的数据提交、刷新或业务执行",
+      "expected_result": "仅同日期人数币种税费及房型早餐取消付款资格条件的报价进入同组排序，缺项明确待核实。",
+      "verification_cases": [
+        {
+          "id": "C08-CTRIP-COMPARE-CASE-1",
+          "description": "同日期人数币种税费同方案条件按可比实付总额排序并保留来源",
+          "required": true
+        },
+        {
+          "id": "C08-CTRIP-COMPARE-CASE-2",
+          "description": "同早餐但付款/取消/房型不同不得直接混按最低价排名，展示差异并分组",
+          "required": true
+        },
+        {
+          "id": "C08-CTRIP-COMPARE-CASE-3",
+          "description": "缺税费或会员资格不确定仅显示待核实，不标官方已验证会员最低价",
+          "required": true
+        },
+        {
+          "id": "C08-CTRIP-COMPARE-CASE-4",
+          "description": "资格撤销/报价过期后重新规划重验，旧推荐不能直接授权执行且不泛化30分钟规则",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/consumer_ota_comparison.py",
+        "application/tests/test_member_product_comparability.py:38",
+        "application/tests/test_member_comparison_quote_validity.py"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [
+        "C07-CTRIP-MEMBER",
+        "C01-CTRIP-RATE"
+      ],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-HISTORY-MEMBER",
+        "proposal_id": "C01-CTRIP-PROPOSAL-09",
+        "source_confidence": "PR218_EXPLICIT_REQUIREMENT",
+        "historical_observation": "会员档位15%及部分不适用仅观察样本，不套GO费率",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-01"
+      ]
+    },
+    {
+      "id": "C01-CTRIP-PROMOTION",
+      "cell": "C01",
+      "title": "酒店促销生效撤销闭环",
+      "category": "CONCURRENCY_RECOVERY",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-MARKETING（HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED；详见requirements_ref）",
+      "actor": "C01职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "酒店促销生效撤销闭环的数据提交、刷新或业务执行",
+      "expected_result": "酒店促销按受权范围、时间和叠加规则作用于新报价，旧成交不静默改变。",
+      "verification_cases": [
+        {
+          "id": "C01-CTRIP-PROMOTION-CASE-1",
+          "description": "草稿→审批/受权启用→生效→到期/撤销状态及生效时区在UI/API/报价一致",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROMOTION-CASE-2",
+          "description": "互斥或叠加优先级和币种/适用客群不明确HOLD，不允许AI建议自动改价",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROMOTION-CASE-3",
+          "description": "撤销与下单并发以同一当前版本重验；旧页面不得重启已撤销促销",
+          "required": true
+        },
+        {
+          "id": "C01-CTRIP-PROMOTION-CASE-4",
+          "description": "失败重试不重复折扣，已成交快照保留原优惠，租户越权拒绝",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:306",
+        "application/frontend/shared/app.js:670",
+        "application/frontend/shared/app.js:694"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-HISTORY-MARKETING",
+        "proposal_id": "C01-CTRIP-PROPOSAL-10",
+        "source_confidence": "HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED",
+        "historical_observation": "促销生命周期、数据中心、知识库",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-06",
+        "C01-13"
+      ]
+    },
+    {
+      "id": "C09-CTRIP-METRICS",
+      "cell": "C09",
+      "title": "经营指标原始事实口径",
+      "category": "TRUTH_CROSS_DOMAIN",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-MARKETING（HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED；详见requirements_ref）",
+      "actor": "C09职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "经营指标原始事实口径的数据提交、刷新或业务执行",
+      "expected_result": "经营指标按酒店和日期口径分别聚合订单、取消、退款与到账，能回到同范围原记录。",
+      "verification_cases": [
+        {
+          "id": "C09-CTRIP-METRICS-CASE-1",
+          "description": "订单额/优惠/实付/取消/应退/已退/到账分别核算并可从卡片钻取匹配原记录",
+          "required": true
+        },
+        {
+          "id": "C09-CTRIP-METRICS-CASE-2",
+          "description": "未知到账、部分退款或取消未退款不计为全额到账或全退，迟到事实刷新不重复累计",
+          "required": true
+        },
+        {
+          "id": "C09-CTRIP-METRICS-CASE-3",
+          "description": "跨酒店或无权限钻取拒绝，筛选日期与币种改变不沿用旧口径结果",
+          "required": true
+        },
+        {
+          "id": "C09-CTRIP-METRICS-CASE-4",
+          "description": "数据源缺失/延迟标未核验或新鲜度，仪表盘不能以空值冒充零失败",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:306",
+        "application/frontend/shared/app.js:670",
+        "application/frontend/shared/app.js:694"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-HISTORY-MARKETING",
+        "proposal_id": "C01-CTRIP-PROPOSAL-10",
+        "source_confidence": "HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED",
+        "historical_observation": "促销生命周期、数据中心、知识库",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-06",
+        "C01-13"
+      ]
+    },
+    {
+      "id": "C08-CTRIP-KNOWLEDGE",
+      "cell": "C08",
+      "title": "运营知识版本与执行引用",
+      "category": "OPERATIONS",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-MARKETING（HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED；详见requirements_ref）",
+      "actor": "C08职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "运营知识版本与执行引用的数据提交、刷新或业务执行",
+      "expected_result": "运营建议只引用当前受权版本知识，发布撤销与失效可回读并阻断陈旧自动执行。",
+      "verification_cases": [
+        {
+          "id": "C08-CTRIP-KNOWLEDGE-CASE-1",
+          "description": "知识草稿→受权审核发布形成版本及来源，建议展示所引用版本和适用范围",
+          "required": true
+        },
+        {
+          "id": "C08-CTRIP-KNOWLEDGE-CASE-2",
+          "description": "过期/撤销/来源冲突停止新引用并登记受影响任务，未知规则转受权人工处理",
+          "required": true
+        },
+        {
+          "id": "C08-CTRIP-KNOWLEDGE-CASE-3",
+          "description": "旧建议执行前重验规则版本，不能凭已生成文案执行改价退款等动作",
+          "required": true
+        },
+        {
+          "id": "C08-CTRIP-KNOWLEDGE-CASE-4",
+          "description": "更新失败重试和重复发布不丢旧审计；真实问题登记→派发→处理→核验→复查有独立状态",
+          "required": true
+        }
+      ],
+      "source_paths": [
+        "application/src/go_hotel/services/hotel_partner_core.py:306",
+        "application/frontend/shared/app.js:670",
+        "application/frontend/shared/app.js:694"
+      ],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "CTRIP-HISTORY-MARKETING",
+        "proposal_id": "C01-CTRIP-PROPOSAL-10",
+        "source_confidence": "HISTORICAL_LEARNING_CLUE_NOT_ORIGINAL_OBSERVATION_VERIFIED",
+        "historical_observation": "促销生命周期、数据中心、知识库",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": [
+        "C01-06",
+        "C01-13"
+      ]
+    },
+    {
+      "id": "C10-CTRIP-EXTERNAL_REFUND",
+      "cell": "C10",
+      "title": "外部订单取消退款跨端投影",
+      "category": "TRUTH_CROSS_DOMAIN",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-MEMBER（PR218_EXPLICIT_REQUIREMENT；详见requirements_ref）",
+      "actor": "C10职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "外部订单取消退款跨端投影的数据提交、刷新或业务执行",
+      "expected_result": "受权归集订单保留成交平台和售后入口，取消与退款进展及到账未知独立投影。",
+      "verification_cases": [
+        {
+          "id": "C10-CTRIP-EXTERNAL_REFUND-CASE-1",
+          "description": "受权来源取消但未退款、部分退款、平台已退款但到账未知，在web/mobile/管理端分别一致显示",
+          "required": true
+        },
+        {
+          "id": "C10-CTRIP-EXTERNAL_REFUND-CASE-2",
+          "description": "迟到旧事件不得使新状态回退；同事件重复归集不重复退款金额",
+          "required": true
+        },
+        {
+          "id": "C10-CTRIP-EXTERNAL_REFUND-CASE-3",
+          "description": "断开账号停止新同步，历史记录保留来源时间且不冒充当前事实；跨账号读取拒绝",
+          "required": true
+        },
+        {
+          "id": "C10-CTRIP-EXTERNAL_REFUND-CASE-4",
+          "description": "售后深链指向正确平台和订单，不把GO聚合查看当作GO已执行取消退款",
+          "required": true
+        }
+      ],
+      "source_paths": [],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "PR218-CTRIP-C10-01",
+        "proposal_id": null,
+        "source_confidence": "PR218_EXPLICIT_REQUIREMENT",
+        "historical_observation": "PR218明确要求外部订单归集后的取消/退款/到账分离",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": []
+    },
+    {
+      "id": "C11-CTRIP-EXTERNAL_REFUND",
+      "cell": "C11",
+      "title": "外部订单退款金额与到账依据",
+      "category": "TRUTH_CROSS_DOMAIN",
+      "requirement_ref": "用户本轮明确要求应用既有携程商家后台学习；PR218@d66c860707793822757f099a329c7cec458d23eb docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md; CTRIP-HISTORY-MEMBER（PR218_EXPLICIT_REQUIREMENT；详见requirements_ref）",
+      "actor": "C11职责内受权用户/操作者；读取、变更和审核按对象所属权与权限分开",
+      "preconditions": "固定候选、酒店/账号所属权及受权规则明确；隔离来源夹具不冒充外部批准；缺参数按各case HOLD",
+      "trigger": "外部订单退款金额与到账依据的数据提交、刷新或业务执行",
+      "expected_result": "外部订单退款只读取可信来源事实，各金额维度与实际到账证据独立，不能另造交易真相。",
+      "verification_cases": [
+        {
+          "id": "C11-CTRIP-EXTERNAL_REFUND-CASE-1",
+          "description": "商品额/优惠/实付/应退/已退分别保留币种和证据；部分退款按原始事件准确累计",
+          "required": true
+        },
+        {
+          "id": "C11-CTRIP-EXTERNAL_REFUND-CASE-2",
+          "description": "退订成功或平台处理完成而缺银行证据时到账未知，不新增GO资金movement冒充执行",
+          "required": true
+        },
+        {
+          "id": "C11-CTRIP-EXTERNAL_REFUND-CASE-3",
+          "description": "同退款重复事件/乱序/冲突不重复累计，超实付或币种不符HOLD进入核对",
+          "required": true
+        },
+        {
+          "id": "C11-CTRIP-EXTERNAL_REFUND-CASE-4",
+          "description": "修正必须带授权及原证据关联，跨账号来源拒绝且旧记录保留审计",
+          "required": true
+        }
+      ],
+      "source_paths": [],
+      "evidence_requirements": [
+        "源身份/清单版本绑定",
+        "原始结果及hash",
+        "适用界面/API/持久化证据",
+        "独立复核记录"
+      ],
+      "dependencies": [],
+      "priority": "P1",
+      "applicability": "REQUIRED",
+      "implementation_state": "NOT_ASSESSED",
+      "evidence_state": "NONE",
+      "review_status": "NOT_ASSESSED",
+      "baseline_status": "REFERENCE_ONLY",
+      "baseline_reference": "ecab和历史源码仅提供待重验线索；当前条目完整范围未验收",
+      "evidence_refs": [],
+      "candidate_binding": null,
+      "reviewer": null,
+      "reviewed_at": null,
+      "requirements_ref": {
+        "pr": {
+          "url": "https://github.com/yuguangzhi3836-glitch/GO/pull/218",
+          "head": "d66c860707793822757f099a329c7cec458d23eb",
+          "document": "docs/product/CTRIP_LEARNING_CELL_UPGRADES_20260919.md",
+          "state_at_read": "OPEN_DRAFT_DOCUMENTATION_ONLY"
+        },
+        "mapping_id": "PR218-CTRIP-C11-01",
+        "proposal_id": null,
+        "source_confidence": "PR218_EXPLICIT_REQUIREMENT",
+        "historical_observation": "PR218明确要求外部订单归集后的取消/退款/到账分离",
+        "note": "历史数字仅指定夹具/观察样本，不构成GO统一政策；未读取原始截图不声称现场重验"
+      },
+      "related_v1_ids": []
+    }
+  ],
+  "existing_only_mapping": {
+    "CTRIP-HISTORY-OPERATIONS": [
+      "C01-13",
+      "C01-12"
+    ],
+    "note": "运营登记/派发/执行/核验/复查已有v1明确义务；不重复加分母，历史驾驶舱仅作为其待核验证据线索。"
+  },
+  "counts": {
+    "added_items": 19,
+    "added_required_cases": 76,
+    "next_items": 305,
+    "next_required_cases": 1009
+  }
+}

@@ -1,0 +1,53 @@
+✔ HTTP helper retains CSRF together with idempotency header (2.926659ms)
+✔ Escape cancels traveler selection without authorizing or creating an order (7.500796ms)
+✔ rental consent is bound to the selected traveler, field and purpose (2.138489ms)
+✔ payment is cancelled without any checkout mutation (5.831571ms)
+✔ a failed confirmed payment stays visible and can be retried (1.871406ms)
+✔ cancelling a party selection creates no order or grant (1.691003ms)
+✔ a party must contain the exact number of different travelers (1.274274ms)
+✔ party confirmation returns only the explicitly selected traveler references (1.284309ms)
+✔ party selection cannot submit without confirming adult travelers and purpose (1.280383ms)
+✔ RIDE browser policy cannot be accepted without a fresh checked consent (3.082755ms)
+✔ RIDE missing policy and cancelled consent create no orders (2.020921ms)
+(node:14) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/scratch/cdb63add4518/go/application/mobile/go-app/src/domain/orderActions.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/scratch/cdb63add4518/go/application/mobile/go-app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ HOTEL: payment binds fresh amount and re-reads the same order after lost response (3.686397ms)
+✔ HOTEL: changed amount and unavailable channel cannot execute payment (0.68871ms)
+✔ HOTEL: refund confirms quoted amount, submits once and does not invent refunded state (1.374686ms)
+✔ HOTEL: changed refund terms need reconfirmation before any cancellation (0.391912ms)
+✔ FLIGHT: payment binds fresh amount and re-reads the same order after lost response (0.365472ms)
+✔ FLIGHT: changed amount and unavailable channel cannot execute payment (0.25153ms)
+✔ FLIGHT: refund confirms quoted amount, submits once and does not invent refunded state (0.593706ms)
+✔ FLIGHT: changed refund terms need reconfirmation before any cancellation (0.206311ms)
+✔ RAIL: payment binds fresh amount and re-reads the same order after lost response (0.86729ms)
+✔ RAIL: changed amount and unavailable channel cannot execute payment (0.255536ms)
+✔ RAIL: refund confirms quoted amount, submits once and does not invent refunded state (0.314926ms)
+✔ RAIL: changed refund terms need reconfirmation before any cancellation (0.12573ms)
+✔ RENTAL: payment binds fresh amount and re-reads the same order after lost response (0.297289ms)
+✔ RENTAL: changed amount and unavailable channel cannot execute payment (0.212111ms)
+✔ RENTAL: refund confirms quoted amount, submits once and does not invent refunded state (0.685365ms)
+✔ RENTAL: changed refund terms need reconfirmation before any cancellation (0.124197ms)
+✔ RIDE: payment binds fresh amount and re-reads the same order after lost response (0.159932ms)
+✔ RIDE: changed amount and unavailable channel cannot execute payment (0.159982ms)
+✔ RIDE: refund confirms quoted amount, submits once and does not invent refunded state (0.420755ms)
+✔ RIDE: changed refund terms need reconfirmation before any cancellation (0.126291ms)
+✔ ATTRACTION: payment binds fresh amount and re-reads the same order after lost response (0.178179ms)
+✔ ATTRACTION: changed amount and unavailable channel cannot execute payment (0.090667ms)
+✔ ATTRACTION: refund confirms quoted amount, submits once and does not invent refunded state (0.349227ms)
+✔ ATTRACTION: changed refund terms need reconfirmation before any cancellation (0.239993ms)
+✔ identity substitution and concurrent payment submission are blocked (0.405593ms)
+✔ screen/session change prevents a mutation after read-only preflight (0.259111ms)
+✔ all six booking intents use explicit vault identities with stable keys and no fabricated people (3.701379ms)
+✔ portable request fingerprint matches standard SHA-256 for Unicode and block boundaries (0.981432ms)
+✔ RIDE native intent requires a separately accepted current policy and preserves its hash (0.288946ms)
+✔ RIDE legacy pending order cannot enter native checkout without a booking policy (0.136486ms)
+ℹ tests 41
+ℹ suites 0
+ℹ pass 41
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 176.928644

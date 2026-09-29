@@ -4,6 +4,7 @@ Queue receipts are not proof of hotel completeness. Discovery adapters can repla
 local facts after a crash; this queue does not claim atomicity with every adapter
 write or authorize external mutations. Historical Redis work needs explicit import.
 """
+from go_hotel.services import catalog_scope
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -69,6 +70,8 @@ class DurableRegionalQueue:
         if not isinstance(payload, dict) or not payload.get('run_id') or len(body.encode()) > 2_000_000:
             raise ValueError('REGIONAL_QUEUE_PAYLOAD_INVALID')
         with transaction(self.factory) as s:
+            catalog_scope.scope_lock(s)
+            catalog_scope.require_run(s,payload)
             guard_current(s)
             now = db_now_ms(s)
             # The primary key serializes repeated submissions across processes.
@@ -95,11 +98,14 @@ class DurableRegionalQueue:
 
     def claim(self, topic):
         with transaction(self.factory) as s:
+            catalog_scope.scope_lock(s)
+            active=catalog_scope.state(s)
+            visible=Row.run_id.not_in(active['retired_run_ids']) if active else True
             now = db_now_ms(s)
             ready = or_(and_(Row.status == 'QUEUED', Row.available_ms <= now),
                         and_(Row.status == 'RUNNING', Row.lease_until_ms <= now))
             while True:
-                row = s.scalar(select(Row).where(Row.topic == topic, ready)
+                row = s.scalar(select(Row).where(Row.topic == topic, ready, visible)
                     .order_by(Row.available_ms, Row.created_ms, Row.message_id)
                     .with_for_update(skip_locked=True).limit(1))
                 if row is None:
@@ -110,6 +116,7 @@ class DurableRegionalQueue:
                     self._dead_event(s, row)
                     s.flush()
                     continue
+                catalog_scope.require_run(s,row.payload_json)
                 row.status = 'RUNNING'
                 row.attempt += 1
                 row.lease_token = uuid.uuid4().hex
@@ -185,3 +192,4 @@ class DurableRegionalQueue:
         with self.factory() as s:
             counts = dict(s.execute(select(Row.status, func.count()).where(Row.run_id == run_id).group_by(Row.status)).all())
             return {name.lower(): counts.get(name, 0) for name in ('QUEUED', 'RUNNING', 'SUCCEEDED', 'DEAD', 'SUPERSEDED')}
+

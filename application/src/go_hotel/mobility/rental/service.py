@@ -66,7 +66,7 @@ class RentalService:
                 "insurance": ins, "external_live": False,
             })
             result=self.out(o)
-        vertical_source_runtime_service.decide("RENTAL",result["order_id"],[{"source_id":"rental-engineering-source","source_type":"RENTAL_COMPANY_OFFICIAL","authorized":True,"available":True,"evidence_reference":f"rental-offer://{body['offer_id']}"}])
+            vertical_source_runtime_service.decide_in(s,"RENTAL",result["order_id"],[{"source_id":"rental-engineering-source","source_type":"RENTAL_COMPANY_OFFICIAL","authorized":True,"available":True,"evidence_reference":f"rental-offer://{body['offer_id']}"}])
         return result
 
     def out(self, o):
@@ -120,14 +120,38 @@ class RentalService:
         def result(r):
             return {'refund_id':r.refund_id,'order_id':order_id,'status':r.status,
                     'refund_amount_minor':r.refund_amount_minor,'currency':r.currency}
+        def verify_receipts(s,r,movement):
+            from types import SimpleNamespace
+            from collections import Counter
+            from go_hotel.services.vertical_refund_recovery import _confirmed_money_in
+            from go_hotel.db.models import OmnichannelMoneyMovementRow as Movement
+            ids=_confirmed_money_in(s,SimpleNamespace(vertical='RENTAL',order_id=order_id,
+                account_id=account,adjustment_ids_json=adjustment_ids(s,order_id),
+                quote_json={'currency':r.currency,'refund_amount_minor':r.refund_amount_minor}),movement)
+            expected=Counter((item['payment_intent_id'],item['capture_id'],item['amount_minor'],item['key'])
+                for item in r.settlement_plan_json)
+            receipts=[s.get(Movement,mid) for mid in ids]
+            observed=Counter((item.root_payment_intent_id,item.parent_movement_id,
+                item.amount_minor,item.idempotency_key) for item in receipts)
+            if observed!=expected:raise ValueError('REFUND_RECEIPT_PLAN_MISMATCH')
+            return ids
+        def completed(s,o,r):
+            if o.status!='REFUNDED':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
+            from go_hotel.services.ticket_operations import _events
+            _events(s,'RENTAL',order_id)
+            evidence=[x['payload'] for x in list_vertical_evidence(s,'RENTAL',order_id)
+                if x['kind']=='REFUND_COMPLETED' and x['payload'].get('refund_id')==r.refund_id]
+            if len(evidence)!=1 or evidence[0].get('refund_amount_minor')!=r.refund_amount_minor:
+                raise ValueError('REFUND_COMPLETION_EVIDENCE_INVALID')
+            verify_receipts(s,r,evidence[0])
+            return result(r)
         with transaction() as s:
             o=owned(s,account,order_id)
             r=s.scalar(select(MobilityRefundRow).where(MobilityRefundRow.order_id==order_id,
                 MobilityRefundRow.vertical=='RENTAL').order_by(MobilityRefundRow.created_at.desc()))
             if r:consent.existing(s,o,r,accepted_hash,'RENTAL')
             if r and r.status=='REFUND_COMPLETED':
-                if o.status!='REFUNDED':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
-                return result(r)
+                return completed(s,o,r)
             if r and r.status=='REFUND_PENDING':
                 if o.status!='REFUND_PENDING':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
             else:
@@ -153,26 +177,11 @@ class RentalService:
             o=owned(s,account,order_id);r=s.get(MobilityRefundRow,refund_id,with_for_update=True)
             consent.existing(s,o,r,accepted_hash,'RENTAL')
             if r.status=='REFUND_COMPLETED':
-                if o.status!='REFUNDED':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
-                return result(r)
+                return completed(s,o,r)
             if o.status!='REFUND_PENDING':raise ValueError('RENTAL_REFUND_RECONCILIATION_REQUIRED')
             # A provider/executor status alone cannot complete a refund. Verify
             # durable receipts against this owner's original and change roots.
-            from types import SimpleNamespace
-            from go_hotel.services.vertical_refund_recovery import _confirmed_money_in
-            confirmed_ids=_confirmed_money_in(s,SimpleNamespace(vertical='RENTAL',order_id=order_id,
-                account_id=account,adjustment_ids_json=adjustment_ids(s,order_id),
-                quote_json={'currency':r.currency,'refund_amount_minor':r.refund_amount_minor}),movement)
-            # Earlier refunds on the same order may have the same amount.
-            # Each receipt must belong to this frozen cancellation allocation.
-            from collections import Counter
-            from go_hotel.db.models import OmnichannelMoneyMovementRow as Movement
-            expected=Counter((item['payment_intent_id'],item['capture_id'],item['amount_minor'],item['key'])
-                for item in r.settlement_plan_json)
-            receipts=[s.get(Movement,mid) for mid in confirmed_ids]
-            observed=Counter((item.root_payment_intent_id,item.parent_movement_id,
-                item.amount_minor,item.idempotency_key) for item in receipts)
-            if observed!=expected:raise ValueError('REFUND_RECEIPT_PLAN_MISMATCH')
+            confirmed_ids=verify_receipts(s,r,movement)
             r.status='REFUND_COMPLETED';o.status='REFUNDED';o.updated_at=now()
             facts={'refund_id':refund_id,'refund_amount_minor':r.refund_amount_minor,
                    'money_movement_ids':confirmed_ids}

@@ -1,0 +1,295 @@
+{
+  "verdict": "FAIL_SCOPED_BUSINESS_DAY",
+  "product_sha": "9a298cb3a093c4e75a043bdb2a4da14594fafd3c",
+  "application_tree": "ba334dadcb8899fa60c352df0410367592bc236b",
+  "gate_sha": "32e40303114008f0db499ae541612276a9fe1b7d",
+  "total": {
+    "tests": 55,
+    "passed": 50,
+    "failed": 5,
+    "errors": 0,
+    "skipped": 0
+  },
+  "suites": [
+    {
+      "name": "candidate-journeys",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 10,
+      "cases": [
+        {
+          "name": "test_complete_business_day_with_cancel_refund_difference_repair_and_replay",
+          "result": "PASS"
+        },
+        {
+          "name": "test_business_day_requires_canonical_date[20260901]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_business_day_requires_canonical_date[2026-02-30]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_business_day_requires_canonical_date[bad]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_business_day_requires_canonical_date[123]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_local_midnight_window",
+          "result": "PASS"
+        },
+        {
+          "name": "test_overnight_checkout_next_day_preserves_prior_close_and_opening_balance",
+          "result": "PASS"
+        },
+        {
+          "name": "test_missing_pool_calendar_blocks_whole_day",
+          "result": "PASS"
+        },
+        {
+          "name": "test_confirmed_cooling_period_survives_nominal_checkin_boundary",
+          "result": "PASS"
+        },
+        {
+          "name": "test_same_hotel_room_cannot_be_assigned_to_two_overlapping_stays",
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "name": "real-jwt-gates",
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 25,
+      "cases": [
+        {
+          "name": "test_gate_blocks_every_sale_entry_then_independent_review_opens_full_journey",
+          "result": "PASS"
+        },
+        {
+          "name": "test_unauthorized_equivalent_entries_have_no_writes_or_pii[readonly]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_unauthorized_equivalent_entries_have_no_writes_or_pii[unscoped]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_unauthorized_equivalent_entries_have_no_writes_or_pii[revoked_role]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_unauthorized_equivalent_entries_have_no_writes_or_pii[revoked_session]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_approved_version_invalidates_across_public_page_availability_and_reservation[reject]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_approved_version_invalidates_across_public_page_availability_and_reservation[content]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_approved_version_invalidates_across_public_page_availability_and_reservation[bytes]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_approved_version_invalidates_across_public_page_availability_and_reservation[reviewer_revoked]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_approved_version_invalidates_across_public_page_availability_and_reservation[fare_changed]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_approval_failure_and_retry_are_truthful_atomic_and_idempotent[missing_ari]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_approval_failure_and_retry_are_truthful_atomic_and_idempotent[after_approval]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_approval_failure_and_retry_are_truthful_atomic_and_idempotent[before_commit]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_staff_grant_requires_real_target_and_cannot_self_grant",
+          "result": "PASS"
+        },
+        {
+          "name": "test_scope_checks_other_hotel_even_for_legitimate_operator",
+          "result": "PASS"
+        },
+        {
+          "name": "test_confirmed_uncharged_request_can_withdraw_and_updates_trips",
+          "result": "PASS"
+        },
+        {
+          "name": "test_uncharged_exit_does_not_bypass_unknown_or_fulfilled_stay[UNKNOWN_EXTERNAL_STATE]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_uncharged_exit_does_not_bypass_unknown_or_fulfilled_stay[IN_HOUSE]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_finance_scope_covers_cross_hotel_mandate_and_global_lists",
+          "result": "PASS"
+        },
+        {
+          "name": "test_media_submitter_cannot_self_review_or_claim_another_identity",
+          "result": "PASS"
+        },
+        {
+          "name": "test_extra_beds_without_structured_quantity_price_are_not_sold[1]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_extra_beds_without_structured_quantity_price_are_not_sold[999_0]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_extra_beds_without_structured_quantity_price_are_not_sold[True]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_extra_beds_without_structured_quantity_price_are_not_sold[999_1]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_extra_beds_without_structured_quantity_price_are_not_sold[-1]",
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "name": "independent-day",
+      "tests": 20,
+      "failures": 5,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 15,
+      "cases": [
+        {
+          "name": "test_independent_normal_overnight_funds_inventory_replay",
+          "result": "PASS"
+        },
+        {
+          "name": "test_independent_short_stay_refund_and_free_cancel",
+          "result": "PASS"
+        },
+        {
+          "name": "test_confirmed_six_prices_share_only_two_of_five_physical_pools",
+          "result": "PASS"
+        },
+        {
+          "name": "test_preview_and_unprovable_historical_first_close",
+          "result": "PASS"
+        },
+        {
+          "name": "test_missing_sources_block[missing_root]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_missing_sources_block[missing_authorization]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_missing_sources_block[wrong_binding]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_missing_sources_block[missing_calendar]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_parent_budget_cannot_be_offset_by_other_root",
+          "result": "PASS"
+        },
+        {
+          "name": "test_economic_date_uses_movement_across_midnight",
+          "result": "PASS"
+        },
+        {
+          "name": "test_authorization_amount_must_match_immutable_intent",
+          "result": "FAIL"
+        },
+        {
+          "name": "test_archived_order_source_tamper_rejected[amount_minor]",
+          "result": "FAIL"
+        },
+        {
+          "name": "test_archived_order_source_tamper_rejected[currency]",
+          "result": "FAIL"
+        },
+        {
+          "name": "test_archived_order_source_tamper_rejected[check_out]",
+          "result": "FAIL"
+        },
+        {
+          "name": "test_captured_arrival_voucher_truthful",
+          "result": "FAIL"
+        },
+        {
+          "name": "test_close_denies_readonly_and_cross_hotel_principals",
+          "result": "PASS"
+        },
+        {
+          "name": "test_ledger_shape_corruption_never_closes[currency]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_ledger_shape_corruption_never_closes[account]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_ledger_shape_corruption_never_closes[orphan]",
+          "result": "PASS"
+        },
+        {
+          "name": "test_archive_payload_hash_is_rechecked",
+          "result": "PASS"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "C13-R8-01",
+      "severity": "P1",
+      "description": "Authorization movement amount differs from immutable intent but close persists",
+      "record": "independent-records/authorization-amount-mismatch.json"
+    },
+    {
+      "id": "C13-R8-02",
+      "severity": "P1",
+      "description": "Archived close replay does not detect unexplained reservation source amount/currency/date changes",
+      "records": [
+        "independent-records/archived-order-amount_minor.json",
+        "independent-records/archived-order-currency.json",
+        "independent-records/archived-order-check_out.json"
+      ]
+    },
+    {
+      "id": "C13-R8-03",
+      "severity": "P1",
+      "description": "Printable arrival voucher denies captured canonical simulator funds",
+      "record": "independent-records/captured-arrival-voucher.json"
+    }
+  ],
+  "local_execution": "C13 actual SQLite real-session JWT HTTP; explicit isolated simulator money and controlled Asia/Shanghai business clock",
+  "postgres_review": "NOT_PERFORMED_FOR_ROUND8",
+  "real_psp": "NOT_INVOKED",
+  "real_hotel_authority": "HOLD_UNVERIFIED",
+  "cooling_anchor": "UNCONFIRMED_COMMERCIAL_RULE; HOTEL_CONFIRMED_IS_TEST_CONFIGURATION",
+  "candidate_change_policy": "No product edits; new SHA required before repairs can be accepted"
+}

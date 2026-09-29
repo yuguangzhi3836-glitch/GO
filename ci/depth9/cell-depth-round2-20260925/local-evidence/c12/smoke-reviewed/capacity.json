@@ -1,0 +1,28 @@
+{
+  "batches": [
+    {
+      "completed": 2,
+      "completed_transactions_per_second": 2.7200878168442713,
+      "concurrency": 1,
+      "elapsed_seconds": 0.7352703789983934,
+      "failed": 0,
+      "failure_rate": 0.0,
+      "latency_population": "all transactions including failures; includes nested replay checks",
+      "max_extra_replay_threads": 2,
+      "observed_peak_inflight_transactions": 1,
+      "transaction_latency": {
+        "p50_ms": 35.42056700098328,
+        "p95_ms": 698.9704549996532,
+        "p99_ms": 698.9704549996532
+      },
+      "transactions": 2
+    }
+  ],
+  "executed_transactions": 2,
+  "failed_transactions": 0,
+  "invariants": "PASS",
+  "planned_transactions": 2,
+  "postgres_gate": "NOT_PROVEN_SQLITE_SMOKE",
+  "production_sla": "NOT_ESTABLISHED",
+  "scope": "RIDE service transaction writes with CONTRACT_SIMULATOR and synthetic supplier facts"
+}

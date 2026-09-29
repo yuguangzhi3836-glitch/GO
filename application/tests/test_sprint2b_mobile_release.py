@@ -1,3 +1,4 @@
+from registration_terms_test_support import register_synthetic_consumer
 from pathlib import Path
 import os
 import subprocess
@@ -11,7 +12,7 @@ from go_hotel.core.config import settings
 ROOT=Path(__file__).resolve().parents[1]
 
 def auth(client,email='2b@example.com'):
-    client.post('/v1/consumer/auth/register',json={'email':email,'password':'StrongPass123!','display_name':'2B'})
+    register_synthetic_consumer(client, json={'email':email,'password':'StrongPass123!','display_name':'2B'})
     t=client.post('/v1/mobile/auth/login',json={'email':email,'password':'StrongPass123!'}).json()['data']
     return {'Authorization':f"Bearer {t['access_token']}"}
 

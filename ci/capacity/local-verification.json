@@ -1,0 +1,33 @@
+{
+  "scope": "LOCAL_FOUNDATION_ONLY_NOT_CAPACITY_OR_C13",
+  "python": "3.12.14",
+  "database": "SQLite; PostgreSQL cases skipped locally; separate CI required",
+  "before_source": "cb96de655f0c84596e85b379c6e9bd67f92817fe:application/src/go_hotel/security/service.py",
+  "reproduced_failure": "IntegrityError: UNIQUE constraint failed: identity_user.username during concurrent first startup",
+  "results": {
+    "bootstrap-before.xml": {
+      "sha256": "402b5fee3244da02bc7b96c09168429abefc078f5467ad820116cd360c0d85bd",
+      "tests": 6,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 3
+    },
+    "foundation-local.xml": {
+      "sha256": "b3d7efe81e61d381c97e31abaf61ecd1f62f1f93346b6e5edc02be6dce4bef4c",
+      "tests": 17,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4
+    },
+    "model-local.xml": {
+      "sha256": "dfd838fbb1d816581eb0053b7e45b30818d03bae48dd6138cce134be91282555",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "full_business_journey": "NOT_RUN_LOCALLY",
+  "million_online": "NOT_TESTED",
+  "deployment": "NOT_RUN"
+}

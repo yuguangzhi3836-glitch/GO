@@ -1,3 +1,4 @@
+from registration_terms_test_support import register_synthetic_consumer
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
@@ -9,7 +10,7 @@ from go_hotel.mobile.push import push_worker
 
 
 def register_mobile(client,email='native2a@example.com'):
-    r=client.post('/v1/consumer/auth/register',json={'email':email,'password':'StrongPass123!','display_name':'Native Traveler'})
+    r=register_synthetic_consumer(client, json={'email':email,'password':'StrongPass123!','display_name':'Native Traveler'})
     assert r.status_code==200,r.text
     t=client.post('/v1/mobile/auth/login',json={'email':email,'password':'StrongPass123!'}).json()['data']
     client.cookies.clear()  # native client stores bearer tokens, not browser cookies

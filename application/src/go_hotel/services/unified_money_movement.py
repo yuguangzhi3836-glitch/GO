@@ -1,33 +1,66 @@
 from datetime import datetime,timezone,timedelta
 import hashlib,json,uuid
-from sqlalchemy import select,text
+from sqlalchemy import select,text,bindparam
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (
  OmnichannelPaymentIntentRow as Intent,OmnichannelMoneyMovementRow as Movement,
  OmnichannelLedgerEntryRow as Ledger,OmnichannelReconciliationRow as Recon,
  FinanceCloseBatchRow as LegacyClose,FinanceCloseLineRow as LegacyLine,SubscriptionInvoiceRow,
  FinanceScopedCloseBatchRow as Close,FinanceScopedCloseLineRow as Line,PaymentOrderFactBindingRow as FactBinding,PaymentOrderRootRow as OrderRoot,
- OrderSupplierFulfillmentRow as Fulfillment,OrderSupplierFulfillmentEventRow as FulfillmentEvent
+ OrderSupplierFulfillmentRow as Fulfillment,OrderSupplierFulfillmentEventRow as FulfillmentEvent,
+ ExternalTruthOperationRow as ExternalTruthOperation,ExternalTruthWebhookReceiptRow as ExternalTruthWebhookReceipt
 )
+# Reuse immutable query shapes, never rows or request values. Every execution
+# still reads the database and acquires the original FOR UPDATE locks.
+_INTENT_LOCK = select(Intent).where(Intent.payment_intent_id==bindparam('intent_id')).with_for_update()
+_MOVEMENT_KEY_LOCK = select(Movement).where(Movement.idempotency_key==bindparam('movement_key')).with_for_update()
+_MOVEMENTS_LOCK = select(Movement).where(Movement.root_payment_intent_id==bindparam('intent_id')).with_for_update()
+_FULFILLMENT_LOCK = select(Fulfillment).where(Fulfillment.payment_intent_id==bindparam('intent_id')).with_for_update()
 def now():return datetime.now(timezone.utc)
 def ident(p):return f'{p}_{uuid.uuid4().hex}'
 def digest(x):return hashlib.sha256(json.dumps(x,sort_keys=True,separators=(',',':'),default=str).encode()).hexdigest()
 def out(r):return {c.name:(getattr(r,c.name).isoformat() if isinstance(getattr(r,c.name),datetime) else getattr(r,c.name)) for c in r.__table__.columns}
+def business_ledger_account_code(business_type,business_id):
+ # Deposit obligation IDs remain complete. A reserved short namespace avoids
+ # overflowing the existing VARCHAR(64); other business account codes stay intact.
+ code=f'RD:{business_id}' if business_type=='RENTAL_DEPOSIT' else f'BUSINESS:{business_type}:{business_id}'
+ if business_type=='RENTAL_DEPOSIT' and len(code)>64:raise ValueError('RENTAL_DEPOSIT_LEDGER_ACCOUNT_TOO_LONG')
+ return code
 class UnifiedMoneyMovementService:
  def create(self,intent_id,b,key,actor):
+  if b.get('mode')=='EXTERNAL_CERTIFIED_FACT':raise ValueError('EXTERNAL_CERTIFIED_FACT_TRUSTED_INGRESS_REQUIRED')
   with SessionLocal() as s:
    if s.bind.dialect.name=='sqlite':s.execute(text('BEGIN IMMEDIATE'))
    result=self.create_in_session(s,intent_id,b,key,actor)
    s.commit();return result
+ def record_verified_external_fact(self,intent_id,b,key,actor,receipt_id):
+  """Only a durable, signature-verified payment callback receipt may enter this path."""
+  with SessionLocal() as s:
+   if s.bind.dialect.name=='sqlite':s.execute(text('BEGIN IMMEDIATE'))
+   result=self.record_verified_external_fact_in_session(s,intent_id,b,key,actor,receipt_id)
+   s.commit();return result
+ def record_verified_external_fact_in_session(self,s,intent_id,b,key,actor,receipt_id):
+  """Append the fact and its movement atomically with the callback receipt."""
+  receipt=s.get(ExternalTruthWebhookReceipt,receipt_id)
+  if not receipt or receipt.source_vertical!='PAYMENT' or not receipt.signature_verified or receipt.supplier_state!='SUCCEEDED':raise ValueError('VERIFIED_PAYMENT_CALLBACK_RECEIPT_REQUIRED')
+  op=s.get(ExternalTruthOperation,receipt.external_truth_operation_id)
+  expected={'AUTHORIZATION':'AUTHORIZE','CAPTURE':'CAPTURE','REFUND':'REFUND'}
+  if not op or op.vertical!='PAYMENT' or op.payment_intent_id!=intent_id or expected.get(b.get('movement_type'))!=op.operation_type:raise ValueError('EXTERNAL_PAYMENT_RECEIPT_BINDING_INVALID')
+  external_reference=b.get('external_reference')
+  if not external_reference or (op.external_operation_id and external_reference!=op.external_operation_id):raise ValueError('EXTERNAL_PAYMENT_REFERENCE_BINDING_INVALID')
+  body=dict(b);body['mode']='EXTERNAL_CERTIFIED_FACT';body['evidence']=[{'reference':f'external-webhook-receipt://{receipt_id}','payload_hash':receipt.payload_hash}]
+  return self.create_in_session(s,intent_id,body,key,actor)
  def create_in_session(self,s,intent_id,b,key,actor):
   """Caller owns the transaction; lock order/payment before updating business facts."""
   typ=b['movement_type']
   if typ not in {'AUTHORIZATION','CAPTURE','REFUND','COMPENSATION','PAYOUT','RELEASE'}:raise ValueError('INVALID_MONEY_MOVEMENT_TYPE')
-  i=s.scalar(select(Intent).where(Intent.payment_intent_id==intent_id).with_for_update())
+  i=s.scalar(_INTENT_LOCK,{'intent_id':intent_id})
   if not i:raise ValueError('ROOT_PAYMENT_INTENT_REQUIRED')
   amount=b.get('amount_minor',i.amount_minor)
   if type(amount) is not int:raise ValueError('INTEGER_MOVEMENT_AMOUNT_REQUIRED')
-  old=s.scalar(select(Movement).where(Movement.idempotency_key==key).with_for_update())
+  from go_hotel.services.rental_deposit_money import assert_money_action as assert_rental_deposit_money_action
+  assert_rental_deposit_money_action(s,i,typ,amount,b.get('parent_movement_id'),key)
+  old=s.scalar(_MOVEMENT_KEY_LOCK,{'movement_key':key})
   if old:
    if (old.root_payment_intent_id,old.movement_type,old.amount_minor,old.parent_movement_id)!=(intent_id,typ,amount,b.get('parent_movement_id')):
     raise ValueError('MONEY_MOVEMENT_IDEMPOTENCY_CONFLICT')
@@ -40,7 +73,7 @@ class UnifiedMoneyMovementService:
   assert_cash_fare_money_action(s,i,typ,amount,b.get('parent_movement_id'),key)
   if i.state!='SUCCEEDED':raise ValueError('ROOT_PAYMENT_SUCCESS_REQUIRED')
   if amount<=0:raise ValueError('POSITIVE_MOVEMENT_AMOUNT_REQUIRED')
-  movements=s.scalars(select(Movement).where(Movement.root_payment_intent_id==intent_id).with_for_update()).all()
+  movements=s.scalars(_MOVEMENTS_LOCK,{'intent_id':intent_id}).all()
   auth=sum(x.amount_minor for x in movements if x.movement_type=='AUTHORIZATION' and x.state=='CONFIRMED')
   captured=sum(x.amount_minor for x in movements if x.movement_type=='CAPTURE' and x.state=='CONFIRMED')
   released=sum(x.amount_minor for x in movements if x.movement_type=='RELEASE' and x.state=='CONFIRMED')
@@ -72,7 +105,7 @@ class UnifiedMoneyMovementService:
   r=Movement(money_movement_id=ident('omm'),root_payment_intent_id=intent_id,parent_movement_id=parent_id,movement_type=typ,business_type=i.business_type,business_id=i.business_id,amount_minor=amount,currency=i.currency,state=state,idempotency_key=key,external_reference=b.get('external_reference'),evidence_json=evidence,created_at=now(),updated_at=now());s.add(r)
   if state=='CONFIRMED' and typ not in {'AUTHORIZATION','RELEASE'}:self._post(s,i,r)
   if typ=='CAPTURE' and state=='CONFIRMED' and captured+amount==i.amount_minor:
-   f=s.scalar(select(Fulfillment).where(Fulfillment.payment_intent_id==intent_id).with_for_update())
+   f=s.scalar(_FULFILLMENT_LOCK,{'intent_id':intent_id})
    if f and f.state=='PAYMENT_CONFIRMED_AWAITING_MONEY_GRAPH':
     f.state='CAPTURE_CONFIRMED_READY_FOR_SUPPLIER';f.updated_at=now();s.add(FulfillmentEvent(order_supplier_fulfillment_event_id=ident('osfe'),order_supplier_fulfillment_id=f.order_supplier_fulfillment_id,event_type='MONEY_GRAPH_CAPTURE_CONFIRMED',state=f.state,evidence_reference=(evidence[0] if isinstance(evidence[0],str) else evidence[0].get('reference','money://capture')),payload_hash=digest({'movement':r.money_movement_id,'captured_total':captured+amount}),occurred_at=now()))
   if i.business_type=='SUBSCRIPTION_INVOICE' and typ=='CAPTURE' and state=='CONFIRMED':
@@ -94,6 +127,13 @@ class UnifiedMoneyMovementService:
   for r in recs:
    if r.payment_intent_id not in latest or r.reconciled_at>latest[r.payment_intent_id].reconciled_at:latest[r.payment_intent_id]=r
   return [f'RECON_MISSING:{iid}' for iid in captured_ids if iid not in latest]+[f'RECON:{latest[iid].reconciliation_id}' for iid in captured_ids if iid in latest and latest[iid].state!='MATCHED']
+ def _external_truth_blockers(self,s,legal_entity_id,currency,cutoff):
+  roots=s.scalars(select(OrderRoot).where(OrderRoot.legal_entity_id==legal_entity_id)).all()
+  root_ids={x.payment_intent_id for x in roots}
+  if not root_ids:return []
+  intents={x.payment_intent_id for x in s.scalars(select(Intent).where(Intent.payment_intent_id.in_(root_ids),Intent.currency==currency)).all()}
+  ops=s.scalars(select(ExternalTruthOperation).where(ExternalTruthOperation.payment_intent_id.in_(intents),ExternalTruthOperation.vertical=='PAYMENT',ExternalTruthOperation.state.in_({'DISPATCHING','UNKNOWN_EXTERNAL_STATE','TRANSPORT_ACCEPTED_PENDING_SIGNED_CALLBACK'}),ExternalTruthOperation.started_at<=cutoff)).all() if intents else []
+  return [f'EXTERNAL_PAYMENT_RECONCILIATION:{x.external_truth_operation_id}' for x in ops]
  def prepare_close(self,b,actor):
   required=('legal_entity_id','currency','period_start','period_end','cutoff_at')
   if any(not b.get(x) for x in required):raise ValueError('SCOPED_CLOSE_FIELDS_REQUIRED')
@@ -104,13 +144,15 @@ class UnifiedMoneyMovementService:
    if old:return out(old)
    movements,ledger,recs=self._scope(s,b['legal_entity_id'],b['currency'],b['period_start'],b['period_end'],cutoff)
    debit=sum(x.amount_minor for x in ledger if x.direction=='DEBIT');credit=sum(x.amount_minor for x in ledger if x.direction=='CREDIT')
-   block=[f'MOVEMENT:{x.money_movement_id}' for x in movements if x.state in {'UNKNOWN_EXTERNAL_STATE','EXTERNAL_EXECUTOR_REQUIRED'}]+self._recon_blockers(recs,movements)
+   block=[f'MOVEMENT:{x.money_movement_id}' for x in movements if x.state in {'UNKNOWN_EXTERNAL_STATE','EXTERNAL_EXECUTOR_REQUIRED'}]+self._recon_blockers(recs,movements)+self._external_truth_blockers(s,b['legal_entity_id'],b['currency'],cutoff)
    try:
     from go_hotel.services.production_connector_runtime import production_connector_runtime_service
     roots_by_intent={x.payment_intent_id:x.business_id for x in s.scalars(select(OrderRoot).where(OrderRoot.payment_intent_id.in_({m.root_payment_intent_id for m in movements}))).all()} if movements else {}
     block+=production_connector_runtime_service.unresolved_incident_blockers(set(roots_by_intent.values()))
    except Exception:
-    pass
+    # The incident authority is part of close admissibility. A failed lookup
+    # cannot be interpreted as "no incidents".
+    block.append('FINANCE_INCIDENT_CHECK_UNAVAILABLE')
    payload=scope|{'movements':[x.money_movement_id for x in movements],'debit':debit,'credit':credit,'blockers':block}
    r=Close(finance_scoped_close_batch_id=ident('fscb'),legal_entity_id=b['legal_entity_id'],currency=b['currency'],period_start=b['period_start'],period_end=b['period_end'],cutoff_at=cutoff,state='BLOCKED' if block or debit!=credit else 'PENDING_APPROVAL',movement_count=len(movements),debit_minor=debit,credit_minor=credit,difference_minor=debit-credit,blockers_json=block,scope_hash=scope_hash,evidence_hash=digest(payload),requested_by=actor,created_at=now());s.add(r);s.flush()
    for x in movements:s.add(Line(finance_scoped_close_line_id=ident('fscl'),finance_scoped_close_batch_id=r.finance_scoped_close_batch_id,source_type='MONEY_MOVEMENT',source_id=x.money_movement_id,state=x.state,amount_minor=x.amount_minor,evidence_hash=digest(out(x))))
@@ -122,20 +164,22 @@ class UnifiedMoneyMovementService:
    if r.requested_by==actor:raise ValueError('MAKER_CHECKER_REQUIRED')
    movements,ledger,recs=self._scope(s,r.legal_entity_id,r.currency,r.period_start,r.period_end,r.cutoff_at)
    debit=sum(x.amount_minor for x in ledger if x.direction=='DEBIT');credit=sum(x.amount_minor for x in ledger if x.direction=='CREDIT')
-   block=[f'MOVEMENT:{x.money_movement_id}' for x in movements if x.state in {'UNKNOWN_EXTERNAL_STATE','EXTERNAL_EXECUTOR_REQUIRED'}]+self._recon_blockers(recs,movements)
+   block=[f'MOVEMENT:{x.money_movement_id}' for x in movements if x.state in {'UNKNOWN_EXTERNAL_STATE','EXTERNAL_EXECUTOR_REQUIRED'}]+self._recon_blockers(recs,movements)+self._external_truth_blockers(s,r.legal_entity_id,r.currency,r.cutoff_at)
    try:
     from go_hotel.services.production_connector_runtime import production_connector_runtime_service
     roots_by_intent={x.payment_intent_id:x.business_id for x in s.scalars(select(OrderRoot).where(OrderRoot.payment_intent_id.in_({m.root_payment_intent_id for m in movements}))).all()} if movements else {}
     block+=production_connector_runtime_service.unresolved_incident_blockers(set(roots_by_intent.values()))
    except Exception:
-    pass
+    # The incident authority is part of close admissibility. A failed lookup
+    # cannot be interpreted as "no incidents".
+    block.append('FINANCE_INCIDENT_CHECK_UNAVAILABLE')
    if block or debit!=credit or len(movements)!=r.movement_count or debit!=r.debit_minor or credit!=r.credit_minor:raise ValueError('FINANCE_CLOSE_SCOPE_CHANGED_REPREPARE_REQUIRED')
    if r.state!='PENDING_APPROVAL':raise ValueError('FINANCE_CLOSE_NOT_PENDING_APPROVAL')
    r.state='CLOSED';r.approved_by=actor;r.closed_at=now();s.commit();return out(r)
  def status(self):
   with SessionLocal() as s:return {'movements':[out(x) for x in s.scalars(select(Movement).order_by(Movement.created_at.desc())).all()],'scoped_closes':[out(x) for x in s.scalars(select(Close).order_by(Close.created_at.desc())).all()],'legacy_close_disabled':True,'principle':'SERVER_ORDER_FACT_TO_PAYMENT_TO_MONEY_MOVEMENT_TO_SCOPED_CLOSE'}
  def _post(self,s,i,m):
-  tx=m.money_movement_id;reverse=m.movement_type in {'REFUND','COMPENSATION','PAYOUT','RELEASE'};pairs=[(f'PAYMENT_CLEARING:{i.selected_channel}','DEBIT'),(f'BUSINESS:{i.business_type}:{i.business_id}','CREDIT')]
+  tx=m.money_movement_id;reverse=m.movement_type in {'REFUND','COMPENSATION','PAYOUT','RELEASE'};pairs=[(f'PAYMENT_CLEARING:{i.selected_channel}','DEBIT'),(business_ledger_account_code(i.business_type,i.business_id),'CREDIT')]
   if reverse:pairs=[(a,'CREDIT' if d=='DEBIT' else 'DEBIT') for a,d in pairs]
-  for account,direction in pairs:s.add(Ledger(ledger_entry_id=ident('ole'),transaction_id=tx,payment_intent_id=i.payment_intent_id,account_code=account,direction=direction,amount_minor=m.amount_minor,currency=m.currency,entry_type=m.movement_type,evidence_hash=digest({'movement':m.money_movement_id}),created_at=now()))
+  for account,direction in pairs:s.add(Ledger(ledger_entry_id=ident('ole'),transaction_id=tx,payment_intent_id=i.payment_intent_id,account_code=account,direction=direction,amount_minor=m.amount_minor,currency=m.currency,entry_type=m.movement_type,evidence_hash=digest({'movement':m.money_movement_id}),created_at=m.created_at))
 unified_money_movement_service=UnifiedMoneyMovementService()

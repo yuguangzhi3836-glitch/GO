@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="9" failures="0" skipped="0" tests="9" time="14.076" timestamp="2026-09-25T00:36:43.817290-07:00" hostname="48cdd5f3df1f"><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_outcome_without_bound_capture_cannot_assert_paid[missing_capture-UNKNOWN_EXTERNAL_STATE]" time="3.834"><error message="failed on setup with &quot;RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist&quot;">fixturedef = &lt;FixtureDef argname='client' scope='function' baseid='tests'&gt;
+request = &lt;SubRequest 'client' for &lt;Function test_supplier_outcome_without_bound_capture_cannot_assert_paid[missing_capture-UNKNOWN_EXTERNAL_STATE]&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+
+../../go-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:728: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in client
+    from go_hotel.main import app
+src/go_hotel/main.py:334: in &lt;module&gt;
+    app.mount("/supplier-console", StaticFiles(directory=str(_frontend_root / "supplier"), html=True), name="supplier-console")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;starlette.staticfiles.StaticFiles object at 0x7fe5a2be5190&gt;
+
+    def __init__(
+        self,
+        *,
+        directory: PathLike | None = None,
+        packages: list[str | tuple[str, str]] | None = None,
+        html: bool = False,
+        check_dir: bool = True,
+        follow_symlink: bool = False,
+    ) -&gt; None:
+        self.directory = directory
+        self.packages = packages
+        self.all_directories = self.get_directories(directory, packages)
+        self.html = html
+        self.config_checked = False
+        self.follow_symlink = follow_symlink
+        if check_dir and directory is not None and not os.path.isdir(directory):
+&gt;           raise RuntimeError(f"Directory '{directory}' does not exist")
+E           RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist
+
+../../go-venv/lib/python3.12/site-packages/starlette/staticfiles.py:56: RuntimeError</error></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_outcome_without_bound_capture_cannot_assert_paid[missing_capture-SUPPLIER_FAILED]" time="1.116"><error message="failed on setup with &quot;RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist&quot;">fixturedef = &lt;FixtureDef argname='client' scope='function' baseid='tests'&gt;
+request = &lt;SubRequest 'client' for &lt;Function test_supplier_outcome_without_bound_capture_cannot_assert_paid[missing_capture-SUPPLIER_FAILED]&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+
+../../go-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:728: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in client
+    from go_hotel.main import app
+src/go_hotel/main.py:334: in &lt;module&gt;
+    app.mount("/supplier-console", StaticFiles(directory=str(_frontend_root / "supplier"), html=True), name="supplier-console")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;starlette.staticfiles.StaticFiles object at 0x7fe5a226fd70&gt;
+
+    def __init__(
+        self,
+        *,
+        directory: PathLike | None = None,
+        packages: list[str | tuple[str, str]] | None = None,
+        html: bool = False,
+        check_dir: bool = True,
+        follow_symlink: bool = False,
+    ) -&gt; None:
+        self.directory = directory
+        self.packages = packages
+        self.all_directories = self.get_directories(directory, packages)
+        self.html = html
+        self.config_checked = False
+        self.follow_symlink = follow_symlink
+        if check_dir and directory is not None and not os.path.isdir(directory):
+&gt;           raise RuntimeError(f"Directory '{directory}' does not exist")
+E           RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist
+
+../../go-venv/lib/python3.12/site-packages/starlette/staticfiles.py:56: RuntimeError</error></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_currency-UNKNOWN_EXTERNAL_STATE]" time="1.067"><error message="failed on setup with &quot;RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist&quot;">fixturedef = &lt;FixtureDef argname='client' scope='function' baseid='tests'&gt;
+request = &lt;SubRequest 'client' for &lt;Function test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_currency-UNKNOWN_EXTERNAL_STATE]&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+
+../../go-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:728: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in client
+    from go_hotel.main import app
+src/go_hotel/main.py:334: in &lt;module&gt;
+    app.mount("/supplier-console", StaticFiles(directory=str(_frontend_root / "supplier"), html=True), name="supplier-console")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;starlette.staticfiles.StaticFiles object at 0x7fe5a2986750&gt;
+
+    def __init__(
+        self,
+        *,
+        directory: PathLike | None = None,
+        packages: list[str | tuple[str, str]] | None = None,
+        html: bool = False,
+        check_dir: bool = True,
+        follow_symlink: bool = False,
+    ) -&gt; None:
+        self.directory = directory
+        self.packages = packages
+        self.all_directories = self.get_directories(directory, packages)
+        self.html = html
+        self.config_checked = False
+        self.follow_symlink = follow_symlink
+        if check_dir and directory is not None and not os.path.isdir(directory):
+&gt;           raise RuntimeError(f"Directory '{directory}' does not exist")
+E           RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist
+
+../../go-venv/lib/python3.12/site-packages/starlette/staticfiles.py:56: RuntimeError</error></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_currency-SUPPLIER_FAILED]" time="0.626"><error message="failed on setup with &quot;RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist&quot;">fixturedef = &lt;FixtureDef argname='client' scope='function' baseid='tests'&gt;
+request = &lt;SubRequest 'client' for &lt;Function test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_currency-SUPPLIER_FAILED]&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+
+../../go-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:728: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in client
+    from go_hotel.main import app
+src/go_hotel/main.py:334: in &lt;module&gt;
+    app.mount("/supplier-console", StaticFiles(directory=str(_frontend_root / "supplier"), html=True), name="supplier-console")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;starlette.staticfiles.StaticFiles object at 0x7fe5a256d610&gt;
+
+    def __init__(
+        self,
+        *,
+        directory: PathLike | None = None,
+        packages: list[str | tuple[str, str]] | None = None,
+        html: bool = False,
+        check_dir: bool = True,
+        follow_symlink: bool = False,
+    ) -&gt; None:
+        self.directory = directory
+        self.packages = packages
+        self.all_directories = self.get_directories(directory, packages)
+        self.html = html
+        self.config_checked = False
+        self.follow_symlink = follow_symlink
+        if check_dir and directory is not None and not os.path.isdir(directory):
+&gt;           raise RuntimeError(f"Directory '{directory}' does not exist")
+E           RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist
+
+../../go-venv/lib/python3.12/site-packages/starlette/staticfiles.py:56: RuntimeError</error></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_binding-UNKNOWN_EXTERNAL_STATE]" time="1.327"><error message="failed on setup with &quot;RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist&quot;">fixturedef = &lt;FixtureDef argname='client' scope='function' baseid='tests'&gt;
+request = &lt;SubRequest 'client' for &lt;Function test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_binding-UNKNOWN_EXTERNAL_STATE]&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+
+../../go-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:728: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in client
+    from go_hotel.main import app
+src/go_hotel/main.py:334: in &lt;module&gt;
+    app.mount("/supplier-console", StaticFiles(directory=str(_frontend_root / "supplier"), html=True), name="supplier-console")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;starlette.staticfiles.StaticFiles object at 0x7fe5a26bd790&gt;
+
+    def __init__(
+        self,
+        *,
+        directory: PathLike | None = None,
+        packages: list[str | tuple[str, str]] | None = None,
+        html: bool = False,
+        check_dir: bool = True,
+        follow_symlink: bool = False,
+    ) -&gt; None:
+        self.directory = directory
+        self.packages = packages
+        self.all_directories = self.get_directories(directory, packages)
+        self.html = html
+        self.config_checked = False
+        self.follow_symlink = follow_symlink
+        if check_dir and directory is not None and not os.path.isdir(directory):
+&gt;           raise RuntimeError(f"Directory '{directory}' does not exist")
+E           RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist
+
+../../go-venv/lib/python3.12/site-packages/starlette/staticfiles.py:56: RuntimeError</error></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_binding-SUPPLIER_FAILED]" time="1.109"><error message="failed on setup with &quot;RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist&quot;">fixturedef = &lt;FixtureDef argname='client' scope='function' baseid='tests'&gt;
+request = &lt;SubRequest 'client' for &lt;Function test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_binding-SUPPLIER_FAILED]&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+
+../../go-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:728: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in client
+    from go_hotel.main import app
+src/go_hotel/main.py:334: in &lt;module&gt;
+    app.mount("/supplier-console", StaticFiles(directory=str(_frontend_root / "supplier"), html=True), name="supplier-console")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;starlette.staticfiles.StaticFiles object at 0x7fe5a2ff5610&gt;
+
+    def __init__(
+        self,
+        *,
+        directory: PathLike | None = None,
+        packages: list[str | tuple[str, str]] | None = None,
+        html: bool = False,
+        check_dir: bool = True,
+        follow_symlink: bool = False,
+    ) -&gt; None:
+        self.directory = directory
+        self.packages = packages
+        self.all_directories = self.get_directories(directory, packages)
+        self.html = html
+        self.config_checked = False
+        self.follow_symlink = follow_symlink
+        if check_dir and directory is not None and not os.path.isdir(directory):
+&gt;           raise RuntimeError(f"Directory '{directory}' does not exist")
+E           RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist
+
+../../go-venv/lib/python3.12/site-packages/starlette/staticfiles.py:56: RuntimeError</error></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_unknown_preserves_independent_bound_money_fact[0-PAID]" time="1.098"><error message="failed on setup with &quot;RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist&quot;">fixturedef = &lt;FixtureDef argname='client' scope='function' baseid='tests'&gt;
+request = &lt;SubRequest 'client' for &lt;Function test_supplier_unknown_preserves_independent_bound_money_fact[0-PAID]&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+
+../../go-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:728: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in client
+    from go_hotel.main import app
+src/go_hotel/main.py:334: in &lt;module&gt;
+    app.mount("/supplier-console", StaticFiles(directory=str(_frontend_root / "supplier"), html=True), name="supplier-console")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;starlette.staticfiles.StaticFiles object at 0x7fe5a1d3f9e0&gt;
+
+    def __init__(
+        self,
+        *,
+        directory: PathLike | None = None,
+        packages: list[str | tuple[str, str]] | None = None,
+        html: bool = False,
+        check_dir: bool = True,
+        follow_symlink: bool = False,
+    ) -&gt; None:
+        self.directory = directory
+        self.packages = packages
+        self.all_directories = self.get_directories(directory, packages)
+        self.html = html
+        self.config_checked = False
+        self.follow_symlink = follow_symlink
+        if check_dir and directory is not None and not os.path.isdir(directory):
+&gt;           raise RuntimeError(f"Directory '{directory}' does not exist")
+E           RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist
+
+../../go-venv/lib/python3.12/site-packages/starlette/staticfiles.py:56: RuntimeError</error></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_unknown_preserves_independent_bound_money_fact[2-PARTIALLY_REFUNDED]" time="0.648"><error message="failed on setup with &quot;RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist&quot;">fixturedef = &lt;FixtureDef argname='client' scope='function' baseid='tests'&gt;
+request = &lt;SubRequest 'client' for &lt;Function test_supplier_unknown_preserves_independent_bound_money_fact[2-PARTIALLY_REFUNDED]&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+
+../../go-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:728: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in client
+    from go_hotel.main import app
+src/go_hotel/main.py:334: in &lt;module&gt;
+    app.mount("/supplier-console", StaticFiles(directory=str(_frontend_root / "supplier"), html=True), name="supplier-console")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;starlette.staticfiles.StaticFiles object at 0x7fe5a20579e0&gt;
+
+    def __init__(
+        self,
+        *,
+        directory: PathLike | None = None,
+        packages: list[str | tuple[str, str]] | None = None,
+        html: bool = False,
+        check_dir: bool = True,
+        follow_symlink: bool = False,
+    ) -&gt; None:
+        self.directory = directory
+        self.packages = packages
+        self.all_directories = self.get_directories(directory, packages)
+        self.html = html
+        self.config_checked = False
+        self.follow_symlink = follow_symlink
+        if check_dir and directory is not None and not os.path.isdir(directory):
+&gt;           raise RuntimeError(f"Directory '{directory}' does not exist")
+E           RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist
+
+../../go-venv/lib/python3.12/site-packages/starlette/staticfiles.py:56: RuntimeError</error></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_unknown_preserves_independent_bound_money_fact[1-REFUNDED]" time="1.316"><error message="failed on setup with &quot;RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist&quot;">fixturedef = &lt;FixtureDef argname='client' scope='function' baseid='tests'&gt;
+request = &lt;SubRequest 'client' for &lt;Function test_supplier_unknown_preserves_independent_bound_money_fact[1-REFUNDED]&gt;&gt;
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -&gt; object | None:
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+&gt;               return (yield)
+                        ^^^^^
+
+../../go-venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:728: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:85: in client
+    from go_hotel.main import app
+src/go_hotel/main.py:334: in &lt;module&gt;
+    app.mount("/supplier-console", StaticFiles(directory=str(_frontend_root / "supplier"), html=True), name="supplier-console")
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;starlette.staticfiles.StaticFiles object at 0x7fe5a2f5d610&gt;
+
+    def __init__(
+        self,
+        *,
+        directory: PathLike | None = None,
+        packages: list[str | tuple[str, str]] | None = None,
+        html: bool = False,
+        check_dir: bool = True,
+        follow_symlink: bool = False,
+    ) -&gt; None:
+        self.directory = directory
+        self.packages = packages
+        self.all_directories = self.get_directories(directory, packages)
+        self.html = html
+        self.config_checked = False
+        self.follow_symlink = follow_symlink
+        if check_dir and directory is not None and not os.path.isdir(directory):
+&gt;           raise RuntimeError(f"Directory '{directory}' does not exist")
+E           RuntimeError: Directory '/workspace/scratch/cdb63add4518/go/application/frontend/supplier' does not exist
+
+../../go-venv/lib/python3.12/site-packages/starlette/staticfiles.py:56: RuntimeError</error></testcase></testsuite></testsuites>

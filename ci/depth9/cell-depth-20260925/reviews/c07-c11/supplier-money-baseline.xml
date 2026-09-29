@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="9" time="8.786" timestamp="2026-09-25T00:40:38.849201-07:00" hostname="48cdd5f3df1f"><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_outcome_without_bound_capture_cannot_assert_paid[missing_capture-UNKNOWN_EXTERNAL_STATE]" time="4.490"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">client = &lt;starlette.testclient.TestClient object at 0x7f06b5ea53a0&gt;
+state = 'UNKNOWN_EXTERNAL_STATE', corruption = 'missing_capture'
+
+    @pytest.mark.parametrize('state', ['UNKNOWN_EXTERNAL_STATE', 'SUPPLIER_FAILED'])
+    @pytest.mark.parametrize('corruption', ['missing_capture', 'wrong_currency', 'wrong_binding'])
+    def test_supplier_outcome_without_bound_capture_cannot_assert_paid(client, state, corruption):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == fulfillment.payment_intent_id,
+                Movement.movement_type == 'CAPTURE'))
+            if corruption == 'missing_capture': session.delete(cap)
+            elif corruption == 'wrong_currency': cap.currency = 'USD'
+            else:
+                binding = session.scalar(select(Binding).where(Binding.payment_intent_id == fulfillment.payment_intent_id))
+                binding.payee_id = 'another-supplier'
+            session.commit()
+        result = svc.record_supplier_fact(fid, {'state': state, 'evidence_reference': 'supplier://unknown'})
+&gt;       assert result['unified_lifecycle']['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:27: AssertionError</failure></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_outcome_without_bound_capture_cannot_assert_paid[missing_capture-SUPPLIER_FAILED]" time="0.360"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">client = &lt;starlette.testclient.TestClient object at 0x7f06b4116d20&gt;
+state = 'SUPPLIER_FAILED', corruption = 'missing_capture'
+
+    @pytest.mark.parametrize('state', ['UNKNOWN_EXTERNAL_STATE', 'SUPPLIER_FAILED'])
+    @pytest.mark.parametrize('corruption', ['missing_capture', 'wrong_currency', 'wrong_binding'])
+    def test_supplier_outcome_without_bound_capture_cannot_assert_paid(client, state, corruption):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == fulfillment.payment_intent_id,
+                Movement.movement_type == 'CAPTURE'))
+            if corruption == 'missing_capture': session.delete(cap)
+            elif corruption == 'wrong_currency': cap.currency = 'USD'
+            else:
+                binding = session.scalar(select(Binding).where(Binding.payment_intent_id == fulfillment.payment_intent_id))
+                binding.payee_id = 'another-supplier'
+            session.commit()
+        result = svc.record_supplier_fact(fid, {'state': state, 'evidence_reference': 'supplier://unknown'})
+&gt;       assert result['unified_lifecycle']['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:27: AssertionError</failure></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_currency-UNKNOWN_EXTERNAL_STATE]" time="0.307"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">client = &lt;starlette.testclient.TestClient object at 0x7f06b912c3b0&gt;
+state = 'UNKNOWN_EXTERNAL_STATE', corruption = 'wrong_currency'
+
+    @pytest.mark.parametrize('state', ['UNKNOWN_EXTERNAL_STATE', 'SUPPLIER_FAILED'])
+    @pytest.mark.parametrize('corruption', ['missing_capture', 'wrong_currency', 'wrong_binding'])
+    def test_supplier_outcome_without_bound_capture_cannot_assert_paid(client, state, corruption):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == fulfillment.payment_intent_id,
+                Movement.movement_type == 'CAPTURE'))
+            if corruption == 'missing_capture': session.delete(cap)
+            elif corruption == 'wrong_currency': cap.currency = 'USD'
+            else:
+                binding = session.scalar(select(Binding).where(Binding.payment_intent_id == fulfillment.payment_intent_id))
+                binding.payee_id = 'another-supplier'
+            session.commit()
+        result = svc.record_supplier_fact(fid, {'state': state, 'evidence_reference': 'supplier://unknown'})
+&gt;       assert result['unified_lifecycle']['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:27: AssertionError</failure></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_currency-SUPPLIER_FAILED]" time="0.314"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">client = &lt;starlette.testclient.TestClient object at 0x7f06b41a7a70&gt;
+state = 'SUPPLIER_FAILED', corruption = 'wrong_currency'
+
+    @pytest.mark.parametrize('state', ['UNKNOWN_EXTERNAL_STATE', 'SUPPLIER_FAILED'])
+    @pytest.mark.parametrize('corruption', ['missing_capture', 'wrong_currency', 'wrong_binding'])
+    def test_supplier_outcome_without_bound_capture_cannot_assert_paid(client, state, corruption):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == fulfillment.payment_intent_id,
+                Movement.movement_type == 'CAPTURE'))
+            if corruption == 'missing_capture': session.delete(cap)
+            elif corruption == 'wrong_currency': cap.currency = 'USD'
+            else:
+                binding = session.scalar(select(Binding).where(Binding.payment_intent_id == fulfillment.payment_intent_id))
+                binding.payee_id = 'another-supplier'
+            session.commit()
+        result = svc.record_supplier_fact(fid, {'state': state, 'evidence_reference': 'supplier://unknown'})
+&gt;       assert result['unified_lifecycle']['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:27: AssertionError</failure></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_binding-UNKNOWN_EXTERNAL_STATE]" time="0.282"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">client = &lt;starlette.testclient.TestClient object at 0x7f06b626c980&gt;
+state = 'UNKNOWN_EXTERNAL_STATE', corruption = 'wrong_binding'
+
+    @pytest.mark.parametrize('state', ['UNKNOWN_EXTERNAL_STATE', 'SUPPLIER_FAILED'])
+    @pytest.mark.parametrize('corruption', ['missing_capture', 'wrong_currency', 'wrong_binding'])
+    def test_supplier_outcome_without_bound_capture_cannot_assert_paid(client, state, corruption):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == fulfillment.payment_intent_id,
+                Movement.movement_type == 'CAPTURE'))
+            if corruption == 'missing_capture': session.delete(cap)
+            elif corruption == 'wrong_currency': cap.currency = 'USD'
+            else:
+                binding = session.scalar(select(Binding).where(Binding.payment_intent_id == fulfillment.payment_intent_id))
+                binding.payee_id = 'another-supplier'
+            session.commit()
+        result = svc.record_supplier_fact(fid, {'state': state, 'evidence_reference': 'supplier://unknown'})
+&gt;       assert result['unified_lifecycle']['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:27: AssertionError</failure></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_outcome_without_bound_capture_cannot_assert_paid[wrong_binding-SUPPLIER_FAILED]" time="0.309"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">client = &lt;starlette.testclient.TestClient object at 0x7f06b5accfe0&gt;
+state = 'SUPPLIER_FAILED', corruption = 'wrong_binding'
+
+    @pytest.mark.parametrize('state', ['UNKNOWN_EXTERNAL_STATE', 'SUPPLIER_FAILED'])
+    @pytest.mark.parametrize('corruption', ['missing_capture', 'wrong_currency', 'wrong_binding'])
+    def test_supplier_outcome_without_bound_capture_cannot_assert_paid(client, state, corruption):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == fulfillment.payment_intent_id,
+                Movement.movement_type == 'CAPTURE'))
+            if corruption == 'missing_capture': session.delete(cap)
+            elif corruption == 'wrong_currency': cap.currency = 'USD'
+            else:
+                binding = session.scalar(select(Binding).where(Binding.payment_intent_id == fulfillment.payment_intent_id))
+                binding.payee_id = 'another-supplier'
+            session.commit()
+        result = svc.record_supplier_fact(fid, {'state': state, 'evidence_reference': 'supplier://unknown'})
+&gt;       assert result['unified_lifecycle']['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:27: AssertionError</failure></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_unknown_preserves_independent_bound_money_fact[0-PAID]" time="0.277" /><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_unknown_preserves_independent_bound_money_fact[2-PARTIALLY_REFUNDED]" time="0.287"><failure message="AssertionError: assert 'PAID' == 'PARTIALLY_REFUNDED'&#10;  &#10;  - PARTIALLY_REFUNDED&#10;  + PAID">client = &lt;starlette.testclient.TestClient object at 0x7f06bdfc0f80&gt;
+refund_fraction = 2, expected = 'PARTIALLY_REFUNDED'
+
+    @pytest.mark.parametrize('refund_fraction,expected', [(0, 'PAID'), (2, 'PARTIALLY_REFUNDED'), (1, 'REFUNDED')])
+    def test_supplier_unknown_preserves_independent_bound_money_fact(client, refund_fraction, expected):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            iid = fulfillment.payment_intent_id
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == iid, Movement.movement_type == 'CAPTURE'))
+            cap_id, amount = cap.money_movement_id, cap.amount_minor
+        if refund_fraction:
+            money.create(iid, {'movement_type': 'REFUND', 'parent_movement_id': cap_id,
+                'amount_minor': amount // refund_fraction, 'mode': 'CONTRACT_SIMULATOR',
+                'evidence': ['isolated://refund']}, 'bound-refund', 'test')
+        result = svc.record_supplier_fact(fid, {'state': 'UNKNOWN_EXTERNAL_STATE', 'evidence_reference': 'supplier://unknown'})
+&gt;       assert result['unified_lifecycle']['payment_state'] == expected
+E       AssertionError: assert 'PAID' == 'PARTIALLY_REFUNDED'
+E         
+E         - PARTIALLY_REFUNDED
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:43: AssertionError</failure></testcase><testcase classname="tests.test_c10_supplier_money_projection" name="test_supplier_unknown_preserves_independent_bound_money_fact[1-REFUNDED]" time="0.253"><failure message="AssertionError: assert 'PAID' == 'REFUNDED'&#10;  &#10;  - REFUNDED&#10;  + PAID">client = &lt;starlette.testclient.TestClient object at 0x7f06b5945280&gt;
+refund_fraction = 1, expected = 'REFUNDED'
+
+    @pytest.mark.parametrize('refund_fraction,expected', [(0, 'PAID'), (2, 'PARTIALLY_REFUNDED'), (1, 'REFUNDED')])
+    def test_supplier_unknown_preserves_independent_bound_money_fact(client, refund_fraction, expected):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            iid = fulfillment.payment_intent_id
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == iid, Movement.movement_type == 'CAPTURE'))
+            cap_id, amount = cap.money_movement_id, cap.amount_minor
+        if refund_fraction:
+            money.create(iid, {'movement_type': 'REFUND', 'parent_movement_id': cap_id,
+                'amount_minor': amount // refund_fraction, 'mode': 'CONTRACT_SIMULATOR',
+                'evidence': ['isolated://refund']}, 'bound-refund', 'test')
+        result = svc.record_supplier_fact(fid, {'state': 'UNKNOWN_EXTERNAL_STATE', 'evidence_reference': 'supplier://unknown'})
+&gt;       assert result['unified_lifecycle']['payment_state'] == expected
+E       AssertionError: assert 'PAID' == 'REFUNDED'
+E         
+E         - REFUNDED
+E         + PAID
+
+tests/test_c10_supplier_money_projection.py:43: AssertionError</failure></testcase></testsuite></testsuites>

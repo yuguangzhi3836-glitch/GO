@@ -1,0 +1,66 @@
+{
+  "application_tree": "b7fccc50bb331a3ba6ef8384915d083d10e8f5ad",
+  "base_application_tree": "153e699d38f25d9fdde15e16ed210599e8561e31",
+  "base_commit": "2816b75a3a9b03c5502e38a64c7d7d2fcf82eaeb",
+  "expected_changes": {
+    "application/tests/test_depth25_migration_history.py": {
+      "new_git_blob": "c22175490ea24a2bc24f382cbe840665b61c9c9b",
+      "old_git_blob": "e5117e28b6209cd345a4cc29c189657f94e95144"
+    },
+    "application/tests/test_depth48_flight_migration.py": {
+      "new_git_blob": "a550091d9e8597826a59a429a66f78dfc7d0e671",
+      "old_git_blob": "92f58ebecf5bf61a21d89df01368c26e7ac4a671"
+    },
+    "application/tests/test_final_depth_terminal_hardening.py": {
+      "new_git_blob": "1e7731c42bb6620dc266a7b7cc5e0322dcbebac0",
+      "old_git_blob": "4d17e5952ea1812e270f936cfba2e89cef15920d"
+    },
+    "application/tests/test_parent_implementation_code_review_debt_closure.py": {
+      "new_git_blob": "729ae6ca8fffdc48e604eaae49e647dbed071786",
+      "old_git_blob": "b8a88b7397086e42e68353568dd2797768827694"
+    }
+  },
+  "inherited_artifacts": [
+    {
+      "id": 10482546309,
+      "name": "canonical-retention-shard-0-2816b75a3a9b03c5502e38a64c7d7d2fcf82eaeb",
+      "zip_sha256": "ef299da1342d247b1c56ee6fe11689454fc37ad8c08759cbe8f8eb16243af1b7"
+    },
+    {
+      "id": 10481911704,
+      "name": "canonical-frontend-http-compat-2816b75a3a9b03c5502e38a64c7d7d2fcf82eaeb",
+      "zip_sha256": "c38ec8117d1a3a1bfb71190a2fa36265c994a62fc40dcb8e3ca3c6469e82e503"
+    },
+    {
+      "id": 10481736965,
+      "name": "canonical-mobile-linking-2816b75a3a9b03c5502e38a64c7d7d2fcf82eaeb",
+      "zip_sha256": "21e8772b3c9b4004bfa9c283904e189282e940e6a06dfc2bb585720aa3552f39"
+    },
+    {
+      "id": 10481796746,
+      "name": "depth47-postgres-2816b75a3a9b03c5502e38a64c7d7d2fcf82eaeb",
+      "zip_sha256": "6e3b18e66138467a052cf0b103d008b31a334c04230832f6080b7e0ab420e7a9"
+    },
+    {
+      "id": 10481524605,
+      "name": "depth47-browser-2816b75a3a9b03c5502e38a64c7d7d2fcf82eaeb",
+      "zip_sha256": "fd5e4fad3d4dd0ffaf76fe82f4386eda7024611d10ab19fd8780654245756e73"
+    }
+  ],
+  "inherited_shards": [],
+  "policy": "Historical evidence is supplemental provenance only. All existing integration jobs remain enabled after automatic review rejected persistent skipping; all four parent shards run. Exact four test blob substitutions only; no runtime, runner or dependency changes.",
+  "rerun_shards": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "schema": "go.unified.test-only-inheritance.v1",
+  "source_fingerprint_sha256": "a0a4fe24987f4bd46fef34ce0b97e4c3dab93d54dabe0111da1d26a43e652430",
+  "task": 178,
+  "affected_shards": [
+    1,
+    2,
+    3
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "round": 8,
+  "baseline_gate": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+  "scope_groups": 18,
+  "executed_tests": 0,
+  "global_denominator_changed": false,
+  "prior_pass_transferred": false,
+  "groups": [
+    {
+      "id": "R8-01",
+      "scope": "配置、页面、日历、订房资料",
+      "assertions": "5×50=250 物理容量；圆梦 0/1/2 餐价格逐项匹配用户资料；同房型餐别共享池；未确认价格/原图状态如实保留。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-02",
+      "scope": "maker 提交→独立 checker→开卖",
+      "assertions": "缺审批、拒绝、修改资料/价格/媒体后所有等价销售入口关闭；批准绑定当前版本后才打开；不伪造 199 图完成。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-03",
+      "scope": "顾客/前台/经理/财务持久 JWT",
+      "assertions": "只读、跨酒店、撤销授权的旧 token 对入住、扣款、退款、日结均拒绝且零业务写入；合法角色正向成功。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-04",
+      "scope": "最后一间在不同餐别并发预订",
+      "assertions": "从真实订单逐步消耗同一 50 房池，剩一间时并发仅一单成功；其他独立池不减；取消/超时只释放一次。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-05",
+      "scope": "页面与电话下单、同 key 重放",
+      "assertions": "同一规范订单/日期/房池；原请求重放不增单、不增夜、不增通知；同 key 换内容拒绝；普通/治理电话入口的必要检查一致。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-06",
+      "scope": "顾客明确金额 checkout",
+      "assertions": "AUTHORIZATION 有原始付款人/收款酒店/币种/金额绑定；不是 CAPTURE、不是收入；重放一次，金额/币种变化拒绝。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-07",
+      "scope": "酒店确认→取消窗口",
+      "assertions": "长等待后确认、29:59、30:00、30:01、13:50 确认跨14:00；展示/报价/执行同一冻结规则，旧报价过时拒绝；不把 RELEASE 算现金 REFUND。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-08",
+      "scope": "拒绝、待确认超时、未收费确认申请退出",
+      "assertions": "原库存/授权释放、订单/Trips/通知一致；带 UNKNOWN、已履约或已扣款不能从免费退出旁路离开。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-09",
+      "scope": "受控改期+审批故障恢复",
+      "assertions": "缺新 ARI/售罄/批准后故障/提交前故障不假称执行成功；恢复重试只执行一次，旧/新日期库存和资金 generation 相符。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-10",
+      "scope": "创建住客→身份→到店→分房→入住",
+      "assertions": "缺身份/登记/房间不入住；14:00/预订日边界；同酒店同房重叠及房池错误拒绝；跨酒店同编号不误冲突；PII访问有审计。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-11",
+      "scope": "正常离店与部分/提前离店",
+      "assertions": "实际入住后、酒店与客人双证据；fulfilled金额来自冻结价值且不超过；重试不重复事件/履约；未定价延住或未批准异常明确拒绝。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-12",
+      "scope": "履约→合同捕获→对账",
+      "assertions": "未离店、证据不匹配、开放争议、UNKNOWN均挡住；合法CAPTURE与未履约RELEASE正确；资金入账故障整体回滚，恢复不重扣。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-13",
+      "scope": "离店后部分退款→独立裁决→执行",
+      "assertions": "REFUND必须指向原CONFIRMED CAPTURE，核实本订单/金额/币种；申请或资格不是退款完成；重复/并发/超过可退额/他人订单拒绝。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-14",
+      "scope": "退款提交故障与重复退款周期",
+      "assertions": "PENDING持久可见，账本失败不虚增已退款；恢复只一笔，第二次合法部分退款单独记周期，总额不超过可退capture。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-15",
+      "scope": "UNKNOWN与跨日恢复",
+      "assertions": "未知资金/开放争议/待审批/待执行退款进入异常清单；未知额不能计作已确认收入或静默归零；新一代unknown不得被旧证据解锁。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-16",
+      "scope": "日结时间/酒店/币种对照",
+      "assertions": "Asia/Shanghai本地午夜前后；前日订单当日离店/退款；当日预订未来入住；另酒店/无关旧订单隔离；金额按币种，不混加。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-17",
+      "scope": "日结封账、并发、重放与晚到事实",
+      "assertions": "绑定hotel/date/timezone/cutoff与来源明细；同输入同结果；并发只一版；新事实不能复用过时摘要，按明确补正/拒绝契约处理。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    },
+    {
+      "id": "R8-18",
+      "scope": "前台交班、Trips、通知、资金与库存联合SQL",
+      "assertions": "每个关键阶段独立读取原始行和对客接口；汇总与来源、账本双边相符；QUEUED只算排队，实际送达另证。最终异常清单未被“UAT PASS”字符串消除。",
+      "status": "NOT_RUN_WAIT_FROZEN_CANDIDATE"
+    }
+  ]
+}

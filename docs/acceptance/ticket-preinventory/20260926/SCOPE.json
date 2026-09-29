@@ -1,0 +1,1361 @@
+{
+  "schema_version": 1,
+  "checklist_version": "1.1.0",
+  "source_scope_id": "C01-C14_INTERNAL_ENGINEERING_PRE_EXTERNAL",
+  "source_frozen_scope_hash": "f120a868a71b242ee7f99a0076c694b137fbbe0a7d988154f3747e88d0b1145a",
+  "parent_candidate": "4d08a4c9393ca14e97c6ba2a8740a9ade1a77559",
+  "modules": [
+    {
+      "cell": "C02",
+      "items": [
+        {
+          "id": "C02-01",
+          "cell": "C02",
+          "title": "航段票价展示",
+          "category": "NORMAL",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "拥有本订单的消费者",
+          "preconditions": "隔离目录/政策版本及有效与无效输入准备完成；尚无本次预订",
+          "trigger": "航段票价展示的真实入口请求（验证case给出具体分支）",
+          "expected_result": "返回每个航段、票价币种及票规；无效航段时间拒绝且无预订写入；报价过期后不得按旧票价预订",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-01.1",
+              "description": "返回每个航段、票价币种及票规",
+              "required": true
+            },
+            {
+              "id": "C02-01.2",
+              "description": "无效航段时间拒绝且无预订写入",
+              "required": true
+            },
+            {
+              "id": "C02-01.3",
+              "description": "报价过期后不得按旧票价预订",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C02-02",
+          "cell": "C02",
+          "title": "乘机人与票联",
+          "category": "NORMAL",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "拥有本订单的消费者",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "乘机人与票联的真实入口请求（验证case给出具体分支）",
+          "expected_result": "乘机人与每个航段票联一一绑定；同键预订返回同订单；出票UNKNOWN不生成虚假票号",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-02.1",
+              "description": "乘机人与每个航段票联一一绑定",
+              "required": true
+            },
+            {
+              "id": "C02-02.2",
+              "description": "同键预订返回同订单",
+              "required": true
+            },
+            {
+              "id": "C02-02.3",
+              "description": "出票UNKNOWN不生成虚假票号",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C02-03",
+          "cell": "C02",
+          "title": "支付与出票",
+          "category": "TRUTH_CROSS_DOMAIN",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "拥有本订单的消费者",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "支付与出票的真实入口请求（验证case给出具体分支）",
+          "expected_result": "成功捕获后仅有一次原支付；出票失败/UNKNOWN与支付已捕获分开投影；非所有人不得触发支付；已出票订单按有效票联履约事实完成行程；未出票或无事实不得标记已完成",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-03.1",
+              "description": "成功捕获后仅有一次原支付",
+              "required": true
+            },
+            {
+              "id": "C02-03.2",
+              "description": "出票失败/UNKNOWN与支付已捕获分开投影",
+              "required": true
+            },
+            {
+              "id": "C02-03.3",
+              "description": "非所有人不得触发支付",
+              "required": true
+            },
+            {
+              "id": "C02-03.4",
+              "description": "已出票订单按有效票联履约事实完成行程；未出票或无事实不得标记已完成",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C02-04",
+          "cell": "C02",
+          "title": "部分改签",
+          "category": "NORMAL",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "拥有本订单的消费者",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "部分改签的真实入口请求（验证case给出具体分支）",
+          "expected_result": "仅选中乘机人和票联改签，其余不变；非法混合他单票联拒绝且无差价写入；陈旧改签计划确认拒绝",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-04.1",
+              "description": "仅选中乘机人和票联改签，其余不变",
+              "required": true
+            },
+            {
+              "id": "C02-04.2",
+              "description": "非法混合他单票联拒绝且无差价写入",
+              "required": true
+            },
+            {
+              "id": "C02-04.3",
+              "description": "陈旧改签计划确认拒绝",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C02-05",
+          "cell": "C02",
+          "title": "退款",
+          "category": "TRUTH_CROSS_DOMAIN",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "拥有本订单的消费者",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "退款的真实入口请求（验证case给出具体分支）",
+          "expected_result": "可退票联只退对应金额且币种不变；已经退款票联重放不重复退款；部分退款后未选票联仍可按原状态使用",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-05.1",
+              "description": "可退票联只退对应金额且币种不变",
+              "required": true
+            },
+            {
+              "id": "C02-05.2",
+              "description": "已经退款票联重放不重复退款",
+              "required": true
+            },
+            {
+              "id": "C02-05.3",
+              "description": "部分退款后未选票联仍可按原状态使用",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C02-06",
+          "cell": "C02",
+          "title": "未决处理",
+          "category": "OPERATIONS",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "对应模块有权限运营管理员",
+          "preconditions": "既有当前版本/未决案件与操作者角色已记录；操作只作用本模块范围",
+          "trigger": "未决处理的真实入口请求（验证case给出具体分支）",
+          "expected_result": "管理员能定位未决出票或改签事件和当前票联；处理结果绑定当前事件，不应用到后续改签；关闭事件保留处理人及原状态审计",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-06.1",
+              "description": "管理员能定位未决出票或改签事件和当前票联",
+              "required": true
+            },
+            {
+              "id": "C02-06.2",
+              "description": "处理结果绑定当前事件，不应用到后续改签",
+              "required": true
+            },
+            {
+              "id": "C02-06.3",
+              "description": "关闭事件保留处理人及原状态审计",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C02-07",
+          "cell": "C02",
+          "title": "消费者边界",
+          "category": "AUTH_TENANT",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "订单所有人A与无关消费者B",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "消费者边界的真实入口请求（验证case给出具体分支）",
+          "expected_result": "用户B GET用户A订单私有详情被拒绝；用户B POST用户A改签、退款、支付被拒绝且DB/ledger不变",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-07.1",
+              "description": "用户B GET用户A订单私有详情被拒绝",
+              "required": true
+            },
+            {
+              "id": "C02-07.2",
+              "description": "用户B POST用户A改签、退款、支付被拒绝且DB/ledger不变",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C02-08",
+          "cell": "C02",
+          "title": "供应商租户边界",
+          "category": "AUTH_TENANT",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "所属供应商及非所属供应商、供应商只读角色",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "供应商租户边界的真实入口请求（验证case给出具体分支）",
+          "expected_result": "供应商B不可读或处理供应商A订单；同供应商只读角色不可提交履约或资金动作",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-08.1",
+              "description": "供应商B不可读或处理供应商A订单",
+              "required": true
+            },
+            {
+              "id": "C02-08.2",
+              "description": "同供应商只读角色不可提交履约或资金动作",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C02-09",
+          "cell": "C02",
+          "title": "管理角色边界",
+          "category": "AUTH_TENANT",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "管理员只读角色及无admin身份的消费者/供应商",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "管理角色边界的真实入口请求（验证case给出具体分支）",
+          "expected_result": "普通消费者及供应商不得访问admin运营入口；admin只读角色不得提交处理操作",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-09.1",
+              "description": "普通消费者及供应商不得访问admin运营入口",
+              "required": true
+            },
+            {
+              "id": "C02-09.2",
+              "description": "admin只读角色不得提交处理操作",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C02-10",
+          "cell": "C02",
+          "title": "并发竞争",
+          "category": "CONCURRENCY_RECOVERY",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "已认证原请求者及恢复worker；无新额外权限",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "并发竞争的真实入口请求（验证case给出具体分支）",
+          "expected_result": "同订单两个并发支付最多一次捕获；同订单两个并发退款最多一次退款；并发改签不能同时消费旧报价或泄漏库存",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-10.1",
+              "description": "同订单两个并发支付最多一次捕获",
+              "required": true
+            },
+            {
+              "id": "C02-10.2",
+              "description": "同订单两个并发退款最多一次退款",
+              "required": true
+            },
+            {
+              "id": "C02-10.3",
+              "description": "并发改签不能同时消费旧报价或泄漏库存",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C02-11",
+          "cell": "C02",
+          "title": "崩溃恢复",
+          "category": "CONCURRENCY_RECOVERY",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "已认证原请求者及恢复worker；无新额外权限",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "崩溃恢复的真实入口请求（验证case给出具体分支）",
+          "expected_result": "本地提交前失败无半成订单/资金状态；资金已提交业务回写前中断，重试恢复原操作不重复资金；恢复失败保留UNKNOWN及可追溯事件，不假报完成",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-11.1",
+              "description": "本地提交前失败无半成订单/资金状态",
+              "required": true
+            },
+            {
+              "id": "C02-11.2",
+              "description": "资金已提交业务回写前中断，重试恢复原操作不重复资金",
+              "required": true
+            },
+            {
+              "id": "C02-11.3",
+              "description": "恢复失败保留UNKNOWN及可追溯事件，不假报完成",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C02-12",
+          "cell": "C02",
+          "title": "跨端事实",
+          "category": "ROLE_UI",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "消费者网页/native、所属供应商、授权管理员",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "跨端事实的真实入口请求（验证case给出具体分支）",
+          "expected_result": "消费者网页、native、admin和所属supplier对同一订单确认/未知/取消状态一致；零退款与已退款到账使用不同显示且资金净额一致；消费者正常真实点击搜索→选择→接受适用条款→预订→支付→读取结果，绑定同一订单与实际DB事实；消费者从同一订单正常点击改签/改期及取消退款，确认当前条款，刷新后金额与状态匹配；所属供应商与授权管理员从正常菜单进入本模块未决/履约处理，真实提交并读取结果；无权限角色界面和API均拒绝写入",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-12.1",
+              "description": "消费者网页、native、admin和所属supplier对同一订单确认/未知/取消状态一致",
+              "required": true
+            },
+            {
+              "id": "C02-12.2",
+              "description": "零退款与已退款到账使用不同显示且资金净额一致",
+              "required": true
+            },
+            {
+              "id": "C02-12.3",
+              "description": "消费者正常真实点击搜索→选择→接受适用条款→预订→支付→读取结果，绑定同一订单与实际DB事实",
+              "required": true
+            },
+            {
+              "id": "C02-12.4",
+              "description": "消费者从同一订单正常点击改签/改期及取消退款，确认当前条款，刷新后金额与状态匹配",
+              "required": true
+            },
+            {
+              "id": "C02-12.5",
+              "description": "所属供应商与授权管理员从正常菜单进入本模块未决/履约处理，真实提交并读取结果；无权限角色界面和API均拒绝写入",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C02-13",
+          "cell": "C02",
+          "title": "运营处理闭环",
+          "category": "OPERATIONS",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "对应模块有权限运营管理员",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "运营处理闭环的真实入口请求（验证case给出具体分支）",
+          "expected_result": "未决记录显示原因、处理角色及责任人；超出既定期限记录显示待升级处理；处理关闭后保留原输入、处理人、时间与结果，不删除未知历史；从本模块真实未决事件登记任务并派发给有权限责任人；登记、派发和执行三个状态不可混为完成；受权处理或人工接管后验证订单与资金结果再关闭任务；后续复查记录原事件与前次处理，不静默删除历史",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-13.1",
+              "description": "未决记录显示原因、处理角色及责任人",
+              "required": true
+            },
+            {
+              "id": "C02-13.2",
+              "description": "超出既定期限记录显示待升级处理",
+              "required": true
+            },
+            {
+              "id": "C02-13.3",
+              "description": "处理关闭后保留原输入、处理人、时间与结果，不删除未知历史",
+              "required": true
+            },
+            {
+              "id": "C02-13.4",
+              "description": "从本模块真实未决事件登记任务并派发给有权限责任人；登记、派发和执行三个状态不可混为完成",
+              "required": true
+            },
+            {
+              "id": "C02-13.5",
+              "description": "受权处理或人工接管后验证订单与资金结果再关闭任务；后续复查记录原事件与前次处理，不静默删除历史",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C02-14",
+          "cell": "C02",
+          "title": "拒绝无副作用",
+          "category": "ERROR_UNKNOWN",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "已认证原请求者及恢复worker；无新额外权限",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "拒绝无副作用的真实入口请求（验证case给出具体分支）",
+          "expected_result": "陈旧报价拒绝后订单版本、ledger余额、库存不变；撤销后延迟请求不能恢复终态；错误提示指明待核验或重新确认而非声称操作成功",
+          "source_paths": [
+            "application/src/go_hotel/flight/changes.py"
+          ],
+          "test_paths": [
+            "application/tests/test_v70_round2_c02_partial_party.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C02-14.1",
+              "description": "陈旧报价拒绝后订单版本、ledger余额、库存不变",
+              "required": true
+            },
+            {
+              "id": "C02-14.2",
+              "description": "撤销后延迟请求不能恢复终态",
+              "required": true
+            },
+            {
+              "id": "C02-14.3",
+              "description": "错误提示指明待核验或重新确认而非声称操作成功",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        }
+      ],
+      "coverage": {
+        "NORMAL": [
+          "C02-01",
+          "C02-02",
+          "C02-04"
+        ],
+        "ERROR_UNKNOWN": [
+          "C02-14"
+        ],
+        "AUTH_TENANT": [
+          "C02-07",
+          "C02-08",
+          "C02-09"
+        ],
+        "CONCURRENCY_RECOVERY": [
+          "C02-10",
+          "C02-11"
+        ],
+        "TRUTH_CROSS_DOMAIN": [
+          "C02-03",
+          "C02-05"
+        ],
+        "ROLE_UI": [
+          "C02-12"
+        ],
+        "OPERATIONS": [
+          "C02-06",
+          "C02-13"
+        ]
+      }
+    },
+    {
+      "cell": "C03",
+      "items": [
+        {
+          "id": "C03-01",
+          "cell": "C03",
+          "title": "车次席位展示",
+          "category": "NORMAL",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "拥有本订单的消费者",
+          "preconditions": "隔离目录/政策版本及有效与无效输入准备完成；尚无本次预订",
+          "trigger": "车次席位展示的真实入口请求（验证case给出具体分支）",
+          "expected_result": "返回车次日期席位价格和币种；无效日期不生成预订；无库存车次不可直接确认出票",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-01.1",
+              "description": "返回车次日期席位价格和币种",
+              "required": true
+            },
+            {
+              "id": "C03-01.2",
+              "description": "无效日期不生成预订",
+              "required": true
+            },
+            {
+              "id": "C03-01.3",
+              "description": "无库存车次不可直接确认出票",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C03-02",
+          "cell": "C03",
+          "title": "实名与预订",
+          "category": "NORMAL",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "拥有本订单的消费者",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "实名与预订的真实入口请求（验证case给出具体分支）",
+          "expected_result": "实名乘客绑定订单席位；同请求重放不重复占座；未知出票显示待确认而非成功",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-02.1",
+              "description": "实名乘客绑定订单席位",
+              "required": true
+            },
+            {
+              "id": "C03-02.2",
+              "description": "同请求重放不重复占座",
+              "required": true
+            },
+            {
+              "id": "C03-02.3",
+              "description": "未知出票显示待确认而非成功",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C03-03",
+          "cell": "C03",
+          "title": "支付库存",
+          "category": "TRUTH_CROSS_DOMAIN",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "拥有本订单的消费者",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "支付库存的真实入口请求（验证case给出具体分支）",
+          "expected_result": "捕获金额币种绑定本订单；支付重放不再次占座或扣款；出票失败按既定恢复状态保留资金真相；已出票订单按有效乘车履约事实结束行程；不允许未确认订单直接完成",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-03.1",
+              "description": "捕获金额币种绑定本订单",
+              "required": true
+            },
+            {
+              "id": "C03-03.2",
+              "description": "支付重放不再次占座或扣款",
+              "required": true
+            },
+            {
+              "id": "C03-03.3",
+              "description": "出票失败按既定恢复状态保留资金真相",
+              "required": true
+            },
+            {
+              "id": "C03-03.4",
+              "description": "已出票订单按有效乘车履约事实结束行程；不允许未确认订单直接完成",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C03-04",
+          "cell": "C03",
+          "title": "连续改签",
+          "category": "NORMAL",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "拥有本订单的消费者",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "连续改签的真实入口请求（验证case给出具体分支）",
+          "expected_result": "当前改签确认更新车次席位；第一份报价应用后同订单平行旧报价SUPERSEDED不可应用；跨订单quote_id不能改签",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-04.1",
+              "description": "当前改签确认更新车次席位",
+              "required": true
+            },
+            {
+              "id": "C03-04.2",
+              "description": "第一份报价应用后同订单平行旧报价SUPERSEDED不可应用",
+              "required": true
+            },
+            {
+              "id": "C03-04.3",
+              "description": "跨订单quote_id不能改签",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C03-05",
+          "cell": "C03",
+          "title": "退款释放",
+          "category": "TRUTH_CROSS_DOMAIN",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "拥有本订单的消费者",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "退款释放的真实入口请求（验证case给出具体分支）",
+          "expected_result": "成功退款后按规定释放当前席位一次；同退款重放不再退款或释放；退款未知阶段不虚报已到账",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-05.1",
+              "description": "成功退款后按规定释放当前席位一次",
+              "required": true
+            },
+            {
+              "id": "C03-05.2",
+              "description": "同退款重放不再退款或释放",
+              "required": true
+            },
+            {
+              "id": "C03-05.3",
+              "description": "退款未知阶段不虚报已到账",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C03-06",
+          "cell": "C03",
+          "title": "改签运营",
+          "category": "OPERATIONS",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "对应模块有权限运营管理员",
+          "preconditions": "既有当前版本/未决案件与操作者角色已记录；操作只作用本模块范围",
+          "trigger": "改签运营的真实入口请求（验证case给出具体分支）",
+          "expected_result": "未决改签显示旧车次、目标车次及事件；绑定当前事件的确认只推进当前改签；已关闭事件再次处理保持同一终态",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-06.1",
+              "description": "未决改签显示旧车次、目标车次及事件",
+              "required": true
+            },
+            {
+              "id": "C03-06.2",
+              "description": "绑定当前事件的确认只推进当前改签",
+              "required": true
+            },
+            {
+              "id": "C03-06.3",
+              "description": "已关闭事件再次处理保持同一终态",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C03-07",
+          "cell": "C03",
+          "title": "消费者边界",
+          "category": "AUTH_TENANT",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "订单所有人A与无关消费者B",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "消费者边界的真实入口请求（验证case给出具体分支）",
+          "expected_result": "用户B GET用户A订单私有详情被拒绝；用户B POST用户A改签、退款、支付被拒绝且DB/ledger不变",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-07.1",
+              "description": "用户B GET用户A订单私有详情被拒绝",
+              "required": true
+            },
+            {
+              "id": "C03-07.2",
+              "description": "用户B POST用户A改签、退款、支付被拒绝且DB/ledger不变",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C03-08",
+          "cell": "C03",
+          "title": "供应商租户边界",
+          "category": "AUTH_TENANT",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "所属供应商及非所属供应商、供应商只读角色",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "供应商租户边界的真实入口请求（验证case给出具体分支）",
+          "expected_result": "供应商B不可读或处理供应商A订单；同供应商只读角色不可提交履约或资金动作",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-08.1",
+              "description": "供应商B不可读或处理供应商A订单",
+              "required": true
+            },
+            {
+              "id": "C03-08.2",
+              "description": "同供应商只读角色不可提交履约或资金动作",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C03-09",
+          "cell": "C03",
+          "title": "管理角色边界",
+          "category": "AUTH_TENANT",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "管理员只读角色及无admin身份的消费者/供应商",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "管理角色边界的真实入口请求（验证case给出具体分支）",
+          "expected_result": "普通消费者及供应商不得访问admin运营入口；admin只读角色不得提交处理操作",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-09.1",
+              "description": "普通消费者及供应商不得访问admin运营入口",
+              "required": true
+            },
+            {
+              "id": "C03-09.2",
+              "description": "admin只读角色不得提交处理操作",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C03-10",
+          "cell": "C03",
+          "title": "并发竞争",
+          "category": "CONCURRENCY_RECOVERY",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "已认证原请求者及恢复worker；无新额外权限",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "并发竞争的真实入口请求（验证case给出具体分支）",
+          "expected_result": "同订单两个并发支付最多一次捕获；同订单两个并发退款最多一次退款；并发改签不能同时消费旧报价或泄漏库存",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-10.1",
+              "description": "同订单两个并发支付最多一次捕获",
+              "required": true
+            },
+            {
+              "id": "C03-10.2",
+              "description": "同订单两个并发退款最多一次退款",
+              "required": true
+            },
+            {
+              "id": "C03-10.3",
+              "description": "并发改签不能同时消费旧报价或泄漏库存",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C03-11",
+          "cell": "C03",
+          "title": "崩溃恢复",
+          "category": "CONCURRENCY_RECOVERY",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "已认证原请求者及恢复worker；无新额外权限",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "崩溃恢复的真实入口请求（验证case给出具体分支）",
+          "expected_result": "本地提交前失败无半成订单/资金状态；资金已提交业务回写前中断，重试恢复原操作不重复资金；恢复失败保留UNKNOWN及可追溯事件，不假报完成",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-11.1",
+              "description": "本地提交前失败无半成订单/资金状态",
+              "required": true
+            },
+            {
+              "id": "C03-11.2",
+              "description": "资金已提交业务回写前中断，重试恢复原操作不重复资金",
+              "required": true
+            },
+            {
+              "id": "C03-11.3",
+              "description": "恢复失败保留UNKNOWN及可追溯事件，不假报完成",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C03-12",
+          "cell": "C03",
+          "title": "跨端事实",
+          "category": "ROLE_UI",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "消费者网页/native、所属供应商、授权管理员",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "跨端事实的真实入口请求（验证case给出具体分支）",
+          "expected_result": "消费者网页、native、admin和所属supplier对同一订单确认/未知/取消状态一致；零退款与已退款到账使用不同显示且资金净额一致；消费者正常真实点击搜索→选择→接受适用条款→预订→支付→读取结果，绑定同一订单与实际DB事实；消费者从同一订单正常点击改签/改期及取消退款，确认当前条款，刷新后金额与状态匹配；所属供应商与授权管理员从正常菜单进入本模块未决/履约处理，真实提交并读取结果；无权限角色界面和API均拒绝写入",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-12.1",
+              "description": "消费者网页、native、admin和所属supplier对同一订单确认/未知/取消状态一致",
+              "required": true
+            },
+            {
+              "id": "C03-12.2",
+              "description": "零退款与已退款到账使用不同显示且资金净额一致",
+              "required": true
+            },
+            {
+              "id": "C03-12.3",
+              "description": "消费者正常真实点击搜索→选择→接受适用条款→预订→支付→读取结果，绑定同一订单与实际DB事实",
+              "required": true
+            },
+            {
+              "id": "C03-12.4",
+              "description": "消费者从同一订单正常点击改签/改期及取消退款，确认当前条款，刷新后金额与状态匹配",
+              "required": true
+            },
+            {
+              "id": "C03-12.5",
+              "description": "所属供应商与授权管理员从正常菜单进入本模块未决/履约处理，真实提交并读取结果；无权限角色界面和API均拒绝写入",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C03-13",
+          "cell": "C03",
+          "title": "运营处理闭环",
+          "category": "OPERATIONS",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "对应模块有权限运营管理员",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "运营处理闭环的真实入口请求（验证case给出具体分支）",
+          "expected_result": "未决记录显示原因、处理角色及责任人；超出既定期限记录显示待升级处理；处理关闭后保留原输入、处理人、时间与结果，不删除未知历史；从本模块真实未决事件登记任务并派发给有权限责任人；登记、派发和执行三个状态不可混为完成；受权处理或人工接管后验证订单与资金结果再关闭任务；后续复查记录原事件与前次处理，不静默删除历史",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-13.1",
+              "description": "未决记录显示原因、处理角色及责任人",
+              "required": true
+            },
+            {
+              "id": "C03-13.2",
+              "description": "超出既定期限记录显示待升级处理",
+              "required": true
+            },
+            {
+              "id": "C03-13.3",
+              "description": "处理关闭后保留原输入、处理人、时间与结果，不删除未知历史",
+              "required": true
+            },
+            {
+              "id": "C03-13.4",
+              "description": "从本模块真实未决事件登记任务并派发给有权限责任人；登记、派发和执行三个状态不可混为完成",
+              "required": true
+            },
+            {
+              "id": "C03-13.5",
+              "description": "受权处理或人工接管后验证订单与资金结果再关闭任务；后续复查记录原事件与前次处理，不静默删除历史",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        },
+        {
+          "id": "C03-14",
+          "cell": "C03",
+          "title": "拒绝无副作用",
+          "category": "ERROR_UNKNOWN",
+          "requirement_ref": "用户C01–C14原职责及模块运营义务；C13 CHECKLIST_RULES.md",
+          "actor": "已认证原请求者及恢复worker；无新额外权限",
+          "preconditions": "隔离工程数据；当前模块订单、报价与主体关系已记录；保留操作前DB、库存与账本快照",
+          "trigger": "拒绝无副作用的真实入口请求（验证case给出具体分支）",
+          "expected_result": "陈旧报价拒绝后订单版本、ledger余额、库存不变；撤销后延迟请求不能恢复终态；错误提示指明待核验或重新确认而非声称操作成功",
+          "source_paths": [
+            "application/src/go_hotel/rail/service.py"
+          ],
+          "test_paths": [
+            "application/tests/test_depth22_rail_resolution.py"
+          ],
+          "verification_cases": [
+            {
+              "id": "C03-14.1",
+              "description": "陈旧报价拒绝后订单版本、ledger余额、库存不变",
+              "required": true
+            },
+            {
+              "id": "C03-14.2",
+              "description": "撤销后延迟请求不能恢复终态",
+              "required": true
+            },
+            {
+              "id": "C03-14.3",
+              "description": "错误提示指明待核验或重新确认而非声称操作成功",
+              "required": true
+            }
+          ],
+          "evidence_requirements": [
+            "固定候选与清单绑定",
+            "逐case原始API/DB/ledger/库存前后结果",
+            "涉及UI使用正常角色真实点击；涉及并发用隔离PG",
+            "独立复核与原始artifact摘要"
+          ],
+          "dependencies": [],
+          "priority": "P1",
+          "applicability": "REQUIRED",
+          "baseline_status": "SCOPED_REFERENCE_ONLY",
+          "exclusion_review": null
+        }
+      ],
+      "coverage": {
+        "NORMAL": [
+          "C03-01",
+          "C03-02",
+          "C03-04"
+        ],
+        "ERROR_UNKNOWN": [
+          "C03-14"
+        ],
+        "AUTH_TENANT": [
+          "C03-07",
+          "C03-08",
+          "C03-09"
+        ],
+        "CONCURRENCY_RECOVERY": [
+          "C03-10",
+          "C03-11"
+        ],
+        "TRUTH_CROSS_DOMAIN": [
+          "C03-03",
+          "C03-05"
+        ],
+        "ROLE_UI": [
+          "C03-12"
+        ],
+        "OPERATIONS": [
+          "C03-06",
+          "C03-13"
+        ]
+      }
+    }
+  ],
+  "new_scope_freeze": false,
+  "note": "Exact C02/C03 definitions from v1.1.0; no original obligations removed or downgraded."
+}

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="4" time="4.772" timestamp="2026-09-25T23:26:00.927079+02:00" hostname="a533d85292b5"><testcase classname="reviews.round5.c13.probe_hotel_approve_permission" name="test_missing_snapshot_forbidden_before_service[anonymous-None-None-roles0-401]" time="2.008" /><testcase classname="reviews.round5.c13.probe_hotel_approve_permission" name="test_missing_snapshot_forbidden_before_service[consumer-CONSUMER-None-roles1-403]" time="0.262" /><testcase classname="reviews.round5.c13.probe_hotel_approve_permission" name="test_missing_snapshot_forbidden_before_service[supplier-SUPPLIER_USER-isolated-supplier-roles2-403]" time="0.234" /><testcase classname="reviews.round5.c13.probe_hotel_approve_permission" name="test_missing_snapshot_forbidden_before_service[readonly-GO_ADMIN-None-roles3-403]" time="0.279"><failure message="assert 409 == 403&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">kind = 'readonly', actor = 'GO_ADMIN', supplier = None, roles = ['GO_READ_ONLY']
+expected = 403
+
+    @pytest.mark.parametrize('kind,actor,supplier,roles,expected',[
+     ('anonymous',None,None,[],401),('consumer','CONSUMER',None,[],403),
+     ('supplier','SUPPLIER_USER','isolated-supplier',['SUPPLIER_OWNER'],403),
+     ('readonly','GO_ADMIN',None,['GO_READ_ONLY'],403)])
+    def test_missing_snapshot_forbidden_before_service(kind,actor,supplier,roles,expected):
+     headers={}
+     if actor:
+      username='c13-r5-'+kind;password=secrets.token_urlsafe(32)
+      identity_service.ensure_user(username,password,actor,supplier,roles)
+      kw={}
+      if actor=='GO_ADMIN':
+       e=identity_service.begin_admin_mfa_enrollment(username,password)
+       identity_service.confirm_admin_mfa_enrollment(e['enrollment_token'],totp(e['secret']));kw['totp_code']=totp(e['secret'])
+      token=identity_service.login(username,password,expected_actor_type=actor,**kw)['access_token']
+      p=identity_service.authenticate(token);assert p.actor_type==actor
+      if kind=='readonly':assert p.permissions=={'admin:read'}
+      headers={'Authorization':'Bearer '+token}
+     with SessionLocal() as s:before=s.scalar(select(func.count()).select_from(HostedContentApprovalRow))
+     app=FastAPI();app.include_router(router)
+     with TestClient(app) as c:
+      result=c.post('/internal/v1/hosted-direct/content-snapshots/c13-definitely-missing-round5/approve',headers=headers,json={'approver_role':'HOTEL_AUTHORIZED_OPERATOR','decision':'APPROVE','evidence_reference':'isolated://c13-negative-probe'})
+     with SessionLocal() as s:assert s.scalar(select(func.count()).select_from(HostedContentApprovalRow))==before
+     Path('/workspace/scratch/cdb63add4518/reviews/round5/c13/OBSERVED_'+kind+'.json').write_text(json.dumps({'kind':kind,'expected_status':expected,'actual_status':result.status_code,'body':result.json(),'approval_rows_unchanged':True,'authentication':'real password + JWT + DB session; admin MFA; no dependency overrides','scope':'isolated actual router; not full main middleware'},indent=2)+'\n')
+&gt;    assert result.status_code==expected
+E    assert 409 == 403
+E     +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+../../reviews/round5/c13/probe_hotel_approve_permission.py:37: AssertionError</failure></testcase></testsuite></testsuites>

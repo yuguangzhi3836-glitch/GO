@@ -72,10 +72,13 @@ def test_aoluguya_official_truth_gate_and_projection_replaces_test_truth():
     status = svc.status()
     assert status["hosted_page"]["official_projection"] is True
     assert status["hosted_page"]["no_test_truth"] is True
-    page = booking.page("aoluguya-harbin")
-    assert page["payment_available"] is False
-    assert all("Staging测试" not in x["rate_name"] for x in page["offers"])
-    assert {x["price_minor"] for x in page["offers"]} >= {72800, 82800, 92800, 102800, 122800}
+    # Supply projection is not independent content/media publication approval.
+    with pytest.raises(ValueError,match='HOSTED_PUBLICATION_BLOCKED'):
+        booking.page("aoluguya-harbin")
+    with SessionLocal() as session:
+        offers=list(session.scalars(select(HostedDirectRoomOfferRow).where(HostedDirectRoomOfferRow.state=='ACTIVE')))
+        assert all("Staging测试" not in x.rate_name for x in offers)
+        assert {x.price_minor for x in offers} >= {72800,82800,92800,102800,122800}
 
 
 def test_stale_or_test_truth_is_rejected():

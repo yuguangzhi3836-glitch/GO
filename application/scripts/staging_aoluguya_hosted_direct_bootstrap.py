@@ -2,7 +2,7 @@
 """Controlled, idempotent AOLUGUYA Hosted Direct bootstrap for STAGING only.
 
 No Alembic changes. No OTA benchmark is persisted as live inventory/official price.
-Creates clearly-labelled test offers and reservation-request-only publication.
+Creates clearly-labelled draft test offers; publication requires independent review.
 """
 import argparse, json, os
 from sqlalchemy import select, delete
@@ -84,7 +84,7 @@ def create():
             'publication_scope':'RESERVATION_REQUEST_ONLY',
         })
         h.contact_json=c
-        h.state='PUBLISHED_REQUEST_ONLY'
+        h.state='DRAFT'
         h.updated_at=now()
         offers,initial=expected_bootstrap_graph(s,h,allow_unlabelled_initial=True)
         for o in offers:

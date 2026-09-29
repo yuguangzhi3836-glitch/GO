@@ -33,5 +33,6 @@ def test_supplier_partner_onboarding_copy_is_not_plain_registration():
     assert '申请成为 GO 合作伙伴' in app
     assert 'GO 合作伙伴入驻' in app
     assert '提交入驻申请' in app
-    assert '创建账号不代表已审核或已开通交易' in app
-    assert 'GO 合作伙伴服务协议' in bff
+    assert '创建账号后仍需主体与酒店关系审核' in app
+    assert '不自动发布或开通交易' in app
+    assert 'require_registration_terms_ready' in bff

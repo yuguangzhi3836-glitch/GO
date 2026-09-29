@@ -2,10 +2,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import hashlib
 from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from go_hotel.db.session import SessionLocal
-from go_hotel.db.models import IdentityUserRow, ConsumerProfileRow, TravelerProfileRow, ConsumerPaymentMethodRow, ConsumerWalletRow
+from go_hotel.db.models import IdentityUserRow, ConsumerProfileRow, TravelerProfileRow, ConsumerPaymentMethodRow, ConsumerWalletRow, AuditEventRow
 from go_hotel.security.service import identity_service, Principal
-from go_hotel.security.crypto import encrypt_secret, decrypt_secret
+from go_hotel.security.crypto import encrypt_secret, decrypt_secret, hash_password
 from go_hotel.domain.models import new_id
 
 
@@ -13,18 +14,30 @@ def now(): return datetime.now(timezone.utc)
 def go_id_for(user_id:str): return "GO" + hashlib.sha256(user_id.encode()).hexdigest()[:12].upper()
 
 class ConsumerService:
-    def register(self,email:str,password:str,display_name:str|None=None,phone:str|None=None):
+    def register(self,email:str,password:str,display_name:str|None=None,phone:str|None=None,registration_audit:dict|None=None,verification_proof:dict|None=None):
         email=email.strip().lower()
-        with SessionLocal() as s:
-            if s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==email)):
-                raise ValueError("EMAIL_ALREADY_REGISTERED")
-        user_id=identity_service.create_user(email,password,"CONSUMER",None,["CONSUMER"])
-        t=now()
-        with SessionLocal() as s:
-            p=ConsumerProfileRow(user_id=user_id,go_id=go_id_for(user_id),email=email,display_name=display_name,phone_ciphertext=encrypt_secret(phone) if phone else None,locale="zh-CN",status="ACTIVE",created_at=t,updated_at=t)
-            w=ConsumerWalletRow(wallet_id=new_id("wal"),user_id=user_id,status="ACTIVE",created_at=t,updated_at=t)
-            s.add_all([p,w]); s.commit()
-            return self.profile_by_user(user_id)
+        t=now(); user_id=new_id("usr")
+        try:
+            with SessionLocal.begin() as s:
+                if verification_proof is not None:
+                    from go_hotel.services.registration_verification import consume
+                    consume(s, verification_proof, user_id)
+                if s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==email)):
+                    raise ValueError("EMAIL_ALREADY_REGISTERED")
+                s.add(IdentityUserRow(user_id=user_id,username=email,password_hash=hash_password(password),actor_type="CONSUMER",supplier_id=None,roles=["CONSUMER"],status="ACTIVE",token_version=1,created_at=t,updated_at=t))
+                s.flush()
+                s.add_all([
+                    ConsumerProfileRow(user_id=user_id,go_id=go_id_for(user_id),email=email,display_name=display_name,phone_ciphertext=encrypt_secret(phone) if phone else None,locale="zh-CN",status="ACTIVE",created_at=t,updated_at=t),
+                    ConsumerWalletRow(wallet_id=new_id("wal"),user_id=user_id,status="ACTIVE",created_at=t,updated_at=t),
+                ])
+                if registration_audit is not None:
+                    s.add(AuditEventRow(audit_id=new_id("aud"),actor_id=user_id,actor_type="CONSUMER",supplier_id=None,roles=["CONSUMER"],session_id=None,action="CONSUMER_REGISTRATION_TERMS_ACCEPTED",resource_type="CONSUMER_REGISTRATION",resource_id=user_id,request_id=registration_audit.get("request_id"),client_ip=registration_audit.get("client_ip"),http_method="POST",path="/v1/consumer/auth/register",before_state=None,after_state={"registration_state":"ACCOUNT_CREATED"},decision_id=None,evidence_id=None,approval_id=None,metadata_json={"term_versions":registration_audit["term_versions"],"term_hashes":registration_audit.get("term_hashes",{}),"accepted_once":True,"personal_vault_opt_in":False,"email_verified":verification_proof is not None,"verification_challenge_id":verification_proof["challenge_id"] if verification_proof else None},created_at=t))
+        except IntegrityError:
+            with SessionLocal() as s:
+                if s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==email)):
+                    raise ValueError("EMAIL_ALREADY_REGISTERED") from None
+            raise
+        return self.profile_by_user(user_id)
     def profile_by_user(self,user_id:str):
         with SessionLocal() as s:
             p=s.get(ConsumerProfileRow,user_id)

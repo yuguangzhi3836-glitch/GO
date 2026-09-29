@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="5.586" timestamp="2026-09-25T00:42:44.617667-07:00" hostname="48cdd5f3df1f"><testcase classname="reviews.c13.probe_c10_money_parent" name="test_orphan_capture_cannot_establish_paid" time="3.946"><failure message="AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'&#10;  &#10;  - UNKNOWN_EXTERNAL_STATE&#10;  + PAID">client = &lt;starlette.testclient.TestClient object at 0x7f9171c32ae0&gt;
+
+    def test_orphan_capture_cannot_establish_paid(client):
+        _, order, _, fid, _ = captured(client)
+        with SessionLocal.begin() as session:
+            fulfillment = session.get(Fulfillment, fid)
+            cap = session.scalar(select(Movement).where(Movement.root_payment_intent_id == fulfillment.payment_intent_id,
+                Movement.movement_type == 'CAPTURE'))
+            cap.parent_movement_id = 'not-an-authorization'
+        result = svc.record_supplier_fact(fid, {'state': 'UNKNOWN_EXTERNAL_STATE', 'evidence_reference': 'supplier://unknown'})
+&gt;       assert result['unified_lifecycle']['payment_state'] == 'UNKNOWN_EXTERNAL_STATE'
+E       AssertionError: assert 'PAID' == 'UNKNOWN_EXTERNAL_STATE'
+E         
+E         - UNKNOWN_EXTERNAL_STATE
+E         + PAID
+
+../../reviews/c13/probe_c10_money_parent.py:16: AssertionError</failure></testcase></testsuite></testsuites>

@@ -54,35 +54,47 @@ def register_go_direct(hotel_id:str,b:Payload,p:Principal=Depends(supplier_princ
 @router.post('/internal/v1/hotel-autopage/media/harvest')
 def media_harvest(b:Payload,p:Principal=Depends(catalog_writer)):
     d=b.model_dump(exclude_none=True)
-    return call_kw(media_svc.harvest,**d)
+    return call(scoped_media,[d.get('hotel_id')],lambda:media_svc.harvest(**d))
 
 @router.post('/internal/v1/hotel-autopage/media/harvest-batch')
 def media_harvest_batch(b:Payload,p:Principal=Depends(catalog_writer)):
     d=b.model_dump(exclude_none=True)
-    return call(media_svc.harvest_batch,d.get('candidates',[]),bool(d.get('allow_private',False)))
+    candidates=d.get('candidates',[])
+    return call(scoped_media,[x.get('hotel_id') for x in candidates],lambda:media_svc.harvest_batch(candidates,bool(d.get('allow_private',False))))
 
 @router.post('/internal/v1/hotel-autopage/media/{asset_id}/rights')
 def media_rights(asset_id:str,b:Payload,p:Principal=Depends(catalog_writer)):
     d=b.model_dump(exclude_none=True)
     if type(d.get('expected_revision')) is not int or d['expected_revision'] < 1:
         raise HTTPException(409,detail='MEDIA_ASSET_REVISION_REQUIRED')
-    return call_kw(media_svc.decide_rights,expected_revision=d['expected_revision'],asset_id=asset_id,rights_state=d.get('rights_state'),actor=p.user_id,rights_owner=d.get('rights_owner'),evidence_reference=d.get('evidence_reference'),expires_at=d.get('expires_at'),rights_scope=d.get('rights_scope'),rights_regions=d.get('rights_regions'),rights_basis=d.get('rights_basis'),provider=d.get('provider'),contract_id=d.get('contract_id'),cache_allowed=d.get('cache_allowed'),modification_allowed=d.get('modification_allowed'))
+    return call(scoped_media_asset,asset_id,lambda:media_svc.decide_rights(expected_revision=d['expected_revision'],asset_id=asset_id,rights_state=d.get('rights_state'),actor=p.user_id,rights_owner=d.get('rights_owner'),evidence_reference=d.get('evidence_reference'),expires_at=d.get('expires_at'),rights_scope=d.get('rights_scope'),rights_regions=d.get('rights_regions'),rights_basis=d.get('rights_basis'),provider=d.get('provider'),contract_id=d.get('contract_id'),cache_allowed=d.get('cache_allowed'),modification_allowed=d.get('modification_allowed')))
 
 @router.get('/internal/v1/hotel-autopage/media/assets')
 def media_assets(hotel_id:str|None=None,room_type_id:str|None=None,publishable_only:bool=False,p:Principal=Depends(admin_principal)):
-    return {'data':media_svc.list_assets(hotel_id=hotel_id,room_type_id=room_type_id,publishable_only=publishable_only)}
+    from go_hotel.db.session import SessionLocal
+    with SessionLocal() as s:
+        assets=media_svc.list_assets(hotel_id=hotel_id,room_type_id=room_type_id,publishable_only=publishable_only)
+        return {'data':[asset for asset in assets if catalog_scope.visible_hotel(s,asset.get('hotel_id'))]}
 
 @router.get('/internal/v1/hotel-autopage/media/{asset_id}/content')
 def media_admin_content(asset_id:str,p:Principal=Depends(admin_principal)):
     try:
-        rec=media_svc.get(asset_id); path=media_svc.content_path(asset_id,require_publishable=False)
+        from go_hotel.db.session import SessionLocal
+        rec=media_svc.get(asset_id)
+        with SessionLocal() as s:catalog_scope.require_hotel(s,rec.get('hotel_id'))
+        path=media_svc.content_path(asset_id,require_publishable=False)
         return FileResponse(path,media_type=rec['mime_type'],filename=path.name,headers={'Cache-Control':'no-store'})
     except ValueError as e:raise HTTPException(404,detail=str(e))
 
 @router.get('/v1/hotel-media/{asset_id}')
 def media_public_content(asset_id:str):
     try:
-        rec=media_svc.get(asset_id); path=media_svc.content_path(asset_id,require_publishable=True)
+        from go_hotel.db.session import SessionLocal
+        rec=media_svc.get(asset_id)
+        if rec.get('source_type') == 'HOTEL_DIRECT_UPLOAD':
+            raise ValueError('DIRECT_MEDIA_REQUIRES_ACTIVE_REVIEW_PAGE')
+        with SessionLocal() as s:catalog_scope.require_hotel(s,rec.get('hotel_id'))
+        path=media_svc.content_path(asset_id,require_publishable=True)
         return FileResponse(path,media_type=rec['mime_type'],headers={'Cache-Control':'no-store','ETag':rec['sha256'],'X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'"})
     except ValueError as e:raise HTTPException(404,detail=str(e))
 
@@ -143,12 +155,12 @@ def regional_build_retry(run_id:str,p:Principal=Depends(catalog_writer)):
 
 @router.get('/internal/v1/hotel-infrastructure/clean-slate/harbin/preview')
 def harbin_clean_slate_preview(p:Principal=Depends(admin_principal)):
-    return {'data':infra_p0.reset_preview()}
+    raise HTTPException(409,detail='CATALOG_RESET_USE_PROTECTED_SCOPE')
 
 @router.post('/internal/v1/hotel-infrastructure/clean-slate/harbin/execute')
 def harbin_clean_slate_execute(b:Payload,p:Principal=Depends(catalog_writer)):
     d=b.model_dump(exclude_none=True)
-    return call_kw(infra_p0.reset_execute,confirmation=d.get('confirmation',''),actor=p.user_id)
+    raise HTTPException(409,detail='CATALOG_RESET_USE_PROTECTED_SCOPE')
 
 @router.post('/internal/v1/hotel-infrastructure/golden-build/aoluguya')
 def aoluguya_golden_build(p:Principal=Depends(catalog_writer)):
@@ -166,3 +178,49 @@ def hotel_travel_graph_project(hotel_id:str,p:Principal=Depends(catalog_writer))
 def regional_build_advance_after_acceptance(run_id:str,b:Payload,p:Principal=Depends(catalog_writer)):
     d=b.model_dump(exclude_none=True)
     return call_kw(regional_build_svc.advance_after_acceptance,run_id=run_id,actor=p.user_id,confirmation=d.get('confirmation',''))
+
+
+# Explicit scope preview + fingerprint binding, no physical deletion.
+from go_hotel.services import catalog_scope
+
+@router.get('/internal/v1/hotel-infrastructure/catalog-scope/preview')
+def catalog_scope_preview(p:Principal=Depends(admin_principal)):
+    return call(catalog_scope.preview)
+
+@router.post('/internal/v1/hotel-infrastructure/catalog-scope/activate')
+def catalog_scope_activate(b:Payload,p:Principal=Depends(catalog_writer)):
+    d=b.model_dump(exclude_none=True)
+    return call(catalog_scope.activate,d.get('scope_sha256',''),p.user_id)
+
+
+def scoped_media(hotel_ids, operation):
+    from go_hotel.autonomy.durable import transaction
+    from go_hotel.db.session import SessionLocal
+    # Keep activation fenced through the local media mutation as well.
+    with transaction(SessionLocal) as s:
+        catalog_scope.scope_lock(s)
+        for hotel_id in hotel_ids:catalog_scope.require_hotel(s,hotel_id)
+        return operation()
+
+
+def scoped_media_asset(asset_id, operation):
+    return scoped_media([media_svc.get(asset_id).get('hotel_id')],operation)
+
+
+# Uses the existing administrator catalogue permission and current public gates.
+from go_hotel.api.routes.hotel_direct_submission import router as direct_submission_router
+router.include_router(direct_submission_router)
+
+
+@router.get('/internal/v1/hotel-infrastructure/catalog-scope/status')
+def catalog_scope_status(p:Principal=Depends(admin_principal)):
+    return call(catalog_scope.status)
+
+@router.get('/internal/v1/hotel-infrastructure/catalog-scope/nationwide/preview')
+def catalog_scope_nationwide_preview(p:Principal=Depends(catalog_writer)):
+    return call(catalog_scope.nationwide_preview)
+
+@router.post('/internal/v1/hotel-infrastructure/catalog-scope/nationwide/activate')
+def catalog_scope_nationwide_activate(b:Payload,p:Principal=Depends(catalog_writer)):
+    d=b.model_dump(exclude_none=True)
+    return call(catalog_scope.activate_nationwide,d.get('scope_sha256',''),p.user_id,d.get('reason',''))
