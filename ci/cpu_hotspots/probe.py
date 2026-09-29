@@ -32,6 +32,13 @@ def child(jobpath):
     try:
         original_child(jobpath)
     finally:
+        if all(t['op'] == 'ride' for t in job['tasks']):
+            import resource
+            usage = resource.getrusage(resource.RUSAGE_SELF)
+            base.write(Path(job['result']+'.lifetime-cpu.json'), {
+                'pid': __import__('os').getpid(),
+                'cpu_seconds': usage.ru_utime + usage.ru_stime,
+                'scope': 'Whole worker process CPU since birth, including imports and query construction'})
         if profile:
             base.write(Path(job['result']+'.thread-cpu.json'), profile.stop(ROOT))
 

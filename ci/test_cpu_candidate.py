@@ -8,8 +8,8 @@ import json
 
 
 def rounds(**overrides):
-    baseline={'cpu_seconds':10.,'p95_ms':8000.,'p99_ms':9000.,'max_worker_rss_kib':200000.}
-    candidate={'cpu_seconds':8.,'p95_ms':6800.,'p99_ms':9000.,'max_worker_rss_kib':220000.}|overrides
+    baseline={'cpu_seconds':10.,'cpu_lifetime_seconds':15.,'p95_ms':8000.,'p99_ms':9000.,'max_worker_rss_kib':200000.}
+    candidate={'cpu_seconds':8.,'cpu_lifetime_seconds':12.,'p95_ms':6800.,'p99_ms':9000.,'max_worker_rss_kib':220000.}|overrides
     return [baseline|{'label':'baseline'},candidate|{'label':'candidate'},
             candidate|{'label':'candidate'},baseline|{'label':'baseline'}]
 
@@ -20,7 +20,7 @@ def test_exact_budget_can_pass_but_does_not_accept_5000ms_capacity():
     assert result['medians']['candidate']['p95_ms']>5000
 
 
-@pytest.mark.parametrize('change',[{'cpu_seconds':8.1},{'p95_ms':6801.},
+@pytest.mark.parametrize('change',[{'cpu_seconds':8.1},{'cpu_lifetime_seconds':12.1},{'p95_ms':6801.},
                                   {'p99_ms':9001.},{'max_worker_rss_kib':220001.}])
 def test_each_required_budget_blocks_adoption(change):
     assert not evaluate(rounds(**change))['meets_budget']

@@ -8,6 +8,7 @@ on:
       - 'application/pyproject.toml'
       - 'application/alembic/**'
       - 'ci/test_cpu_candidate.py'
+      - 'ci/journey_latency/**'
       - '.github/workflows/cpu-candidate.yml'
 permissions:
   contents: read
@@ -19,7 +20,7 @@ concurrency:
 jobs:
   compare:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 60
     services:
       postgres:
         image: postgres:18.4
@@ -57,7 +58,17 @@ jobs:
         if: steps.change.outputs.run == 'true' && steps.change.outputs.candidate == 'true'
       - name: Validate candidate budget
         if: steps.change.outputs.run == 'true'
-        run: python -m pytest ci/test_cpu_candidate.py -q
+        run: python -m pytest ci/test_cpu_candidate.py ci/journey_latency/test_measure.py ci/journey_latency/test_verify.py -q
+      - name: Query reuse payment safety on isolated PostgreSQL
+        if: steps.change.outputs.candidate == 'true'
+        env:
+          GO_TEST_DATABASE_URL: ${{ env.GO_MULTI_DATABASE_URL }}
+          APP_ENV: test
+          MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED: 'false'
+          TRAVEL_INTELLIGENCE_ENABLED: 'false'
+        run: |
+          mkdir -p cpu-candidate-qualification
+          python -m pytest application/tests/test_payment_query_reuse.py -q --junitxml=cpu-candidate-qualification/payment.xml
       - name: Baseline-candidate-candidate-baseline; identical harness, no profiler
         if: steps.change.outputs.run == 'true'
         run: python ci/cpu_candidate.py
@@ -65,5 +76,7 @@ jobs:
         if: always() && steps.change.outputs.run == 'true'
         with:
           name: cpu-candidate-${{ github.event.pull_request.head.sha }}
-          path: cpu-candidate-evidence/
+          path: |
+            cpu-candidate-evidence/
+            cpu-candidate-qualification/
           retention-days: 30

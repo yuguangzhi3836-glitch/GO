@@ -81,3 +81,16 @@ def test_incomplete_business_result_cannot_count_as_success(operation):
     operations.query = lambda *a: {'data': {'order_id': 'order', 'status': 'UNKNOWN'}}
     with pytest.raises(AssertionError):
         operations.execute(operation, {'owner': 'owner', 'order_id': 'order', 'body': {}, 'key': 'key'})
+
+
+def test_full_transaction_uses_original_actor_once(monkeypatch):
+    operations, _ = fixture_operations()
+    calls = []
+    def transaction(index):
+        calls.append(index)
+        return {'outcome': 'SUCCESS', 'owner': 'mi-load-abc', 'order_id': 'one'}
+    monkeypatch.setitem(sys.modules, 'ride_workload', SimpleNamespace(transaction=transaction))
+    assert operations.execute('full_transaction', {'owner': 'mi-load-abc', 'index': 'abc'})['order_id'] == 'one'
+    assert calls == ['abc']
+    with pytest.raises(AssertionError):
+        operations.execute('full_transaction', {'owner': 'wrong', 'index': 'abc'})

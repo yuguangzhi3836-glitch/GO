@@ -225,6 +225,13 @@ def coordinator(out):
                 ride_service.fulfill(owner, oid, 'COMPLETE', 'isolated://journey/complete/' + oid)
             queried = measure('order_query', payment_tasks, folder / 'order_query')
             cumulative += values
+            full_tasks = [[{'owner': f'mi-load-journey-full-{n}-{batch}-{i}',
+                'index': f'journey-full-{n}-{batch}-{i}'} for i in range(n)]
+                for batch in range(BATCHES)]
+            full = measure('full_transaction', full_tasks, folder / 'full_transaction')
+            cumulative += [row['value'] for batch in full for row in batch['rows']]
+            result['operations'].append({'concurrency': n, 'operation': 'full_transaction',
+                'batches': [x['summary'] for x in full]})
             facts = ride_workload.verify(cumulative)
             assert len(facts) == len(cumulative)
             write(folder / 'ledger-facts.json', facts)
@@ -240,7 +247,8 @@ def coordinator(out):
                     'batches': [x['summary'] for x in data]})
             result['checks'].append({'concurrency': n, 'sql': 'PASS', 'ownership_denial': 'PASS',
                 'cumulative_orders': len(cumulative)})
-            result['normal_actor_count'] = len(cumulative)
+            result['normal_actor_count'] += n * BATCHES
+            result['completed_actor_count'] = len(cumulative)
             write(out / 'result.json', result)
         result['status'] = 'MEASUREMENT_COMPLETE_NOT_CAPACITY_ACCEPTANCE'
         return 0
@@ -255,6 +263,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--worker', type=Path)
     parser.add_argument('--coordinator', type=Path)
+    parser.add_argument('--out', type=Path)
+    parser.add_argument('--application-tree')
     args = parser.parse_args()
     sys.addaudithook(guard)
     if args.worker:
@@ -269,11 +279,11 @@ def main():
         assert hashlib.sha256((ROOT / file).read_bytes()).hexdigest() == digest, 'FORMAL_BASELINE_CHANGED'
     head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     app = subprocess.check_output(['git', 'rev-parse', 'HEAD:application'], cwd=ROOT, text=True).strip()
-    assert head == os.environ['EXPECTED_HEAD'] and app == frozen['application_tree']
+    assert head == os.environ['EXPECTED_HEAD'] and app == (args.application_tree or frozen['application_tree'])
     url = make_url(os.environ['GO_MULTI_DATABASE_URL'])
     assert (url.drivername, url.host, url.port, url.username, url.database) == (
         'postgresql+psycopg', '127.0.0.1', 5432, 'go_ci', 'go_c11_isolated') and not url.query
-    out = ROOT / 'journey-latency-evidence'; out.mkdir(exist_ok=False)
+    out = args.out or ROOT / 'journey-latency-evidence'; out.mkdir(exist_ok=False)
     schema = 'mi_' + uuid4().hex; engine = create_engine(url); code = 1
     binding = {'head': head, 'application_tree': app, 'baseline': frozen,
         'tiers': TIERS, 'batches_per_operation': BATCHES, 'instances_per_operation': 2,

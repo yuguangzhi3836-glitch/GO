@@ -5,7 +5,7 @@ failed attempt, retains its allocation for money reconciliation. Database time
 and transactions determine the winner; the browser clock never releases seats.
 """
 from datetime import datetime, UTC
-from sqlalchemy import select
+from sqlalchemy import bindparam, select
 from sqlalchemy.orm import object_session
 from go_hotel.autonomy.durable import db_now_ms, digest, transaction
 from go_hotel.db.session import SessionLocal
@@ -16,6 +16,10 @@ from go_hotel.db.models import (
 
 HOLD_MS = 15 * 60 * 1000
 MODELS = {'RAIL': RailOrderRow, 'ATTRACTION': AttractionOrderRow, 'RIDE': MobilityRideOrderRow, 'RENTAL': MobilityRentalOrderRow}
+
+_PAYMENT_ID = select(Intent.payment_intent_id).where(
+    Intent.business_type == bindparam('business_type'),
+    Intent.business_id == bindparam('business_id')).limit(1)
 
 
 def terms(row):
@@ -50,8 +54,7 @@ def projection(vertical, order):
 
 
 def payment_in(s, vertical, order_id):
-    return s.scalar(select(Intent.payment_intent_id).where(
-        Intent.business_type == vertical + '_ORDER', Intent.business_id == order_id).limit(1))
+    return s.scalar(_PAYMENT_ID, {'business_type': vertical + '_ORDER', 'business_id': order_id})
 
 
 def guard_payment_in(s, vertical, order):

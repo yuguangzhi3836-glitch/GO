@@ -28,4 +28,9 @@ class Operations:
             assert result['order_id'] == task['order_id'] and result['status'] == 'COMPLETED', 'QUERY_STATE'
             assert result['total_amount_minor'] == 16800 and result['currency'] == 'CNY', 'QUERY_MONEY'
             return {'owner': owner, 'order_id': result['order_id'], 'state': result['status']}
+        if operation == 'full_transaction':
+            import ride_workload
+            result = ride_workload.transaction(task['index'])
+            assert result['outcome'] == 'SUCCESS' and result['owner'] == owner, 'FULL_TRANSACTION_FAILED'
+            return result
         raise ValueError('UNKNOWN_JOURNEY_OPERATION')
