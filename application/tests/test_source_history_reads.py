@@ -170,7 +170,16 @@ def test_populated_postgres_migration_and_latest_query_plan(history_db, record_p
     from alembic.operations import Operations
     from alembic.runtime.migration import MigrationContext
     migration = migration_module()
-    seed(engine, 10000)
+    # A latest lookup should select one order out of a mixed order history.
+    # An all-one-order fixture legitimately favors the smaller created_at index
+    # and cannot distinguish the composite index's selective access path.
+    with engine.begin() as c:
+        for start in range(0, 10000, 1000):
+            c.execute(Decision.__table__.insert(), [decision(n,
+                business_id='target' if n % 100 == 0 else 'other-' + str(n % 100))
+                for n in range(start, start+1000)])
+    record_property('total_history_rows', 10000)
+    record_property('distinct_order_histories', 100)
     with engine.connect() as c:
         c.execute(text(f'DROP INDEX {INDEX}'))
         c.commit()
@@ -197,5 +206,5 @@ def test_populated_postgres_migration_and_latest_query_plan(history_db, record_p
         c.commit()
         migration.downgrade()
         assert c.scalar(text('SELECT to_regclass(:name)'), {'name': INDEX}) is None
-        assert c.scalar(text('SELECT count(*) FROM vertical_source_decision')) == 10002
+        assert c.scalar(text('SELECT count(*) FROM vertical_source_decision')) == 10000
         c.rollback()
