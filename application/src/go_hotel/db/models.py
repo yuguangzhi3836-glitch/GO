@@ -6975,6 +6975,7 @@ class VerticalSourceDecisionRow(Base):
     reason_codes_json: Mapped[list]=mapped_column(JSON,nullable=False)
     decision_hash: Mapped[str]=mapped_column(String(64),nullable=False,unique=True)
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False,index=True)
+    __table_args__=(Index('ix_vertical_source_latest', 'vertical', 'business_id', 'created_at'),)
 
 # P0 remediation 0098 — server-resolved payment truth and scoped financial close.
 class PaymentOrderFactBindingRow(Base):

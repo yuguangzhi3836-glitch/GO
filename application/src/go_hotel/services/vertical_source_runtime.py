@@ -1,10 +1,15 @@
 from datetime import datetime, timezone
 import hashlib, json, uuid
-from sqlalchemy import select
+from sqlalchemy import select, bindparam
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import VerticalSourceDecisionRow as Decision
 from go_hotel.autonomy.durable import insert_once
 from go_hotel.services.phase1_closure import VERTICALS, OFFICIAL, SourceCandidate
+
+# Limit in SQL: Result.scalar() alone still loads every matching ORM row.
+_LATEST = (select(Decision).where(Decision.vertical == bindparam('vertical'),
+    Decision.business_id == bindparam('business_id'))
+    .order_by(Decision.created_at.desc()).limit(1))
 
 def now(): return datetime.now(timezone.utc)
 def ident(p): return f'{p}_{uuid.uuid4().hex}'
@@ -41,7 +46,7 @@ class VerticalSourceRuntimeService:
 
     def latest_in(self, s, vertical, business_id):
         """Read current source facts using the caller's existing transaction."""
-        r=s.scalar(select(Decision).where(Decision.vertical==vertical,Decision.business_id==business_id).order_by(Decision.created_at.desc()))
+        r=s.scalar(_LATEST, {'vertical': vertical, 'business_id': business_id})
         return out(r) if r else None
 
 vertical_source_runtime_service=VerticalSourceRuntimeService()

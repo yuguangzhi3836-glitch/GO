@@ -21,6 +21,11 @@ ORDER_TYPES={
  'RIDE_ORDER':('RIDE',MobilityRideOrderRow),'RENTAL_ORDER':('RENTAL',MobilityRentalOrderRow),'ATTRACTION_ORDER':('ATTRACTION',AttractionOrderRow),
 }
 TERMINAL={'SUCCEEDED','FAILED'}
+# Preserve the existing available-source filter, while bounding ORM hydration
+# even when an order has a long source-decision history.
+_LATEST_AVAILABLE_SOURCE = (select(SourceDecision).where(
+ SourceDecision.vertical==bindparam('vertical'), SourceDecision.business_id==bindparam('business_id'),
+ SourceDecision.route!='UNAVAILABLE').order_by(SourceDecision.created_at.desc()).limit(1))
 # These are immutable statement shapes, not cached payment facts. The caller
 # still holds the original attempt and intent locks when each read executes.
 _SUCCESS_CONFLICTS = select(
@@ -67,7 +72,7 @@ class OmnichannelPaymentService:
   if vertical in {'RAIL','ATTRACTION'}:
    if order.status=='CANCELLED':raise ValueError('CANCELLED_ORDER_NOT_PAYABLE')
    reservation_expiry.guard_payment_in(s,vertical,order)
-  decision=s.scalar(select(SourceDecision).where(SourceDecision.vertical==vertical,SourceDecision.business_id==business_id,SourceDecision.route!='UNAVAILABLE').order_by(SourceDecision.created_at.desc()))
+  decision=s.scalar(_LATEST_AVAILABLE_SOURCE,{'vertical':vertical,'business_id':business_id})
   if not decision or not decision.selected_source_id or not decision.evidence_reference:raise ValueError('AUTHORIZED_VERTICAL_SOURCE_DECISION_REQUIRED')
   fact={'business_type':business_type,'business_id':business_id,'payer_id':payer,'payee_id':decision.selected_source_id,'amount_minor':int(order.total_amount_minor),'currency':order.currency,'order_status':order.status,'source_decision_id':decision.vertical_source_decision_id,'source_decision_hash':decision.decision_hash}
   return fact,decision
