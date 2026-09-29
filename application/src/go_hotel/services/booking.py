@@ -1,7 +1,8 @@
 from __future__ import annotations
 from datetime import datetime, timezone
 from functools import partial
-from anyio import CapacityLimiter, to_thread
+import asyncio
+from anyio import CancelScope, CapacityLimiter, to_thread
 from go_hotel.connectors.registry import registry
 from go_hotel.connectors.resilience import ResilientConnector, ConnectorTimeout
 from go_hotel.core.config import settings
@@ -27,7 +28,26 @@ _search_write_limiter = CapacityLimiter(1)
 _legacy_write_limiter = CapacityLimiter(1)
 
 async def _db_segment(function, *args, **kwargs):
-    return await to_thread.run_sync(partial(function, *args, **kwargs), limiter=_legacy_write_limiter)
+    # A synchronous segment previously ran to completion before cancellation could
+    # be delivered. Preserve that boundary, including time queued after an external
+    # provider success. AnyIO scope cancellation and native asyncio Task.cancel()
+    # are separate mechanisms; neither may abandon a durable checkpoint.
+    with CancelScope(shield=True):
+        worker = asyncio.create_task(to_thread.run_sync(
+            partial(function, *args, **kwargs), limiter=_legacy_write_limiter
+        ))
+        cancelled = False
+        while True:
+            try:
+                result = await asyncio.shield(worker)
+                break
+            except asyncio.CancelledError:
+                if worker.cancelled():
+                    raise
+                cancelled = True
+        if cancelled:
+            raise asyncio.CancelledError
+        return result
 
 
 class BookingService:

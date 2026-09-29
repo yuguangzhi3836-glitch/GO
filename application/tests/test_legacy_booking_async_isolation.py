@@ -174,3 +174,57 @@ async def test_post_provider_commit_releases_loop_and_provider_stays_on_loop(mon
         return {'status': result.status}
     response = await assert_responsive(app, blocker, 'GET', '/pay')
     assert response.status_code == 200 and commits == [blocker.worker_thread]
+
+
+@pytest.mark.parametrize('cancel_kind', ['anyio', 'asyncio'])
+async def test_cancellation_after_external_success_still_persists_checkpoint(monkeypatch, cancel_kind):
+    import anyio
+    from go_hotel.domain.models import Payment, PaymentStatus
+    from go_hotel.services.booking import payment_provider
+    payment = Payment('p1', 'o1', 100, 'CNY', PaymentStatus.AUTHORIZED)
+    monkeypatch.setattr(booking_service, '_prepare_payment', lambda *a: (None, {'operation_id':'op1'}))
+    saved = []
+    monkeypatch.setattr(booking.repo, 'mark_external_success', lambda *a: saved.append('external-success'))
+    monkeypatch.setattr(booking.repo, 'commit_authorization_saga', lambda *a: saved.append('authorization'))
+    with anyio.CancelScope() as scope:
+        async def authorize(*a, **k):
+            if cancel_kind == 'anyio': scope.cancel()
+            else: asyncio.current_task().cancel()
+            return payment
+        monkeypatch.setattr(payment_provider, 'authorize', authorize)
+        if cancel_kind == 'anyio':
+            await booking_service.pay('o1', 100, 'CNY', 'pm')
+        else:
+            task = asyncio.create_task(booking_service.pay('o1', 100, 'CNY', 'pm'))
+            with pytest.raises(asyncio.CancelledError): await task
+    assert saved == ['external-success', 'authorization'], 'CANCELLATION_DROPPED_DURABLE_CHECKPOINT'
+
+
+async def test_native_cancellation_waits_for_running_commit_segment(monkeypatch):
+    from go_hotel.domain.models import Payment, PaymentStatus
+    from go_hotel.services.booking import payment_provider
+    payment = Payment('p1', 'o1', 100, 'CNY', PaymentStatus.AUTHORIZED)
+    monkeypatch.setattr(booking_service, '_prepare_payment', lambda *a: (None, {'operation_id':'op1'}))
+    async def authorize(*a, **k): return payment
+    monkeypatch.setattr(payment_provider, 'authorize', authorize)
+    blocker = BlockedCall()
+    monkeypatch.setattr(booking.repo, 'mark_external_success', blocker)
+    saved=[]
+    monkeypatch.setattr(booking.repo, 'commit_authorization_saga', lambda *a: saved.append('authorization'))
+    task = asyncio.create_task(booking_service.pay('o1', 100, 'CNY', 'pm'))
+    try:
+        for _ in range(200):
+            if blocker.entered.is_set(): break
+            await asyncio.sleep(.005)
+        assert blocker.entered.is_set()
+        task.cancel()
+        await asyncio.sleep(.01)
+        returned_before_commit = task.done()
+        blocker.release.set()
+        with pytest.raises(asyncio.CancelledError): await task
+        for _ in range(200):
+            if saved: break
+            await asyncio.sleep(.005)
+        assert not returned_before_commit and saved == ['authorization']
+    finally:
+        blocker.release.set()
