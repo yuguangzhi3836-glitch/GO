@@ -21,8 +21,11 @@ review.
 from __future__ import annotations
 
 import argparse
+from email.utils import parsedate_to_datetime
 import json
+import re
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -110,6 +113,9 @@ class ReviewUnavailable(RuntimeError):
         self.http_status = http_status
         self.review_trace = None
         self.ai_called = True
+        self.rate_limited = False
+        self.retry_after_seconds = None
+        self.retry_events = []
 
 
 ROLE_RULES = {
@@ -269,7 +275,31 @@ def _call_api(*, prompt: str, model: str, api_key: str, schema: dict, role: str,
             detail = error.read().decode("utf-8", "replace")
         except Exception:  # pragma: no cover - best effort only
             detail = "unreadable_error_body"
-        raise ReviewUnavailable(classify_ai_failure(error.code, detail), detail[:400], http_status=error.code) from error
+        failure = ReviewUnavailable(classify_ai_failure(error.code, detail), detail[:400], http_status=error.code)
+        # Only explicit throughput exhaustion is retryable. Billing/quota,
+        # authentication, generic 429, malformed output and 5xx stay fail-closed.
+        try:
+            failure.rate_limited = (error.code == 429 and failure.failure_class != "AI_QUOTA_EXHAUSTED" and
+                                    parse_json(detail).get("error", {}).get("code") == "rate_limit_exceeded")
+        except (ValueError, AttributeError, TypeError):
+            pass
+        if failure.rate_limited:
+            delays = []
+            retry_header = error.headers.get("Retry-After", "") if error.headers else ""
+            try:
+                value = float(retry_header)
+                if 0 <= value < float("inf"):
+                    delays.append(value)
+            except (ValueError, TypeError, AttributeError):
+                try:
+                    delays.append(max(0.0, parsedate_to_datetime(retry_header).timestamp() - time.time()))
+                except (ValueError, TypeError, AttributeError, OverflowError):
+                    pass
+            match = re.search(r"try again in ([0-9]+(?:\.[0-9]+)?)(ms|s)\b", detail, re.I)
+            if match:
+                delays.append(float(match[1]) / (1000 if match[2].lower() == "ms" else 1))
+            failure.retry_after_seconds = max(delays) if delays else 20.0
+        raise failure from error
     except (urllib.error.URLError, TimeoutError, OSError) as error:
         raise ReviewUnavailable(classify_ai_failure(transport_error=str(error)), str(error)[:400]) from error
     try:

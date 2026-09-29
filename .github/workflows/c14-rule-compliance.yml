@@ -65,7 +65,7 @@ jobs:
   c14-rule-review:
     name: C14 fresh rule review (read-only, no quality sandbox)
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - name: Check out the execution backend (this run's own commit)
         uses: actions/checkout@v4

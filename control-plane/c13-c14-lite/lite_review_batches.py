@@ -12,14 +12,15 @@ import time
 
 import lite_ai_reviewer as ai
 from lite_canonical import canonical, digest, digest_bytes, is_sha256, parse_json
+from lite_review_pacing import ReviewPacer, MAX_RETRIES_PER_REQUEST, MAX_EXTRA_ATTEMPTS
 
 # Backend budgets, not claims about a particular model's context limit. No
-# dispatch override, retries, tools, candidate execution or credential logging.
+# dispatch override, tools, candidate execution or credential logging.
 MAX_PROMPT_BYTES = 512 * 1024
 MAX_PARTS = 64
 MAX_REPORT_BYTES = 4096
-MAX_REVIEW_SECONDS = 18 * 60
-WORKERS = 4
+MAX_REVIEW_SECONDS = 25 * 60
+WORKERS = 2
 PROTOCOL = "go.c13c14.partitioned-review.v1"
 
 PART_INSTRUCTIONS = """
@@ -187,6 +188,7 @@ def run_partitioned(role, facts, *, model, api_key, timeout, checkpoint=None):
              "parts": [], "final": None, "complete": False}
     called = False
     deadline = time.monotonic() + MAX_REVIEW_SECONDS
+    pacer = ReviewPacer()
 
     def save():
         if checkpoint:
@@ -200,11 +202,26 @@ def run_partitioned(role, facts, *, model, api_key, timeout, checkpoint=None):
         save()
 
         def call(prompt, schema):
-            remaining = int(deadline - time.monotonic())
-            if remaining <= 0:
-                refuse("review_time_budget_exceeded")
-            return ai._call_api(prompt=prompt, model=model, api_key=api_key,
-                                schema=schema, role=role, timeout=min(timeout, remaining))
+            nonlocal called
+            retries = []
+            while True:
+                try:
+                    pacer.admit(deadline)
+                    remaining = int(deadline - time.monotonic())
+                    if remaining <= 0:
+                        refuse("review_time_budget_exceeded")
+                    called = True
+                    payload, text, raw = ai._call_api(prompt=prompt, model=model, api_key=api_key,
+                                                    schema=schema, role=role, timeout=min(timeout, remaining))
+                    return payload, text, raw, retries
+                except ai.ReviewUnavailable as error:
+                    event = {"http_status": error.http_status, "failure_class": error.failure_class,
+                             "detail": error.detail, "retry_after_seconds": error.retry_after_seconds}
+                    if pacer.retry(error, len(retries), deadline):
+                        retries.append(event)
+                        continue
+                    error.retry_events = retries
+                    raise
 
         # Bounded waves preserve every completed response before a failure stops
         # further requests. All jobs in a wave are collected, even if one fails.
@@ -212,7 +229,6 @@ def run_partitioned(role, facts, *, model, api_key, timeout, checkpoint=None):
             for start in range(0, len(prompts), WORKERS):
                 wave = []
                 for index in range(start, min(start + WORKERS, len(prompts))):
-                    called = True
                     wave.append((index, executor.submit(call, prompts[index], _schema(role))))
                 save()
                 failures = []
@@ -220,12 +236,14 @@ def run_partitioned(role, facts, *, model, api_key, timeout, checkpoint=None):
                     entry = {"part_id": plan["parts"][index]["part_id"], "error": None}
                     trace["parts"].append(entry)
                     try:
-                        payload, text, raw = future.result()
+                        payload, text, raw, retries = future.result()
+                        entry["rate_limit_retries"] = retries
                         # Preserve raw bytes even when parsing/schema validation fails.
                         entry.update(response_json=raw.decode("utf-8"), response_sha256=digest_bytes(raw))
                         entry.update(_response_record(payload, text, raw, prompts[index]))
                         _check_report(role, entry["report"], plan["parts"][index], facts["candidate_sha"])
                     except ai.ReviewUnavailable as error:
+                        entry.setdefault("rate_limit_retries", error.retry_events)
                         entry["error"] = {"failure_class": error.failure_class,
                                           "detail": error.detail, "http_status": error.http_status}
                         failures.append(error)
@@ -237,8 +255,14 @@ def run_partitioned(role, facts, *, model, api_key, timeout, checkpoint=None):
             refuse("review_duplicate_execution_id")
         prompt = _bounded(_final_prompt(role, facts, plan, trace["parts"]))
         save()
-        payload, text, raw = call(prompt, ai.ROLE_SCHEMAS[role])
+        try:
+            payload, text, raw, retries = call(prompt, ai.ROLE_SCHEMAS[role])
+        except ai.ReviewUnavailable as error:
+            trace["final_failure"] = {"failure_class": error.failure_class, "detail": error.detail,
+                                      "http_status": error.http_status, "rate_limit_retries": error.retry_events}
+            raise
         trace["final"] = {"response_json": raw.decode("utf-8"), "response_sha256": digest_bytes(raw)}
+        trace["final"]["rate_limit_retries"] = retries
         final = _response_record(payload, text, raw, prompt)
         trace["final"].update(final)
         opinion = final["report"]
@@ -309,6 +333,17 @@ def verify(outcome, *, facts=None):
     _verify_record(trace["final"])
     ai.validate_opinion(role, trace["final"]["report"], plan["candidate_sha"])
     _check_final(role, trace)
+    records = [*trace["parts"], trace["final"]]
+    retry_count = 0
+    for record in records:
+        retries = record.get("rate_limit_retries", [])
+        if not isinstance(retries, list) or len(retries) > MAX_RETRIES_PER_REQUEST:
+            refuse("review_retry_budget_exceeded")
+        retry_count += len(retries)
+        if any(r.get("http_status") != 429 or r.get("failure_class") != "AI_PROVIDER_FAILURE" for r in retries):
+            refuse("review_invalid_retry_evidence")
+    if retry_count > MAX_EXTRA_ATTEMPTS:
+        refuse("review_retry_budget_exceeded")
     if trace["final"]["report"] != outcome["opinion"] or trace["final"]["execution_id"] != outcome["ai_execution_id"]:
         refuse("review_final_binding_mismatch")
     if facts is not None:
