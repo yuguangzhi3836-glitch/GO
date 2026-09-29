@@ -153,11 +153,13 @@ def test_migration_checks_existing_metadata_index(history_db, existing_correct):
             c.execute(text(f'DROP INDEX {INDEX}'))
             c.execute(text(f'CREATE INDEX {INDEX} ON vertical_source_decision (business_id)'))
         c.commit()
-        migration.op = Operations(MigrationContext.configure(c))
+        context = MigrationContext.configure(c)
+        migration.op = Operations(context)
         if existing_correct:
-            migration.upgrade()
+            with context.begin_transaction():
+                migration.upgrade()
         else:
-            with pytest.raises(RuntimeError, match='SOURCE_LATEST_INDEX_DEFINITION_MISMATCH'):
+            with pytest.raises(RuntimeError, match='SOURCE_LATEST_INDEX_DEFINITION_MISMATCH'), context.begin_transaction():
                 migration.upgrade()
 
 
@@ -172,8 +174,12 @@ def test_populated_postgres_migration_and_latest_query_plan(history_db, record_p
     with engine.connect() as c:
         c.execute(text(f'DROP INDEX {INDEX}'))
         c.commit()
-        migration.op = Operations(MigrationContext.configure(c))
-        migration.upgrade()
+        context = MigrationContext.configure(c)
+        migration.op = Operations(context)
+        # Match env.py: introspection must belong to Alembic's transaction so
+        # its autocommit block can commit before CREATE INDEX CONCURRENTLY.
+        with context.begin_transaction():
+            migration.upgrade()
         assert c.scalar(text('SELECT indisvalid AND indisready FROM pg_index WHERE indexrelid=to_regclass(:name)'), {'name': INDEX})
         migration.upgrade()  # A verified healthy index is reusable on retry.
         c.execute(text('ANALYZE vertical_source_decision'))
