@@ -366,17 +366,40 @@ jobs:
             --spec "$RUNNER_TEMP/c13.spec.json" \
             --contract "$RUNNER_TEMP/c13.contract.json" \
             --outcome "$RUNNER_TEMP/c13.outcome.json" \
+            --facts "$RUNNER_TEMP/c13.facts.json" \
             --prereq "$RUNNER_TEMP/c14_bundle.json" \
             --junit "$RUNNER_TEMP/junit.xml" \
             --stdout "$RUNNER_TEMP/stdout.txt" \
             --manifest "$RUNNER_TEMP/manifest.json" \
             --out "$RUNNER_TEMP/artifacts/c13_bundle.json"
+          cp "$RUNNER_TEMP/c13.outcome.json" "$RUNNER_TEMP/artifacts/c13_opinion.json"
+
+      - name: Preserve C13 raw review evidence after success or failure
+        if: always()
+        run: |
+          set -euo pipefail
+          python control-plane/c13-c14-lite/lite_cli.py raw-evidence \
+            --out "$RUNNER_TEMP/c13-raw" \
+            --spec "$RUNNER_TEMP/c13.spec.json" \
+            --facts "$RUNNER_TEMP/c13.facts.json" \
+            --contract "$RUNNER_TEMP/c13.contract.json" \
+            --outcome "$RUNNER_TEMP/c13.outcome.json" \
+            --scope "$RUNNER_TEMP/scope.json" \
+            --review-brief "$RUNNER_TEMP/review_brief.json"
+
+      - name: Publish C13 raw review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13c14-lite-c13-raw-${{ inputs.candidate_sha }}
+          path: ${{ runner.temp }}/c13-raw
+          if-no-files-found: warn
+          retention-days: 90
 
       - name: Verify the whole round from the received bytes
         if: always()
         run: |
           set -euo pipefail
-          cp "$RUNNER_TEMP/c13.outcome.json" "$RUNNER_TEMP/artifacts/c13_opinion.json"
           python control-plane/c13-c14-lite/lite_cli.py verify \
             --spec "$RUNNER_TEMP/c13.spec.json" \
             --c14-bundle "$RUNNER_TEMP/c14_bundle.json" \

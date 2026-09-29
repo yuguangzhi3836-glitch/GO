@@ -262,6 +262,7 @@ jobs:
                --spec "$RUNNER_TEMP/c14.spec.json" \
                --contract "$RUNNER_TEMP/c14.contract.json" \
                --outcome "$RUNNER_TEMP/c14.outcome.json" \
+               --facts "$RUNNER_TEMP/c14.facts.json" \
                --out "$RUNNER_TEMP/artifacts/c14_bundle.json" \
                > "$RUNNER_TEMP/seal_stdout.txt" 2> "$RUNNER_TEMP/seal_stderr.txt"; then
             printf '{"step":"seal","status":"SEALED","exit_code":0}\n' > "$RUNNER_TEMP/seal_result.json"

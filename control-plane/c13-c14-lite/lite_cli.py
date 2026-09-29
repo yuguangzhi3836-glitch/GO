@@ -422,10 +422,10 @@ def cmd_review(args) -> int:
             model=spec.get("ai_model", lite_ai_reviewer.DEFAULT_MODEL),
             api_key=os.environ.get("OPENAI_API_KEY"),
             stub=args.stub,
+            checkpoint=lambda partial: _write_review_checkpoint(args.out, partial),
         )
     except lite_ai_reviewer.ReviewUnavailable as error:
-        outcome = lite_ai_reviewer.blocked_outcome(role, facts, error.failure_class, error.detail)
-        outcome["http_status"] = error.http_status
+        outcome = lite_ai_reviewer.failure_outcome(role, facts, error)
         _write(args.out, outcome)
         print(json.dumps({"verdict": outcome["verdict"], "failure_class": outcome["failure_class"]}))
         # A provider/quota failure is BLOCKED, not a crash and not a FAIL.
@@ -433,6 +433,13 @@ def cmd_review(args) -> int:
     _write(args.out, outcome)
     print(json.dumps({"verdict": outcome["verdict"], "ai_provider": outcome["ai_provider"]}))
     return 0
+
+
+def _write_review_checkpoint(path, partial):
+    """An interrupted batch run leaves a complete BLOCKED record, never a PASS."""
+    temporary = str(path) + ".checkpoint"
+    _write(temporary, partial)
+    pathlib.Path(temporary).replace(path)
 
 
 def _machine_job(spec: dict, artifacts: dict) -> dict:
@@ -453,6 +460,28 @@ def cmd_seal(args) -> int:
     contract = _read(args.contract)
     outcome = _read(args.outcome)
     role = spec["role"]
+    facts_path = getattr(args, "facts", None)
+    if role == "c13" and outcome.get("opinion") is None:
+        # Legacy C13 bundles require an execution ID. Preserve raw BLOCKED
+        # evidence instead of manufacturing blocked-<run> as a provider identity.
+        raise lite_errors.Reject("c13_no_provider_opinion_raw_only")
+    if outcome.get("review_mode") == "partitioned-v1" and outcome.get("opinion") is not None and not facts_path:
+        raise lite_errors.Reject("partitioned_seal_requires_original_facts")
+    try:
+        lite_ai_reviewer.validate_outcome(outcome, facts=_read(facts_path) if facts_path else None)
+    except (lite_ai_reviewer.ReviewUnavailable, KeyError, TypeError, ValueError) as error:
+        raise lite_errors.Reject("outcome_verification_failed", str(error)) from error
+    if outcome["role"] != role or outcome["prompt_sha256"] != contract["prompt_sha256"]:
+        raise lite_errors.Reject("outcome_contract_binding_mismatch")
+    if outcome.get("opinion") and outcome["opinion"]["candidate_sha"] != contract["candidate_commit_sha"]:
+        raise lite_errors.Reject("outcome_candidate_mismatch")
+    # Workflows publish the complete outcome envelope as *_opinion.json. Bind
+    # those exact bytes, including all batch responses, not only its inner opinion.
+    opinion_artifact_sha = lite_canonical.digest_bytes(pathlib.Path(args.outcome).read_bytes())
+    import re
+    for label, pattern in FORBIDDEN_SECRET_PATTERNS:
+        if re.search(pattern, pathlib.Path(args.outcome).read_bytes()):
+            raise lite_errors.Reject("opinion_artifact_secret_shape", label)
     cell_id = spec["cell_id"]
     fields = {
         "schema_version": lite_bundle.SCHEMA_VERSION_C14 if role == "c14" else lite_bundle.SCHEMA_VERSION_C13,
@@ -474,7 +503,7 @@ def cmd_seal(args) -> int:
         "review_execution_id": outcome["ai_execution_id"] or f"blocked-{spec['run_id']}-{spec['run_attempt']}",
         "prompt_sha256": outcome["prompt_sha256"],
         "input_sha256": outcome["input_sha256"],
-        "opinion_sha256": outcome["opinion_sha256"] or lite_canonical.digest({"blocked": outcome["failure_class"]}),
+        "opinion_sha256": opinion_artifact_sha,
         "verdict": outcome["verdict"],
         "failure_class": outcome["failure_class"],
         "issued_at": spec["issued_at"],
@@ -507,7 +536,7 @@ def cmd_seal(args) -> int:
             "ai_model": outcome["ai_model"],
             "ai_execution_id": outcome["ai_execution_id"],
             "review_execution_id": outcome["ai_execution_id"],
-            "opinion_sha256": outcome["opinion_sha256"],
+            "opinion_sha256": opinion_artifact_sha if outcome["opinion_sha256"] is not None else None,
             "not_applicable": (opinion or {}).get("not_applicable"),
             "findings": (opinion or {}).get("findings", []),
             "blocking_issues": list((opinion or {}).get("blocking_issues")
@@ -983,6 +1012,7 @@ def main(argv=None) -> int:
     seal.add_argument("--spec", required=True)
     seal.add_argument("--contract", required=True)
     seal.add_argument("--outcome", required=True)
+    seal.add_argument("--facts", help="original frozen facts; required to seal a partitioned opinion")
     seal.add_argument("--out", required=True)
     seal.add_argument("--prereq")
     seal.add_argument("--junit")

@@ -26,7 +26,7 @@ import sys
 import urllib.error
 import urllib.request
 
-from lite_canonical import digest, digest_bytes
+from lite_canonical import digest, digest_bytes, parse_json
 from lite_errors import AI_REVIEW, BLOCKED, classify_ai_failure
 
 API_URL = "https://api.openai.com/v1/responses"
@@ -108,6 +108,8 @@ class ReviewUnavailable(RuntimeError):
         self.verdict = BLOCKED
         self.detail = detail
         self.http_status = http_status
+        self.review_trace = None
+        self.ai_called = True
 
 
 ROLE_RULES = {
@@ -270,7 +272,14 @@ def _call_api(*, prompt: str, model: str, api_key: str, schema: dict, role: str,
         raise ReviewUnavailable(classify_ai_failure(error.code, detail), detail[:400], http_status=error.code) from error
     except (urllib.error.URLError, TimeoutError, OSError) as error:
         raise ReviewUnavailable(classify_ai_failure(transport_error=str(error)), str(error)[:400]) from error
-    payload = json.loads(raw.decode("utf-8"))
+    try:
+        payload = parse_json(raw.decode("utf-8"))
+    except (ValueError, UnicodeError) as error:
+        raise ReviewUnavailable("AI_PROVIDER_FAILURE", "provider_payload_not_json") from error
+    if not isinstance(payload, dict):
+        raise ReviewUnavailable("AI_PROVIDER_FAILURE", "provider_payload_not_object")
+    if payload.get("status") not in (None, "completed"):
+        raise ReviewUnavailable("AI_PROVIDER_FAILURE", "provider_response_not_completed")
     return payload, _extract_text(payload), raw
 
 
@@ -311,6 +320,72 @@ def validate_opinion(role: str, opinion, candidate_sha: str) -> None:
         raise ReviewUnavailable("AI_PROVIDER_FAILURE", "opinion_field_set_mismatch")
     if opinion.get("candidate_sha") != candidate_sha:
         raise ReviewUnavailable("AI_PROVIDER_FAILURE", "opinion_candidate_mismatch")
+    _validate_schema(opinion, ROLE_SCHEMAS[role])
+    findings = opinion["findings" if role == "c14" else "quality_findings"]
+    if opinion["verdict"] in ("PASS_SCOPED", "NOT_APPLICABLE"):
+        if any(item["severity"] in ("MAJOR", "BLOCKER") for item in findings):
+            raise ReviewUnavailable("AI_PROVIDER_FAILURE", "opinion_success_with_blocker")
+        if role == "c14" and (opinion["blocking_issues"] or
+                (opinion["verdict"] == "PASS_SCOPED" and opinion["remediation_status"] not in ("CLOSED", "NOT_REQUIRED"))):
+            raise ReviewUnavailable("AI_PROVIDER_FAILURE", "opinion_success_with_open_remediation")
+    if role == "c14" and ((opinion["verdict"] == "NOT_APPLICABLE") != (opinion["not_applicable"] is not None)):
+        raise ReviewUnavailable("AI_PROVIDER_FAILURE", "opinion_not_applicable_mismatch")
+
+
+def _validate_schema(value, schema):
+    """Validate the small structured-output vocabulary locally, including nested fields."""
+    kinds = schema.get("type")
+    kinds = kinds if isinstance(kinds, list) else [kinds]
+    valid = (("null" in kinds and value is None) or
+             ("string" in kinds and isinstance(value, str)) or
+             ("object" in kinds and isinstance(value, dict)) or
+             ("array" in kinds and isinstance(value, list)))
+    if not valid or ("enum" in schema and value not in schema["enum"]):
+        raise ReviewUnavailable("AI_PROVIDER_FAILURE", "opinion_schema_invalid")
+    if value is None:
+        return
+    if isinstance(value, dict):
+        if set(value) != set(schema["required"]):
+            raise ReviewUnavailable("AI_PROVIDER_FAILURE", "opinion_nested_fields_invalid")
+        for key, item in value.items():
+            _validate_schema(item, schema["properties"][key])
+    elif isinstance(value, list):
+        for item in value:
+            _validate_schema(item, schema["items"])
+
+
+def failure_outcome(role, facts, error):
+    outcome = blocked_outcome(role, facts, error.failure_class, error.detail)
+    outcome["http_status"] = error.http_status
+    outcome["ai_called"] = error.ai_called
+    if error.review_trace is not None:
+        outcome["review_mode"] = "partitioned-v1"
+        outcome["review_trace"] = error.review_trace
+    return outcome
+
+
+def validate_outcome(outcome, *, facts=None):
+    """Check an opinion envelope independently of its artifact-file digest."""
+    role = outcome["role"]
+    opinion = outcome.get("opinion")
+    if opinion is None:
+        if outcome["verdict"] != BLOCKED:
+            raise ReviewUnavailable("AI_PROVIDER_FAILURE", "outcome_missing_opinion")
+        return
+    if outcome.get("failure_class") is not None or outcome.get("ai_called") is not True:
+        raise ReviewUnavailable("AI_PROVIDER_FAILURE", "opinion_without_completed_review")
+    for key in ("ai_provider", "ai_model", "ai_execution_id"):
+        if not isinstance(outcome.get(key), str) or not outcome[key].strip():
+            raise ReviewUnavailable("AI_PROVIDER_FAILURE", "opinion_execution_identity_missing")
+    validate_opinion(role, opinion, facts["candidate_sha"] if facts else opinion.get("candidate_sha"))
+    if outcome["opinion_sha256"] != digest(opinion) or outcome["verdict"] != opinion["verdict"]:
+        raise ReviewUnavailable("AI_PROVIDER_FAILURE", "outcome_opinion_binding_mismatch")
+    if facts is not None and (outcome["input_sha256"] != digest(facts) or
+            outcome["prompt_sha256"] != digest_bytes(build_prompt(role, facts).encode())):
+        raise ReviewUnavailable("AI_PROVIDER_FAILURE", "outcome_facts_binding_mismatch")
+    if outcome.get("review_mode") == "partitioned-v1" or "review_trace" in outcome:
+        from lite_review_batches import verify
+        verify(outcome, facts=facts)
 
 
 def run(
@@ -321,6 +396,7 @@ def run(
     api_key=None,
     stub: bool = False,
     timeout: int = 180,
+    checkpoint=None,
 ) -> dict:
     """Produce one fresh review execution. Raises ``ReviewUnavailable`` on failure."""
     if role not in ROLE_SCHEMAS:
@@ -352,11 +428,14 @@ def run(
 
     if not api_key:
         raise ReviewUnavailable("AI_PROVIDER_FAILURE", "api_key_not_supplied")
+    from lite_review_batches import MAX_PROMPT_BYTES, run_partitioned
+    if len(prompt.encode("utf-8")) > MAX_PROMPT_BYTES:
+        return run_partitioned(role, facts, model=model, api_key=api_key, timeout=timeout, checkpoint=checkpoint)
     payload, text, _raw = _call_api(
         prompt=prompt, model=model, api_key=api_key, schema=ROLE_SCHEMAS[role], role=role, timeout=timeout
     )
     try:
-        opinion = json.loads(text)
+        opinion = parse_json(text)
     except ValueError as error:
         raise ReviewUnavailable("AI_PROVIDER_FAILURE", "opinion_not_json") from error
     validate_opinion(role, opinion, facts["candidate_sha"])
@@ -412,8 +491,7 @@ def main(argv=None):
     try:
         outcome = run(args.role, facts, model=args.model, api_key=__import__("os").environ.get("OPENAI_API_KEY"), stub=args.stub)
     except ReviewUnavailable as error:
-        outcome = blocked_outcome(args.role, facts, error.failure_class, error.detail)
-        outcome["http_status"] = error.http_status
+        outcome = failure_outcome(args.role, facts, error)
     with open(args.output, "w", encoding="utf-8") as handle:
         json.dump(outcome, handle, ensure_ascii=False, indent=2, sort_keys=True)
         handle.write("\n")
