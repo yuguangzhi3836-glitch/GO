@@ -1,0 +1,51 @@
+name: Isolated normal journey latency
+on:
+  pull_request:
+    paths:
+      - 'ci/journey_latency/**'
+      - '.github/workflows/journey-latency.yml'
+permissions:
+  contents: read
+concurrency:
+  group: journey-latency-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  measure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_multi_only
+          POSTGRES_DB: go_c11_isolated
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U go_ci -d go_c11_isolated" --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      GO_MULTI_DATABASE_URL: postgresql+psycopg://go_ci:isolated_multi_only@127.0.0.1:5432/go_c11_isolated
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e './application[dev]'
+      - name: Qualify normal-call and timing contracts
+        run: |
+          mkdir -p journey-qualification
+          python -m pytest ci/journey_latency/test_measure.py -q --junitxml=journey-qualification/results.xml
+      - name: Measure process-cold and continued normal operations
+        run: python ci/journey_latency/measure.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: journey-latency-${{ github.event.pull_request.head.sha }}
+          path: |
+            journey-latency-evidence/
+            journey-qualification/
+          retention-days: 30
