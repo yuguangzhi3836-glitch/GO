@@ -24,44 +24,12 @@ class VerticalTransactionBridge:
             return self._existing_intent_in(s,vertical,order_id,account_id)
 
     def _confirm_contract_payment(self, iid, account_id):
-        # Resume committed simulator steps, never infer success from a stale
-        # pre-execution state. Every transition retains its database row lock.
-        # This bounded reconciliation does not send an external payment.
-        for _ in range(8):
-            with SessionLocal() as s:
-                i=s.get(OmnichannelPaymentIntentRow,iid)
-                if not i or i.payer_id!=account_id:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
-                state=i.state
-                if state=='SUCCEEDED':return
-                if state=='UNKNOWN_EXTERNAL_STATE':raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
-                pending=list(s.scalars(select(OmnichannelPaymentAttemptRow).where(
-                    OmnichannelPaymentAttemptRow.payment_intent_id==iid,
-                    OmnichannelPaymentAttemptRow.state=='CONTRACT_READY_NOT_EXTERNAL'))) if state=='CONTRACT_READY_NOT_EXTERNAL' else []
-                if len(pending)>1 or any(a.external_invoked for a in pending):raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
-                aid=pending[0].payment_attempt_id if pending else None
-            try:
-                if state=='REQUIRES_CHANNEL_SELECTION':
-                    selected=omnichannel_payment_service.select_channel(iid,'LOCAL_MARKET',account_id,True)
-                    if selected['payment_intent_id']!=iid or selected['payer_id']!=account_id:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
-                    state=selected['state']
-                if state=='READY':
-                    a=omnichannel_payment_service.execute(iid,'CONTRACT_SIMULATOR')
-                    confirmed=omnichannel_payment_service.simulate_result(a['payment_attempt_id'],'SUCCEEDED')['intent']
-                elif state=='CONTRACT_READY_NOT_EXTERNAL':
-                    if not aid:continue
-                    confirmed=omnichannel_payment_service.simulate_result(aid,'SUCCEEDED')['intent']
-                else:raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
-                # These are the committed result facts of the locked transition,
-                # not the stale snapshot read before execution. Concurrent-state
-                # conflicts still go through the existing reload loop.
-                if confirmed['payment_intent_id']!=iid or confirmed['payer_id']!=account_id:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
-                if confirmed['state']=='SUCCEEDED':return
-                raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
-            except ValueError as exc:
-                if str(exc) not in {'CHANNEL_SWITCH_BLOCKED_BY_PAYMENT_STATE','PAYMENT_INTENT_NOT_READY','ACTIVE_OR_UNKNOWN_ATTEMPT_BLOCKS_RESEND'}:raise
-                # Another worker may have committed the next state. Reload it;
-                # no blanket SQL/network retry and no replacement attempt.
-        raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+        confirmed=omnichannel_payment_service.confirm_contract_simulator(iid,account_id)
+        if confirmed['intent']['payment_intent_id']!=iid or confirmed['intent']['payer_id']!=account_id:
+            raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
+        if confirmed['intent']['state']!='SUCCEEDED':
+            raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+        return confirmed
 
     def checkout_contract(self, vertical:str, order_id:str, account_id:str, source_id:str, evidence_reference:str, payment_method_id:str|None=None):
         if _prod(): raise ValueError('EXTERNAL_PAYMENT_EXECUTOR_REQUIRED')
