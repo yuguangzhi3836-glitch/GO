@@ -1,7 +1,8 @@
 from __future__ import annotations
 from sqlalchemy import select
 from go_hotel.core.config import settings
-from go_hotel.db.session import SessionLocal
+from go_hotel.db.session import SessionLocal, engine
+from sqlalchemy.orm import Session
 from go_hotel.db.models import OrderSupplierFulfillmentRow, OmnichannelPaymentIntentRow, OmnichannelMoneyMovementRow, OmnichannelPaymentAttemptRow
 from go_hotel.services.vertical_source_runtime import vertical_source_runtime_service
 from go_hotel.services.omnichannel_payment import omnichannel_payment_service
@@ -63,6 +64,28 @@ class VerticalTransactionBridge:
                 # no blanket SQL/network retry and no replacement attempt.
         raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
 
+    def _ride_money_graph(self, iid, order_id, evidence_reference):
+        """Reuse one PostgreSQL checkout while preserving the AUTH and CAPTURE commit boundary."""
+        if engine.dialect.name=='sqlite':
+            auth=unified_money_movement_service.create(iid,{'movement_type':'AUTHORIZATION','evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'ride-auth:{order_id}','vertical-transaction-bridge')
+            cap=unified_money_movement_service.create(iid,{'movement_type':'CAPTURE','parent_movement_id':auth['money_movement_id'],'evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'ride-cap:{order_id}','vertical-transaction-bridge')
+            with SessionLocal() as s:
+                f=s.scalar(select(OrderSupplierFulfillmentRow).where(OrderSupplierFulfillmentRow.payment_intent_id==iid))
+                return auth,cap,f
+        # Bind the ORM session to one explicitly-held connection. Session.commit()
+        # still commits AUTH before CAPTURE, so a process exit between the two
+        # leaves the original durable recovery point intact. The connection stays
+        # checked out across those short transactions, avoiding release/reacquire
+        # queueing between money.create calls and the fulfillment read.
+        with engine.connect() as conn:
+            with Session(bind=conn,expire_on_commit=False,autoflush=False) as s:
+                auth=unified_money_movement_service.create_in_session(s,iid,{'movement_type':'AUTHORIZATION','evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'ride-auth:{order_id}','vertical-transaction-bridge')
+                s.commit()
+                cap=unified_money_movement_service.create_in_session(s,iid,{'movement_type':'CAPTURE','parent_movement_id':auth['money_movement_id'],'evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'ride-cap:{order_id}','vertical-transaction-bridge')
+                s.commit()
+                f=s.scalar(select(OrderSupplierFulfillmentRow).where(OrderSupplierFulfillmentRow.payment_intent_id==iid))
+                return auth,cap,f
+
     def checkout_contract(self, vertical:str, order_id:str, account_id:str, source_id:str, evidence_reference:str, payment_method_id:str|None=None):
         if _prod(): raise ValueError('EXTERNAL_PAYMENT_EXECUTOR_REQUIRED')
         if vertical=='RIDE':
@@ -102,10 +125,13 @@ class VerticalTransactionBridge:
             payment_started(vertical, order_id, account_id)
         iid=i['payment_intent_id']
         self._confirm_contract_payment(iid,account_id)
-        auth=unified_money_movement_service.create(iid,{'movement_type':'AUTHORIZATION','evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'{vertical.lower()}-auth:{order_id}','vertical-transaction-bridge')
-        cap=unified_money_movement_service.create(iid,{'movement_type':'CAPTURE','parent_movement_id':auth['money_movement_id'],'evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'{vertical.lower()}-cap:{order_id}','vertical-transaction-bridge')
-        with SessionLocal() as s:
-            f=s.scalar(select(OrderSupplierFulfillmentRow).where(OrderSupplierFulfillmentRow.payment_intent_id==iid))
-            return {'payment_intent_id':iid,'authorization_id':auth['money_movement_id'],'capture_id':cap['money_movement_id'],'supplier_fulfillment_id':f.order_supplier_fulfillment_id if f else None,'state':'PAYMENT_CONFIRMED_AWAITING_SUPPLIER'}
+        if vertical=='RIDE':
+            auth,cap,f=self._ride_money_graph(iid,order_id,evidence_reference)
+        else:
+            auth=unified_money_movement_service.create(iid,{'movement_type':'AUTHORIZATION','evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'{vertical.lower()}-auth:{order_id}','vertical-transaction-bridge')
+            cap=unified_money_movement_service.create(iid,{'movement_type':'CAPTURE','parent_movement_id':auth['money_movement_id'],'evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'{vertical.lower()}-cap:{order_id}','vertical-transaction-bridge')
+            with SessionLocal() as s:
+                f=s.scalar(select(OrderSupplierFulfillmentRow).where(OrderSupplierFulfillmentRow.payment_intent_id==iid))
+        return {'payment_intent_id':iid,'authorization_id':auth['money_movement_id'],'capture_id':cap['money_movement_id'],'supplier_fulfillment_id':f.order_supplier_fulfillment_id if f else None,'state':'PAYMENT_CONFIRMED_AWAITING_SUPPLIER'}
 
 vertical_transaction_bridge=VerticalTransactionBridge()
