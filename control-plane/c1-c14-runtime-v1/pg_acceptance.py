@@ -35,12 +35,11 @@ def count(conn,sql,args=()):
 def run_workers(dsn,workers):
     ps=[]
     for i in range(workers):
-        c=f"C{(i%12)+1}"
         ps.append(subprocess.Popen(["python",str(Path(__file__).with_name("pg_acceptance_worker.py")),
-          "--dsn",dsn,"--c",c,"--worker",f"w{i}"],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True))
+          "--dsn",dsn,"--c","ALL","--worker",f"w{i}"],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True))
     outs=[]
     for p in ps:
-        o,e=p.communicate(timeout=60); outs.append((p.returncode,o,e))
+        o,e=p.communicate(timeout=120); outs.append((p.returncode,o,e))
     return outs
 
 def main():
