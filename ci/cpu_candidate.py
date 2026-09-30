@@ -109,6 +109,24 @@ def main():
                     env=dict(os.environ,EXPECTED_HEAD=sha),cwd=checkout,check=True)
                 from journey_latency.verify import verify_journey
                 round['journey']=verify_journey(journey,sha,tree)
+                # Separate instrumented evidence on this SAME runner. Its
+                # timings/CPU never enter the uninstrumented adoption budget.
+                diagnostic=out/f'{number}-{label}-diagnostic'
+                diagnostic_code=subprocess.call([sys.executable,str(checkout/'ci/cpu_hotspots/transaction_diagnostic.py'),
+                    '--diagnostic','--out',str(diagnostic)],
+                    env=dict(os.environ,EXPECTED_HEAD=sha),cwd=checkout)
+                diagnostic_result=json.loads((diagnostic/'result.json').read_text())
+                diagnostic_binding=json.loads((diagnostic/'binding.json').read_text())
+                diagnostic_correctness=json.loads((diagnostic/'correctness.json').read_text())
+                assert diagnostic_binding['head']==sha and diagnostic_binding['application_tree']==tree
+                assert diagnostic_binding['diagnostic_instrumentation'] is True
+                assert diagnostic_result['correctness']==diagnostic_correctness['status']=='PASS'
+                assert len(diagnostic_correctness['scenarios'])==13
+                assert [x['concurrent_transactions'] for x in diagnostic_result['stages']]==[20,100]
+                assert all(x['errors']==0 and x['sql']=='PASS' for x in diagnostic_result['stages'])
+                assert diagnostic_code in (0,1)
+                round['diagnostic']={'folder':diagnostic.name,'binding':diagnostic_binding,
+                    'result':diagnostic_result,'excluded_from_acceptance':True}
                 summary['rounds'].append(round);write(out/'summary.json',summary)
                 print(json.dumps({k:v for k,v in round.items() if k not in ('environment','resources')}),flush=True)
             finally:git('worktree','remove','--force',str(checkout))

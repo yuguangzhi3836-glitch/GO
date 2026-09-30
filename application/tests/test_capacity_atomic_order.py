@@ -86,6 +86,34 @@ def test_commit_ack_failure_never_releases_claim(monkeypatch, committed):
             assert caught.value.detail['code'] == 'IDEMPOTENCY_IN_PROGRESS'
 
 
+@pytest.mark.parametrize('committed', [False, True])
+def test_real_driver_disconnect_on_both_sides_of_commit(monkeypatch, committed):
+    from sqlalchemy.exc import DBAPIError
+    original = Session.commit
+    def disconnect(session):
+        driver = session.connection().connection.driver_connection
+        if committed:
+            original(session)
+        driver.close()  # Close the real SQLite/psycopg connection, not a mock.
+        if committed:
+            raise ConnectionError('COMMIT_ACK_LOST_AFTER_DISCONNECT')
+        original(session)
+    with synthetic_policy():
+        body = request()
+        with monkeypatch.context() as patch:
+            patch.setattr(Session, 'commit', disconnect)
+            with pytest.raises((DBAPIError, ConnectionError)):
+                rb(body, SimpleNamespace(user_id='atomic-disconnect'), 'atomic-disconnect')
+        assert facts('atomic-disconnect') == ((1, 200) if committed else (0, 102))
+        if committed:
+            rb(body, SimpleNamespace(user_id='atomic-disconnect'), 'atomic-disconnect')
+            assert facts('atomic-disconnect') == (1, 200)
+        else:
+            with pytest.raises(HTTPException) as caught:
+                rb(body, SimpleNamespace(user_id='atomic-disconnect'), 'atomic-disconnect')
+            assert caught.value.detail['code'] == 'IDEMPOTENCY_IN_PROGRESS'
+
+
 def _exit_at_commit(body, key, committed):
     import os
     original = Session.commit

@@ -59,7 +59,7 @@ jobs:
       - name: Validate candidate budget
         if: steps.change.outputs.run == 'true'
         run: python -m pytest ci/test_cpu_candidate.py ci/journey_latency/test_measure.py ci/journey_latency/test_verify.py -q
-      - name: Query reuse payment safety on isolated PostgreSQL
+      - name: Transaction boundaries and money replay safety on isolated PostgreSQL
         if: steps.change.outputs.candidate == 'true'
         working-directory: application
         env:
@@ -69,7 +69,8 @@ jobs:
           TRAVEL_INTELLIGENCE_ENABLED: 'false'
         run: |
           mkdir -p ../cpu-candidate-qualification
-          python -m pytest tests/test_payment_query_reuse.py tests/test_capacity_projection_reads.py -q --junitxml=../cpu-candidate-qualification/payment.xml
+          python -m pytest tests/test_capacity_atomic_order.py tests/test_capacity_atomic_checkout.py tests/test_capacity_money_replay.py -q --junitxml=../cpu-candidate-qualification/payment.xml
+          python -c "import xml.etree.ElementTree as E; s=E.parse('../cpu-candidate-qualification/payment.xml').getroot().find('testsuite'); assert int(s.get('tests')) >= 24; assert all(int(s.get(k, '0')) == 0 for k in ('failures', 'errors', 'skipped'))"
       - name: Baseline-candidate-candidate-baseline; identical harness, no profiler
         if: steps.change.outputs.run == 'true'
         run: python ci/cpu_candidate.py

@@ -1,5 +1,5 @@
 {
-  "candidate_application_tree": null,
+  "candidate_application_tree": "b77840d31f0e31b046d8f3359c35630c75b8a02d",
   "baseline_sha": "059ebec3ab379099ef258effc3ab0a9833d52c35",
-  "reason": "Combined query/projection ABBA 36585892034 rejected: app CPU -9.07%, lifetime CPU -6.26%, P95 -7.76%; exact baseline application restored. Capacity NOT ACCEPTED."
+  "reason": "Three independently revertible transaction changes: atomic local order receipt, fused RIDE root preparation, restricted committed money replay. PostgreSQL qualification required; unchanged CPU -20%, P95 -15%, formal 100 P95<=5000ms. NOT ACCEPTED pending measurements."
 }

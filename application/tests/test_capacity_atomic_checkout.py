@@ -100,6 +100,22 @@ def test_real_process_exit_before_and_after_root_commit(committed):
         assert sum(x.amount_minor * (1 if x.direction == 'DEBIT' else -1) for x in ledger) == 0
 
 
+def test_concurrent_preparation_has_one_root(monkeypatch):
+    oid = order()
+    barrier = Barrier(4)
+    def stop(*args):
+        raise RuntimeError('DURABLE_ROOT_BOUNDARY')
+    monkeypatch.setattr(bridge, '_confirm_contract_payment', stop)
+    def run(_):
+        barrier.wait(10)
+        with pytest.raises(RuntimeError, match='DURABLE_ROOT_BOUNDARY'):
+            checkout(oid)
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        list(pool.map(run, range(4)))
+    assert root_facts(oid) == (1, 1, 'PAYMENT_STARTED')
+
+
+@pytest.mark.skipif(engine.dialect.name != 'postgresql', reason='Full payment transitions require PostgreSQL FOR UPDATE row locks')
 def test_concurrent_checkout_has_one_root_and_capture():
     oid = order()
     barrier = Barrier(4)
