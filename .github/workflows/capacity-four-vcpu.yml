@@ -1,0 +1,51 @@
+name: Separate four-vCPU capacity comparison
+on:
+  pull_request:
+    paths:
+      - 'ci/four_vcpu/**'
+      - '.github/workflows/capacity-four-vcpu.yml'
+permissions:
+  contents: read
+concurrency:
+  group: four-vcpu-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+jobs:
+  compare:
+    # Set only after an actual isolated 4-vCPU runner has been provisioned and
+    # authorized. Empty configuration skips; no invented runner label is queued.
+    if: vars.GO_CAPACITY_4CPU_RUNNER != ''
+    runs-on: ${{ vars.GO_CAPACITY_4CPU_RUNNER }}
+    timeout-minutes: 120
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_multi_only
+          POSTGRES_DB: go_c11_isolated
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U go_ci -d go_c11_isolated" --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      GO_MULTI_DATABASE_URL: postgresql+psycopg://go_ci:isolated_multi_only@127.0.0.1:5432/go_c11_isolated
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python ci/four_vcpu/run.py --preflight-only
+      - run: python -m pip install -e './application[dev]'
+      - run: python -m pytest ci/four_vcpu/test_run.py ci/test_cpu_candidate.py ci/journey_latency/test_measure.py ci/journey_latency/test_verify.py -q
+      - name: Frozen regressions then four-vCPU ABBA; separate from two-vCPU acceptance
+        run: python ci/four_vcpu/run.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: four-vcpu-${{ github.event.pull_request.head.sha }}
+          path: |
+            four-vcpu-qualification/
+            cpu-candidate-evidence/
+          retention-days: 30

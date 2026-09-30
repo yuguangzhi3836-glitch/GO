@@ -375,22 +375,19 @@ class SqlRepository:
             return "REPLAY", rec
 
     def complete_idempotency(self, operation: str, key: str, payload: dict, response: dict, resource_id: str | None = None, response_code: int = 200) -> dict:
-        with SessionLocal.begin() as s:
-            return self.complete_idempotency_in_session(s, operation, key, payload, response, resource_id, response_code)
-
-    def complete_idempotency_in_session(self, s, operation: str, key: str, payload: dict, response: dict, resource_id: str | None = None, response_code: int = 200) -> dict:
-        """Caller commits the local mutation and its receipt together."""
         digest = self.hash_payload(payload)
         table = IdempotencyRow.__table__
-        # Ownership is checked in the write, not in a preceding stale read.
-        changed = s.execute(table.update().where(
-            table.c.operation == operation,
-            table.c.idempotency_key == key,
-            table.c.request_hash == digest,
-        ).values(response_code=response_code, response_body=response,
-                 resource_id=resource_id)).rowcount
-        if changed != 1:
-            raise ValueError("IDEMPOTENCY_CLAIM_LOST")
+        with SessionLocal.begin() as s:
+            # Recheck ownership in the write itself: a preceding read can become
+            # stale if another transaction releases and replaces the claim.
+            changed = s.execute(table.update().where(
+                table.c.operation == operation,
+                table.c.idempotency_key == key,
+                table.c.request_hash == digest,
+            ).values(response_code=response_code, response_body=response,
+                     resource_id=resource_id)).rowcount
+            if changed != 1:
+                raise ValueError("IDEMPOTENCY_CLAIM_LOST")
         return response
 
     def release_idempotency_claim(self, operation: str, key: str, payload: dict) -> None:

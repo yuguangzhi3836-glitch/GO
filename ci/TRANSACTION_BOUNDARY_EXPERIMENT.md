@@ -1,4 +1,85 @@
-# Transaction-boundary candidate — pending PostgreSQL qualification
+# Transaction-boundary candidate — rejected; original application restored
+
+## Verified decision — 2026-09-30
+
+Candidate `4048cbe64d0551130618d5d028204f770143aab7` is **NOT ADOPTED**.
+Restore exact original application `6570b66bc977f89c0311d67bdc6b721cd70d4e09`.
+Keep all three implementation commits and candidate evidence in history. Draft #279 remains open.
+
+[ABBA run 36665715345](https://github.com/yuguangzhi3836-glitch/GO/actions/runs/36665715345) is **INVALID_COMPARISON_NOT_EVALUATED**: its fourth baseline continued create-order batch at requested100 achieved actual peak99. The full transaction main measurements did complete all four rounds, at actual20/100 overlap, and fail both screening targets. These complete main measurements are useful rejection evidence, not a valid complete ABBA acceptance. No retry was selected to hide the shortfall.
+
+| Main full transactions, 100 actors; two-round medians | Baseline | Candidate | Reduction |
+|---|---:|---:|---:|
+| Application CPU seconds | 10.440037 | 9.758867 | 6.52% |
+| Whole worker lifetime CPU seconds | 18.027909 | 17.332227 | 3.86% |
+| P95 ms | 7895.358639 | 7522.084423 | 4.73% |
+| P99 ms | 7964.721595 | 7575.241660 | 4.89% |
+
+Required: application CPU reduction20%, lifetime CPU20%, P95 reduction15%; P99 no regression; RSS<=+10%. Measured RSS ratio1.004701. **Screening goals failed; no adoption.**
+
+Safety: 24 new PostgreSQL tests PASS, zero skips/failures/errors; frozen250 PostgreSQL regressions PASS, zero skips/failures/errors. Every main round passed13 correctness/recovery scenarios. Formal raw230-file manifest and ABBA3256-file manifest verified, plus all three ZIP digests. Four normal rounds were independently recomputed from raw durations, process counters, exact overlap and balanced ledger facts. The supplementary batch shortfall is retained, not corrected or excluded to manufacture a complete comparison.
+
+### Original frozen formal gate
+
+[Run36665714654](https://github.com/yuguangzhi3836-glitch/GO/actions/runs/36665714654), 2vCPU AMD EPYC7763, two service workers, pool5/overflow0:
+
+| Concurrent full transactions | P95 ms | P99 ms | Errors | Gate |
+|---:|---:|---:|---:|---|
+| 20 | 2382.408401 | 2382.657274 | 0 | PASS |
+| 100 | 7856.219058 | 7922.968890 | 0 | FAIL |
+
+P95<=5000ms remains mandatory. No250/500/1000 tier ran. 120 final orders each had exactly one attempt, two balanced ledger entries and capture/debit/credit16800. This is service/route synthetic measurement, omitting HTTP/auth/network and real suppliers/PSPs.
+
+### Same-machine cold and continued phase measurements
+
+Below are medians across both rounds per variant; continued uses three subsequent bursts per round, not a soak. Values are P95/P99 milliseconds and application process CPU seconds. These measurements are supplementary to the failed main screening. The entire baseline100-create continued cell is marked INVALID because one of its six batches reached99/100; its value is not silently dropped. Other cells describe verified individual raw batches, not a valid whole-run acceptance. Phase percentiles cannot be added.
+
+| Actors | Operation | Mode | Baseline P95 / P99 / CPU s | Candidate P95 / P99 / CPU s |
+|---:|---|---|---:|---:|
+| 20 | full_transaction | Cold | 2265.948 / 2275.848 / 3.202 | 2193.573 / 2197.927 / 3.104 |
+| 20 | full_transaction | Continued | 1337.849 / 1358.047 / 1.592 | 1221.602 / 1233.568 / 1.428 |
+| 20 | create_order | Cold | 1024.957 / 1028.409 / 1.792 | 960.248 / 961.002 / 1.710 |
+| 20 | create_order | Continued | 195.837 / 196.838 / 0.247 | 188.915 / 189.991 / 0.235 |
+| 20 | payment_confirm | Cold | 1472.325 / 1474.461 / 2.259 | 1528.557 / 1529.222 / 2.135 |
+| 20 | payment_confirm | Continued | 590.280 / 594.442 / 0.683 | 528.912 / 532.062 / 0.593 |
+| 20 | order_query | Cold | 871.676 / 872.280 / 1.592 | 884.240 / 885.624 / 1.579 |
+| 20 | order_query | Continued | 71.680 / 72.140 / 0.091 | 70.822 / 70.999 / 0.090 |
+| 100 | full_transaction | Cold | 7977.918 / 8019.130 / 10.097 | 7491.013 / 7556.568 / 9.472 |
+| 100 | full_transaction | Continued | 6681.416 / 6773.645 / 8.077 | 6286.624 / 6369.231 / 7.463 |
+| 100 | create_order | Cold | 1753.161 / 1807.952 / 2.795 | 1789.751 / 1809.257 / 2.727 |
+| 100 | create_order | Continued | INVALID (peak99/100) | 853.014 / 870.876 / 1.238 |
+| 100 | payment_confirm | Cold | 3753.974 / 3853.011 / 5.108 | 3516.483 / 3656.812 / 4.699 |
+| 100 | payment_confirm | Continued | 2973.805 / 3107.209 / 3.551 | 2712.096 / 2754.635 / 3.086 |
+| 100 | order_query | Cold | 1126.562 / 1145.765 / 1.943 | 1152.457 / 1165.098 / 1.971 |
+| 100 | order_query | Continued | 342.592 / 355.849 / 0.463 | 338.140 / 355.432 / 0.460 |
+
+### Separate instrumented database diagnostics (incomplete ABBA)
+
+Only rounds1baseline,2candidate,3candidate reached diagnostics; round4 stopped on the journey shortfall. These are diagnostic observations, **not an ABBA estimate of wait reduction**. Queue/SQL/hold sums overlap across threads and are not end-to-end latency or database-server CPU; SQL wall includes transport and scheduling. Cold/continued phase CPU above is uninstrumented; diagnostic collection covers separately launched cold full transactions.
+
+| Round | Actors | SQL executions | Connection acquisitions | Pool queue sum s | Connection hold sum s | SQL wall sum s |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 baseline | 20 | 2280 | 420 | 16.954 | 13.402 | 9.832 |
+| 1 baseline | 100 | 11400 | 2100 | 637.836 | 69.458 | 50.611 |
+| 2 candidate | 20 | 2240 | 360 | 14.975 | 13.835 | 10.223 |
+| 2 candidate | 100 | 11200 | 1800 | 576.822 | 66.099 | 49.144 |
+| 3 candidate | 20 | 2240 | 360 | 14.317 | 12.800 | 9.293 |
+| 3 candidate | 100 | 11200 | 1800 | 582.700 | 67.333 | 49.807 |
+
+Connection acquisitions fell21→18 per actor as designed; measured CPU savings still miss the target. Baseline and candidate retain the dominant service CPU and database-wait work. Do not infer that extending transaction scope further is safe or that merely increasing the pool solves this.
+
+### Hardware step and evidence
+
+The [four-vCPU driver](four_vcpu/README.md) is prepared, with hardware/quota guards and an immutable detached candidate checkout. Its38 combined guard/harness tests passed locally. **4vCPU has not run: execution resource pending.** Repository runner settings on2026-09-30 show no configured self-hosted runners; current capacity workflows use2vCPU. An actual approved isolated4vCPU x86_64 runner label is needed. No label, capacity benefit, cost, purchase, registration or permission grant is invented. Original2vCPU remainsFAIL regardless of future4vCPU results.
+
+- ABBA artifact11077515662: `d310f0ae7d2256202e2a4895c68d76695d4b61f7315c949f7adc8c2782c0fd67`
+- Formal artifact11076950329: `7fb35272de968598e6e9bf716df4fd301df5cf70b3cfddeb3f5cac79b908b34c`
+- Journey artifact11076003613: `2be563629dbb10ab06a74b8f1da487c3cfd0d4e39662e311e9970bf06b298fca`
+
+Standalone journey36665714685 verified960 orders, but is a different runner and is not used to calculate optimization speedup. C14→C13 remain pending; funding screenshot does not constitute an API probe or review approval.
+
+---
+
 
 Scope: Draft PR #279 only. No merge, deployment, Hong Kong, supplier or real
 payment access. Frozen baseline: 059ebec3ab379099ef258effc3ab0a9833d52c35,

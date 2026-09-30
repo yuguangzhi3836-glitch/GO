@@ -1,0 +1,243 @@
+{
+  "head": "4048cbe64d0551130618d5d028204f770143aab7",
+  "status": "INVALID_COMPARISON_NOT_EVALUATED",
+  "decision": "REJECT_RESTORE_ORIGINAL_APPLICATION",
+  "verified_files": 3256,
+  "new_pg_tests": 24,
+  "original_pg_tests": 250,
+  "formal": {
+    "admission_active_per_instance": 0,
+    "correctness": "PASS",
+    "mode": "NORMAL_STAIRCASE",
+    "scope": "two independent service processes, shared PostgreSQL; not HTTP/auth/production or million-online proof",
+    "stages": [
+      {
+        "admission_wait_p95_ms": 0,
+        "completed_per_second": 8.381683894090575,
+        "concurrent_transactions": 20,
+        "errors": 0,
+        "observed_peak_executing": 20,
+        "observed_peak_inflight": 20,
+        "p95_ms": 2382.408401,
+        "p99_ms": 2382.657274,
+        "pass": true,
+        "process_ids": [
+          7630,
+          7631
+        ],
+        "sql": "PASS",
+        "transactions": 20
+      },
+      {
+        "admission_wait_p95_ms": 0,
+        "completed_per_second": 12.585222709200382,
+        "concurrent_transactions": 100,
+        "errors": 0,
+        "observed_peak_executing": 100,
+        "observed_peak_inflight": 100,
+        "p95_ms": 7856.219058,
+        "p99_ms": 7922.96889,
+        "pass": false,
+        "process_ids": [
+          7743,
+          7744
+        ],
+        "sql": "PASS",
+        "transactions": 100
+      }
+    ],
+    "status": "STOPPED_AT_FAILED_TIER"
+  },
+  "screening_only_budget": {
+    "medians": {
+      "baseline": {
+        "cpu_seconds": 10.440037,
+        "cpu_lifetime_seconds": 18.027909,
+        "p95_ms": 7895.358639,
+        "p99_ms": 7964.721595,
+        "max_worker_rss_kib": 186332.0
+      },
+      "candidate": {
+        "cpu_seconds": 9.7588675,
+        "cpu_lifetime_seconds": 17.3322265,
+        "p95_ms": 7522.0844225,
+        "p99_ms": 7575.2416605,
+        "max_worker_rss_kib": 187208.0
+      }
+    },
+    "ratios": {
+      "cpu_seconds": 0.9347541105457767,
+      "cpu_lifetime_seconds": 0.9614108047694272,
+      "p95_ms": 0.9527223228776245,
+      "p99_ms": 0.951099366141749,
+      "max_worker_rss_kib": 1.004701285876822
+    },
+    "limits": {
+      "cpu_seconds": 0.8,
+      "cpu_lifetime_seconds": 0.8,
+      "p95_ms": 0.85,
+      "p99_ms": 1.0,
+      "max_worker_rss_kib": 1.1
+    },
+    "ranges": {
+      "baseline": {
+        "cpu_seconds": {
+          "min": 10.419962,
+          "max": 10.460111999999999
+        },
+        "cpu_lifetime_seconds": {
+          "min": 17.944921,
+          "max": 18.110897
+        },
+        "p95_ms": {
+          "min": 7863.872516,
+          "max": 7926.844762
+        },
+        "p99_ms": {
+          "min": 7912.970776,
+          "max": 8016.472414
+        },
+        "max_worker_rss_kib": {
+          "min": 186048,
+          "max": 186616
+        }
+      },
+      "candidate": {
+        "cpu_seconds": {
+          "min": 9.703291,
+          "max": 9.814443999999998
+        },
+        "cpu_lifetime_seconds": {
+          "min": 17.314078000000002,
+          "max": 17.350375
+        },
+        "p95_ms": {
+          "min": 7496.821383,
+          "max": 7547.347462
+        },
+        "p99_ms": {
+          "min": 7540.066342,
+          "max": 7610.416979
+        },
+        "max_worker_rss_kib": {
+          "min": 187208,
+          "max": 187208
+        }
+      }
+    },
+    "paired_ratios": [
+      {
+        "cpu_seconds": 0.9418886556400108,
+        "cpu_lifetime_seconds": 0.9668682854608276,
+        "p95_ms": 0.9597494677900752,
+        "p99_ms": 0.9617648282086868,
+        "max_worker_rss_kib": 1.0031722896214688
+      },
+      {
+        "cpu_seconds": 0.9276469506253854,
+        "cpu_lifetime_seconds": 0.9560033387633976,
+        "p95_ms": 0.9457510028376661,
+        "p99_ms": 0.9405716071363257,
+        "max_worker_rss_kib": 1.006234950120399
+      }
+    ],
+    "adoption_authorized": false,
+    "review_required": [
+      "Exclude costs moved before CPU measurement window",
+      "Inspect per-round variation; two rounds per label are screening only",
+      "Verify transaction semantics and pass the separate original formal staircase"
+    ],
+    "meets_budget": false
+  },
+  "invalid_batches": [
+    {
+      "round": 4,
+      "label": "baseline",
+      "operation": "create_order",
+      "concurrency": 100,
+      "valid_concurrency": false,
+      "batch": 2,
+      "batch_span_seconds": 1.2086614,
+      "errors": 0,
+      "max_ms": 1199.553479,
+      "max_worker_rss_kib": 170952,
+      "mode": "CONTINUED_PROCESS",
+      "observed_peak_inflight": 99,
+      "p50_ms": 700.130322,
+      "p95_ms": 1122.900591,
+      "p99_ms": 1193.309838,
+      "pids": [
+        21408,
+        21409
+      ],
+      "process_cpu_seconds": 1.6775029999999997,
+      "release_ns": 2242139946632,
+      "requested_concurrency": 100,
+      "requests": 100,
+      "successful_per_second_in_burst": 82.73615753758662
+    }
+  ],
+  "diagnostics_incomplete_abba": [
+    {
+      "round": 1,
+      "label": "baseline",
+      "actors": 20,
+      "sql_executions": 2280,
+      "acquisitions": 420,
+      "pool_wait_seconds": 16.954069199999026,
+      "hold_seconds": 13.40156237099984,
+      "sql_wall_seconds": 9.831764401999749
+    },
+    {
+      "round": 1,
+      "label": "baseline",
+      "actors": 100,
+      "sql_executions": 11400,
+      "acquisitions": 2100,
+      "pool_wait_seconds": 637.835705053002,
+      "hold_seconds": 69.4584774929998,
+      "sql_wall_seconds": 50.61069077899879
+    },
+    {
+      "round": 2,
+      "label": "candidate",
+      "actors": 20,
+      "sql_executions": 2240,
+      "acquisitions": 360,
+      "pool_wait_seconds": 14.97520026000052,
+      "hold_seconds": 13.83491626500063,
+      "sql_wall_seconds": 10.22276481599988
+    },
+    {
+      "round": 2,
+      "label": "candidate",
+      "actors": 100,
+      "sql_executions": 11200,
+      "acquisitions": 1800,
+      "pool_wait_seconds": 576.8221923379986,
+      "hold_seconds": 66.0994776149978,
+      "sql_wall_seconds": 49.144209922992104
+    },
+    {
+      "round": 3,
+      "label": "candidate",
+      "actors": 20,
+      "sql_executions": 2240,
+      "acquisitions": 360,
+      "pool_wait_seconds": 14.317209934998573,
+      "hold_seconds": 12.800264923999293,
+      "sql_wall_seconds": 9.292742503993622
+    },
+    {
+      "round": 3,
+      "label": "candidate",
+      "actors": 100,
+      "sql_executions": 11200,
+      "acquisitions": 1800,
+      "pool_wait_seconds": 582.7004447450013,
+      "hold_seconds": 67.33274844799666,
+      "sql_wall_seconds": 49.80703769298998
+    }
+  ],
+  "four_vcpu": "NOT_RUN_RESOURCE_PENDING"
+}

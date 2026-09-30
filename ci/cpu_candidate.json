@@ -1,5 +1,5 @@
 {
-  "candidate_application_tree": "b77840d31f0e31b046d8f3359c35630c75b8a02d",
+  "candidate_application_tree": null,
   "baseline_sha": "059ebec3ab379099ef258effc3ab0a9833d52c35",
-  "reason": "Three independently revertible transaction changes: atomic local order receipt, fused RIDE root preparation, restricted committed money replay. PostgreSQL qualification required; unchanged CPU -20%, P95 -15%, formal 100 P95<=5000ms. NOT ACCEPTED pending measurements."
+  "reason": "Transaction candidate 4048cbe rejected: complete main rounds CPU -6.52%, P95 -4.73%; supplementary ABBA invalid (99/100 overlap); original 2-vCPU formal P95 7856.219ms FAIL. Restore original application; isolated 4-vCPU candidate remains pinned separately."
 }

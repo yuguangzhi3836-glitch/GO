@@ -22,9 +22,6 @@ class MobilityService:
     def create_ride(self, account, body):
         return ride_service.create(account, body)
 
-    def create_ride_in_session(self, session, account, body):
-        return ride_service.create_in_session(session, account, body)
-
     def rental_search(self, **kwargs):
         return rental_service.search(**kwargs)
 

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from sqlalchemy import bindparam, select
+from sqlalchemy import select
 from go_hotel.core.config import settings
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import OrderSupplierFulfillmentRow, OmnichannelPaymentIntentRow, OmnichannelMoneyMovementRow, OmnichannelPaymentAttemptRow
@@ -11,29 +11,11 @@ from go_hotel.autonomy.durable import transaction
 OFFICIAL={'FLIGHT':'AIRLINE_OFFICIAL','RAIL':'RAIL_OPERATOR_OFFICIAL','RIDE':'FLEET_OFFICIAL','RENTAL':'RENTAL_COMPANY_OFFICIAL','ATTRACTION':'ATTRACTION_OFFICIAL'}
 BTYPE={'FLIGHT':'FLIGHT_ORDER','RAIL':'RAIL_ORDER','RIDE':'RIDE_ORDER','RENTAL':'RENTAL_ORDER','ATTRACTION':'ATTRACTION_ORDER'}
 
-# Cache query shapes only. Each execution reads fresh facts in its own session;
-# no ORM instances or payment results are shared between requests or processes.
-_EXISTING_INTENT = select(
-    OmnichannelPaymentIntentRow.payment_intent_id,
-    OmnichannelPaymentIntentRow.payer_id,
-    OmnichannelPaymentIntentRow.state,
-).where(OmnichannelPaymentIntentRow.business_type == bindparam('business_type'),
-        OmnichannelPaymentIntentRow.business_id == bindparam('business_id'))
-_PAYMENT_STATE = select(OmnichannelPaymentIntentRow.payer_id,
-    OmnichannelPaymentIntentRow.state).where(
-    OmnichannelPaymentIntentRow.payment_intent_id == bindparam('intent_id'))
-_PENDING_ATTEMPTS = select(OmnichannelPaymentAttemptRow.payment_attempt_id,
-    OmnichannelPaymentAttemptRow.external_invoked).where(
-    OmnichannelPaymentAttemptRow.payment_intent_id == bindparam('intent_id'),
-    OmnichannelPaymentAttemptRow.state == 'CONTRACT_READY_NOT_EXTERNAL').limit(2)
-_FULFILLMENT_ID = select(OrderSupplierFulfillmentRow.order_supplier_fulfillment_id).where(
-    OrderSupplierFulfillmentRow.payment_intent_id == bindparam('intent_id'))
-
 def _prod(): return settings.app_env.strip().lower() in {'prod','production'}
 
 class VerticalTransactionBridge:
     def _existing_intent_in(self, s, vertical, order_id, account_id):
-        existing=s.execute(_EXISTING_INTENT,{'business_type':BTYPE[vertical],'business_id':order_id}).first()
+        existing=s.scalar(select(OmnichannelPaymentIntentRow).where(OmnichannelPaymentIntentRow.business_type==BTYPE[vertical],OmnichannelPaymentIntentRow.business_id==order_id))
         if existing and existing.payer_id!=account_id:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
         return {'payment_intent_id':existing.payment_intent_id,'state':existing.state} if existing else None
 
@@ -47,14 +29,14 @@ class VerticalTransactionBridge:
         # This bounded reconciliation does not send an external payment.
         for _ in range(8):
             with SessionLocal() as s:
-                i=s.execute(_PAYMENT_STATE,{'intent_id':iid}).first()
+                i=s.get(OmnichannelPaymentIntentRow,iid)
                 if not i or i.payer_id!=account_id:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
                 state=i.state
                 if state=='SUCCEEDED':return
                 if state=='UNKNOWN_EXTERNAL_STATE':raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
-                # Two rows suffice to reject ambiguity; never load an unbounded
-                # attempt history merely to decide whether exactly one exists.
-                pending=s.execute(_PENDING_ATTEMPTS,{'intent_id':iid}).all() if state=='CONTRACT_READY_NOT_EXTERNAL' else []
+                pending=list(s.scalars(select(OmnichannelPaymentAttemptRow).where(
+                    OmnichannelPaymentAttemptRow.payment_intent_id==iid,
+                    OmnichannelPaymentAttemptRow.state=='CONTRACT_READY_NOT_EXTERNAL'))) if state=='CONTRACT_READY_NOT_EXTERNAL' else []
                 if len(pending)>1 or any(a.external_invoked for a in pending):raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
                 aid=pending[0].payment_attempt_id if pending else None
             try:
@@ -86,21 +68,17 @@ class VerticalTransactionBridge:
         if vertical=='RIDE':
             from go_hotel.db.models import MobilityRideOrderRow
             from go_hotel.mobility.ride.cancellation_policy import accepted_in
-            from go_hotel.services.vertical_reservation_expiry import guard_checkout_payment_in, confirm_payment_started_in
+            from go_hotel.services.vertical_reservation_expiry import guard_checkout_payment_in
             with transaction(SessionLocal) as s:
                 order=s.get(MobilityRideOrderRow,order_id,with_for_update=True)
                 if not order or order.account_id!=account_id:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
                 accepted_in(s,order)
                 guard_checkout_payment_in(s,vertical,order,account_id)
                 i=self._existing_intent_in(s,vertical,order_id,account_id)
+                # This read needs no separate connection after the order guard.
+                # Only the snapshot crosses this boundary; no Session is shared
+                # with the independently committed payment transitions below.
                 source=vertical_source_runtime_service.latest_in(s,vertical,order_id)
-                if not source:
-                    source=vertical_source_runtime_service.decide_in(s,vertical,order_id,[{'source_id':source_id,'source_type':OFFICIAL[vertical],'authorized':True,'available':True,'evidence_reference':evidence_reference}])
-                if i is None:
-                    i=omnichannel_payment_service.create_intent_in_session(s,{'business_type':BTYPE[vertical],'business_id':order_id,'channel_priority':['LOCAL_MARKET']},f'{vertical.lower()}-checkout:{order_id}',account_id)
-                confirm_payment_started_in(s,vertical,order,account_id)
-            # This local root is now durable. Channel selection, attempts,
-            # authorization and capture keep their independent recovery commits.
         if vertical=='RENTAL':
             from go_hotel.services.vertical_reservation_expiry import guard_checkout_payment
             guard_checkout_payment(vertical, order_id, account_id)
@@ -119,7 +97,7 @@ class VerticalTransactionBridge:
                 # bridge resumes that obligation; it does not change its amount.
                 i=self._existing_intent(vertical,order_id,account_id)
                 if i is None:raise
-        if vertical=='RENTAL':
+        if vertical in {'RIDE','RENTAL'}:
             from go_hotel.services.vertical_reservation_expiry import payment_started
             payment_started(vertical, order_id, account_id)
         iid=i['payment_intent_id']
@@ -127,7 +105,7 @@ class VerticalTransactionBridge:
         auth=unified_money_movement_service.create(iid,{'movement_type':'AUTHORIZATION','evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'{vertical.lower()}-auth:{order_id}','vertical-transaction-bridge')
         cap=unified_money_movement_service.create(iid,{'movement_type':'CAPTURE','parent_movement_id':auth['money_movement_id'],'evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'{vertical.lower()}-cap:{order_id}','vertical-transaction-bridge')
         with SessionLocal() as s:
-            fulfillment_id=s.scalar(_FULFILLMENT_ID,{'intent_id':iid})
-            return {'payment_intent_id':iid,'authorization_id':auth['money_movement_id'],'capture_id':cap['money_movement_id'],'supplier_fulfillment_id':fulfillment_id,'state':'PAYMENT_CONFIRMED_AWAITING_SUPPLIER'}
+            f=s.scalar(select(OrderSupplierFulfillmentRow).where(OrderSupplierFulfillmentRow.payment_intent_id==iid))
+            return {'payment_intent_id':iid,'authorization_id':auth['money_movement_id'],'capture_id':cap['money_movement_id'],'supplier_fulfillment_id':f.order_supplier_fulfillment_id if f else None,'state':'PAYMENT_CONFIRMED_AWAITING_SUPPLIER'}
 
 vertical_transaction_bridge=VerticalTransactionBridge()

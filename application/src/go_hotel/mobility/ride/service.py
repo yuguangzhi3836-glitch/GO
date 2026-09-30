@@ -38,11 +38,6 @@ class RideService:
                     ('ride_standard', 'COMFORT', 16800, 60), ('ride_premium', 'PREMIUM', 26800, 90)]]
 
     def create(self, account: str, body: dict):
-        with SessionLocal.begin() as s:
-            return self.create_in_session(s, account, body)
-
-    def create_in_session(self, s, account: str, body: dict):
-        """Caller owns commit; order, source and API receipt can be atomic."""
         production_truth_required("RIDE", "CREATE_ORDER")
         # These engineering offers have fixed CNY prices; accepting another
         # currency would relabel the amount without a supplier fare or FX quote.
@@ -55,7 +50,8 @@ class RideService:
         total = prices.get(body["offer_id"])
         if total is None:
             raise ValueError("RIDE_OFFER_NOT_FOUND")
-        o = MobilityRideOrderRow(
+        with SessionLocal.begin() as s:
+            o = MobilityRideOrderRow(
                 order_id=new_id("ride_ord"), account_id=account, status="PAYMENT_PENDING",
                 pickup=body["pickup"], dropoff=body["dropoff"], pickup_at=body["pickup_at"],
                 vehicle_class="PREMIUM" if body["offer_id"] == "ride_premium" else "COMFORT",
@@ -63,22 +59,23 @@ class RideService:
                 passengers=body.get("passengers", []), flight_no=body.get("flight_no"),
                 supplier_reference=None,
                 created_at=now(), updated_at=now(),
-        )
-        s.add(o); s.flush()
-        from go_hotel.services.vertical_reservation_expiry import issue_in
-        issue_in(s, "RIDE", o)
-        append_vertical_evidence(s, "RIDE", o.order_id, "ORDER_CREATED", o.status, {"offer_id": body["offer_id"], "external_live": False})
-        cancellation_policy.freeze_in(s, o, body['offer_id'], body.get('cancellation_policy_hash'))
-        snapshot_policy(s, o, body['offer_id'])
-        if body.get('flight_tracking_enabled'):
-            flight_ride_sync.bind_in(s, account, o.order_id, {
+            )
+            s.add(o); s.flush()
+            from go_hotel.services.vertical_reservation_expiry import issue_in
+            issue_in(s, "RIDE", o)
+            append_vertical_evidence(s, "RIDE", o.order_id, "ORDER_CREATED", o.status, {"offer_id": body["offer_id"], "external_live": False})
+            cancellation_policy.freeze_in(s, o, body['offer_id'], body.get('cancellation_policy_hash'))
+            snapshot_policy(s, o, body['offer_id'])
+            if body.get('flight_tracking_enabled'):
+                flight_ride_sync.bind_in(s, account, o.order_id, {
                     'flight_identity': body.get('flight_identity'), 'authority_id': body.get('flight_authority_id'),
                     'tracking_enabled': True, 'delay_protection_enabled': body.get('delay_protection_enabled', False),
                     'expected_revision': 0}, creating=True)
-        result=self.out(o)
-        result["service_policy"]=engineering_policy(body["offer_id"])
-        # Failure rolls back both facts before the API releases its claim.
-        vertical_source_runtime_service.decide_in(s,"RIDE",result["order_id"],[{"source_id":"ride-engineering-source","source_type":"FLEET_OFFICIAL","authorized":True,"available":True,"evidence_reference":f"ride-offer://{body['offer_id']}"}])
+            result=self.out(o)
+            result["service_policy"]=engineering_policy(body["offer_id"])
+            # Failure must roll back both facts before the API releases its
+            # idempotency claim; a retry must not create a second native order.
+            vertical_source_runtime_service.decide_in(s,"RIDE",result["order_id"],[{"source_id":"ride-engineering-source","source_type":"FLEET_OFFICIAL","authorized":True,"available":True,"evidence_reference":f"ride-offer://{body['offer_id']}"}])
         return result
 
     def out(self, o):
