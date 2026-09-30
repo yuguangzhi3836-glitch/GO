@@ -16,6 +16,14 @@ _INTENT_LOCK = select(Intent).where(Intent.payment_intent_id==bindparam('intent_
 _MOVEMENT_KEY_LOCK = select(Movement).where(Movement.idempotency_key==bindparam('movement_key')).with_for_update()
 _MOVEMENTS_LOCK = select(Movement).where(Movement.root_payment_intent_id==bindparam('intent_id')).with_for_update()
 _FULFILLMENT_LOCK = select(Fulfillment).where(Fulfillment.payment_intent_id==bindparam('intent_id')).with_for_update()
+# Core columns avoid ORM hydration and do not configure mappers at import time.
+# One committed snapshot for replay only. Never cache rows or financial results.
+_REPLAY_INTENT = Intent.__table__
+_REPLAY_MOVEMENT = Movement.__table__
+_CONFIRMED_RIDE_REPLAY = (select(_REPLAY_INTENT.c.amount_minor.label('_root_amount'), *_REPLAY_MOVEMENT.c)
+ .select_from(_REPLAY_INTENT.join(_REPLAY_MOVEMENT, _REPLAY_MOVEMENT.c.idempotency_key==bindparam('movement_key')))
+ .where(_REPLAY_INTENT.c.payment_intent_id==bindparam('intent_id'),
+        _REPLAY_INTENT.c.business_type=='RIDE_ORDER', _REPLAY_MOVEMENT.c.state=='CONFIRMED'))
 def now():return datetime.now(timezone.utc)
 def ident(p):return f'{p}_{uuid.uuid4().hex}'
 def digest(x):return hashlib.sha256(json.dumps(x,sort_keys=True,separators=(',',':'),default=str).encode()).hexdigest()
@@ -31,8 +39,23 @@ class UnifiedMoneyMovementService:
   if b.get('mode')=='EXTERNAL_CERTIFIED_FACT':raise ValueError('EXTERNAL_CERTIFIED_FACT_TRUSTED_INGRESS_REQUIRED')
   with SessionLocal() as s:
    if s.bind.dialect.name=='sqlite':s.execute(text('BEGIN IMMEDIATE'))
-   result=self.create_in_session(s,intent_id,b,key,actor)
+   result=self._confirmed_ride_replay(s,intent_id,b,key) if b['movement_type'] in {'AUTHORIZATION','CAPTURE'} else None
+   if result is None:result=self.create_in_session(s,intent_id,b,key,actor)
    s.commit();return result
+ def _confirmed_ride_replay(self,s,intent_id,b,key):
+  """Read-only RIDE replay; a miss must recheck under the original locks.
+
+  Rental verified-source scope and all other verticals use the original path.
+  No new movement, ledger, fulfillment or payment state may be written here.
+  A concurrent uncommitted movement is invisible and takes the locked fallback.
+  """
+  row=s.execute(_CONFIRMED_RIDE_REPLAY,{'intent_id':intent_id,'movement_key':key}).mappings().one_or_none()
+  if row is None:return None
+  amount=b.get('amount_minor',row['_root_amount'])
+  if type(amount) is not int:raise ValueError('INTEGER_MOVEMENT_AMOUNT_REQUIRED')
+  if (row['root_payment_intent_id'],row['movement_type'],row['amount_minor'],row['parent_movement_id'])!=(intent_id,b['movement_type'],amount,b.get('parent_movement_id')):
+   raise ValueError('MONEY_MOVEMENT_IDEMPOTENCY_CONFLICT')
+  return {c.name:(row[c.name].isoformat() if isinstance(row[c.name],datetime) else row[c.name]) for c in Movement.__table__.columns}
  def record_verified_external_fact(self,intent_id,b,key,actor,receipt_id):
   """Only a durable, signature-verified payment callback receipt may enter this path."""
   with SessionLocal() as s:
