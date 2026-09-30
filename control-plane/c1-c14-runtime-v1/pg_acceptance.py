@@ -35,11 +35,22 @@ def count(conn,sql,args=()):
 def run_workers(dsn,workers):
     ps=[]
     for i in range(workers):
-        ps.append(subprocess.Popen(["python",str(Path(__file__).with_name("pg_acceptance_worker.py")),
-          "--dsn",dsn,"--c","ALL","--worker",f"w{i}"],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True))
+        ps.append(subprocess.Popen(
+            ["python",str(Path(__file__).with_name("pg_acceptance_worker.py")),
+             "--dsn",dsn,"--c","ALL","--worker",f"w{i}","--batch","100"],
+            stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True))
+    deadline=time.time()+90
+    while time.time()<deadline and any(p.poll() is None for p in ps):
+        time.sleep(0.25)
     outs=[]
     for p in ps:
-        o,e=p.communicate(timeout=120); outs.append((p.returncode,o,e))
+        if p.poll() is None:
+            p.kill()
+            _,e=p.communicate(timeout=5)
+            outs.append((124,"",e+"\nTIMEOUT_KILLED"))
+        else:
+            _,e=p.communicate(timeout=5)
+            outs.append((p.returncode,"",e))
     return outs
 
 def main():
@@ -53,7 +64,16 @@ def main():
         succ=count(conn,"SELECT count(*) FROM c_runtime_task WHERE status='SUCCEEDED'")
         effects=count(conn,"SELECT count(*) FROM c_runtime_effect")
         dup_effects=count(conn,"SELECT count(*) FROM (SELECT effect_key,count(*) n FROM c_runtime_effect GROUP BY effect_key HAVING count(*)>1) x")
-        observations[str(wc)]={"succ":succ,"effects":effects,"dup_effects":dup_effects,"rc":[x[0] for x in outs]}
+        with conn.cursor() as cur:
+            cur.execute("""SELECT wait_event_type,wait_event,state,count(*)
+                           FROM pg_stat_activity
+                           WHERE datname=current_database()
+                           GROUP BY wait_event_type,wait_event,state
+                           ORDER BY count(*) DESC""")
+            waits=[list(r) for r in cur.fetchall()]
+        observations[str(wc)]={"succ":succ,"effects":effects,"dup_effects":dup_effects,
+                               "rc":[x[0] for x in outs],"stderr":[x[2][-1000:] for x in outs],
+                               "waits":waits}
         contention = contention and succ==1000 and effects==1000 and dup_effects==0 and all(x[0]==0 for x in outs)
     record("claim_contention",contention,observations=observations)
 
