@@ -533,7 +533,7 @@ class Runtime:
             rows = conn.execute(
                 """SELECT DISTINCT owner_c FROM tasks
                    WHERE status='QUEUED' AND available_at<=? ORDER BY owner_c""",
-                (cutoff,),
+                (now,),
             ).fetchall()
         return [str(r["owner_c"]) for r in rows]
 
