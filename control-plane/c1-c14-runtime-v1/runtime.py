@@ -488,35 +488,36 @@ class Runtime:
         Expired RUNNING tasks are requeued while attempts remain. Exhausted tasks
         become ESCALATED and require review. Agent liveness becomes STALE.
         """
-        now = time.time() if now is None else now
+        cutoff = time.time() if now is None else now
+        wall_now = time.time()
         requeued = escalated = stale_agents = 0
         exhausted: list[tuple[str, str]] = []
         with self.tx() as conn:
             rows = conn.execute(
                 """SELECT task_id,owner_c,attempts,max_attempts FROM tasks
                    WHERE status='RUNNING' AND lease_until IS NOT NULL AND lease_until<?""",
-                (now,),
+                (cutoff,),
             ).fetchall()
             for row in rows:
                 if int(row["attempts"]) < int(row["max_attempts"]):
                     conn.execute(
                         """UPDATE tasks SET status='QUEUED',lease_owner=NULL,lease_until=NULL,
                            available_at=?,last_error='LEASE_EXPIRED',updated_at=? WHERE task_id=?""",
-                        (now, now, row["task_id"]),
+                        (wall_now, wall_now, row["task_id"]),
                     )
                     requeued += 1
                 else:
                     conn.execute(
                         """UPDATE tasks SET status='ESCALATED',lease_owner=NULL,lease_until=NULL,
                            last_error='MAX_ATTEMPTS_EXHAUSTED',updated_at=? WHERE task_id=?""",
-                        (now, row["task_id"]),
+                        (wall_now, row["task_id"]),
                     )
                     exhausted.append((str(row["owner_c"]), str(row["task_id"])))
                     escalated += 1
             stale_agents = conn.execute(
                 """UPDATE agents SET status='STALE'
                    WHERE lease_until IS NOT NULL AND lease_until<? AND status!='STALE'""",
-                (now,),
+                (cutoff,),
             ).rowcount
         for c_id, task_id in exhausted:
             self.escalate(
@@ -532,7 +533,7 @@ class Runtime:
             rows = conn.execute(
                 """SELECT DISTINCT owner_c FROM tasks
                    WHERE status='QUEUED' AND available_at<=? ORDER BY owner_c""",
-                (now,),
+                (cutoff,),
             ).fetchall()
         return [str(r["owner_c"]) for r in rows]
 
