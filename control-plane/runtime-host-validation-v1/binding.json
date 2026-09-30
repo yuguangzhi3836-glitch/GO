@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "record_type": "PROPOSAL_NOT_EXECUTION_AUTHORITY",
+  "status": "BLOCKED_HOST_AND_EXECUTION_ROUTE",
+  "authorizes_any_action": false,
+  "candidate": {
+    "repository": "yuguangzhi3836-glitch/GO",
+    "pr": 287,
+    "sha": "7b9d53adb99b0523c1563ad388ac593ad800c864",
+    "runtime_tree": "bd102d9b3dcc6eb7cba4720e4baa20ff1bf3c742",
+    "application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186"
+  },
+  "topology": {
+    "id": "GO_C_RUNTIME_ISOLATED_SINGLETON",
+    "version": 1,
+    "status": "PROPOSED_HOLD",
+    "sha256": "ede10d06e41d7eec42dc7996d8001bea61d034e7010632a7485c7485f2c1f394",
+    "unit_sha256": "94955124d1f63a9f4cb5da5a6dab4bcaf93869973066b889e7116ad65c6cdee5"
+  },
+  "reviews": {
+    "round": "GO-RUNTIME-PR287-20261001-R2",
+    "c14": {
+      "run": 36745755189,
+      "verdict": "PASS_SCOPED",
+      "root": "62f223d7c4699b8916b6129ca22f1e5db0e2d29e4774eb593a84bcf491f559eb"
+    },
+    "c13": {
+      "run": 36746088878,
+      "verdict": "PASS_SCOPED",
+      "root": "16fbae6b74d8e57625edaf57b940ffbc505fa948ddc4cf37d7308774d7265103",
+      "tests": 77,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "round_decision": "ACCEPT",
+    "independence_verified": true
+  },
+  "user_direction": {
+    "received_at": "2026-10-01T01:13:17+08:00",
+    "scope": "Proceed with independent topology approval, isolated target-host validation and separately authorized first E2E",
+    "target_specific_install_or_host_reboot_bound": false
+  },
+  "target": {
+    "host_id": null,
+    "environment_id": null,
+    "host_identity_evidence": null,
+    "approved_execution_route": null,
+    "installed_executor_capability_evidence": null
+  },
+  "host_validation": {
+    "permissions": "NOT_RUN",
+    "network_namespace": "NOT_RUN",
+    "cgroup_limits": "NOT_RUN",
+    "service_restart": "NOT_RUN",
+    "boot_recovery": "NOT_RUN",
+    "power_loss_recovery": "NOT_RUN",
+    "backup_restore": "NOT_RUN",
+    "first_e2e": "NOT_RUN"
+  },
+  "approval": {
+    "source_scope_review": "PASS_SCOPED",
+    "host_bound_topology_approval": "PENDING",
+    "approved_and_proven": false,
+    "production": false,
+    "hk_business_mutation": false
+  },
+  "required_before_dispatch": [
+    "Bound dedicated isolated host identity",
+    "Verified installed formal execution capability and request schema",
+    "Host-specific authorized bounded installation and first-E2E plan",
+    "Independently approved topology/host/plan binding",
+    "Fresh task and authenticated evidence through approved route"
+  ],
+  "post_validation_state": "STOPPED_HOLD_UNLESS_SEPARATELY_AUTHORIZED_FOR_RESIDENCY"
+}
