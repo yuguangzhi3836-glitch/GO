@@ -1,0 +1,32 @@
+{
+  "version": "c1-c14-runtime-v1",
+  "default_decision": "DENY",
+  "principles": [
+    "candidate work is not execution authority",
+    "unknown actions fail closed",
+    "real money, real suppliers, deployment and production require human approval",
+    "private keys and gate bypass are denied to C1-C14 runtime workers"
+  ],
+  "safe_automatic_actions": [
+    "READ_REPOSITORY",
+    "WRITE_CANDIDATE_BRANCH",
+    "RUN_ISOLATED_TEST",
+    "CREATE_DRAFT_PR",
+    "WRITE_EVIDENCE",
+    "CROSS_C_MESSAGE"
+  ],
+  "human_approval_actions": [
+    "MERGE_TO_MAIN",
+    "HK_DEPLOY",
+    "FINAL_RELEASE",
+    "PRODUCTION",
+    "REAL_PAYMENT",
+    "REAL_SUPPLIER",
+    "SIGN_EXECUTION_AUTHORITY"
+  ],
+  "denied_actions": [
+    "READ_PRIVATE_KEYS",
+    "EXPORT_SECRETS",
+    "BYPASS_GATE"
+  ]
+}

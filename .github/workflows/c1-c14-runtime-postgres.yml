@@ -1,0 +1,89 @@
+name: C1-C14 Runtime PostgreSQL acceptance
+on:
+  pull_request:
+    paths:
+      - 'control-plane/c1-c14-runtime-v1/**'
+      - '.github/workflows/c1-c14-runtime-postgres.yml'
+concurrency:
+  group: runtime-postgres-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  postgres-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: go
+          POSTGRES_PASSWORD: go
+          POSTGRES_DB: runtime
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U go -d runtime"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bind exact candidate and initialize evidence
+        env:
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p /tmp/c14-runtime
+          python - <<'PY'
+          import json, os, pathlib, subprocess
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
+          sha = git('rev-parse', 'HEAD')
+          assert sha == os.environ['CANDIDATE_SHA']
+          binding = {'candidate_sha': sha, 'runtime_tree': git('rev-parse', 'HEAD:control-plane/c1-c14-runtime-v1'), 'application_tree': git('rev-parse', 'HEAD:application'), 'run_id': os.environ['GITHUB_RUN_ID'], 'run_attempt': os.environ['GITHUB_RUN_ATTEMPT']}
+          out = pathlib.Path('/tmp/c14-runtime')
+          (out/'SOURCE_BINDING.json').write_text(json.dumps(binding, indent=2)+'\n')
+          (out/'results.json').write_text(json.dumps({'candidate_sha': sha, 'scenarios': []})+'\n')
+          PY
+      - run: pip install "psycopg[binary]>=3.2,<4"
+      - name: Real PostgreSQL contention, SIGKILL and restart acceptance
+        timeout-minutes: 7
+        env:
+          DSN: postgresql://go:go@127.0.0.1:5432/runtime
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python -u control-plane/c1-c14-runtime-v1/pg_acceptance.py --dsn "$DSN" --out /tmp/c14-runtime/results.json --candidate-sha "$CANDIDATE_SHA" --restart-container "$POSTGRES_CONTAINER" > /tmp/c14-runtime/acceptance.log 2>&1
+      - name: Collect database restart logs
+        if: always()
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          mkdir -p /tmp/c14-runtime
+          docker logs "$POSTGRES_CONTAINER" > /tmp/c14-runtime/postgres.log 2>&1
+          docker inspect --format '{{.Id}} {{.Image}} {{.State.StartedAt}}' "$POSTGRES_CONTAINER" > /tmp/c14-runtime/container-identity.txt
+      - name: Aggregate evidence
+        if: always()
+        run: |
+          python control-plane/c1-c14-runtime-v1/acceptance_harness.py /tmp/c14-runtime/results.json --out /tmp/c14-runtime/evidence
+      - name: Hash all raw and aggregate evidence
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib, pathlib
+          root = pathlib.Path('/tmp/c14-runtime')
+          files = sorted(p for p in root.rglob('*') if p.is_file() and p != root/'SHA256SUMS')
+          (root/'SHA256SUMS').write_text(''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.relative_to(root)}\n' for p in files))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c1-c14-runtime-postgres-evidence
+          path: /tmp/c14-runtime/
+          if-no-files-found: error

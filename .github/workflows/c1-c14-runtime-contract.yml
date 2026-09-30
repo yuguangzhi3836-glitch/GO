@@ -1,0 +1,26 @@
+name: C1-C14 Runtime isolated contract tests
+on:
+  pull_request:
+    paths:
+      - 'control-plane/c1-c14-runtime-v1/**'
+      - '.github/workflows/c1-c14-runtime-contract.yml'
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Unit and contract tests
+        run: python -m unittest discover -s control-plane/c1-c14-runtime-v1/tests -v
+      - name: Verify NOT_RUN acceptance fixture fails closed
+        shell: bash
+        run: |
+          set +e
+          python control-plane/c1-c14-runtime-v1/acceptance_harness.py             control-plane/c1-c14-runtime-v1/acceptance-not-run.json --out /tmp/runtime-acceptance
+          rc=$?
+          test "$rc" -eq 2
+
