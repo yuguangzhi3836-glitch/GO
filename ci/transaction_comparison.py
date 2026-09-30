@@ -1,4 +1,4 @@
-"""Same-runner ABBA comparison; never treats failed capacity as acceptance."""
+"""Same-runner ABBA comparison for RIDE money connection reuse; never treats failed capacity as acceptance."""
 from pathlib import Path
 import hashlib
 import json
@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-BASELINE = '66ebd33116977e230ffded6c8d7a85b59c8b7f94'
+BASELINE = 'a6361b9376ab59f05616338b8245ac4e2976dec3'
 # Resolve to the immutable PR head supplied by Actions, then record that SHA
 # in every round. Both applications use the identical uninstrumented harness.
 CANDIDATE = os.environ['EXPECTED_HEAD']
