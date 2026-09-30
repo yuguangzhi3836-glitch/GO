@@ -18,12 +18,12 @@ class WatchdogAndChainTests(unittest.TestCase):
   out=Watchdog(self.rt,stale_after_s=1).inspect(now=t.lease_until+2)
   self.assertIn("C2",out["stale_domains"])
   self.assertEqual(1,out["recovery"]["requeued"])
- def test_c14_requires_c13_pass(self):
+ def test_c13_requires_completed_c14(self):
   chain=ReviewChain(self.rt); b=CandidateBinding("sha","tree","ev")
-  t13=chain.start_c13("C4",b)
+  t14=chain.start_c14("C4",b)
   with self.assertRaises(RuntimeErrorInvariant):
-   chain.advance_to_c14(c13_task_id=t13,c13_verdict="FAIL",binding=b)
-  t14=chain.advance_to_c14(c13_task_id=t13,c13_verdict="PASS",binding=b)
-  self.assertTrue(t14.startswith("rt_"))
+   chain.advance_to_c13(c14_task_id=t14,binding=b)
+  self.assertIsNone(self.rt.claim("C13",worker_id="independent-c13"))
 
 if __name__=="__main__": unittest.main()
+

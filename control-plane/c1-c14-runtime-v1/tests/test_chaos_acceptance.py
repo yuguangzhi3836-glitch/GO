@@ -37,9 +37,10 @@ class ChaosAcceptance(unittest.TestCase):
  def test_unknown_permission_fails_closed(self):
   self.assertEqual("DENY",self.rt.authorize("C1","MAGIC_PRODUCTION_BYPASS"))
 
- def test_c14_bypass_without_c13_pass_rejected(self):
+ def test_c13_bypass_without_c14_rejected(self):
   chain=ReviewChain(self.rt); b=CandidateBinding("sha","tree","ev")
   with self.assertRaises(RuntimeErrorInvariant):
-   chain.advance_to_c14(c13_task_id="missing",c13_verdict="FAIL",binding=b)
+   chain.advance_to_c13(c14_task_id="missing",binding=b)
 
 if __name__=="__main__": unittest.main()
+

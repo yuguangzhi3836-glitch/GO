@@ -57,7 +57,7 @@ Production access is required.
 2. executor adapter contract for model/Dot/Codex workers;
 3. per-C role registry binding the already-approved C1-C14 responsibility map;
 4. PostgreSQL implementation with `FOR UPDATE SKIP LOCKED` claiming;
-5. maker-checker handoff for C13/C14 independent review;
+5. maker-checker handoff in formal order: C14 rule review, then C13 quality acceptance;
 6. Command Center dashboard: liveness, queue age, escalations, evidence chain;
 7. signed runtime receipts without giving workers signing-key access;
 8. chaos tests for process death, DB restart, duplicate dispatch and clock drift.
@@ -69,3 +69,32 @@ Production access is required.
 - changing HK-STAGING topology;
 - merging or deploying this candidate;
 - replacing existing C13/C14 gates or Command Center authority.
+
+
+## Independent review order
+
+The candidate follows the existing formal channel: **C14 -> C13**.
+`ReviewChain.start_c14()` queues C14 from a builder domain (C1-C12).
+`advance_to_c13()` reads the completed C14 task and its completion Evidence;
+there is no caller-supplied PASS parameter. The existing
+`control-plane/c13-c14-lite/lite_prerequisite.py` validator recomputes the sealed
+C14 root and applies the formal PASS_SCOPED / documented NOT_APPLICABLE and
+remediation-closure rules. FAIL, BLOCKED, missing/incomplete/tampered results,
+and candidate SHA or application-tree mismatches refuse the handoff.
+The originating evidence reference is also fixed; the C13 task hashes the C14
+root and completion-evidence identity into its idempotent request binding.
+
+The former `start_c13` / `advance_to_c14` reverse-order methods are removed.
+Calling `request_independent_review` directly cannot skip the C14 prerequisite.
+Review routing code must use this entry point; generic task queue operations are
+not a formal review dispatch or review authority.
+
+This Runtime is still a candidate coordinator. A stored bundle/root alone does
+not establish independent AI execution or authenticated GitHub provenance. The
+formal backend remains responsible for real run/artifact readback, original
+ledger/task binding, reviewer independence, and acceptance formation. Unit
+fixtures are synthetic and grant no review verdict. Keep Draft; installation
+still requires both independent reviews and human Command Center authorization.
+
+Change classes for this alignment: CONTROL_PLANE, PRODUCT_FIX, TEST_ONLY,
+DOCUMENTATION. No migration, formal-workflow edit or live topology change.

@@ -11,11 +11,11 @@ class GovernanceTests(unittest.TestCase):
  def setUp(self):
   self.tmp=tempfile.TemporaryDirectory(); self.rt=Runtime(Path(self.tmp.name)/"r.db")
  def tearDown(self): self.tmp.cleanup()
- def test_c13_review_is_bound_and_idempotent(self):
-  req=ReviewRequest("C4","C13","abc","tree","ev-1")
+ def test_c14_review_is_bound_and_idempotent(self):
+  req=ReviewRequest("C4","C14","abc","tree","ev-1")
   a=request_independent_review(self.rt,req); b=request_independent_review(self.rt,req)
   self.assertEqual(a,b)
-  task=self.rt.claim("C13",worker_id="independent-c13")
+  task=self.rt.claim("C14",worker_id="independent-c14")
   self.assertTrue(verify_review_binding(task.payload))
  def test_self_review_rejected(self):
   with self.assertRaises(RuntimeErrorInvariant):
@@ -37,3 +37,4 @@ class GovernanceTests(unittest.TestCase):
   self.assertEqual(tid,recovered.task_id)
 
 if __name__=="__main__": unittest.main()
+
