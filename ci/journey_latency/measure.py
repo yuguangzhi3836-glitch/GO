@@ -70,6 +70,37 @@ def atomic(path, data):
     temporary.replace(path)
 
 
+
+def synchronized_batch(pool, tasks, invoke, ready_file, start_file):
+    """One release watcher per process; request clocks stay inside invoke.
+
+    A shared coordinator marker releases both processes. Never hold request
+    completion or move its start clock before admission to fabricate overlap.
+    """
+    barrier = threading.Barrier(len(tasks) + 1)
+    released = threading.Event()
+    cancelled = threading.Event()
+    def admitted(task):
+        barrier.wait(60)
+        if not released.wait(130):
+            raise TimeoutError('JOURNEY_RELEASE_TIMEOUT')
+        if cancelled.is_set():
+            raise RuntimeError('JOURNEY_RELEASE_CANCELLED')
+        return invoke(task)
+    futures = [pool.submit(admitted, task) for task in tasks]
+    try:
+        barrier.wait(60)
+        atomic(ready_file, {'pid': os.getpid()})
+        wait(start_file)
+    except BaseException:
+        cancelled.set()
+        barrier.abort()
+        raise
+    finally:
+        released.set()
+    return [future.result() for future in futures]
+
+
 def worker(job_path):
     started = time.monotonic_ns(); initial_cpu = cpu()
     imports()
@@ -95,10 +126,7 @@ def worker(job_path):
         with ThreadPoolExecutor(max_workers=workers) as pool:
             for number, tasks in enumerate(job['batches']):
                 assert len(tasks) == workers
-                barrier = threading.Barrier(workers + 1)
                 def request(task):
-                    barrier.wait(60)
-                    wait(directory / f'batch-{number}.start')
                     start = time.monotonic_ns()
                     row = {'pid': os.getpid(), 'owner': task['owner'], 'start_ns': start,
                         'operation': job['operation'], 'batch': number, 'ok': False}
@@ -112,10 +140,9 @@ def worker(job_path):
                     row['duration_ms'] = (row['end_ns'] - start) / 1e6
                     return row
                 before = cpu()
-                futures = [pool.submit(request, task) for task in tasks]
-                barrier.wait(60)
-                atomic(directory / f'batch-{number}.ready', {'pid': os.getpid()})
-                rows = [future.result() for future in futures]
+                rows = synchronized_batch(pool, tasks, request,
+                    directory / f'batch-{number}.ready',
+                    Path(job['release_directory']) / f'batch-{number}.start')
                 atomic(directory / f'batch-{number}.json', {'rows': rows,
                     'process_cpu_seconds': cpu() - before,
                     'peak_rss_kib': resource.getrusage(resource.RUSAGE_SELF).ru_maxrss})
@@ -131,7 +158,7 @@ def measure(operation, batches, directory):
     try:
         for index in range(2):
             child_dir = directory / f'worker-{index}'; child_dir.mkdir()
-            job = {'directory': str(child_dir), 'operation': operation,
+            job = {'directory': str(child_dir), 'release_directory': str(directory), 'operation': operation,
                 'batches': [batch[index::2] for batch in batches]}
             path = child_dir / 'job.json'; write(path, job)
             with (child_dir / 'worker.log').open('w') as log:
@@ -151,8 +178,7 @@ def measure(operation, batches, directory):
             for index in range(2):
                 wait(directory / f'worker-{index}/batch-{number}.ready', processes)
             release_ns = time.monotonic_ns()
-            for index in range(2):
-                (directory / f'worker-{index}/batch-{number}.start').touch()
+            (directory / f'batch-{number}.start').touch()
             rows = []; counters = []
             for index in range(2):
                 path = directory / f'worker-{index}/batch-{number}.json'

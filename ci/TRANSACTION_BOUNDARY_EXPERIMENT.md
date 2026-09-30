@@ -149,3 +149,30 @@ USD 113 charge to fund GOAI OpenAI API credits. This is funding evidence only;
 the configured review environment has not yet been probed successfully. Do not
 retain "credit exhausted" as a freshly verified current fact, or infer C14 PASS.
 C14 and C13 remain pending the fixed final candidate and their own actual results.
+
+## Measurement-tool follow-up — 2026-09-30
+
+Restoration run36668874513 independently verified:250 PostgreSQL regressions PASS,
+13 scenarios PASS,20P95/P99=1896.006680/1900.873421ms,100P95/P99=6348.505668/6384.859837ms,
+zero errors and balanced money facts. Original configuration still FAIL; this is
+a different runner and cannot be compared with rejected-candidate7.86s as speedup.
+Normal artifact11076823798 SHA2563ff81145defec1074d9ec3ff70ca53a01101076be7dec36e468006cf15a701fd.
+
+The supplementary journey harness previously made every actor poll a filesystem
+release marker, with different markers for the two processes. Replace these with
+one shared marker watched once per process and a local Event broadcast after all
+threads are ready. This reduces release skew and harness polling overhead; it does
+not guarantee real100 overlap for fast operations. Actual overlap remains strictly
+verified from each request's unchanged start/end clock around its operation. No
+completion hold, pre-admission timestamp, discarded batch, automatic retry or
+relaxed concurrency threshold is introduced. Failed coordinator release invokes
+no application operation.
+
+Standalone journey workflow now calls the existing strict raw-evidence verifier:
+a99/100 batch fails the workflow, even if measurement collection itself succeeded.
+All40 local harness/guard tests pass. Fresh PostgreSQL journey validation is required;
+no historical invalid comparison is repaired retroactively. The4-vCPU driver copies
+this identical harness into its fixed candidate checkout, so both baseline and
+candidate use the same new measurement definition. Frozen formal harness, baseline
+application and5-second gate remain unchanged. Four-vCPU run36668874486 is SKIPPED
+because the required runner configuration is absent; no hardware result exists.

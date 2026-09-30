@@ -124,6 +124,10 @@ def main():
     checkout = original / 'four-vcpu-fixed-worktree'
     subprocess.run(['git', 'worktree', 'add', '--detach', str(checkout), CANDIDATE], cwd=original, check=True)
     try:
+        # Apply the same reviewed measurement harness to BOTH variants. Runtime
+        # stays pinned; historical measurements are not compared across harnesses.
+        shutil.copytree(original / 'ci/journey_latency', checkout / 'ci/journey_latency', dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns('__pycache__'))
         ROOT = checkout
         return execute()
     finally:

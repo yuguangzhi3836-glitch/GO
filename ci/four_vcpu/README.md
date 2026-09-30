@@ -39,3 +39,8 @@ absolute100-actor P95/P99, measured CPU, memory and DB waits. Cross-machine 2→
 changes also include any observed CPU-model/OS/package differences, and must not
 be described as a clean CPU-only causal effect. No additional concurrency tiers,
 merge, deployment, C14 pass or production capacity claim follows from this script.
+
+The driver overlays the current reviewed journey harness onto the pinned candidate
+checkout before ABBA; cpu_candidate then copies that identical harness to both
+variants. Application bytes remain pinned. Do not compare new harness results
+with old harness results to estimate a speedup. Actual concurrency validation stays strict.

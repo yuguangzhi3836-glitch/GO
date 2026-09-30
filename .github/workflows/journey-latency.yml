@@ -40,7 +40,9 @@ jobs:
           mkdir -p journey-qualification
           python -m pytest ci/journey_latency/test_measure.py -q --junitxml=journey-qualification/results.xml
       - name: Measure process-cold and continued normal operations
-        run: python ci/journey_latency/measure.py --application-tree "$(git rev-parse HEAD:application)"
+        run: |
+          python ci/journey_latency/measure.py --application-tree "$(git rev-parse HEAD:application)"
+          python -c "import os, subprocess, sys; sys.path.insert(0, 'ci'); from journey_latency.verify import verify_journey; verify_journey('journey-latency-evidence', os.environ['EXPECTED_HEAD'], subprocess.check_output(['git', 'rev-parse', 'HEAD:application'], text=True).strip())"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

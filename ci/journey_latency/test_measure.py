@@ -94,3 +94,44 @@ def test_full_transaction_uses_original_actor_once(monkeypatch):
     assert calls == ['abc']
     with pytest.raises(AssertionError):
         operations.execute('full_transaction', {'owner': 'wrong', 'index': 'abc'})
+
+
+def test_shared_release_admits_both_workers_only_after_coordinator(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    import threading
+    import time
+    from measure import synchronized_batch, wait
+    calls = []
+    lock = threading.Lock()
+    release = tmp_path / 'shared.start'
+    def invoke(task):
+        with lock:
+            calls.append((task, time.monotonic_ns()))
+        return task
+    def worker(i):
+        with ThreadPoolExecutor(max_workers=10) as pool:
+            return synchronized_batch(pool, list(range(i * 10, i * 10 + 10)), invoke,
+                                      tmp_path / f'{i}.ready', release)
+    with ThreadPoolExecutor(max_workers=2) as coordinators:
+        jobs = [coordinators.submit(worker, i) for i in range(2)]
+        for i in range(2):
+            wait(tmp_path / f'{i}.ready', timeout=5)
+        assert calls == []
+        released_ns = time.monotonic_ns()
+        release.touch()
+        assert sorted(x for job in jobs for x in job.result(timeout=5)) == list(range(20))
+    assert len(calls) == 20 and all(t >= released_ns for _, t in calls)
+
+
+def test_failed_release_never_calls_application(tmp_path, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    import measure
+    calls = []
+    def timeout(*args):
+        raise TimeoutError('injected coordinator loss')
+    monkeypatch.setattr(measure, 'wait', timeout)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        with pytest.raises(TimeoutError):
+            measure.synchronized_batch(pool, [1, 2], calls.append,
+                                       tmp_path / 'ready', tmp_path / 'start')
+    assert calls == []
