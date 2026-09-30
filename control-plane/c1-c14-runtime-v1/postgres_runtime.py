@@ -33,6 +33,7 @@ COMPLETE_SQL = """
 UPDATE c_runtime_task
 SET status=%s, lease_owner=NULL, lease_until=NULL, last_error=%s, updated_at=now()
 WHERE task_id=%s AND owner_c=%s AND status='RUNNING' AND lease_owner=%s
+  AND attempts=%s AND lease_until>clock_timestamp()
 RETURNING task_id;
 """
 
@@ -66,11 +67,11 @@ class PostgresRuntimeRepository:
                 row=cur.fetchone()
         return row
 
-    def complete(self, *, task_id: str, owner_c: str, worker_id: str, success: bool, error: str|None=None) -> bool:
+    def complete(self, *, task_id: str, owner_c: str, worker_id: str, expected_attempt: int, success: bool, error: str|None=None) -> bool:
         status="SUCCEEDED" if success else "FAILED"
         with self.conn.transaction():
             with self.conn.cursor() as cur:
-                cur.execute(COMPLETE_SQL,(status,error,task_id,owner_c,worker_id))
+                cur.execute(COMPLETE_SQL,(status,error,task_id,owner_c,worker_id,expected_attempt))
                 row=cur.fetchone()
         return row is not None
 
@@ -116,3 +117,4 @@ def claim_batch(conn, owner_cs: list[str], worker_id: str, *, limit: int=25, lea
         with conn.cursor() as cur:
             cur.execute(CLAIM_BATCH_SQL,(owner_cs,limit,worker_id,lease_s))
             return cur.fetchall()
+

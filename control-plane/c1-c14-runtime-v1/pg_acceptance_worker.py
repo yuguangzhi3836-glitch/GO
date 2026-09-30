@@ -1,47 +1,57 @@
-"""Isolated PostgreSQL contention worker used only by CI acceptance."""
+"""Bounded worker for the disposable PostgreSQL acceptance database only."""
 from __future__ import annotations
-import argparse,json,os
-import psycopg
-from postgres_runtime import claim_batch
+import argparse
+import json
+import time
+from pathlib import Path
 
-DOMAINS=[f"C{i}" for i in range(1,13)]
+import psycopg
+from postgres_runtime import PostgresRuntimeRepository, claim_batch
+
+DOMAINS = [f"C{i}" for i in range(1, 13)]
+
 
 def main():
- p=argparse.ArgumentParser()
- p.add_argument("--dsn",required=True)
- p.add_argument("--c",default="ALL")
- p.add_argument("--worker",required=True)
- p.add_argument("--limit",type=int,default=10000)
- p.add_argument("--batch",type=int,default=25)
- p.add_argument("--crash-after-claim",action="store_true")
- a=p.parse_args()
- domains=DOMAINS if a.c=="ALL" else [a.c]
- conn=psycopg.connect(a.dsn)
- done=0
- while done<a.limit:
-  rows=claim_batch(conn,domains,a.worker,limit=min(a.batch,a.limit-done),lease_s=30)
-  if not rows:
-   break
-  if a.crash_after_claim:
-   os._exit(23)
-  with conn.transaction():
-   with conn.cursor() as cur:
-    for row in rows:
-     task_id,owner_c=row[0],row[1]
-     cur.execute("""INSERT INTO c_runtime_effect(effect_key,task_id,effect_type,body)
-                    VALUES (%s,%s,'TEST',%s::jsonb)
-                    ON CONFLICT(effect_key) DO NOTHING RETURNING effect_key""",
-                 (f"effect:{task_id}",task_id,json.dumps({"worker":a.worker,"owner_c":owner_c})))
-     if cur.fetchone() is None:
-      raise RuntimeError(f"duplicate effect for {task_id}")
-     cur.execute("""UPDATE c_runtime_task
-                    SET status='SUCCEEDED',lease_owner=NULL,lease_until=NULL,updated_at=now()
-                    WHERE task_id=%s AND owner_c=%s AND status='RUNNING' AND lease_owner=%s
-                    RETURNING task_id""",(task_id,owner_c,a.worker))
-     if cur.fetchone() is None:
-      raise RuntimeError(f"completion fencing rejected current owner for {task_id}")
-  done += len(rows)
- print(json.dumps({"worker":a.worker,"done":done}),flush=True)
+    p = argparse.ArgumentParser()
+    p.add_argument("--dsn", required=True)
+    p.add_argument("--c", default="ALL")
+    p.add_argument("--worker", required=True)
+    p.add_argument("--limit", type=int, default=10000)
+    p.add_argument("--batch", type=int, default=25)
+    p.add_argument("--lease-seconds", type=int, default=30)
+    p.add_argument("--hold-after-claim", type=Path)
+    a = p.parse_args()
+    domains = DOMAINS if a.c == "ALL" else [a.c]
+    claims = []
+    with psycopg.connect(a.dsn, autocommit=True, connect_timeout=5,
+                         application_name=f"runtime-worker:{a.worker}",
+                         options="-c statement_timeout=15000 -c lock_timeout=5000") as conn:
+        repo = PostgresRuntimeRepository(conn)
+        while len(claims) < a.limit:
+            rows = claim_batch(conn, domains, a.worker,
+                               limit=min(a.batch, a.limit - len(claims)),
+                               lease_s=a.lease_seconds)
+            if not rows:
+                break
+            if a.hold_after_claim:
+                # Parent sends a real SIGKILL only after the claim is committed.
+                a.hold_after_claim.write_text(json.dumps(rows, default=str))
+                time.sleep(60)
+                raise RuntimeError("parent failed to kill paused worker")
+            with conn.transaction():
+                for row in rows:
+                    task_id, owner_c, _, _, attempt, _ = row
+                    if not repo.complete(task_id=task_id, owner_c=owner_c,
+                                         worker_id=a.worker, expected_attempt=attempt,
+                                         success=True):
+                        raise RuntimeError(f"completion fencing rejected {task_id}")
+                    if not repo.record_effect_once(effect_key=f"effect:{task_id}",
+                                                   task_id=task_id, effect_type="TEST",
+                                                   body={"worker": a.worker, "attempt": attempt}):
+                        raise RuntimeError(f"duplicate effect for {task_id}")
+            claims.extend([[r[0], r[4]] for r in rows])
+    print(json.dumps({"worker": a.worker, "done": len(claims), "claims": claims}), flush=True)
 
-if __name__=="__main__":
- main()
+
+if __name__ == "__main__":
+    main()
