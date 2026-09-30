@@ -2,7 +2,7 @@
 from pathlib import Path
 import hashlib,json,os,runpy,shlex,signal,subprocess,sys,time,zipfile
 ROOT=Path(__file__).resolve().parents[2]
-PYTHON='/tmp/go-capacity-venv/bin/python'
+PYTHON='/workspaces/.go-capacity-venv/bin/python'
 NAME='literate-winner-vpqqjgwvpjprcp7gw'
 BRANCH='experiment/process-pool-20260930'
 OUT=ROOT/'process-pool-qualification'
