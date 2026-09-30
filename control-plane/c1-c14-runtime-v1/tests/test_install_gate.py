@@ -11,7 +11,8 @@ class InstallGateTests(unittest.TestCase):
   self.assertEqual("FAIL",evaluate(x)["verdict"])
  def test_every_install_gate_required(self):
   base=dict(postgres_acceptance="PASS",c13_verdict="PASS",c14_verdict="PASS",
-            evidence_chain_valid=True,sha256_manifest_present=True,human_command_center_authorization=True)
+            evidence_chain_valid=True,sha256_manifest_present=True,human_command_center_authorization=True,topology_review_passed=True,topology_validation_passed=True,
+            topology_approved_and_proven=True,topology_binding_verified=True)
   self.assertTrue(installation_eligibility(GateInput(**base))["eligible"])
   for key in list(base):
    bad=dict(base)

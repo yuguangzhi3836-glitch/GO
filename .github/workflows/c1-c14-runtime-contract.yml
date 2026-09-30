@@ -15,7 +15,15 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - name: Unit and contract tests
-        run: python -m unittest discover -s control-plane/c1-c14-runtime-v1/tests -v
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/runtime-contract
+          python -m unittest discover -s control-plane/c1-c14-runtime-v1/tests -v 2>&1 | tee /tmp/runtime-contract/tests.txt
+      - name: Validate isolated topology and service syntax
+        run: |
+          python -c "import sys; from pathlib import Path; sys.path.insert(0,'control-plane/c1-c14-runtime-v1'); from topology import load_topology; load_topology(Path('control-plane/c1-c14-runtime-v1/topology.v1.json'))"
+          systemd-analyze verify control-plane/c1-c14-runtime-v1/systemd/go-c1-c14-runtime.service
       - name: Verify NOT_RUN acceptance fixture fails closed
         shell: bash
         run: |
@@ -24,3 +32,21 @@ jobs:
           rc=$?
           test "$rc" -eq 2
 
+      - name: Preserve exact candidate contract evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p /tmp/runtime-contract
+          git rev-parse HEAD > /tmp/runtime-contract/candidate_sha.txt
+          git rev-parse HEAD:control-plane/c1-c14-runtime-v1 > /tmp/runtime-contract/runtime_tree.txt
+          git rev-parse HEAD:application > /tmp/runtime-contract/application_tree.txt
+          cp control-plane/c1-c14-runtime-v1/topology.v1.json /tmp/runtime-contract/
+          cp control-plane/c1-c14-runtime-v1/systemd/go-c1-c14-runtime.service /tmp/runtime-contract/
+          cd /tmp/runtime-contract
+          sha256sum *.txt *.json *.service > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-contract-${{ github.event.pull_request.head.sha }}
+          path: /tmp/runtime-contract
+          if-no-files-found: error

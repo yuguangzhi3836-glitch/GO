@@ -61,7 +61,7 @@ class ReviewChainTests(unittest.TestCase):
         self.assertEqual(task.task_id, task_id)
         if result is None:
             result = {"c14_bundle": synthetic_bundle() if bundle is None else bundle}
-        self.rt.complete("C14", task_id, worker_id="synthetic-c14-worker", success=True, result=result)
+        self.rt.complete("C14", task_id, worker_id="synthetic-c14-worker", expected_attempt=task.attempts, success=True, result=result)
         return task_id
 
     def assert_no_c13(self):
@@ -77,7 +77,7 @@ class ReviewChainTests(unittest.TestCase):
         task = self.rt.claim("C14", worker_id="synthetic-c14-worker")
         with self.assertRaises(RuntimeErrorInvariant):
             self.chain.advance_to_c13(c14_task_id=t14, binding=BINDING)
-        self.rt.complete("C14", task.task_id, worker_id="synthetic-c14-worker", success=True,
+        self.rt.complete("C14", task.task_id, worker_id="synthetic-c14-worker", expected_attempt=task.attempts, success=True,
                          result={"c14_bundle": synthetic_bundle()})
         t13 = self.chain.advance_to_c13(c14_task_id=t14, binding=BINDING)
         queued = self.rt.claim("C13", worker_id="synthetic-c13-worker")
@@ -115,8 +115,8 @@ class ReviewChainTests(unittest.TestCase):
                 rt = Runtime(Path(temp)/"r.db")
                 chain = ReviewChain(rt)
                 task_id = chain.start_c14("C4", BINDING)
-                rt.claim("C14", worker_id="synthetic-c14")
-                rt.complete("C14", task_id, worker_id="synthetic-c14", success=True,
+                task = rt.claim("C14", worker_id="synthetic-c14")
+                rt.complete("C14", task_id, worker_id="synthetic-c14", expected_attempt=task.attempts, success=True,
                             result={"c14_bundle": synthetic_bundle(verdict)})
                 with self.assertRaises(RuntimeErrorInvariant):
                     chain.advance_to_c13(c14_task_id=task_id, binding=BINDING)
@@ -130,8 +130,8 @@ class ReviewChainTests(unittest.TestCase):
                 rt = Runtime(Path(temp)/"r.db")
                 chain = ReviewChain(rt)
                 task_id = chain.start_c14("C4", BINDING)
-                rt.claim("C14", worker_id="synthetic-c14")
-                rt.complete("C14", task_id, worker_id="synthetic-c14", success=True, result={"c14_bundle": bundle})
+                task = rt.claim("C14", worker_id="synthetic-c14")
+                rt.complete("C14", task_id, worker_id="synthetic-c14", expected_attempt=task.attempts, success=True, result={"c14_bundle": bundle})
                 with self.assertRaises(RuntimeErrorInvariant):
                     chain.advance_to_c13(c14_task_id=task_id, binding=BINDING)
 
@@ -144,8 +144,8 @@ class ReviewChainTests(unittest.TestCase):
                 rt = Runtime(Path(temp)/"r.db")
                 chain = ReviewChain(rt)
                 task_id = chain.start_c14("C4", BINDING)
-                rt.claim("C14", worker_id="synthetic-c14")
-                rt.complete("C14", task_id, worker_id="synthetic-c14", success=True, result={"c14_bundle": bundle})
+                task = rt.claim("C14", worker_id="synthetic-c14")
+                rt.complete("C14", task_id, worker_id="synthetic-c14", expected_attempt=task.attempts, success=True, result={"c14_bundle": bundle})
                 with self.assertRaises(RuntimeErrorInvariant):
                     chain.advance_to_c13(c14_task_id=task_id, binding=BINDING)
 

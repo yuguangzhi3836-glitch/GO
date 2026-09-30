@@ -24,8 +24,8 @@ class ChaosAcceptance(unittest.TestCase):
   self.rt.recover_stale(now=first.lease_until+1)
   second=self.rt.claim("C5",worker_id="replacement")
   with self.assertRaises(RuntimeErrorInvariant):
-   self.rt.complete("C5",tid,worker_id="dead",success=True)
-  self.rt.complete("C5",tid,worker_id="replacement",success=True)
+   self.rt.complete("C5",tid,worker_id="dead",expected_attempt=first.attempts,success=True)
+  self.rt.complete("C5",tid,worker_id="replacement",expected_attempt=second.attempts,success=True)
 
  def test_evidence_tamper_is_detected(self):
   tid=self.rt.enqueue("C6","AUDIT",{})

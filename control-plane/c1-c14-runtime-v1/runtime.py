@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import sqlite3
 import time
 import uuid
@@ -294,15 +295,20 @@ class Runtime:
         })
         return task_id
 
-    def claim(self, c_id: str, *, worker_id: str, lease_s: int = 120) -> Optional[ClaimedTask]:
+    def claim(self, c_id: str, *, worker_id: str, lease_s: int = 120, kinds: tuple[str, ...] | None = None) -> Optional[ClaimedTask]:
         self._require_c(c_id)
-        now = time.time()
+        self._require_lease_seconds(lease_s)
+        if not worker_id:
+            raise ValueError("worker_id is required")
+        if kinds is not None and not kinds:
+            return None
         with self.tx() as conn:
+            now = time.time()  # Sample after acquiring the SQLite write lock.
+            kind_filter = "" if kinds is None else " AND kind IN (" + ",".join("?" for _ in kinds) + ")"
             row = conn.execute(
-                """SELECT * FROM tasks
-                   WHERE owner_c=? AND status='QUEUED' AND available_at<=?
-                   ORDER BY priority ASC, created_at ASC LIMIT 1""",
-                (c_id, now),
+                "SELECT * FROM tasks WHERE owner_c=? AND status='QUEUED' AND available_at<=?"
+                + kind_filter + " ORDER BY priority ASC, created_at ASC LIMIT 1",
+                (c_id, now, *(kinds or ())),
             ).fetchone()
             if row is None:
                 return None
@@ -330,46 +336,56 @@ class Runtime:
         })
         return task
 
-    def renew_task(self, task_id: str, *, worker_id: str, lease_s: int = 120) -> float:
-        now = time.time()
-        lease_until = now + lease_s
+    @staticmethod
+    def _require_attempt(expected_attempt: int) -> None:
+        if type(expected_attempt) is not int or expected_attempt < 1:
+            raise RuntimeErrorInvariant("positive integer lease attempt required")
+
+    @staticmethod
+    def _require_lease_seconds(lease_s: float) -> None:
+        if isinstance(lease_s, bool) or not isinstance(lease_s, (int, float)) or not math.isfinite(lease_s) or lease_s <= 0:
+            raise ValueError("lease duration must be finite and positive")
+
+    def renew_task(self, task_id: str, *, worker_id: str, expected_attempt: int,
+                   lease_s: int = 120) -> float:
+        self._require_attempt(expected_attempt)
+        self._require_lease_seconds(lease_s)
         with self.tx() as conn:
+            now = time.time()
+            lease_until = now + lease_s
             changed = conn.execute(
                 """UPDATE tasks SET lease_until=?,updated_at=?
-                   WHERE task_id=? AND status='RUNNING' AND lease_owner=?""",
-                (lease_until, now, task_id, worker_id),
+                   WHERE task_id=? AND status='RUNNING' AND lease_owner=?
+                     AND attempts=? AND lease_until>?""",
+                (lease_until, now, task_id, worker_id, expected_attempt, now),
             ).rowcount
             if changed != 1:
-                raise RuntimeErrorInvariant("task lease is not owned by worker")
+                raise RuntimeErrorInvariant("renewal rejected: stale, expired or unowned lease")
         return lease_until
 
     def complete(
-        self,
-        c_id: str,
-        task_id: str,
-        *,
-        worker_id: str,
-        success: bool,
-        result: Optional[dict[str, Any]] = None,
-        error: Optional[str] = None,
+        self, c_id: str, task_id: str, *, worker_id: str,
+        expected_attempt: int, success: bool,
+        result: Optional[dict[str, Any]] = None, error: Optional[str] = None,
     ) -> None:
         self._require_c(c_id)
-        now = time.time()
+        self._require_attempt(expected_attempt)
         status = "SUCCEEDED" if success else "FAILED"
         with self.tx() as conn:
-            row = conn.execute("SELECT * FROM tasks WHERE task_id=?", (task_id,)).fetchone()
-            if row is None:
-                raise KeyError(task_id)
-            if row["owner_c"] != c_id or row["status"] != "RUNNING" or row["lease_owner"] != worker_id:
-                raise RuntimeErrorInvariant("completion rejected: owner/lease mismatch")
-            conn.execute(
+            now = time.time()
+            changed = conn.execute(
                 """UPDATE tasks SET status=?,lease_owner=NULL,lease_until=NULL,last_error=?,updated_at=?
-                   WHERE task_id=?""",
-                (status, error, now, task_id),
-            )
-        self.append_evidence(c_id, task_id, "TASK_COMPLETED", {
-            "status": status, "result": result or {}, "error": error
-        })
+                   WHERE task_id=? AND owner_c=? AND status='RUNNING' AND lease_owner=?
+                     AND attempts=? AND lease_until>?""",
+                (status, error, now, task_id, c_id, worker_id, expected_attempt, now),
+            ).rowcount
+            if changed != 1:
+                raise RuntimeErrorInvariant("completion rejected: stale, expired or unowned lease")
+            # State transition and its handoff evidence commit or roll back together.
+            self._append_evidence(conn, c_id, task_id, "TASK_COMPLETED", {
+                "status": status, "result": result or {}, "error": error,
+                "worker_id": worker_id, "attempt": expected_attempt,
+            })
         self.heartbeat(c_id, status="IDLE")
 
     def send_message(
@@ -413,32 +429,33 @@ class Runtime:
         self, c_id: str, task_id: Optional[str], event_type: str, body: dict[str, Any]
     ) -> str:
         self._require_c(c_id)
+        with self.tx() as conn:
+            return self._append_evidence(conn, c_id, task_id, event_type, body)
+
+    def _append_evidence(self, conn, c_id, task_id, event_type, body) -> str:
         now = time.time()
         raw = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         evidence_id = "ev_" + uuid.uuid4().hex
-        with self.tx() as conn:
-            prev = conn.execute(
-                "SELECT event_hash FROM evidence ORDER BY created_at DESC,evidence_id DESC LIMIT 1"
-            ).fetchone()
-            prev_hash = None if prev is None else str(prev["event_hash"])
-            canonical = json.dumps({
-                "evidence_id": evidence_id, "c_id": c_id, "task_id": task_id,
-                "event_type": event_type, "body": json.loads(raw),
-                "prev_hash": prev_hash, "created_at": now,
-            }, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-            event_hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-            conn.execute(
-                """INSERT INTO evidence(
-                   evidence_id,c_id,task_id,event_type,body_json,prev_hash,event_hash,created_at)
-                   VALUES (?,?,?,?,?,?,?,?)""",
-                (evidence_id, c_id, task_id, event_type, raw, prev_hash, event_hash, now),
-            )
+        prev = conn.execute("SELECT event_hash FROM evidence ORDER BY rowid DESC LIMIT 1").fetchone()
+        prev_hash = None if prev is None else str(prev["event_hash"])
+        canonical = json.dumps({
+            "evidence_id": evidence_id, "c_id": c_id, "task_id": task_id,
+            "event_type": event_type, "body": json.loads(raw),
+            "prev_hash": prev_hash, "created_at": now,
+        }, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        event_hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        conn.execute(
+            """INSERT INTO evidence(
+               evidence_id,c_id,task_id,event_type,body_json,prev_hash,event_hash,created_at)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (evidence_id, c_id, task_id, event_type, raw, prev_hash, event_hash, now),
+        )
         return evidence_id
 
     def verify_evidence_chain(self) -> bool:
         with self._connect() as conn:
             rows = conn.execute(
-                "SELECT * FROM evidence ORDER BY created_at ASC,evidence_id ASC"
+                "SELECT * FROM evidence ORDER BY rowid ASC"
             ).fetchall()
         previous = None
         for r in rows:
@@ -488,14 +505,14 @@ class Runtime:
         Expired RUNNING tasks are requeued while attempts remain. Exhausted tasks
         become ESCALATED and require review. Agent liveness becomes STALE.
         """
-        cutoff = time.time() if now is None else now
-        wall_now = time.time()
         requeued = escalated = stale_agents = 0
         exhausted: list[tuple[str, str]] = []
         with self.tx() as conn:
+            wall_now = time.time()
+            cutoff = wall_now if now is None else now
             rows = conn.execute(
                 """SELECT task_id,owner_c,attempts,max_attempts FROM tasks
-                   WHERE status='RUNNING' AND lease_until IS NOT NULL AND lease_until<?""",
+                   WHERE status='RUNNING' AND lease_until IS NOT NULL AND lease_until<=?""",
                 (cutoff,),
             ).fetchall()
             for row in rows:
@@ -516,7 +533,7 @@ class Runtime:
                     escalated += 1
             stale_agents = conn.execute(
                 """UPDATE agents SET status='STALE'
-                   WHERE lease_until IS NOT NULL AND lease_until<? AND status!='STALE'""",
+                   WHERE lease_until IS NOT NULL AND lease_until<=? AND status!='STALE'""",
                 (cutoff,),
             ).rowcount
         for c_id, task_id in exhausted:

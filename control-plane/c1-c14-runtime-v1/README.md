@@ -37,8 +37,8 @@ Default policy:
 
 ## Why SQLite first
 
-This slice proves the state machine and recovery semantics with no new service
-topology and no external dependency. It is **not** the target HA store.
+This slice proves the state machine and recovery semantics with no external dependency. The Supervisor/Runner service candidate adds a
+new runtime role and is classified TOPOLOGY + INFRASTRUCTURE, with activation HOLD. It is **not** the target HA store.
 Production-grade 24x7 operation should move the same contracts to the existing
 approved PostgreSQL/control-plane persistence after acceptance.
 
@@ -66,7 +66,7 @@ Production access is required.
 
 - redefining C1-C14 responsibilities;
 - creating C15;
-- changing HK-STAGING topology;
+- changing the currently approved HK-STAGING business topology through ordinary DEPLOY;
 - merging or deploying this candidate;
 - replacing existing C13/C14 gates or Command Center authority.
 
@@ -98,3 +98,16 @@ still requires both independent reviews and human Command Center authorization.
 
 Change classes for this alignment: CONTROL_PLANE, PRODUCT_FIX, TEST_ONLY,
 DOCUMENTATION. No migration, formal-workflow edit or live topology change.
+
+## Topology and residency follow-up
+
+See [TOPOLOGY_AND_RESIDENCY.md](TOPOLOGY_AND_RESIDENCY.md) and
+`topology.v1.json` for the independent isolated singleton proposal. Installation
+remains BLOCKED / TOPOLOGY_CHANGE_REQUIRED; old source-review PASS does not
+transfer to this changed candidate. The service is probe-only, not a live AI team.
+
+SQLite `complete` and `renew_task` now require `expected_attempt=claimed.attempts`.
+Expired or replaced leases fail closed even with the same worker name. Completion
+and its Evidence commit atomically. The runner requires `--isolated-validation`,
+uses a per-database singleton lock and only claims `RUNTIME_PROBE`.
+Change classes: CONTROL_PLANE, PRODUCT_FIX, TOPOLOGY, INFRASTRUCTURE, TEST_ONLY, DOCUMENTATION.

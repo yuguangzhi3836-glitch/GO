@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "topology_id": "GO_C_RUNTIME_ISOLATED_SINGLETON",
+  "version": 1,
+  "status": "PROPOSED_HOLD",
+  "authorizes_any_action": false,
+  "environment": "ISOLATED_VALIDATION_ONLY",
+  "services": [{"role": "go-c1-c14-runtime", "replicas": 1, "adapter": "noop", "task_kinds": ["RUNTIME_PROBE"]}],
+  "persistence": {"engine": "sqlite", "local_disk_only": true, "shared_filesystem": false, "ha": false},
+  "network": {"listeners": [], "egress": []},
+  "credentials": [],
+  "business_topology_mutation": false,
+  "protected_targets": ["HK-STAGING", "Production", "business_database", "caddy", "redis", "media", "HK_Agent", "Executor", "signing_keys", "authority_ledger", "SSH"],
+  "activation_gate": "TOPOLOGY_CHANGE_REQUIRED"
+}

@@ -37,8 +37,8 @@ class RuntimeTests(unittest.TestCase):
         claimed = self.rt.claim("C3", worker_id="worker-a", lease_s=10)
         self.assertEqual(task_id, claimed.task_id)
         with self.assertRaises(RuntimeErrorInvariant):
-            self.rt.complete("C3", task_id, worker_id="worker-b", success=True)
-        self.rt.complete("C3", task_id, worker_id="worker-a", success=True)
+            self.rt.complete("C3", task_id, worker_id="worker-b", expected_attempt=claimed.attempts, success=True)
+        self.rt.complete("C3", task_id, worker_id="worker-a", expected_attempt=claimed.attempts, success=True)
         self.assertEqual(1, self.rt.snapshot()["task_counts"]["SUCCEEDED"])
 
     def test_cross_c_message_and_wake(self):
@@ -61,8 +61,8 @@ class RuntimeTests(unittest.TestCase):
     def test_evidence_chain_is_append_only_verifiable(self):
         self.rt.heartbeat("C7")
         task_id = self.rt.enqueue("C7", "AUDIT", {})
-        self.rt.claim("C7", worker_id="w")
-        self.rt.complete("C7", task_id, worker_id="w", success=True, result={"ok": True})
+        claimed = self.rt.claim("C7", worker_id="w")
+        self.rt.complete("C7", task_id, worker_id="w", expected_attempt=claimed.attempts, success=True, result={"ok": True})
         self.assertTrue(self.rt.verify_evidence_chain())
 
 if __name__ == "__main__":

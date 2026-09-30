@@ -1,20 +1,37 @@
+# CANDIDATE ONLY: requires separate topology approval and authorized installation.
 [Unit]
-Description=GO C1-C14 Runtime Supervisor
-After=network.target
+Description=GO C1-C14 isolated Runtime probe supervisor
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 Type=simple
 User=go-runtime
 Group=go-runtime
 WorkingDirectory=/opt/go/c1-c14-runtime
-ExecStart=/usr/bin/python3 /opt/go/c1-c14-runtime/runner_service.py --db /var/lib/go-c-runtime/runtime.db --tick 5 --watchdog-every 12
-Restart=always
+ExecStart=/usr/bin/python3 /opt/go/c1-c14-runtime/runner_service.py --isolated-validation --db /var/lib/go-c-runtime/runtime.db --tick 5 --watchdog-every 12
+Restart=on-failure
 RestartSec=3
+TimeoutStopSec=20
+KillMode=control-group
+StateDirectory=go-c-runtime
+StateDirectoryMode=0700
+UMask=0077
 NoNewPrivileges=true
 PrivateTmp=true
+PrivateNetwork=true
+PrivateDevices=true
 ProtectSystem=strict
 ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+CapabilityBoundingSet=
+RestrictSUIDSGID=true
 ReadWritePaths=/var/lib/go-c-runtime
+MemoryMax=256M
+CPUQuota=50%
+TasksMax=32
 
 [Install]
 WantedBy=multi-user.target
