@@ -60,7 +60,7 @@ class PostgresRuntimeRepository:
         self.conn=conn
 
     def claim_one(self, owner_c: str, worker_id: str, lease_s: int=120):
-        with self.conn:
+        with self.conn.transaction():
             with self.conn.cursor() as cur:
                 cur.execute(CLAIM_SQL,(owner_c,worker_id,lease_s))
                 row=cur.fetchone()
@@ -68,21 +68,21 @@ class PostgresRuntimeRepository:
 
     def complete(self, *, task_id: str, owner_c: str, worker_id: str, success: bool, error: str|None=None) -> bool:
         status="SUCCEEDED" if success else "FAILED"
-        with self.conn:
+        with self.conn.transaction():
             with self.conn.cursor() as cur:
                 cur.execute(COMPLETE_SQL,(status,error,task_id,owner_c,worker_id))
                 row=cur.fetchone()
         return row is not None
 
     def recover_expired(self):
-        with self.conn:
+        with self.conn.transaction():
             with self.conn.cursor() as cur:
                 cur.execute(RECOVER_SQL)
                 return cur.fetchall()
 
     def record_effect_once(self, *, effect_key: str, task_id: str, effect_type: str, body: dict[str,Any]) -> bool:
         raw=json.dumps(body,sort_keys=True,separators=(",",":"))
-        with self.conn:
+        with self.conn.transaction():
             with self.conn.cursor() as cur:
                 cur.execute(INSERT_EFFECT_SQL,(effect_key,task_id,effect_type,raw))
                 row=cur.fetchone()
