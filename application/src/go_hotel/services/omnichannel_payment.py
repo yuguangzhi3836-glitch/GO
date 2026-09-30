@@ -143,6 +143,39 @@ class OmnichannelPaymentService:
    a=s.scalar(select(Attempt).where(Attempt.payment_attempt_id==aid).with_for_update());i=s.scalar(select(Intent).where(Intent.payment_intent_id==a.payment_intent_id).with_for_update()) if a else None
    if not a or a.external_invoked:raise ValueError('SIMULATOR_ATTEMPT_REQUIRED')
    mapped='UNKNOWN_EXTERNAL_STATE' if result=='TIMEOUT' else result;self._transition(s,a,i,mapped);s.commit();return {'intent':out(i),'attempt':out(a)}
+ def confirm_contract_simulator(self,iid,actor):
+  """Complete local simulator payment confirmation in one transaction."""
+  with SessionLocal() as s:
+   i=s.scalar(select(Intent).where(Intent.payment_intent_id==iid).with_for_update())
+   if not i or i.payer_id!=actor:raise ValueError('PAYMENT_PAYER_ORDER_MISMATCH')
+   if i.state=='UNKNOWN_EXTERNAL_STATE':raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+   if i.state=='SUCCEEDED':
+    a=s.scalar(select(Attempt).where(Attempt.payment_intent_id==iid,Attempt.state=='SUCCEEDED').order_by(Attempt.attempt_no.desc()).limit(1))
+    f=s.scalar(select(Fulfillment).where(Fulfillment.payment_intent_id==iid))
+    return {'intent':out(i),'attempt':out(a) if a else None,'supplier_fulfillment_id':f.order_supplier_fulfillment_id if f else None}
+   pending=list(s.scalars(select(Attempt).where(
+    Attempt.payment_intent_id==iid,
+    Attempt.state.in_(['PROCESSING','UNKNOWN_EXTERNAL_STATE','CONTRACT_READY_NOT_EXTERNAL'])
+   ).with_for_update()))
+   if any(a.state in {'PROCESSING','UNKNOWN_EXTERNAL_STATE'} or a.external_invoked for a in pending):
+    raise ValueError('ACTIVE_OR_UNKNOWN_ATTEMPT_BLOCKS_RESEND')
+   contract=[a for a in pending if a.state=='CONTRACT_READY_NOT_EXTERNAL']
+   if len(contract)>1:raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+   if i.state=='REQUIRES_CHANNEL_SELECTION':
+    if 'LOCAL_MARKET' not in i.channel_priority_json:raise ValueError('CHANNEL_NOT_ALLOWED_FOR_INTENT')
+    i.selected_channel='LOCAL_MARKET';i.user_channel_consent_at=now();i.state='READY';i.updated_at=now()
+   if i.state=='READY':
+    n=(s.scalar(select(func.max(Attempt.attempt_no)).where(Attempt.payment_intent_id==iid)) or 0)+1
+    a=Attempt(payment_attempt_id=ident('opa'),payment_intent_id=iid,channel=i.selected_channel,attempt_no=n,external_operation_id=None,channel_idempotency_key=f'{i.idempotency_key}:{n}',state='CONTRACT_READY_NOT_EXTERNAL',external_invoked=False,created_at=now(),updated_at=now());s.add(a);s.flush()
+   elif i.state=='CONTRACT_READY_NOT_EXTERNAL':
+    if len(contract)!=1:raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+    a=contract[0]
+   else:
+    raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+   self._transition(s,a,i,'SUCCEEDED')
+   f=s.scalar(select(Fulfillment).where(Fulfillment.payment_intent_id==iid))
+   s.commit()
+   return {'intent':out(i),'attempt':out(a),'supplier_fulfillment_id':f.order_supplier_fulfillment_id if f else None}
  def fallback(self,iid,channel,actor):
   with SessionLocal() as s:
    i=s.scalar(select(Intent).where(Intent.payment_intent_id==iid).with_for_update())
