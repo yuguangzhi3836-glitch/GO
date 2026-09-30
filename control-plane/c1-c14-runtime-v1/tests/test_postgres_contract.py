@@ -21,6 +21,7 @@ class FakeCursor:
 class FakeConn:
     def __init__(self,rows): self.cur=FakeCursor(rows)
     def cursor(self): return self.cur
+    def transaction(self): return self
     def __enter__(self): return self
     def __exit__(self,*a): pass
 
