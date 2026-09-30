@@ -13,7 +13,7 @@ def read(path):
     return json.loads(path.read_text())
 
 
-def verify_journey(folder, head, tree):
+def verify_journey(folder, head, tree, expected_instances=2, expected_pool=5):
     folder = Path(folder)
     manifest = read(folder / 'SHA256.json')
     assert manifest and all(hashlib.sha256((folder / p).read_bytes()).hexdigest() == digest
@@ -23,8 +23,9 @@ def verify_journey(folder, head, tree):
     assert read(folder / 'exit.json')['exit_code'] == 0
     assert binding['head'] == head and binding['application_tree'] == tree
     assert binding['tiers'] == [20, 100] and binding['batches_per_operation'] == 4
-    assert binding['instances_per_operation'] == 2
-    assert binding['pool_per_instance'] == 5 and binding['max_overflow'] == 0
+    assert expected_instances in (2, 4) and expected_pool in (4, 5)
+    assert binding['instances_per_operation'] == expected_instances
+    assert binding['pool_per_instance'] == expected_pool and binding['max_overflow'] == 0
     assert binding['original_formal_p95_ms'] == 5000 and binding['original_formal_p99_ms'] == 10000
     assert result['status'] == 'MEASUREMENT_COMPLETE_NOT_CAPACITY_ACCEPTANCE'
     expected = {(n, op) for n in (20, 100) for op in
@@ -38,7 +39,7 @@ def verify_journey(folder, head, tree):
         directory = folder / f'tier-{n}' / operation
         startups = read(directory / 'startups.json')
         pids = sorted(s['pid'] for s in startups)
-        assert len(set(pids)) == 2
+        assert len(set(pids)) == expected_instances
         for s in startups:
             assert s['initial_pool_connections'] == s['initial_configured_mappers'] == 0
             assert s['ready_ns'] >= s['child_entry_ns'] >= s['launch_ns']
@@ -55,7 +56,7 @@ def verify_journey(folder, head, tree):
             assert summary['pids'] == pids and summary['requested_concurrency'] == n
             assert summary['observed_peak_inflight'] == n, 'JOURNEY_CONCURRENCY_SHORTFALL'
             assert summary['mode'] == ('PROCESS_COLD_FIRST_BATCH' if batch == 0 else 'CONTINUED_PROCESS')
-            counters = [read(directory / f'worker-{i}/batch-{batch}.json') for i in range(2)]
+            counters = [read(directory / f'worker-{i}/batch-{batch}.json') for i in range(expected_instances)]
             assert sorted(r['owner'] for c in counters for r in c['rows']) == sorted(r['owner'] for r in rows)
             assert summary['process_cpu_seconds'] == sum(c['process_cpu_seconds'] for c in counters)
             for field in ('process_cpu_seconds', 'p95_ms', 'p99_ms', 'max_worker_rss_kib'):

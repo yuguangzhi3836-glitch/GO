@@ -155,11 +155,13 @@ def worker(job_path):
 def measure(operation, batches, directory):
     directory.mkdir()
     processes = []; launches = []; result = []
+    instances = int(os.environ.get('GO_JOURNEY_INSTANCES', '2'))
+    assert instances in (2, 4), 'INVALID_JOURNEY_INSTANCE_COUNT'
     try:
-        for index in range(2):
+        for index in range(instances):
             child_dir = directory / f'worker-{index}'; child_dir.mkdir()
             job = {'directory': str(child_dir), 'release_directory': str(directory), 'operation': operation,
-                'batches': [batch[index::2] for batch in batches]}
+                'batches': [batch[index::instances] for batch in batches]}
             path = child_dir / 'job.json'; write(path, job)
             with (child_dir / 'worker.log').open('w') as log:
                 launched = time.monotonic_ns()
@@ -167,7 +169,7 @@ def measure(operation, batches, directory):
                     stdout=log, stderr=subprocess.STDOUT)
             processes.append(p); launches.append(launched)
         startups = []
-        for index in range(2):
+        for index in range(instances):
             path = directory / f'worker-{index}' / 'startup.json'; wait(path, processes)
             startup = json.loads(path.read_text())
             startup['launch_ns'] = launches[index]
@@ -175,12 +177,12 @@ def measure(operation, batches, directory):
             startups.append(startup)
         write(directory / 'startups.json', startups)
         for number, tasks in enumerate(batches):
-            for index in range(2):
+            for index in range(instances):
                 wait(directory / f'worker-{index}/batch-{number}.ready', processes)
             release_ns = time.monotonic_ns()
             (directory / f'batch-{number}.start').touch()
             rows = []; counters = []
-            for index in range(2):
+            for index in range(instances):
                 path = directory / f'worker-{index}/batch-{number}.json'
                 # A worker may exit successfully immediately after its last result.
                 wait(path)
@@ -291,6 +293,8 @@ def main():
     parser.add_argument('--coordinator', type=Path)
     parser.add_argument('--out', type=Path)
     parser.add_argument('--application-tree')
+    parser.add_argument('--instances-per-operation', type=int, choices=(2, 4), default=2)
+    parser.add_argument('--pool-per-instance', type=int, choices=(4, 5), default=5)
     args = parser.parse_args()
     sys.addaudithook(guard)
     if args.worker:
@@ -309,11 +313,13 @@ def main():
     url = make_url(os.environ['GO_MULTI_DATABASE_URL'])
     assert (url.drivername, url.host, url.port, url.username, url.database) == (
         'postgresql+psycopg', '127.0.0.1', 5432, 'go_ci', 'go_c11_isolated') and not url.query
+    if (args.instances_per_operation, args.pool_per_instance) != (2, 5) and args.out is None:
+        parser.error('Non-default journey configuration requires a separate output directory')
     out = args.out or ROOT / 'journey-latency-evidence'; out.mkdir(exist_ok=False)
     schema = 'mi_' + uuid4().hex; engine = create_engine(url); code = 1
     binding = {'head': head, 'application_tree': app, 'baseline': frozen,
-        'tiers': TIERS, 'batches_per_operation': BATCHES, 'instances_per_operation': 2,
-        'pool_per_instance': 5, 'max_overflow': 0, 'schema': schema,
+        'tiers': TIERS, 'batches_per_operation': BATCHES, 'instances_per_operation': args.instances_per_operation,
+        'pool_per_instance': args.pool_per_instance, 'max_overflow': 0, 'schema': schema,
         'python': sys.version, 'platform': platform.platform(), 'cpu_count': os.cpu_count(),
         'cpu_model': next((s.split(':', 1)[1].strip() for s in Path('/proc/cpuinfo').read_text().splitlines()
                            if s.startswith('model name')), None),
@@ -333,7 +339,8 @@ def main():
             ' -cstatement_timeout=15000 -clock_timeout=10000 -cidle_in_transaction_session_timeout=30000',
             'connect_timeout': '5'}).render_as_string(hide_password=False),
             APP_ENV='test', MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED='false', TRAVEL_INTELLIGENCE_ENABLED='false',
-            DATABASE_POOL_SIZE='5', DATABASE_MAX_OVERFLOW='0', DATABASE_POOL_TIMEOUT_SECONDS='10',
+            DATABASE_POOL_SIZE=str(args.pool_per_instance), DATABASE_MAX_OVERFLOW='0', DATABASE_POOL_TIMEOUT_SECONDS='10',
+            GO_JOURNEY_INSTANCES=str(args.instances_per_operation),
             PYTHONPATH=str(APP / 'src'),
             GO_RIDE_ISOLATED_CANCELLATION_POLICY_FILE=str(APP / 'scripts/fixtures/ride-cancellation.synthetic.json'))
         with (out / 'coordinator.log').open('w') as log:
