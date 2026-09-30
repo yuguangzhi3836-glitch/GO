@@ -4,7 +4,7 @@ import hashlib,json,os,runpy,shlex,signal,subprocess,sys,time,zipfile
 ROOT=Path(__file__).resolve().parents[2]
 PYTHON='/workspaces/.go-capacity-venv/bin/python'
 NAME='literate-winner-vpqqjgwvpjprcp7gw'
-BRANCH='experiment/process-pool-20260930'
+BRANCH='experiment/process-pool-r2-20260930'
 OUT=ROOT/'process-pool-qualification'
 OUT.mkdir(exist_ok=False)
 START=time.monotonic();DEADLINE=START+5400
@@ -29,7 +29,7 @@ try:
     (OUT/'hardware.json').write_text(json.dumps(hardware,indent=2)+'\n')
     # Preserve dependencies from the preceding experiment, no upgrades.
     (OUT/'packages.txt').write_text(subprocess.check_output([PYTHON,'-m','pip','freeze'],text=True))
-    run([PYTHON,'-m','pytest','ci/process_pool/test_run.py','ci/multi_instance/test_thread_switch.py','-q','--junitxml='+str(OUT/'harness.xml')])
+    run([PYTHON,'-m','pytest','-p','no:cacheprovider','ci/process_pool/test_run.py','ci/multi_instance/test_thread_switch.py','-q','--junitxml='+str(OUT/'harness.xml')])
     run(['docker','run','--name','go-process-pool-pg','--rm','-d','-e','POSTGRES_USER=go_ci','-e','POSTGRES_PASSWORD=isolated_multi_only','-e','POSTGRES_DB=go_c11_isolated','-p','127.0.0.1:5432:5432','postgres:18.4']);pg=True
     for _ in range(60):
         if run(['docker','exec','go-process-pool-pg','pg_isready','-U','go_ci','-d','go_c11_isolated'],check=False)==0:break
@@ -41,7 +41,7 @@ try:
     line=next(s.strip() for s in step['run'].splitlines() if s.strip().startswith('python -m pytest '))
     args=[s for s in shlex.split(line)[3:] if not s.startswith('--junitxml=')]
     state['status']='REGRESSIONS';save()
-    run([PYTHON,'-m','pytest',*args,'--junitxml='+str(OUT/'original.xml')],cwd=ROOT/'application',env=dict(ENV,GO_TEST_DATABASE_URL=ENV['GO_MULTI_DATABASE_URL']))
+    run([PYTHON,'-m','pytest','-p','no:cacheprovider',*args,'--junitxml='+str(OUT/'original.xml')],cwd=ROOT/'application',env=dict(ENV,GO_TEST_DATABASE_URL=ENV['GO_MULTI_DATABASE_URL']))
     suite=ET.parse(OUT/'original.xml').getroot().find('testsuite')
     assert int(suite.get('tests'))==250 and all(int(suite.get(k,'0'))==0 for k in ('failures','errors','skipped'))
     state['status']='FACTORIAL_RUNNING';save()
@@ -59,6 +59,8 @@ finally:
         dest=ROOT/'ci/process_pool/evidence/20260930';dest.mkdir(parents=True,exist_ok=False)
         archive=dest/'raw.zip'
         with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
+            launch_log=ROOT/'process-pool-launch.log'
+            if launch_log.exists():z.write(launch_log,launch_log.name)
             for folder in (OUT,ROOT/'process-pool-evidence'):
                 if folder.exists():
                     for f in folder.rglob('*'):

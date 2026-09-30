@@ -22,3 +22,11 @@ def test_invalid_scope_rejected_before_database(args):
 def test_frozen_formal_default_unchanged():
     assert mod.base.plan_for(0)==[20,100,250,500,1000]
     assert mod.CONFIGS==((2,4),(4,2),(2,8),(4,4))
+
+def test_qualification_does_not_rewrite_tracked_pytest_cache(tmp_path):
+    cache=tmp_path/'.pytest_cache/v/cache/nodeids'
+    cache.parent.mkdir(parents=True);cache.write_text('["historical_test"]')
+    (tmp_path/'test_example.py').write_text('def test_one(): assert 1 + 1 == 2\n')
+    r=subprocess.run([sys.executable,'-m','pytest','-p','no:cacheprovider','-q',str(tmp_path/'test_example.py')],cwd=tmp_path,capture_output=True,text=True)
+    assert r.returncode==0,r.stdout+r.stderr
+    assert cache.read_text()=='["historical_test"]'

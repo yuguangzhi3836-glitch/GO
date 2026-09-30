@@ -17,13 +17,15 @@ def main():
     try:
         for number,(instances,pool) in enumerate([CONFIGS[i] for i in ORDER],1):
             folder=out/f'{number}-{instances}x{pool}'
-            code=subprocess.call([sys.executable,str(ROOT/'ci/process_pool/run.py'),'--instances',str(instances),'--pool',str(pool),'--out',str(folder)],cwd=ROOT)
+            with (out/f'{number}-command.log').open('w') as log:
+                code=subprocess.call([sys.executable,str(ROOT/'ci/process_pool/run.py'),'--instances',str(instances),'--pool',str(pool),'--out',str(folder)],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT)
             assert code in (0,1)
             row=validate(folder,instances,pool,False,head);row.update(number=number,folder=folder.name)
             summary['rounds'].append(row);save();print('ROUND_COMPLETE',number,instances,pool,json.dumps(row['stages']),flush=True)
         for instances,pool in CONFIGS:
             folder=out/f'diagnostic-{instances}x{pool}'
-            code=subprocess.call([sys.executable,str(ROOT/'ci/process_pool/run.py'),'--instances',str(instances),'--pool',str(pool),'--out',str(folder),'--diagnostic'],cwd=ROOT)
+            with (out/f'diagnostic-{instances}x{pool}-command.log').open('w') as log:
+                code=subprocess.call([sys.executable,str(ROOT/'ci/process_pool/run.py'),'--instances',str(instances),'--pool',str(pool),'--out',str(folder),'--diagnostic'],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT)
             assert code in (0,1)
             row=validate(folder,instances,pool,True,head);row['folder']=folder.name
             summary['diagnostics'].append(row);save();print('DIAGNOSTIC_COMPLETE',instances,pool,flush=True)
