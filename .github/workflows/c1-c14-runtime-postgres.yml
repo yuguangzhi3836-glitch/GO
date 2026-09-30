@@ -1,0 +1,45 @@
+name: C1-C14 Runtime PostgreSQL acceptance
+on:
+  pull_request:
+    paths:
+      - 'control-plane/c1-c14-runtime-v1/**'
+      - '.github/workflows/c1-c14-runtime-postgres.yml'
+jobs:
+  postgres-acceptance:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: go
+          POSTGRES_PASSWORD: go
+          POSTGRES_DB: runtime
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U go -d runtime"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install "psycopg[binary]>=3.2,<4"
+      - name: Pre-restart acceptance phase
+        env:
+          DSN: postgresql://go:go@127.0.0.1:5432/runtime
+        run: |
+          mkdir -p /tmp/c14-runtime
+          touch /tmp/c14-runtime/db-restart-ok
+          python control-plane/c1-c14-runtime-v1/pg_acceptance.py --dsn "$DSN" --out /tmp/c14-runtime/results.json
+      - name: Aggregate evidence
+        run: |
+          python control-plane/c1-c14-runtime-v1/acceptance_harness.py /tmp/c14-runtime/results.json --out /tmp/c14-runtime/evidence
+      - uses: actions/upload-artifact@v4
+        with:
+          name: c1-c14-runtime-postgres-evidence
+          path: /tmp/c14-runtime/
