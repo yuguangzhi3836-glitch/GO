@@ -10,7 +10,7 @@ def record(name,passed,**details): SCENARIOS.append({"name":name,"passed":bool(p
 
 def setup(conn):
     schema=Path(__file__).with_name("postgres_schema.sql").read_text()
-    with conn:
+    with conn.transaction():
         with conn.cursor() as cur:
             cur.execute("DROP TABLE IF EXISTS c_runtime_evidence_projection CASCADE")
             cur.execute("DROP TABLE IF EXISTS c_runtime_effect CASCADE")
@@ -23,7 +23,7 @@ def seed(conn,n=1000):
     for i in range(n):
         c=f"C{(i%12)+1}"
         rows.append((f"task-{i}",f"idem-{i}",c,"LOAD",json.dumps({"i":i}),100))
-    with conn:
+    with conn.transaction():
         with conn.cursor() as cur:
             cur.executemany("""INSERT INTO c_runtime_task(task_id,idempotency_key,owner_c,kind,payload,priority,status,available_at)
                                VALUES (%s,%s,%s,%s,%s::jsonb,%s,'QUEUED',now())""",rows)
@@ -60,21 +60,19 @@ def main():
 
     # duplicate dispatch via unique idempotency key
     setup(conn)
-    with conn:
+    with conn.transaction():
         with conn.cursor() as cur:
             ok=0
             for i in range(10):
-                try:
-                    cur.execute("""INSERT INTO c_runtime_task(task_id,idempotency_key,owner_c,kind,payload,priority,status,available_at)
-                                   VALUES (%s,'same','C1','X','{}',100,'QUEUED',now())""",(f"d{i}",))
-                    ok+=1
-                except Exception:
-                    conn.rollback()
+                cur.execute("""INSERT INTO c_runtime_task(task_id,idempotency_key,owner_c,kind,payload,priority,status,available_at)
+                               VALUES (%s,'same','C1','X','{}',100,'QUEUED',now())
+                               ON CONFLICT(idempotency_key) DO NOTHING RETURNING task_id""",(f"d{i}",))
+                ok += 1 if cur.fetchone() else 0
     record("duplicate_dispatch",count(conn,"SELECT count(*) FROM c_runtime_task WHERE idempotency_key='same'")==1)
 
     # effect idempotency
     setup(conn); seed(conn,1)
-    with conn:
+    with conn.transaction():
         with conn.cursor() as cur:
             inserted=0
             for _ in range(10):
@@ -87,14 +85,14 @@ def main():
     setup(conn); seed(conn,1)
     dead=subprocess.run(["python",str(Path(__file__).with_name("pg_acceptance_worker.py")),"--dsn",a.dsn,"--c","C1","--worker","dead","--crash-after-claim"])
     time.sleep(3)
-    with conn:
+    with conn.transaction():
         with conn.cursor() as cur:
             cur.execute("""UPDATE c_runtime_task SET status='QUEUED',lease_owner=NULL,lease_until=NULL,last_error='LEASE_EXPIRED'
                            WHERE status='RUNNING' AND lease_until<now() RETURNING task_id""")
             recovered=cur.fetchone() is not None
     replacement=subprocess.run(["python",str(Path(__file__).with_name("pg_acceptance_worker.py")),"--dsn",a.dsn,"--c","C1","--worker","replacement"])
     record("worker_death",dead.returncode==23 and recovered and replacement.returncode==0)
-    with conn:
+    with conn.transaction():
         with conn.cursor() as cur:
             cur.execute("""UPDATE c_runtime_task SET status='SUCCEEDED' WHERE task_id='task-0' AND lease_owner='dead' AND status='RUNNING' RETURNING task_id""")
             old=cur.fetchone()
@@ -106,7 +104,7 @@ def main():
 
     # retry exhaustion direct state transition check
     setup(conn)
-    with conn:
+    with conn.transaction():
         with conn.cursor() as cur:
             cur.execute("""INSERT INTO c_runtime_task(task_id,owner_c,kind,payload,priority,status,available_at,lease_owner,lease_until,attempts,max_attempts)
                            VALUES ('rx','C1','X','{}',100,'RUNNING',now(),'dead',now()-interval '1 second',3,3)""")
@@ -117,7 +115,7 @@ def main():
 
     # evidence projection consistency
     setup(conn)
-    with conn:
+    with conn.transaction():
         with conn.cursor() as cur:
             cur.execute("""INSERT INTO c_runtime_evidence_projection(projection_key,last_event_hash,last_event_id,event_count)
                            VALUES ('main','h3','e3',3)""")
