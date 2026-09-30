@@ -87,3 +87,32 @@ class PostgresRuntimeRepository:
                 cur.execute(INSERT_EFFECT_SQL,(effect_key,task_id,effect_type,raw))
                 row=cur.fetchone()
         return row is not None
+
+
+CLAIM_BATCH_SQL = """
+WITH next_tasks AS (
+  SELECT task_id
+  FROM c_runtime_task
+  WHERE owner_c = ANY(%s)
+    AND status='QUEUED'
+    AND available_at<=now()
+  ORDER BY priority ASC, created_at ASC
+  FOR UPDATE SKIP LOCKED
+  LIMIT %s
+)
+UPDATE c_runtime_task t
+SET status='RUNNING',
+    lease_owner=%s,
+    lease_until=now() + (%s || ' seconds')::interval,
+    attempts=attempts+1,
+    updated_at=now()
+FROM next_tasks n
+WHERE t.task_id=n.task_id
+RETURNING t.task_id,t.owner_c,t.kind,t.payload,t.attempts,t.lease_until;
+"""
+
+def claim_batch(conn, owner_cs: list[str], worker_id: str, *, limit: int=25, lease_s: int=30):
+    with conn.transaction():
+        with conn.cursor() as cur:
+            cur.execute(CLAIM_BATCH_SQL,(owner_cs,limit,worker_id,lease_s))
+            return cur.fetchall()
