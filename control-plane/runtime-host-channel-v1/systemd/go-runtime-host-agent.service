@@ -26,10 +26,12 @@ ProtectKernelModules=true
 ProtectControlGroups=true
 PrivateDevices=true
 # The Agent holds the Evidence signing key and the restricted GitHub deploy keys in
-# /etc/go-runtime-host, which stays read-only here; only its own state directory is
-# writable. PrivateNetwork is deliberately NOT set: the Agent must reach GitHub and
-# the ECS instance metadata endpoint to observe its own cloud identity.
-ReadWritePaths=/var/lib/go-runtime-host
+# /etc/go-runtime-host, which stays read-only here; only its own state directory and
+# the fixed bridge inbox are writable, because the C1 bridge hands one immutable
+# request file to the go-runtime bridge service. PrivateNetwork is deliberately NOT
+# set: the Agent must reach GitHub and the ECS instance metadata endpoint to observe
+# its own cloud identity.
+ReadWritePaths=/var/lib/go-runtime-host /var/lib/go-runtime-bridge/inbox
 
 [Install]
 WantedBy=multi-user.target

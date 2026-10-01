@@ -16,8 +16,14 @@ Scope (deliberately minimal -- PR290 ships library code only, no resident entry)
  10. bounded sleep, then repeat
 
 Refuses: shell execution, arbitrary action, arbitrary URL, arbitrary path input,
-deploy, reboot, Production, HK actions. The only task action accepted is
-`RUNTIME_HOST_PROBE_V1`, enforced by channel.py itself (`ACTION`).
+deploy, reboot, Production, HK actions. The accepted task actions are the closed
+channel.ACTIONS set -- `RUNTIME_HOST_PROBE_V1` (bounded host probe) and
+`RUNTIME_C1_PROBE_V1` (bounded external probe crossing the local bridge into the
+C1-C14 Runtime) -- enforced by channel.py itself.
+
+The bridge for the second action is optional configuration. When present it is a fixed
+pair of local directories; the Agent writes one request file and reads one result file.
+The Agent never opens the Runtime database and never calls Runtime.enqueue().
 
 Usage:
     agent_service.py            # resident loop
@@ -85,6 +91,15 @@ def load_config():
         check_remote(block["remote"], k + ".remote")
         check_path(block["key"], k + ".key")
         check_path(block["known_hosts"], k + ".known_hosts")
+    bridge = cfg.get("bridge")
+    if bridge is not None:
+        # Optional, and only ever a fixed local directory pair.
+        if not isinstance(bridge, dict):
+            raise Reject("config_bridge")
+        for sub in ("inbox", "outbox"):
+            if sub not in bridge:
+                raise Reject("config_missing:bridge.%s" % sub)
+            check_path(bridge[sub], "bridge." + sub)
     if not isinstance(cfg["tick_seconds"], int) or not TICK_MIN <= cfg["tick_seconds"] <= TICK_MAX:
         raise Reject("config_tick")
     return cfg
@@ -146,6 +161,15 @@ def build_git_env(key_path, known_hosts):
     }
 
 
+def build_bridge(cfg):
+    """Optional local filesystem bridge. Nothing else in the Agent touches these paths."""
+    block = cfg.get("bridge")
+    if not block:
+        return None
+    from runtime_bridge import LocalBridge
+    return LocalBridge(block["inbox"], block["outbox"])
+
+
 def one_pass(cfg, registry_holder):
     from channel import Registry
 
@@ -161,6 +185,7 @@ def one_pass(cfg, registry_holder):
                          git_env=build_git_env(cfg["tasks"]["key"], cfg["tasks"]["known_hosts"]))
     evidence = GitTransport(cfg["evidence"]["remote"], cfg["evidence"]["branch"], "evidence",
                             git_env=build_git_env(cfg["evidence"]["key"], cfg["evidence"]["known_hosts"]))
+    bridge = build_bridge(cfg)
 
     if registry_holder[0] is None:
         os.makedirs(os.path.dirname(cfg["registry_db"]), mode=0o700, exist_ok=True)
@@ -179,7 +204,8 @@ def one_pass(cfg, registry_holder):
         raise Reject("local_host_mismatch")
 
     results = poll_once(registry_holder[0], registration_raw, authority_public, task_public,
-                        evidence_signer, live_host_id, executor_sha256, tasks, evidence, clock)
+                        evidence_signer, live_host_id, executor_sha256, tasks, evidence, clock,
+                        bridge=bridge)
 
     sys.stderr.write(json.dumps({
         "status": "PASS", "environment": cfg["environment"], "host_id": live_host_id,

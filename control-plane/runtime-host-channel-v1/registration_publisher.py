@@ -21,8 +21,9 @@ Responsibilities, and nothing else:
  11. record the generation as published only after a confirmed readback
 
 Refuses: task publication, arbitrary action, shell, deploy, reboot, host-selector
-input, URL input, Production and HK actions. The only registration action is the
-module constant channel.ACTION == 'RUNTIME_HOST_PROBE_V1'.
+input, URL input, Production and HK actions. The registration action vector is the
+closed module constant channel.ACTIONS: the original host probe
+('RUNTIME_HOST_PROBE_V1') plus the bounded C1 bridge probe ('RUNTIME_C1_PROBE_V1').
 
 No command line arguments are accepted. Every path, remote and binding value comes
 from the protected root-owned config files, never from a caller.
@@ -42,7 +43,7 @@ import time
 
 from cryptography.hazmat.primitives import serialization
 
-from channel import ACTION, Reject, digest, identifier, registration, signed
+from channel import ACTION, ACTIONS, Reject, digest, identifier, registration, signed
 from git_transport import GitTransport
 
 CONFIG_DIR = "/etc/go-command-center/runtime-host-v1"
@@ -239,7 +240,7 @@ def build_body(cfg, generation, now):
         "approval_ref": cfg["approval_ref"],
         "issued_at": now,
         "expires_at": now + REGISTRATION_LIFETIME_SECONDS,
-        "actions": [ACTION],
+        "actions": list(ACTIONS),
     }
 
 

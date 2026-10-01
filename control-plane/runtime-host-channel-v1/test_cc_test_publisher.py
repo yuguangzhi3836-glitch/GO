@@ -255,7 +255,8 @@ class PublisherContractTests(unittest.TestCase):
                "agent_id": "go-runtime-test-01-agent", "generation": 1,
                "executor_sha256": "0" * 64,
                "evidence_key_sha256": self.evidence_key_sha256}
-        task = {"task_id": "rh-probe-test", "issued_at": now - 5, "expires_at": now + 30}
+        task = {"task_id": "rh-probe-test", "action": channel.ACTION,
+                "issued_at": now - 5, "expires_at": now + 30}
         return reg, task
 
     def signed_evidence(self, task, reg, **overrides):
