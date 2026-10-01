@@ -400,6 +400,100 @@ In short:
 
 This principle is one of the main reasons Forge uses an AI operator rather than another rigid gate chain.
 
+### HK-STAGING risk budget — recoverable, not sacred
+
+Forge is being designed for **HK-STAGING**, not Production.
+
+Therefore the risk model must reflect the actual value and recoverability of the environment.
+
+HK-STAGING has multiple recovery layers:
+
+- Alibaba Cloud server-level backup / snapshot capability
+- pre-migration backup performed by the AI before destructive DB work
+- immutable Candidate/source history in GitHub
+- existing image/package/deploy records
+- rollback / previous-known-good assets
+- the option, if necessary, to rebuild the staging environment from known source and artifacts
+
+Because of this, the goal is **not zero mutation and not zero failure**.
+
+The goal is:
+
+> **fast execution + bounded failure + fast recovery + complete audit**
+
+or more explicitly:
+
+```text
+Safety != prevent every possible mistake
+
+Safety =
+  know what changed
++ know what Candidate was requested
++ keep recovery paths available
++ detect failure quickly
++ recover cheaply
++ retain an audit trail
+```
+
+For HK-STAGING, the cost of a false-positive STOP is real. A deployment system that repeatedly blocks harmless or recoverable differences can cost more engineering time and model/API spend than the staging failure it is trying to prevent.
+
+Therefore **cost and efficiency are first-class design constraints**, not secondary optimizations.
+
+#### Environment mismatch is not a production-grade release gate
+
+The following are not automatic blockers in HK-STAGING:
+
+- DB generation differs from Candidate
+- runtime/image generation differs from an old recorded pointer
+- Candidate introduces a newer migration head
+- executor/runtime needs a bounded repair
+- staging containers need recreation
+- a recoverable state must be rebuilt from GitHub/artifacts
+
+They must be evaluated by the AI in context.
+
+#### Destructive migration is an impact-analysis trigger, not an automatic reject
+
+A migration containing `DROP`, column removal, destructive DDL, data deletion, or another irreversible-looking action must not automatically become:
+
+```text
+DESTRUCTIVE
+→ REJECT
+```
+
+Instead Forge should ask:
+
+1. What object/data is being removed?
+2. Does the Candidate still depend on it?
+3. Is the change consistent with the Candidate's code and migration lineage?
+4. Is the affected staging data valuable or disposable?
+5. Is a backup/snapshot available and verified?
+6. What is the realistic recovery cost if the operation is wrong?
+7. Can the environment be rebuilt from GitHub + artifacts if needed?
+8. Is the action still confined to HK-STAGING?
+
+If the impact is understood and recovery cost is acceptable, Forge may continue.
+
+If the impact is unknown, recovery is not available, the change escapes staging scope, or the Candidate itself appears internally inconsistent, Forge should stop.
+
+Forge should judge the **effect of the migration**, not attempt to infer that an upstream GPT "must have had a good reason." Upstream intent is not a safety proof; observable impact and recoverability are.
+
+#### Staging severity model
+
+A failure in HK-STAGING is not automatically equivalent to a Production incident.
+
+The environment is intentionally allowed a larger operational risk budget because it is a test/staging system and can be recovered or rebuilt.
+
+A severe staging failure can still be inconvenient and must be audited, but Forge must not apply Production-grade release blocking to every recoverable staging deviation.
+
+Production remains explicitly out of scope and denied by the runtime.
+
+Core statement:
+
+> **HK-STAGING is recoverable, not sacred. Forge optimizes for fast, auditable recovery rather than preventing every possible mutation.**
+
+This principle does **not** remove backup, verification, rollback, audit, immutable Candidate, or Production-denial controls. It changes what counts as a reason to stop.
+
 ---
 
 ## 8. Audit is mandatory
