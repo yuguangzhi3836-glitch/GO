@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "record_type": "PROPOSAL_NOT_EXECUTION_AUTHORITY",
-  "status": "BLOCKED_HOST_AND_EXECUTION_ROUTE",
+  "status": "HOST_IDENTIFIED_BLOCKED_FORMAL_ENROLLMENT",
   "authorizes_any_action": false,
   "candidate": {
     "repository": "yuguangzhi3836-glitch/GO",
@@ -39,14 +39,29 @@
   "user_direction": {
     "received_at": "2026-10-01T01:13:17+08:00",
     "scope": "Proceed with independent topology approval, isolated target-host validation and separately authorized first E2E",
-    "target_specific_install_or_host_reboot_bound": false
+    "target_specific_install_or_host_reboot_bound": false,
+    "latest": {
+      "received_at": "2026-10-01T09:38:43+08:00",
+      "verbatim": "下一刀：把这台测试机接入正式任务通道，完成主机验收。",
+      "scope": "Enroll the dedicated test host in the formal task channel and complete host acceptance; does not establish installed capability or acceptance results."
+    }
   },
   "target": {
-    "host_id": null,
+    "host_id": "i-j6cg7euc4ggol8gkijog",
     "environment_id": null,
-    "host_identity_evidence": null,
+    "host_identity_evidence": "Alibaba Cloud ECS console and fresh Workbench login observed 2026-10-01; observational, not signed host acceptance",
     "approved_execution_route": null,
-    "installed_executor_capability_evidence": null
+    "installed_executor_capability_evidence": null,
+    "name": "go-runtime-test-01",
+    "region": "cn-hongkong",
+    "zone": "cn-hongkong-d",
+    "public_ipv4": "47.242.131.254",
+    "private_ipv4": "172.19.17.79",
+    "vpc_id": "vpc-j6c50x8oxnn1r1rtibg7c",
+    "security_group_id": "sg-j6chaivjql8codj78jyj",
+    "vcpus": 2,
+    "memory_gib": 4,
+    "os": "Ubuntu 24.04"
   },
   "host_validation": {
     "permissions": "NOT_RUN",
@@ -72,5 +87,18 @@
     "Independently approved topology/host/plan binding",
     "Fresh task and authenticated evidence through approved route"
   ],
-  "post_validation_state": "STOPPED_HOLD_UNLESS_SEPARATELY_AUTHORIZED_FOR_RESIDENCY"
+  "post_validation_state": "STOPPED_HOLD_UNLESS_SEPARATELY_AUTHORIZED_FOR_RESIDENCY",
+  "connection_observations": {
+    "workbench_fresh_login": "PASS_OBSERVED",
+    "ssh_inbound_source": "100.104.0.0/16",
+    "ssh_port": 22,
+    "formal_channel_enrolled": "NOT_PROVEN",
+    "host_routing_isolation": "NOT_VERIFIED",
+    "credentials_copied": false
+  },
+  "disclosure_authorization": {
+    "received_at": "2026-10-01T09:45:43+08:00",
+    "destination": "yuguangzhi3836-glitch/GO Draft PR #289",
+    "scope": "User explicitly authorized publishing the test host instance ID, IP addresses, VPC and security group metadata for formal enrollment and host acceptance; no secrets."
+  }
 }
