@@ -2292,13 +2292,6 @@ class EnvironmentHarness:
         found = self.extra_evidence.get(task.get('task_id'))
         return found if found is not None else self.f.read_evidence(task)
 
-    def canary_authority(self, path=None):
-        """The root-owned canary authority the channel reads for a CANARY Task."""
-        return {'version': 1, 'environment': gate.ENVIRONMENT,
-                'candidate_image_id': self.f.candidate,
-                'candidate_package_sha256': self.f.package,
-                'expected_current_image_id': self.f.current}
-
     def request_for(self, number, action=None):
         r = self.f.request(number)
         if action is not None: r = {**r, 'action_id': action}
@@ -2314,8 +2307,6 @@ class EnvironmentHarness:
         self.stack.enter_context(patch.object(bridge, 'read_admission', side_effect=self.f.admission_pointer))
         self.stack.enter_context(patch.object(bridge, 'read_evidence', side_effect=self.read_evidence))
         self.stack.enter_context(patch.object(bridge, 'load_baseline', side_effect=self.f.verify_baseline))
-        self.stack.enter_context(patch.object(bridge, 'load_canary_baseline',
-                                              side_effect=self.canary_authority))
         self.stack.enter_context(patch.object(bridge, 'read_supported_migration_head',
                                               side_effect=self.f.supported_migration_head))
         self.stack.enter_context(patch.object(

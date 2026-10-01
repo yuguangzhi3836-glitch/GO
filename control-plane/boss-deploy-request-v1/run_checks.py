@@ -46,13 +46,14 @@ summary={'schema_version':'1','status':'PASS' if result.wasSuccessful() and not 
     'health_participates_in_deploy_arm_or_plan_budget':'NO',
     'health_changes_verify_test_pr_deploy_permissions':'NO',
     # The canary action, reported the same way: a Request with no caller-controlled
-    # field at all, whose Task parameters exist only because a root-owned authority
-    # file states them.  It is not gated by the deployment authorisation, and it cannot
-    # reach the plan/approval path.
+    # field at all, whose Task parameters exist only because the candidate admission
+    # record states them -- the same record DEPLOY derives its own candidate from, so a
+    # canary can never be about a candidate the plan is not about.  It is not gated by
+    # the deployment authorisation, and it cannot reach the plan/approval path.
     'canary_request_fields':sorted(test_deploy_entry.bridge.ALLOWED),
     'canary_task_parameters':['release_id','candidate_image_id','candidate_package_sha256','expected_current_image_id'],
-    'canary_parameters_source':'ROOT_OWNED_CANARY_AUTHORITY_FILE',
-    'canary_authority_config':test_deploy_entry.bridge.CANARY_BASELINE_CONFIG,
+    'canary_parameters_source':'CANDIDATE_ADMISSION_RECORD',
+    'canary_admission_pointer':test_deploy_entry.bridge.plan_derivation.ADMISSION_POINTER,
     'canary_gated_by_the_deployment_authorization':'NO',
     'canary_can_become_verify_test_pr_deploy_or_rollback':'NO',
     'canary_participates_in_deploy_arm_or_plan_budget':'NO',
