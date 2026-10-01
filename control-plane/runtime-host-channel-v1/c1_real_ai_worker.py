@@ -39,7 +39,6 @@ FIXED_PROMPT = (
 )
 
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
-DEFAULT_MODEL = "gpt-5.6-luna"
 HTTP_TIMEOUT_S = 45
 LEASE_S = 90
 MAX_RESPONSE_BYTES = 1024 * 1024
