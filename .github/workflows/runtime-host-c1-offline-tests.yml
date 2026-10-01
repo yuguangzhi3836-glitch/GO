@@ -38,6 +38,10 @@ jobs:
           python -m pip install PyYAML==6.0.3 cryptography==46.0.0
 
       - name: Run the runtime-host channel regression
+        env:
+          # The step runs as root, so it must not leave root-owned bytecode in the
+          # workspace for the rest of the job.
+          PYTHONDONTWRITEBYTECODE: "1"
         run: |
           set -euo pipefail
           # The Management Agent runs as root on the Runtime Host (User=root), and this
