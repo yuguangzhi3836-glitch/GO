@@ -29,7 +29,7 @@ RUN_ID = 36874444444
 # Every module that runs on the Runtime Host for this loop.
 RUNTIME_SIDE = ("c1_execution_contract.py", "c1_dispatch_outbox.py",
                 "c1_result_pull.py", "c1_github_actions_client.py",
-                "c1_execution_loop.py")
+                "c1_execution_loop.py", "c1_worker.py")
 # The one module that legitimately names the credential, and only ever inside a
 # disposable GitHub-hosted runner.
 GITHUB_SIDE = ("c1_ai_execution_backend.py",)

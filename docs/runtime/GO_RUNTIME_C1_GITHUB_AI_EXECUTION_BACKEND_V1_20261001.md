@@ -239,6 +239,71 @@ that every state change appends a hash-chained Evidence row) and the GitHub tran
 workflow file runs when dispatched, and that a dispatch reaches GitHub. Those need the
 first real dispatch and are deliberately not part of this change.
 
+## The worker, and why it is its own service
+
+The loop is inert until something claims a task and drives it. That something is
+`c1_worker.py`, run by `go-runtime-host-c1-worker.service` as User=go-runtime.
+
+It is a **third component**, because the two that already exist each state a limit that
+puts the AI loop outside them:
+
+| component | its own stated limit |
+| --- | --- |
+| `agent_service.py` (User=**root**) | "The Agent never opens the Runtime database and never calls `Runtime.enqueue()`" - it reaches the C1 Runtime only through the fixed bridge directory pair |
+| `runtime_bridge_service.py` (User=go-runtime) | "It is **NOT a worker**. It never claims, executes or completes a Runtime task", and it runs `PrivateNetwork=true` - no network |
+
+The AI loop *is* a worker: it claims, executes and completes. So it needs two things no
+existing component has together - Runtime access and outbound network - and it runs as the
+same unprivileged account that already owns the Runtime database.
+
+**Only AI_WORK_V1.** The kind filter is passed to `Runtime.claim()` itself
+(`kinds=("AI_WORK_V1",)`), so a `RUNTIME_PROBE` task is not merely ignored after being
+claimed - it is never selected. `advance()` refuses anything outside the contract as a
+second, independent gate. The Agent's root process, its closed `channel.ACTIONS` set, the
+bridge handoff and the whole probe path are untouched: the worker never imports `channel`,
+`flow` or `adapter`, never knows the bridge directories, and never names a model
+credential.
+
+**No claim without a credential.** Claiming a task the worker cannot execute would burn
+one of that task's attempts, so the GitHub credential is checked *before* anything is
+claimed - and the unit carries `ConditionPathExists` on the token file, so without it the
+service is simply inactive. `--check` reports readiness and claims nothing.
+
+### Three deployment facts found while wiring this up
+
+1. **It must not be installed inside `/opt/go/runtime-host-agent`.** The Agent's
+   `executor_sha256` is `SHA256` of a manifest over *every* `*.py` directly in the bundle
+   directory, and that digest is bound by the registration. Adding files there changes the
+   Agent's identity, makes it refuse to start with `local_executor_mismatch`, and forces a
+   registration rotation - for code the Agent would never run. Hence
+   `/opt/go/runtime-host-c1-worker/`.
+2. **The credential file must be owned by the account that runs the worker.** The loader
+   refuses a file that is group- or other-readable, so `0640 root:go-runtime` is not an
+   option: the only compliant arrangement is a single-owner `0600` file inside a directory
+   that same owner can traverse. Hence `/etc/go-runtime-c1/github-token`
+   (`0600 go-runtime:go-runtime`) and `Environment=C1_GITHUB_TOKEN_PATH=...`.
+   ⚠ A token already placed at `/etc/go-runtime-host/c1-github-token` as `root:root 0600`
+   is **readable only by root** and cannot be used by this service as-is.
+3. **This is the one runtime-host component with egress,** so its unit deliberately does
+   **not** set `PrivateNetwork=true` - unlike the bridge. Everything else is hardened:
+   `NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome`, `PrivateTmp`,
+   `PrivateDevices`, `UMask=0077`, and `ReadWritePaths` covering only the Runtime state
+   directory and its own outbox.
+
+### Installing it
+
+```
+install -d -m 0700 -o go-runtime -g go-runtime /opt/go/runtime-host-c1-worker
+install -m 0644 <the C1 modules> /opt/go/runtime-host-c1-worker/
+install -m 0600 -o go-runtime -g go-runtime <the token> /etc/go-runtime-c1/github-token
+install -m 0644 go-runtime-host-c1-worker.service /etc/systemd/system/
+systemd-tmpfiles --create /etc/tmpfiles.d/go-runtime-host-c1-worker.conf
+systemctl daemon-reload && systemctl enable --now go-runtime-host-c1-worker.service
+```
+
+Run `/usr/bin/python3 -B /opt/go/runtime-host-c1-worker/c1_worker.py --check` first: it
+prints `READY` with no side effects.
+
 ## Secret boundary
 
 `OPENAI_API_KEY` never reaches the Runtime side. Asserted, not merely stated:
