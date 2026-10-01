@@ -1,7 +1,10 @@
 """Immutable candidate Git transport, separate namespace from legacy HK tasks.
 Remote/branch/credentials must be trusted installed config, never Request inputs.
 Calls use argv, no shell. This module does not provision or discover credentials.
+A read snapshot clones the configured repository once per polling pass; it is read-only
+and never creates, pushes or provisions anything.
 """
+import contextlib
 import os
 import re
 import subprocess
@@ -13,6 +16,17 @@ PREFIX='runtime-host-v1/'
 KINDS=('tasks','evidence','registrations')  # registrations is an append-only namespace
 KEY=re.compile(r'^(tasks|evidence|registrations)/[A-Za-z0-9][A-Za-z0-9._-]{2,79}\.json$')
 
+class Snapshot:
+    """Read-only view over a single clone, sharing the transport's validation.
+    Never writes, never pushes, never re-validates remote/branch inputs."""
+    __slots__=('_transport','_repo')
+    def __init__(self,transport,repo):
+        self._transport,self._repo=transport,repo
+    def keys(self):
+        return self._transport.keys_in(self._repo)
+    def read(self,key):
+        return self._transport.read_path(self._repo,self._transport.path(key))
+
 class GitTransport:
     def __init__(self, remote, branch, kind, *, git_env):
         if kind not in KINDS or not re.fullmatch('[A-Za-z0-9][A-Za-z0-9._-]{0,79}',branch):
@@ -23,33 +37,45 @@ class GitTransport:
         # Supplied by trusted service with pinned host keys and dedicated identity.
         self.env=dict(git_env)
         self.env.update(GIT_TERMINAL_PROMPT='0',GIT_CONFIG_NOSYSTEM='1')
+        self.clones=0  # observability only: how many clones this instance has made
     def git(self, repo, *args, check=True):
         result=subprocess.run(['git','-C',str(repo),*args],env=self.env,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if check and result.returncode: raise Reject('git_transport_failed')
         return result
     def clone(self, root):
+        self.clones+=1
         result=subprocess.run(['git','clone','--quiet','--single-branch','--branch',self.branch,'--',self.remote,str(root)],env=self.env,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         if result.returncode: raise Reject('git_clone_failed')
     def path(self,key):
         if not KEY.fullmatch(key) or not key.startswith(self.kind+'/'): raise Reject('transport_key')
         return PREFIX+key
+    def read_path(self,repo,path):
+        present=self.git(repo,'ls-tree','HEAD','--',path).stdout
+        if not present:return None
+        if not present.startswith(b'100644 blob '): raise Reject('transport_object_mode')
+        data=self.git(repo,'show','HEAD:'+path).stdout
+        if len(data)>16384:raise Reject('transport_object_size')
+        return data
+    def keys_in(self,repo):
+        names=self.git(repo,'ls-tree','-r','--name-only','HEAD','--',PREFIX+self.kind+'/').stdout.decode().splitlines()
+        keys=[name[len(PREFIX):] for name in names]
+        for key in keys:self.path(key)
+        return keys
     def read(self,key):
         path=self.path(key)
         with tempfile.TemporaryDirectory() as root:
             repo=Path(root)/'repo';self.clone(repo)
-            present=self.git(repo,'ls-tree','HEAD','--',path).stdout
-            if not present:return None
-            if not present.startswith(b'100644 blob '): raise Reject('transport_object_mode')
-            data=self.git(repo,'show','HEAD:'+path).stdout
-            if len(data)>16384:raise Reject('transport_object_size')
-            return data
+            return self.read_path(repo,path)
     def keys(self):
         with tempfile.TemporaryDirectory() as root:
             repo=Path(root)/'repo';self.clone(repo)
-            names=self.git(repo,'ls-tree','-r','--name-only','HEAD','--',PREFIX+self.kind+'/').stdout.decode().splitlines()
-            keys=[name[len(PREFIX):] for name in names]
-            for key in keys:self.path(key)
-            return keys
+            return self.keys_in(repo)
+    @contextlib.contextmanager
+    def snapshot(self):
+        """One clone for the whole block. Read-only: keys() and read() only."""
+        with tempfile.TemporaryDirectory() as root:
+            repo=Path(root)/'repo';self.clone(repo)
+            yield Snapshot(self,repo)
     def create(self,key,raw):
         path=self.path(key)
         if not isinstance(raw,bytes) or len(raw)>16384:raise Reject('transport_size')
