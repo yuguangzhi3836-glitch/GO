@@ -45,9 +45,18 @@ DISPATCH_AMBIGUOUS = "DISPATCH_AMBIGUOUS"  # a POST may have landed; lookup requ
 RUN_BOUND = "RUN_BOUND"                  # the GitHub run id is known
 RESULT_SEALED = "RESULT_SEALED"          # a terminal result is stored, immutable
 COMPLETED = "COMPLETED"                  # Runtime.complete() done
+# The Runtime has refused this identity's completion, and always will: its fence wants
+# `status='RUNNING' AND lease_owner=this worker AND attempts==expected_attempt AND
+# lease_until>now`, and a lease that has expired can never be renewed while a requeued
+# task comes back as the NEXT attempt. Retrying is pointless, so the identity is
+# settled instead of left in flight - otherwise it would block the worker forever.
+ABANDONED = "ABANDONED"
 
 IN_FLIGHT_STATES = (INTENT, DISPATCH_AMBIGUOUS, RUN_BOUND)
 TERMINAL_STATES = (RESULT_SEALED, COMPLETED)
+# Everything that still holds work, including a sealed result whose completion was
+# interrupted: that is exactly the case a restart has to pick up.
+UNFINISHED_STATES = (INTENT, DISPATCH_AMBIGUOUS, RUN_BOUND, RESULT_SEALED)
 
 # The outward-facing dispatch_status vocabulary. The internal state names are kept
 # because they say exactly what the outbox actually knows (in particular the
@@ -59,6 +68,7 @@ DISPATCH_STATUS = {
     RUN_BOUND: "RUNNING",
     RESULT_SEALED: "COMPLETED",
     COMPLETED: "COMPLETED",
+    ABANDONED: "FAILED",
 }
 DISPATCH_STATUS_VALUES = ("CREATED", "DISPATCHED", "RUNNING", "COMPLETED", "FAILED")
 
@@ -74,6 +84,7 @@ CREATE TABLE IF NOT EXISTS c1_dispatch (
     result_json          TEXT,
     result_sha256        TEXT,
     reused_from          TEXT,
+    abandon_reason       TEXT,
     updated_at           TEXT NOT NULL
 );
 """
@@ -98,6 +109,8 @@ class DispatchOutbox:
         present = {row["name"] for row in self._db.execute("PRAGMA table_info(c1_dispatch)")}
         if "reused_from" not in present:
             self._db.execute("ALTER TABLE c1_dispatch ADD COLUMN reused_from TEXT")
+        if "abandon_reason" not in present:
+            self._db.execute("ALTER TABLE c1_dispatch ADD COLUMN abandon_reason TEXT")
 
     def close(self):
         self._db.close()
@@ -114,6 +127,16 @@ class DispatchOutbox:
         self._db.execute(
             "UPDATE c1_dispatch SET %s, updated_at=? WHERE execution_request_id=?" % sets, values
         )
+
+    def _refuse_if_abandoned(self, request_id) -> None:
+        """An abandoned identity is settled: nothing may be sent, sealed or adopted for it.
+
+        This is the guard that keeps `abandon` from ever becoming a route back to a
+        second dispatch.
+        """
+        row = self._row(request_id)
+        if row is not None and row["state"] == ABANDONED:
+            raise Refused("EXECUTION_ABANDONED")
 
     # --------------------------------------------------------------- registration
     def register(self, runtime_task_id, attempt) -> dict:
@@ -140,6 +163,8 @@ class DispatchOutbox:
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
         state = row["state"]
+        if state == ABANDONED:
+            return ABANDONED
         if state in TERMINAL_STATES:
             return "REUSE_TERMINAL"
         if state == INTENT:
@@ -149,6 +174,52 @@ class DispatchOutbox:
         if state == RUN_BOUND:
             return "AWAIT_RESULT"
         raise Refused("OUTBOX_STATE_UNKNOWN")
+
+    # ------------------------------------------------------------------- resume
+    def unfinished(self, *, limit: int = 10) -> list[dict]:
+        """Executions still holding work, oldest first. What a restart must pick up.
+
+        `COMPLETED` is excluded because the Runtime has already been told the answer,
+        and `ABANDONED` because nothing can ever be done with it again. Ordered
+        oldest-first so a backlog drains in the order it was created - which matters
+        because each of these identities is a real execution that may already have been
+        paid for.
+        """
+        placeholders = ",".join("?" for _ in UNFINISHED_STATES)
+        rows = self._db.execute(
+            "SELECT * FROM c1_dispatch WHERE state IN (%s)"
+            " ORDER BY updated_at ASC, execution_request_id ASC LIMIT ?" % placeholders,
+            (*UNFINISHED_STATES, limit),
+        ).fetchall()
+        return [{"execution_request_id": r["execution_request_id"],
+                 "runtime_task_id": r["runtime_task_id"], "attempt": r["attempt"],
+                 "state": r["state"], "dispatches_sent": r["dispatches_sent"],
+                 "github_run_id": r["github_run_id"]} for r in rows]
+
+    def abandon(self, request_id, reason) -> str:
+        """Settle an identity the Runtime will never accept a completion for.
+
+        Called only after the Runtime has itself refused one. The fence conditions are
+        all unrecoverable, so retrying is pointless - and leaving the row unfinished
+        would keep the caller from ever doing anything else, which is the failure this
+        whole module exists to avoid.
+
+        It cannot become a route back to a second dispatch: an abandoned row is never
+        selected by `unfinished()`, `record_dispatch_sent` refuses it outright, and
+        `next_action` reports ABANDONED rather than DISPATCH or LOOKUP_RUN. A result
+        already sealed for it stays visible to `terminal_for_task`, so if the Runtime
+        later hands the same task out as a new attempt, that attempt still adopts the
+        answer instead of paying for a new one.
+        """
+        row = self._row(request_id)
+        if row is None:
+            raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
+        if row["state"] == COMPLETED:
+            raise Refused("CANNOT_ABANDON_A_COMPLETED_EXECUTION")
+        if row["state"] == ABANDONED:
+            return ABANDONED
+        self._update(request_id, state=ABANDONED, abandon_reason=str(reason)[:200])
+        return ABANDONED
 
     # ------------------------------------------------------------------- dispatch
     def record_dispatch_sent(self, request_id, github_run_id=None) -> None:
@@ -161,6 +232,7 @@ class DispatchOutbox:
         row = self._row(request_id)
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
+        self._refuse_if_abandoned(request_id)
         if row["dispatches_sent"] >= 1:
             raise Refused("SECOND_DISPATCH_FORBIDDEN")
         self._update(request_id, dispatches_sent=row["dispatches_sent"] + 1,
@@ -172,6 +244,7 @@ class DispatchOutbox:
         row = self._row(request_id)
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
+        self._refuse_if_abandoned(request_id)
         if row["state"] in TERMINAL_STATES:
             return
         if not isinstance(github_run_id, int) or github_run_id <= 0:
@@ -184,6 +257,7 @@ class DispatchOutbox:
         row = self._row(request_id)
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
+        self._refuse_if_abandoned(request_id)
         validate_result(document, runtime_task_id=runtime_task_id, attempt=attempt,
                         execution_request_id_=request_id)
         payload = canonical(document)
@@ -208,6 +282,7 @@ class DispatchOutbox:
         row = self._row(request_id)
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
+        self._refuse_if_abandoned(request_id)
         if row["state"] == COMPLETED:
             return
         if row["state"] != RESULT_SEALED:
@@ -246,6 +321,7 @@ class DispatchOutbox:
         row = self._row(request_id)
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
+        self._refuse_if_abandoned(request_id)
         if row["result_json"] is not None:
             if row["result_json"] == source["result_json"]:
                 return
@@ -304,6 +380,11 @@ def drive_once(outbox: DispatchOutbox, runtime_task_id, attempt, *, send, find_r
     if action == "REUSE_TERMINAL":
         return {"action": "REUSE_TERMINAL", "execution_request_id": request_id,
                 "result": outbox.terminal_result(request_id)}
+
+    if action == ABANDONED:
+        # Settled as uncompletable. `send` is not called, and never will be for this
+        # execution identity.
+        return {"action": ABANDONED, "execution_request_id": request_id}
 
     if action == "DISPATCH":
         outcome = send(request)

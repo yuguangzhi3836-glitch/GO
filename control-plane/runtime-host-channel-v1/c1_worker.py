@@ -32,10 +32,13 @@ this host.
 
 Responsibilities, and nothing else
 ----------------------------------
-  * claim ONE task per tick, `owner_c=C1`, kind restricted to `CLAIM_KINDS` - AI_WORK_V1
-    alone. The kind filter is passed to `Runtime.claim()` itself, so the probe kind is
-    never even looked at.
-  * advance the loop one bounded step (dispatch / resolve / pull / complete)
+  * finish what is already in flight: for an execution identity our own outbox still
+    holds, drive it one bounded step (lookup / pull / complete). `Runtime.claim()`
+    hands out `QUEUED` tasks only, so a task this worker has already taken is
+    `RUNNING` and can never be claimed again - the outbox is what remembers it
+  * only when nothing is in flight, claim ONE task, `owner_c=C1`, kind restricted to
+    `CLAIM_KINDS` - AI_WORK_V1 alone. The kind filter is passed to `Runtime.claim()`
+    itself, so the probe kind is never even looked at
   * refuse to claim at all when it could not execute the task: claiming a task it cannot
     run would burn one of that task's attempts, so the GitHub credential is checked
     before anything is claimed
@@ -53,7 +56,7 @@ import sys
 import time
 
 from c1_dispatch_outbox import DispatchOutbox
-from c1_execution_loop import DEFAULT_LEASE_S, advance
+from c1_execution_loop import DEFAULT_LEASE_S, advance, resume
 
 # Fixed installed locations. Constants, never caller inputs - the same pattern the
 # bridge service uses, so the two components cannot disagree about where the Runtime is.
@@ -71,12 +74,17 @@ DEFAULT_INTERVAL_S = 5.0
 INTERVAL_MIN_S = 1.0
 INTERVAL_MAX_S = 3600.0
 
+# How many unfinished execution identities one tick will look at. Only the oldest is
+# driven, so this is a read bound rather than a work bound: it keeps a long-neglected
+# outbox from being loaded wholesale.
+DEFAULT_RESUME_LIMIT = 10
+
 # Everything the status line may contain. An allowlist, so a future field cannot leak by
 # accident - the same rule the GitHub-side executor follows when it prints.
 STATUS_FIELDS = (
-    "status", "verb", "claimed", "kind", "runtime_task_id", "attempt", "action",
-    "dispatch_status", "reused", "renewed", "reason", "detail", "claimed_kinds",
-    "runtime_db", "outbox_db", "credential",
+    "status", "verb", "claimed", "resumed", "unfinished", "kind", "runtime_task_id",
+    "attempt", "action", "dispatch_status", "reused", "renewed", "reason", "detail",
+    "claimed_kinds", "runtime_db", "outbox_db", "credential",
 )
 
 
@@ -132,17 +140,55 @@ def credential_refusal(loader=None):
 
 
 def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_S,
-         clock=time.time, claim_kinds=CLAIM_KINDS) -> dict:
-    """Claim at most one AI_WORK_V1 task and advance it one bounded step.
+         clock=time.time, claim_kinds=CLAIM_KINDS,
+         resume_limit=DEFAULT_RESUME_LIMIT) -> dict:
+    """One bounded tick: resume what is in flight, and only then claim new work.
 
-    The `kinds` filter is handed to `Runtime.claim()`, so a probe task is not merely
-    ignored after being claimed - it is never selected. `advance()` refuses anything
-    that is not this contract's task as a second, independent gate.
+    Phase 1 is not an optimisation, it is the fix for the defect that stopped the first
+    deployment. `Runtime.claim()` selects `status='QUEUED'` only, and a task this worker
+    has already taken is `RUNNING` and owned by this worker - so `claim()` will never
+    return it again. A tick that only advances what it has just claimed therefore
+    advances each task exactly once, forever: the dispatch leg succeeds, GitHub runs,
+    the artifact exists, and the result leg never happens because the next tick asks the
+    Runtime for work and is handed nothing.
+
+    So the outbox is asked first. Its unfinished identities are the tasks this worker is
+    in the middle of, and each one is driven by `resume()` using the identity it already
+    has - no new claim, no new dispatch, the stored counter still in charge.
+
+    Phase 2 runs only when nothing is unfinished, which is also why a task is never
+    claimed while an execution of ours is still in flight.
+
+    A resume that could not be driven and was not settled by the Runtime (a transport
+    failure, say) reports `BLOCKED` and claims nothing this tick: continuing past it
+    would start new paid work while an existing one is unresolved. The identity stays in
+    the outbox and the next tick tries again, so a transient fault costs time, not money.
     """
+    unfinished = outbox.unfinished(limit=resume_limit)
+    if unfinished:
+        row = unfinished[0]
+        try:
+            outcome = resume(outbox, runtime, row["runtime_task_id"], row["attempt"],
+                             worker_id=worker_id, client=client, lease_s=lease_s,
+                             clock=clock)
+        except Exception as exc:  # noqa: BLE001 -- one bad task must not stop the worker
+            return {"status": "BLOCKED", "claimed": False, "resumed": True,
+                    "unfinished": len(unfinished),
+                    "runtime_task_id": row["runtime_task_id"], "attempt": row["attempt"],
+                    "reason": type(exc).__name__}
+        return {"status": "RESUMED", "claimed": False, "resumed": True,
+                "unfinished": len(unfinished),
+                "runtime_task_id": row["runtime_task_id"], "attempt": row["attempt"],
+                "action": outcome.get("action"),
+                "dispatch_status": outcome.get("state"),
+                "reason": outcome.get("reason"),
+                "reused": bool(outcome.get("reused")),
+                "renewed": bool(outcome.get("renewed"))}
+
     claimed = runtime.claim(OWNER_C, worker_id=worker_id, lease_s=lease_s,
                             kinds=claim_kinds)
     if claimed is None:
-        return {"status": "IDLE", "claimed": False}
+        return {"status": "IDLE", "claimed": False, "resumed": False, "unfinished": 0}
     try:
         outcome = advance(outbox, runtime, claimed, worker_id=worker_id, client=client,
                           lease_s=lease_s, clock=clock)
@@ -150,11 +196,12 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
         # Nothing is completed here. The outbox keeps its durable state, so the next
         # tick resumes from it - and because the dispatch counter survives, a failure
         # after a POST can only lead to a lookup, never to a second POST.
-        return {"status": "FAILED", "claimed": True, "kind": claimed.kind,
-                "runtime_task_id": claimed.task_id, "attempt": claimed.attempts,
-                "reason": type(exc).__name__}
-    return {"status": "ADVANCED", "claimed": True, "kind": claimed.kind,
-            "runtime_task_id": claimed.task_id, "attempt": claimed.attempts,
+        return {"status": "FAILED", "claimed": True, "resumed": False, "unfinished": 0,
+                "kind": claimed.kind, "runtime_task_id": claimed.task_id,
+                "attempt": claimed.attempts, "reason": type(exc).__name__}
+    return {"status": "ADVANCED", "claimed": True, "resumed": False, "unfinished": 0,
+            "kind": claimed.kind, "runtime_task_id": claimed.task_id,
+            "attempt": claimed.attempts,
             "action": outcome.get("action"),
             "dispatch_status": outcome.get("state"),
             "reused": bool(outcome.get("reused")),
