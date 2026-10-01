@@ -223,6 +223,57 @@ is not this contract's is refused before anything is sent - which is what makes 
 loop never executes `RUNTIME_PROBE`" a property of the loop rather than of the caller's
 claim query.
 
+### The resume leg, and the one state that cannot be recovered
+
+`advance()` is only reachable for a task that was *just claimed*, and that turned out to
+be the whole defect of the first deployment. It is a third fact about the kernel:
+
+3. `claim()` selects `status='QUEUED'` only. A task this worker has taken is `RUNNING`
+   and owned by it, so `claim()` will never return it again - and the kernel exposes no
+   way to read a task back (`snapshot()` returns aggregate counts, not rows).
+
+A tick that only advanced what it had just claimed therefore advanced each task exactly
+once, forever: the dispatch leg succeeded, GitHub ran, the artifact was published, and
+the result leg never happened. Measured on the Runtime Host rather than deduced - one
+`DISPATCHED` tick, then `IDLE` for as long as the worker was left running.
+
+`resume()` is the other entry point. Given a task id and an attempt that this outbox
+already holds, it drives the same three legs with no claim involved, and derives nothing:
+the identity is the same `execution_request_id` the claiming tick registered, so the
+stored dispatch counter still decides that an ambiguous POST is resolved by lookup and
+never by a second POST - across ticks, across a restart, and across a crash between the
+POST and the pull. `DispatchOutbox.unfinished()` is the list it works from, oldest first.
+
+A restart is safe for the same reason a lease renewal is: the worker id is a constant
+(`go-runtime-host-c1-worker`), not a per-process id, so a lease taken by the previous
+process is still owned by this one.
+
+**The one unrecoverable state.** `complete()` is fenced on
+
+    status='RUNNING' AND lease_owner=this worker AND attempts=expected_attempt
+      AND lease_until>now
+
+and `renew_task()` carries the identical fence. So when the Runtime refuses a completion,
+the lease is already in the past and can never be extended again; and the attempt can
+never come back either, because a requeued task is handed out as the *next* attempt. The
+refusal is therefore permanent for that `(task, attempt)`, and the identity is
+**settled** (`DispatchOutbox.abandon`) rather than retried - retrying would be pointless,
+and leaving the row unfinished would stop the worker from ever claiming anything again.
+
+A refusal is told apart from a transport failure or a defect of ours by the kernel's own
+exception type, `RuntimeErrorInvariant`, which the kernel raises from nowhere else this
+module can reach with a well-formed attempt. Only a refusal settles anything; anything
+else is raised, and the identity stays in flight for the next tick. That distinction is
+pinned by a test, because getting it wrong in the other direction would strand a task
+that was still completable - and a stranded task comes back later as a new attempt, which
+is a second paid call.
+
+Settling is not a way back to a second dispatch: an abandoned row is never selected by
+`unfinished()`, `record_dispatch_sent` refuses it outright, and `next_action` reports
+`ABANDONED` rather than `DISPATCH` or `LOOKUP_RUN`. A result already sealed for it stays
+visible to `terminal_for_task`, so if the Runtime later hands the same task out as a new
+attempt, that attempt still adopts the answer instead of buying a new one.
+
 ### What the offline E2E proves, and what it does not
 
 `test_c1_execution_loop.py` closes the loop with **no network and no credential**. The
@@ -263,6 +314,13 @@ second, independent gate. The Agent's root process, its closed `channel.ACTIONS`
 bridge handoff and the whole probe path are untouched: the worker never imports `channel`,
 `flow` or `adapter`, never knows the bridge directories, and never names a model
 credential.
+
+**Resume first, claim second.** One tick has two phases: finish what is already in
+flight (the oldest `unfinished()` identity, through `resume()`), and only when nothing is
+unfinished claim a new `AI_WORK_V1` task and advance it. A resume that could not be
+driven and was not settled by the Runtime reports `BLOCKED` and claims nothing that tick,
+so a transient fault costs time instead of starting new paid work; the identity stays in
+the outbox and the next tick tries again.
 
 **No claim without a credential.** Claiming a task the worker cannot execute would burn
 one of that task's attempts, so the GitHub credential is checked *before* anything is
@@ -314,22 +372,33 @@ field that could carry one, the one line the executor prints is an explicit allo
 of nine non-sensitive fields, and the artifact step has no credential in its
 environment.
 
-## What is proven, and what is not (as of 2026-10-01)
+## What is proven, and what is not (as of 2026-10-02)
 
-Landed on `main` as PR **#303** (`main` = `5968d62e80fab5c71d43c02c3ea0148e5bf0a3fd`),
-so `.github/workflows/c1-ai-execution-backend-v1.yml` is now registered **active** and
+The C1 backend, the loop and the worker are all on `main` as PRs **#303**, **#304** and
+**#305** (`main` = `b616d92ed53be2dfafb3ebd775d2f55a453fb238`), so
+`.github/workflows/c1-ai-execution-backend-v1.yml` is registered **active** and
 `workflow_dispatch` is discoverable - it was a guaranteed 404 before that.
+
+The worker is installed on the Runtime Host and **the dispatch leg has been exercised for
+real**: `workflow_dispatch` reached GitHub, one run completed in stub mode, and its
+artifact was published under the identity-derived name. The result leg did not run, for
+the reason in "The resume leg" above - that is the defect this change fixes.
 
 Proven: the contract and its refusal matrix; the exactly-once model including a
 simulated dispatch timeout, an ambiguous outcome and a restart with the counter intact;
 the whole GitHub-side path in stub mode with no credential; the Runtime-side client
 against a faked transport including the signed-URL rule; the loop end to end against
 `RuntimeDouble` + `StubGitHub`, including lease renewal and the no-second-payment guard;
-the secret boundary above.
+the two-phase worker tick (dispatch on one tick, pull-and-complete on the next, one POST
+for the whole task, no claim while anything is in flight, a restart resuming from its own
+outbox, and a permanently-stale identity settled rather than retried); the secret
+boundary above.
 
 Not proven, and not claimed: that the deployed kernel behaves as its source says, that
 the workflow actually runs when dispatched, and that a real model call succeeds. The
-GitHub dispatch credential is now in place on the Runtime Host
+GitHub dispatch credential is in place on the Runtime Host
 (`/etc/go-runtime-host/c1-github-token`, `root:root 0600`, `Actions: Read and write`
-verified), so the remaining gap is the Agent wiring plus the first real dispatch - the
-live path still defaults to the offline stub, and nothing has been dispatched yet.
+verified) and a second copy is deployed where the worker can read it
+(`/etc/go-runtime-c1/github-token`), so the remaining gap is the first real dispatch of
+this fixed worker - the live path still defaults to the offline stub, and nothing has
+been dispatched since.

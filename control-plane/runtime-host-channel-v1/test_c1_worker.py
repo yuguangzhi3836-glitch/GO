@@ -25,6 +25,7 @@ HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
+import c1_dispatch_outbox as outbox_mod  # noqa: E402
 import c1_execution_contract as contract  # noqa: E402
 import c1_worker as worker  # noqa: E402
 import test_c1_execution_loop as harness  # noqa: E402
@@ -81,7 +82,10 @@ class TheWorkerOwnsOnlyAiWork(WorkerCase):
 
         outcome = self.worker_tick()
 
-        self.assertEqual(outcome, {"status": "IDLE", "claimed": False})
+        self.assertEqual(outcome["status"], "IDLE")
+        self.assertIs(outcome["claimed"], False)
+        self.assertIs(outcome["resumed"], False)
+        self.assertEqual(outcome["unfinished"], 0)
         self.assertEqual(self.github.dispatch_calls, 0)
         self.assertEqual(self.runtime.status_of(probe_task_id), "QUEUED")
         # The enqueue its own Evidence is expected; what must NOT exist is a claim.
@@ -99,6 +103,163 @@ class TheWorkerOwnsOnlyAiWork(WorkerCase):
         self.assertEqual(self.worker_tick()["action"], "COMPLETED")
         second = self.worker_tick()
         self.assertEqual(second["status"], "IDLE")
+        self.assertEqual(self.github.dispatch_calls, 1)
+
+
+class TheWorkerResumesBeforeItClaims(WorkerCase):
+    """The fix, at the level the Runtime Host actually runs it.
+
+    `Runtime.claim()` returns QUEUED tasks only, and the task a tick just claimed is
+    RUNNING and owned by this worker - so it can never be handed out again. A worker
+    whose every tick only advanced what it had just claimed advanced each task exactly
+    once: the dispatch went out, GitHub ran, the artifact existed, and the result leg
+    never happened. These are the situations that has to be true in.
+    """
+
+    def test_tick_one_claims_and_dispatches_tick_two_pulls_and_completes(self):
+        # The production shape: a dispatch answers 204 with no run id, so the run has to
+        # be found by its deterministic name on a later tick.
+        self.github.declare_run_id = False
+        task_id = self.enqueue_c1()
+
+        first = self.worker_tick()
+        self.assertEqual(first["status"], "ADVANCED", first)
+        self.assertIs(first["claimed"], True)
+        self.assertEqual(first["action"], "DISPATCHED", first)
+        self.assertEqual(self.github.dispatch_calls, 1)
+        self.assertEqual(self.runtime.status_of(task_id), "RUNNING")
+
+        second = self.worker_tick()
+
+        request_id = self.request_id(task_id, 1)
+        self.assertEqual(second["status"], "RESUMED", second)
+        self.assertIs(second["claimed"], False,
+                      "nothing is claimed while an execution is in flight")
+        self.assertEqual(second["runtime_task_id"], task_id)
+        self.assertEqual(second["attempt"], 1)
+        self.assertEqual(second["action"], "COMPLETED", second)
+
+        self.assertEqual(self.github.dispatch_calls, 1, "one POST for the whole task")
+        self.assertEqual(self.runtime.status_of(task_id), "SUCCEEDED")
+        self.assertEqual(self.outbox.dispatch_status(request_id), "COMPLETED")
+        completed = [r for r in self.runtime.evidence if r["event_type"] == "TASK_COMPLETED"]
+        self.assertEqual(len(completed), 1)
+        self.assertEqual(completed[0]["body"]["attempt"], 1)
+        self.assertEqual(self.event_types().count("TASK_CLAIMED"), 1,
+                         "the task was claimed exactly once")
+
+        print("C1_RESUME_STUB_E2E_OK %s dispatch=%d ticks=2"
+              % (request_id, self.github.dispatch_calls))
+
+    def test_a_worker_restart_finishes_the_execution_it_left_behind(self):
+        self.github.declare_run_id = False
+        task_id = self.enqueue_c1()
+        self.assertEqual(self.worker_tick()["action"], "DISPATCHED")
+
+        # The process dies and comes back: same outbox file, same worker id. The worker
+        # id being a constant is what keeps the lease valid, and it is why a resume can
+        # complete a task the previous process had started.
+        self.worker_outbox.close()
+        self.outbox = self.worker_outbox = outbox_mod.DispatchOutbox(
+            os.path.join(self.tmp, "outbox.db"), clock=self.outbox_clock)
+        self.addCleanup(self.worker_outbox.close)
+
+        outcome = self.worker_tick()
+
+        self.assertEqual(outcome["status"], "RESUMED", outcome)
+        self.assertEqual(outcome["action"], "COMPLETED", outcome)
+        self.assertEqual(self.runtime.status_of(task_id), "SUCCEEDED")
+        self.assertEqual(self.github.dispatch_calls, 1)
+
+    def test_it_never_claims_while_an_execution_is_still_in_flight(self):
+        # A second C1 task is queued throughout and must stay QUEUED: starting new paid
+        # work while an execution of ours is unresolved is what phase 1 prevents.
+        self.github.hold_ticks = 2
+        first_task = self.enqueue_c1(key="first")
+        second_task = self.enqueue_c1(key="second")
+
+        self.assertEqual(self.worker_tick()["action"], "AWAIT_RESULT")
+        waiting = self.worker_tick()
+        self.assertEqual(waiting["status"], "RESUMED", waiting)
+        self.assertEqual(waiting["action"], "AWAIT_RESULT", waiting)
+        self.assertIs(waiting["renewed"], True, "an unfinished tick renews the lease")
+
+        self.assertEqual(self.runtime.status_of(second_task), "QUEUED")
+        self.assertEqual(self.runtime.tasks[second_task].attempts, 0)
+
+        finished = self.worker_tick()
+        self.assertEqual(finished["action"], "COMPLETED", finished)
+        self.assertEqual(self.runtime.status_of(first_task), "SUCCEEDED")
+        self.assertEqual(self.github.dispatch_calls, 1)
+
+        # Only now does phase 2 run, and it takes the queued task.
+        after = self.worker_tick()
+        self.assertEqual(after["status"], "ADVANCED", after)
+        self.assertEqual(after["runtime_task_id"], second_task)
+        self.assertEqual(self.github.dispatch_calls, 2)
+
+    def test_a_lost_run_never_becomes_a_second_dispatch(self):
+        # GitHub times out and the run never appears. The worker may retry for as long as
+        # it likes; it must never send a second POST, because that is a second paid model
+        # call for a task that may already have been executed.
+        self.github.fault = "ambiguous"
+        task_id = self.enqueue_c1()
+
+        first = self.worker_tick()
+        self.assertEqual(first["status"], "ADVANCED", first)
+        self.assertEqual(self.github.dispatch_calls, 1)
+
+        for _ in range(3):
+            self.clock.advance(30)
+            outcome = self.worker_tick()
+            self.assertEqual(outcome["status"], "RESUMED", outcome)
+            self.assertEqual(outcome["action"], "LOOKUP_RUN_NOT_FOUND", outcome)
+
+        self.assertEqual(self.github.dispatch_calls, 1, "no second paid call, ever")
+        self.assertEqual(self.runtime.status_of(task_id), "RUNNING")
+
+    def test_a_stale_identity_is_settled_so_the_worker_starts_working_again(self):
+        # This is the state the Runtime Host is actually in: one identity whose lease died
+        # before it could complete. Retrying it forever would mean the worker never claims
+        # anything again - the same "the loop is stopped" failure, one layer down.
+        self.github.declare_run_id = False
+        self.enqueue_c1(key="stuck", max_attempts=1)
+        self.assertEqual(self.worker_tick()["action"], "DISPATCHED")
+        self.clock.advance(1000)
+        self.assertEqual(self.runtime.recover_stale(), {"requeued": 0, "escalated": 1})
+
+        settled = self.worker_tick()
+
+        self.assertEqual(settled["status"], "RESUMED", settled)
+        self.assertEqual(settled["action"], "ABANDONED", settled)
+        self.assertEqual(settled["unfinished"], 1)
+
+        # Nothing is in flight any more, so the next tick claims and completes normally.
+        self.github.declare_run_id = True
+        good = self.enqueue_c1(key="good")
+        outcome = self.worker_tick()
+        self.assertEqual(outcome["status"], "ADVANCED", outcome)
+        self.assertEqual(outcome["runtime_task_id"], good)
+        self.assertEqual(outcome["action"], "COMPLETED", outcome)
+        self.assertEqual(self.runtime.status_of(good), "SUCCEEDED")
+
+    def test_a_resume_tick_never_touches_a_queued_probe(self):
+        # Phase 1 changes when the worker claims, so "the probe is never selected" has to
+        # hold on a resume tick too - not only on a claim tick.
+        self.github.declare_run_id = False
+        probe = self.enqueue_probe()
+        self.enqueue_c1()
+        self.assertEqual(self.worker_tick()["action"], "DISPATCHED")
+
+        outcome = self.worker_tick()
+
+        self.assertEqual(outcome["status"], "RESUMED", outcome)
+        self.assertEqual(outcome["action"], "COMPLETED", outcome)
+        self.assertEqual(self.runtime.status_of(probe), "QUEUED")
+        self.assertEqual(self.runtime.tasks[probe].attempts, 0)
+        self.assertNotIn("TASK_CLAIMED",
+                         [row["event_type"] for row in self.runtime.evidence
+                          if row["task_id"] == probe])
         self.assertEqual(self.github.dispatch_calls, 1)
 
 
