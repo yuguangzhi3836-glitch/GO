@@ -149,6 +149,8 @@ class DockerSandbox:
                 h.get("VolumesFrom") or h.get("PortBindings") or h.get("PublishAllPorts") or
                 h.get("PidMode", "") not in ("", "private") or h.get("IpcMode") != "private" or
                 h.get("Tmpfs") != TMPFS or h.get("Memory") != 2147483648 or
+                h.get("MemorySwap") != 2147483648 or
+                h.get("RestartPolicy") != {"Name": "no", "MaximumRetryCount": 0} or
                 h.get("PidsLimit") != 128 or h.get("NanoCpus") != 2000000000 or
                 h.get("SecurityOpt") != ["no-new-privileges"] or
                 any(m.get("Type") != "tmpfs" for m in info.get("Mounts", []))):
@@ -170,7 +172,7 @@ class DockerSandbox:
             argv = self.docker + ["create", "--name", name, "--pull=never", "--interactive",
                     "--network=none", "--read-only", "--user=65532:65532", "--cap-drop=ALL",
                     "--security-opt=no-new-privileges", "--ipc=private", "--pids-limit=128",
-                    "--memory=2g", "--memory-swap=2g", "--cpus=2", "--log-driver=none",
+                    "--memory=2g", "--memory-swap=2g", "--restart=no", "--cpus=2", "--log-driver=none",
                     "--entrypoint", ENTRYPOINT]
             for target, options in TMPFS.items():
                 argv += ["--tmpfs", target + ":" + options]

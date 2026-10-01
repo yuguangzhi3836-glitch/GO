@@ -1,5 +1,25 @@
 # C13 developer-side first test, then isolated Hong Kong C14
 
+## Container policy readback repair — 2026-10-01
+
+The sandbox now explicitly creates containers with `--restart=no` and refuses
+execution unless Docker inspection reports that policy with zero retries and
+`MemorySwap=2147483648` alongside the existing equal memory limit. Previously
+the create command limited swap, but the pre-start readback did not check swap
+or restart policy drift. Missing fields, unlimited/additional swap and automatic
+restart policies now refuse before the test process starts; the created container
+is removed through the existing cleanup path without replaying the Task.
+
+Validation adds nine drift/missing-field cases covering refusal, no process
+start, one create and cleanup. These are synthetic Docker-host tests. Real host
+kernel/cgroup enforcement, controlled installation, restart reconciliation and
+same-source C14 evidence remain separate requirements. This does not supply the
+installed C14 action or CC receipt route, and does not create an AI opinion.
+
+Docker references: [memory/swap constraints](https://docs.docker.com/engine/containers/resource_constraints/)
+and [restart policies](https://docs.docker.com/engine/containers/start-containers-automatically/).
+Change classes: CONTROL_PLANE, TEST_ONLY, DOCUMENTATION. Draft only.
+
 ## Failure diagnostics — development increment, 2026-09-25
 
 `DockerSandbox` captures stdout/stderr before raising on an execution timeout

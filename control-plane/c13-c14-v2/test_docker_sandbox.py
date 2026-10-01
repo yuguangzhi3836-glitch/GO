@@ -47,6 +47,7 @@ def info():
     return {"Image": IMAGE, "Config": {"User": "65532:65532", "Entrypoint": [ENTRYPOINT], "Cmd": ENTRY_ARGS},
         "HostConfig": {"NetworkMode": "none", "ReadonlyRootfs": True, "Privileged": False,
         "CapDrop": ["ALL"], "Tmpfs": TMPFS, "Memory": 2147483648, "PidsLimit": 128,
+        "MemorySwap": 2147483648, "RestartPolicy": {"Name": "no", "MaximumRetryCount": 0},
         "NanoCpus": 2000000000, "SecurityOpt": ["no-new-privileges"], "IpcMode": "private"}, "Mounts": []}
 
 
@@ -173,6 +174,40 @@ class HostTests(unittest.TestCase):
         self.assertIn("rm", calls[-1])
         self.assertIn("--force", calls[-1])
         self.assertFalse(any("start" in c for c in calls))
+
+    def test_swap_and_restart_drift_refused_before_execution(self):
+        for field, value in (
+                ("MemorySwap", -1), ("MemorySwap", 0),
+                ("MemorySwap", 4294967296), ("MemorySwap", None),
+                ("RestartPolicy", {"Name": "always", "MaximumRetryCount": 0}),
+                ("RestartPolicy", {"Name": "unless-stopped", "MaximumRetryCount": 0}),
+                ("RestartPolicy", {"Name": "on-failure", "MaximumRetryCount": 3}),
+                ("RestartPolicy", {"Name": "no", "MaximumRetryCount": 1}),
+                ("RestartPolicy", None)):
+            with self.subTest(field=field, value=value):
+                host = self.host()
+                host._source_archive = lambda: b"fixture"
+                calls = []
+                def command(argv):
+                    calls.append(argv)
+                    if "image" in argv:
+                        return canonical([{"Id": IMAGE, "Config": {"Volumes": {"/var/lib/postgresql": {}}}}])
+                    if "inspect" in argv:
+                        data = info()
+                        if value is None:
+                            data["HostConfig"].pop(field)
+                        else:
+                            data["HostConfig"][field] = value
+                        return canonical([data])
+                    return b"ok"
+                host._command = command
+                with patch("docker_sandbox.subprocess.Popen") as start, \
+                        self.assertRaisesRegex(Refusal, "sandbox_isolation"):
+                    host.run_fixed_isolated_suite(CANDIDATE, TREE, SCOPE_COMMANDS)
+                start.assert_not_called()
+                self.assertIn("--restart=no", next(c for c in calls if "create" in c))
+                self.assertIn("rm", calls[-1])
+                self.assertEqual(sum("create" in c for c in calls), 1)
 
     def capture_failure(self, *, timeout=True, oversized=False, cleanup_failure=False):
         host = self.host()
