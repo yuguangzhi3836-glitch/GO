@@ -80,3 +80,53 @@ and root/no-group-write validation on every ancestor, plus fixed probe task deri
 from a registration. The caller must be the existing authenticated immutable-PR
 Bridge boundary; passing an author string by itself is not authentication. It is
 not yet wired into that Bridge. These functions do not sign or publish live tasks.
+
+## 2026-10-01 signing / publishing / polling integration increment
+
+`flow.py` now connects verified registration initialization, trusted-author Request
+validation, task derivation/signing, durable outbox, immutable transport, one-pass
+Agent polling, stored Evidence publication/readback and CC receipt collection.
+`git_transport.py` provides the Git adapter. It uses a separate `runtime-host-v1/`
+namespace; it MUST NOT be pointed at live repositories until that namespace and
+new protocol are independently reviewed and installed. Legacy HK task JSON/signature
+format differs from this envelope, so silently passing it to the existing writer
+or old Agent is unsafe and is not implemented.
+
+- Sign once and commit the exact bytes before publication.
+- Commit ATTEMPTED before network I/O. A lost acknowledgement reconciles by readback;
+  absent or conflicting bytes remain unresolved and are not automatically resent.
+- Polling does not execute an already-claimed task again. Completed receipt bytes
+  are reused, including after a lost Evidence publication acknowledgement.
+- Initialization rejects wrong observed host, executable digest or Evidence key
+  before enrolling. It creates no credentials and installs no system services.
+- Git uses explicit argv, fixed trusted remote/branch configuration, exact keys,
+  no force push, no arbitrary command and no automatic rebase/retry.
+
+Validation now: **33 distinct unittest methods PASS**. The E2E runs both against
+in-memory fault-injection transports and two actual temporary local bare Git
+repositories (Tasks and Evidence). The latter performs commits, pushes, fresh
+clones and readbacks. All host IDs/keys/approvals remain synthetic. Local bare Git
+E2E is not real GitHub authentication, CC deployment, cloud initialization or live
+host acceptance. No server command or external Task was issued.
+
+### Live installation blockers (still mandatory)
+
+1. A reachable authorized CC management session is not available in this conversation;
+   Remote Desktop Commander currently reports only EASON Offline. The new VM's
+   Workbench session does not grant access to the existing CC host.
+2. Independent review must approve this new protocol/namespace, registration authority,
+   Request authentication adapter and separate service identities before installation.
+   `authenticated_author` remains an internal trusted argument, NOT a user input.
+3. Provision the new host's distinct credentials via an approved bootstrap, bind
+   cloud-observed identity and actual executable digest, and resolve approval_ref
+   against the exact approved host/plan. None is supplied by this source proposal.
+4. Wire the installed immutable-PR reader, root-owned key/DB paths, timer/service,
+   transport remotes, revocation behavior and bounded rejection telemetry. The new
+   transport exists in source, but those live settings and service units do not.
+5. Run real Request → Task → Agent → Evidence E2E before claiming enrollment.
+   Full Runtime installation/fault/reboot acceptance remains a separate frozen
+   executor/fixture, still NOT_RUN. Current probe can never report that acceptance PASS.
+
+Earlier paragraphs describe earlier increments; this section supersedes their
+statements that signing/polling/Git transport source is absent. It does not supersede
+NOT_INSTALLED or the pending live integration and host acceptance boundaries.
