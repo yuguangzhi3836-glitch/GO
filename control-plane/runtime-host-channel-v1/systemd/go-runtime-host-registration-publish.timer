@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the GO Command Center runtime-host registration publisher periodically
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=12h
+Persistent=true
+Unit=go-runtime-host-registration-publish.service
+
+[Install]
+WantedBy=timers.target

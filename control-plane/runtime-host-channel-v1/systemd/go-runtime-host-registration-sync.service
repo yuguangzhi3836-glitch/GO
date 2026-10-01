@@ -1,0 +1,31 @@
+[Unit]
+Description=GO Runtime Host registration synchroniser (bounded refresh)
+ConditionPathExists=/etc/go-runtime-host/registration-sync.json
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/go/runtime-host-agent
+ExecStart=/opt/go/runtime-host-agent/.venv/bin/python -B /opt/go/runtime-host-agent/registration_sync.py
+# HOME is redirected into a writable path because ProtectHome=true would otherwise
+# leave git without a readable or writable home directory.
+Environment=HOME=/var/lib/go-runtime-host
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+# Only the installed registration may change. It must stay writable while the
+# rest of the filesystem stays read-only, and the repository is reachable over
+# the network, so PrivateNetwork is deliberately NOT set here.
+ReadWritePaths=/etc/go-runtime-host /var/lib/go-runtime-host
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,31 @@
+[Unit]
+Description=GO Command Center runtime-host registration publisher (one new generation)
+ConditionPathExists=/etc/go-command-center/runtime-host-v1/publisher.json
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/usr/local/libexec/go-runtime-host
+ExecStart=/usr/local/libexec/go-runtime-host/.venv/bin/python -B /usr/local/libexec/go-runtime-host/registration_publisher.py
+# HOME is redirected into the writable state directory because ProtectHome=true
+# would otherwise leave git without a home directory.
+Environment=HOME=/var/lib/go-command-center/runtime-host-v1
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+# Reads the signer key and the deployment binding from /etc (read-only), and writes
+# only its own generation state. The repository is reached over the network, so
+# PrivateNetwork is deliberately NOT set.
+ReadWritePaths=/var/lib/go-command-center/runtime-host-v1
+
+[Install]
+WantedBy=multi-user.target
