@@ -560,6 +560,100 @@ verify.json
 summary.md
 ```
 
+### Enterprise WeChat notification channel
+
+Forge should reuse the **existing Enterprise WeChat notification capability** as a thin human-notification channel.
+
+Its purpose is simple:
+
+> **When Forge finishes, tell the human what happened. When Forge cannot safely finish, ask the human to intervene.**
+
+It must **not** become another approval service, workflow engine, state machine, or source of truth.
+
+Recommended terminal notifications:
+
+#### SUCCESS
+
+Send after final verification succeeds.
+
+Example content:
+
+```text
+GO Forge 部署成功
+
+Task: <task_id>
+Candidate: PR298 / <immutable_sha>
+Target: HK-STAGING-01
+Result: SUCCESS
+DB: <before_head> -> <after_head>
+Image: <before_image> -> <candidate_image>
+Verify: PASS
+Evidence: <pointer>
+```
+
+Human-facing wording may be informal; for example:
+
+> 部署成功了哥，PR298 已经在 HK-STAGING 跑起来，Verify 通过。
+
+#### NEEDS_HUMAN
+
+Send when the AI cannot establish a safe/efficient path within its allowed boundary.
+
+Example content:
+
+```text
+GO Forge 需要人工处理
+
+Task: <task_id>
+Candidate: PR298 / <immutable_sha>
+Target: HK-STAGING-01
+Result: NEEDS_HUMAN
+Stage: <migration/deploy/verify/etc>
+Reason: <short factual reason>
+Last safe state: <state>
+Recommended human action: <one concise next step>
+Evidence: <pointer>
+```
+
+The notification should say **what the AI could not resolve**, not dump a long model explanation.
+
+#### Other useful terminal states
+
+Forge may also notify:
+
+- CANDIDATE_DEFECT — candidate itself must change before deployment can continue
+- ROLLBACK_DONE — deployment failed but recovery completed successfully
+- ABORTED — task was stopped before mutation or before completion
+- INCIDENT — recovery also failed and immediate human attention is required
+
+### Notification rules
+
+1. **Notify terminal state, not every internal step.** Avoid message spam.
+2. Enterprise WeChat is **observability**, not authority. A message does not authorize a deployment.
+3. Notification payloads must never contain secrets, DB URLs, tokens, private keys, or raw sensitive logs.
+4. Include enough information to identify the exact task: Task ID, Candidate PR/SHA, target, result, short reason, and evidence pointer.
+5. Notification delivery failure must **not** convert a successful deployment into a failed deployment. Record NOTIFY_FAILED in the audit trail and retry a small bounded number of times.
+6. A terminal deployment failure that requires human action should always attempt Enterprise WeChat notification before the worker goes idle.
+7. Reuse the existing Enterprise WeChat push path; do not create a second messaging platform unless the existing capability proves insufficient.
+
+This gives Forge a simple operating model:
+
+```text
+Task arrives
+↓
+AI works autonomously
+↓
+SUCCESS
+→ Enterprise WeChat: 部署成功
+
+or
+
+AI cannot safely resolve
+→ Enterprise WeChat: 需要人工处理
+```
+
+The human should not need to watch GitHub, SSH sessions, or logs continuously just to know whether the deployment finished.
+
 ---
 
 ## 9. Controls that should remain hard-coded
