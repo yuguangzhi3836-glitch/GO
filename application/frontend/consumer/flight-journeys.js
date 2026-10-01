@@ -9,7 +9,7 @@
   function leave(fn) { document.body.classList.remove('go-journey'); fn(); }
   function frame(content, aside='') {
     document.body.classList.add('go-journey');
-    $('#app').innerHTML = `<div class="journey-frame"><header class="journey-header"><img src="/go-app/assets/go-compact-lockup-v14.svg?v=20260909-depth28" alt="GO AI DIRECT+"><button class="j-text" id="jHome">返回首页</button></header><main class="journey-layout"><div class="journey-main">${content}</div><aside class="journey-aside">${aside || `<span class="j-eyebrow">GO 旅行</span><h2>每一段，<br>都心中有数。</h2><p>逐段选航班，统一核对总价。行李和退改规则，随行程一起看清。</p><div class="j-rule"></div><b>服务状态</b><p>当前未连接航空公司实时库存与价格，无法实际出行。此版本支持 1–9 位成人、经济舱、人民币。</p>`}</aside></main><footer class="journey-footer">GO · 让旅行回归清晰与从容</footer></div>`;
+    $('#app').innerHTML = `<div class="journey-frame"><header class="journey-header"><img src="/go-app/assets/go-compact-lockup-v14.svg?v=20261001-si-direct" alt="GO SI DIRECT+"><button class="j-text" id="jHome">返回首页</button></header><main class="journey-layout"><div class="journey-main">${content}</div><aside class="journey-aside">${aside || `<span class="j-eyebrow">GO 旅行</span><h2>每一段，<br>都心中有数。</h2><p>逐段选航班，统一核对总价。行李和退改规则，随行程一起看清。</p><div class="j-rule"></div><b>服务状态</b><p>当前未连接航空公司实时库存与价格，无法实际出行。此版本支持 1–9 位成人、经济舱、人民币。</p>`}</aside></main><footer class="journey-footer">GO · 让旅行回归清晰与从容</footer></div>`;
     $('#jHome').onclick=()=>leave(showHome);
   }
   function capture() {

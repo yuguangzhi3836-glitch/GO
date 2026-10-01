@@ -13,7 +13,7 @@ export default function Home({navigation}:any){
   useEffect(()=>{api('/v1/consumer/home').then(r=>setData(r.data)).catch(e=>setError(e.message));api('/v1/consumer/profile/completeness').then(r=>setProfileReady(Boolean(r.data?.profile_ready))).catch(()=>setProfileReady(null));registerPush().catch(()=>{})},[]);
   const recs=data?.recommendations||[];
   return <ScrollView style={screen.root} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-    <View style={s.masterHeader}><Brand/><View style={s.headerRule}/><View><Text style={s.direct}>AI DIRECT<Text style={{color:GO.orange}}>+</Text></Text><Text style={s.tagline}>发现全世界，直接向官方预订。</Text></View></View>
+    <View style={s.masterHeader}><Image source={require('../../assets/brand/go-si-direct.png')} accessibilityLabel="GO SI DIRECT+ 发现全世界 直接向官方预订" resizeMode="contain" style={s.masterLockup}/></View>
 
     <View style={s.categories}>{category.map(([icon,label,to],i)=><Pressable key={label} style={s.cat} onPress={()=>navigation.navigate(to)}><View style={s.catIcon}><Text style={s.catGlyph}>{icon}</Text></View><Text style={s.catText}>{label}</Text></Pressable>)}</View>
 
@@ -34,7 +34,7 @@ export default function Home({navigation}:any){
 
 const s=StyleSheet.create({
   content:{paddingHorizontal:12,paddingTop:18,paddingBottom:120,backgroundColor:GO.white},
-  masterHeader:{minHeight:84,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:14},headerRule:{height:44,width:1,backgroundColor:'rgba(7,27,85,.16)'},direct:{fontSize:18,fontWeight:'600',letterSpacing:2.8,color:GO.navy},tagline:{fontSize:11,color:GO.slate,marginTop:5,letterSpacing:.2},
+  masterHeader:{minHeight:84,justifyContent:'center'},masterLockup:{width:'100%',aspectRatio:6796/1080},
   categories:{flexDirection:'row',justifyContent:'space-between',marginTop:14,marginBottom:20,paddingHorizontal:4},cat:{alignItems:'center',width:'19%'},catIcon:{width:44,height:44,borderRadius:22,borderWidth:1,borderColor:GO.line,backgroundColor:GO.white,alignItems:'center',justifyContent:'center'},catGlyph:{fontSize:20,fontWeight:'600',color:GO.navy},catText:{fontSize:12,fontWeight:'500',color:GO.navy,marginTop:7,textAlign:'center'},
   profileBuild:{flexDirection:'row',alignItems:'center',backgroundColor:GO.white,borderWidth:1,borderColor:'rgba(8,120,249,.12)',borderRadius:GO.radius.l,padding:16,marginBottom:12},profileBuildEyebrow:{fontSize:10,fontWeight:'600',letterSpacing:1,color:GO.blue},profileBuildTitle:{...type.titleS,color:GO.navy,marginTop:4},profileBuildCopy:{...type.captionS,color:GO.slate,marginTop:4},profileBuildArrow:{fontSize:28,color:GO.blue,marginLeft:10},
   heroRow:{flexDirection:'row',gap:8},hero:{flex:1,minHeight:296,borderRadius:GO.radius.l,padding:16,borderWidth:1,overflow:'hidden'},ai:{backgroundColor:'#F6F9FF',borderColor:'rgba(8,120,249,.10)'},offer:{backgroundColor:'#FFF8F5',borderColor:'rgba(255,75,22,.10)'},heroBrand:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},chev:{fontSize:24,color:GO.navy,fontWeight:'300'},heroTitle:{...type.titleM,color:GO.navy,marginTop:16},heroCopy:{...type.captionS,color:GO.slate,marginTop:7},
