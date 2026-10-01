@@ -1,0 +1,281 @@
+{
+  "schema": "go.non-dot-hk-release-coverage.v1",
+  "classification": [
+    "DOCUMENTATION"
+  ],
+  "observed_at": "2026-10-01T02:30:00Z",
+  "base_main": "e663460e006f1267173b2e63016d85bee2cc7463",
+  "owner_instruction": "除DOT外，其他全部部署香港",
+  "intended_environment": "HK-STAGING-01",
+  "status": "SOURCE_COVERAGE_AND_ACCEPTANCE_BLOCKED",
+  "deployment_performed": false,
+  "execution_authority": false,
+  "excluded_prs": [
+    285,
+    287,
+    289,
+    290
+  ],
+  "excluded_scope": [
+    "C1-C14 persistent Runtime",
+    "new-host enrollment",
+    "runtime-host-v1 task protocol"
+  ],
+  "integration_reference": {
+    "pr": 279,
+    "sha": "40d59f85bc667754707c2d40ca1eedbf95e239d4",
+    "application_tree": "6570b66bc977f89c0311d67bdc6b721cd70d4e09",
+    "not_release_candidate": true
+  },
+  "ancestor_coverage": [
+    {
+      "pr": 246,
+      "head": "b2d9f9744dd7d994636caa805e4dc954e278aab9",
+      "relationship": "ahead",
+      "behind": 0,
+      "meaning": "Commit ancestry only; does not prove behavior retention or release acceptance."
+    },
+    {
+      "pr": 259,
+      "head": "138e24d76a9f87b9fac9862c7f44a523679aef0b",
+      "relationship": "ahead",
+      "behind": 0,
+      "meaning": "Commit ancestry only; does not prove behavior retention or release acceptance."
+    },
+    {
+      "pr": 264,
+      "head": "4d08a4c9393ca14e97c6ba2a8740a9ade1a77559",
+      "relationship": "ahead",
+      "behind": 0,
+      "meaning": "Commit ancestry only; does not prove behavior retention or release acceptance."
+    },
+    {
+      "pr": 265,
+      "head": "cd04d822f102c8b0b7806dc4b3a2b53e5bbd17cc",
+      "relationship": "ahead",
+      "behind": 0,
+      "meaning": "Commit ancestry only; does not prove behavior retention or release acceptance."
+    },
+    {
+      "pr": 266,
+      "head": "95c1c56e5ab92947ecd38366d9930ddcb14ac56f",
+      "relationship": "ahead",
+      "behind": 0,
+      "meaning": "Commit ancestry only; does not prove behavior retention or release acceptance."
+    },
+    {
+      "pr": 273,
+      "head": "cb96de655f0c84596e85b379c6e9bd67f92817fe",
+      "relationship": "ahead",
+      "behind": 0,
+      "meaning": "Commit ancestry only; does not prove behavior retention or release acceptance."
+    }
+  ],
+  "nonancestor_content_checks": [
+    {
+      "n": 217,
+      "changed": 163,
+      "exact": 87,
+      "missing": [
+        "application/src/go_hotel/mobility/rental/recovery_evidence.py",
+        "application/tests/flight/test_c02_prebook_consumption.py",
+        "application/tests/go_ai/test_c08_planning_verification_failures.py",
+        "application/tests/judgment/test_cell_depth_c09_public_binding.py",
+        "application/tests/test_c01_property_change_boundaries.py",
+        "application/tests/test_c03_change_quote_supersession.py",
+        "application/tests/test_c04_change_capture_receipts.py",
+        "application/tests/test_c04_change_refund_receipts.py",
+        "application/tests/test_c04_unknown_episode_evidence.py",
+        "application/tests/test_c05_fleet_stale_snapshot.py",
+        "application/tests/test_c07_account_transaction_fence.py",
+        "application/tests/test_c07_connection_metadata_isolation.py",
+        "application/tests/test_c07_connection_transaction_boundaries.py",
+        "application/tests/test_c07_source_revocation_locking.py",
+        "application/tests/test_c10_external_verification_precedence.py",
+        "application/tests/test_cell_depth_c06_change_quote_binding.py",
+        "application/tests/test_cell_depth_c11_callback_races.py",
+        "application/tests/test_cell_depth_c11_payment_boundary.py",
+        "application/tests/test_cell_depth_c12_identity_binding.py"
+      ],
+      "different": [
+        "application/frontend/admin/hotel-page-factory.js",
+        "application/frontend/consumer/app.js",
+        "application/frontend/consumer/date-range.js",
+        "application/frontend/consumer/flight-journeys.js",
+        "application/frontend/consumer/index.html",
+        "application/frontend/consumer/travel-status.js",
+        "application/frontend/shared/app.js",
+        "application/frontend/supplier/config.js",
+        "application/mobile/go-app/src/screens/CheckoutScreen.tsx",
+        "application/mobile/go-app/src/screens/FlightTripDetailScreen.tsx",
+        "application/src/go_hotel/api/routes/bff.py",
+        "application/src/go_hotel/api/routes/flight.py",
+        "application/src/go_hotel/api/routes/hosted_direct_booking.py",
+        "application/src/go_hotel/api/routes/hotel_autopage_factory.py",
+        "application/src/go_hotel/api/routes/hotel_partner_core.py",
+        "application/src/go_hotel/api/routes/mobility.py",
+        "application/src/go_hotel/api/routes/omnichannel_payment.py",
+        "application/src/go_hotel/api/routes/operations_console.py",
+        "application/src/go_hotel/attractions/service.py",
+        "application/src/go_hotel/db/models.py",
+        "application/src/go_hotel/flight/journeys.py",
+        "application/src/go_hotel/flight/service.py",
+        "application/src/go_hotel/go_ai/service.py",
+        "application/src/go_hotel/judgment/service.py",
+        "application/src/go_hotel/mobility/rental/changes.py",
+        "application/src/go_hotel/mobility/rental/service.py",
+        "application/src/go_hotel/mobility/ride/flight_sync.py",
+        "application/src/go_hotel/mobility/ride/service.py",
+        "application/src/go_hotel/mobility/service.py",
+        "application/src/go_hotel/rail/service.py",
+        "application/src/go_hotel/repositories/sql.py",
+        "application/src/go_hotel/security/deps.py",
+        "application/src/go_hotel/security/service.py",
+        "application/src/go_hotel/services/booking.py",
+        "application/src/go_hotel/services/catalog_scope.py",
+        "application/src/go_hotel/services/consumer_ota_comparison.py",
+        "application/src/go_hotel/services/consumer_unified_lifecycle.py",
+        "application/src/go_hotel/services/flight_change_resolution.py",
+        "application/src/go_hotel/services/hosted_money.py",
+        "application/src/go_hotel/services/hotel_autopage_factory.py",
+        "application/src/go_hotel/services/hotel_partner_core.py",
+        "application/src/go_hotel/services/omnichannel_payment.py",
+        "application/src/go_hotel/services/personal_travel_vault.py",
+        "application/src/go_hotel/services/personal_vault_management.py",
+        "application/src/go_hotel/services/supplier_onboarding.py",
+        "application/tests/test_account_holder_http_integration.py",
+        "application/tests/test_depth18_regional_queue.py",
+        "application/tests/test_depth25_migration_history.py",
+        "application/tests/test_depth48_flight_migration.py",
+        "application/tests/test_final_depth_terminal_hardening.py",
+        "application/tests/test_next_depth_c06_supplier_validity.py",
+        "application/tests/test_parent_implementation_code_review_debt_closure.py",
+        "application/tests/test_rc20_2_all_b_to_a.py",
+        "application/tests/test_round2_c07_explicit_preferences.py",
+        "application/tests/test_supplier_import_migration.py",
+        "application/tests/test_supplier_onboarding_and_member_comparison.py",
+        "application/tests/test_v70_r4_c01_unknown_episode.py"
+      ],
+      "head": "0c3da07bc32009dee16c69125111f8e4ea9d546b",
+      "comparison": "Application blobs changed from this PR/common merge base with #279; compare path and blob against #279. Missing paths may be replaced elsewhere; semantic retention NOT proven."
+    },
+    {
+      "n": 235,
+      "changed": 9,
+      "exact": 6,
+      "missing": [],
+      "different": [
+        "application/src/go_hotel/services/omnichannel_payment.py",
+        "application/src/go_hotel/services/payment_sandbox_runtime.py",
+        "application/src/go_hotel/services/unified_money_movement.py"
+      ],
+      "head": "4ddb0e5eef6f80d446d0b9c3bb973b5392906ade",
+      "comparison": "Application blobs changed from this PR/common merge base with #279; compare path and blob against #279. Missing paths may be replaced elsewhere; semantic retention NOT proven."
+    },
+    {
+      "n": 240,
+      "changed": 4,
+      "exact": 0,
+      "missing": [],
+      "different": [
+        "application/ci/next_depth/c11_postgres.py",
+        "application/src/go_hotel/api/idempotency.py",
+        "application/src/go_hotel/repositories/sql.py",
+        "application/src/go_hotel/services/recovery.py"
+      ],
+      "head": "d4376d6ae9a58eca3c7c32968ec96dffc5574122",
+      "comparison": "Application blobs changed from this PR/common merge base with #279; compare path and blob against #279. Missing paths may be replaced elsewhere; semantic retention NOT proven."
+    },
+    {
+      "n": 267,
+      "changed": 21,
+      "exact": 10,
+      "missing": [],
+      "different": [
+        "application/frontend/consumer/app.js",
+        "application/frontend/consumer/index.html",
+        "application/frontend/shared/app.js",
+        "application/frontend/supplier/config.js",
+        "application/frontend/supplier/index.html",
+        "application/scripts/partner-mobile-acceptance/browser.mjs",
+        "application/scripts/partner-mobile-acceptance/server.py",
+        "application/src/go_hotel/api/routes/dashboard.py",
+        "application/src/go_hotel/api/routes/go_identity_entitlements.py",
+        "application/tests/test_consumer_registration_ui.cjs",
+        "application/tests/test_partner_mobile_repairs.py"
+      ],
+      "head": "679f56e71d9aa5d7cb9205eb55bd1a277225c21e",
+      "comparison": "Application blobs changed from this PR/common merge base with #279; compare path and blob against #279. Missing paths may be replaced elsewhere; semantic retention NOT proven."
+    },
+    {
+      "n": 268,
+      "changed": 46,
+      "exact": 27,
+      "missing": [],
+      "different": [
+        "application/frontend/consumer/app.js",
+        "application/frontend/shared/app.js",
+        "application/frontend/shared/registration-verification.js",
+        "application/frontend/supplier/config.js",
+        "application/scripts/partner-mobile-acceptance/browser.mjs",
+        "application/scripts/partner-mobile-acceptance/server.py",
+        "application/src/go_hotel/api/routes/bff.py",
+        "application/src/go_hotel/api/routes/consumer_identity.py",
+        "application/src/go_hotel/api/routes/dashboard.py",
+        "application/src/go_hotel/api/routes/registration_verification.py",
+        "application/src/go_hotel/core/config.py",
+        "application/src/go_hotel/db/models.py",
+        "application/src/go_hotel/main.py",
+        "application/src/go_hotel/services/registration_verification.py",
+        "application/tests/registration_terms_test_support.py",
+        "application/tests/test_consumer_registration_ui.cjs",
+        "application/tests/test_registration_verification.py",
+        "application/tests/test_registration_verification_ui.cjs",
+        "application/tests/test_supplier_registration_ui.cjs"
+      ],
+      "head": "ab03839a586ab13b34939bf8fb873c50620d23df",
+      "comparison": "Application blobs changed from this PR/common merge base with #279; compare path and blob against #279. Missing paths may be replaced elsewhere; semantic retention NOT proven."
+    }
+  ],
+  "performance_experiments": [
+    {
+      "pr": 283,
+      "head": "cdbf90d4844b96df598fc85f0c56ace9bb513a66",
+      "relationship_to_279": "diverged",
+      "status": "REQUIRES_SAFETY_AND_ABBA_ACCEPTANCE_BEFORE_INCLUSION"
+    },
+    {
+      "pr": 284,
+      "head": "2515c62bf2ced5fad474cf73c6d59617589b460c",
+      "relationship_to_279": "behind",
+      "status": "REQUIRES_SAFETY_AND_ABBA_ACCEPTANCE_BEFORE_INCLUSION"
+    }
+  ],
+  "blocking_facts": [
+    "No single verified candidate yet covers all requested non-DOT work.",
+    "PR279 fixed 4x4 formal 100 actor P95=5363.783ms >5000ms. No passing replacement evidence verified.",
+    "PR279 latest reviewed whole-business C14 R9 was BLOCKED; do not transfer Runtime PR287 PASS to business candidate.",
+    "PR284 new tests are source assertions; test SOURCE uses parents[1]/src from tests/payments, apparently resolving to application/tests/src; behavioral PostgreSQL fault evidence required.",
+    "New candidate must bind exact source, image, schema, migration compatibility and existing business topology; do not change live authority files."
+  ],
+  "formal_live_check": {
+    "request_pr": "https://github.com/chenzhenxi1-sudo/go-control-tasks/pull/125",
+    "action": "HK_STAGING_VERIFY",
+    "request_head": "f938b3a44d3857e8c9a47f25c9c318da9ed859f9",
+    "result": "PENDING_AT_REPORT_CREATION"
+  },
+  "required_sequence": [
+    "Resolve missing/different implementations with regression retention, producing one immutable non-DOT business candidate.",
+    "Accept or reject experiments using existing safety/ABBA/capacity criteria; do not treat failed or superseded experimental commits as mandatory live features.",
+    "Obtain independent C14 then C13 bound to final candidate; preserve registration readiness and external-provider boundaries.",
+    "Use installed Command Center candidate admission and source-bound TEST_PR.",
+    "Run fresh candidate CANARY then live VERIFY then DEPLOY through five-field Requests; CC derives all authority inputs.",
+    "Obtain separate post-deploy VERIFY and retained Task/Evidence bindings."
+  ],
+  "limitations": [
+    "This report is not a deploy plan, candidate admission, approval record, Signed Task, or acceptance verdict.",
+    "Inventory covers the active business chains identified in the audit, not proof that every historical Draft PR is included.",
+    "Owner deployment authorization is recorded; no repeated approval is requested. Existing correctness, review and capacity requirements are not waived.",
+    "Deployment does not activate real PSP/OTA credentials or external side effects."
+  ]
+}
