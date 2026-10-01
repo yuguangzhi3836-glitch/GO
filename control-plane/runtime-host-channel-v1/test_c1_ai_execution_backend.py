@@ -306,6 +306,13 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertNotIn("secrets.", text)
         self.assertIn('OPENAI_API_KEY: ""', text)
 
+    def test_the_regression_runs_as_the_principal_the_agent_runs_as(self):
+        # The channel's protected-path tests assert root-only semantics; the Management
+        # Agent itself runs as root (User=root). Without this the six registration-sync
+        # cases fail on an unprivileged runner for the wrong reason.
+        text = OFFLINE_WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn('sudo "$(command -v python)" -m unittest discover', text)
+
 
 class ESCCredentialRemovalTests(unittest.TestCase):
     """The superseded 'persistent C1 worker on the Runtime Host' design must be gone."""
