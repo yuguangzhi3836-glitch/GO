@@ -214,7 +214,53 @@ behaviour.
 
 No network, no real GitHub, no SSH and no shared state are used by the tests.
 
-## 11. Boundaries recorded, not changed
+## 11. Findings from the live run
+
+Two defects were found only by running the channel against the deployed host, and both are
+recorded here rather than glossed over.
+
+**A. The Management Agent unit needed the bridge inbox writable.** Under
+`ProtectSystem=strict` the Agent could read the fixed inbox but not create the request file,
+so the first live pass failed with `OSError` and the unit entered a restart loop.
+`go-runtime-host-agent.service` now lists
+`ReadWritePaths=/var/lib/go-runtime-host /var/lib/go-runtime-bridge/inbox`. The unit file is
+not part of the `executor_sha256` manifest, so this correction does not change the bundle
+digest.
+
+**B. The Agent configuration needed a bridge block.** `agent.json` on the host did not carry
+the fixed `inbox` / `outbox` pair, so the Agent refused the bridge action with
+`bridge_unavailable` rather than guessing a path. This is the intended fail-closed behaviour,
+and the fix is configuration only.
+
+**C. An external task that expires before it is delivered is not inert.** `bridge_probe()`
+applies the same 300-second task window as the host probe, so a bridge task left in the
+repository past its expiry makes every later pass refuse and the Agent exit. The observed
+consequence on this round: the first published probe was never delivered (see 12) and, once
+expired, would have kept the Agent in a restart loop. The object was withdrawn before that
+happened. This is a real product-level gap in how an undelivered task should be retired, and
+it is recorded as a known issue rather than fixed in this round.
+
+## 12. Undelivered task of the live run
+
+One `RUNTIME_C1_PROBE_V1` task was published before the two defects above were found, and it
+expired without ever being delivered.
+
+```
+task_id          rh-c1probe-2cf380ace296b750
+task bytes       557, sha256 0f92e6e2746d94da828302fa0e843e847cacdc848c2c35adcd1610f4bf1b9c34
+inbox files      0
+runtime tasks    0
+evidence objects 0
+```
+
+It produced no bridge request, no Runtime task and no Evidence. Because an expired task
+would have poisoned every later pass (finding C), the object was withdrawn from
+`runtime-host-v1/tasks/` and the CC-side outbox record was archived as
+`c1-probe-outbox.withdrawn-rh-c1probe-2cf380ace296b750.db` rather than deleted. Exactly one
+replacement identity was then published, and that is the task the live end-to-end actually
+exercised.
+
+## 13. Boundaries recorded, not changed
 
 `EXTERNAL_TASK_TO_C1_C14_RUNTIME` is now scoped, not general: one fixed `C1` /
 `RUNTIME_PROBE` probe crosses the bridge and is completed by the existing `NoopWorker`.
