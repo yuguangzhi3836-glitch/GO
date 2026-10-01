@@ -16,17 +16,20 @@ name: C1 real AI execution backend (V1)
 # secret + Responses API). It does NOT claim that the Owner has permanently fixed
 # GitHub Actions as the execution location for every cell.
 #
-# Scope of V1: ONE fixed smoke execution for ONE already-bound Runtime task.
-#   * fixed payload  {"schema_version":1,"smoke_id":"C1_REAL_AI_WORKER_V1"}
-#   * fixed model endpoint (the Responses API URL is not a parameter)
-#   * no arbitrary prompt, no arbitrary URL, no arbitrary C id, no shell, no deployment
+# Dispatch inputs are the identity triple ONLY. The requester cannot name a prompt, a
+# model, an endpoint, a repository, a branch or a C id: those are fixed here and in
+# control-plane/runtime-host-channel-v1/c1_execution_contract.py, which both sides
+# import. The smoke payload is a literal in this file for the same reason.
 #
-# The payload is a literal in this file and is deliberately NOT a dispatch input, so a
-# caller cannot turn this backend into a generic prompt runner.
+# `live_call` is not a task parameter. It is a closed safety gate that defaults to the
+# offline stub, so an accidental dispatch cannot spend money before the transport has
+# been proven end to end on both sides.
 #
-# exactly-once: the execution identity is (runtime_task_id, attempt, fixed binding).
-# `concurrency` serialises the same Runtime task, and the backend reuses a terminal
-# result for an identical execution identity instead of paying for a second model call.
+# exactly-once: identity is (runtime_task_id, attempt, fixed binding). The run NAME is
+# that identity, so an unknown dispatch outcome can be resolved by lookup instead of
+# by sending a second POST; `concurrency` serialises the same Runtime task; and the
+# backend copies forward a terminal result for an identical identity rather than
+# calling the model again.
 #
 # authorizes_any_action is false in every record this workflow produces.
 
@@ -39,10 +42,9 @@ on:
       attempt:
         description: "Runtime attempt number for that task (exactly-once binding)"
         required: true
-      ai_model:
-        description: "Model used for the C1 execution"
-        required: false
-        default: "gpt-5.6-sol"
+      execution_request_id:
+        description: "sha256 of the canonical task binding, derived by the requester"
+        required: true
       live_call:
         description: "Literal 'true' to reach the real model endpoint; anything else runs the offline stub"
         required: false
@@ -51,9 +53,17 @@ on:
 permissions:
   contents: read
 
+# The run name IS the execution identity, so the requester can resolve an ambiguous
+# dispatch by looking this name up instead of sending a second POST.
+run-name: C1 ${{ inputs.runtime_task_id }} ${{ inputs.attempt }} ${{ inputs.execution_request_id }}
+
 concurrency:
   group: c1-ai-execution-${{ inputs.runtime_task_id }}
   cancel-in-progress: false
+
+env:
+  # Repo-side controlled value: the model is NOT a dispatch input.
+  C1_AI_MODEL: "gpt-5.6-sol"
 
 jobs:
   c1-ai-execution:
@@ -73,7 +83,7 @@ jobs:
       - name: Execute the fixed C1 smoke and seal one result
         env:
           # The credential is injected ONLY when the caller explicitly asked for a live
-          # call. In stub mode the variable is set to the empty string, which the backend
+          # call. In stub mode the variable is the empty string, which the backend
           # treats as "no credential" and refuses to call the model with - so an offline
           # run cannot consume the secret even by accident.
           OPENAI_API_KEY: ${{ inputs.live_call == 'true' && secrets.OPENAI_API_KEY || '' }}
@@ -84,10 +94,12 @@ jobs:
           python control-plane/runtime-host-channel-v1/c1_ai_execution_backend.py run \
             --runtime-task-id "${{ inputs.runtime_task_id }}" \
             --attempt "${{ inputs.attempt }}" \
-            --model "${{ inputs.ai_model }}" \
-            --payload-json '{"schema_version":1,"smoke_id":"C1_REAL_AI_WORKER_V1"}' \
-            ${MODE} \
-            --out "$RUNNER_TEMP/c1_result.json"
+            --execution-request-id "${{ inputs.execution_request_id }}" \
+            --model "$C1_AI_MODEL" \
+            --github-run-id "${{ github.run_id }}" \
+            --github-run-attempt "${{ github.run_attempt }}" \
+            --out "$RUNNER_TEMP/c1_result.json" \
+            ${MODE}
           # Independent of the backend's own guard, and checked in the only step that
           # has the credential: the sealed document must never carry the secret.
           if [ -n "${OPENAI_API_KEY:-}" ]; then
@@ -96,25 +108,38 @@ jobs:
             fi
           fi
 
-      - name: Verify the sealed result shape
+      - name: Verify the sealed result shape and its binding
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json, os, pathlib
+          import json, os, pathlib, sys
+          sys.path.insert(0, "control-plane/runtime-host-channel-v1")
+          from c1_execution_contract import (
+              RESULT_FIELDS, RESULT_KIND, EXPECTED_OUTPUT, validate_result,
+              execution_request_id, output_sha256,
+          )
           doc = json.loads(pathlib.Path(os.environ["RUNNER_TEMP"], "c1_result.json").read_text())
-          assert doc["kind"] == "c1-ai-execution-result", doc.get("kind")
+          task = "${{ inputs.runtime_task_id }}"
+          attempt = int("${{ inputs.attempt }}")
+          req = "${{ inputs.execution_request_id }}"
+          extra = set(doc) - RESULT_FIELDS
+          assert not extra, "unexpected result fields: %s" % sorted(extra)
+          validate_result(doc, runtime_task_id=task, attempt=attempt,
+                          execution_request_id_=req)
+          assert doc["kind"] == RESULT_KIND
+          assert doc["output"] == EXPECTED_OUTPUT, doc.get("output")
+          assert doc["output_sha256"] == output_sha256(doc["output"])
+          assert req == execution_request_id(task, attempt), "identity is not derivable"
+          assert doc["github_run_id"] == int("${{ github.run_id }}")
           assert doc["authorizes_any_action"] is False
-          assert doc["accepted"] is True, doc
-          assert doc["output"] == "GO_C1_REAL_AI_WORKER_V1_OK", doc.get("output")
-          assert doc["runtime_task_id"] and doc["execution_request_id"]
-          print("C1_RESULT_OK", doc["execution_request_id"])
+          print("C1_RESULT_OK", doc["execution_request_id"], doc["github_run_id"])
           PY
 
       - name: Publish the sealed execution result
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: c1-ai-execution-result-${{ inputs.runtime_task_id }}-${{ inputs.attempt }}
+          name: c1-ai-execution-result-${{ inputs.execution_request_id }}
           path: ${{ runner.temp }}/c1_result.json
           if-no-files-found: warn
           retention-days: 90

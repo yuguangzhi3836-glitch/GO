@@ -54,17 +54,36 @@ jobs:
           sudo "$(command -v python)" -m unittest discover \
             -s control-plane/runtime-host-channel-v1 -p 'test_*.py'
 
-      - name: Run the C1 execution backend in stub mode
+      - name: Run the C1 execution backend end to end in stub mode
         env:
-          # Deliberately absent in this job: the offline path must not need a credential.
+          # Deliberately empty in this job: the offline path must not need a credential.
           OPENAI_API_KEY: ""
         run: |
           set -euo pipefail
-          python control-plane/runtime-host-channel-v1/c1_ai_execution_backend.py run \
+          D=control-plane/runtime-host-channel-v1
+          # The requester derives the identity; the backend must reproduce it exactly.
+          REQUEST_ID="$(python "$D/c1_ai_execution_backend.py" emit-request \
+            --runtime-task-id rt_stub_offline_regression --attempt 1 \
+            | python -c 'import json,sys;print(json.load(sys.stdin)["execution_request_id"])')"
+          python "$D/c1_ai_execution_backend.py" run \
             --runtime-task-id rt_stub_offline_regression \
             --attempt 1 \
-            --model gpt-5.6-sol \
-            --payload-json '{"schema_version":1,"smoke_id":"C1_REAL_AI_WORKER_V1"}' \
+            --execution-request-id "$REQUEST_ID" \
+            --model c1-offline-stub \
+            --github-run-id "${{ github.run_id }}" \
+            --github-run-attempt "${{ github.run_attempt }}" \
             --stub \
             --out "$RUNNER_TEMP/c1_stub_result.json"
-          python -c "import json,sys;d=json.load(open(sys.argv[1]));assert d['accepted'] is True;assert d['output']=='GO_C1_REAL_AI_WORKER_V1_OK';assert d['authorizes_any_action'] is False;print('C1_STUB_OK', d['execution_request_id'])" "$RUNNER_TEMP/c1_stub_result.json"
+          python - "$RUNNER_TEMP/c1_stub_result.json" "$REQUEST_ID" <<'PY'
+          import json, sys
+          sys.path.insert(0, "control-plane/runtime-host-channel-v1")
+          from c1_execution_contract import validate_result, RESULT_KIND, output_sha256
+          doc = json.load(open(sys.argv[1]))
+          validate_result(doc, runtime_task_id="rt_stub_offline_regression", attempt=1,
+                          execution_request_id_=sys.argv[2])
+          assert doc["kind"] == RESULT_KIND
+          assert doc["output"] == "GO_C1_REAL_AI_WORKER_V1_OK"
+          assert doc["output_sha256"] == output_sha256(doc["output"])
+          assert doc["authorizes_any_action"] is False
+          print("C1_STUB_E2E_OK", doc["execution_request_id"], doc["github_run_id"])
+          PY
