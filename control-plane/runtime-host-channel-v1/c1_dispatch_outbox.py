@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS c1_dispatch (
     github_run_attempt   INTEGER,
     result_json          TEXT,
     result_sha256        TEXT,
+    reused_from          TEXT,
     updated_at           TEXT NOT NULL
 );
 """
@@ -90,6 +91,13 @@ class DispatchOutbox:
         self._db.row_factory = sqlite3.Row
         self._db.execute("PRAGMA journal_mode=WAL")
         self._db.execute(_SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Add columns introduced after an outbox file may already exist on disk."""
+        present = {row["name"] for row in self._db.execute("PRAGMA table_info(c1_dispatch)")}
+        if "reused_from" not in present:
+            self._db.execute("ALTER TABLE c1_dispatch ADD COLUMN reused_from TEXT")
 
     def close(self):
         self._db.close()
@@ -205,6 +213,46 @@ class DispatchOutbox:
         if row["state"] != RESULT_SEALED:
             raise Refused("COMPLETION_WITHOUT_A_SEALED_RESULT")
         self._update(request_id, state=COMPLETED)
+
+    # -------------------------------------------------- reuse across attempts
+    def terminal_for_task(self, runtime_task_id, *, exclude_request_id=None):
+        """A result already sealed for this Runtime task, whatever attempt produced it.
+
+        This is the guard against paying twice for one task: an attempt that loses its
+        lease is requeued by the Runtime as a NEW attempt, and a new attempt is a new
+        execution identity, so nothing else would stop a second real model call.
+        """
+        row = self._db.execute(
+            "SELECT * FROM c1_dispatch WHERE runtime_task_id=? AND result_json IS NOT NULL"
+            " AND execution_request_id != ? ORDER BY attempt ASC LIMIT 1",
+            (runtime_task_id, exclude_request_id or ""),
+        ).fetchone()
+        if row is None:
+            return None
+        import json
+        return {"execution_request_id": row["execution_request_id"],
+                "attempt": row["attempt"],
+                "result": json.loads(row["result_json"]),
+                "result_json": row["result_json"],
+                "result_sha256": row["result_sha256"]}
+
+    def adopt_terminal_result(self, request_id, source) -> None:
+        """Answer this execution identity with an earlier attempt's sealed result.
+
+        The bytes are copied unchanged - a result is never rewritten to claim an attempt
+        that did not produce it - and the identity it came from is recorded beside them,
+        so the reuse is auditable rather than invisible.
+        """
+        row = self._row(request_id)
+        if row is None:
+            raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
+        if row["result_json"] is not None:
+            if row["result_json"] == source["result_json"]:
+                return
+            raise Refused("CONFLICTING_RESULT_BYTES")
+        self._update(request_id, result_json=source["result_json"],
+                     result_sha256=source["result_sha256"], state=RESULT_SEALED,
+                     reused_from=source["execution_request_id"])
 
     # ------------------------------------------------------------- introspection
     def completion_binding(self, request_id) -> dict:

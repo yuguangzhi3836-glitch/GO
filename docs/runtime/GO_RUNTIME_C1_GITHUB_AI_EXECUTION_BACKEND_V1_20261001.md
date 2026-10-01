@@ -186,7 +186,58 @@ Call-site and configuration interface (implemented, no credential created):
   `workflow_run_id` under API version `2026-03-10` but `204` with no body under
   `2022-11-28` (the client accepts either, and a missing run id routes to lookup); and
   `workflow_dispatch` only triggers when the workflow file exists on the **default
-  branch**, so this backend cannot be dispatched for real until PR #300 is merged.
+  branch**, which is why this backend had to reach `main` (PR #303) before it could be
+  dispatched at all.
+
+## The loop (`c1_execution_loop.py`)
+
+The outbox and the puller each did their half, but nothing joined them to the Runtime's
+lease or owned the clock. That join is this module, and its shape is dictated by two
+facts read out of the deployed kernel (`/opt/go/c1-c14-runtime/runtime.py`):
+
+1. `complete()` lands only while the task is `RUNNING`, owned by this worker, with
+   `attempts == expected_attempt` and `lease_until` in the future. An execution that
+   outlives its lease therefore cannot complete at all - unless the lease is renewed
+   while we wait for GitHub. `renew_task()` exists for exactly that.
+2. an attempt that loses its lease is requeued by `recover_stale()` as a **new** attempt,
+   and a new attempt is a new execution identity. That is the concrete mechanism by
+   which one Runtime task becomes two paid model calls.
+
+So `advance()` - one bounded tick, safe to call repeatedly - does three things and
+nothing else:
+
+* **before dispatching a new attempt**, it adopts a terminal result that already exists
+  for the same Runtime task (`terminal_for_task` / `adopt_terminal_result`). The adopted
+  bytes are copied unchanged - a result is never rewritten to claim an attempt that did
+  not produce it - and `reused_from` records which identity they came from, so the reuse
+  is auditable. This is the guard that keeps one task from paying twice;
+* it pushes the outbox one step through `drive_once`, which structurally sends at most
+  one POST per execution identity;
+* if the execution is still in flight, it renews the lease so a later tick can still
+  complete it.
+
+`Runtime.complete()` remains the only way this module touches Runtime state, and it is
+still reached through `complete_after_pull` with the exact attempt the outbox holds, so
+the Runtime's own fencing stays the authority. A task whose `owner_c`, `kind` or payload
+is not this contract's is refused before anything is sent - which is what makes "the C1
+loop never executes `RUNTIME_PROBE`" a property of the loop rather than of the caller's
+claim query.
+
+### What the offline E2E proves, and what it does not
+
+`test_c1_execution_loop.py` closes the loop with **no network and no credential**. The
+sealed result it asserts on is produced by running the real executor
+(`c1_ai_execution_backend.py run --stub`) as a subprocess; the outbox, the puller, the
+contract and the loop are the real modules.
+
+**Doubles, stated plainly:** the Runtime (`RuntimeDouble`, which reproduces the fencing
+rules above - including that `complete()` rejects a stale, expired or unowned lease, and
+that every state change appends a hash-chained Evidence row) and the GitHub transport
+(`StubGitHub`).
+
+**Not proven here:** that the deployed kernel behaves as its source says, that the
+workflow file runs when dispatched, and that a dispatch reaches GitHub. Those need the
+first real dispatch and are deliberately not part of this change.
 
 ## Secret boundary
 
@@ -198,14 +249,22 @@ field that could carry one, the one line the executor prints is an explicit allo
 of nine non-sensitive fields, and the artifact step has no credential in its
 environment.
 
-## What can be proven before merge, and what cannot
+## What is proven, and what is not (as of 2026-10-01)
 
-Proven in this branch: the contract and its refusal matrix; the exactly-once model
-including a simulated dispatch timeout, an ambiguous outcome and a restart with the
-counter intact; the whole GitHub-side path in stub mode with no credential; the
-Runtime-side client against a faked transport including the signed-URL rule; the
-secret boundary above.
+Landed on `main` as PR **#303** (`main` = `5968d62e80fab5c71d43c02c3ea0148e5bf0a3fd`),
+so `.github/workflows/c1-ai-execution-backend-v1.yml` is now registered **active** and
+`workflow_dispatch` is discoverable - it was a guaranteed 404 before that.
 
-Requires post-merge / a provisioned credential: a **real** `workflow_dispatch` (404
-until the file is on `main`), a real run id and artifact pulled by the Agent, and a
-real model call (deliberately not run).
+Proven: the contract and its refusal matrix; the exactly-once model including a
+simulated dispatch timeout, an ambiguous outcome and a restart with the counter intact;
+the whole GitHub-side path in stub mode with no credential; the Runtime-side client
+against a faked transport including the signed-URL rule; the loop end to end against
+`RuntimeDouble` + `StubGitHub`, including lease renewal and the no-second-payment guard;
+the secret boundary above.
+
+Not proven, and not claimed: that the deployed kernel behaves as its source says, that
+the workflow actually runs when dispatched, and that a real model call succeeds. The
+GitHub dispatch credential is now in place on the Runtime Host
+(`/etc/go-runtime-host/c1-github-token`, `root:root 0600`, `Actions: Read and write`
+verified), so the remaining gap is the Agent wiring plus the first real dispatch - the
+live path still defaults to the offline stub, and nothing has been dispatched yet.
