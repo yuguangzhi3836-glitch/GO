@@ -1,0 +1,120 @@
+name: C1 real AI execution backend (V1)
+
+# C1 = the ephemeral AI execution backend for the C1 cell.
+#
+# Architecture this implements (Owner's current Runtime design):
+#
+#   Runtime Host   = durable COORDINATION kernel only
+#                    queue / task identity / attempts + lease / completion / Evidence
+#                    -> holds NO model credential and NO outbound model access
+#   GitHub Actions = ephemeral AI execution backend (this workflow)
+#   OPENAI_API_KEY = stays a repository secret; it exists only inside a disposable
+#                    runner process and never lands on a persistent host
+#
+# This is an execution-backend IMPLEMENTATION CHOICE, consistent with the pattern the
+# Owner's C13 / C14 acceptance already use (GitHub-hosted ubuntu-24.04 + repository
+# secret + Responses API). It does NOT claim that the Owner has permanently fixed
+# GitHub Actions as the execution location for every cell.
+#
+# Scope of V1: ONE fixed smoke execution for ONE already-bound Runtime task.
+#   * fixed payload  {"schema_version":1,"smoke_id":"C1_REAL_AI_WORKER_V1"}
+#   * fixed model endpoint (the Responses API URL is not a parameter)
+#   * no arbitrary prompt, no arbitrary URL, no arbitrary C id, no shell, no deployment
+#
+# The payload is a literal in this file and is deliberately NOT a dispatch input, so a
+# caller cannot turn this backend into a generic prompt runner.
+#
+# exactly-once: the execution identity is (runtime_task_id, attempt, fixed binding).
+# `concurrency` serialises the same Runtime task, and the backend reuses a terminal
+# result for an identical execution identity instead of paying for a second model call.
+#
+# authorizes_any_action is false in every record this workflow produces.
+
+on:
+  workflow_dispatch:
+    inputs:
+      runtime_task_id:
+        description: "Runtime task id this execution is bound to (exact Runtime fact)"
+        required: true
+      attempt:
+        description: "Runtime attempt number for that task (exactly-once binding)"
+        required: true
+      ai_model:
+        description: "Model used for the C1 execution"
+        required: false
+        default: "gpt-5.6-sol"
+      live_call:
+        description: "Literal 'true' to reach the real model endpoint; anything else runs the offline stub"
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: c1-ai-execution-${{ inputs.runtime_task_id }}
+  cancel-in-progress: false
+
+jobs:
+  c1-ai-execution:
+    name: C1 ephemeral AI execution (one bound task, one sealed result)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the execution backend (this run's own commit)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Execute the fixed C1 smoke and seal one result
+        env:
+          # The credential is injected ONLY when the caller explicitly asked for a live
+          # call. In stub mode the variable is set to the empty string, which the backend
+          # treats as "no credential" and refuses to call the model with - so an offline
+          # run cannot consume the secret even by accident.
+          OPENAI_API_KEY: ${{ inputs.live_call == 'true' && secrets.OPENAI_API_KEY || '' }}
+        run: |
+          set -euo pipefail
+          MODE="--stub"
+          if [ "${{ inputs.live_call }}" = "true" ]; then MODE=""; fi
+          python control-plane/runtime-host-channel-v1/c1_ai_execution_backend.py run \
+            --runtime-task-id "${{ inputs.runtime_task_id }}" \
+            --attempt "${{ inputs.attempt }}" \
+            --model "${{ inputs.ai_model }}" \
+            --payload-json '{"schema_version":1,"smoke_id":"C1_REAL_AI_WORKER_V1"}' \
+            ${MODE} \
+            --out "$RUNNER_TEMP/c1_result.json"
+          # Independent of the backend's own guard, and checked in the only step that
+          # has the credential: the sealed document must never carry the secret.
+          if [ -n "${OPENAI_API_KEY:-}" ]; then
+            if grep -qF "$OPENAI_API_KEY" "$RUNNER_TEMP/c1_result.json"; then
+              echo "CREDENTIAL_MATERIAL_IN_RESULT"; exit 1
+            fi
+          fi
+
+      - name: Verify the sealed result shape
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, pathlib
+          doc = json.loads(pathlib.Path(os.environ["RUNNER_TEMP"], "c1_result.json").read_text())
+          assert doc["kind"] == "c1-ai-execution-result", doc.get("kind")
+          assert doc["authorizes_any_action"] is False
+          assert doc["accepted"] is True, doc
+          assert doc["output"] == "GO_C1_REAL_AI_WORKER_V1_OK", doc.get("output")
+          assert doc["runtime_task_id"] and doc["execution_request_id"]
+          print("C1_RESULT_OK", doc["execution_request_id"])
+          PY
+
+      - name: Publish the sealed execution result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c1-ai-execution-result-${{ inputs.runtime_task_id }}-${{ inputs.attempt }}
+          path: ${{ runner.temp }}/c1_result.json
+          if-no-files-found: warn
+          retention-days: 90

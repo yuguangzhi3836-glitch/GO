@@ -1,0 +1,51 @@
+name: Runtime Host C1 backend offline regression
+
+# Offline only: no model credential, no call to the model endpoint, no contact with any
+# Runtime host and no Runtime database access. It runs the runtime-host channel suite
+# plus the C1 execution backend in stub mode, so the C1 boundary - fixed payload, fixed
+# endpoint, no credential persistence, exactly-once reuse - is checked long before any
+# real dispatch exists.
+
+on:
+  pull_request:
+    paths:
+      - 'control-plane/runtime-host-channel-v1/**'
+      - '.github/workflows/c1-ai-execution-backend-v1.yml'
+      - '.github/workflows/runtime-host-c1-offline-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install the workflow-contract parser
+        run: python -m pip install PyYAML==6.0.3
+
+      - name: Run the runtime-host channel regression
+        run: python -m unittest discover -s control-plane/runtime-host-channel-v1 -p 'test_*.py'
+
+      - name: Run the C1 execution backend in stub mode
+        env:
+          # Deliberately absent in this job: the offline path must not need a credential.
+          OPENAI_API_KEY: ""
+        run: |
+          set -euo pipefail
+          python control-plane/runtime-host-channel-v1/c1_ai_execution_backend.py run \
+            --runtime-task-id rt_stub_offline_regression \
+            --attempt 1 \
+            --model gpt-5.6-sol \
+            --payload-json '{"schema_version":1,"smoke_id":"C1_REAL_AI_WORKER_V1"}' \
+            --stub \
+            --out "$RUNNER_TEMP/c1_stub_result.json"
+          python -c "import json,sys;d=json.load(open(sys.argv[1]));assert d['accepted'] is True;assert d['output']=='GO_C1_REAL_AI_WORKER_V1_OK';assert d['authorizes_any_action'] is False;print('C1_STUB_OK', d['execution_request_id'])" "$RUNNER_TEMP/c1_stub_result.json"
