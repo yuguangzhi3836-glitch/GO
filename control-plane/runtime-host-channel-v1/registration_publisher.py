@@ -27,8 +27,11 @@ module constant channel.ACTION == 'RUNTIME_HOST_PROBE_V1'.
 No command line arguments are accepted. Every path, remote and binding value comes
 from the protected root-owned config files, never from a caller.
 
-An ambiguous push is reconciled by readback only: the stored bytes are re-read,
-never re-signed, and the generation is never advanced on an unconfirmed write.
+An unfinished publication is reconciled against the stored bytes: if the object is
+still absent the identical key and the identical byte string are retried, and the
+generation is never advanced on an unconfirmed write. One generation, one
+signature, one immutable key, one exact byte string -- network retry is allowed,
+semantic regeneration is not.
 """
 import base64
 import hashlib
@@ -243,23 +246,40 @@ def build_body(cfg, generation, now):
 # ---- rotation ----------------------------------------------------------------
 
 def resolve_pending(state, transport):
-    """Readback only. The stored bytes are never re-signed and the generation is
-    never advanced on an unresolved publication."""
+    """Reconcile an unfinished publication using the already-stored bytes.
+
+    The pending entry holds one generation, one signature, one immutable key and one
+    exact byte string. The identical bytes may be pushed again when the object is
+    still absent; nothing is ever re-signed, re-based or re-generated.
+    """
     pending = state["pending"]
     raw = base64.b64decode(pending["raw"])
     if hashlib.sha256(raw).hexdigest() != pending["file_sha256"]:
         die("state_bytes_mismatch", pending["generation"])
+
     remote = transport.read(pending["key"])
+    retried = False
     if remote is None:
-        die("publication_unresolved_no_retry", pending["generation"])
+        # Retry the identical key and byte string. A repeat of the same bytes is
+        # idempotent in the transport; a different body would not be.
+        retried = True
+        transport.create(pending["key"], raw)
+        remote = transport.read(pending["key"])
+
+    if remote is None:
+        # Nothing was published. Leave the pending entry exactly as it is.
+        die("publication_still_absent", pending["generation"])
     if remote != raw:
+        # Something else is at that key. Never overwrite it and never advance.
         die("publication_conflict", pending["generation"])
+
     state["last_generation"] = pending["generation"]
     state["pending"] = None
     save_state(state)
     emit({"status": "PASS", "verb": "resolve-pending",
           "generation": state["last_generation"], "key": pending["key"],
           "file_sha256": pending["file_sha256"], "readback_identical": True,
+          "retried_identical_bytes": retried,
           "last_generation": state["last_generation"]})
     return 0
 
@@ -297,7 +317,8 @@ def rotate(cfg, transport, clock):
     transport.create(key, raw)
     remote = transport.read(key)
     if remote is None:
-        die("publication_unresolved_no_retry", generation)
+        # The pending entry survives; the next tick retries the identical bytes.
+        die("publication_unresolved", generation)
     if remote != raw:
         die("publication_conflict", generation)
 

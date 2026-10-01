@@ -133,18 +133,32 @@ Shape (per the round specification):
 fall below `deployment_first_generation - 1`. An identity change in the state file
 is refused.
 
-### Ambiguous publication
+### Unfinished publication
 
-If the push is unresolved (the object is absent on readback), the rotator reports
-`publication_unresolved_no_retry` and leaves the pending generation recorded. The
-next tick reads back only: it never re-signs and never advances to another
-generation. If the object is present but differs from the stored bytes it reports
-`publication_conflict` and leaves the state alone.
+A pending entry always holds one generation, one signature, one immutable key and
+one exact byte string. Recovery works from those stored bytes and nothing else:
 
-Observed consequence, recorded here rather than designed around: if the very first
-push never reached the remote and no object exists, the rotator will not re-arm by
-itself, and the pending generation needs an explicit human decision before rotation
-can continue.
+| remote state at the pending key | action | outcome |
+|---|---|---|
+| object present, bytes identical | none | the pending generation is marked published, `pending` is cleared, PASS |
+| object absent | retry with the identical key and the identical byte string, then read back | exact readback marks the same generation published, PASS; if still absent the pending entry is left untouched and the run fails |
+| object present, bytes differ | none | `publication_conflict`, nothing overwritten, the pending entry is left untouched |
+
+Recovery never re-signs, never builds another body, never increments the generation,
+never changes `issued_at` / `expires_at` and never uses a different key. Only the
+network step is retried; the signed artifact is immutable. The first attempt of a
+cycle reports `publication_unresolved` when the object cannot be read back, and the
+next timer tick performs the recovery above. This removes the earlier failure mode
+where a push that never reached the remote left rotation stuck until a human edited
+the state file.
+
+### Rotation interval and lifetime
+
+Lifetime stays at the protocol maximum of 86400 s (24 h), as a module constant.
+
+The publisher timer runs every 6 h (`OnBootSec=5min`, `OnUnitActiveSec=6h`). A 24 h
+registration refreshed every 6 h tolerates several missed publisher cycles before
+the installed registration expires.
 
 ### First deployment generation
 
@@ -185,7 +199,7 @@ identity, plan, executor, Evidence-key or expiry checks are simply not applied, 
 the installed registration is left untouched.
 
 Scan bound: at most the 4 newest registration names are considered. The rotator
-publishes every 12 h and a registration is valid for at most 24 h, so any still
+publishes every 6 h and a registration is valid for at most 24 h, so any still
 usable generation is always inside that window; the bound keeps one timer tick from
 turning a year of history into hundreds of repository clones.
 
@@ -237,7 +251,7 @@ directory so git has a home.
 same hardening shape, `ReadWritePaths=/var/lib/go-command-center/runtime-host-v1`.
 
 `go-runtime-host-registration-publish.timer` — `OnBootSec=5min`,
-`OnUnitActiveSec=12h`, `Persistent=true`.
+`OnUnitActiveSec=6h`, `Persistent=true`.
 
 The timer is not coupled to the existing Boss Request service, and the legacy
 six-action enum is unchanged.
@@ -284,7 +298,36 @@ check. The rotator refuses to publish while the binding does not match.
 
 ---
 
-## 8. Tests
+## 8. Deployment bindings
+
+Prepared for the deployment round: a canonical deployment plan and a
+deployment-scoped approval record. The same `plan_sha256` is pinned in every place
+that must agree, and any mismatch makes the rotator refuse to publish.
+
+```
+deployment plan   : /etc/go-command-center/runtime-host-v1/install-plan.json
+plan_sha256       : e110bf679fb29c6da12023949f7c6150afa76b69f56f414fcfd311dcedd3216e
+approval record   : /etc/go-command-center/runtime-host-v1/approval.json
+approval_ref      : approval-6b57fa553b355e4e
+approval_status   : HUMAN_APPROVED_RUNTIME_HOST_DEPLOYMENT
+generation floor  : 2
+rotation interval : 21600 s (6 h)
+lifetime          : 86400 s (24 h)
+```
+
+The approval record carries `explicitly_not_claimed`: independent authority,
+production approval, HK approval, external C1-C14 integration approval. It records
+the deployment authorization reported by Eason after the Owner reviewed PR292, and
+supersedes the bounded-test record `approval-7b9f6a99599db06b`.
+
+The same `plan_sha256`, the deployment executor digest
+(`593a01ac…`) and the deployment evidence key digest (`14a79fdc…`) are pinned
+identically in `publisher.json` on the Control Center and in
+`registration-sync.json` on the Runtime Host.
+
+---
+
+## 9. Tests
 
 All tests run offline: temporary filesystem, in-memory transport, and a local bare
 Git fixture. No network, no real GitHub transport, no SSH, no Runtime or Agent
@@ -312,37 +355,38 @@ the replacement fails half way.
 
 ---
 
-## 9. Known issues recorded, not changed
+## 10. Known issues recorded, not changed
 
 - `cc_test_publisher.check_binding` reads the plan file without closing the handle
   (`ResourceWarning` under CPython). Left exactly as validated on the real host;
   the tested bytes were not edited in this round.
 - Registration scan is bounded to the 4 newest names, as described in section 5.
-- An unresolved first push requires an explicit human decision before rotation
-  resumes, as described in section 4.
 - The repository has no `.gitignore` on `main`; a WSL test run produced
   `__pycache__` artifacts that had to be removed from the staging area before
   commit. Recorded as an observed hazard.
 
 ---
 
-## 10. State at the end of this round
+## 11. State carried by this commit
 
 ```
-REGISTRATION_PUBLISHER = READY   (source + tests; not installed on CC)
-REGISTRATION_SYNC      = READY   (source + tests; not installed on rt01)
-AGENT_SYSTEMD          = READY   (unit verified; not installed)
-CC_TIMER               = READY   (unit verified; not installed, not enabled)
-RT01_TIMER             = READY   (unit verified; not installed, not enabled)
+REGISTRATION_PUBLISHER = READY   (source + tests)
+REGISTRATION_SYNC      = READY   (source + tests)
+AGENT_SYSTEMD          = READY   (unit verified)
+CC_TIMER               = READY   (unit verified, 6 h interval)
+RT01_TIMER             = READY   (unit verified, 5 min interval)
 
-RUNTIME_HOST         = unchanged / STOPPED_HOLD
-MANAGEMENT_AGENT     = unchanged / STOPPED
-REGISTRATION_PUBLISHED = NO      (no real registration written to any repository)
-NEW_REAL_TASK        = NO
-NEW_EVIDENCE         = NO
+RUNTIME_HOST           = unchanged / STOPPED_HOLD at the time of this commit
+MANAGEMENT_AGENT       = unchanged / STOPPED at the time of this commit
+REGISTRATION_PUBLISHED = NO      (no real registration written by this commit)
+NEW_REAL_TASK          = NO
+NEW_EVIDENCE           = NO
 EXTERNAL_TASK_TO_C1_C14_RUNTIME = NOT_IMPLEMENTED
-REAL_AI_WORKER       = NOT_IMPLEMENTED
+REAL_AI_WORKER         = NOT_IMPLEMENTED
 ```
 
-Nothing was enabled, started or enabled-on-boot on either host. No repository,
-credential, key, host or approval record was created.
+This document states what the source and the units are. Installing, enabling and
+starting them on a host is a separate execution step; its live results are recorded
+in the deployment round's own report and are deliberately not restated here.
+
+No repository, credential, key or host was created by this commit.

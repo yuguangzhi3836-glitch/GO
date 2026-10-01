@@ -35,11 +35,13 @@ def die_reason(fn, *args, **kwargs):
 class FakeTransport:
     """In-memory stand-in for GitTransport. No network, no git."""
 
-    def __init__(self, initial=None, fail_after=False, drop=False):
+    def __init__(self, initial=None, fail_after=False, drop=False, fail_before=0):
         self.store = dict(initial or {})
         self.writes = 0
+        self.created = []
         self.fail_after = fail_after
         self.drop = drop
+        self.fail_before = fail_before
 
     def keys(self):
         return sorted(self.store)
@@ -49,6 +51,10 @@ class FakeTransport:
 
     def create(self, key, raw):
         self.writes += 1
+        self.created.append((key, raw))
+        if self.fail_before > 0:
+            self.fail_before -= 1
+            raise OSError("push failed before the object existed")
         if self.drop:
             return  # a write that never reached the remote
         if key in self.store:
@@ -307,51 +313,88 @@ class RotationTests(unittest.TestCase):
         with self.patched():
             self.assertEqual(pub.rotate(cfg, Watching(), self.clock), 0)
 
-    # ---- ambiguous publication --------------------------------------------
-    def test_ambiguous_push_reconciles_by_readback_only(self):
+    # ---- unfinished publication -------------------------------------------
+    def _counting_signer(self):
+        """Wrap load_signer so a re-sign during recovery would be visible."""
+        calls = {"n": 0}
+        real = pub.load_signer
+
+        def counting(cfg, private=False):
+            calls["n"] += 1
+            return real(cfg, private=private)
+
+        return calls, counting
+
+    def test_a_push_that_never_landed_retries_the_identical_bytes(self):
         cfg = self.prepared()
-        transport = FakeTransport(fail_after=True)
+        transport = FakeTransport(fail_before=1)  # first push dies before the object exists
         with self.patched():
             self.assertRaises(OSError, pub.rotate, cfg, transport, self.clock)
-        state = self.state()
-        self.assertEqual(state["pending"]["state"], "ATTEMPTED")
-        self.assertEqual(state["last_generation"], 1)  # never advanced on ambiguity
-        published_key = state["pending"]["key"]
-        first_bytes = transport.store[published_key]
-
-        with self.patched():
-            self.assertEqual(pub.rotate(cfg, transport, self.clock), 0)
-        state = self.state()
-        self.assertIsNone(state["pending"])
-        self.assertEqual(state["last_generation"], 2)
-        self.assertEqual(transport.writes, 1)                 # no second push
-        self.assertEqual(transport.store[published_key], first_bytes)  # same bytes
-
-    def test_unresolved_push_never_produces_a_second_generation(self):
-        cfg = self.prepared()
-        transport = FakeTransport(drop=True)
-        with self.patched():
-            self.assertEqual(die_reason(pub.rotate, cfg, transport, self.clock), 1)
             state = self.state()
             self.assertEqual(state["pending"]["generation"], 2)
             self.assertEqual(state["last_generation"], 1)
-            # a second tick only reads back; it must not sign a new generation
-            self.assertEqual(die_reason(pub.rotate, cfg, transport, self.clock), 1)
-            self.assertEqual(self.state()["pending"]["generation"], 2)
-            self.assertEqual(self.state()["last_generation"], 1)
-        self.assertEqual(transport.writes, 1)
-        self.assertEqual(transport.store, {})
+            pending_key = state["pending"]["key"]
+            pending_raw = base64.b64decode(state["pending"]["raw"])
 
-    def test_conflicting_remote_object_is_refused_not_overwritten(self):
+            calls, counting = self._counting_signer()
+            with mock.patch.object(pub, "load_signer", counting):
+                self.assertEqual(pub.rotate(cfg, transport, self.clock), 0)
+            self.assertEqual(calls["n"], 0)  # recovery never re-signs
+
+        self.assertEqual(transport.writes, 2)
+        self.assertEqual(transport.created,
+                         [(pending_key, pending_raw), (pending_key, pending_raw)])
+        self.assertEqual(transport.store[pending_key], pending_raw)
+        state = self.state()
+        self.assertIsNone(state["pending"])
+        self.assertEqual(state["last_generation"], 2)
+
+    def test_b_lost_acknowledgement_is_resolved_by_readback_alone(self):
+        cfg = self.prepared()
+        transport = FakeTransport(fail_after=True)  # stored remotely, ack lost
+        with self.patched():
+            self.assertRaises(OSError, pub.rotate, cfg, transport, self.clock)
+            state = self.state()
+            self.assertEqual(state["pending"]["state"], "ATTEMPTED")
+            self.assertEqual(state["last_generation"], 1)  # never advanced on ambiguity
+            pending_key = state["pending"]["key"]
+            published = transport.store[pending_key]
+
+            calls, counting = self._counting_signer()
+            with mock.patch.object(pub, "load_signer", counting):
+                self.assertEqual(pub.rotate(cfg, transport, self.clock), 0)
+            self.assertEqual(calls["n"], 0)
+
+        self.assertEqual(transport.writes, 1)  # no second write was needed
+        self.assertEqual(transport.store[pending_key], published)
+        self.assertEqual(self.state()["last_generation"], 2)
+
+    def test_c_conflicting_remote_object_is_refused_not_overwritten(self):
         cfg = self.prepared()
         transport = FakeTransport(fail_after=True)
+        conflict = b'{"body":{},"signature":"AAAA"}'
         with self.patched():
             self.assertRaises(OSError, pub.rotate, cfg, transport, self.clock)
             key = self.state()["pending"]["key"]
-            transport.store[key] = b'{"body":{},"signature":"AAAA"}'
+            transport.store[key] = conflict
+            before = transport.writes
             self.assertEqual(die_reason(pub.rotate, cfg, transport, self.clock), 1)
+            self.assertEqual(transport.writes, before)  # not even an overwrite attempt
+            self.assertEqual(transport.store[key], conflict)
             self.assertEqual(self.state()["last_generation"], 1)
             self.assertEqual(self.state()["pending"]["generation"], 2)
+
+    def test_d_repeated_absence_leaves_pending_and_generation_unchanged(self):
+        cfg = self.prepared()
+        transport = FakeTransport(drop=True)
+        with self.patched():
+            for _ in range(3):
+                self.assertEqual(die_reason(pub.rotate, cfg, transport, self.clock), 1)
+                self.assertEqual(self.state()["pending"]["generation"], 2)
+                self.assertEqual(self.state()["last_generation"], 1)
+        self.assertEqual(transport.store, {})
+        self.assertEqual(len({key for key, _ in transport.created}), 1)   # one key only
+        self.assertEqual(len({raw for _, raw in transport.created}), 1)   # one byte string
 
     # ---- namespace ---------------------------------------------------------
     def test_published_key_uses_the_registrations_namespace(self):
