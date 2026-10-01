@@ -4,6 +4,7 @@ No real transport is enabled here; wire only after a reviewed installed revision
 import hashlib
 import secrets
 import sqlite3
+from contextlib import nullcontext
 from adapter import derive_probe
 from channel import Reject, canonical, decode, digest, signed, verified, registration, window, verify_evidence
 
@@ -77,35 +78,51 @@ def initialize(registry, registration_raw, authority_public, evidence_signer,
     return reg
 
 
+def read_snapshot(transport):
+    """One repository clone per pass when the transport offers snapshots.
+    In-memory transports are used directly: they have no clone to share.
+    """
+    return transport.snapshot() if hasattr(transport,'snapshot') else nullcontext(transport)
+
+
 def poll_once(registry, registration_raw, authority_public, task_public, evidence_signer,
               live_host_id, executor_sha256, tasks, evidence, clock):
-    """One polling pass. Replays only publish the original stored receipt bytes.
+    """One polling pass over one read-only snapshot per repository.
+    Replays only publish the original stored receipt bytes. An already-exact remote
+    receipt is compared against the snapshot read and is not fetched a second time;
+    a new write still requires its fresh post-write readback.
     Transports are separate stores; IDs supplied by transport are never paths to shell.
     Unknown/crashed task claims remain uncertain. Caller schedules next poll.
     """
     reg=initialize(registry,registration_raw,authority_public,evidence_signer,live_host_id,executor_sha256,clock)
     results=[]
-    for key in tasks.keys():
-        raw=tasks.read(key)
-        task=verified(raw,task_public)
-        if task.get('environment')!=reg['environment']: continue
-        from channel import identifier
-        identifier(task.get('task_id'))
-        if key!='tasks/'+task['task_id']+'.json': raise Reject('task_path_binding')
-        stored=registry.db.execute('SELECT task_digest,state,evidence FROM tasks WHERE id=?',(task['task_id'],)).fetchone()
-        if stored:
-            if stored[0]!=digest(task): raise Reject('task_id_rebound')
-            if stored[1]!='COMPLETE':
-                results.append((task['task_id'],'UNCERTAIN')); continue
-            receipt=stored[2]
-        else:
-            receipt=registry.probe(raw,task_public,live_host_id,executor_sha256,evidence_signer,clock)
-        dest='evidence/'+task['task_id']+'.json'
-        found=evidence.read(dest)
-        if found is None: evidence.create(dest,receipt)
-        elif found!=receipt: raise Reject('evidence_publication_conflict')
-        if evidence.read(dest)!=receipt: raise Reject('evidence_readback')
-        results.append((task['task_id'],'EVIDENCE_PUBLISHED'))
+    with read_snapshot(tasks) as task_view:
+        keys=task_view.keys()
+        if not keys: return results
+        with read_snapshot(evidence) as evidence_view:
+            for key in keys:
+                raw=task_view.read(key)
+                task=verified(raw,task_public)
+                if task.get('environment')!=reg['environment']: continue
+                from channel import identifier
+                identifier(task.get('task_id'))
+                if key!='tasks/'+task['task_id']+'.json': raise Reject('task_path_binding')
+                stored=registry.db.execute('SELECT task_digest,state,evidence FROM tasks WHERE id=?',(task['task_id'],)).fetchone()
+                if stored:
+                    if stored[0]!=digest(task): raise Reject('task_id_rebound')
+                    if stored[1]!='COMPLETE':
+                        results.append((task['task_id'],'UNCERTAIN')); continue
+                    receipt=stored[2]
+                else:
+                    receipt=registry.probe(raw,task_public,live_host_id,executor_sha256,evidence_signer,clock)
+                dest='evidence/'+task['task_id']+'.json'
+                found=evidence_view.read(dest)
+                if found is None:
+                    evidence.create(dest,receipt)
+                    if evidence.read(dest)!=receipt: raise Reject('evidence_readback')
+                elif found!=receipt:
+                    raise Reject('evidence_publication_conflict')
+                results.append((task['task_id'],'EVIDENCE_PUBLISHED'))
     return results
 
 
