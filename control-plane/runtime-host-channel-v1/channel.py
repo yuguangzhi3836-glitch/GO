@@ -70,6 +70,28 @@ def window(body, now, maximum):
         raise Reject('lifetime')
 
 
+def task_temporal_state(task, now):
+    """Explicit classification of one external task's delivery window.
+
+    The window decides whether a NEW external task may be admitted. It is never
+    re-applied to a task that was already admitted and completed, so a historical
+    expired object stays inert instead of poisoning the resident Agent.
+
+    Structural problems remain fail-closed: a malformed timestamp is not "expired",
+    and an out-of-contract lifetime is still a rejection, never a classification.
+    """
+    for key in ('issued_at', 'expires_at'):
+        if type(task.get(key)) is not int:
+            raise Reject('time_type')
+    if not 0 < task['expires_at'] - task['issued_at'] <= 300:
+        raise Reject('lifetime')
+    if now < task['issued_at']:
+        return TASK_FUTURE
+    if now >= task['expires_at']:
+        return TASK_EXPIRED
+    return TASK_ACTIVE
+
+
 def identifier(value):
     if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{2,79}', value):
         raise Reject('identifier')
@@ -102,6 +124,13 @@ RUNTIME_KIND = 'RUNTIME_PROBE'
 RUNTIME_SUCCEEDED = 'SUCCEEDED'
 RUNTIME_TASK_ID = re.compile(r'rt_[0-9a-f]{32}')
 BRIDGE_PENDING = 'RUNTIME_PENDING'
+BRIDGE_EXPIRED = 'BRIDGE_EXPIRED'  # the delivery window closed before a Runtime result
+
+# External task delivery-window classification. Only a NEW external task is subject
+# to it; a task that was already admitted and completed keeps replaying its receipt.
+TASK_ACTIVE = 'ACTIVE'
+TASK_FUTURE = 'FUTURE'
+TASK_EXPIRED = 'EXPIRED'
 
 
 def action_scope(actions):
@@ -335,6 +364,38 @@ class Registry:
         if changed != 1:
             raise Reject('bridge_state')
         return evidence
+
+    def expire_bridge_pending(self, task_id, task_digest):
+        """Close a bounded bridge probe whose delivery window ended before a terminal
+        Runtime result existed.
+
+        This is the only transition that may leave BRIDGE_PENDING without Evidence, and
+        it is deliberately narrow: the external probe receives no success Evidence, the
+        Runtime side is never touched (no re-enqueue, no delete, no stop), and the row is
+        never overwritten afterwards. Idempotent once already expired.
+        """
+        identifier(task_id)
+        hex_digest(task_digest)
+        self.db.execute('BEGIN IMMEDIATE')
+        try:
+            row = self.db.execute('SELECT task_digest,state FROM tasks WHERE id=?',
+                                  (task_id,)).fetchone()
+            if row is None:
+                raise Reject('unknown_task')
+            if row[0] != task_digest:
+                raise Reject('task_id_rebound')
+            if row[1] == BRIDGE_EXPIRED:
+                self.db.execute('COMMIT')
+                return 'ALREADY_EXPIRED'
+            if row[1] != BRIDGE_PENDING:
+                raise Reject('state')
+            self.db.execute("UPDATE tasks SET state=? WHERE id=? AND state=?",
+                            (BRIDGE_EXPIRED, task_id, BRIDGE_PENDING))
+            self.db.execute('COMMIT')
+            return 'EXPIRED'
+        except Exception:
+            self.db.execute('ROLLBACK')
+            raise
 
     def evidence(self, task_id):
         row = self.db.execute('SELECT state,evidence FROM tasks WHERE id=?', (task_id,)).fetchone()

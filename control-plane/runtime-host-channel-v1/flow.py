@@ -6,7 +6,8 @@ import secrets
 import sqlite3
 from contextlib import nullcontext
 from adapter import derive_probe
-from channel import (BRIDGE_PENDING, RUNTIME_ACTION, Reject, canonical, decode, digest, signed,
+from channel import (BRIDGE_EXPIRED, BRIDGE_PENDING, RUNTIME_ACTION, TASK_EXPIRED, TASK_FUTURE,
+                     Reject, canonical, decode, digest, signed, task_temporal_state,
                      verified, registration, window, verify_evidence)
 
 class Outbox:
@@ -95,6 +96,10 @@ def poll_once(registry, registration_raw, authority_public, task_public, evidenc
     Transports are separate stores; IDs supplied by transport are never paths to shell.
     A C1 bridge task stays RUNTIME_PENDING until the local Runtime reports a terminal
     result; it is never re-enqueued and its receipt is never re-signed.
+    The delivery window gates admission of a new external task; a historical
+    object past its window is ignored, and one already admitted but unfinished
+    becomes BRIDGE_EXPIRED without Evidence. Neither ever fails the pass, so one
+    stale object cannot put the resident Agent into a restart loop.
     Unknown/crashed task claims remain uncertain. Caller schedules next poll.
     """
     reg=initialize(registry,registration_raw,authority_public,evidence_signer,live_host_id,executor_sha256,clock)
@@ -109,34 +114,62 @@ def poll_once(registry, registration_raw, authority_public, task_public, evidenc
                 if task.get('environment')!=reg['environment']: continue
                 from channel import identifier
                 identifier(task.get('task_id'))
-                if key!='tasks/'+task['task_id']+'.json': raise Reject('task_path_binding')
+                task_id=task['task_id']
+                if key!='tasks/'+task_id+'.json': raise Reject('task_path_binding')
                 action=task.get('action')
-                stored=registry.db.execute('SELECT task_digest,state,evidence FROM tasks WHERE id=?',(task['task_id'],)).fetchone()
-                if stored:
-                    if stored[0]!=digest(task): raise Reject('task_id_rebound')
-                    if stored[1]=='COMPLETE':
-                        receipt=stored[2]
-                    elif stored[1]==BRIDGE_PENDING and action==RUNTIME_ACTION:
-                        receipt=registry.bridge_probe(raw,task_public,live_host_id,executor_sha256,
-                                                      evidence_signer,clock,bridge)
-                    else:
-                        results.append((task['task_id'],'UNCERTAIN')); continue
-                elif action==RUNTIME_ACTION:
+                task_digest=digest(task)
+                # Local state is consulted before the delivery window is classified, so a
+                # completed historical task stays replayable whatever the clock says.
+                stored=registry.db.execute('SELECT task_digest,state,evidence FROM tasks WHERE id=?',(task_id,)).fetchone()
+                if stored is not None and stored[0]!=task_digest:
+                    raise Reject('task_id_rebound')
+
+                if stored is not None and stored[1]=='COMPLETE':
+                    # An already completed task owns its receipt forever; the external
+                    # delivery window is never re-applied to it.
+                    receipt=stored[2]
+                elif stored is not None and stored[1]==BRIDGE_EXPIRED:
+                    # The window closed before a terminal Runtime result existed. The
+                    # object is inert: never bridged, never signed, never Evidence.
+                    results.append((task_id,BRIDGE_EXPIRED)); continue
+                elif stored is not None and stored[1]==BRIDGE_PENDING:
+                    if action!=RUNTIME_ACTION:
+                        results.append((task_id,'UNCERTAIN')); continue
+                    delivery=task_temporal_state(task,clock())
+                    if delivery==TASK_FUTURE:
+                        # An admitted task cannot move back before its own window.
+                        raise Reject('admitted_task_in_future')
+                    if delivery==TASK_EXPIRED:
+                        registry.expire_bridge_pending(task_id,task_digest)
+                        results.append((task_id,BRIDGE_EXPIRED)); continue
                     receipt=registry.bridge_probe(raw,task_public,live_host_id,executor_sha256,
                                                   evidence_signer,clock,bridge)
+                elif stored is None:
+                    delivery=task_temporal_state(task,clock())
+                    if delivery==TASK_EXPIRED:
+                        # Never admitted here and the window has closed: inert history.
+                        results.append((task_id,'EXPIRED_IGNORED')); continue
+                    if delivery==TASK_FUTURE:
+                        results.append((task_id,'NOT_YET_VALID')); continue
+                    receipt=(registry.bridge_probe(raw,task_public,live_host_id,executor_sha256,
+                                                   evidence_signer,clock,bridge)
+                             if action==RUNTIME_ACTION
+                             else registry.probe(raw,task_public,live_host_id,executor_sha256,
+                                                 evidence_signer,clock))
                 else:
-                    receipt=registry.probe(raw,task_public,live_host_id,executor_sha256,evidence_signer,clock)
+                    results.append((task_id,'UNCERTAIN')); continue
+
                 if receipt is None:
                     # Runtime result not terminal yet: no Evidence is published.
-                    results.append((task['task_id'],BRIDGE_PENDING)); continue
-                dest='evidence/'+task['task_id']+'.json'
+                    results.append((task_id,BRIDGE_PENDING)); continue
+                dest='evidence/'+task_id+'.json'
                 found=evidence_view.read(dest)
                 if found is None:
                     evidence.create(dest,receipt)
                     if evidence.read(dest)!=receipt: raise Reject('evidence_readback')
                 elif found!=receipt:
                     raise Reject('evidence_publication_conflict')
-                results.append((task['task_id'],'EVIDENCE_PUBLISHED'))
+                results.append((task_id,'EVIDENCE_PUBLISHED'))
     return results
 
 
