@@ -1,0 +1,11 @@
+[Unit]
+Description=Run GO Runtime Host registration synchroniser periodically
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+Persistent=true
+Unit=go-runtime-host-registration-sync.service
+
+[Install]
+WantedBy=timers.target

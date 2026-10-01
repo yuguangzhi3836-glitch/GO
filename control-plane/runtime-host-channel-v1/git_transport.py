@@ -10,11 +10,12 @@ from pathlib import Path
 from channel import Reject
 
 PREFIX='runtime-host-v1/'
-KEY=re.compile(r'^(tasks|evidence)/[A-Za-z0-9][A-Za-z0-9._-]{2,79}\.json$')
+KINDS=('tasks','evidence','registrations')  # registrations is an append-only namespace
+KEY=re.compile(r'^(tasks|evidence|registrations)/[A-Za-z0-9][A-Za-z0-9._-]{2,79}\.json$')
 
 class GitTransport:
     def __init__(self, remote, branch, kind, *, git_env):
-        if kind not in ('tasks','evidence') or not re.fullmatch('[A-Za-z0-9][A-Za-z0-9._-]{0,79}',branch):
+        if kind not in KINDS or not re.fullmatch('[A-Za-z0-9][A-Za-z0-9._-]{0,79}',branch):
             raise Reject('transport_config')
         if not isinstance(remote,str) or remote.startswith('-') or '\n' in remote:
             raise Reject('remote_config')

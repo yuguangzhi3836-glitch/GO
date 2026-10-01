@@ -1,0 +1,35 @@
+[Unit]
+Description=GO Runtime Host Management Agent (resident registration-bound poller)
+ConditionPathExists=/etc/go-runtime-host/agent.json
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/go/runtime-host-agent
+ExecStart=/opt/go/runtime-host-agent/.venv/bin/python -B /opt/go/runtime-host-agent/agent_service.py
+Restart=on-failure
+RestartSec=10
+# HOME is redirected because ProtectHome=true would otherwise hide /root from git.
+Environment=HOME=/var/lib/go-runtime-host
+UMask=0077
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+PrivateDevices=true
+# The Agent holds the Evidence signing key and the restricted GitHub deploy keys in
+# /etc/go-runtime-host, which stays read-only here; only its own state directory is
+# writable. PrivateNetwork is deliberately NOT set: the Agent must reach GitHub and
+# the ECS instance metadata endpoint to observe its own cloud identity.
+ReadWritePaths=/var/lib/go-runtime-host
+
+[Install]
+WantedBy=multi-user.target
