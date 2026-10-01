@@ -256,13 +256,14 @@
     "PR279 fixed 4x4 formal 100 actor P95=5363.783ms >5000ms. No passing replacement evidence verified.",
     "PR279 latest reviewed whole-business C14 R9 was BLOCKED; do not transfer Runtime PR287 PASS to business candidate.",
     "PR284 new tests are source assertions; test SOURCE uses parents[1]/src from tests/payments, apparently resolving to application/tests/src; behavioral PostgreSQL fault evidence required.",
-    "New candidate must bind exact source, image, schema, migration compatibility and existing business topology; do not change live authority files."
+    "New candidate must bind exact source, image, schema, migration compatibility and existing business topology; do not change live authority files.",
+    "SI DIRECT+ PR296 is a new unmerged source candidate and must be included in final source-bound acceptance; it is not present merely because deployment is authorized."
   ],
   "formal_live_check": {
     "request_pr": "https://github.com/chenzhenxi1-sudo/go-control-tasks/pull/125",
     "action": "HK_STAGING_VERIFY",
     "request_head": "f938b3a44d3857e8c9a47f25c9c318da9ed859f9",
-    "result": "PENDING_AT_REPORT_CREATION"
+    "result": "SUCCESS_VERIFY_OK_RECORDED_IN_LIVE_VERIFY_MD"
   },
   "required_sequence": [
     "Resolve missing/different implementations with regression retention, producing one immutable non-DOT business candidate.",
@@ -277,5 +278,23 @@
     "Inventory covers the active business chains identified in the audit, not proof that every historical Draft PR is included.",
     "Owner deployment authorization is recorded; no repeated approval is requested. Existing correctness, review and capacity requirements are not waived.",
     "Deployment does not activate real PSP/OTA credentials or external side effects."
-  ]
+  ],
+  "refresh_observed_at": "2026-10-01T12:07:01.007Z",
+  "latest_owner_instruction": "把所有成果重新部署香港更新系统",
+  "additional_requested_source": [
+    {
+      "pr": 296,
+      "head": "3f107cc2996bc4b1ffafbb4cdb206dc82a3d98be",
+      "scope": "Confirmed SI DIRECT+ combined logo across web and native app",
+      "status": "DRAFT_UNMERGED_NOT_INTEGRATED",
+      "independent_acceptance": "NOT_VERIFIED",
+      "native_distribution": "Web business deployment cannot prove delivery of an iOS/Android build."
+    }
+  ],
+  "formal_live_check_refresh": {
+    "request_pr": "https://github.com/chenzhenxi1-sudo/go-control-tasks/pull/126",
+    "action": "HK_STAGING_VERIFY",
+    "request_head": "b034e3703a30892fe0fd083db6e5fa270ec3b6a9",
+    "result": "PENDING"
+  }
 }
