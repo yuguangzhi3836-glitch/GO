@@ -562,98 +562,102 @@ summary.md
 
 ### Enterprise WeChat notification channel
 
-Forge should reuse the **existing Enterprise WeChat notification capability** as a thin human-notification channel.
+Forge should reuse the **existing Enterprise WeChat push capability** only as a thin human-notification channel.
 
-Its purpose is simple:
+For the first version, Enterprise WeChat has exactly **three notification types**:
 
-> **When Forge finishes, tell the human what happened. When Forge cannot safely finish, ask the human to intervene.**
+#### 1. DEPLOY_STARTED
 
-It must **not** become another approval service, workflow engine, state machine, or source of truth.
+Send once, immediately after Forge has accepted the deployment task and is beginning work.
 
-Recommended terminal notifications:
+Example:
 
-#### SUCCESS
+```text
+GO Forge 开始部署
 
-Send after final verification succeeds.
+PR298
+Target: HK-STAGING-01
+Status: STARTED
+```
 
-Example content:
+Human wording may be simple:
+
+> 收到 PR298 部署指令，开始部署。
+
+#### 2. DEPLOY_SUCCEEDED
+
+Send once, only after deployment and final verification have completed successfully.
+
+Example:
 
 ```text
 GO Forge 部署成功
 
-Task: <task_id>
-Candidate: PR298 / <immutable_sha>
+PR298
 Target: HK-STAGING-01
-Result: SUCCESS
-DB: <before_head> -> <after_head>
-Image: <before_image> -> <candidate_image>
+Status: SUCCESS
 Verify: PASS
-Evidence: <pointer>
 ```
 
-Human-facing wording may be informal; for example:
+Human wording may be:
 
-> 部署成功了哥，PR298 已经在 HK-STAGING 跑起来，Verify 通过。
+> PR298 已部署成功，Verify 通过。
 
-#### NEEDS_HUMAN
+#### 3. DEPLOY_FAILED_NEEDS_HUMAN
 
-Send when the AI cannot establish a safe/efficient path within its allowed boundary.
+Send once when Forge has stopped because it cannot safely or efficiently complete the task within its allowed boundary.
 
-Example content:
+Example:
 
 ```text
-GO Forge 需要人工处理
+GO Forge 部署失败，需要人工介入
 
-Task: <task_id>
-Candidate: PR298 / <immutable_sha>
+PR298
 Target: HK-STAGING-01
-Result: NEEDS_HUMAN
 Stage: <migration/deploy/verify/etc>
 Reason: <short factual reason>
-Last safe state: <state>
-Recommended human action: <one concise next step>
-Evidence: <pointer>
 ```
 
-The notification should say **what the AI could not resolve**, not dump a long model explanation.
+Human wording may be:
 
-#### Other useful terminal states
+> PR298 部署失败，需要人工处理一下。原因：<short reason>。
 
-Forge may also notify:
+### Enterprise WeChat rules
 
-- CANDIDATE_DEFECT — candidate itself must change before deployment can continue
-- ROLLBACK_DONE — deployment failed but recovery completed successfully
-- ABORTED — task was stopped before mutation or before completion
-- INCIDENT — recovery also failed and immediate human attention is required
+1. **Only these three messages are required.**
+2. Do not push every internal step, retry, gate, migration revision, command, or AI decision.
+3. Enterprise WeChat is for human awareness, not authorization and not machine truth.
+4. Notification payloads must never contain secrets, DB URLs, tokens, keys, or raw sensitive logs.
+5. Notification failure must not change the deployment result; record the notification fault in audit and continue normal result publication.
+6. During early testing the recipient may be Eason only. Once the flow is mature, the Boss can be added to the same Enterprise WeChat group so both humans receive the same three notifications.
 
-### Notification rules
+### Machine-readable result remains on GitHub
 
-1. **Notify terminal state, not every internal step.** Avoid message spam.
-2. Enterprise WeChat is **observability**, not authority. A message does not authorize a deployment.
-3. Notification payloads must never contain secrets, DB URLs, tokens, private keys, or raw sensitive logs.
-4. Include enough information to identify the exact task: Task ID, Candidate PR/SHA, target, result, short reason, and evidence pointer.
-5. Notification delivery failure must **not** convert a successful deployment into a failed deployment. Record NOTIFY_FAILED in the audit trail and retry a small bounded number of times.
-6. A terminal deployment failure that requires human action should always attempt Enterprise WeChat notification before the worker goes idle.
-7. Reuse the existing Enterprise WeChat push path; do not create a second messaging platform unless the existing capability proves insufficient.
+Enterprise WeChat does **not** replace the existing GitHub result/evidence path.
 
-This gives Forge a simple operating model:
+Forge should continue publishing the canonical machine-readable task result to:
 
 ```text
-Task arrives
-↓
-AI works autonomously
-↓
-SUCCESS
-→ Enterprise WeChat: 部署成功
-
-or
-
-AI cannot safely resolve
-→ Enterprise WeChat: 需要人工处理
+chenzhenxi1-sudo/go-control-evidence
 ```
 
-The human should not need to watch GitHub, SSH sessions, or logs continuously just to know whether the deployment finished.
+This is the result surface for Boss GPT / future AI consumers and later audit.
 
+Therefore the final feedback model is intentionally simple:
+
+```text
+Task accepted
+├── Enterprise WeChat: STARTED
+└── Forge begins work
+
+Task terminal state
+├── GitHub Evidence: canonical machine-readable result
+└── Enterprise WeChat:
+      ├── SUCCESS
+      └── FAILED / NEEDS_HUMAN
+```
+
+Humans get a short message. GPT/AI gets the structured evidence.
 ---
 
 ## 9. Controls that should remain hard-coded
