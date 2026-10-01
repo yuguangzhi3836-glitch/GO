@@ -1,0 +1,45 @@
+# CANDIDATE ONLY: separate C1 Real AI Worker V1.
+# Does not replace go-c1-c14-runtime.service / NoopWorker.
+[Unit]
+Description=GO Runtime C1 Real AI Worker V1
+After=network-online.target go-c1-c14-runtime.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=go-runtime
+Group=go-runtime
+WorkingDirectory=/opt/go/runtime-host-agent
+EnvironmentFile=/etc/go-runtime-worker-c1.env
+ExecStart=/usr/bin/python3 /opt/go/runtime-host-agent/c1_real_ai_worker.py --db /var/lib/go-c-runtime/runtime.db --runtime-source /opt/go/c1-c14-runtime --interval 2
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+KillMode=control-group
+UMask=0077
+
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+CapabilityBoundingSet=
+RestrictSUIDSGID=true
+
+ReadWritePaths=/var/lib/go-c-runtime
+ReadOnlyPaths=/opt/go/runtime-host-agent /opt/go/c1-c14-runtime /etc/go-runtime-worker-c1.env
+
+# Real model invocation needs outbound network, but no listeners are opened.
+IPAddressDeny=any
+IPAddressAllow=0.0.0.0/0
+IPAddressAllow=::/0
+
+MemoryMax=256M
+CPUQuota=50%
+TasksMax=32
+
+[Install]
+WantedBy=multi-user.target
