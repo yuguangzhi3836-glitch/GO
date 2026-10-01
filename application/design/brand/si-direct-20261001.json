@@ -1,0 +1,26 @@
+{
+  "change_class": "PRODUCT_FIX",
+  "approved_date": "2026-10-01",
+  "source": "GO_SI_DIRECT_logo.svg approved by user in this conversation",
+  "source_svg_sha256": "26b68e4df4fb017fa7d54ab508eb4db4b08f79733e5263ffe29f0430c633f961",
+  "reverse_svg_sha256": "a5f55a24c180debe56711b6b4338f34ae1b7c5fefcb4035d65d95ff5ad16e911",
+  "native_png_sha256": "0052aa55682a1b711ada7a9721a6300259c3c09378d50b405ab16d13145d3f0c",
+  "view_box": "-40 -40 6796 1080",
+  "cache_version": "20261001-si-direct",
+  "scope": "Complete system master lockup; all paths outlined. Standalone GO, GO AI/Offer subbrands and business behavior unchanged.",
+  "legacy_aliases": "Main/compact V14 filenames retained for compatibility; both now carry the exact approved complete SI artwork.",
+  "reverse_derivation": "Replace #061B3A with #FFFFFF only, preserving paths, red O segment, proportions and Chinese tagline.",
+  "native_derivation": "PNG exported from the approved SVG with transparent background; native home renders it intact using aspectRatio 6796/1080.",
+  "validation": {
+    "brand_contract": "5/5 PASS: node --test tests_frontend/brand_v14.test.mjs",
+    "javascript_syntax": "PASS: node --check consumer/app.js, consumer/flight-journeys.js, shared/app.js",
+    "mobile_contract": "PASS: node scripts/contract-check.mjs",
+    "asset_integrity": "PASS: exact source SHA256; all outlines; no fonts/scripts/embedded images; reverse changes only navy to white",
+    "visual": "Approved original preview and dark reverse SVG render inspected; no clipping in source artwork",
+    "limitations": [
+      "Browser viewport and physical-device review not run: local Chromium executable unavailable.",
+      "Native iOS/Android build not run.",
+      "Independent C13/C14 review and runtime deployment not performed."
+    ]
+  }
+}
