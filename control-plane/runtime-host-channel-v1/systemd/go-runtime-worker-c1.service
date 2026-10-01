@@ -32,10 +32,7 @@ RestrictSUIDSGID=true
 ReadWritePaths=/var/lib/go-c-runtime
 ReadOnlyPaths=/opt/go/runtime-host-agent /opt/go/c1-c14-runtime /etc/go-runtime-worker-c1.env
 
-# Real model invocation needs outbound network, but no listeners are opened.
-IPAddressDeny=any
-IPAddressAllow=0.0.0.0/0
-IPAddressAllow=::/0
+# Real model invocation needs outbound network. The worker opens no listener.
 
 MemoryMax=256M
 CPUQuota=50%
