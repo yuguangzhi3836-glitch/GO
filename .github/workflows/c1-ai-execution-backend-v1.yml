@@ -21,9 +21,9 @@ name: C1 real AI execution backend (V1)
 # control-plane/runtime-host-channel-v1/c1_execution_contract.py, which both sides
 # import. The smoke payload is a literal in this file for the same reason.
 #
-# `live_call` is not a task parameter. It is a closed safety gate that defaults to the
-# offline stub, so an accidental dispatch cannot spend money before the transport has
-# been proven end to end on both sides.
+# The dispatch inputs are the identity triple and nothing else. The live/stub choice is
+# NOT an input: it is repo-controlled configuration (`vars.C1_AI_LIVE_ENABLED`), and it
+# defaults to the offline stub, so a dispatch sent by the Runtime cannot spend money.
 #
 # exactly-once: identity is (runtime_task_id, attempt, fixed binding). The run NAME is
 # that identity, so an unknown dispatch outcome can be resolved by lookup instead of
@@ -45,10 +45,6 @@ on:
       execution_request_id:
         description: "sha256 of the canonical task binding, derived by the requester"
         required: true
-      live_call:
-        description: "Literal 'true' to reach the real model endpoint; anything else runs the offline stub"
-        required: false
-        default: "false"
 
 permissions:
   contents: read
@@ -82,15 +78,17 @@ jobs:
 
       - name: Execute the fixed C1 smoke and seal one result
         env:
-          # The credential is injected ONLY when the caller explicitly asked for a live
-          # call. In stub mode the variable is the empty string, which the backend
-          # treats as "no credential" and refuses to call the model with - so an offline
-          # run cannot consume the secret even by accident.
-          OPENAI_API_KEY: ${{ inputs.live_call == 'true' && secrets.OPENAI_API_KEY || '' }}
+          # The credential is injected ONLY when the repository-side switch is on.
+          # `vars.C1_AI_LIVE_ENABLED` is repo-controlled configuration, not a task
+          # input, so a dispatch sent by the Runtime can never ask for a paid call.
+          # With the variable unset the value is the empty string, which the backend
+          # treats as "no credential" and refuses to call the model with.
+          OPENAI_API_KEY: ${{ vars.C1_AI_LIVE_ENABLED == 'true' && secrets.OPENAI_API_KEY || '' }}
+          C1_AI_LIVE_ENABLED: ${{ vars.C1_AI_LIVE_ENABLED }}
         run: |
           set -euo pipefail
           MODE="--stub"
-          if [ "${{ inputs.live_call }}" = "true" ]; then MODE=""; fi
+          if [ "${C1_AI_LIVE_ENABLED:-}" = "true" ]; then MODE=""; fi
           python control-plane/runtime-host-channel-v1/c1_ai_execution_backend.py run \
             --runtime-task-id "${{ inputs.runtime_task_id }}" \
             --attempt "${{ inputs.attempt }}" \

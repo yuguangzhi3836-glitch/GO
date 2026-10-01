@@ -228,12 +228,12 @@ class WorkflowContractTests(unittest.TestCase):
         for trigger in ("push", "pull_request", "schedule"):
             self.assertNotIn(trigger, self.triggers)
 
-    def test_the_dispatch_inputs_are_the_identity_triple_plus_a_safety_gate(self):
+    def test_the_dispatch_inputs_are_the_identity_triple_and_nothing_else(self):
         inputs = set(self.triggers["workflow_dispatch"]["inputs"])
-        self.assertEqual(inputs, {"runtime_task_id", "attempt", "execution_request_id",
-                                  "live_call"})
+        self.assertEqual(inputs, {"runtime_task_id", "attempt", "execution_request_id"})
         for forbidden in ("payload", "prompt", "model", "url", "endpoint", "repo", "ref",
-                          "c_id", "owner_c", "kind", "workflow", "shell", "command"):
+                          "c_id", "owner_c", "kind", "workflow", "shell", "command",
+                          "live_call", "mode"):
             self.assertNotIn(forbidden, inputs)
 
     def test_the_model_is_a_repo_side_controlled_value_not_an_input(self):
@@ -267,8 +267,8 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn("secrets.OPENAI_API_KEY", self.text)
         self.assertEqual(self.text.count("secrets."), 1)
 
-    def test_the_credential_is_injected_only_for_a_live_call(self):
-        self.assertIn("inputs.live_call == 'true' && secrets.OPENAI_API_KEY || ''",
+    def test_the_credential_is_injected_only_for_a_repo_side_live_switch(self):
+        self.assertIn("vars.C1_AI_LIVE_ENABLED == 'true' && secrets.OPENAI_API_KEY || ''",
                       self._execution_step()["env"]["OPENAI_API_KEY"])
         self.assertEqual(self.job["timeout-minutes"], 15)
 
@@ -291,8 +291,15 @@ class WorkflowContractTests(unittest.TestCase):
 
     def test_the_backend_defaults_to_the_offline_stub(self):
         self.assertIn('MODE="--stub"', self.text)
-        self.assertIn('if [ "${{ inputs.live_call }}" = "true" ]; then MODE=""; fi',
-                      self.text)
+        self.assertIn('if [ "${C1_AI_LIVE_ENABLED:-}" = "true" ]; then MODE=""; fi', self.text)
+        self.assertNotIn("inputs.live_call", self.text)
+
+    def test_the_live_switch_is_not_a_dispatch_input(self):
+        # Repo-controlled, not task-controlled: a Runtime dispatch cannot turn it on.
+        self.assertIn("vars.C1_AI_LIVE_ENABLED", self.text)
+        self.assertEqual(self._execution_step()["env"]["C1_AI_LIVE_ENABLED"],
+                         "${{ vars.C1_AI_LIVE_ENABLED }}")
+        self.assertNotIn("live_call", self.triggers["workflow_dispatch"]["inputs"])
 
     def test_offline_regression_job_carries_no_credential(self):
         document, triggers = load_workflow(OFFLINE_WORKFLOW)

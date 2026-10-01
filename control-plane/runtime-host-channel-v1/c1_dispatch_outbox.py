@@ -49,6 +49,19 @@ COMPLETED = "COMPLETED"                  # Runtime.complete() done
 IN_FLIGHT_STATES = (INTENT, DISPATCH_AMBIGUOUS, RUN_BOUND)
 TERMINAL_STATES = (RESULT_SEALED, COMPLETED)
 
+# The outward-facing dispatch_status vocabulary. The internal state names are kept
+# because they say exactly what the outbox actually knows (in particular the
+# difference between "we are not in flight" and "we may have sent something and do
+# not know"); this projection is the stable contract callers read.
+DISPATCH_STATUS = {
+    INTENT: "CREATED",
+    DISPATCH_AMBIGUOUS: "DISPATCHED",
+    RUN_BOUND: "RUNNING",
+    RESULT_SEALED: "COMPLETED",
+    COMPLETED: "COMPLETED",
+}
+DISPATCH_STATUS_VALUES = ("CREATED", "DISPATCHED", "RUNNING", "COMPLETED", "FAILED")
+
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS c1_dispatch (
     execution_request_id TEXT PRIMARY KEY,
@@ -208,6 +221,21 @@ class DispatchOutbox:
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
         return {k: row[k] for k in row.keys()}
+
+    def dispatch_status(self, request_id) -> str:
+        """The outward-facing status: CREATED / DISPATCHED / RUNNING / COMPLETED / FAILED.
+
+        A sealed result that was not accepted reports FAILED; a sealed one that was
+        accepted reports COMPLETED. Both are terminal, and neither permits a second
+        dispatch or a second model call.
+        """
+        snapshot = self.snapshot(request_id)
+        state = snapshot["state"]
+        if state in TERMINAL_STATES:
+            document = self.terminal_result(request_id)
+            if document is not None and not document.get("accepted", False):
+                return "FAILED"
+        return DISPATCH_STATUS[state]
 
 
 def drive_once(outbox: DispatchOutbox, runtime_task_id, attempt, *, send, find_run) -> dict:

@@ -302,5 +302,43 @@ class ActionSurfaceTests(OutboxCase):
                 self.outbox.record_run_lookup(self.request_id(), bad)
 
 
+class DispatchStatusTests(OutboxCase):
+    """The outward-facing status vocabulary the Runtime-side contract reports."""
+
+    def test_the_five_documented_statuses_exist(self):
+        self.assertEqual(outbox_mod.DISPATCH_STATUS_VALUES,
+                         ("CREATED", "DISPATCHED", "RUNNING", "COMPLETED", "FAILED"))
+
+    def test_the_status_walks_from_created_to_completed(self):
+        request_id = self.request_id()
+        self.outbox.register(TASK, 1)
+        self.assertEqual(self.outbox.dispatch_status(request_id), "CREATED")
+        self.outbox.record_dispatch_sent(request_id)
+        self.assertEqual(self.outbox.dispatch_status(request_id), "DISPATCHED")
+        self.outbox.record_run_lookup(request_id, RUN_ID)
+        self.assertEqual(self.outbox.dispatch_status(request_id), "RUNNING")
+        self.outbox.record_result(request_id, sealed_result(TASK, 1),
+                                  runtime_task_id=TASK, attempt=1)
+        self.assertEqual(self.outbox.dispatch_status(request_id), "COMPLETED")
+        self.outbox.mark_completed(request_id)
+        self.assertEqual(self.outbox.dispatch_status(request_id), "COMPLETED")
+
+    def test_a_failed_execution_reports_failed_not_completed(self):
+        output = "not the smoke string"
+        failed = sealed_result(TASK, 1)
+        failed.update({"status": "FAILED", "accepted": False, "output": output,
+                       "output_sha256": contract.output_sha256(output),
+                       "failure_reason": "MODEL_OUTPUT_DID_NOT_MATCH_SMOKE_STRING"})
+        request_id = self.request_id()
+        self.outbox.register(TASK, 1)
+        self.outbox.record_dispatch_sent(request_id, github_run_id=RUN_ID)
+        self.outbox.record_result(request_id, failed, runtime_task_id=TASK, attempt=1)
+        self.assertEqual(self.outbox.dispatch_status(request_id), "FAILED")
+
+    def test_an_unknown_identity_has_no_status(self):
+        with self.assertRaises(contract.Refused):
+            self.outbox.dispatch_status("0" * 64)
+
+
 if __name__ == "__main__":
     unittest.main()
