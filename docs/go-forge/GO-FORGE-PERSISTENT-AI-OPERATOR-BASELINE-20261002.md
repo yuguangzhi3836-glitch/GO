@@ -338,6 +338,68 @@ Examples:
 - deploy a different SHA
 - skip final verify
 
+### Core principle — Mismatch Is a Decision Point, Not an Automatic Failure
+
+A mismatch is **input to AI judgment**, not a reason to reject deployment by itself.
+
+Forge must not use logic equivalent to:
+
+```text
+candidate DB head != live DB head
+→ FAIL
+```
+
+Instead it must inspect the facts and classify the mismatch.
+
+Typical database example:
+
+```text
+Candidate migration head = 0145
+Live DB head             = 0137
+        ↓
+ENV_BEHIND_CANDIDATE
+        ↓
+inspect migration graph
+        ↓
+backup
+        ↓
+isolated migration rehearsal when required
+        ↓
+migrate once
+        ↓
+verify DB head = 0145
+        ↓
+continue deployment
+```
+
+The same principle applies to runtime/image/executor state.
+
+```text
+Mismatch
+≠ automatic failure
+
+Mismatch
+= decision point
+```
+
+Forge should distinguish at least:
+
+- **Expected upgrade gap** — candidate is ahead of the live environment on the same valid lineage; perform the required migration/update procedure.
+- **Operational variance** — stale container, expired lock, executor generation pin, transient service state, or another recoverable execution issue; AI may repair within its authorized boundary.
+- **Material drift** — state differs in a way that requires evidence and investigation before continuing.
+- **Candidate defect** — continuing requires changing the Candidate itself; abort the deployment task.
+- **Unsafe / unresolved divergence** — e.g. multiple DB heads, non-ancestor migration branches, unprovable state, failed backup, or destructive migration that cannot be safely justified; abort.
+
+Therefore database generation mismatch, runtime generation mismatch, or similar state differences must never be treated as a generic `REJECT` condition without first determining **why** the mismatch exists and whether a safe supported transition exists.
+
+A deployment should stop because the AI has established a concrete unsafe condition, not merely because the environment differs from a precomputed expected value.
+
+In short:
+
+> **Difference is a fact. Risk is a judgment. Only proven unsafe conditions should block the deployment.**
+
+This principle is one of the main reasons Forge uses an AI operator rather than another rigid gate chain.
+
 ---
 
 ## 8. Audit is mandatory
