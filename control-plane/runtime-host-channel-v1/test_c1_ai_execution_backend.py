@@ -313,6 +313,14 @@ class WorkflowContractTests(unittest.TestCase):
         text = OFFLINE_WORKFLOW.read_text(encoding="utf-8")
         self.assertIn('sudo "$(command -v python)" -m unittest discover', text)
 
+    def test_the_regression_installs_the_dependencies_its_tests_import(self):
+        # test_registration_sync / test_registration_publisher import `cryptography`, at
+        # the version the rest of this repository pins. Without the install the job goes
+        # red at import time, and the regression proves nothing.
+        text = OFFLINE_WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("cryptography==46.0.0", text)
+        self.assertIn("PyYAML==6.0.3", text)
+
 
 class ESCCredentialRemovalTests(unittest.TestCase):
     """The superseded 'persistent C1 worker on the Runtime Host' design must be gone."""
