@@ -194,7 +194,7 @@ class TestPrDurabilityTests(unittest.TestCase):
     def test_a_passing_build_seals_last_and_reports_the_package(self):
         runner, result = self.build()
         self.assertEqual(result["result"], "TEST_PR_OK")
-        self.assertEqual(result["executor_version"], "test-pr-v3")
+        self.assertEqual(result["executor_version"], "test-pr-v4-runtime-root")
         self.assertEqual(result["built_image_id"], IMAGE_ID)
         self.assertEqual(result["artifact_durability"], "PROVEN")
         self.assertEqual(result["artifact_package"]["image_id"], IMAGE_ID)

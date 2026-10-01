@@ -300,7 +300,7 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn("from %s" % "go-hotel:depth48-runtime-6d0fd905", dockerfile)
         self.assertIn('BUILDER_IMAGE = "go-hotel:depth48-runtime-6d0fd905"', source)
         self.assertIn('BUILDER_IMAGE_ID = "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"', source)
-        self.assertIn('EXECUTOR_VERSION = "test-pr-v3"', source)
+        self.assertIn('EXECUTOR_VERSION = "test-pr-v4-runtime-root"', source)
         # Nothing executable may still name the environment that is gone, or the
         # rename left a second, dead pin behind.
         stale_scope = sorted((ROOT / "hk-staging").rglob("*")) + sorted((ROOT / "install").glob("*.sh"))

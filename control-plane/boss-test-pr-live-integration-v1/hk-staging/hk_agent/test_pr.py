@@ -1,9 +1,11 @@
 """Fixed, isolated HK_STAGING_TEST_PR executor; no Compose or runtime bindings."""
 import hashlib
+import inspect
 import os
 import pathlib
 import re
 import shutil
+import shlex
 import stat
 import subprocess
 import tempfile
@@ -12,7 +14,7 @@ from . import artifact_store
 
 ACTION = "HK_STAGING_TEST_PR"
 PROFILE = "go-application-python-v1"   # the Task-facing contract: unchanged by V2
-EXECUTOR_VERSION = "test-pr-v3"
+EXECUTOR_VERSION = "test-pr-v4-runtime-root"
 REPOSITORY = "git@github.com:yuguangzhi3836-glitch/GO.git"
 DEPLOY_KEY = "/etc/go-hk-agent/keys/github-go-source-reader"
 DOCKERFILE = "/usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2"
@@ -148,6 +150,23 @@ def _builder_image(runner):
         raise Reject("TEST_PR_BUILDER_IMAGE_REJECT")
 
 
+def runtime_source_digest(root):
+    """Bind served frontend and imported Python bytes, including deleted files."""
+    digest = hashlib.sha256()
+    for name in ("src", "frontend", "alembic", "alembic.ini", "pyproject.toml"):
+        path = pathlib.Path(root) / name
+        paths = sorted(path.rglob("*")) if path.is_dir() else [path]
+        for item in paths:
+            if "__pycache__" in item.parts or item.suffix in (".pyc", ".pyo"):
+                continue
+            if item.is_symlink():
+                raise ValueError("runtime source symlink refused")
+            if item.is_file():
+                digest.update(item.relative_to(root).as_posix().encode() + b"\0")
+                digest.update(hashlib.sha256(item.read_bytes()).digest())
+    return digest.hexdigest()
+
+
 def execute(task, runner=_run):
     source = validate_parameters(task["parameters"])
     commit = source["commit_sha"]
@@ -169,6 +188,9 @@ def execute(task, runner=_run):
         _builder_image(runner)
         if _dependency_profile(context / "pyproject.toml", context, runner) != DEPENDENCY_PROFILE_SHA256:
             raise Reject("TEST_PR_DEPENDENCY_PROFILE_REJECT")
+        source_check = ("import hashlib,pathlib\n" + inspect.getsource(runtime_source_digest)
+                        + "\nassert runtime_source_digest(pathlib.Path('/app')) == "
+                        + repr(runtime_source_digest(context)))
         runner(["/usr/bin/docker", "build", "--network", "none", "--pull=false", "--file", DOCKERFILE, "--tag", image, str(context)], timeout=900)
         image_id = runner(["/usr/bin/docker", "image", "inspect", image, "--format", "{{.Id}}"], timeout=30).stdout.strip()
         if not re.fullmatch(r"sha256:[0-9a-f]{64}", image_id):
@@ -176,8 +198,12 @@ def execute(task, runner=_run):
         runner(["/usr/bin/docker", "run", "--rm", "--network", "none", "--read-only", "--cap-drop", "ALL",
                 "--security-opt", "no-new-privileges", "--pids-limit", "128", "--memory", "768m", "--cpus", "1.00",
                 "--tmpfs", "/tmp:rw,nosuid,nodev,size=64m", "--env", "PYTHONPYCACHEPREFIX=" + PYTHONPYCACHEPREFIX,
+                "--env", "PYTHONPATH=/app/src", "--workdir", "/app",
                 "--entrypoint", "/bin/sh", image, "-c",
-                "python -m compileall -q /workspace/src && alembic heads"], timeout=180)
+                "python -c \"import importlib.util,pathlib; p=importlib.util.find_spec('go_hotel'); "
+                "assert p and pathlib.Path(p.origin).resolve()==pathlib.Path('/app/src/go_hotel/__init__.py')\" "
+                "&& python -c " + shlex.quote(source_check)
+                + " && python -m compileall -q /app/src && alembic heads"], timeout=180)
         # Only now, with every gate above already PASS, is the exact built image
         # made durable.  Sealing is the last step on purpose: an image that failed
         # a gate must never reach the store, and an image that passes is no longer
