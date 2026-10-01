@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import sqlite3
+import time
 from cryptography.exceptions import InvalidSignature
 
 
@@ -126,9 +127,11 @@ class Registry:
         ''')
 
     def enroll(self, raw, authority_key, now):
-        body = registration(raw, authority_key, now)
+        clock = now if callable(now) else lambda fixed=now: fixed
+        body = registration(raw, authority_key, clock())
         self.db.execute('BEGIN IMMEDIATE')
         try:
+            window(body, clock(), 86400)
             old = self.db.execute('SELECT generation,digest,host,agent FROM registry WHERE environment=?',
                                   (body['environment'],)).fetchone()
             if old and old[1] == digest(body):
@@ -150,19 +153,23 @@ class Registry:
         Identity/digest observations must be from the installed adapter, not the task.
         """
         from cryptography.hazmat.primitives import serialization
+        clock = now if callable(now) else lambda fixed=now: fixed
+        at = clock()
         task = verified(raw, task_key)
         fields(task, TASK_FIELDS)
         if type(task['version']) is not int or task['version'] != 1 or task['kind'] != 'runtime-host-task':
             raise Reject('version_or_kind')
         for key in ('task_id', 'nonce'):
             identifier(task[key])
-        window(task, now, 300)
+        window(task, at, 300)
         if task['action'] != ACTION or task['parameters'] != {}:
             raise Reject('action_or_parameters')
         if type(task['generation']) is not int:
             raise Reject('generation')
         self.db.execute('BEGIN IMMEDIATE')
         try:
+            now = clock()
+            window(task, now, 300)
             row = self.db.execute('SELECT body FROM registry WHERE environment=?', (task['environment'],)).fetchone()
             if not row:
                 raise Reject('unregistered')

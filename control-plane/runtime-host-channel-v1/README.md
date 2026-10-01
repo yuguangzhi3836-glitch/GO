@@ -27,9 +27,9 @@ The real target and disclosure authorization remain in Draft PR #289 at
 ## Trust and integration boundary
 
 `Registry` is an offline library, not a daemon, installer, enrollment API or signer
-service. Its trusted inputs must NOT be exposed as Request fields. The current
-clock argument is a deterministic evaluation instant for offline tests; the live
-adapter must resample it after any lock wait and before signing/publishing. No
+service. Its trusted inputs must NOT be exposed as Request fields. The clock argument accepts a callable; the trusted live adapter must provide its
+clock (never a caller timestamp). Registration and probe validation resample after
+lock acquisition. Publishing must separately recheck expiry before transmission. No
 live adapter exists in this candidate, so it is not safe to wire directly to live
 polling or call it a complete installed channel.
 
@@ -65,10 +65,18 @@ cd control-plane/runtime-host-channel-v1
 python -m unittest -v
 ```
 
-16 tests pass, including receipt roundtrip and durable readback, signature rejection,
+21 distinct test methods pass, including receipt roundtrip and durable readback, signature rejection,
 registration expiry, generation changes, identity rebinding, wrong host/artifact/key,
 extra fields, arbitrary commands, task/nonce replay across DB connections, crash
 claim preservation and stale/tampered receipts. All keys are ephemeral test keys;
-no server commands or external tasks are issued. Concurrent process races, live
-clock sampling, protected-path checks, bootstrap and GitHub transport E2E remain
-unproven and must be completed before independent acceptance and installation.
+no server commands or external tasks are issued. Threaded concurrent SQLite connections, expiry after lock acquisition, and
+root-owned/symlink/unsafe-parent fixture checks pass. Multi-process crash/publish
+races, real bootstrap and GitHub transport E2E remain unproven and must be completed before independent acceptance and installation.
+
+## Additional adapter primitives
+
+`adapter.py` provides descriptor-relative protected reads with no symlink traversal
+and root/no-group-write validation on every ancestor, plus fixed probe task derivation
+from a registration. The caller must be the existing authenticated immutable-PR
+Bridge boundary; passing an author string by itself is not authentication. It is
+not yet wired into that Bridge. These functions do not sign or publish live tasks.
