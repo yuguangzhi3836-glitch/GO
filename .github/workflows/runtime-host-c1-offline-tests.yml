@@ -1,0 +1,89 @@
+name: Runtime Host C1 backend offline regression
+
+# Offline only: no model credential, no call to the model endpoint, no contact with any
+# Runtime host and no Runtime database access. It runs the runtime-host channel suite
+# plus the C1 execution backend in stub mode, so the C1 boundary - fixed payload, fixed
+# endpoint, no credential persistence, exactly-once reuse - is checked long before any
+# real dispatch exists.
+
+on:
+  pull_request:
+    paths:
+      - 'control-plane/runtime-host-channel-v1/**'
+      - '.github/workflows/c1-ai-execution-backend-v1.yml'
+      - '.github/workflows/runtime-host-c1-offline-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install the offline test dependencies
+        # The channel's tests sign and inspect Ed25519 evidence with `cryptography`,
+        # at the same version the other workflows in this repository pin; without it
+        # the suite fails at import time and the regression silently proves nothing.
+        run: |
+          set -euo pipefail
+          python -m pip install PyYAML==6.0.3 cryptography==46.0.0
+
+      - name: Run the runtime-host channel regression
+        env:
+          # The step runs as root, so it must not leave root-owned bytecode in the
+          # workspace for the rest of the job.
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          set -euo pipefail
+          # The Management Agent runs as root on the Runtime Host (User=root), and this
+          # channel's protected-path tests assert root-only semantics for the files it
+          # installs - registration files, the executor bundle, the pinned host keys.
+          # Running them as the runner's unprivileged user fails them for the wrong
+          # reason (6 registration-sync cases), so the regression is run as the same
+          # principal the agent actually runs as. Verified green on Linux ext4 as root:
+          # 203 tests, OK.
+          sudo "$(command -v python)" -m unittest discover \
+            -s control-plane/runtime-host-channel-v1 -p 'test_*.py'
+
+      - name: Run the C1 execution backend end to end in stub mode
+        env:
+          # Deliberately empty in this job: the offline path must not need a credential.
+          OPENAI_API_KEY: ""
+        run: |
+          set -euo pipefail
+          D=control-plane/runtime-host-channel-v1
+          # The requester derives the identity; the backend must reproduce it exactly.
+          REQUEST_ID="$(python "$D/c1_ai_execution_backend.py" emit-request \
+            --runtime-task-id rt_stub_offline_regression --attempt 1 \
+            | python -c 'import json,sys;print(json.load(sys.stdin)["execution_request_id"])')"
+          python "$D/c1_ai_execution_backend.py" run \
+            --runtime-task-id rt_stub_offline_regression \
+            --attempt 1 \
+            --execution-request-id "$REQUEST_ID" \
+            --model c1-offline-stub \
+            --github-run-id "${{ github.run_id }}" \
+            --github-run-attempt "${{ github.run_attempt }}" \
+            --stub \
+            --out "$RUNNER_TEMP/c1_stub_result.json"
+          python - "$RUNNER_TEMP/c1_stub_result.json" "$REQUEST_ID" <<'PY'
+          import json, sys
+          sys.path.insert(0, "control-plane/runtime-host-channel-v1")
+          from c1_execution_contract import validate_result, RESULT_KIND, output_sha256
+          doc = json.load(open(sys.argv[1]))
+          validate_result(doc, runtime_task_id="rt_stub_offline_regression", attempt=1,
+                          execution_request_id_=sys.argv[2])
+          assert doc["kind"] == RESULT_KIND
+          assert doc["output"] == "GO_C1_REAL_AI_WORKER_V1_OK"
+          assert doc["output_sha256"] == output_sha256(doc["output"])
+          assert doc["authorizes_any_action"] is False
+          print("C1_STUB_E2E_OK", doc["execution_request_id"], doc["github_run_id"])
+          PY
