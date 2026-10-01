@@ -123,6 +123,15 @@ def issue(request, role, epoch, host):
         raise Refusal("c13_prerequisite")
     if type(epoch) is not int or epoch < 0:
         raise Refusal("task_time")
+    # Claim the candidate/tree/scope BEFORE nonce generation or signing. A bus
+    # duplicate check happens too late: concurrent callers can already have
+    # signed different envelopes, and an ambiguous publish must not re-sign.
+    try:
+        claimed = host.claim_c14_dispatch_once(admission)
+    except AttributeError as exc:
+        raise Refusal("dispatch_store_not_installed") from exc
+    if claimed is not True:
+        raise Refusal("c14_dispatch_already_claimed")
     nonce = host.fresh_nonce()
     if not isinstance(nonce, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", nonce):
         raise Refusal("nonce")

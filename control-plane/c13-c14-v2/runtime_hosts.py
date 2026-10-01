@@ -18,6 +18,9 @@ from docker_sandbox import DockerSandbox
 from durable_claims import DurableClaims
 from evidence_time import utc_epoch
 from git_acceptance_bus import GitAcceptanceBus
+from house_bridge import canonical, digest, _params
+
+CC_DISPATCH_STORE_ID = "GO-COMMAND-CENTER:C14-DISPATCH-V1"
 
 
 def _callable(value, reason):
@@ -53,7 +56,8 @@ class CommandCenterAcceptanceHost:
                  task_signer: Callable[[bytes], str],
                  task_verifier: Callable[[bytes, str], bool],
                  runner_verifier: Callable[[str, bytes, str], bool],
-                 nonce_source: Callable[[], str] | None = None):
+                 nonce_source: Callable[[], str] | None = None,
+                 dispatch_claims: DurableClaims | None = None):
         if not isinstance(opinions, AIAdmissionHost) or not isinstance(receipts, ControlReceiptRoute):
             raise Refusal("runtime_component")
         self.opinions = opinions
@@ -66,6 +70,27 @@ class CommandCenterAcceptanceHost:
         self._nonce_source = _callable(nonce_source or (lambda: secrets.token_urlsafe(24)),
                                        "runtime_nonce_source")
         self._verified_c13 = set()
+        if dispatch_claims is not None and (
+                not isinstance(dispatch_claims, DurableClaims) or
+                dispatch_claims.runner_id != CC_DISPATCH_STORE_ID):
+            raise Refusal("runtime_dispatch_store_identity")
+        self.dispatch_claims = dispatch_claims
+
+    def claim_c14_dispatch_once(self, admission):
+        """One issuance attempt per fixed scope, retained even on signing failure.
+
+        This is a CC-local store, separate from HK execution claims. Changing
+        the C13 reference or Runner cannot grant another attempt. Provisioning
+        is an explicit controlled-install operation, never an issue-time action.
+        """
+        params = _params(admission)
+        if self.verify_c13_prerequisite(admission) is not True:
+            raise Refusal("c13_prerequisite")
+        if self.dispatch_claims is None:
+            raise Refusal("dispatch_store_not_installed")
+        scope = digest(canonical({k: params[k] for k in
+                                  ("candidate_sha", "application_tree", "test_scope_sha256")}))
+        return self.dispatch_claims.claim_task_once("go-c14-scope-" + scope, scope)
 
     def authorize_candidate(self, candidate_sha, application_tree):
         return self.opinions.authorize_candidate(candidate_sha, application_tree)
@@ -198,4 +223,3 @@ class HongKongAcceptanceHost:
 
     def publish_house_evidence(self, task_id, nonce, raw):
         return self.evidence.publish_house_evidence(task_id, nonce, raw)
-

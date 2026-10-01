@@ -1,5 +1,38 @@
 # C13 developer-side first test, then isolated Hong Kong C14
 
+## CC issuance claim before signing — 2026-10-01
+
+`house_bridge.issue()` now requires a committed CC dispatch claim before generating
+a nonce or calling the machine signer. Previously the Git bus rejected duplicate
+publication only after another envelope could already have been signed.
+`CommandCenterAcceptanceHost` binds a separate `DurableClaims` store with identity
+`GO-COMMAND-CENTER:C14-DISPATCH-V1`. The claim key covers candidate SHA, application
+tree and scope; changing C13 record bytes or the Runner cannot grant a second
+issuance attempt. This store is distinct from HK execution claims and Git outbox.
+
+Controlled installation must explicitly provision that store in a private local
+directory and inject it as `dispatch_claims`. Missing/unavailable stores refuse
+before signing and are never automatically created. Invalid C13 prerequisites
+are rejected before consuming a claim. After a committed claim, nonce/signature
+failure, crash or publication uncertainty leaves it consumed. This deliberately
+favours at-most-once issuance over automatic recovery: operators must reconcile
+the existing Git outbox/remote exact bytes; never delete/reset the claim or call
+`issue()` again to obtain a replacement. A crash before signed bytes become durable
+remains unresolved and requires a separately reviewed recovery policy.
+
+Eight new tests use real SQLite and separate OS processes with synthetic signing
+and bus fixtures. They cover concurrency, restart, changed C13 content, signer
+failure, acknowledgement loss, crash after claim, absent installation/store and
+rejection before claim. Full local suite: 110 tests PASS. These are development
+tests, not real C14 evidence, independent AI review or installed-host acceptance.
+
+The separate PR #295 route remains fixed to C1 / RUNTIME_PROBE / NoopWorker and
+cannot carry this C14 action. This increment adds no Boss Request schema, changes
+no installed allowlist, touches no machine key and does not perform installation,
+merge or business/Production deployment. The bounded C14 request reader, complete
+installation bundle and actual CC/HK receipt route still require installed-host
+wiring and readback. Change classes: CONTROL_PLANE, TEST_ONLY, DOCUMENTATION.
+
 ## Container policy readback repair — 2026-10-01
 
 The sandbox now explicitly creates containers with `--restart=no` and refuses

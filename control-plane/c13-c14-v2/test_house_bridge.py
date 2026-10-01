@@ -26,6 +26,7 @@ class Host:
         self.artifacts = {}
         self.receipts = {}
         self.c13_verified = True
+        self.dispatch_scopes = set()
         self.evidence = {"candidate_sha": SHA, "application_tree": TREE,
                          "test_scope_sha256": SCOPE, "verdict": "PASS_SCOPED",
                          "actor_id": "independent-c13", "verified": True,
@@ -48,6 +49,14 @@ class Host:
 
     def fresh_nonce(self):
         return "host-generated-unique-nonce"
+
+    def claim_c14_dispatch_once(self, admission):
+        scope = tuple(admission[k] for k in
+                      ("candidate_sha", "application_tree", "test_scope_sha256"))
+        if scope in self.dispatch_scopes:
+            return False
+        self.dispatch_scopes.add(scope)
+        return True
 
     def sign_house_task(self, raw):
         return hashlib.sha512(b"house-key:" + raw).hexdigest()
