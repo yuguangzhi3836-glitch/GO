@@ -7,7 +7,8 @@ Why this file exists
 The VERIFY collector was pinned to the R3.1.5 runtime (revision
 0114_ext_truth_incident_hard, image sha256:66c54087...). The host has since moved to
 DEPTH48, so every VERIFY Task signed from that pin was rejected by the executor.
-The pin is now the DEPTH48 revision 0133_flight_change_plan. This regression keeps
+The generation is no longer pinned in the module at all: the collector derives it
+from the root-owned environment fact.  This regression keeps
 the collector honest about three things:
 
   * it accepts exactly the proven DEPTH48 baseline, and
@@ -25,14 +26,22 @@ import hashlib
 import importlib.util
 import json
 import pathlib
+import re
 import sys
 import tempfile
 
 HERE = pathlib.Path(__file__).resolve().parent
 COLLECTOR = HERE / "collector_runtime.py"
+CANARY = HERE / "canary_runtime.py"
 DEPLOYCTL = HERE.parent / "go-hk-deployctl"
 
-# Proven read-only from HK-STAGING on 2026-09-16. These are the live values, not
+# The generation is no longer written into either module; it is read from the
+# root-owned environment fact. `LIVE["EXPECTED_REVISION"]` below is the value that
+# fact declares on this host, so the regression can still prove the module derives
+# the truth rather than a copy of it.
+REVISION_LITERAL = re.compile(r"'[0-9]{4}_[a-z0-9_]+'")
+
+# Proven read-only from HK-STAGING on 2026-10-01. These are the live values, not
 # copies of what the repository happens to say.
 LIVE = {
     "COMPOSE_PROJECT": "go-822-staging",
@@ -42,7 +51,7 @@ LIVE = {
     "COMPOSE_SHA256": "7ef4ab181c1250d8cec0e348b29c24bfbb8e5dce4fc2a57f6faaa59363c26895",
     "ENV_FILE": "/home/go-stg/control/r317-five-star-completeness-20260828/runtime.env",
     "ENV_SHA256": "6682ff61f336fb8ff95a6585e9133c88c52a4eaa440a7aea6a6e06f771e607fc",
-    "EXPECTED_REVISION": "0133_flight_change_plan",
+    "EXPECTED_REVISION": "0145_source_latest_index",
 }
 LIVE_IMAGE = "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"
 RETIRED_R315_IMAGE = "sha256:66c540878ff5dd8d2d089059288c3d9f0c45f880514f7b053bd50defb9e8c324"
@@ -152,10 +161,15 @@ def run():
                             "" if condition else "  %s" % detail))
 
     # 1. the production pins are the proven live DEPTH48 ones
+    # EXPECTED_REVISION is no longer a module constant: the collector derives the
+    # generation from the root-owned environment fact, so the proven live value is
+    # asserted against the derivation rather than against a copy of it.
+    resolved = {"EXPECTED_REVISION": C.resolve_revision}
     for name, value in LIVE.items():
+        actual = resolved[name]() if name in resolved else getattr(C, name)
         check("PRODUCTION_%s_IS_THE_PROVEN_LIVE_VALUE" % name,
-              getattr(C, name) == value,
-              "collector says %r" % (getattr(C, name),))
+              actual == value,
+              "collector says %r" % (actual,))
 
     # 2. the exact DEPTH48 baseline passes
     ok, detail = verify()
@@ -177,8 +191,13 @@ def run():
 
     ok, _ = verify(current=RETIRED_R315_REVISION, heads=RETIRED_R315_REVISION)
     check("OLD_R315_REVISION_REJECTS", not ok)
+    # A pair from a previous generation, and a pair that disagrees with itself: both
+    # are refused now, because the comparison is against the environment fact and not
+    # against "a revision that happens to agree with itself".
     ok, _ = verify(current="0133_flight_change_plan", heads="0114_ext_truth_incident_hard")
     check("ALEMBIC_CURRENT_NOT_EQUAL_TO_HEAD_REJECTS", not ok)
+    ok, _ = verify(current="0133_flight_change_plan", heads="0133_flight_change_plan")
+    check("A_SELF_CONSISTENT_OLD_GENERATION_STILL_REJECTS", not ok)
 
     with tempfile.TemporaryDirectory(prefix="go-hk-verify-") as raw:
         compose = pathlib.Path(raw) / "compose.yml"
@@ -210,8 +229,12 @@ def run():
           and all(a[0] == C.DOCKER for a in runner.argv),
           sorted(str(b) for b in bounded))
     check("THE_REVISION_CHECK_IS_STILL_EXACT_AND_NOT_A_PREFIX_MATCH",
-          C.EXPECTED_REVISION == "0133_flight_change_plan"
-          and RETIRED_R315_REVISION != C.EXPECTED_REVISION)
+          C.resolve_revision() == LIVE["EXPECTED_REVISION"]
+          and RETIRED_R315_REVISION != LIVE["EXPECTED_REVISION"])
+    check("NEITHER_MODULE_CARRIES_A_REVISION_LITERAL",
+          not REVISION_LITERAL.search(COLLECTOR.read_text(encoding="utf-8"))
+          and not REVISION_LITERAL.search(CANARY.read_text(encoding="utf-8")),
+          "a literal would silently block the next generation advance")
 
     deployctl = DEPLOYCTL.read_text(encoding="utf-8")
     # The pin is the hash of the file **as the repository stores it** (LF). A checkout with
