@@ -26,6 +26,9 @@ jobs:
         options: --health-cmd "pg_isready -U go_ci -d go_c11_isolated" --health-interval 5s --health-timeout 5s --health-retries 12
     env:
       EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      APP_ENV: test
+      MODEL_GATEWAY_EXTERNAL_EGRESS_ENABLED: 'false'
+      GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_multi_only@127.0.0.1:5432/go_c11_isolated
       GO_MULTI_DATABASE_URL: postgresql+psycopg://go_ci:isolated_multi_only@127.0.0.1:5432/go_c11_isolated
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +50,12 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -e './application[dev]'
         if: steps.change.outputs.run == 'true'
+      - name: Commit, disconnect, process-death and idempotency safety before performance
+        if: steps.change.outputs.run == 'true'
+        working-directory: application
+        run: |
+          mkdir -p ../transaction-comparison-evidence-preflight
+          python -m pytest -x tests/payments/test_ride_money_connection_boundaries.py tests/test_multi_instance_payment_regressions.py tests/test_transaction_read_optimization.py tests/test_payment_transition_read_optimization.py tests/test_vertical_source_atomicity.py --junitxml=../transaction-comparison-evidence-preflight/results.xml
       - name: Baseline-candidate-candidate-baseline; identical harness, no profiler
         if: steps.change.outputs.run == 'true'
         run: python ci/transaction_comparison.py
@@ -54,5 +63,7 @@ jobs:
         if: always() && steps.change.outputs.run == 'true'
         with:
           name: transaction-comparison-${{ github.event.pull_request.head.sha }}
-          path: transaction-comparison-evidence/
+          path: |
+            transaction-comparison-evidence/
+            transaction-comparison-evidence-preflight/
           retention-days: 30
