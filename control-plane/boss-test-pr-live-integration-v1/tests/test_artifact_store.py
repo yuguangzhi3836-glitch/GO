@@ -1456,6 +1456,16 @@ class CanaryDeliveryContractTests(StoreFixture):
         module.COMPOSE_SHA = hashlib.sha256(compose.read_bytes()).hexdigest()
         module.ENV_SHA = hashlib.sha256(env.read_bytes()).hexdigest()
 
+        # The canary no longer carries the expected migration generation as a literal:
+        # it derives it from the root-owned environment fact.  Supply that fact the same
+        # way the two baselines above are supplied -- point the module at its own copy --
+        # so the real derivation runs here instead of being stubbed out.
+        head = "0312_synthetic_generation"
+        graph = directory / "environment-graph-v1.json"
+        graph.write_text(json.dumps({"environment": module.ENVIRONMENT,
+                                     "migration_head": head}))
+        module.ENVIRONMENT_GRAPH = str(graph)
+
         # ``run_canary`` calls ``artifact.materialise(runner, package, candidate)``
         # with the production store root bound into that signature, so the only thing
         # redirected here is where the store is.  The reader, its checks, its call
@@ -1466,7 +1476,7 @@ class CanaryDeliveryContractTests(StoreFixture):
             runner, package, image_id, self.root)
         self.addCleanup(setattr, reader, "materialise", real_materialise)
 
-        docker = self.DockerCalls(candidate, expected, module.HEAD)
+        docker = self.DockerCalls(candidate, expected, head)
         module.subprocess = docker
 
         gates = module.run_canary("canary-release-under-test", candidate,
