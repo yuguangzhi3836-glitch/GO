@@ -43,7 +43,7 @@ CANARY 与预检 VERIFY 之后才发布。实际请求时间使用当时 UTC；�
 
 ### CANARY 请求（Bridge 1.6 新增）
 
-CANARY 与 VERIFY 同形：Request 只有五个公共字段，**没有任何调用者可控参数**——没有 image、没有 package、没有 service、没有 path、没有 env、没有 command、没有 plan_id、没有 pr_number。Task 的四个参数（`release_id`、`candidate_image_id`、`candidate_package_sha256`、`expected_current_image_id`）全部读自 root-only 权威文件 `/etc/go-command-center/boss-request-canary-baseline-v1.json`（`root:root 0600`，操作人员写入，Bridge 只读）。该文件缺失、不可读、JSON 非法、字段多余或缺失、镜像不是 `sha256:<64hex>`、包不是 64 位十六进制或环境不符，一律以 `invalid_canary_authority` **拒绝**（是拒绝，不是异常——轮询 tick 不会因此死掉）。
+CANARY 与 VERIFY 同形：Request 只有五个公共字段，**没有任何调用者可控参数**——没有 image、没有 package、没有 service、没有 path、没有 env、没有 command、没有 plan_id、没有 pr_number。Task 的四个参数（`release_id`、`candidate_image_id`、`candidate_package_sha256`、`expected_current_image_id`）全部解析自**候选准入记录**——也就是 DEPLOY 自己解析候选的同一份 `docs/canonical-baseline/CURRENT_CANDIDATE.json`（本机 root-only 记录可用时优先，否则走只读远端指针）——其中"当前应当是什么"取自该记录与 root-only 活跃基线 `/etc/go-command-center/boss-request-verify-baseline-v1.json` 的同一次 join。**不再有独立的 canary 候选文件**（旧 `/etc/go-command-center/boss-request-canary-baseline-v1.json` 已不再被读取，可以留着，也可以删）：两份候选记录就是两个答案，而 canary 正是部署计划必须引用的那份证据，于是 canary 可能在跑一个计划并不针对的镜像；现在只有一个答案，canary 与 DEPLOY 不可能各自漂移。准入记录缺失、形态不对、来源/镜像/包绑定不完整或格式不对（`candidate_pointer_schema`、`release_candidate_missing`、`candidate_admission_incomplete`、`invalid_canary_authority`）、与该记录声明要替换的活跃镜像不符（`candidate_and_live_current_disagree`）、或该记录没有指向它被准入时所依据的签名 TEST_PR（`candidate_test_result_missing`、`candidate_test_result_not_a_test_pr`），一律**拒绝**（是拒绝，不是异常——轮询 tick 不会因此死掉）。
 
 CANARY **不受部署授权约束**：它不触碰业务运行时（隔离容器、无网络、只读根、drop 全部能力），而且它正是部署计划必须先引用、再登记的那份证据——若用部署开关去拦它，计划就永远无法成立。CANARY 也不读取部署计划、不占用 approval / plan 预算、不能变成 VERIFY / TEST_PR / DEPLOY / ROLLBACK。`HK_STAGING_ROLLBACK` 仍然不可请求。
 
