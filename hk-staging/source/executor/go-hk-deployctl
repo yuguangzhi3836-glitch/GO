@@ -45,8 +45,8 @@ _RELEASE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 # verification is the runtime's, and the launcher's job is to refuse a Task that does not
 # carry a well-formed one.
 _CONTRACT = re.compile(r"^[0-9a-f]{64}$")
-_COLLECTOR_SHA256 = "dff91265a5e3e80704277664f1952129ff19c6c7174d78e9b3e66125b9618ccc"
-_CANARY_SHA256 = "f93d4365116a52942c457accb41be53625d3f3f1a7a6eafe92d53c457c86aed1"
+_COLLECTOR_SHA256 = "a7f55a7c1133a6cae17075d76b91ac6c894d41bbf619feab02af894bbed82b5a"
+_CANARY_SHA256 = "50284e007947730feeec57e1bcbebabb80b7ac4766524214d8da6424c606181a"
 # Updated by CCV1-85 (WP-4A), again by WP-9's product decision of 2026-09-19, and again
 # by the 2026-09-19 convergence that carried the rollback channel onto this main line:
 # deploy_runtime.py resolves the candidate the Task names, applies the migration rule, and

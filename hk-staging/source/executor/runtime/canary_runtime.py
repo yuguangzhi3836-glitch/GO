@@ -10,7 +10,30 @@ COMPOSE_SHA='7ef4ab181c1250d8cec0e348b29c24bfbb8e5dce4fc2a57f6faaa59363c26895'
 ENV_SHA='6682ff61f336fb8ff95a6585e9133c88c52a4eaa440a7aea6a6e06f771e607fc'
 PROJECT='go-822-staging'
 SERVICES=('api','recovery-worker','outbox-worker','mobile-push-receipt-worker','reconciliation-worker','mobile-push-worker','mobile-engagement-worker','judgment-worker')
-HEAD='0133_flight_change_plan'
+ENVIRONMENT_GRAPH='/etc/go-hk-deployctl/environment-graph-v1.json'
+ENVIRONMENT='HK-STAGING-01'
+REVISION_NAME=re.compile(r'^[0-9][0-9a-z_]*$')
+
+def expected_head():
+ """The migration generation this environment is on.
+
+ A literal here was a second copy of a fact that already has a home, and it went stale
+ silently the moment the environment advanced: on 2026-10-01 a real CANARY Task was
+ rejected because this constant still named the previous generation while the candidate
+ named the new one, and the same literal existed in three places at three different
+ values.  Read the root-owned environment fact instead -- the same one the deploy path
+ reads -- so "which generation is this environment on" has exactly one answer.  A fact
+ that is missing, unreadable, off-environment or headless is refused rather than
+ defaulted: an unestablished environment graph must not let a candidate through.
+ """
+ try:
+  document=json.loads(pathlib.Path(ENVIRONMENT_GRAPH).read_text())
+ except (OSError,UnicodeDecodeError,json.JSONDecodeError) as exc:
+  raise Reject('E_CANARY_ALEMBIC_HEAD_MISMATCH') from exc
+ if not isinstance(document,dict) or document.get('environment')!=ENVIRONMENT: raise Reject('E_CANARY_ALEMBIC_HEAD_MISMATCH')
+ head=document.get('migration_head')
+ if not isinstance(head,str) or REVISION_NAME.fullmatch(head) is None: raise Reject('E_CANARY_ALEMBIC_HEAD_MISMATCH')
+ return head
 HEAD_LINE=re.compile(r'^([0-9][0-9a-z_]*) \(head\)\n?$')
 
 class Reject(ValueError): pass
@@ -61,7 +84,7 @@ def parse_alembic_head(raw):
  """Accept exactly one canonical Alembic ``heads`` line and one expected head."""
  if not isinstance(raw,str): raise Reject('E_CANARY_ALEMBIC_HEAD_MISMATCH')
  match=HEAD_LINE.fullmatch(raw)
- if match is None or match.group(1)!=HEAD: raise Reject('E_CANARY_ALEMBIC_HEAD_MISMATCH')
+ if match is None or match.group(1)!=expected_head(): raise Reject('E_CANARY_ALEMBIC_HEAD_MISMATCH')
  return match.group(1)
 
 def run_canary(release,candidate,package,expected,runner=None,inputs=None,artifact=None):

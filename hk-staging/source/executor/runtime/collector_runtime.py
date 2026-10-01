@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-import hashlib, json, os, re, subprocess, time
+import hashlib, json, os, pathlib, re, subprocess, time
 WORKER_LIVENESS_OBSERVATION_SECONDS=60
 @dataclass(frozen=True)
 class ProcessResult:
@@ -46,7 +46,32 @@ ENV_FILE='/home/go-stg/control/r317-five-star-completeness-20260828/runtime.env'
 ENV_SHA256='6682ff61f336fb8ff95a6585e9133c88c52a4eaa440a7aea6a6e06f771e607fc'
 API_SERVICE='api'
 ALEMBIC_WORKDIR='/app'; ALEMBIC_EXECUTABLE='/usr/local/bin/alembic'
-EXPECTED_REVISION='0133_flight_change_plan'
+ENVIRONMENT_GRAPH='/etc/go-hk-deployctl/environment-graph-v1.json'
+ENVIRONMENT='HK-STAGING-01'
+REVISION_NAME=re.compile(r'^[0-9][0-9a-z_]*$')
+
+def resolve_revision(explicit=None):
+ """The migration generation this environment is on.
+
+ A literal here was a second copy of a fact that already has a home, and it went stale
+ silently the moment the environment advanced: on 2026-10-01 a real CANARY Task was
+ rejected because that copy still named the previous generation.  Read the root-owned
+ environment fact instead -- the same one the deploy path reads -- so "which generation
+ is this environment on" has exactly one answer.  An explicit argument stays supported
+ for the offline self-test.  A fact that is missing, unreadable, off-environment or
+ headless is refused rather than defaulted.
+ """
+ if explicit is not None:
+  if not isinstance(explicit,str) or REVISION_NAME.fullmatch(explicit) is None: raise ValueError('expected revision')
+  return explicit
+ try:
+  document=json.loads(pathlib.Path(ENVIRONMENT_GRAPH).read_text())
+ except (OSError,UnicodeDecodeError,json.JSONDecodeError) as exc:
+  raise ValueError('environment graph') from exc
+ if not isinstance(document,dict) or document.get('environment')!=ENVIRONMENT: raise ValueError('environment graph')
+ head=document.get('migration_head')
+ if not isinstance(head,str) or REVISION_NAME.fullmatch(head) is None: raise ValueError('environment graph')
+ return head
 def collect_api(runner, expected):
  p=[DOCKER,'ps','-aq','--filter',f'label=com.docker.compose.project={PROJECT}','--filter',f'label=com.docker.compose.service={API_SERVICE}'];x=runner.run(p)
  if x.returncode or len(x.stdout.splitlines())!=1: raise ValueError('api selection')
@@ -85,11 +110,12 @@ def _parse_head_revision(stdout):
  if len(matches)!=1:raise ValueError('head parse')
  return matches[0]
 
-def collect_api_alembic(runner, expected_image, expected_revision=EXPECTED_REVISION):
+def collect_api_alembic(runner, expected_image, expected_revision=None):
  api=collect_api(runner,expected_image)
  return _collect_alembic_for_api(runner,api,expected_revision)
 
-def _collect_alembic_for_api(runner, api, expected_revision=EXPECTED_REVISION):
+def _collect_alembic_for_api(runner, api, expected_revision=None):
+ expected_revision=resolve_revision(expected_revision)
  api_id=api.get('Id')
  if not isinstance(api_id,str) or not api_id:raise ValueError('api id')
  current=[DOCKER,'exec','-w',ALEMBIC_WORKDIR,api_id,ALEMBIC_EXECUTABLE,'current','-v']
