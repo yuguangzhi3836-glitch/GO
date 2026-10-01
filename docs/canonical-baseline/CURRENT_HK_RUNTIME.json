@@ -4,8 +4,29 @@
   "environment": "HK-STAGING",
   "host": "i-j6ccs8t04f1p4d8pe69z",
   "runtime_generation": "DEPTH48",
-  "deployed_date": "2026-09-13",
+  "deployed_date": "2026-10-01",
 
+  "pointer_update": {
+    "at": "2026-10-01",
+    "note": "Re-pointed at the runtime that is actually running on HK-STAGING. Before this the pointer still described the 2026-09-13 DEPTH48 deployment and was wrong in the two fields machinery reads: the installer copies database.alembic_head verbatim into the host's environment-graph-v1.json, and the Control State projector compares image.image_config_id against the image a signed VERIFY proves. Left alone on purpose: product_source_identity, canonical_runtime_identity and fresh_checkout_build describe the DEPTH48 integration into main and remain true as history; PR #298 is not merged, so replacing them with its tree would assert something false. runtime_generation stays DEPTH48 -- this update moves the pointer, it does not relabel a lineage.",
+    "measured_against": {
+      "host": "HK-STAGING-01 (i-j6ccs8t04f1p4d8pe69z)",
+      "image": "docker inspect <container>.Image over the eight business services",
+      "alembic_head": "alembic_version and the api container's `alembic heads`",
+      "tables_after_migration": "information_schema.tables, current schema",
+      "migration_steps": "the eight revisions applied on 2026-10-01, 0138..0145"
+    },
+    "superseded_2026_09_13": {
+      "deployed_date": "2026-09-13",
+      "image_config_id": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132",
+      "image_id_short": "1c9598d699c2",
+      "image_tag": "go-hotel:depth48-runtime-6d0fd905",
+      "alembic_head": "0133_flight_change_plan",
+      "tables_after_migration": 551,
+      "previous_revision": "0114_ext_truth_incident_hard",
+      "migration_steps": 19
+    }
+  },
   "source_of_truth": {
     "statement": "This file is the single authoritative pointer for the runtime that is actually running on HK-STAGING. Live state, Human Approval, Signed Task, installed artifact, durable previous-state record and Signed Evidence outrank this file for any execution decision.",
     "business_source": "application/",
@@ -43,10 +64,10 @@
   },
 
   "image": {
-    "image_tag": "go-hotel:depth48-runtime-6d0fd905",
-    "image_config_id": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132",
-    "image_id_short": "1c9598d699c2",
-    "image_config_id_note": "Corrected 2026-09-16. This field carries the running image identity, i.e. what `docker inspect <container>.Image` reports for the eight business services, and it is what the Control State projector and the Deploy Readiness evaluator compare against the image a signed VERIFY proves. It previously carried sha256:57beafa2..., which is not an image on the host (`docker image inspect` -> No such image) and appears in no Task or Evidence record on the control bus. The short id below was already correct and never disagreed with the live image.",
+    "image_tag": "go-hk-test-pr:e109af4dc4ae84f27f63d0104aa42c8d6b64b34d",
+    "image_config_id": "sha256:e1049b5c0f3fc9d04d2919c8fdbb259dcd71d9e2d6f979bf93e5a1c2c8c397aa",
+    "image_id_short": "e1049b5c0f3f",
+    "image_config_id_note": "Re-measured 2026-10-01 against `docker inspect <container>.Image` over all eight business services, which report one value. It previously carried the DEPTH48 image sha256:1c9598d699c2...; the deploy of PR #298 replaced it. The earlier correction of 2026-09-16 (a config id that was not an image on the host) is preserved here: this field carries the running image identity and is what the Control State projector and the Deploy Readiness evaluator compare against the image a signed VERIFY proves.",
     "base_image": "python:3.12-slim",
     "startup": "uvicorn go_hotel.main:app --host 0.0.0.0 --port 8000"
   },
@@ -54,11 +75,11 @@
   "database": {
     "engine": "PostgreSQL 18.4",
     "database": "go_hotel_stg",
-    "alembic_head": "0133_flight_change_plan",
-    "tables_after_migration": 551,
-    "previous_revision": "0114_ext_truth_incident_hard",
+    "alembic_head": "0145_source_latest_index",
+    "tables_after_migration": 564,
+    "previous_revision": "0137_hosted_unknown_episode",
     "migration_direction": "FORWARD_ONLY",
-    "migration_steps": 19,
+    "migration_steps": 8,
     "policy": "Never drop, reset, or destructively downgrade business data."
   },
 
