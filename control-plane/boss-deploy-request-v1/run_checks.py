@@ -51,8 +51,8 @@ summary={'schema_version':'1','status':'PASS' if result.wasSuccessful() and not 
     # reach the plan/approval path.
     'canary_request_fields':sorted(test_deploy_entry.bridge.ALLOWED),
     'canary_task_parameters':['release_id','candidate_image_id','candidate_package_sha256','expected_current_image_id'],
-    'canary_parameters_source':'ROOT_OWNED_CANARY_AUTHORITY_FILE',
-    'canary_authority_config':test_deploy_entry.bridge.CANARY_BASELINE_CONFIG,
+    'canary_parameters_source':'ADMISSION_POINTER_AND_SIGNED_TEST_PR',
+    'canary_admission_pointer':test_deploy_entry.derivation.ADMISSION_POINTER,
     'canary_gated_by_the_deployment_authorization':'NO',
     'canary_can_become_verify_test_pr_deploy_or_rollback':'NO',
     'canary_participates_in_deploy_arm_or_plan_budget':'NO',
@@ -76,3 +76,4 @@ summary={'schema_version':'1','status':'PASS' if result.wasSuccessful() and not 
 (OUT/'summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
 print(log.getvalue(),end=''); print(json.dumps({k:v for k,v in summary.items() if k!='files'},sort_keys=True))
 sys.exit(0 if summary['status']=='PASS' else 1)
+

@@ -221,6 +221,38 @@ def pair_by_task_id(records,action,task_id,reason):
         if task.get('task_id')==task_id: return task,record
     raise Reject(reason)
 
+def canary_baseline(*, admission, verify_baseline, supported_migration_head,
+                   ledger_records, read_evidence, authority_key, hk_key):
+    """Select the admitted candidate, never a separate operator-maintained image.
+
+    A successful build alone does not admit a candidate. The same admission pointer,
+    live baseline and immutable signed build used by DEPLOY must agree first.
+    """
+    block=admission_block(admission)
+    admission_digest(admission)
+    if block.get('migration_required') is not False:
+        raise Reject(E_DATABASE_MIGRATION_REQUIRED)
+    if not supported_migration_head or block.get('migration_head')!=supported_migration_head:
+        raise Reject(E_DATABASE_MIGRATION_GRAPH_MISMATCH)
+    candidate=candidate_from_admission(block)
+    expected=expected_current_from(block,verify_baseline)
+    task,_record=pair_by_task_id(ledger_records,deploy_gate.TEST_PR_ACTION,
+                               test_pr_task_id(block),'test_pr_task_not_in_ledger')
+    evidence=deploy_gate.test_pr_proof(task,read_evidence(task),authority_key,hk_key)
+    # TEST_PR uses the SSH remote while admission uses its repository slug.
+    # The existing gate confines both spellings to the one authorised repository.
+    deploy_gate.candidate_repository(candidate['repository'])
+    if evidence['source_commit_sha']!=candidate['source_commit']:
+        raise Reject('test_pr_candidate_source_binding')
+    if evidence['built_image_id']!=candidate['image_id']:
+        raise Reject('test_pr_candidate_artifact_binding')
+    if evidence['artifact_package']['package_sha256']!=candidate['package_sha256']:
+        raise Reject('test_pr_candidate_package_binding')
+    return {'version':1,'environment':deploy_gate.ENVIRONMENT,
+            'candidate_image_id':candidate['image_id'],
+            'candidate_package_sha256':candidate['package_sha256'],
+            'expected_current_image_id':expected}
+
 def bound_to(task,binding):
     parameters=task.get('parameters')
     if not isinstance(parameters,dict): return False

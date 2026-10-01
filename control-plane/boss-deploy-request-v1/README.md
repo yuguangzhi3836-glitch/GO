@@ -43,7 +43,7 @@ CANARY 与预检 VERIFY 之后才发布。实际请求时间使用当时 UTC；�
 
 ### CANARY 请求（Bridge 1.6 新增）
 
-CANARY 与 VERIFY 同形：Request 只有五个公共字段，**没有任何调用者可控参数**——没有 image、没有 package、没有 service、没有 path、没有 env、没有 command、没有 plan_id、没有 pr_number。Task 的四个参数（`release_id`、`candidate_image_id`、`candidate_package_sha256`、`expected_current_image_id`）全部读自 root-only 权威文件 `/etc/go-command-center/boss-request-canary-baseline-v1.json`（`root:root 0600`，操作人员写入，Bridge 只读）。该文件缺失、不可读、JSON 非法、字段多余或缺失、镜像不是 `sha256:<64hex>`、包不是 64 位十六进制或环境不符，一律以 `invalid_canary_authority` **拒绝**（是拒绝，不是异常——轮询 tick 不会因此死掉）。
+CANARY 与 VERIFY 同形：Request 只有五个公共字段，没有调用者可控参数。自 `1.12.0-admitted-canary-handoff` 起，持久 Request 通道与 DEPLOY 读取同一份 `docs/canonical-baseline/CURRENT_CANDIDATE.json`。Bridge 将该候选的签名 TEST_PR、镜像、封存包、源码提交与 VERIFY 当前镜像逐项绑定，并拒绝需要迁移或迁移图不一致的候选。独立旧 canary 配置不再用于持久通道；历史解析器仅用于兼容性自测。TEST_PR 成功只证明构建，不能自动越过候选准入和业务验收。
 
 CANARY **不受部署授权约束**：它不触碰业务运行时（隔离容器、无网络、只读根、drop 全部能力），而且它正是部署计划必须先引用、再登记的那份证据——若用部署开关去拦它，计划就永远无法成立。CANARY 也不读取部署计划、不占用 approval / plan 预算、不能变成 VERIFY / TEST_PR / DEPLOY / ROLLBACK。`HK_STAGING_ROLLBACK` 仍然不可请求。
 
@@ -90,3 +90,4 @@ python control-plane/boss-deploy-request-v1/run_checks.py /tmp/go-deploy-entry-c
 - `INSTALL_HANDOFF.md`、`PLAN_CONTRACT.md`：运维接入与计划登记要求。
 
 `command-center/` 和 `hk-staging/` 的既有运行档案保持原样。候选源码身份与运行版本身份分开记录；本包存在不等于入口已接通。
+

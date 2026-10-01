@@ -1940,6 +1940,62 @@ class DerivationTests(unittest.TestCase):
                                     self.f.hk.public_key(),self.f.at,self.f.approval_identity,
                                     self.f.request_sha256)
 
+    def canary_baseline(self, **over):
+        kwargs=dict(admission=self.f.admission_pointer(),
+                    verify_baseline=self.f.verify_baseline(),
+                    supported_migration_head=self.f.supported_migration_head(),
+                    ledger_records=self.records, read_evidence=self.f.read_evidence,
+                    authority_key=self.f.authority.public_key(), hk_key=self.f.hk.public_key())
+        kwargs.update(over)
+        return derivation.canary_baseline(**kwargs)
+
+    def test_canary_selects_same_candidate_as_deploy(self):
+        baseline=self.canary_baseline()
+        _,bundle=self.derive()
+        self.assertEqual(baseline['candidate_image_id'],bundle['plan']['candidate']['image_id'])
+        self.assertEqual(baseline['candidate_package_sha256'],bundle['plan']['candidate']['package_sha256'])
+        self.assertEqual(baseline['expected_current_image_id'],bundle['plan']['expected_current_image_id'])
+
+    def test_canary_rejects_stale_admission_and_wrong_build_bindings(self):
+        for field,value,reason in [
+            ('source_commit','1'*40,'test_pr_candidate_source_binding'),
+            ('artifact_digest','sha256:'+'1'*64,'test_pr_candidate_artifact_binding')]:
+            with self.subTest(field=field):
+                pointer=self.f.admission_pointer(); pointer['release_candidate_v1'][field]=value
+                with self.assertRaisesRegex(gate.Reject,reason): self.canary_baseline(admission=pointer)
+        pointer=self.f.admission_pointer()
+        pointer['release_candidate_v1']['artifact_package']['package_sha256']='1'*64
+        with self.assertRaisesRegex(gate.Reject,'test_pr_candidate_package_binding'):
+            self.canary_baseline(admission=pointer)
+        with self.assertRaisesRegex(gate.Reject,'candidate_and_live_current_disagree'):
+            self.canary_baseline(verify_baseline={'image_id':'sha256:'+'1'*64})
+
+    def test_canary_requires_admission_signed_evidence_and_no_migration(self):
+        pointer=self.f.admission_pointer(); del pointer['candidate_contract_sha256']
+        with self.assertRaisesRegex(gate.Reject,'candidate_admission_incomplete'):
+            self.canary_baseline(admission=pointer)
+        with self.assertRaisesRegex(gate.Reject,'test_pr_task_not_in_ledger'):
+            self.canary_baseline(ledger_records={})
+        bad=copy.deepcopy(self.f.bundle['test_pr_evidence']); bad['built_image_id']='sha256:'+'1'*64
+        with self.assertRaises(gate.Reject): self.canary_baseline(read_evidence=lambda task:bad)
+        pointer=self.f.admission_pointer(); pointer['release_candidate_v1']['migration_required']=True
+        with self.assertRaisesRegex(gate.Reject,derivation.E_DATABASE_MIGRATION_REQUIRED):
+            self.canary_baseline(admission=pointer)
+        with self.assertRaisesRegex(gate.Reject,derivation.E_DATABASE_MIGRATION_GRAPH_MISMATCH):
+            self.canary_baseline(supported_migration_head='0142')
+
+    def test_bridge_canary_reads_admission_and_never_legacy_selector(self):
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(bridge,'read_admission',side_effect=self.f.admission_pointer))
+            stack.enter_context(patch.object(bridge,'load_baseline',side_effect=self.f.verify_baseline))
+            stack.enter_context(patch.object(bridge,'read_supported_migration_head',side_effect=self.f.supported_migration_head))
+            stack.enter_context(patch.object(bridge,'read_evidence',side_effect=self.f.read_evidence))
+            stack.enter_context(patch.object(gate,'load_keys',return_value=(self.f.authority.public_key(),self.f.hk.public_key())))
+            stack.enter_context(patch.object(bridge,'load_canary_baseline',side_effect=AssertionError('legacy selector consulted')))
+            self.assertEqual(bridge.load_admitted_canary_baseline(self.records),self.canary_baseline())
+        with self.assertRaisesRegex(gate.Reject,'canary_admission_context_required'):
+            bridge.derive_formal_task({'action_id':gate.CANARY_ACTION})
+
     def test_a_full_derivation_is_a_valid_plan(self):
         plan_id,bundle=self.derive()
         context=self.validate(plan_id,bundle)
@@ -2314,8 +2370,8 @@ class EnvironmentHarness:
         self.stack.enter_context(patch.object(bridge, 'read_admission', side_effect=self.f.admission_pointer))
         self.stack.enter_context(patch.object(bridge, 'read_evidence', side_effect=self.read_evidence))
         self.stack.enter_context(patch.object(bridge, 'load_baseline', side_effect=self.f.verify_baseline))
-        self.stack.enter_context(patch.object(bridge, 'load_canary_baseline',
-                                              side_effect=self.canary_authority))
+        self.stack.enter_context(patch.object(bridge, 'load_admitted_canary_baseline',
+                                              side_effect=lambda records: self.canary_authority()))
         self.stack.enter_context(patch.object(bridge, 'read_supported_migration_head',
                                               side_effect=self.f.supported_migration_head))
         self.stack.enter_context(patch.object(
@@ -2838,3 +2894,4 @@ class ShippedUnitTests(unittest.TestCase):
         """
         self.assertEqual(str(gate.STORE), '/etc/go-command-center/deployment-plans-v1')
         self.assertIn(str(gate.STORE), self.directives('ReadWritePaths'))
+
