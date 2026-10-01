@@ -339,8 +339,154 @@ def read_repo_file(repo, key_path, path):
         raise Reject("readable_file_unavailable") from exc
     finally: subprocess.run(["/usr/bin/rm","-rf",str(work)],check=True)
 
+# --------------------------------------------------------------------------- #
+# the local authoritative override (CCV1-121)
+# --------------------------------------------------------------------------- #
+# Both pointers below are published by the GO repository and read over the network, from
+# whatever canonical main says at the moment of the read.  The host's own record of what it
+# is running is kept here, root-owned, and for the one environment this Bridge serves that
+# record is preferred -- because "which candidate may be deployed" is a fact about this
+# environment, established by the signed TEST_PR and the root-owned live baseline, not by
+# the branch a pointer happens to sit on.
+#
+# This is not a bypass, and it is shaped so that it cannot become one:
+#
+#   * it applies to ONE environment.  Any other environment takes the network read, and
+#     therefore takes the network read's refusals.
+#   * the file must be root-owned, not a symlink, and not writable by any other identity.
+#     A file another identity could rewrite is not an authority.
+#   * the candidate digest is RECOMPUTED from the fact itself by the candidate admission
+#     component's own implementation -- imported, never re-implemented here, and pinned by
+#     content address, so a substituted module is refused rather than used.
+#   * a file that is absent, unreadable, of the wrong shape, about another environment, or
+#     whose stated digest does not recompute from its own block is IGNORED.  The caller then
+#     takes the original path, which refuses exactly as it did before this revision.
+#
+# Nothing else moves.  The migration graph, the expected current image, the TEST_PR
+# binding, the approval join and every other gate read what they always read.
+LOCAL_OVERRIDE_DIR = "/etc/go-command-center"
+LOCAL_CANDIDATE_OVERRIDE = LOCAL_OVERRIDE_DIR + "/current-candidate-override-v1.json"
+LOCAL_RUNTIME_OVERRIDE = LOCAL_OVERRIDE_DIR + "/current-hk-runtime-override-v1.json"
+LOCAL_OVERRIDE_ENVIRONMENT = "HK-STAGING-01"
+LOCAL_OVERRIDE_VERSION = 1
+# The candidate admission component's implementation of the converged digest.  Imported
+# rather than copied, and pinned: this host is not allowed to grow a second implementation
+# of a rule that already has one.
+LOCAL_CANDIDATE_FACT_MODULE = "/usr/local/libexec/candidate_fact.py"
+LOCAL_CANDIDATE_FACT_SHA256 = "b378a4724633a963526409ed98dfbfa90a1ab601aa123771edcf4c6567cde0fd"
+ADMISSION_POINTER_SCHEMA = "go.depth48.current-candidate.v1"
+
+_LOCAL_CANDIDATE_FACT = None
+
+
+def _local_candidate_fact():
+    """The candidate admission component's own implementation, or raise."""
+    global _LOCAL_CANDIDATE_FACT
+    if _LOCAL_CANDIDATE_FACT is None:
+        raw_module = pathlib.Path(LOCAL_CANDIDATE_FACT_MODULE).read_bytes()
+        if hashlib.sha256(raw_module).hexdigest() != LOCAL_CANDIDATE_FACT_SHA256:
+            raise Reject("local_override_module_not_authoritative")
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("_cc_local_candidate_fact",
+                                                     LOCAL_CANDIDATE_FACT_MODULE)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _LOCAL_CANDIDATE_FACT = module
+    return _LOCAL_CANDIDATE_FACT
+
+
+def _local_override_document(path):
+    """A root-owned local override, parsed, or None if it may not be used at all."""
+    if POLICY.get("environment") != LOCAL_OVERRIDE_ENVIRONMENT:
+        return None
+    import stat
+    try:
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    except OSError:
+        return None
+    try:
+        info = os.fstat(descriptor)
+        if not stat.S_ISREG(info.st_mode):
+            return None
+        if info.st_uid != 0:
+            return None
+        if info.st_mode & 0o022:
+            return None
+        payload = os.read(descriptor, 1 << 20)
+    except OSError:
+        return None
+    finally:
+        os.close(descriptor)
+    try:
+        document = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        return None
+    if not isinstance(document, dict):
+        return None
+    if document.get("version") != LOCAL_OVERRIDE_VERSION:
+        return None
+    if document.get("environment") != LOCAL_OVERRIDE_ENVIRONMENT:
+        return None
+    return document
+
+
+def local_admission_override():
+    """The candidate admission record this host states for itself, or None.
+
+    The stated digest is not trusted.  It is recomputed from the block by the candidate
+    admission component's own implementation and the two must agree, or the file is not
+    used: a record whose digest describes a different candidate than its own block is
+    exactly the self-contradictory authority record this refuses to carry.
+    """
+    document = _local_override_document(LOCAL_CANDIDATE_OVERRIDE)
+    if document is None:
+        return None
+    if document.get("schema") != ADMISSION_POINTER_SCHEMA:
+        return None
+    block = document.get("release_candidate_v1")
+    if not isinstance(block, dict):
+        return None
+    stated = document.get("candidate_contract_sha256")
+    if not isinstance(stated, str) or deploy_gate.SHA.fullmatch(stated) is None:
+        return None
+    try:
+        module = _local_candidate_fact()
+        kind = module.classify_document(block)
+        module.validate_converged(block)
+        recomputed = module.candidate_contract_sha256(block)
+    except (OSError, ValueError, AttributeError):
+        # Unreadable, unparsable or not a converged fact: the file is not usable, and the
+        # original path decides from here.
+        return None
+    if kind != module.CandidateDigestKind.CONVERGED:
+        return None
+    if recomputed != stated:
+        return None
+    return document
+
+
+def local_runtime_override():
+    """The migration graph this host states for itself, or None."""
+    document = _local_override_document(LOCAL_RUNTIME_OVERRIDE)
+    if document is None:
+        return None
+    database = document.get("database")
+    head = database.get("alembic_head") if isinstance(database, dict) else None
+    if not isinstance(head, str) or not head:
+        return None
+    return document
+
+
 def read_admission():
-    """The candidate admission record, as the GO repository publishes it."""
+    """The candidate admission record, as the GO repository publishes it.
+
+    For the one environment this Bridge serves, the host's own root-owned record is
+    preferred over the published pointer; see the override block above for what makes that
+    record usable and what happens when it is not (the published pointer, unchanged).
+    """
+    local = local_admission_override()
+    if local is not None:
+        return local
     return deploy_gate.parse_json(read_repo_file(
         GO_REPOSITORY, PR_RESOLVER_KEY, plan_derivation.ADMISSION_POINTER))
 
@@ -355,6 +501,9 @@ def read_supported_migration_head():
     read, or that carries no head, raises rather than returning something benign:
     an unestablished environment graph must not let a candidate through.
     """
+    local = local_runtime_override()
+    if local is not None:
+        return plan_derivation.environment_migration_head(local)
     return plan_derivation.environment_migration_head(deploy_gate.parse_json(
         read_repo_file(GO_REPOSITORY, PR_RESOLVER_KEY, plan_derivation.RUNTIME_POINTER)))
 
