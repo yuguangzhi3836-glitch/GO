@@ -80,13 +80,13 @@ class OpenAIResponsesClient:
     def __init__(self, api_key=None, model=None, url=OPENAI_RESPONSES_URL,
                  timeout_s=HTTP_TIMEOUT_S):
         self.api_key = api_key if api_key is not None else os.environ.get("OPENAI_API_KEY")
-        self.model = model if model is not None else os.environ.get("GO_C1_OPENAI_MODEL", DEFAULT_MODEL)
+        self.model = model if model is not None else os.environ.get("GO_C1_OPENAI_MODEL")
         self.url = url
         self.timeout_s = timeout_s
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY is required")
         if not self.model or not isinstance(self.model, str):
-            raise ValueError("GO_C1_OPENAI_MODEL must be a non-empty string")
+            raise ValueError("GO_C1_OPENAI_MODEL is required")
         if self.url != OPENAI_RESPONSES_URL:
             raise ValueError("Responses endpoint is fixed in V1")
 
