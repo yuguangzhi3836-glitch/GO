@@ -1,0 +1,35 @@
+[Unit]
+Description=GO Runtime Host local C1 runtime bridge (fixed inbox/outbox, no network)
+ConditionPathExists=/opt/go/runtime-host-agent/runtime_bridge_service.py
+After=go-c1-c14-runtime.service
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=go-runtime
+Group=go-runtime
+WorkingDirectory=/opt/go/runtime-host-agent
+ExecStart=/usr/bin/python3 -B /opt/go/runtime-host-agent/runtime_bridge_service.py
+Restart=on-failure
+RestartSec=5
+UMask=0077
+# No network of any kind: the bridge is a local filesystem handoff. It never reaches
+# GitHub, never signs and never holds a credential; the Runtime database it observes is
+# owned by the same account.
+PrivateNetwork=true
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+PrivateDevices=true
+# Reads the fixed inbox and the installed Runtime source; writes the fixed outbox and
+# the Runtime state directory. Nothing else is writable.
+ReadOnlyPaths=/var/lib/go-runtime-bridge/inbox /opt/go/c1-c14-runtime
+ReadWritePaths=/var/lib/go-runtime-bridge/outbox /var/lib/go-c-runtime
+
+[Install]
+WantedBy=multi-user.target

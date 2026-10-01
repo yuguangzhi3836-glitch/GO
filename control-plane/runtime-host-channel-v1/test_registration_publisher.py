@@ -257,7 +257,10 @@ class RotationTests(unittest.TestCase):
         bodies = [json.loads(v.decode("utf-8"))["body"] for v in transport.store.values()]
         self.assertEqual(sorted(b["generation"] for b in bodies), [2, 3, 4])
         for body in bodies:
-            self.assertEqual(body["actions"], [channel.ACTION])
+            # The rotator now issues the closed action vector: the original host
+            # probe plus the bounded C1 bridge probe.
+            self.assertEqual(body["actions"], [channel.HOST_ACTION, channel.RUNTIME_ACTION])
+            self.assertEqual(set(body["actions"]), set(channel.ACTIONS))
             self.assertEqual(set(body), set(channel.REGISTRATION_FIELDS.split()))
             self.assertEqual(body["expires_at"] - body["issued_at"], 86400)
 

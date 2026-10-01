@@ -6,7 +6,8 @@ import secrets
 import sqlite3
 from contextlib import nullcontext
 from adapter import derive_probe
-from channel import Reject, canonical, decode, digest, signed, verified, registration, window, verify_evidence
+from channel import (BRIDGE_PENDING, RUNTIME_ACTION, Reject, canonical, decode, digest, signed,
+                     verified, registration, window, verify_evidence)
 
 class Outbox:
     def __init__(self, path):
@@ -86,12 +87,14 @@ def read_snapshot(transport):
 
 
 def poll_once(registry, registration_raw, authority_public, task_public, evidence_signer,
-              live_host_id, executor_sha256, tasks, evidence, clock):
+              live_host_id, executor_sha256, tasks, evidence, clock, bridge=None):
     """One polling pass over one read-only snapshot per repository.
     Replays only publish the original stored receipt bytes. An already-exact remote
     receipt is compared against the snapshot read and is not fetched a second time;
     a new write still requires its fresh post-write readback.
     Transports are separate stores; IDs supplied by transport are never paths to shell.
+    A C1 bridge task stays RUNTIME_PENDING until the local Runtime reports a terminal
+    result; it is never re-enqueued and its receipt is never re-signed.
     Unknown/crashed task claims remain uncertain. Caller schedules next poll.
     """
     reg=initialize(registry,registration_raw,authority_public,evidence_signer,live_host_id,executor_sha256,clock)
@@ -107,14 +110,25 @@ def poll_once(registry, registration_raw, authority_public, task_public, evidenc
                 from channel import identifier
                 identifier(task.get('task_id'))
                 if key!='tasks/'+task['task_id']+'.json': raise Reject('task_path_binding')
+                action=task.get('action')
                 stored=registry.db.execute('SELECT task_digest,state,evidence FROM tasks WHERE id=?',(task['task_id'],)).fetchone()
                 if stored:
                     if stored[0]!=digest(task): raise Reject('task_id_rebound')
-                    if stored[1]!='COMPLETE':
+                    if stored[1]=='COMPLETE':
+                        receipt=stored[2]
+                    elif stored[1]==BRIDGE_PENDING and action==RUNTIME_ACTION:
+                        receipt=registry.bridge_probe(raw,task_public,live_host_id,executor_sha256,
+                                                      evidence_signer,clock,bridge)
+                    else:
                         results.append((task['task_id'],'UNCERTAIN')); continue
-                    receipt=stored[2]
+                elif action==RUNTIME_ACTION:
+                    receipt=registry.bridge_probe(raw,task_public,live_host_id,executor_sha256,
+                                                  evidence_signer,clock,bridge)
                 else:
                     receipt=registry.probe(raw,task_public,live_host_id,executor_sha256,evidence_signer,clock)
+                if receipt is None:
+                    # Runtime result not terminal yet: no Evidence is published.
+                    results.append((task['task_id'],BRIDGE_PENDING)); continue
                 dest='evidence/'+task['task_id']+'.json'
                 found=evidence_view.read(dest)
                 if found is None:
