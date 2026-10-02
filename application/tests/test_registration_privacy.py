@@ -10,6 +10,15 @@ from registration_terms_test_support import approved_terms_fixture,with_verifica
 from test_registration_verification import delivery,send,payload
 
 
+@pytest.fixture(scope='module', autouse=True)
+def isolated_media_cache(tmp_path_factory):
+    # App import initializes its media service even for registration-only tests.
+    # Keep incidental runtime files outside a read-only candidate source mount.
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setenv('GO_MEDIA_CACHE_DIR', str(tmp_path_factory.mktemp('registration-media')))
+        yield
+
+
 def test_cleanup_without_any_subsequent_registration_and_restore_replay(client,monkeypatch):
     t=privacy.now_ms()
     def restored():
