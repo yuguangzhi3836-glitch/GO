@@ -1,0 +1,58 @@
+name: Current rental and vault guard regression
+on:
+  pull_request:
+    paths:
+      - 'application/src/go_hotel/mobility/rental/**'
+      - 'application/src/go_hotel/services/personal_travel_vault.py'
+      - 'application/tests/test_current_rental_vault_guards.py'
+      - '.github/workflows/current-rental-vault-guards.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite, postgres]
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: isolated-guard-test-only
+          POSTGRES_DB: guard_tests
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d guard_tests"
+          --health-interval 5s --health-timeout 5s --health-retries 15
+    defaults:
+      run:
+        working-directory: application
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      - name: Run bound receipt and provider import regressions
+        env:
+          GO_MEDIA_CACHE_DIR: ${{ runner.temp }}/go-guard-media
+          GO_TEST_DATABASE_URL: ${{ matrix.database == 'postgres' && 'postgresql+psycopg://postgres:isolated-guard-test-only@127.0.0.1:5432/guard_tests' || '' }}
+        run: >-
+          python -m pytest
+          tests/test_current_rental_vault_guards.py
+          tests/test_depth06_rental_settlement.py
+          tests/test_personal_travel_vault.py
+          tests/test_depth04_vault_management.py
+          tests/test_account_holder_http_integration.py
+          tests/test_final_depth_vault_booking_entry.py
+          tests/test_rc20_2_all_b_to_a.py::test_rental_pickup_return_cancel_rules_and_reconciliation
+          tests/independent_rental_attractions/test_rental_independent.py
+          tests/independent_rental_attractions/test_completed_ledger.py
+          -ra
