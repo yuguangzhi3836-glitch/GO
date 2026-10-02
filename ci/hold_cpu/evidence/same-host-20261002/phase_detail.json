@@ -1,0 +1,257 @@
+{
+  "tiers_100": {
+    "sql_by_service": {
+      "bridge._confirm_contract_payment": {
+        "calling_thread_cpu_seconds": 0.02453616100000003,
+        "count": 100.0,
+        "sum_seconds": 0.5584310779998987
+      },
+      "bridge.checkout_contract": {
+        "calling_thread_cpu_seconds": 0.21055301800000026,
+        "count": 1100.0,
+        "sum_seconds": 5.680987737999885
+      },
+      "idempotency.claim_idempotency": {
+        "calling_thread_cpu_seconds": 0.32457796600000016,
+        "count": 300.0,
+        "sum_seconds": 3.9013361319998694
+      },
+      "idempotency.complete_idempotency": {
+        "calling_thread_cpu_seconds": 0.030136013000000073,
+        "count": 100.0,
+        "sum_seconds": 0.801585133999879
+      },
+      "money.create_in_session": {
+        "calling_thread_cpu_seconds": 0.4091145650000001,
+        "count": 2000.0,
+        "sum_seconds": 9.309649022998542
+      },
+      "payment.create_intent": {
+        "calling_thread_cpu_seconds": 0.21560835500000022,
+        "count": 1200.0,
+        "sum_seconds": 6.142175848000079
+      },
+      "payment.execute": {
+        "calling_thread_cpu_seconds": 0.09961401400000028,
+        "count": 500.0,
+        "sum_seconds": 3.315463165001347
+      },
+      "payment.select_channel": {
+        "calling_thread_cpu_seconds": 0.042024411000000136,
+        "count": 200.0,
+        "sum_seconds": 1.0358970569992607
+      },
+      "payment.simulate_result": {
+        "calling_thread_cpu_seconds": 0.1394543800000004,
+        "count": 800.0,
+        "sum_seconds": 4.316787899998872
+      },
+      "ride.create": {
+        "calling_thread_cpu_seconds": 0.2718702860000002,
+        "count": 1500.0,
+        "sum_seconds": 8.703241973001695
+      },
+      "ride.fulfill": {
+        "calling_thread_cpu_seconds": 0.37078576599999946,
+        "count": 2000.0,
+        "sum_seconds": 8.131515827997305
+      },
+      "source.decide_in": {
+        "calling_thread_cpu_seconds": 0.04138771500000017,
+        "count": 200.0,
+        "sum_seconds": 1.5951230870003883
+      },
+      "supplier.record_supplier_fact": {
+        "calling_thread_cpu_seconds": 0.23588070799999988,
+        "count": 1300.0,
+        "sum_seconds": 5.372427429001618
+      },
+      "unattributed": {
+        "calling_thread_cpu_seconds": 0.024977124,
+        "count": 100.0,
+        "sum_seconds": 1.831179632000044
+      }
+    },
+    "connection_by_service": {
+      "bridge._confirm_contract_payment": {
+        "acquisition_sum_seconds": 0.3630599969994819,
+        "acquisitions": 100.0,
+        "hold_count": 100.0,
+        "hold_sum_seconds": 1.2214905159991076,
+        "queue_gets": 100.0,
+        "queue_sum_seconds": 0.000667568999915602
+      },
+      "bridge.checkout_contract": {
+        "acquisition_sum_seconds": 2.022242488999268,
+        "acquisitions": 300.0,
+        "hold_count": 300.0,
+        "hold_sum_seconds": 8.570363171999588,
+        "queue_gets": 300.0,
+        "queue_sum_seconds": 0.8048554310009877
+      },
+      "idempotency.claim_idempotency": {
+        "acquisition_sum_seconds": 12.541084068998885,
+        "acquisitions": 200.0,
+        "hold_count": 200.0,
+        "hold_sum_seconds": 6.134033467999984,
+        "queue_gets": 200.0,
+        "queue_sum_seconds": 10.013737679999736
+      },
+      "idempotency.complete_idempotency": {
+        "acquisition_sum_seconds": 3.452758522000522,
+        "acquisitions": 100.0,
+        "hold_count": 100.0,
+        "hold_sum_seconds": 1.6542246979993251,
+        "queue_gets": 100.0,
+        "queue_sum_seconds": 2.9794997170005217
+      },
+      "money.create_in_session": {
+        "acquisition_sum_seconds": 230.274727971002,
+        "acquisitions": 500.0,
+        "hold_count": 500.0,
+        "hold_sum_seconds": 14.063154191999502,
+        "queue_gets": 500.0,
+        "queue_sum_seconds": 228.7267022730008
+      },
+      "payment.create_intent": {
+        "acquisition_sum_seconds": 0.44123088300057134,
+        "acquisitions": 100.0,
+        "hold_count": 100.0,
+        "hold_sum_seconds": 8.313541990999283,
+        "queue_gets": 100.0,
+        "queue_sum_seconds": 0.0041830389995993755
+      },
+      "payment.execute": {
+        "acquisition_sum_seconds": 0.43726123099963843,
+        "acquisitions": 100.0,
+        "hold_count": 100.0,
+        "hold_sum_seconds": 4.550510216000134,
+        "queue_gets": 100.0,
+        "queue_sum_seconds": 0.001090991999376456
+      },
+      "payment.select_channel": {
+        "acquisition_sum_seconds": 0.41578399000002264,
+        "acquisitions": 100.0,
+        "hold_count": 100.0,
+        "hold_sum_seconds": 2.062996481000255,
+        "queue_gets": 100.0,
+        "queue_sum_seconds": 0.0006732180000881272
+      },
+      "payment.simulate_result": {
+        "acquisition_sum_seconds": 1.8711651860000984,
+        "acquisitions": 100.0,
+        "hold_count": 100.0,
+        "hold_sum_seconds": 5.706529028000432,
+        "queue_gets": 100.0,
+        "queue_sum_seconds": 1.0817097850001574
+      },
+      "ride.create": {
+        "acquisition_sum_seconds": 210.9818016929995,
+        "acquisitions": 100.0,
+        "hold_count": 100.0,
+        "hold_sum_seconds": 13.01508317400021,
+        "queue_gets": 100.0,
+        "queue_sum_seconds": 210.50943353200057
+      },
+      "ride.fulfill": {
+        "acquisition_sum_seconds": 0.6111338140001408,
+        "acquisitions": 200.0,
+        "hold_count": 200.0,
+        "hold_sum_seconds": 10.990581138999687,
+        "queue_gets": 200.0,
+        "queue_sum_seconds": 0.002304354999637326
+      },
+      "supplier.record_supplier_fact": {
+        "acquisition_sum_seconds": 0.2927602759991714,
+        "acquisitions": 100.0,
+        "hold_count": 100.0,
+        "hold_sum_seconds": 7.784901285999354,
+        "queue_gets": 100.0,
+        "queue_sum_seconds": 0.0006765250001308232
+      },
+      "unattributed": {
+        "acquisition_sum_seconds": 35.19359380900039,
+        "acquisitions": 100.0,
+        "hold_count": 100.0,
+        "hold_sum_seconds": 2.9991988349997882,
+        "queue_gets": 84.0,
+        "queue_sum_seconds": 32.46582266099949
+      }
+    },
+    "dbapi_commits_by_service": {
+      "bridge.checkout_contract": {
+        "calling_thread_cpu_seconds": 0.019630965000000222,
+        "calls": 200.0,
+        "wall_sum_seconds": 1.3373107409984186
+      },
+      "idempotency.claim_idempotency": {
+        "calling_thread_cpu_seconds": 0.020886304000000036,
+        "calls": 200.0,
+        "wall_sum_seconds": 1.9456229759995267
+      },
+      "idempotency.complete_idempotency": {
+        "calling_thread_cpu_seconds": 0.010044428000000025,
+        "calls": 100.0,
+        "wall_sum_seconds": 0.7534954370001969
+      },
+      "money.create": {
+        "calling_thread_cpu_seconds": 0.04276977900000003,
+        "calls": 400.0,
+        "wall_sum_seconds": 2.4095178080003734
+      },
+      "payment.create_intent": {
+        "calling_thread_cpu_seconds": 0.009860640999999962,
+        "calls": 100.0,
+        "wall_sum_seconds": 0.6109443720001764
+      },
+      "payment.execute": {
+        "calling_thread_cpu_seconds": 0.010537267000000058,
+        "calls": 100.0,
+        "wall_sum_seconds": 0.6870088460001398
+      },
+      "payment.select_channel": {
+        "calling_thread_cpu_seconds": 0.009789581000000123,
+        "calls": 100.0,
+        "wall_sum_seconds": 0.8292040739995628
+      },
+      "payment.simulate_result": {
+        "calling_thread_cpu_seconds": 0.010930849000000152,
+        "calls": 100.0,
+        "wall_sum_seconds": 0.6520415270006197
+      },
+      "ride.create": {
+        "calling_thread_cpu_seconds": 0.010011817999999912,
+        "calls": 100.0,
+        "wall_sum_seconds": 0.8515308559993855
+      },
+      "ride.fulfill": {
+        "calling_thread_cpu_seconds": 0.02154472300000003,
+        "calls": 200.0,
+        "wall_sum_seconds": 0.9450874280001926
+      },
+      "supplier.record_supplier_fact": {
+        "calling_thread_cpu_seconds": 0.010630753999999895,
+        "calls": 100.0,
+        "wall_sum_seconds": 0.4336123120000366
+      }
+    }
+  },
+  "mapper_configuration": [
+    {
+      "configuring_thread_cpu_seconds": 0.66439225,
+      "wall_seconds": 1.6621743749999496
+    },
+    {
+      "configuring_thread_cpu_seconds": 0.716345688,
+      "wall_seconds": 1.8823992090000274
+    },
+    {
+      "configuring_thread_cpu_seconds": 0.705961654,
+      "wall_seconds": 1.5540276460000086
+    },
+    {
+      "configuring_thread_cpu_seconds": 0.761420135,
+      "wall_seconds": 2.0758369950000315
+    }
+  ]
+}
