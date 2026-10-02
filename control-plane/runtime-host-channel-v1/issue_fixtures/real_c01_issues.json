@@ -1,0 +1,34 @@
+{
+  "captured_at_utc": "2026-10-02T12:14:42.507253+00:00",
+  "captured_from": "yuguangzhi3836-glitch/GO issues API",
+  "fields": [
+    "number",
+    "title",
+    "state",
+    "body",
+    "html_url"
+  ],
+  "issues": [
+    {
+      "body": "Canonical source: `main 8ffcde66d36c1bbf849218529ef015f6e81725af`\n\nStatus at dispatch: `ASSIGNED_NO_ACK` — this issue is the task assignment, not proof that a worker has started.\n\nTask: source-bound read-only diagnosis of mixed hotel funds before any controlled reconciliation decision.\n\nInherit without rerun: `evidence/v70-next-depth-20260914/c01/RESULT.json` and all accepted prior PASS evidence.\n\nRequired first execution evidence: source-bound ACK/start receipt identifying this task and canonical source. Only after that may the ledger move to RUNNING.\n\nDo not claim: reconciliation performed, funds repaired, or C01 domain complete.\n\nOn completion: code/test/Evidence -> C14 -> independent C13; if another executable in-scope gap remains, successor must be assigned immediately.",
+      "html_url": "https://github.com/yuguangzhi3836-glitch/GO/issues/79",
+      "number": 79,
+      "state": "open",
+      "title": "C01 · V70-R3-C01-01 · mixed hotel funds read-only diagnosis"
+    },
+    {
+      "body": "Canonical lineage: R3 product anchor `8ffcde66d36c1bbf849218529ef015f6e81725af`.\n\nPredecessor `V70-R3-C01-01` is `DONE_SCOPED` on fixed candidate `3a7ebba703cd998fc5c5c328ff97f4c7b6f191db`, application tree `f00e970fc3d54a20b0593d89cf29f6bad402e530`, after candidate Evidence PASS, C14 PASS_SCOPED (run 35040162294), and independent C13 PASS_SCOPED (run 35040618517).\n\nSuccessor task: deepen hotel-funds integrity after reconciliation detection. Inspect the existing settlement flow for the next executable in-scope gap around authorization reuse, amount/currency consistency, idempotent retry, and final settlement state. Preserve already-PASS behavior; do not redo C01-01. Implement only a concrete evidenced gap found in current canonical application source, with bounded regression tests.\n\nRequired completion packet: task-bound ACK/start; fixed candidate SHA; application tree/fingerprint; exact changed files; actual test originals/result; Evidence SHA256. First complete packet goes immediately to C14 then independent C13.\n\nNo migration, no unrelated Cell changes, no historical PASS inflation, no direct repair of external funds, no merge/deploy authority. `FINAL_RELEASE / HK_DEPLOY / PRODUCTION = HOLD`.",
+      "html_url": "https://github.com/yuguangzhi3836-glitch/GO/issues/116",
+      "number": 116,
+      "state": "closed",
+      "title": "C01 · V70-R3-C01-02 · post-reconciliation settlement integrity depth"
+    },
+    {
+      "body": "Canonical lineage: inherit exact predecessor `V70-R3-C01-02 = DONE_SCOPED`.\n\nPredecessor fixed candidate: `3b0432f8196ac086ae205352c44887aade1035c0`\nApplication tree: `b0dba98dccfead7f2a7f80ccc611fc153f5915ea`\nSource tree SHA256: `ecf362b530e9ba2a1168fb6941933980c2016c627d9933ae90fd8df51747afd8`\nPredecessor C14: run `35168383106` PASS_SCOPED\nPredecessor independent C13: run `35168473342` PASS_SCOPED\n\nConcrete executable gap evidenced in current source: `alipay_safeguarded_settlement.Service.authorize()` resolves an existing idempotency key, then compares the immutable original authorization amount/currency against the **current mutable reservation** amount/currency. After a lawful fare change has replaced the funding generation, an exact replay of the original authorization request can therefore be misclassified as `AUTHORIZATION_IDEMPOTENCY_CONFLICT` even though the idempotency key belongs to the same reservation and no amount/currency is supplied by that replay request.\n\nTask: preserve strict cross-reservation idempotency conflict protection while making same-reservation replay return the original immutable authorization response after lawful fare change. A new key after a changed order must remain unable to mint/reuse an invalid original authorization. Add bounded regression covering: same-key replay after changed amount, no duplicate authorization/money movement, and cross-reservation key conflict remains rejected.\n\nRequired completion packet: source-bound ACK/start; fixed candidate SHA; application tree/fingerprint; exact changed files relative to predecessor; actual test originals/result; Evidence SHA256; then C14 -> independent C13.\n\nNo migration, no unrelated Cell changes, no historical PASS inflation, no merge/deploy authority. `FINAL_RELEASE / HK_DEPLOY / PRODUCTION = HOLD`.",
+      "html_url": "https://github.com/yuguangzhi3836-glitch/GO/issues/170",
+      "number": 170,
+      "state": "closed",
+      "title": "C01 · V70-R3-C01-03 · authorization replay after lawful fare change"
+    }
+  ]
+}
