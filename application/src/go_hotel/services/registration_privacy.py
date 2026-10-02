@@ -24,7 +24,8 @@ def now_ms():
 
 def required_decisions(policy):
     return {k: ('NOTICE_ACKNOWLEDGED' if k == 'privacy_policy' else
-                'DEFERRED' if k == 'personal_vault_terms' else 'CONTRACT_ACCEPTED')
+                'DEFERRED' if k in {'personal_vault_terms', 'data_processing_terms',
+                                    'electronic_signature_authorization'} else 'CONTRACT_ACCEPTED')
             for k in policy['versions']}
 
 

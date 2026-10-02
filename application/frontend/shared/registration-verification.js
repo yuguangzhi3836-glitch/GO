@@ -1,5 +1,10 @@
 (function(root){
  'use strict';
+ const deferred={
+  personal_vault_terms:'旅行资料库为可选功能，注册时不开通或授权。',
+  data_processing_terms:'数据协作在实际启用时另行确认数据处理条款，注册时不授权。',
+  electronic_signature_authorization:'电子签署在实际使用时另行授权，注册时不授权。'
+ };
  const messages={
   REGISTRATION_CODE_INVALID_OR_EXPIRED:'验证码不正确、已过期或已使用，请检查或重新获取。',
   REGISTRATION_CODE_RATE_LIMITED:'发送过于频繁，请稍后再试。',
@@ -18,7 +23,7 @@
   function decisions(){
    const p=policy();if(!p?.enabled)throw Error('注册条款尚未就绪。');
    const out={};for(const key of Object.keys(p.versions)){
-    if(key==='personal_vault_terms'){out[key]='DEFERRED';continue}
+    if(Object.hasOwn(deferred,key)){out[key]='DEFERRED';continue}
     if(!decisionInputs[key]?.checked)throw Error('请分别确认协议与隐私告知。');
     out[key]=key==='privacy_policy'?'NOTICE_ACKNOWLEDGED':'CONTRACT_ACCEPTED';
    }return out;
@@ -29,7 +34,7 @@
    decisionVersion=version;decisionInputs={};decisionContainer.replaceChildren();
    for(const key of Object.keys(p.versions)){
     const label=document.createElement('label');label.style.display='block';
-    if(key==='personal_vault_terms'){label.textContent='旅行资料库为可选功能，注册时不开通或授权。';decisionContainer.append(label);continue}
+    if(Object.hasOwn(deferred,key)){label.textContent=deferred[key];decisionContainer.append(label);continue}
     const input=document.createElement('input');input.type='checkbox';input.required=true;input.disabled=!p.enabled;input.dataset.term=key;
     input.addEventListener('change',update);decisionInputs[key]=input;label.append(input);
     const title=({privacy_policy:'隐私政策',consumer_service_terms:'用户服务条款',supplier_service_terms:'供应商服务条款',data_processing_terms:'数据处理条款',electronic_signature_authorization:'电子签署授权',platform_operating_rules:'平台运营规则'})[key]||key;
