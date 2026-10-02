@@ -7,6 +7,75 @@
 
 ---
 
+## 0. Meet GO Forge
+
+GO Forge exists because GO no longer needs deployment to be driven primarily by a fixed, ever-growing sequence of historical Command Center rules.
+
+It is an **autonomous AI deployment operator** with access to real operational capabilities such as GitHub, SSH, Shell, Docker, systemd, database tooling, and environment inspection.
+
+The important difference is not "AI instead of scripts." The difference is **who decides the execution path**.
+
+Old model:
+
+```text
+predefined workflow
+    |
+    v
+fixed gates / fixed assumptions
+    |
+    v
+operator tries to make the real environment fit the workflow
+```
+
+GO Forge model:
+
+```text
+deployment intent
+    |
+    v
+AI inspects the Candidate and the real environment
+    |
+    v
+AI chooses the safest valid execution path
+    |
+    v
+real tools
+    |
+    v
+recoverable mutation
+    |
+    v
+deployment-integrity Evidence
+```
+
+Forge is **not** Command Center V2.
+
+It does not exist to recreate every old CC gate with an AI in front of it. It reuses useful capabilities — GitHub access, SSH, Docker, migration, rollback, Evidence — without inheriting unnecessary workflow.
+
+Its operating principle is:
+
+> **Recovery capability defines autonomy.**
+
+If Forge can identify the exact Candidate, understand the real environment, establish a recovery point, execute within the authorized boundary, and leave an auditable trail, it can act like a real deployment engineer rather than a command relay.
+
+That also means Boss GPT should not need to micromanage *which computer* performs the deployment or provide a hand-written SSH recipe under normal conditions. The normal input is intent and Candidate identity; Forge decides how to carry it out.
+
+PR #320 provided the first real HK-STAGING proof that this model can perform an actual controlled deployment.
+
+Forge remains bounded:
+
+- Candidate identity may not silently change.
+- Production is not part of the current operating scope.
+- Real mutation requires recovery and audit.
+- Forge does not become the product-quality judge.
+- Old CC remains available as fallback rather than as a mandatory hop.
+
+In short:
+
+> **Boss / Boss GPT decides what should be deployed. GO Forge figures out how to deploy it safely, proves what it actually installed, and keeps a recovery path.**
+
+---
+
 ## 1. What GO Forge is for
 
 GO Forge is the primary AI deployment operator for GO.
