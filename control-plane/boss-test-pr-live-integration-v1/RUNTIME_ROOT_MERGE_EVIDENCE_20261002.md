@@ -156,6 +156,59 @@ Because a lost B would make a standard-profile build raise
 `TEST_PR_DEPENDENCY_PROFILE_REJECT`, and a lost A would remove the `/app` gate,
 these assertions fail if either side of the merge is lost.
 
+## 6b. Measured results (real Linux — WSL `Ubuntu-24.04`, Python 3.12)
+
+Run from a `git archive` (LF) extraction of this commit's `control-plane hk-staging
+deploy docs command-center .github`. Point-in-time counts.
+
+**Manifest verification** (LF extraction, `sha256sum -c`):
+
+| component | entries | CR bytes | non-OK lines |
+|---|---|---|---|
+| `boss-test-pr-live-integration-v1` | 36 | 0 | **0** |
+| `command-center-candidate-admission-v1` | 14 | 0 | **0** |
+| `command-center-state-v1` | 79 | 0 | **0** |
+
+**Builder suites** (module by module — the tests dir has no `__init__.py`):
+
+| module | ran | fail | err | skip |
+|---|---|---|---|---|
+| `test_artifact_store` | 103 | 0 | 0 | 0 |
+| `test_candidate_digest_wiring` | 32 | 0 | 0 | 0 |
+| `test_dependency_compatibility` | 22 | 0 | 0 | 0 |
+| `test_hk_install_fact` | 74 | 0 | 0 | 0 |
+| `test_installed_identity_wiring` | 14 | 0 | 0 | 0 |
+| `test_live_integration` | 35 | 0 | 0 | 0 |
+| `test_media_mount` | 31 | 0 | 0 | 0 |
+| **`test_merged_runtime_root_and_dependency`** | **6** | **0** | **0** | **0** |
+| `test_migration_guard` | 21 | 0 | 0 | 0 |
+| `test_runtime_source_root` | 6 | 0 | 0 | 0 |
+| `test_test_pr_durability` | 18 | 0 | 0 | 0 |
+| **total** | **362** | **0** | **0** | **0** |
+
+**Admission:** `run_checks.py` → `status: PASS`, `tests: 156`, `failures: 0`,
+`errors: 0`, `skips: 0`; the two test modules run `108 + 48 = 156`, all pass.
+
+**Offline shadow matrix** (merged admission code, no install, no network, no host):
+
+| case | expected | observed | rejected by |
+|---|---|---|---|
+| historical valid v3 evidence + historical recipe | ACCEPT | **ACCEPT** | — |
+| historical v3 declared + v4 recipe | REJECT | **REJECT** | `candidate_build_dockerfile_sha256` |
+| fresh v4 candidate + v4 evidence + v4 staged recipe | ACCEPT | **ACCEPT** | — |
+| v4 declared + old (legacy) recipe | REJECT | **REJECT** | `candidate_build_dockerfile_sha256` |
+| no evidence supplied | not ACCEPT | **UNKNOWN** | (design: never accepted, nothing refuted) |
+| source/artifact digest mismatch | REJECT | **REJECT** | `candidate_artifact_digest` |
+| cross-generation: v4 declared, v3 signed evidence | REJECT | **REJECT** | `candidate_test_result_evidence_builder_version` |
+| cross-generation: v3 declared, v4 signed evidence | REJECT | **REJECT** | `candidate_build_dockerfile_sha256` |
+| relabelled historical v3 image claiming v4 | REJECT | **REJECT** | `candidate_test_result_evidence_builder_version` |
+
+One deliberate deviation from the task's wording: the "no evidence" row is
+**`UNKNOWN`**, not `REJECT`. The component's contract is that absent evidence is
+"never accepted" but is *also* not refuted, so it is reported as `UNKNOWN` — the
+workflow asserts `an_absent_test_result_context_is_never_accepted`. The matrix is
+PASS under that (stricter) rule.
+
 ## 7. Proven / not proven
 
 **Proven here:** the merged sources carry both checks; the merged builder compiles
