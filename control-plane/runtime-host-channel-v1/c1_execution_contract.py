@@ -7,20 +7,71 @@ GitHub-hosted executor can never drift apart about what a given execution *is*:
   GitHub workflow  ->  c1_ai_execution_backend.py  ->  sealed result  ->  Runtime
 
 Fixed by configuration, NEVER by task input:
-  repository, workflow file, git ref, owner cell, task kind, payload, model endpoint.
+  repository, workflow file, git ref, owner cell, model endpoint.
 
-Carried by the task (the only things a Runtime task may influence):
-  runtime_task_id, attempt.
+Carried by the task: the task's own payload, plus `runtime_task_id` and `attempt`.
 
 Derived, never sent by a caller as an independent value:
-  execution_request_id = sha256(canonical(task binding + fixed binding))
+  execution_request_id = sha256(canonical(task binding))
 
 Nothing here performs I/O, holds a credential, or knows about the Runtime database.
+
+--------------------------------------------------------------------- task classes
+There are exactly two task classes, and they are deliberately separate:
+
+  SMOKE  kind `AI_WORK_V1`   payload `SMOKE_PAYLOAD`  prompt + accepted output fixed
+         The deployed, already-PASS end-to-end smoke. Its binding, its execution
+         identity and its acceptance rule are UNCHANGED by this revision: with no
+         explicit spec, `task_binding(task, attempt)` still returns the same document
+         byte for byte, so the identity the live Runtime Host already recorded for
+         `rt_fed1d4626...` attempt 1 still resolves to the same `execution_request_id`.
+         That matters: if it changed, an already-answered execution would look like a
+         brand new one and a second paid model call would become possible.
+
+  REAL   kind `AI_TASK_V1`   payload = a validated real-task payload  prompt DERIVED
+         The new capability. It carries one real task's execution input, derives the
+         prompt from the claimed task's payload, and accepts any well-formed non-empty
+         model output instead of one fixed literal.
+
+The two classes can never collide: their bindings have different key sets, so no real
+payload can derive a smoke execution identity (or the reverse). That is what keeps a
+smoke result and a real result from being interchangeable.
+
+------------------------------------------------------------- canonical cell identity
+The deployed kernel's responsibility set is
+
+    C_IDS = tuple(f"C{i}" for i in range(1, 15))        # runtime.py:20
+
+so `owner_c` is `C1`..`C14`. The Owner's own cell names are zero-padded (`C01`..`C14`).
+There is exactly ONE canonical internal representation - the kernel's - and exactly one
+place where the external spelling is folded into it: `canonical_cell_id()`. Nothing
+downstream ever sees both spellings, so no task can acquire two keys.
+
+------------------------------------------------------------- real task payload shape
+A real payload carries only what executing the AI needs, split by role so that adding a
+field later is a conscious decision:
+
+  binding input   schema_version, cell_id, external_task_id
+                  Participate in `execution_request_id`; `external_task_id` is also the
+                  caller's stable task key and the base of the idempotency key.
+  execution input objective, scope
+                  What the DERIVED prompt is built from. Nothing else reaches the model.
+  trace only      source_anchor, issue_number
+                  Recorded in the binding for auditability. NOT in the prompt: the
+                  executor may not act on them, and handing them to the model would
+                  invite it to reason about provenance it cannot verify.
+  refused         candidate_sha, artifact_id, pr_number, c14_verdict, c13_verdict,
+                  run_id, github_run_id, execution_request_id, output, output_sha256,
+                  result, accepted, status
+                  All produced *after* the execution, or by the Runtime itself.
+                  Accepting them at enqueue time would let a caller assert a result
+                  before one exists, so they are rejected outright.
 """
 from __future__ import annotations
 
 import hashlib
 import json
+import re
 
 SCHEMA_VERSION = 1
 
@@ -33,11 +84,68 @@ REF = "main"
 DISPATCH_ENDPOINT = "/repos/%s/actions/workflows/%s/dispatches" % (REPO, WORKFLOW_FILE)
 RUNS_ENDPOINT = "/repos/%s/actions/runs" % REPO
 
-# ---------------------------------------------------------------- fixed task shape
+# ------------------------------------------------- canonical responsibility identity
+# The kernel's own canonical spelling: `C1`, never `C01`.
 OWNER_C = "C1"
+
+# The Owner writes `C01`, `C02`, ... The kernel only knows `C1`, `C2`, ...
+_EXTERNAL_PADDED_CELL = re.compile(r"^C0([1-9])$")
+_CANONICAL_CELL = re.compile(r"^C([1-9]|1[0-4])$")
+
+
+class Refused(Exception):
+    """Fail-closed refusal carrying a stable machine-readable reason code."""
+
+    def __init__(self, reason: str):
+        super().__init__(reason)
+        self.reason = reason
+
+
+def canonical_cell_id(external) -> str:
+    """Fold an external cell spelling onto the kernel's canonical one.
+
+    The ONLY boundary where the two spellings meet, and total: every accepted input maps
+    to exactly one canonical value, and the function is idempotent
+    (`canonical_cell_id(canonical_cell_id(x)) == canonical_cell_id(x)`), so re-normalising
+    can never produce a second key.
+
+        canonical_cell_id("C1")  == "C1"
+        canonical_cell_id("C01") == "C1"
+        canonical_cell_id("C14") == "C14"
+
+    Anything that is not a real cell refuses rather than being coerced, so a typo cannot
+    quietly become a new responsibility domain.
+    """
+    if not isinstance(external, str):
+        raise Refused("CELL_ID_NOT_A_STRING")
+    value = external.strip().upper()
+    padded = _EXTERNAL_PADDED_CELL.match(value)
+    if padded:
+        return "C" + padded.group(1)
+    if _CANONICAL_CELL.match(value):
+        return value
+    raise Refused("CELL_ID_NOT_A_KNOWN_RESPONSIBILITY_DOMAIN")
+
+
+def assert_canonical_cell_id(value) -> str:
+    """Refuse a value that is not already canonical.
+
+    For values travelling *inside* the system. An internal caller that passes the
+    external spelling trips this instead of silently creating a second identity for the
+    same cell - which is the point of having one canonical representation.
+    """
+    if not isinstance(value, str) or canonical_cell_id(value) != value:
+        raise Refused("CELL_ID_NOT_CANONICAL")
+    return value
+
+
+# ---------------------------------------------------------------- smoke task (V1)
 KIND = "AI_WORK_V1"
 SMOKE_ID = "C1_REAL_AI_WORKER_V1"
-PAYLOAD = {"schema_version": 1, "smoke_id": SMOKE_ID}
+SMOKE_PAYLOAD = {"schema_version": 1, "smoke_id": SMOKE_ID}
+# Kept under its original name: the workflow, the backend and the tests import it, and
+# it still means "the fixed payload of the deployed smoke".
+PAYLOAD = SMOKE_PAYLOAD
 IDEMPOTENCY_KEY = "c1-real-ai-worker-v1:smoke:1"
 EXPECTED_OUTPUT = "GO_C1_REAL_AI_WORKER_V1_OK"
 
@@ -52,8 +160,12 @@ PROMPT = (
 REQUEST_KIND = "c1-ai-execution-request"
 RESULT_KIND = "c1-ai-execution-result"
 
-# The ONLY workflow inputs a dispatch may carry. Everything else is fixed config.
+# The ONLY workflow inputs a smoke dispatch may carry. Everything else is fixed config.
 DISPATCH_INPUT_NAMES = ("runtime_task_id", "attempt", "execution_request_id")
+# A real dispatch additionally carries its kind and payload: the executor runs in a
+# different process and a different checkout, so its prompt cannot be re-derived without
+# them. It still never carries a model, an endpoint, a ref or a repository.
+REAL_DISPATCH_INPUT_NAMES = DISPATCH_INPUT_NAMES + ("task_kind", "task_payload")
 
 # The exact field set of a sealed result. `failure_reason` is allowed only when the
 # execution did not succeed; anything else is a refusal, not a warning.
@@ -65,25 +177,49 @@ RESULT_FIELDS = frozenset({
 })
 RESULT_STATUSES = ("SUCCEEDED", "FAILED")
 
+# ---------------------------------------------------------------- real task (V1)
+REAL_TASK_KIND = "AI_TASK_V1"
+REAL_PAYLOAD_SCHEMA_VERSION = 1
 
-class Refused(Exception):
-    """Fail-closed refusal carrying a stable machine-readable reason code."""
+TASK_CLASS_SMOKE = "SMOKE"
+TASK_CLASS_REAL = "REAL"
 
-    def __init__(self, reason: str):
-        super().__init__(reason)
-        self.reason = reason
+# The role of each real-task payload field, as data rather than as prose.
+TASK_PAYLOAD_BINDING_INPUT = ("schema_version", "cell_id", "external_task_id")
+TASK_PAYLOAD_EXECUTION_INPUT = ("objective", "scope")
+TASK_PAYLOAD_TRACE_ONLY = ("source_anchor", "issue_number")
+TASK_PAYLOAD_FIELDS = frozenset(
+    TASK_PAYLOAD_BINDING_INPUT + TASK_PAYLOAD_EXECUTION_INPUT + TASK_PAYLOAD_TRACE_ONLY)
+TASK_PAYLOAD_REQUIRED = ("schema_version", "cell_id", "external_task_id",
+                         "objective", "scope")
+# Post-execution facts, or Runtime internals. Never an enqueue input.
+TASK_PAYLOAD_REFUSED = frozenset({
+    "candidate_sha", "artifact_id", "pr_number", "c14_verdict", "c13_verdict",
+    "run_id", "github_run_id", "execution_request_id", "output", "output_sha256",
+    "result", "accepted", "status",
+})
+
+MAX_EXTERNAL_TASK_ID = 200
+MAX_OBJECTIVE = 4000
+MAX_SCOPE = 4000
+MAX_SOURCE_ANCHOR = 200
 
 
 def canonical(document) -> str:
-    return json.dumps(document, sort_keys=True, separators=(",", ":"))
+    return json.dumps(document, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 
 def sha256_hex(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def prompt_sha256() -> str:
-    return sha256_hex(PROMPT)
+def prompt_sha256(prompt: str | None = None) -> str:
+    """Hash of the prompt an execution will actually send.
+
+    With no argument: the fixed smoke prompt, exactly as before. A real task passes the
+    prompt derived from its own payload.
+    """
+    return sha256_hex(PROMPT if prompt is None else prompt)
 
 
 def output_sha256(output: str) -> str:
@@ -98,32 +234,207 @@ def require_runtime_facts(runtime_task_id, attempt) -> tuple:
     return runtime_task_id, attempt
 
 
-def task_binding(runtime_task_id, attempt) -> dict:
+# ------------------------------------------------------------- real task payload
+def _bounded_text(value, *, limit: int, reason: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise Refused(reason)
+    text = value.strip()
+    if len(text) > limit:
+        raise Refused(reason + "_TOO_LONG")
+    return text
+
+
+def validate_task_payload(payload) -> dict:
+    """Normalise and validate a real-task payload, or refuse it.
+
+    Returns the payload with `cell_id` folded onto the canonical spelling, so what is
+    bound, what is stored and what reaches the prompt all agree on one value.
+    """
+    if type(payload) is not dict:
+        raise Refused("TASK_PAYLOAD_NOT_AN_OBJECT")
+    unknown = set(payload) - TASK_PAYLOAD_FIELDS
+    refused = sorted(unknown & TASK_PAYLOAD_REFUSED)
+    if refused:
+        # Naming the field makes the refusal actionable instead of mysterious.
+        raise Refused("TASK_PAYLOAD_REFUSED_FIELD:" + ",".join(refused))
+    if unknown:
+        raise Refused("TASK_PAYLOAD_UNKNOWN_FIELD:" + ",".join(sorted(unknown)))
+    missing = [name for name in TASK_PAYLOAD_REQUIRED if name not in payload]
+    if missing:
+        raise Refused("TASK_PAYLOAD_MISSING_FIELD:" + ",".join(missing))
+    if payload["schema_version"] != REAL_PAYLOAD_SCHEMA_VERSION:
+        raise Refused("TASK_PAYLOAD_SCHEMA_VERSION_UNSUPPORTED")
+
+    normalised = {
+        "schema_version": REAL_PAYLOAD_SCHEMA_VERSION,
+        "cell_id": canonical_cell_id(payload["cell_id"]),
+        "external_task_id": _bounded_text(
+            payload["external_task_id"], limit=MAX_EXTERNAL_TASK_ID,
+            reason="TASK_PAYLOAD_EXTERNAL_TASK_ID_INVALID"),
+        "objective": _bounded_text(payload["objective"], limit=MAX_OBJECTIVE,
+                                   reason="TASK_PAYLOAD_OBJECTIVE_INVALID"),
+        "scope": _bounded_text(payload["scope"], limit=MAX_SCOPE,
+                               reason="TASK_PAYLOAD_SCOPE_INVALID"),
+    }
+    if normalised["cell_id"] != OWNER_C:
+        # This contract belongs to C1. Another cell's task is another cell's business.
+        raise Refused("TASK_PAYLOAD_CELL_IS_NOT_C1")
+    for name in TASK_PAYLOAD_TRACE_ONLY:
+        if name not in payload:
+            continue
+        value = payload[name]
+        if name == "issue_number":
+            if type(value) is not int or value <= 0:
+                raise Refused("TASK_PAYLOAD_ISSUE_NUMBER_INVALID")
+        else:
+            value = _bounded_text(value, limit=MAX_SOURCE_ANCHOR,
+                                  reason="TASK_PAYLOAD_SOURCE_ANCHOR_INVALID")
+        normalised[name] = value
+    return normalised
+
+
+def build_task_payload(*, cell_id, external_task_id, objective, scope,
+                       source_anchor=None, issue_number=None) -> dict:
+    """Compose a real-task payload from the fields a caller actually has.
+
+    `cell_id` may be given in either spelling; it is canonicalised here, so the caller
+    never has to know which one the kernel uses.
+    """
+    payload = {
+        "schema_version": REAL_PAYLOAD_SCHEMA_VERSION,
+        "cell_id": cell_id,
+        "external_task_id": external_task_id,
+        "objective": objective,
+        "scope": scope,
+    }
+    if source_anchor is not None:
+        payload["source_anchor"] = source_anchor
+    if issue_number is not None:
+        payload["issue_number"] = issue_number
+    return validate_task_payload(payload)
+
+
+def real_idempotency_key(cell_id, external_task_id) -> str:
+    """The Runtime-side idempotency key for one real task.
+
+    Derived, not chosen, so the same external task presented twice cannot become two
+    Runtime tasks. Reuses the Runtime's own `idempotency_key` mechanism - there is no
+    second de-duplication system anywhere in this channel.
+    """
+    return "c1-ai-task-v1:%s:%s" % (
+        canonical_cell_id(cell_id),
+        _bounded_text(external_task_id, limit=MAX_EXTERNAL_TASK_ID,
+                      reason="TASK_PAYLOAD_EXTERNAL_TASK_ID_INVALID"))
+
+
+# --------------------------------------------------------------- prompt derivation
+def prompt_for_task(task_kind: str, payload) -> str:
+    """The prompt an execution of this kind sends, derived from the task's own payload.
+
+    The smoke prompt is the existing fixed literal. A real prompt is a pure function of
+    the payload's execution-input fields, so two different payloads cannot produce the
+    same prompt and the same payload always produces the same bytes - which is what makes
+    `prompt_sha256` a meaningful commitment inside the binding.
+    """
+    if task_kind == KIND:
+        return PROMPT
+    if task_kind != REAL_TASK_KIND:
+        raise Refused("TASK_KIND_UNKNOWN")
+    normalised = validate_task_payload(payload)
+    return (
+        "GO C1 real task (AI_TASK_V1).\n"
+        "cell: %s\nexternal_task_id: %s\n"
+        "\nOBJECTIVE\n%s\n"
+        "\nSCOPE\n%s\n"
+        "\nAnswer the objective within the scope. Reply with the task result as plain "
+        "text and nothing else. You have no authority to change money, state, "
+        "deployment, release or configuration, and you must not claim any."
+        % (normalised["cell_id"], normalised["external_task_id"],
+           normalised["objective"], normalised["scope"]))
+
+
+# --------------------------------------------------------------------- task specs
+def task_spec(task_kind: str, payload) -> dict:
+    """A normalised description of one task class, safe to store and re-read.
+
+    Explicit rather than re-derived from a kind string at each use: this is what lets the
+    resume leg rebuild an execution identity without the Runtime, because the spec is
+    stored beside the outbox row.
+    """
+    if task_kind == KIND:
+        if payload != PAYLOAD:
+            raise Refused("SMOKE_PAYLOAD_MISMATCH")
+        return {"task_class": TASK_CLASS_SMOKE, "task_kind": KIND, "payload": PAYLOAD}
+    if task_kind == REAL_TASK_KIND:
+        return {"task_class": TASK_CLASS_REAL, "task_kind": REAL_TASK_KIND,
+                "payload": validate_task_payload(payload)}
+    raise Refused("TASK_KIND_UNKNOWN")
+
+
+SMOKE_SPEC = {"task_class": TASK_CLASS_SMOKE, "task_kind": KIND, "payload": PAYLOAD}
+# The two kinds this channel owns. Anything else is not ours to execute.
+CLAIMABLE_KINDS = (KIND, REAL_TASK_KIND)
+
+
+def spec_from_request(request) -> dict:
+    """Recover the spec from a stored dispatch request, for the resume leg."""
+    if type(request) is not dict:
+        raise Refused("REQUEST_NOT_AN_OBJECT")
+    return task_spec(request.get("task_kind", KIND), request.get("payload", PAYLOAD))
+
+
+def prompt_for_spec(spec) -> str:
+    return prompt_for_task(spec["task_kind"], spec["payload"])
+
+
+# ----------------------------------------------------------------------- identity
+def task_binding(runtime_task_id, attempt, spec=None) -> dict:
+    """The canonical binding whose hash IS the execution identity.
+
+    With no `spec` this is the deployed smoke binding byte for byte: same keys, same
+    values, same canonical JSON. Nothing in this revision may change that, because the
+    execution identity of the already-completed live smoke is derived from it.
+    """
     runtime_task_id, attempt = require_runtime_facts(runtime_task_id, attempt)
+    if spec is None or spec["task_class"] == TASK_CLASS_SMOKE:
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "kind": REQUEST_KIND,
+            "owner_c": OWNER_C,
+            "task_kind": KIND,
+            "smoke_id": SMOKE_ID,
+            "payload": PAYLOAD,
+            "idempotency_key": IDEMPOTENCY_KEY,
+            "runtime_task_id": runtime_task_id,
+            "attempt": attempt,
+            "provider": PROVIDER,
+            "prompt_sha256": prompt_sha256(),
+        }
+    payload = spec["payload"]
     return {
         "schema_version": SCHEMA_VERSION,
         "kind": REQUEST_KIND,
         "owner_c": OWNER_C,
-        "task_kind": KIND,
-        "smoke_id": SMOKE_ID,
-        "payload": PAYLOAD,
-        "idempotency_key": IDEMPOTENCY_KEY,
+        "task_kind": REAL_TASK_KIND,
+        "payload": payload,
+        "payload_sha256": sha256_hex(canonical(payload)),
+        "external_task_id": payload["external_task_id"],
         "runtime_task_id": runtime_task_id,
         "attempt": attempt,
         "provider": PROVIDER,
-        "prompt_sha256": prompt_sha256(),
+        "prompt_sha256": prompt_sha256(prompt_for_spec(spec)),
     }
 
 
-def execution_request_id(runtime_task_id, attempt) -> str:
-    """Deterministic: same task + same attempt => same id, always, on both sides."""
-    return sha256_hex(canonical(task_binding(runtime_task_id, attempt)))
+def execution_request_id(runtime_task_id, attempt, spec=None) -> str:
+    """Deterministic: same task + same attempt + same spec => same id, on both sides."""
+    return sha256_hex(canonical(task_binding(runtime_task_id, attempt, spec)))
 
 
-def build_dispatch_request(runtime_task_id, attempt) -> dict:
+def build_dispatch_request(runtime_task_id, attempt, spec=None) -> dict:
     """The canonical request the Runtime forms before anything is sent anywhere."""
-    request = dict(task_binding(runtime_task_id, attempt))
-    request["execution_request_id"] = execution_request_id(runtime_task_id, attempt)
+    request = dict(task_binding(runtime_task_id, attempt, spec))
+    request["execution_request_id"] = sha256_hex(canonical(request))
     request["repo"] = REPO
     request["workflow_file"] = WORKFLOW_FILE
     request["ref"] = REF
@@ -131,12 +442,22 @@ def build_dispatch_request(runtime_task_id, attempt) -> dict:
 
 
 def dispatch_inputs(request: dict) -> dict:
-    """The wire inputs. Exactly the identity triple - no prompt, model or URL."""
-    return {
+    """The wire inputs.
+
+    A smoke dispatch carries exactly the identity triple - no prompt, model or URL. A real
+    dispatch additionally carries its kind and payload, because the executor runs
+    elsewhere and must be able to re-derive the same identity and the same prompt from
+    what it receives.
+    """
+    inputs = {
         "runtime_task_id": request["runtime_task_id"],
         "attempt": request["attempt"],
         "execution_request_id": request["execution_request_id"],
     }
+    if request.get("task_kind") == REAL_TASK_KIND:
+        inputs["task_kind"] = REAL_TASK_KIND
+        inputs["task_payload"] = canonical(validate_task_payload(request["payload"]))
+    return inputs
 
 
 def run_identity_name(runtime_task_id, attempt, request_id) -> str:
@@ -149,12 +470,22 @@ def run_identity_name(runtime_task_id, attempt, request_id) -> str:
 
 
 # ------------------------------------------------------------------- result side
-def validate_result(document, *, runtime_task_id, attempt, execution_request_id_) -> dict:
+def validate_result(document, *, runtime_task_id, attempt, execution_request_id_,
+                    task_kind: str = KIND) -> dict:
     """Validate a sealed result against the exact task identity it claims to belong to.
 
     Fails closed on: wrong field set, wrong kind/version, wrong task, wrong attempt,
     wrong execution_request_id, inconsistent accepted/status, mismatched output hash.
+
+    `task_kind` selects only what "accepted" means:
+      * SMOKE - the output must be the fixed smoke literal (unchanged, so the deployed
+        smoke keeps the acceptance rule it has always had);
+      * REAL  - any non-empty model output is accepted. Judging the quality of that
+        output is not this contract's job, and no fixed literal may be reintroduced
+        here: what ties a result to its task is the identity triple, not the text.
     """
+    if task_kind not in (KIND, REAL_TASK_KIND):
+        raise Refused("RESULT_TASK_KIND_UNKNOWN")
     if type(document) is not dict:
         raise Refused("RESULT_NOT_AN_OBJECT")
     keys = set(document)
@@ -187,11 +518,19 @@ def validate_result(document, *, runtime_task_id, attempt, execution_request_id_
         raise Refused("RESULT_GITHUB_RUN_ATTEMPT_INVALID")
     if document["provider"] != PROVIDER:
         raise Refused("RESULT_PROVIDER_MISMATCH")
+    if not isinstance(document["output"], str):
+        raise Refused("RESULT_OUTPUT_NOT_A_STRING")
     if document["output_sha256"] != output_sha256(document["output"]):
         raise Refused("RESULT_OUTPUT_HASH_MISMATCH")
     if document["accepted"]:
-        if document["output"] != EXPECTED_OUTPUT:
-            raise Refused("RESULT_ACCEPTED_WITHOUT_THE_EXPECTED_OUTPUT")
+        if task_kind == KIND:
+            if document["output"] != EXPECTED_OUTPUT:
+                raise Refused("RESULT_ACCEPTED_WITHOUT_THE_EXPECTED_OUTPUT")
+        elif not document["output"].strip():
+            # A real task may return any text, but "no text at all" is not an answer -
+            # accepting it would make an empty transcript indistinguishable from a
+            # completed execution.
+            raise Refused("RESULT_ACCEPTED_WITH_AN_EMPTY_OUTPUT")
         if not document["response_id"]:
             raise Refused("RESULT_MISSING_RESPONSE_ID")
     if not document["accepted"] and "failure_reason" not in document:

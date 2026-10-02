@@ -13,11 +13,13 @@ The identity it executes under is defined in `c1_execution_contract.py`, shared 
 the Runtime-side requester, so the two can never disagree about what an execution is.
 
 Boundaries:
-- fixed smoke payload; no arbitrary prompt, URL, model, C id, shell or deployment
+- the prompt is the one the shared contract derives from the task's own payload; no
+  caller-supplied prompt, URL, model, C id, shell or deployment reaches this module
 - the model endpoint is fixed; the model name is a workflow-side controlled value
 - the credential is read from the environment and never written to the result
-- the supplied execution_request_id must equal the one derived locally, otherwise
-  the run refuses (a dispatch cannot ask for an identity it does not belong to)
+- the supplied execution_request_id must equal the one derived locally - from the same
+  task facts and the same payload - otherwise the run refuses (a dispatch cannot ask for
+  an identity it does not belong to, nor smuggle in a payload that is not the one bound)
 """
 from __future__ import annotations
 
@@ -36,8 +38,11 @@ if str(_HERE) not in sys.path:
 from c1_execution_contract import (  # noqa: E402
     API_URL,
     EXPECTED_OUTPUT,
+    KIND,
     PROMPT,
     PROVIDER,
+    PAYLOAD,
+    REAL_TASK_KIND,
     RESULT_KIND,
     SCHEMA_VERSION,
     Refused,
@@ -45,6 +50,9 @@ from c1_execution_contract import (  # noqa: E402
     canonical,
     execution_request_id,
     output_sha256,
+    prompt_for_spec,
+    sha256_hex,
+    task_spec,
     validate_result,
 )
 
@@ -72,13 +80,20 @@ def extract_output_text(document) -> str:
     return output
 
 
-def call_responses_api(*, api_key: str, model: str, opener=urllib.request.urlopen):
-    """One real model call. The key is used and then goes out of scope."""
+def call_responses_api(*, api_key: str, model: str, prompt: str = PROMPT,
+                       opener=urllib.request.urlopen):
+    """One real model call. The key is used and then goes out of scope.
+
+    `prompt` is supplied by the caller, which obtained it from the shared contract's
+    derivation for this exact task. The default is the fixed smoke prompt, matching
+    `prompt_sha256()`'s own convention, so a direct call with no task in hand behaves
+    exactly as it did before the real-task contract existed.
+    """
     if not api_key:
         raise Refused("MISSING_OPENAI_API_KEY")
     body = canonical({
         "model": model,
-        "input": PROMPT,
+        "input": prompt,
         "max_output_tokens": MAX_OUTPUT_TOKENS,
         "store": False,
     }).encode("utf-8")
@@ -114,14 +129,30 @@ def call_responses_api(*, api_key: str, model: str, opener=urllib.request.urlope
     }
 
 
-def stub_response(*, model: str) -> dict:
-    """Deterministic stand-in for offline tests and CI. No network, no key."""
-    return {"response_id": "stub:no-model-call", "model": model, "output": EXPECTED_OUTPUT}
+def stub_response(*, model: str, task_kind: str = KIND, prompt: str = "") -> dict:
+    """Deterministic stand-in for offline tests and CI. No network, no key.
+
+    For the smoke this is the fixed smoke literal, exactly as before. For a real task the
+    stand-in is derived from the prompt, so the offline path produces a well-formed
+    non-empty answer that is deliberately NOT the smoke string - which is what makes it
+    exercise the real acceptance rule ("any non-empty output") instead of the smoke one.
+    """
+    output = EXPECTED_OUTPUT if task_kind == KIND else "STUB_TASK_RESULT " + sha256_hex(prompt)
+    return {"response_id": "stub:no-model-call", "model": model, "output": output}
 
 
 def sealed_result(*, runtime_task_id, attempt, request_id, reply, github_run_id,
-                  github_run_attempt, reused: bool) -> dict:
-    accepted = reply["output"] == EXPECTED_OUTPUT
+                  github_run_attempt, reused: bool, task_kind: str = KIND) -> dict:
+    if task_kind == KIND:
+        accepted = reply["output"] == EXPECTED_OUTPUT
+        failure_reason = "MODEL_OUTPUT_DID_NOT_MATCH_SMOKE_STRING"
+    else:
+        # A real task's result is bound to its task by the identity triple, not by its
+        # text. Any non-empty answer carrying a response id is a completed execution;
+        # judging the answer's quality is not this contract's job, and reintroducing a
+        # fixed literal here would make the identity check redundant.
+        accepted = bool(reply["output"].strip()) and bool(reply.get("response_id"))
+        failure_reason = "MODEL_RETURNED_NO_USABLE_OUTPUT"
     document = {
         "version": SCHEMA_VERSION,
         "kind": RESULT_KIND,
@@ -141,7 +172,7 @@ def sealed_result(*, runtime_task_id, attempt, request_id, reply, github_run_id,
         "authorizes_any_action": False,
     }
     if not accepted:
-        document["failure_reason"] = "MODEL_OUTPUT_DID_NOT_MATCH_SMOKE_STRING"
+        document["failure_reason"] = failure_reason
     return document
 
 
@@ -165,10 +196,20 @@ def reuse_terminal_result(path, request_id):
 
 def run_execution(*, runtime_task_id, attempt, model, github_run_id, github_run_attempt,
                   execution_request_id_given=None, existing_result=None, stub=False,
-                  api_key="", opener=urllib.request.urlopen) -> dict:
-    derived = execution_request_id(runtime_task_id, attempt)
+                  api_key="", opener=urllib.request.urlopen, task_kind: str = KIND,
+                  payload=None) -> dict:
+    """Execute exactly one already-bound task and seal exactly one result.
+
+    The task's kind and payload decide BOTH the identity and the prompt, and both are
+    re-derived here through the same shared contract the requester used. A dispatch that
+    carries a payload other than the one its `execution_request_id` was built from is
+    therefore refused rather than executed - which is what stops a valid-looking dispatch
+    from substituting one task's content for another's.
+    """
+    spec = task_spec(task_kind, PAYLOAD if payload is None else payload)
+    derived = execution_request_id(runtime_task_id, attempt, spec)
     if execution_request_id_given is not None and execution_request_id_given != derived:
-        # The dispatch asked for an identity that does not belong to these Runtime facts.
+        # The dispatch asked for an identity that does not belong to these task facts.
         raise Refused("EXECUTION_REQUEST_ID_DOES_NOT_MATCH_RUNTIME_FACTS")
 
     if existing_result:
@@ -176,13 +217,16 @@ def run_execution(*, runtime_task_id, attempt, model, github_run_id, github_run_
         if reused is not None:
             return dict(reused, reused_terminal_result=True)
 
-    reply = stub_response(model=model) if stub else call_responses_api(
-        api_key=api_key, model=model, opener=opener)
+    prompt = prompt_for_spec(spec)
+    reply = (stub_response(model=model, task_kind=task_kind, prompt=prompt) if stub
+             else call_responses_api(api_key=api_key, model=model, prompt=prompt,
+                                     opener=opener))
     document = sealed_result(
         runtime_task_id=runtime_task_id, attempt=attempt, request_id=derived, reply=reply,
-        github_run_id=github_run_id, github_run_attempt=github_run_attempt, reused=False)
+        github_run_id=github_run_id, github_run_attempt=github_run_attempt, reused=False,
+        task_kind=task_kind)
     validate_result(document, runtime_task_id=runtime_task_id, attempt=attempt,
-                    execution_request_id_=derived)
+                    execution_request_id_=derived, task_kind=task_kind)
     return document
 
 
@@ -218,13 +262,25 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="C1 real AI execution backend (V1)")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    emit = sub.add_parser("emit-request", help="print the canonical dispatch request")
-    emit.add_argument("--runtime-task-id", required=True)
-    emit.add_argument("--attempt", type=int, required=True)
+    def add_task_arguments(command):
+        """The task identity a dispatch carries.
 
-    run = sub.add_parser("run", help="execute the fixed smoke and seal one result")
-    run.add_argument("--runtime-task-id", required=True)
-    run.add_argument("--attempt", type=int, required=True)
+        A smoke dispatch supplies neither (the defaults reproduce the fixed smoke exactly,
+        which is why existing invocations are unaffected). A real dispatch supplies both,
+        and the payload is what its `execution_request_id` must have been derived from.
+        """
+        command.add_argument("--runtime-task-id", required=True)
+        command.add_argument("--attempt", type=int, required=True)
+        command.add_argument("--task-kind", default=KIND,
+                             help="AI_WORK_V1 (fixed smoke) or AI_TASK_V1 (real task)")
+        command.add_argument("--task-payload", default=None,
+                             help="canonical JSON payload; required for a real task")
+
+    emit = sub.add_parser("emit-request", help="print the canonical dispatch request")
+    add_task_arguments(emit)
+
+    run = sub.add_parser("run", help="execute one bound task and seal one result")
+    add_task_arguments(run)
     run.add_argument("--execution-request-id", required=True)
     run.add_argument("--model", required=True)
     run.add_argument("--github-run-id", type=int, required=True)
@@ -237,8 +293,16 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     try:
+        payload = None
+        if args.task_payload is not None:
+            try:
+                payload = json.loads(args.task_payload)
+            except ValueError:
+                raise Refused("TASK_PAYLOAD_NOT_JSON") from None
+        spec = task_spec(args.task_kind, PAYLOAD if payload is None else payload)
+
         if args.command == "emit-request":
-            print(canonical(build_dispatch_request(args.runtime_task_id, args.attempt)))
+            print(canonical(build_dispatch_request(args.runtime_task_id, args.attempt, spec)))
             return 0
 
         api_key = os.environ.get(API_KEY_ENV, "")
@@ -252,6 +316,8 @@ def main(argv=None) -> int:
             existing_result=args.existing_result,
             stub=args.stub,
             api_key=api_key,
+            task_kind=args.task_kind,
+            payload=payload,
         )
         assert_no_credential_material(document, api_key)
         write_result(document, args.out)

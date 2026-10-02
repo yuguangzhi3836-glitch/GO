@@ -87,3 +87,68 @@ jobs:
           assert doc["authorizes_any_action"] is False
           print("C1_STUB_E2E_OK", doc["execution_request_id"], doc["github_run_id"])
           PY
+
+      - name: Run a real task end to end in stub mode
+        env:
+          # Deliberately empty in this job: the offline path must not need a credential.
+          OPENAI_API_KEY: ""
+        run: |
+          set -euo pipefail
+          D=control-plane/runtime-host-channel-v1
+          TASK_ID="rt_stub_real_task_offline"
+          # The payload is built and validated through the shared contract, then written
+          # out once so the verifier below checks the same bytes the executor received.
+          python - "$D" "$RUNNER_TEMP/c1_task_payload.json" <<'PY'
+          import sys, pathlib
+          sys.path.insert(0, sys.argv[1])
+          import c1_execution_contract as c
+          payload = c.build_task_payload(
+              cell_id="C01", external_task_id="C01-OFFLINE-A",
+              objective="Offline regression: derive the prompt from this payload.",
+              scope="No real execution. Answer with one short line.")
+          pathlib.Path(sys.argv[2]).write_text(c.canonical(payload), encoding="utf-8")
+          print(c.canonical(payload))
+          PY
+          PAYLOAD="$(cat "$RUNNER_TEMP/c1_task_payload.json")"
+          REQUEST_ID="$(python "$D/c1_ai_execution_backend.py" emit-request \
+            --runtime-task-id "$TASK_ID" --attempt 1 \
+            --task-kind AI_TASK_V1 --task-payload "$PAYLOAD" \
+            | python -c 'import json,sys;print(json.load(sys.stdin)["execution_request_id"])')"
+          python "$D/c1_ai_execution_backend.py" run \
+            --runtime-task-id "$TASK_ID" \
+            --attempt 1 \
+            --execution-request-id "$REQUEST_ID" \
+            --task-kind AI_TASK_V1 \
+            --task-payload "$PAYLOAD" \
+            --model c1-offline-stub \
+            --github-run-id "${{ github.run_id }}" \
+            --github-run-attempt "${{ github.run_attempt }}" \
+            --stub \
+            --out "$RUNNER_TEMP/c1_real_result.json"
+          python - "$RUNNER_TEMP/c1_real_result.json" "$RUNNER_TEMP/c1_task_payload.json" "$REQUEST_ID" <<'PY'
+          import json, sys
+          sys.path.insert(0, "control-plane/runtime-host-channel-v1")
+          import c1_execution_contract as c
+          doc = json.load(open(sys.argv[1]))
+          payload = json.load(open(sys.argv[2]))
+          spec = c.task_spec(c.REAL_TASK_KIND, payload)
+          c.validate_result(doc, runtime_task_id=doc["runtime_task_id"], attempt=1,
+                            execution_request_id_=sys.argv[3], task_kind=c.REAL_TASK_KIND)
+          assert doc["accepted"] is True
+          assert doc["output"].strip()
+          # The real contract does NOT accept the fixed smoke literal as the rule, and the
+          # identity is re-derivable from the payload that travelled with the dispatch.
+          assert doc["output"] != c.EXPECTED_OUTPUT
+          assert sys.argv[3] == c.execution_request_id(doc["runtime_task_id"], 1, spec)
+          assert c.task_binding(doc["runtime_task_id"], 1, spec)["prompt_sha256"] == \
+              c.prompt_sha256(c.prompt_for_spec(spec))
+          # The smoke rule must NOT accept a real answer: the two classes stay separate.
+          try:
+              c.validate_result(doc, runtime_task_id=doc["runtime_task_id"], attempt=1,
+                                execution_request_id_=sys.argv[3], task_kind=c.KIND)
+          except c.Refused as refusal:
+              assert refusal.reason == "RESULT_ACCEPTED_WITHOUT_THE_EXPECTED_OUTPUT", refusal.reason
+          else:
+              raise AssertionError("the smoke rule accepted a real task result")
+          print("C1_REAL_TASK_STUB_E2E_OK", doc["execution_request_id"], doc["github_run_id"])
+          PY
