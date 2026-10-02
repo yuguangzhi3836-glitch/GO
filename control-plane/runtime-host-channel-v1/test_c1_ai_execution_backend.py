@@ -228,11 +228,20 @@ class WorkflowContractTests(unittest.TestCase):
         for trigger in ("push", "pull_request", "schedule"):
             self.assertNotIn(trigger, self.triggers)
 
-    def test_the_dispatch_inputs_are_the_identity_triple_and_nothing_else(self):
-        inputs = set(self.triggers["workflow_dispatch"]["inputs"])
-        self.assertEqual(inputs, {"runtime_task_id", "attempt", "execution_request_id"})
+    def test_the_dispatch_inputs_are_the_identity_plus_the_tasks_own_facts(self):
+        inputs = self.triggers["workflow_dispatch"]["inputs"]
+        # Before the real-task contract this was the identity triple and nothing else. It
+        # is now the triple plus the task's own kind and payload - and only those two,
+        # both optional, so a smoke dispatch still sends the triple alone.
+        self.assertEqual(set(inputs), {"runtime_task_id", "attempt", "execution_request_id",
+                                       "task_kind", "task_payload"})
+        for optional in ("task_kind", "task_payload"):
+            self.assertIs(inputs[optional].get("required"), False, optional)
+        for always in ("runtime_task_id", "attempt", "execution_request_id"):
+            self.assertIs(inputs[always].get("required"), True, always)
+        # Still not inputs: where it runs, what it runs against, or how.
         for forbidden in ("payload", "prompt", "model", "url", "endpoint", "repo", "ref",
-                          "c_id", "owner_c", "kind", "workflow", "shell", "command",
+                          "c_id", "owner_c", "workflow", "shell", "command",
                           "live_call", "mode"):
             self.assertNotIn(forbidden, inputs)
 

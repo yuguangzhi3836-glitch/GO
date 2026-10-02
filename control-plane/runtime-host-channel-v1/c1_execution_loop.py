@@ -57,10 +57,15 @@ from c1_dispatch_outbox import (
     drive_once,
 )
 from c1_execution_contract import (
+    CLAIMABLE_KINDS,
     KIND,
     OWNER_C,
     PAYLOAD,
-    execution_request_id,
+    REAL_TASK_KIND,
+    Refused,
+    build_dispatch_request,
+    task_spec,
+    validate_task_payload,
 )
 from c1_result_pull import complete_after_pull
 
@@ -81,7 +86,11 @@ def _is_a_fenced_refusal(exc) -> bool:
 
 
 def _not_our_task(claimed) -> dict | None:
-    """Refuse anything that is not an AI_WORK_V1 task for C1.
+    """Refuse anything that is not a C1 task this channel owns.
+
+    Two kinds are ours: the fixed smoke (`AI_WORK_V1`, whose payload must be the literal)
+    and a real task (`AI_TASK_V1`, whose payload must validate). Everything else -
+    including both probe kinds - is refused.
 
     The claim itself should already be filtered by kind; this is the second, cheap
     gate, and it is the one that makes "the C1 loop never executes RUNTIME_PROBE"
@@ -98,11 +107,24 @@ def _not_our_task(claimed) -> dict | None:
     payload = getattr(claimed, "payload", None)
     if owner_c != OWNER_C:
         return {"action": "NOT_A_C1_TASK", "reason": "OWNER_C_MISMATCH", "owner_c": owner_c}
-    if kind != KIND:
+    if kind not in CLAIMABLE_KINDS:
         return {"action": "NOT_A_C1_TASK", "reason": "KIND_MISMATCH", "kind": kind}
-    if payload != PAYLOAD:
+    if kind == KIND and payload != PAYLOAD:
         return {"action": "NOT_A_C1_TASK", "reason": "PAYLOAD_MISMATCH", "payload": payload}
+    if kind == REAL_TASK_KIND:
+        try:
+            validate_task_payload(payload)
+        except Refused as refusal:
+            # A real task whose payload is not a valid task is not ours to execute, and
+            # must never be registered - the same guarantee the smoke payload check gives.
+            return {"action": "NOT_A_C1_TASK", "reason": "TASK_PAYLOAD_REFUSED",
+                    "detail": refusal.reason}
     return None
+
+
+def _spec_of(claimed) -> dict:
+    """The task spec of what `Runtime.claim()` handed out, for building its request."""
+    return task_spec(claimed.kind, claimed.payload)
 
 
 def _renew(runtime, task_id, attempt, *, worker_id, lease_s) -> bool:
@@ -130,8 +152,12 @@ def advance(outbox, runtime, claimed, *, worker_id: str, client,
     refusal = _not_our_task(claimed)
     if refusal is not None:
         return refusal
-    return _drive(outbox, runtime, claimed.task_id, claimed.attempts, worker_id=worker_id,
-                  client=client, lease_s=lease_s, clock=clock)
+    # The request is built from what was actually claimed - for a real task that is the
+    # payload the Runtime handed out - and then travels with the identity everywhere.
+    return _drive(outbox, runtime, claimed.task_id, claimed.attempts,
+                  request=build_dispatch_request(claimed.task_id, claimed.attempts,
+                                                 _spec_of(claimed)),
+                  worker_id=worker_id, client=client, lease_s=lease_s, clock=clock)
 
 
 def resume(outbox, runtime, runtime_task_id, attempt, *, worker_id: str, client,
@@ -157,20 +183,32 @@ def resume(outbox, runtime, runtime_task_id, attempt, *, worker_id: str, client,
                   client=client, lease_s=lease_s, clock=clock)
 
 
-def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clock) -> dict:
+def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clock,
+           request=None) -> dict:
     """The three legs, once, for one execution identity. Shared by claim and resume.
 
     It starts by registering the identity, which commits the intent durably before
     anything can be sent - the property the whole exactly-once model rests on, and the
     reason a crash here can never lose the fact that this identity exists.
 
+    `request` is that identity's already-formed dispatch request. `advance()` builds it
+    from the task it just claimed; `resume()` omits it, and the outbox - which already
+    remembers work in progress - is asked what this identity was registered with. Only a
+    row written before the real-task contract falls back to the smoke binding, which is
+    exactly the identity such a row was created from. Either way the identity is never
+    re-derived from a guess, which is what keeps the exactly-once counter meaningful
+    across ticks, restarts and crashes.
+
     `clock` is threaded through from the public entry points and is deliberately never
     read: every lease decision belongs to the Runtime, which samples the wall clock
     itself. Judging the lease here would let a wrong local clock turn into a wrong
     completion, which is exactly what the fence exists to prevent.
     """
-    request_id = execution_request_id(task_id, attempt)
-    action = outbox.register(task_id, attempt)["action"]
+    if request is None:
+        request = outbox.stored_request(task_id, attempt) or \
+            build_dispatch_request(task_id, attempt)
+    request_id = request["execution_request_id"]
+    action = outbox.register(task_id, attempt, request=request)["action"]
 
     if action == ABANDONED:
         # Already settled as uncompletable. Reachable if a caller keeps a stale list of
@@ -185,8 +223,8 @@ def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clo
     # _complete() like everything else - which is what makes "the Runtime refused this
     # identity" behave the same on all three paths.
     if action == "REUSE_TERMINAL":
-        return _finish(outbox, runtime, task_id, attempt, worker_id=worker_id,
-                       lease_s=lease_s, reused=False)
+        return _finish(outbox, runtime, task_id, attempt, request=request,
+                       worker_id=worker_id, lease_s=lease_s, reused=False)
 
     # ---- never pay twice for one Runtime task ---------------------------------
     # A task that lost its lease mid-flight comes back as a new attempt, and a new
@@ -196,41 +234,44 @@ def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clo
         earlier = outbox.terminal_for_task(task_id, exclude_request_id=request_id)
         if earlier is not None:
             outbox.adopt_terminal_result(request_id, earlier)
-            return _finish(outbox, runtime, task_id, attempt, worker_id=worker_id,
-                           lease_s=lease_s, reused=True,
+            return _finish(outbox, runtime, task_id, attempt, request=request,
+                           worker_id=worker_id, lease_s=lease_s, reused=True,
                            source_request_id=earlier["execution_request_id"],
                            source_attempt=earlier["attempt"])
 
     # ---- dispatch leg: at most one POST per execution identity ----------------
     if action in ("DISPATCH", "LOOKUP_RUN"):
-        step = drive_once(outbox, task_id, attempt, send=client.send, find_run=client.find_run)
+        step = drive_once(outbox, task_id, attempt, send=client.send, find_run=client.find_run,
+                          request=request)
         if outbox.next_action(request_id) != "AWAIT_RESULT":
             # Still unresolved (ambiguous POST with no run found yet). Renew, come back.
-            return _pending(outbox, runtime, task_id, attempt, worker_id=worker_id,
-                            lease_s=lease_s, leg="DISPATCH", step=step)
+            return _pending(outbox, runtime, task_id, attempt, request=request,
+                            worker_id=worker_id, lease_s=lease_s, leg="DISPATCH", step=step)
 
     # ---- result leg: pull, validate, seal, then complete ----------------------
-    return _complete(outbox, runtime, task_id, attempt, client=client,
+    return _complete(outbox, runtime, task_id, attempt, request=request, client=client,
                      worker_id=worker_id, lease_s=lease_s)
 
 
-def _complete(outbox, runtime, task_id, attempt, *, client, worker_id, lease_s) -> dict:
+def _complete(outbox, runtime, task_id, attempt, *, client, worker_id, lease_s,
+              request) -> dict:
     """Pull if one is still needed, then complete - and settle a refused identity.
 
     Every completion in this module goes through here, so the one unrecoverable outcome
     is handled identically however this point was reached: from a fresh pull, from a
     result this identity already sealed, or from one adopted from an earlier attempt.
     """
-    request_id = execution_request_id(task_id, attempt)
+    request_id = request["execution_request_id"]
     try:
         outcome = complete_after_pull(outbox, runtime, task_id, attempt,
-                                      client=client, worker_id=worker_id)
+                                      client=client, worker_id=worker_id, request=request)
     except Exception as exc:                                # noqa: BLE001 - re-raised below
         if not _is_a_fenced_refusal(exc):
             # A transport failure, a defect of ours, anything else - NOT permanent.
             # Raise it, leave the row in flight, and let the next tick try again.
             raise
-        return _abandon(outbox, task_id, attempt, reason=type(exc).__name__)
+        return _abandon(outbox, task_id, attempt, request=request,
+                        reason=type(exc).__name__)
 
     if outcome["action"] in ("COMPLETED", "ALREADY_COMPLETED"):
         return {"action": outcome["action"], "execution_request_id": request_id,
@@ -239,11 +280,11 @@ def _complete(outbox, runtime, task_id, attempt, *, client, worker_id, lease_s) 
                 "accepted": outcome.get("accepted"),
                 "reused": False, "renewed": False}
 
-    return _pending(outbox, runtime, task_id, attempt, worker_id=worker_id,
-                    lease_s=lease_s, leg="RESULT", step=outcome)
+    return _pending(outbox, runtime, task_id, attempt, request=request,
+                    worker_id=worker_id, lease_s=lease_s, leg="RESULT", step=outcome)
 
 
-def _abandon(outbox, task_id, attempt, *, reason) -> dict:
+def _abandon(outbox, task_id, attempt, *, request, reason) -> dict:
     """Settle an identity the Runtime has refused, so it stops being retried.
 
     Only reachable from a refusal by the Runtime's own fence, which is permanent for
@@ -251,7 +292,7 @@ def _abandon(outbox, task_id, attempt, *, reason) -> dict:
     leaving the row unfinished would keep the worker from ever claiming anything again.
     Nothing is dispatched here, and nothing can be dispatched for this identity later.
     """
-    request_id = execution_request_id(task_id, attempt)
+    request_id = request["execution_request_id"]
     outbox.abandon(request_id, reason)
     return {"action": ABANDONED, "execution_request_id": request_id,
             "runtime_task_id": task_id, "attempt": attempt,
@@ -259,10 +300,10 @@ def _abandon(outbox, task_id, attempt, *, reason) -> dict:
             "reused": False, "renewed": False}
 
 
-def _finish(outbox, runtime, task_id, attempt, *, worker_id, lease_s, reused,
+def _finish(outbox, runtime, task_id, attempt, *, request, worker_id, lease_s, reused,
             source_request_id=None, source_attempt=None) -> dict:
     """Complete an execution whose result is already sealed (own or adopted)."""
-    result = _complete(outbox, runtime, task_id, attempt, client=_NoPull(),
+    result = _complete(outbox, runtime, task_id, attempt, request=request, client=_NoPull(),
                        worker_id=worker_id, lease_s=lease_s)
     result["reused"] = reused
     if reused:
@@ -285,8 +326,9 @@ class _NoPull:
     send = find_run = find_run_by_name = get_run = download_artifact = _refuse
 
 
-def _pending(outbox, runtime, task_id, attempt, *, worker_id, lease_s, leg, step) -> dict:
-    request_id = execution_request_id(task_id, attempt)
+def _pending(outbox, runtime, task_id, attempt, *, request, worker_id, lease_s, leg,
+             step) -> dict:
+    request_id = request["execution_request_id"]
     return {"action": step["action"], "execution_request_id": request_id,
             "runtime_task_id": task_id, "attempt": attempt,
             "state": outbox.dispatch_status(request_id), "leg": leg,
@@ -295,8 +337,14 @@ def _pending(outbox, runtime, task_id, attempt, *, worker_id, lease_s, leg, step
 
 
 def loop_state(outbox, runtime_task_id, attempt) -> dict:
-    """Read-only view of where this execution is, for a status line or a test."""
-    request_id = execution_request_id(runtime_task_id, attempt)
+    """Read-only view of where this execution is, for a status line or a test.
+
+    The identity comes from the outbox, so this reports correctly for a real task too -
+    including one this process has not seen before, such as after a restart.
+    """
+    request = outbox.stored_request(runtime_task_id, attempt) or \
+        build_dispatch_request(runtime_task_id, attempt)
+    request_id = request["execution_request_id"]
     snapshot = outbox.snapshot(request_id)
     return {"execution_request_id": request_id, "state": snapshot["state"],
             "dispatch_status": outbox.dispatch_status(request_id),

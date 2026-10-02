@@ -16,19 +16,23 @@ name: C1 real AI execution backend (V1)
 # secret + Responses API). It does NOT claim that the Owner has permanently fixed
 # GitHub Actions as the execution location for every cell.
 #
-# Dispatch inputs are the identity triple ONLY. The requester cannot name a prompt, a
-# model, an endpoint, a repository, a branch or a C id: those are fixed here and in
-# control-plane/runtime-host-channel-v1/c1_execution_contract.py, which both sides
-# import. The smoke payload is a literal in this file for the same reason.
+# Dispatch inputs: the identity triple, plus - for a real task only - the task's kind and
+# its payload. The requester still cannot name a prompt, a model, an endpoint, a
+# repository, a branch or a C id: those are fixed here and in
+# control-plane/runtime-host-channel-v1/c1_execution_contract.py, which both sides import.
+# A payload is not a prompt: the prompt is DERIVED from the payload by the shared contract
+# on the Runtime side and re-derived here, and the payload is what the execution identity
+# was derived from - so this workflow recomputes that identity from what it received and
+# refuses a dispatch whose payload does not belong to the identity it claims.
 #
-# The dispatch inputs are the identity triple and nothing else. The live/stub choice is
-# NOT an input: it is repo-controlled configuration (`vars.C1_AI_LIVE_ENABLED`), and it
-# defaults to the offline stub, so a dispatch sent by the Runtime cannot spend money.
+# The live/stub choice is NOT an input: it is repo-controlled configuration
+# (`vars.C1_AI_LIVE_ENABLED`), and it defaults to the offline stub, so a dispatch sent by
+# the Runtime cannot spend money.
 #
-# exactly-once: identity is (runtime_task_id, attempt, fixed binding). The run NAME is
-# that identity, so an unknown dispatch outcome can be resolved by lookup instead of
-# by sending a second POST; `concurrency` serialises the same Runtime task; and the
-# backend copies forward a terminal result for an identical identity rather than
+# exactly-once: identity is (runtime_task_id, attempt, binding derived from the payload).
+# The run NAME is that identity, so an unknown dispatch outcome can be resolved by lookup
+# instead of by sending a second POST; `concurrency` serialises the same Runtime task; and
+# the backend copies forward a terminal result for an identical identity rather than
 # calling the model again.
 #
 # authorizes_any_action is false in every record this workflow produces.
@@ -45,6 +49,14 @@ on:
       execution_request_id:
         description: "sha256 of the canonical task binding, derived by the requester"
         required: true
+      task_kind:
+        description: "AI_WORK_V1 (fixed smoke, default) or AI_TASK_V1 (real task)"
+        required: false
+        default: ""
+      task_payload:
+        description: "canonical JSON payload of a real task; empty for the fixed smoke"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -76,7 +88,7 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Execute the fixed C1 smoke and seal one result
+      - name: Execute the bound C1 task and seal one result
         env:
           # The credential is injected ONLY when the repository-side switch is on.
           # `vars.C1_AI_LIVE_ENABLED` is repo-controlled configuration, not a task
@@ -85,14 +97,25 @@ jobs:
           # treats as "no credential" and refuses to call the model with.
           OPENAI_API_KEY: ${{ vars.C1_AI_LIVE_ENABLED == 'true' && secrets.OPENAI_API_KEY || '' }}
           C1_AI_LIVE_ENABLED: ${{ vars.C1_AI_LIVE_ENABLED }}
+          # Taken from the environment rather than interpolated into a shell word: the
+          # payload is JSON, and routing it through the shell is exactly how a payload
+          # would get mangled into one that no longer matches the execution identity.
+          C1_TASK_KIND: ${{ inputs.task_kind }}
+          C1_TASK_PAYLOAD: ${{ inputs.task_payload }}
         run: |
           set -euo pipefail
           MODE="--stub"
           if [ "${C1_AI_LIVE_ENABLED:-}" = "true" ]; then MODE=""; fi
+          # The smoke passes neither argument, so the backend's own defaults reproduce
+          # the deployed smoke byte for byte and this step is unchanged for it.
+          TASK_ARGS=()
+          if [ -n "${C1_TASK_KIND:-}" ]; then TASK_ARGS+=(--task-kind "$C1_TASK_KIND"); fi
+          if [ -n "${C1_TASK_PAYLOAD:-}" ]; then TASK_ARGS+=(--task-payload "$C1_TASK_PAYLOAD"); fi
           python control-plane/runtime-host-channel-v1/c1_ai_execution_backend.py run \
             --runtime-task-id "${{ inputs.runtime_task_id }}" \
             --attempt "${{ inputs.attempt }}" \
             --execution-request-id "${{ inputs.execution_request_id }}" \
+            "${TASK_ARGS[@]}" \
             --model "$C1_AI_MODEL" \
             --github-run-id "${{ github.run_id }}" \
             --github-run-attempt "${{ github.run_attempt }}" \
@@ -107,30 +130,45 @@ jobs:
           fi
 
       - name: Verify the sealed result shape and its binding
+        env:
+          C1_TASK_KIND: ${{ inputs.task_kind }}
+          C1_TASK_PAYLOAD: ${{ inputs.task_payload }}
+          C1_RUNTIME_TASK_ID: ${{ inputs.runtime_task_id }}
+          C1_ATTEMPT: ${{ inputs.attempt }}
+          C1_EXECUTION_REQUEST_ID: ${{ inputs.execution_request_id }}
         run: |
           set -euo pipefail
           python - <<'PY'
           import json, os, pathlib, sys
           sys.path.insert(0, "control-plane/runtime-host-channel-v1")
           from c1_execution_contract import (
-              RESULT_FIELDS, RESULT_KIND, EXPECTED_OUTPUT, validate_result,
-              execution_request_id, output_sha256,
+              EXPECTED_OUTPUT, KIND, PAYLOAD, RESULT_FIELDS, RESULT_KIND,
+              execution_request_id, output_sha256, task_spec, validate_result,
           )
+          kind = os.environ.get("C1_TASK_KIND", "").strip() or KIND
+          raw_payload = os.environ.get("C1_TASK_PAYLOAD", "")
+          payload = json.loads(raw_payload) if raw_payload.strip() else PAYLOAD
+          spec = task_spec(kind, payload)
+          task = os.environ["C1_RUNTIME_TASK_ID"]
+          attempt = int(os.environ["C1_ATTEMPT"])
+          req = os.environ["C1_EXECUTION_REQUEST_ID"]
           doc = json.loads(pathlib.Path(os.environ["RUNNER_TEMP"], "c1_result.json").read_text())
-          task = "${{ inputs.runtime_task_id }}"
-          attempt = int("${{ inputs.attempt }}")
-          req = "${{ inputs.execution_request_id }}"
           extra = set(doc) - RESULT_FIELDS
           assert not extra, "unexpected result fields: %s" % sorted(extra)
           validate_result(doc, runtime_task_id=task, attempt=attempt,
-                          execution_request_id_=req)
+                          execution_request_id_=req, task_kind=kind)
           assert doc["kind"] == RESULT_KIND
-          assert doc["output"] == EXPECTED_OUTPUT, doc.get("output")
           assert doc["output_sha256"] == output_sha256(doc["output"])
-          assert req == execution_request_id(task, attempt), "identity is not derivable"
+          # The identity must be re-derivable from the facts that travelled with it -
+          # including the payload, which is what makes a substituted payload detectable.
+          assert req == execution_request_id(task, attempt, spec), "identity is not derivable"
+          if kind == KIND:
+              assert doc["output"] == EXPECTED_OUTPUT, doc.get("output")
+          else:
+              assert doc["output"].strip(), "a real task must return an answer"
           assert doc["github_run_id"] == int("${{ github.run_id }}")
           assert doc["authorizes_any_action"] is False
-          print("C1_RESULT_OK", doc["execution_request_id"], doc["github_run_id"])
+          print("C1_RESULT_OK", kind, doc["execution_request_id"], doc["github_run_id"])
           PY
 
       - name: Publish the sealed execution result

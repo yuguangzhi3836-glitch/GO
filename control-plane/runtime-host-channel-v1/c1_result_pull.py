@@ -27,8 +27,9 @@ from c1_dispatch_outbox import (
     DispatchOutbox,
 )
 from c1_execution_contract import (
+    KIND,
     Refused,
-    execution_request_id,
+    build_dispatch_request,
     run_identity_name,
     sha256_hex,
     validate_result,
@@ -37,21 +38,37 @@ from c1_execution_contract import (
 ARTIFACT_PREFIX = "c1-ai-execution-result-"
 
 
-def artifact_name(runtime_task_id: int | str, attempt: int) -> str:
-    return ARTIFACT_PREFIX + execution_request_id(runtime_task_id, attempt)
+def artifact_name(runtime_task_id: int | str, attempt: int, request=None) -> str:
+    """The artifact name IS the execution identity, so it is derived from the request.
+
+    For a smoke task the request is the fixed one and this is unchanged. For a real task
+    the caller passes the request the outbox holds, because the identity of a real task is
+    derived from its payload and cannot be recovered from (task, attempt) alone.
+    """
+    if request is None:
+        request = build_dispatch_request(runtime_task_id, attempt)
+    return ARTIFACT_PREFIX + request["execution_request_id"]
 
 
 def pull_result(outbox: DispatchOutbox, runtime_task_id, attempt, *, client,
-                expected_run_id=None) -> dict:
+                expected_run_id=None, request=None) -> dict:
     """One bounded attempt to obtain and seal the terminal result for this execution.
 
     `client` must provide:
         find_run_by_name(name) -> {"id": int, "run_attempt": int, "status": str,
                                    "conclusion": str|None, "head_sha": str} | None
         download_artifact(run_id, name) -> {"bytes": bytes, "digest": str|None} | None
+
+    `request` identifies which execution this is. When it is omitted the outbox is asked
+    first and only a pre-contract row falls back to the smoke binding, so the smoke path
+    is unchanged and a real task never has to be re-derived from (task, attempt).
     """
-    request_id = execution_request_id(runtime_task_id, attempt)
-    registered = outbox.register(runtime_task_id, attempt)
+    if request is None:
+        request = outbox.stored_request(runtime_task_id, attempt) or \
+            build_dispatch_request(runtime_task_id, attempt)
+    request_id = request["execution_request_id"]
+    task_kind = request.get("task_kind", KIND)
+    registered = outbox.register(runtime_task_id, attempt, request=request)
     action = registered["action"]
 
     if action == "REUSE_TERMINAL":
@@ -84,7 +101,8 @@ def pull_result(outbox: DispatchOutbox, runtime_task_id, attempt, *, client,
         return {"action": "RUN_DID_NOT_SUCCEED", "execution_request_id": request_id,
                 "conclusion": run.get("conclusion")}
 
-    artifact = client.download_artifact(run_id, artifact_name(runtime_task_id, attempt))
+    artifact = client.download_artifact(run_id, artifact_name(runtime_task_id, attempt,
+                                                             request=request))
     if artifact is None:
         return {"action": "ARTIFACT_MISSING", "execution_request_id": request_id}
 
@@ -99,7 +117,7 @@ def pull_result(outbox: DispatchOutbox, runtime_task_id, attempt, *, client,
         raise Refused("ARTIFACT_NOT_VALID_JSON") from None
 
     validate_result(document, runtime_task_id=runtime_task_id, attempt=attempt,
-                    execution_request_id_=request_id)
+                    execution_request_id_=request_id, task_kind=task_kind)
     if document["github_run_id"] != run_id:
         raise Refused("RESULT_BELONGS_TO_ANOTHER_RUN")
 
@@ -111,21 +129,21 @@ def pull_result(outbox: DispatchOutbox, runtime_task_id, attempt, *, client,
 
 
 def complete_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attempt, *,
-                        client, worker_id) -> dict:
+                        client, worker_id, request=None) -> dict:
     """Pull, validate, and complete through the Runtime's own contract.
 
     `Runtime.complete()` is called with the exact attempt the outbox holds, so the
     Runtime's lease/attempt fencing remains the authority. Nothing here writes to the
     Runtime database directly.
     """
-    pulled = pull_result(outbox, runtime_task_id, attempt, client=client)
+    pulled = pull_result(outbox, runtime_task_id, attempt, client=client, request=request)
     if pulled["action"] != "RESULT_SEALED":
         if pulled["action"] == "REUSE_TERMINAL":
             pass
         else:
             return pulled
 
-    request_id = execution_request_id(runtime_task_id, attempt)
+    request_id = pulled["execution_request_id"]
     snapshot = outbox.snapshot(request_id)
     if snapshot["state"] == COMPLETED:
         return {"action": "ALREADY_COMPLETED", "execution_request_id": request_id}
@@ -148,8 +166,9 @@ def complete_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attemp
 
 
 def is_pending(outbox: DispatchOutbox, runtime_task_id, attempt) -> bool:
-    request_id = execution_request_id(runtime_task_id, attempt)
+    request = outbox.stored_request(runtime_task_id, attempt) or \
+        build_dispatch_request(runtime_task_id, attempt)
     try:
-        return outbox.snapshot(request_id)["state"] == INTENT
+        return outbox.snapshot(request["execution_request_id"])["state"] == INTENT
     except Refused:
         return False

@@ -4,6 +4,13 @@ Date: 2026-10-01
 
 Stacked on PR #297 at `1e442d5db1a852c0bd263eece87138eec5bfd9ac`.
 
+> **Superseded in part (2026-10-02).** This document describes the backend with the *fixed
+> smoke* task only. A second task class, `AI_TASK_V1`, now carries one real task end to end
+> (payload-driven prompt, no fixed accepted literal) while the smoke described here stays
+> byte-for-byte unchanged. See
+> `GO_RUNTIME_C1_REAL_TASK_CONTRACT_V1_20261002.md`. Where this document says "the smoke
+> payload is a literal", that is still true for `AI_WORK_V1` and remains the default.
+
 ## Scope
 
 This change re-architects the C1 real-AI path that an earlier revision of this branch

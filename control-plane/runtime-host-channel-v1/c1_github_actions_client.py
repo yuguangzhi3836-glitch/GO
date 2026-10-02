@@ -34,7 +34,13 @@ import urllib.error
 import urllib.request
 import zipfile
 
-from c1_execution_contract import DISPATCH_ENDPOINT, RUNS_ENDPOINT, Refused, canonical
+from c1_execution_contract import (
+    DISPATCH_ENDPOINT,
+    RUNS_ENDPOINT,
+    Refused,
+    canonical,
+    dispatch_inputs,
+)
 
 API_BASE = "https://api.github.com"
 # 2022-11-28 answers a dispatch with 204 and no body; 2026-03-10 answers 200 with
@@ -152,12 +158,17 @@ class GitHubActionsClient:
 
     # ------------------------------------------------ the five real operations
     def dispatch_workflow(self, request: dict):
-        """Send exactly one dispatch. Returns ("sent", run_id|None) for the outbox."""
-        payload = {"ref": request["ref"], "inputs": {
-            "runtime_task_id": request["runtime_task_id"],
-            "attempt": str(request["attempt"]),
-            "execution_request_id": request["execution_request_id"],
-        }}
+        """Send exactly one dispatch. Returns ("sent", run_id|None) for the outbox.
+
+        The input set comes from the contract rather than from here: a smoke dispatch
+        carries the identity triple and nothing else, while a real dispatch additionally
+        carries its kind and payload so the executor can re-derive the same identity and
+        prompt from what it receives. Repository, workflow file, ref and model stay fixed
+        and stay off the wire in both cases.
+        """
+        payload = {"ref": request["ref"],
+                   "inputs": {name: value if isinstance(value, str) else str(value)
+                              for name, value in dispatch_inputs(request).items()}}
         status, raw = self._call("POST", DISPATCH_ENDPOINT, payload)
         if status == 204 or not raw:
             return ("sent", None)

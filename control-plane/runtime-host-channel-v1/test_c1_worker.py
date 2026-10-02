@@ -93,9 +93,14 @@ class TheWorkerOwnsOnlyAiWork(WorkerCase):
         self.assertEqual(events, ["TASK_ENQUEUED"])
         self.assertNotIn("TASK_CLAIMED", events)
 
-    def test_the_claimed_kind_set_is_exactly_ai_work_v1(self):
-        self.assertEqual(worker.CLAIM_KINDS, ("AI_WORK_V1",))
-        self.assertNotIn("RUNTIME_PROBE", worker.CLAIM_KINDS)
+    def test_the_claimed_kind_set_is_the_two_task_kinds_and_no_probe(self):
+        # The set is closed, and this is the whole of it: the fixed smoke and the real
+        # task kind. It was widened deliberately by the real-task contract, so it is
+        # asserted exactly rather than loosely - a third kind appearing here would be a
+        # silent expansion of what this worker will execute.
+        self.assertEqual(worker.CLAIM_KINDS, ("AI_WORK_V1", "AI_TASK_V1"))
+        for probe in ("RUNTIME_PROBE", "RUNTIME_C1_PROBE_V1", "RUNTIME_HOST_PROBE_V1"):
+            self.assertNotIn(probe, worker.CLAIM_KINDS)
         self.assertEqual(worker.OWNER_C, "C1")
 
     def test_two_ticks_do_not_dispatch_twice(self):
@@ -293,7 +298,7 @@ class NoClaimWithoutACredential(WorkerCase):
         self.assertEqual(code, 0)
         payload = json.loads(out)
         self.assertEqual(payload["status"], "READY")
-        self.assertEqual(payload["claimed_kinds"], ["AI_WORK_V1"])
+        self.assertEqual(payload["claimed_kinds"], ["AI_WORK_V1", "AI_TASK_V1"])
         self.assertEqual(payload["credential"], "present")
         # Readiness only: nothing was claimed and nothing was executed.
         self.assertEqual(self.runtime.status_of(task_id), "QUEUED")

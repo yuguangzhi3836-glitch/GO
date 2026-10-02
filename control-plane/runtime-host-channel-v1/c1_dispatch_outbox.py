@@ -30,6 +30,7 @@ import sqlite3
 from datetime import datetime, timezone
 
 from c1_execution_contract import (
+    KIND,
     Refused,
     build_dispatch_request,
     canonical,
@@ -85,6 +86,7 @@ CREATE TABLE IF NOT EXISTS c1_dispatch (
     result_sha256        TEXT,
     reused_from          TEXT,
     abandon_reason       TEXT,
+    request_json         TEXT,
     updated_at           TEXT NOT NULL
 );
 """
@@ -111,6 +113,12 @@ class DispatchOutbox:
             self._db.execute("ALTER TABLE c1_dispatch ADD COLUMN reused_from TEXT")
         if "abandon_reason" not in present:
             self._db.execute("ALTER TABLE c1_dispatch ADD COLUMN abandon_reason TEXT")
+        if "request_json" not in present:
+            # Rows written before the real-task contract have no stored request. They are
+            # not broken: `stored_request()` returns None for them and the caller falls
+            # back to the smoke binding, which is exactly the identity they were created
+            # from. Nothing is rewritten here.
+            self._db.execute("ALTER TABLE c1_dispatch ADD COLUMN request_json TEXT")
 
     def close(self):
         self._db.close()
@@ -139,24 +147,82 @@ class DispatchOutbox:
             raise Refused("EXECUTION_ABANDONED")
 
     # --------------------------------------------------------------- registration
-    def register(self, runtime_task_id, attempt) -> dict:
+    def register(self, runtime_task_id, attempt, *, request=None) -> dict:
         """Record the intent and report what the caller is allowed to do next.
 
         The intent row is committed before returning, so a crash after this call can
-        never lose the fact that this execution identity exists.
+        never lose the fact that this execution identity exists - nor, for a real task,
+        the payload the identity was derived from. Storing the request is what lets
+        `resume()` rebuild an execution identity without asking the Runtime, which
+        exposes no way to read a task back.
+
+        With no `request` this derives the smoke request, which is the pre-existing
+        behaviour and stays byte-identical.
         """
-        request = build_dispatch_request(runtime_task_id, attempt)
+        if request is None:
+            request = build_dispatch_request(runtime_task_id, attempt)
         request_id = request["execution_request_id"]
         row = self._row(request_id)
         if row is None:
             self._db.execute(
                 "INSERT INTO c1_dispatch (execution_request_id, runtime_task_id, attempt,"
-                " state, dispatches_sent, updated_at) VALUES (?,?,?,?,0,?)",
-                (request_id, runtime_task_id, attempt, INTENT, self.clock()),
+                " state, dispatches_sent, request_json, updated_at) VALUES (?,?,?,?,0,?,?)",
+                (request_id, runtime_task_id, attempt, INTENT, canonical(request),
+                 self.clock()),
             )
             return {"action": "DISPATCH", "request": request}
+        self._confirm_stored_request(row, request)
         return {"action": self.next_action(request_id), "request": request,
                 "state": row["state"]}
+
+    def _confirm_stored_request(self, row, request) -> None:
+        """Backfill a pre-contract row; refuse a request that contradicts a stored one.
+
+        The primary key already commits the identity, so a contradiction can only mean a
+        caller derived a different request for the same id. That is never resolved by
+        silently preferring one of the two.
+        """
+        stored = row["request_json"]
+        if stored is None:
+            self._update(row["execution_request_id"], request_json=canonical(request))
+            return
+        if stored != canonical(request):
+            raise Refused("STORED_REQUEST_DOES_NOT_MATCH")
+
+    def stored_request(self, runtime_task_id, attempt):
+        """The exact request this identity was born with, or None for a legacy row.
+
+        This is how the resume leg knows what a task actually asked for: the Runtime
+        kernel exposes no way to read a task back, so the outbox - which already
+        remembers work in progress - remembers this too. A None means the row predates
+        the real-task contract, and the caller's smoke fallback reproduces exactly the
+        identity such a row was created from.
+        """
+        import json
+
+        row = self._db.execute(
+            "SELECT request_json FROM c1_dispatch WHERE runtime_task_id=? AND attempt=?"
+            " AND request_json IS NOT NULL ORDER BY updated_at DESC LIMIT 1",
+            (runtime_task_id, attempt),
+        ).fetchone()
+        if row is None:
+            return None
+        return json.loads(row["request_json"])
+
+    def task_kind_for(self, request_id) -> str:
+        """The task kind this execution identity belongs to.
+
+        Read from the request stored beside the row, so a sealed result is validated
+        against the acceptance rule of its OWN task class - the smoke's fixed literal or a
+        real task's "any non-empty answer". A row written before the real-task contract
+        has no stored request and is a smoke row by construction.
+        """
+        row = self._row(request_id)
+        if row is None or row["request_json"] is None:
+            return KIND
+        import json
+
+        return json.loads(row["request_json"]).get("task_kind", KIND)
 
     def next_action(self, request_id) -> str:
         row = self._row(request_id)
@@ -258,8 +324,12 @@ class DispatchOutbox:
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
         self._refuse_if_abandoned(request_id)
+        # Validated against this identity's own task class, never a default: a real task's
+        # result must not be judged by the smoke's fixed-literal rule, and the smoke's must
+        # not be relaxed by the real rule.
         validate_result(document, runtime_task_id=runtime_task_id, attempt=attempt,
-                        execution_request_id_=request_id)
+                        execution_request_id_=request_id,
+                        task_kind=self.task_kind_for(request_id))
         payload = canonical(document)
         digest = sha256_hex(payload)
         if row["result_json"] is not None:
@@ -362,7 +432,8 @@ class DispatchOutbox:
         return DISPATCH_STATUS[state]
 
 
-def drive_once(outbox: DispatchOutbox, runtime_task_id, attempt, *, send, find_run) -> dict:
+def drive_once(outbox: DispatchOutbox, runtime_task_id, attempt, *, send, find_run,
+               request=None) -> dict:
     """One bounded advance of the outbox. Returns the action taken and why.
 
     `send(request) -> ("sent", run_id) | ("sent", None) | ("ambiguous", reason)`
@@ -371,10 +442,17 @@ def drive_once(outbox: DispatchOutbox, runtime_task_id, attempt, *, send, find_r
     The safety property is structural: whichever branch runs, `send` is called at most
     once per execution identity, and an ambiguous outcome routes to lookup - never to a
     second POST.
+
+    `request` is the already-formed dispatch request for this execution identity. It is
+    optional only so that the pre-contract smoke path keeps working unchanged: when it is
+    absent the outbox is asked what this identity was registered with, and the smoke
+    binding is derived only if the row predates that.
     """
-    request = build_dispatch_request(runtime_task_id, attempt)
+    if request is None:
+        request = outbox.stored_request(runtime_task_id, attempt) or \
+            build_dispatch_request(runtime_task_id, attempt)
     request_id = request["execution_request_id"]
-    registered = outbox.register(runtime_task_id, attempt)
+    registered = outbox.register(runtime_task_id, attempt, request=request)
     action = registered["action"]
 
     if action == "REUSE_TERMINAL":

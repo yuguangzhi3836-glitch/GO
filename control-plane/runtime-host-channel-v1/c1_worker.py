@@ -37,8 +37,8 @@ Responsibilities, and nothing else
     hands out `QUEUED` tasks only, so a task this worker has already taken is
     `RUNNING` and can never be claimed again - the outbox is what remembers it
   * only when nothing is in flight, claim ONE task, `owner_c=C1`, kind restricted to
-    `CLAIM_KINDS` - AI_WORK_V1 alone. The kind filter is passed to `Runtime.claim()`
-    itself, so the probe kind is never even looked at
+    `CLAIM_KINDS` - the fixed smoke and the real task kind. The kind filter is passed to
+    `Runtime.claim()` itself, so the probe kinds are never even looked at
   * refuse to claim at all when it could not execute the task: claiming a task it cannot
     run would burn one of that task's attempts, so the GitHub credential is checked
     before anything is claimed
@@ -66,9 +66,11 @@ OUTBOX_DB = "/var/lib/go-runtime-c1/outbox.db"
 
 WORKER_ID = "go-runtime-host-c1-worker"
 OWNER_C = "C1"
-# The one kind this worker owns. RUNTIME_PROBE / RUNTIME_C1_PROBE_V1 are not in it and
-# never will be: those belong to the probe path and its own worker.
-CLAIM_KINDS = ("AI_WORK_V1",)
+# The two kinds this worker owns. RUNTIME_PROBE / RUNTIME_C1_PROBE_V1 are not in this set
+# and never will be: those belong to the probe path and its own worker. `AI_TASK_V1` is a
+# real task - its payload carries the task's own objective and scope, and its prompt is
+# derived from that payload by the shared contract rather than from a fixed literal.
+CLAIM_KINDS = ("AI_WORK_V1", "AI_TASK_V1")
 
 DEFAULT_INTERVAL_S = 5.0
 INTERVAL_MIN_S = 1.0
