@@ -1,0 +1,11 @@
+title = "GO default secret detection plus Authorization evidence fragments"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "go-authorization-evidence"
+description = "Authorization value, including pytest-truncated session fragments"
+regex = '''(?i)\b(?:bearer|basic)[ \t]+([a-z0-9_~+./=-]{20,})'''
+secretGroup = 1
+keywords = ["bearer", "basic"]

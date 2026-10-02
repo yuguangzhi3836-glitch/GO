@@ -1,10 +1,17 @@
 import os
+import sys
 import shutil
 import tempfile
 import uuid
 import hashlib
 from pathlib import Path
 import pytest
+
+# Apply to every application test before terminal/JUnit evidence is emitted.
+_application_root = str(Path(__file__).resolve().parents[1])
+if _application_root not in sys.path:
+    sys.path.insert(0, _application_root)
+from tests.evidence_hygiene_plugin import pytest_runtest_makereport, pytest_make_collect_report
 
 # tempfile is portable across the Windows review workstation and Linux Staging.
 # Isolated PostgreSQL evidence jobs set GO_TEST_DATABASE_URL explicitly. All

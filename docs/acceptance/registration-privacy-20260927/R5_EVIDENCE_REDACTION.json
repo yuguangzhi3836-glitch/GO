@@ -1,0 +1,28 @@
+{
+  "schema": "go.pr273.r5.evidence-redaction.v1",
+  "candidate_predecessor": "cb96de655f0c84596e85b379c6e9bd67f92817fe",
+  "original_introduction": "d666da292d1b11a255eeb40dcfd4d4e97d1302c0",
+  "files": [
+    {
+      "path": "docs/acceptance/rental-attractions/20260927/operations-next/independent/attraction-operations-before.log",
+      "original_sha256": "d9616e6556db936d5ef73c8026d29b863dbb489be2a29d8b76dff245300646d6",
+      "sanitized_sha256": "56514d343c8707bf3f9d1d0b4565172664b9161b30bc7fe731265d884411c064",
+      "redactions": 10
+    },
+    {
+      "path": "docs/acceptance/rental-attractions/20260927/operations-next/independent/attraction-operations-before.xml",
+      "original_sha256": "385a5701fea362f1759237de7c5c2473d8c943a4fea1d194594b6dc4000bcca9",
+      "sanitized_sha256": "1b9030a40a835848d0736efa032fc2f1492693345cfd7d89f8b1f9a50bcc4e42",
+      "redactions": 10
+    }
+  ],
+  "reason": "Complete R4 omission in independent failed-test diagnostics. Original history remains unchanged. No credential revocation or rotation. Failed-test verdicts retained.",
+  "c13": "NOT_EXECUTED",
+  "c14": "NOT_EXECUTED",
+  "previous_pass_transferred": false,
+  "changes": [
+    "TEST_ONLY",
+    "BUILD",
+    "DOCUMENTATION"
+  ]
+}

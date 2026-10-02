@@ -5,13 +5,29 @@ on:
       - application/**
       - .github/workflows/ticket-preinventory.yml
       - docs/acceptance/ticket-preinventory/**
+      - ci/evidence_hygiene/**
 permissions:
   contents: read
 concurrency:
   group: ticket-preinventory-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 jobs:
+  evidence-hygiene:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'pytest>=8,<9'
+      - name: Exercise evidence publication failure boundaries
+        run: python -m pytest ci/evidence_hygiene/test_guard.py -q
   postgres:
+    needs: evidence-hygiene
     strategy:
       fail-fast: false
       matrix:
@@ -78,25 +94,21 @@ jobs:
             coupons) suites=(tests/test_flight_partial_runtime.py tests/test_ticket_operations_runtime.py tests/test_flight_coupon_migration.py tests/test_depth19_travel_facts.py tests/independent_ticket/test_independent_coupon_readiness.py tests/independent_ticket/test_independent_ticket_operations.py tests/independent_ticket/test_independent_completed_money.py tests/independent_ticket/test_independent_money_view.py) ;;
             *) exit 1 ;;
           esac
-          python -m pytest "${suites[@]}" --junitxml=../ticket-evidence/junit.xml 2>&1 | tee ../ticket-evidence/pytest.log
-      - name: Hash raw evidence including failures
+          python -m pytest "${suites[@]}" --junitxml=../ticket-evidence/junit.xml 2>&1 | python tests/evidence_hygiene.py stream | tee ../ticket-evidence/pytest.log
+      - name: Sanitize and validate ticket evidence before upload
+        id: sanitized
         if: always()
-        run: |
-          python - <<'PY'
-          import hashlib,json
-          from pathlib import Path
-          root=Path('ticket-evidence');root.mkdir(exist_ok=True)
-          hashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir() if p.is_file()}
-          (root/'SHA256.json').write_text(json.dumps(hashes,indent=2)+'\n')
-          PY
+        run: python application/tests/evidence_hygiene.py prepare ticket-evidence ticket-publish
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{ always() && steps.sanitized.outcome == 'success' }}
         with:
           name: ticket-preinventory-${{ github.event.pull_request.head.sha }}-${{ matrix.suite }}
-          path: ticket-evidence/
+          path: ticket-publish/
+          if-no-files-found: error
           retention-days: 90
 
   browser:
+    needs: evidence-hygiene
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -129,19 +141,27 @@ jobs:
             if curl -fsS http://127.0.0.1:4187/__acceptance/binding > "$RUNNER_TEMP/ticket-runtime-binding.json"; then break; fi
             sleep 1
           done
-          TICKET_BROWSER_ROOT="$ROOT" TICKET_BROWSER_STATE="$STATE" PLAYWRIGHT_MODULE="$RUNNER_TEMP/ticket-browser-deps/node_modules/playwright" node application/scripts/ticket-acceptance/browser.mjs
-      - uses: actions/upload-artifact@v4
+          TICKET_BROWSER_ROOT="$ROOT" TICKET_BROWSER_STATE="$STATE" PLAYWRIGHT_MODULE="$RUNNER_TEMP/ticket-browser-deps/node_modules/playwright" node application/scripts/ticket-acceptance/browser.mjs 2>&1 | python application/tests/evidence_hygiene.py stream
+      - name: Sanitize browser evidence before upload
+        id: sanitized_browser
         if: always()
+        run: |
+          set -euo pipefail
+          RAW="$RUNNER_TEMP/ticket-evidence-raw"
+          mkdir -p "$RAW"
+          for source in "$RUNNER_TEMP/ticket-browser-source/evidence" "$RUNNER_TEMP/ticket-browser-source/binding.json" "$RUNNER_TEMP/ticket-browser-source/fingerprint.json" "$RUNNER_TEMP/ticket-runtime-binding.json" "$RUNNER_TEMP/ticket-runtime.log"; do
+            if [ -e "$source" ]; then cp -R "$source" "$RAW/"; fi
+          done
+          python application/tests/evidence_hygiene.py prepare "$RAW" ticket-browser-publish
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && steps.sanitized_browser.outcome == 'success' }}
         with:
           name: ticket-browser-${{ github.event.pull_request.head.sha }}
-          path: |
-            ${{ runner.temp }}/ticket-browser-source/evidence
-            ${{ runner.temp }}/ticket-browser-source/binding.json
-            ${{ runner.temp }}/ticket-browser-source/fingerprint.json
-            ${{ runner.temp }}/ticket-runtime-binding.json
-            ${{ runner.temp }}/ticket-runtime.log
+          path: ticket-browser-publish/
+          if-no-files-found: error
           retention-days: 14
   native:
+    needs: evidence-hygiene
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -152,16 +172,31 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Native source checks (not a device acceptance)
         working-directory: application/mobile/go-app
         run: |
           set -o pipefail
           npm ci --ignore-scripts
-          npm run typecheck 2>&1 | tee "$RUNNER_TEMP/ticket-native-typecheck.log"
-          npm run test:contract 2>&1 | tee "$RUNNER_TEMP/ticket-native-contract.log"
-      - uses: actions/upload-artifact@v4
+          npm run typecheck 2>&1 | python ../../tests/evidence_hygiene.py stream | tee "$RUNNER_TEMP/ticket-native-typecheck.log"
+          npm run test:contract 2>&1 | python ../../tests/evidence_hygiene.py stream | tee "$RUNNER_TEMP/ticket-native-contract.log"
+      - name: Sanitize native evidence before upload
+        id: sanitized_native
         if: always()
+        run: |
+          set -euo pipefail
+          RAW="$RUNNER_TEMP/ticket-native-raw"
+          mkdir -p "$RAW"
+          for source in "$RUNNER_TEMP/ticket-native-typecheck.log" "$RUNNER_TEMP/ticket-native-contract.log"; do
+            if [ -f "$source" ]; then cp "$source" "$RAW/"; fi
+          done
+          python application/tests/evidence_hygiene.py prepare "$RAW" ticket-native-publish
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && steps.sanitized_native.outcome == 'success' }}
         with:
           name: ticket-native-source-${{ github.event.pull_request.head.sha }}
-          path: ${{ runner.temp }}/ticket-native-*.log
+          path: ticket-native-publish/
+          if-no-files-found: error
           retention-days: 14

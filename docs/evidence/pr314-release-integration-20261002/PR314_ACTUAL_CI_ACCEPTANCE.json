@@ -1,0 +1,1586 @@
+{
+  "schema": "go.pr314.actual-ci-acceptance.v1",
+  "verified_at_utc": "2026-10-02T00:31:15.636488+00:00",
+  "candidate_sha": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+  "candidate_application_tree": "dd542fe725922a0ce7c499401d8615b47ab1a24d",
+  "verdict": "PASS_SCOPED_ACTUAL_CI_ARTIFACTS",
+  "runs": [
+    36945213057,
+    36945213058
+  ],
+  "jobs": [
+    {
+      "run_id": 36945213057,
+      "job_id": 110645649902,
+      "name": "evidence-hygiene",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run python -m pip install 'pytest>=8,<9'",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Exercise failure reports, JUnit, sanitization and rejected uploads",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Scan tracked rental and attraction evidence",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run_id": 36945213057,
+      "job_id": 110645769465,
+      "name": "browser",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install isolated browser dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Rental and attraction normal browser journeys",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sanitize browser evidence before upload",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run_id": 36945213057,
+      "job_id": 110645769520,
+      "name": "postgres (attraction)",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install isolated application dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Bind actual source and isolated database",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "PostgreSQL rental and attraction regression",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sanitize and validate evidence before hashing and upload",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run_id": 36945213057,
+      "job_id": 110645769593,
+      "name": "postgres (rental)",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install isolated application dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Bind actual source and isolated database",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "PostgreSQL rental and attraction regression",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sanitize and validate evidence before hashing and upload",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run_id": 36945213057,
+      "job_id": 110645769602,
+      "name": "postgres (independent)",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install isolated application dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Bind actual source and isolated database",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "PostgreSQL rental and attraction regression",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sanitize and validate evidence before hashing and upload",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run_id": 36945213057,
+      "job_id": 110645769633,
+      "name": "postgres (recovery)",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install isolated application dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Bind actual source and isolated database",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "PostgreSQL rental and attraction regression",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Sanitize and validate evidence before hashing and upload",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run_id": 36945213058,
+      "job_id": 110645649856,
+      "name": "browser",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install isolated browser dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Real browser ticket operations in disposable runtime",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run_id": 36945213058,
+      "job_id": 110645650006,
+      "name": "postgres (resolution)",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install isolated application dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Bind actual source and isolated database",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "PostgreSQL ticket boundaries and complete existing core journeys",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Hash raw evidence including failures",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run_id": 36945213058,
+      "job_id": 110645650053,
+      "name": "postgres (coupons)",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install isolated application dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Bind actual source and isolated database",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "PostgreSQL ticket boundaries and complete existing core journeys",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Hash raw evidence including failures",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run_id": 36945213058,
+      "job_id": 110645650056,
+      "name": "native",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Native source checks (not a device acceptance)",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run_id": 36945213058,
+      "job_id": 110645650081,
+      "name": "postgres (shared)",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install isolated application dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Bind actual source and isolated database",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "PostgreSQL ticket boundaries and complete existing core journeys",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Hash raw evidence including failures",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "run_id": 36945213058,
+      "job_id": 110645650205,
+      "name": "postgres (core)",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install isolated application dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Bind actual source and isolated database",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "PostgreSQL ticket boundaries and complete existing core journeys",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Hash raw evidence including failures",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/upload-artifact@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-python@v5",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact_id": 11201613882,
+      "name": "rental-attraction-browser-3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "run_id": 36945213057,
+      "head_sha": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "zip_sha256": "2699ce9bf8cec6708d884958448d57f79400e9ccba6e01d485642fd3e336e179",
+      "zip_digest_verified": true,
+      "files_checked": 36,
+      "png_byte_checks_without_ocr": 29,
+      "authorization_findings": [],
+      "sha256_manifest_present": true,
+      "sha256_manifest_verified": 35,
+      "sanitization_manifest_present": true,
+      "sanitized_files_verified": 34,
+      "redactions": 0,
+      "source_guard_files_verified": [],
+      "bindings": [
+        {
+          "path": "ticket-runtime-binding.json",
+          "fields": [
+            "background_workers",
+            "browser_gate",
+            "data_class",
+            "database",
+            "final_release",
+            "mode",
+            "outbound_network",
+            "postgres_gate",
+            "python",
+            "schema",
+            "source_tree_sha256",
+            "verified_source_files"
+          ]
+        },
+        {
+          "path": "binding.json",
+          "fields": [
+            "application_tree",
+            "candidate",
+            "source_tree_sha256",
+            "tracked_source_dirty"
+          ],
+          "application_tree": "dd542fe725922a0ce7c499401d8615b47ab1a24d"
+        }
+      ],
+      "junit": [],
+      "status": "PASS"
+    },
+    {
+      "artifact_id": 11201584319,
+      "name": "rental-attraction-preinventory-3a28b6d7215e9285b1c2b153497df9c416a638b2-independent",
+      "run_id": 36945213057,
+      "head_sha": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "zip_sha256": "464c2815029366bc2400b3f868426d53dcd7a73f652dc95ea4d6581150b0baca",
+      "zip_digest_verified": true,
+      "files_checked": 6,
+      "png_byte_checks_without_ocr": 0,
+      "authorization_findings": [],
+      "sha256_manifest_present": true,
+      "sha256_manifest_verified": 5,
+      "sanitization_manifest_present": true,
+      "sanitized_files_verified": 4,
+      "redactions": 0,
+      "source_guard_files_verified": [
+        "application/tests/conftest.py",
+        "application/tests/evidence_hygiene.py",
+        "application/tests/evidence_hygiene_plugin.py"
+      ],
+      "bindings": [
+        {
+          "path": "binding.json",
+          "fields": [
+            "C13",
+            "application_tree",
+            "database",
+            "deployment",
+            "head",
+            "real_psp",
+            "real_supplier",
+            "scope",
+            "server_version",
+            "source_files",
+            "suite"
+          ],
+          "head": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+          "application_tree": "dd542fe725922a0ce7c499401d8615b47ab1a24d",
+          "suite": "independent",
+          "scope": "RENTAL_ATTRACTION_BOUNDARIES_NOT_FULL_44_152",
+          "C13": "NOT_EXECUTED"
+        }
+      ],
+      "junit": [
+        {
+          "path": "junit.xml",
+          "suites": [
+            {
+              "tests": "43",
+              "failures": "0",
+              "errors": "0",
+              "skipped": "0"
+            }
+          ]
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "artifact_id": 11201244353,
+      "name": "rental-attraction-preinventory-3a28b6d7215e9285b1c2b153497df9c416a638b2-recovery",
+      "run_id": 36945213057,
+      "head_sha": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "zip_sha256": "f08549d2ce295272bee9ae21dec48cab1d0f6491f83532acc6b0328b162a1089",
+      "zip_digest_verified": true,
+      "files_checked": 6,
+      "png_byte_checks_without_ocr": 0,
+      "authorization_findings": [],
+      "sha256_manifest_present": true,
+      "sha256_manifest_verified": 5,
+      "sanitization_manifest_present": true,
+      "sanitized_files_verified": 4,
+      "redactions": 0,
+      "source_guard_files_verified": [
+        "application/tests/conftest.py",
+        "application/tests/evidence_hygiene.py",
+        "application/tests/evidence_hygiene_plugin.py"
+      ],
+      "bindings": [
+        {
+          "path": "binding.json",
+          "fields": [
+            "C13",
+            "application_tree",
+            "database",
+            "deployment",
+            "head",
+            "real_psp",
+            "real_supplier",
+            "scope",
+            "server_version",
+            "source_files",
+            "suite"
+          ],
+          "head": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+          "application_tree": "dd542fe725922a0ce7c499401d8615b47ab1a24d",
+          "suite": "recovery",
+          "scope": "RENTAL_ATTRACTION_BOUNDARIES_NOT_FULL_44_152",
+          "C13": "NOT_EXECUTED"
+        }
+      ],
+      "junit": [
+        {
+          "path": "junit.xml",
+          "suites": [
+            {
+              "tests": "70",
+              "failures": "0",
+              "errors": "0",
+              "skipped": "0"
+            }
+          ]
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "artifact_id": 11201971023,
+      "name": "ticket-native-source-3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "run_id": 36945213058,
+      "head_sha": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "zip_sha256": "4e6da8d1286707d9fae6556d8de49556fafd1e22080d784b63b0c15c96691eeb",
+      "zip_digest_verified": true,
+      "files_checked": 2,
+      "png_byte_checks_without_ocr": 0,
+      "authorization_findings": [],
+      "sha256_manifest_present": false,
+      "sha256_manifest_verified": 0,
+      "sanitization_manifest_present": false,
+      "sanitized_files_verified": 0,
+      "redactions": null,
+      "source_guard_files_verified": [],
+      "bindings": [],
+      "junit": [],
+      "status": "PASS"
+    },
+    {
+      "artifact_id": 11201792268,
+      "name": "ticket-preinventory-3a28b6d7215e9285b1c2b153497df9c416a638b2-coupons",
+      "run_id": 36945213058,
+      "head_sha": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "zip_sha256": "4317be60bab4d38db8a94f40c60b92fa28046cd373ac1198c86c31e7bf63bd43",
+      "zip_digest_verified": true,
+      "files_checked": 5,
+      "png_byte_checks_without_ocr": 0,
+      "authorization_findings": [],
+      "sha256_manifest_present": true,
+      "sha256_manifest_verified": 4,
+      "sanitization_manifest_present": false,
+      "sanitized_files_verified": 0,
+      "redactions": null,
+      "source_guard_files_verified": [
+        "application/tests/conftest.py",
+        "application/tests/evidence_hygiene.py",
+        "application/tests/evidence_hygiene_plugin.py"
+      ],
+      "bindings": [
+        {
+          "path": "binding.json",
+          "fields": [
+            "C13",
+            "application_tree",
+            "database",
+            "deployment",
+            "head",
+            "real_psp",
+            "real_supplier",
+            "scope",
+            "server_version",
+            "source_files",
+            "suite"
+          ],
+          "head": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+          "application_tree": "dd542fe725922a0ce7c499401d8615b47ab1a24d",
+          "suite": "coupons",
+          "scope": "DEVELOPER_TICKET_BOUNDARY_AND_REGRESSION_ONLY",
+          "C13": "NOT_EXECUTED"
+        }
+      ],
+      "junit": [
+        {
+          "path": "junit.xml",
+          "suites": [
+            {
+              "tests": "54",
+              "failures": "0",
+              "errors": "0",
+              "skipped": "0"
+            }
+          ]
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "artifact_id": 11201494830,
+      "name": "ticket-preinventory-3a28b6d7215e9285b1c2b153497df9c416a638b2-shared",
+      "run_id": 36945213058,
+      "head_sha": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "zip_sha256": "bda23a87d7844f036a8cd1a8174a8ac747d878142339387f8aa2d0b1f0cb1cd0",
+      "zip_digest_verified": true,
+      "files_checked": 5,
+      "png_byte_checks_without_ocr": 0,
+      "authorization_findings": [],
+      "sha256_manifest_present": true,
+      "sha256_manifest_verified": 4,
+      "sanitization_manifest_present": false,
+      "sanitized_files_verified": 0,
+      "redactions": null,
+      "source_guard_files_verified": [
+        "application/tests/conftest.py",
+        "application/tests/evidence_hygiene.py",
+        "application/tests/evidence_hygiene_plugin.py"
+      ],
+      "bindings": [
+        {
+          "path": "binding.json",
+          "fields": [
+            "C13",
+            "application_tree",
+            "database",
+            "deployment",
+            "head",
+            "real_psp",
+            "real_supplier",
+            "scope",
+            "server_version",
+            "source_files",
+            "suite"
+          ],
+          "head": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+          "application_tree": "dd542fe725922a0ce7c499401d8615b47ab1a24d",
+          "suite": "shared",
+          "scope": "DEVELOPER_TICKET_BOUNDARY_AND_REGRESSION_ONLY",
+          "C13": "NOT_EXECUTED"
+        }
+      ],
+      "junit": [
+        {
+          "path": "junit.xml",
+          "suites": [
+            {
+              "tests": "49",
+              "failures": "0",
+              "errors": "0",
+              "skipped": "0"
+            }
+          ]
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "artifact_id": 11200594689,
+      "name": "ticket-browser-3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "run_id": 36945213058,
+      "head_sha": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "zip_sha256": "07678e5532e2ab945cb9cc7ad18689b5224abe709e5a0597f8601e08843de7f3",
+      "zip_digest_verified": true,
+      "files_checked": 12,
+      "png_byte_checks_without_ocr": 7,
+      "authorization_findings": [],
+      "sha256_manifest_present": false,
+      "sha256_manifest_verified": 0,
+      "sanitization_manifest_present": false,
+      "sanitized_files_verified": 0,
+      "redactions": null,
+      "source_guard_files_verified": [],
+      "bindings": [
+        {
+          "path": "ticket-runtime-binding.json",
+          "fields": [
+            "background_workers",
+            "browser_gate",
+            "data_class",
+            "database",
+            "final_release",
+            "mode",
+            "outbound_network",
+            "postgres_gate",
+            "python",
+            "schema",
+            "source_tree_sha256",
+            "verified_source_files"
+          ]
+        },
+        {
+          "path": "ticket-browser-source/binding.json",
+          "fields": [
+            "application_tree",
+            "candidate",
+            "source_tree_sha256",
+            "tracked_source_dirty"
+          ],
+          "application_tree": "dd542fe725922a0ce7c499401d8615b47ab1a24d"
+        }
+      ],
+      "junit": [],
+      "status": "PASS"
+    },
+    {
+      "artifact_id": 11202026725,
+      "name": "ticket-preinventory-3a28b6d7215e9285b1c2b153497df9c416a638b2-resolution",
+      "run_id": 36945213058,
+      "head_sha": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "zip_sha256": "5bf325747e72e4123ebe289d23f464a8c5f67b93ee4412ff7fb9b176c21c7676",
+      "zip_digest_verified": true,
+      "files_checked": 5,
+      "png_byte_checks_without_ocr": 0,
+      "authorization_findings": [],
+      "sha256_manifest_present": true,
+      "sha256_manifest_verified": 4,
+      "sanitization_manifest_present": false,
+      "sanitized_files_verified": 0,
+      "redactions": null,
+      "source_guard_files_verified": [
+        "application/tests/conftest.py",
+        "application/tests/evidence_hygiene.py",
+        "application/tests/evidence_hygiene_plugin.py"
+      ],
+      "bindings": [
+        {
+          "path": "binding.json",
+          "fields": [
+            "C13",
+            "application_tree",
+            "database",
+            "deployment",
+            "head",
+            "real_psp",
+            "real_supplier",
+            "scope",
+            "server_version",
+            "source_files",
+            "suite"
+          ],
+          "head": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+          "application_tree": "dd542fe725922a0ce7c499401d8615b47ab1a24d",
+          "suite": "resolution",
+          "scope": "DEVELOPER_TICKET_BOUNDARY_AND_REGRESSION_ONLY",
+          "C13": "NOT_EXECUTED"
+        }
+      ],
+      "junit": [
+        {
+          "path": "junit.xml",
+          "suites": [
+            {
+              "tests": "96",
+              "failures": "0",
+              "errors": "0",
+              "skipped": "0"
+            }
+          ]
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "artifact_id": 11201069593,
+      "name": "ticket-preinventory-3a28b6d7215e9285b1c2b153497df9c416a638b2-core",
+      "run_id": 36945213058,
+      "head_sha": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "zip_sha256": "88e0e31bd52ec50cc92e925c2bce08e7af0ee6811f5850a846a7f4cb9b289ddb",
+      "zip_digest_verified": true,
+      "files_checked": 5,
+      "png_byte_checks_without_ocr": 0,
+      "authorization_findings": [],
+      "sha256_manifest_present": true,
+      "sha256_manifest_verified": 4,
+      "sanitization_manifest_present": false,
+      "sanitized_files_verified": 0,
+      "redactions": null,
+      "source_guard_files_verified": [
+        "application/tests/conftest.py",
+        "application/tests/evidence_hygiene.py",
+        "application/tests/evidence_hygiene_plugin.py"
+      ],
+      "bindings": [
+        {
+          "path": "binding.json",
+          "fields": [
+            "C13",
+            "application_tree",
+            "database",
+            "deployment",
+            "head",
+            "real_psp",
+            "real_supplier",
+            "scope",
+            "server_version",
+            "source_files",
+            "suite"
+          ],
+          "head": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+          "application_tree": "dd542fe725922a0ce7c499401d8615b47ab1a24d",
+          "suite": "core",
+          "scope": "DEVELOPER_TICKET_BOUNDARY_AND_REGRESSION_ONLY",
+          "C13": "NOT_EXECUTED"
+        }
+      ],
+      "junit": [
+        {
+          "path": "junit.xml",
+          "suites": [
+            {
+              "tests": "74",
+              "failures": "0",
+              "errors": "0",
+              "skipped": "0"
+            }
+          ]
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "artifact_id": 11202036871,
+      "name": "rental-attraction-preinventory-3a28b6d7215e9285b1c2b153497df9c416a638b2-rental",
+      "run_id": 36945213057,
+      "head_sha": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "zip_sha256": "1a9ab7c45e57aa5759df84ce3286f939693a150925e43570fdf89bfcdd0bba36",
+      "zip_digest_verified": true,
+      "files_checked": 6,
+      "png_byte_checks_without_ocr": 0,
+      "authorization_findings": [],
+      "sha256_manifest_present": true,
+      "sha256_manifest_verified": 5,
+      "sanitization_manifest_present": true,
+      "sanitized_files_verified": 4,
+      "redactions": 0,
+      "source_guard_files_verified": [
+        "application/tests/conftest.py",
+        "application/tests/evidence_hygiene.py",
+        "application/tests/evidence_hygiene_plugin.py"
+      ],
+      "bindings": [
+        {
+          "path": "binding.json",
+          "fields": [
+            "C13",
+            "application_tree",
+            "database",
+            "deployment",
+            "head",
+            "real_psp",
+            "real_supplier",
+            "scope",
+            "server_version",
+            "source_files",
+            "suite"
+          ],
+          "head": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+          "application_tree": "dd542fe725922a0ce7c499401d8615b47ab1a24d",
+          "suite": "rental",
+          "scope": "RENTAL_ATTRACTION_BOUNDARIES_NOT_FULL_44_152",
+          "C13": "NOT_EXECUTED"
+        }
+      ],
+      "junit": [
+        {
+          "path": "junit.xml",
+          "suites": [
+            {
+              "tests": "120",
+              "failures": "0",
+              "errors": "0",
+              "skipped": "0"
+            }
+          ]
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "artifact_id": 11201952652,
+      "name": "rental-attraction-preinventory-3a28b6d7215e9285b1c2b153497df9c416a638b2-attraction",
+      "run_id": 36945213057,
+      "head_sha": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+      "zip_sha256": "d210158974e2bb7247feec2fe480ce33f866dca3fb8c036f9592fa6b50dcc84d",
+      "zip_digest_verified": true,
+      "files_checked": 6,
+      "png_byte_checks_without_ocr": 0,
+      "authorization_findings": [],
+      "sha256_manifest_present": true,
+      "sha256_manifest_verified": 5,
+      "sanitization_manifest_present": true,
+      "sanitized_files_verified": 4,
+      "redactions": 0,
+      "source_guard_files_verified": [
+        "application/tests/conftest.py",
+        "application/tests/evidence_hygiene.py",
+        "application/tests/evidence_hygiene_plugin.py"
+      ],
+      "bindings": [
+        {
+          "path": "binding.json",
+          "fields": [
+            "C13",
+            "application_tree",
+            "database",
+            "deployment",
+            "head",
+            "real_psp",
+            "real_supplier",
+            "scope",
+            "server_version",
+            "source_files",
+            "suite"
+          ],
+          "head": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+          "application_tree": "dd542fe725922a0ce7c499401d8615b47ab1a24d",
+          "suite": "attraction",
+          "scope": "RENTAL_ATTRACTION_BOUNDARIES_NOT_FULL_44_152",
+          "C13": "NOT_EXECUTED"
+        }
+      ],
+      "junit": [
+        {
+          "path": "junit.xml",
+          "suites": [
+            {
+              "tests": "168",
+              "failures": "0",
+              "errors": "0",
+              "skipped": "0"
+            }
+          ]
+        }
+      ],
+      "status": "PASS"
+    }
+  ],
+  "job_log_scan": {
+    "method": "in-memory JWT and Authorization patterns; not Gitleaks",
+    "results": [
+      {
+        "job_id": 110645769465,
+        "name": "browser",
+        "characters": 71805,
+        "jwt_pattern_hits": 0,
+        "authorization_value_hits": 0
+      },
+      {
+        "job_id": 110645769593,
+        "name": "postgres (rental)",
+        "characters": 64767,
+        "jwt_pattern_hits": 0,
+        "authorization_value_hits": 0
+      },
+      {
+        "job_id": 110645769602,
+        "name": "postgres (independent)",
+        "characters": 78579,
+        "jwt_pattern_hits": 0,
+        "authorization_value_hits": 0
+      },
+      {
+        "job_id": 110645769633,
+        "name": "postgres (recovery)",
+        "characters": 64050,
+        "jwt_pattern_hits": 0,
+        "authorization_value_hits": 0
+      },
+      {
+        "job_id": 110645649856,
+        "name": "browser",
+        "characters": 68679,
+        "jwt_pattern_hits": 0,
+        "authorization_value_hits": 0
+      },
+      {
+        "job_id": 110645650006,
+        "name": "postgres (resolution)",
+        "characters": 85238,
+        "jwt_pattern_hits": 0,
+        "authorization_value_hits": 0
+      },
+      {
+        "job_id": 110645650053,
+        "name": "postgres (coupons)",
+        "characters": 61926,
+        "jwt_pattern_hits": 0,
+        "authorization_value_hits": 0
+      },
+      {
+        "job_id": 110645650056,
+        "name": "native",
+        "characters": 23713,
+        "jwt_pattern_hits": 0,
+        "authorization_value_hits": 0
+      },
+      {
+        "job_id": 110645650081,
+        "name": "postgres (shared)",
+        "characters": 63239,
+        "jwt_pattern_hits": 0,
+        "authorization_value_hits": 0
+      },
+      {
+        "job_id": 110645650205,
+        "name": "postgres (core)",
+        "characters": 62599,
+        "jwt_pattern_hits": 0,
+        "authorization_value_hits": 0
+      },
+      {
+        "job_id": 110645649902,
+        "characters": 22007,
+        "jwt_pattern_hits": 0,
+        "authorization_value_hits": 0
+      },
+      {
+        "job_id": 110645769520,
+        "characters": 76544,
+        "jwt_pattern_hits": 0,
+        "authorization_value_hits": 0
+      }
+    ]
+  },
+  "summary": {
+    "jobs_passed": 12,
+    "artifacts_verified": 11,
+    "artifact_files": 94,
+    "png_byte_checks_without_ocr": 36,
+    "junit_tests": 674,
+    "credential_findings": 0,
+    "rental_artifacts_with_verified_sanitization_and_hash_manifests": 5,
+    "legacy_ticket_artifacts_without_sanitization_manifest": 6
+  },
+  "independent_scan": {
+    "scanner": "Gitleaks 8.30.1",
+    "configuration": "ci/evidence_hygiene/gitleaks.toml",
+    "default_rules_enabled": true,
+    "redacted_output": true,
+    "inline_allow_directives_ignored": true,
+    "empty_ignore_file": true,
+    "raw_exit_code": 1,
+    "raw_findings": 243,
+    "reviewed_classifications": {
+      "RENTAL_DEPOSIT_OPERATION_ID": 3,
+      "BUSINESS_IDEMPOTENCY_UUID": 10,
+      "SOURCE_FILE_SHA256_DIGEST": 230
+    },
+    "safe_findings": "PR314_GITLEAKS_REVIEW.json"
+  },
+  "ticket_publication_gap": {
+    "credential_leak_observed": false,
+    "gap": "Legacy ticket upload boundaries lack sanitized staging; browser/native artifacts also lack the publication hash manifest",
+    "integrated_fix": ".github/workflows/ticket-preinventory.yml",
+    "local_preparation_of_actual_ticket_artifacts": [
+      {
+        "artifact_id": 11201971023,
+        "status": "PASS",
+        "files": 2,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 11201792268,
+        "status": "PASS",
+        "files": 4,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 11201494830,
+        "status": "PASS",
+        "files": 4,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 11200594689,
+        "status": "PASS",
+        "files": 12,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 11202026725,
+        "status": "PASS",
+        "files": 4,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 11201069593,
+        "status": "PASS",
+        "files": 4,
+        "redactions": 0
+      }
+    ]
+  },
+  "limits": [
+    "Scoped CI acceptance, not C13/C14 or release approval",
+    "PNG bytes checked without OCR",
+    "Historical session fragments remain in Git history",
+    "GitGuardian backend incident state unchanged",
+    "No revocation, rotation, history rewriting, deployment or real supplier/payment access"
+  ]
+}

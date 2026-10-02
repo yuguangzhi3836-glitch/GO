@@ -1,0 +1,84 @@
+{
+  "schema": "go.unified-business.evidence-hygiene-integration.v1",
+  "base_pr": 313,
+  "base_sha": "07eaef6dd06ef49ccd5b14f318df099e0e3b4f99",
+  "integrated_pr": 314,
+  "integrated_sha": "3a28b6d7215e9285b1c2b153497df9c416a638b2",
+  "candidate_application_tree": "6f97ac5d572dae1de0b3e38b6201da2a6de14216",
+  "pr314_exact_blob_reuse_count": 13,
+  "pr314_exact_blob_reuse_paths": [
+    ".github/workflows/rental-attraction-preinventory.yml",
+    "application/tests/conftest.py",
+    "application/tests/evidence_hygiene.py",
+    "application/tests/evidence_hygiene_plugin.py",
+    "ci/evidence_hygiene/README.md",
+    "ci/evidence_hygiene/gitleaks.toml",
+    "ci/evidence_hygiene/test_guard.py",
+    "docs/acceptance/registration-privacy-20260927/R5_EVIDENCE_HYGIENE.md",
+    "docs/acceptance/registration-privacy-20260927/R5_EVIDENCE_REDACTION.json",
+    "docs/acceptance/registration-privacy-20260927/R5_SCAN_FINDINGS.json",
+    "docs/acceptance/registration-privacy-20260927/R5_SCAN_REPORT.json",
+    "docs/acceptance/rental-attractions/20260927/operations-next/independent/attraction-operations-before.log",
+    "docs/acceptance/rental-attractions/20260927/operations-next/independent/attraction-operations-before.xml"
+  ],
+  "all_other_predecessor_entries_retained": true,
+  "protected_source_retention": [
+    {
+      "path": "application/src",
+      "tree": "3f5108514d37a08af97616fdb63e0382420195e1",
+      "matches_predecessor": true
+    },
+    {
+      "path": "application/frontend",
+      "tree": "2c630bdc4cbba77dc3070bc46a5a3b9e01ffe7d9",
+      "matches_predecessor": true
+    },
+    {
+      "path": "application/mobile",
+      "tree": "a56982a454ac98316c83149b8672caf07d73964a",
+      "matches_predecessor": true
+    },
+    {
+      "path": "application/alembic",
+      "tree": "22bfb360f2dbacf4f2e3bc8ead0b5018b684e800",
+      "matches_predecessor": true
+    },
+    {
+      "path": "deploy",
+      "tree": "0863d861b2a8aa2ec45a4623bc108ffa1b292e7e",
+      "matches_predecessor": true
+    },
+    {
+      "path": "command-center",
+      "tree": "94306141250a59563a8f704fbc8d183fecf3d474",
+      "matches_predecessor": true
+    },
+    {
+      "path": "control-plane",
+      "tree": "ad10c394aac3de7eb61291e2dc65c35fe8a82577",
+      "matches_predecessor": true
+    },
+    {
+      "path": "hk-staging",
+      "tree": "3507c25eeac2392e4e875559f72e05c3e122bec0",
+      "matches_predecessor": true
+    }
+  ],
+  "additional_changes": [
+    ".github/workflows/ticket-preinventory.yml",
+    "docs/evidence/pr314-release-integration-20261002/"
+  ],
+  "change_classes": [
+    "TEST_ONLY",
+    "BUILD",
+    "DOCUMENTATION"
+  ],
+  "local_guard_tests_passed": 25,
+  "c13": "NOT_EXECUTED",
+  "c14": "NOT_EXECUTED",
+  "previous_pass_transferred": false,
+  "main_merge": false,
+  "deployment": false,
+  "credential_rotation": false,
+  "history_rewrite": false
+}

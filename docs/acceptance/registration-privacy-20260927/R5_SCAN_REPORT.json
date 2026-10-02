@@ -1,0 +1,401 @@
+{
+  "schema": "go.pr273.r5.scan-report.v1",
+  "scanned_at_utc": "2026-10-02T00:12:24.146726+00:00",
+  "base_commit": "cb96de655f0c84596e85b379c6e9bd67f92817fe",
+  "candidate_branch": "fix/pr273-evidence-redaction-r5-20261002",
+  "scope_paths": [
+    "docs/acceptance/rental-attractions",
+    "docs/acceptance/registration-privacy-20260927"
+  ],
+  "ref_snapshot": {
+    "refs": 822,
+    "reachable_commits": 2289,
+    "history_commits_touching_scope": 7,
+    "shallow": false,
+    "ref_categories": [
+      "heads",
+      "tags",
+      "pull_heads",
+      "available_pull_merges"
+    ]
+  },
+  "scanner": {
+    "name": "gitleaks",
+    "version": "8.30.1",
+    "release_archive_sha256": "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
+    "official_checksum_verified": true,
+    "default_rules_enabled": true,
+    "additional_rule": "go-authorization-evidence",
+    "inline_allow_directives_ignored": true,
+    "ignore_file_empty": true,
+    "max_decode_depth": 2,
+    "max_archive_depth": 2,
+    "secret_output_redaction_percent": 100
+  },
+  "candidate": {
+    "authorization_findings": 0,
+    "generic_findings": 25,
+    "raw_scanner_exit_code": 1,
+    "reviewed_classifications": {
+      "RENTAL_DEPOSIT_OPERATION_ID": 6,
+      "BUSINESS_IDEMPOTENCY_UUID": 19
+    },
+    "status": "NO_CREDENTIAL_FINDINGS_AFTER_REVIEW_WITHIN_SCOPE",
+    "targeted_scan": {
+      "schema": "go.evidence-hygiene.scan.v1",
+      "files_checked": 80,
+      "png_byte_checks_without_ocr": 0,
+      "findings": [],
+      "status": "PASS",
+      "scope": "authorization_and_session_credentials"
+    }
+  },
+  "history": {
+    "raw_scanner_exit_code": 1,
+    "total_findings": 48,
+    "known_truncated_session_findings": 23,
+    "distinct_truncated_fragments": 6,
+    "reviewed_business_identifier_findings": 25,
+    "credential_revocation_performed": false,
+    "history_rewritten": false,
+    "fragment_classification": [
+      {
+        "commit": "d666da292d1b11a255eeb40dcfd4d4e97d1302c0",
+        "path": "docs/acceptance/rental-attractions/20260927/operations-next/independent/attraction-operations-before.xml",
+        "occurrences": 10,
+        "unique": 5,
+        "all_truncated": true
+      },
+      {
+        "commit": "d666da292d1b11a255eeb40dcfd4d4e97d1302c0",
+        "path": "docs/acceptance/rental-attractions/20260927/operations-next/independent/attraction-operations-before.log",
+        "occurrences": 10,
+        "unique": 5,
+        "all_truncated": true
+      },
+      {
+        "commit": "4c10cced49fd4eff3dd66638ce1c1861bb077ac5",
+        "path": "docs/acceptance/rental-attractions/20260927/first-fix.log",
+        "occurrences": 1,
+        "unique": 1,
+        "all_truncated": true
+      },
+      {
+        "commit": "4c10cced49fd4eff3dd66638ce1c1861bb077ac5",
+        "path": "docs/acceptance/rental-attractions/20260927/first-fix.xml",
+        "occurrences": 2,
+        "unique": 1,
+        "all_truncated": true
+      }
+    ],
+    "status": "KNOWN_HISTORICAL_FRAGMENTS_REMAIN"
+  },
+  "actions_artifacts": {
+    "run_ids": [
+      36305234598,
+      36270344405
+    ],
+    "artifact_count": 10,
+    "files_checked": 100,
+    "png_byte_checks_without_ocr": 52,
+    "authorization_findings": 0,
+    "raw_scanner_exit_code": 1,
+    "generic_findings": 253,
+    "reviewed_classifications": {
+      "SOURCE_FILE_SHA256_DIGEST": 230,
+      "RENTAL_DEPOSIT_OPERATION_ID": 6,
+      "BUSINESS_IDEMPOTENCY_UUID": 17
+    },
+    "inventory": [
+      {
+        "artifact_id": 10927540317,
+        "name": "rental-attraction-preinventory-cb96de655f0c84596e85b379c6e9bd67f92817fe-attraction",
+        "zip_sha256": "ee70cdc61712d3321305c8763c75fd230cc0cfce3b91865dc2ca8741c9ba54e2",
+        "targeted_scan": {
+          "schema": "go.evidence-hygiene.scan.v1",
+          "files_checked": 5,
+          "png_byte_checks_without_ocr": 0,
+          "findings": [],
+          "status": "PASS",
+          "scope": "authorization_and_session_credentials"
+        }
+      },
+      {
+        "artifact_id": 10927530604,
+        "name": "rental-attraction-preinventory-cb96de655f0c84596e85b379c6e9bd67f92817fe-recovery",
+        "zip_sha256": "00e4caf272c0f877f36f20c67bd94b9da24b7029d502386dac4ad44571e8e1fb",
+        "targeted_scan": {
+          "schema": "go.evidence-hygiene.scan.v1",
+          "files_checked": 5,
+          "png_byte_checks_without_ocr": 0,
+          "findings": [],
+          "status": "PASS",
+          "scope": "authorization_and_session_credentials"
+        }
+      },
+      {
+        "artifact_id": 10927235480,
+        "name": "rental-attraction-browser-cb96de655f0c84596e85b379c6e9bd67f92817fe",
+        "zip_sha256": "37d9493d4e9b6070e5b3f746de0e481e253da0e7baf12dabfe9845a18860690d",
+        "targeted_scan": {
+          "schema": "go.evidence-hygiene.scan.v1",
+          "files_checked": 34,
+          "png_byte_checks_without_ocr": 29,
+          "findings": [],
+          "status": "PASS",
+          "scope": "authorization_and_session_credentials"
+        }
+      },
+      {
+        "artifact_id": 10926898316,
+        "name": "rental-attraction-preinventory-cb96de655f0c84596e85b379c6e9bd67f92817fe-rental",
+        "zip_sha256": "66db4a7aa4fdefb754a0dbebc9b7d6a5dc50bf65242f764708a7791f045b20c4",
+        "targeted_scan": {
+          "schema": "go.evidence-hygiene.scan.v1",
+          "files_checked": 5,
+          "png_byte_checks_without_ocr": 0,
+          "findings": [],
+          "status": "PASS",
+          "scope": "authorization_and_session_credentials"
+        }
+      },
+      {
+        "artifact_id": 10926279976,
+        "name": "rental-attraction-preinventory-cb96de655f0c84596e85b379c6e9bd67f92817fe-independent",
+        "zip_sha256": "7326ed84306cf8cd783e00b7e3f34144d0d28d31d4358cffb93f53fa96c4ac5c",
+        "targeted_scan": {
+          "schema": "go.evidence-hygiene.scan.v1",
+          "files_checked": 5,
+          "png_byte_checks_without_ocr": 0,
+          "findings": [],
+          "status": "PASS",
+          "scope": "authorization_and_session_credentials"
+        }
+      },
+      {
+        "artifact_id": 10915915310,
+        "name": "rental-attraction-preinventory-d666da292d1b11a255eeb40dcfd4d4e97d1302c0-rental",
+        "zip_sha256": "46805ac82edc8ff4292328ad242df72ec0efdead3645857aeb6974a0510fbbdf",
+        "targeted_scan": {
+          "schema": "go.evidence-hygiene.scan.v1",
+          "files_checked": 4,
+          "png_byte_checks_without_ocr": 0,
+          "findings": [],
+          "status": "PASS",
+          "scope": "authorization_and_session_credentials"
+        }
+      },
+      {
+        "artifact_id": 10915811382,
+        "name": "rental-attraction-preinventory-d666da292d1b11a255eeb40dcfd4d4e97d1302c0-attraction",
+        "zip_sha256": "fcdaa65f9daf1d0493d45b80f33fc8f0a9abd5f3ec7637c211dca18558cbc80d",
+        "targeted_scan": {
+          "schema": "go.evidence-hygiene.scan.v1",
+          "files_checked": 4,
+          "png_byte_checks_without_ocr": 0,
+          "findings": [],
+          "status": "PASS",
+          "scope": "authorization_and_session_credentials"
+        }
+      },
+      {
+        "artifact_id": 10915531503,
+        "name": "rental-attraction-browser-d666da292d1b11a255eeb40dcfd4d4e97d1302c0",
+        "zip_sha256": "60050d4c67a7766339a01adc49044cebcb0e8851af0d6cebadf07d6f4170ee76",
+        "targeted_scan": {
+          "schema": "go.evidence-hygiene.scan.v1",
+          "files_checked": 28,
+          "png_byte_checks_without_ocr": 23,
+          "findings": [],
+          "status": "PASS",
+          "scope": "authorization_and_session_credentials"
+        }
+      },
+      {
+        "artifact_id": 10915063942,
+        "name": "rental-attraction-preinventory-d666da292d1b11a255eeb40dcfd4d4e97d1302c0-independent",
+        "zip_sha256": "c35f0e067504758f1f0fcf0a65c873252e352b093e4993e0b992584795ea11c5",
+        "targeted_scan": {
+          "schema": "go.evidence-hygiene.scan.v1",
+          "files_checked": 5,
+          "png_byte_checks_without_ocr": 0,
+          "findings": [],
+          "status": "PASS",
+          "scope": "authorization_and_session_credentials"
+        }
+      },
+      {
+        "artifact_id": 10914904398,
+        "name": "rental-attraction-preinventory-d666da292d1b11a255eeb40dcfd4d4e97d1302c0-recovery",
+        "zip_sha256": "1c7001e5206a57ae27885489f553a0e83c29d3dc06ec3fa652be9f1885f91b1a",
+        "targeted_scan": {
+          "schema": "go.evidence-hygiene.scan.v1",
+          "files_checked": 5,
+          "png_byte_checks_without_ocr": 0,
+          "findings": [],
+          "status": "PASS",
+          "scope": "authorization_and_session_credentials"
+        }
+      }
+    ],
+    "preparation_verification": [
+      {
+        "artifact_id": 10914904398,
+        "status": "PASS",
+        "files": 4,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 10915063942,
+        "status": "PASS",
+        "files": 4,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 10915531503,
+        "status": "PASS",
+        "files": 28,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 10915811382,
+        "status": "PASS",
+        "files": 3,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 10915915310,
+        "status": "PASS",
+        "files": 3,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 10926279976,
+        "status": "PASS",
+        "files": 4,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 10926898316,
+        "status": "PASS",
+        "files": 4,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 10927235480,
+        "status": "PASS",
+        "files": 34,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 10927530604,
+        "status": "PASS",
+        "files": 4,
+        "redactions": 0
+      },
+      {
+        "artifact_id": 10927540317,
+        "status": "PASS",
+        "files": 4,
+        "redactions": 0
+      }
+    ]
+  },
+  "actions_job_logs": [
+    {
+      "job_id": 108580431737,
+      "characters": 71132,
+      "jwt_pattern_hits": 0,
+      "authorization_value_hits": 0,
+      "scope": "in_memory_jwt_and_authorization_pattern_scan"
+    },
+    {
+      "job_id": 108580431854,
+      "characters": 78586,
+      "jwt_pattern_hits": 0,
+      "authorization_value_hits": 0,
+      "scope": "in_memory_jwt_and_authorization_pattern_scan"
+    },
+    {
+      "job_id": 108580431796,
+      "characters": 64648,
+      "jwt_pattern_hits": 0,
+      "authorization_value_hits": 0,
+      "scope": "in_memory_jwt_and_authorization_pattern_scan"
+    },
+    {
+      "job_id": 108580431850,
+      "characters": 63991,
+      "jwt_pattern_hits": 0,
+      "authorization_value_hits": 0,
+      "scope": "in_memory_jwt_and_authorization_pattern_scan"
+    },
+    {
+      "job_id": 108580431900,
+      "characters": 76981,
+      "jwt_pattern_hits": 0,
+      "authorization_value_hits": 0,
+      "scope": "in_memory_jwt_and_authorization_pattern_scan"
+    },
+    {
+      "job_id": 108482973894,
+      "characters": 70465,
+      "jwt_pattern_hits": 0,
+      "authorization_value_hits": 0,
+      "scope": "in_memory_jwt_and_authorization_pattern_scan"
+    },
+    {
+      "job_id": 108482973960,
+      "characters": 73648,
+      "jwt_pattern_hits": 0,
+      "authorization_value_hits": 0,
+      "scope": "in_memory_jwt_and_authorization_pattern_scan"
+    },
+    {
+      "job_id": 108482973919,
+      "characters": 78595,
+      "jwt_pattern_hits": 0,
+      "authorization_value_hits": 0,
+      "scope": "in_memory_jwt_and_authorization_pattern_scan"
+    },
+    {
+      "job_id": 108482974068,
+      "characters": 62800,
+      "jwt_pattern_hits": 0,
+      "authorization_value_hits": 0,
+      "scope": "in_memory_jwt_and_authorization_pattern_scan"
+    },
+    {
+      "job_id": 108482973963,
+      "characters": 64013,
+      "jwt_pattern_hits": 0,
+      "authorization_value_hits": 0,
+      "scope": "in_memory_jwt_and_authorization_pattern_scan"
+    }
+  ],
+  "tests": {
+    "command": "python -m pytest ci/evidence_hygiene/test_guard.py -q",
+    "passed": 25,
+    "c13": "NOT_EXECUTED",
+    "c14_full_suite": "NOT_EXECUTED",
+    "previous_pass_transferred": false
+  },
+  "limitations": [
+    "Not a repository-wide or all-object secret scan",
+    "No OCR or visual review of screenshots",
+    "Only two workflow runs and their ten artifacts/ten jobs",
+    "GitGuardian backend rescan and incident closure not performed",
+    "No remote credential replay",
+    "Historical refs, caches and external clones remain unchanged"
+  ],
+  "safe_findings_file": "R5_SCAN_FINDINGS.json",
+  "candidate_application_tree": "dd542fe725922a0ce7c499401d8615b47ab1a24d",
+  "remediation_source_sha256": {
+    "application/tests/conftest.py": "7bdec226e94ac4ac5c178624ae5fff40555ae5fbb3277c1b79ea1fccc99a7b37",
+    "application/tests/evidence_hygiene.py": "62fdfae7c2f0b84c9e06d0ced8a25820f1369ddfee8aad19871d534aec526e48",
+    "application/tests/evidence_hygiene_plugin.py": "36e9e776361e0dce0d20a54d8cbc5e194c781f3b1f0555730b2c24e50788c052",
+    "ci/evidence_hygiene/test_guard.py": "225c27a6ba9097b152a81d5dd42f15191d32dbe4a2b259f4a1f47a3411722ba6",
+    "ci/evidence_hygiene/gitleaks.toml": "b552810aba515292dbe12799bf0101edfdf93f31368318c1a1a38414e9e47006",
+    ".github/workflows/rental-attraction-preinventory.yml": "e125a9013fb34d67c9b842cf18668bb12992a9a1bf484bef6e5588dd753b36e1"
+  }
+}
