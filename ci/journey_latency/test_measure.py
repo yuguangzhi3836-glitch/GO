@@ -117,8 +117,9 @@ def test_shared_release_admits_both_workers_only_after_coordinator(tmp_path):
         for i in range(2):
             wait(tmp_path / f'{i}.ready', timeout=5)
         assert calls == []
-        released_ns = time.monotonic_ns()
-        release.touch()
+        released_ns = time.monotonic_ns() + 100_000_000
+        from measure import atomic
+        atomic(release, {'release_ns': released_ns})
         assert sorted(x for job in jobs for x in job.result(timeout=5)) == list(range(20))
     assert len(calls) == 20 and all(t >= released_ns for _, t in calls)
 
@@ -134,4 +135,36 @@ def test_failed_release_never_calls_application(tmp_path, monkeypatch):
         with pytest.raises(TimeoutError):
             measure.synchronized_batch(pool, [1, 2], calls.append,
                                        tmp_path / 'ready', tmp_path / 'start')
+    assert calls == []
+
+
+def test_release_does_not_fabricate_overlap_for_serial_application(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    import threading
+    import time
+    from measure import synchronized_batch, atomic
+    lock = threading.Lock()
+    deadline = time.monotonic_ns() + 100_000_000
+    atomic(tmp_path / 'start', {'release_ns': deadline})
+    def invoke(task):
+        with lock:
+            start = time.monotonic_ns()
+            end = time.monotonic_ns()
+            return {'pid': 1, 'start_ns': start, 'end_ns': end, 'ok': True}
+    with ThreadPoolExecutor(max_workers=20) as pool:
+        rows = synchronized_batch(pool, list(range(20)), invoke, tmp_path / 'ready', tmp_path / 'start')
+    assert min(r['start_ns'] for r in rows) >= deadline
+    assert summarize(rows)['observed_peak_inflight'] == 1
+    assert summarize(rows)['all_requests_overlap_margin_ms'] < 0
+
+
+@pytest.mark.parametrize('deadline', [True, 'later', -1, 10**30])
+def test_invalid_deadline_never_enters_application(tmp_path, deadline):
+    from concurrent.futures import ThreadPoolExecutor
+    from measure import synchronized_batch, atomic
+    calls = []
+    atomic(tmp_path / 'start', {'release_ns': deadline})
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        with pytest.raises(AssertionError, match='INVALID_RELEASE_DEADLINE'):
+            synchronized_batch(pool, [1, 2], calls.append, tmp_path / 'ready', tmp_path / 'start')
     assert calls == []

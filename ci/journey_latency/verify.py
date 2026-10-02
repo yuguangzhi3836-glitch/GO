@@ -13,7 +13,7 @@ def read(path):
     return json.loads(path.read_text())
 
 
-def verify_journey(folder, head, tree, expected_instances=2, expected_pool=5):
+def verify_journey(folder, head, tree, expected_instances=2, expected_pool=5, *, collect_shortfalls=False):
     folder = Path(folder)
     manifest = read(folder / 'SHA256.json')
     assert manifest and all(hashlib.sha256((folder / p).read_bytes()).hexdigest() == digest
@@ -34,6 +34,7 @@ def verify_journey(folder, head, tree, expected_instances=2, expected_pool=5):
     assert {(x['concurrency'], x['operation']) for x in result['operations']} == expected
     all_orders = set()
     metrics = []
+    shortfalls = []
     for item in result['operations']:
         n, operation = item['concurrency'], item['operation']
         directory = folder / f'tier-{n}' / operation
@@ -54,7 +55,9 @@ def verify_journey(folder, head, tree, expected_instances=2, expected_pool=5):
             assert all(math.isclose(r['duration_ms'], (r['end_ns']-r['start_ns'])/1e6) for r in rows)
             assert summarize(rows) == {key: summary[key] for key in summarize(rows)}
             assert summary['pids'] == pids and summary['requested_concurrency'] == n
-            assert summary['observed_peak_inflight'] == n, 'JOURNEY_CONCURRENCY_SHORTFALL'
+            if summary['observed_peak_inflight'] != n:
+                shortfalls.append({'concurrency': n, 'operation': operation, 'batch': batch,
+                                   'observed_peak_inflight': summary['observed_peak_inflight']})
             assert summary['mode'] == ('PROCESS_COLD_FIRST_BATCH' if batch == 0 else 'CONTINUED_PROCESS')
             counters = [read(directory / f'worker-{i}/batch-{batch}.json') for i in range(expected_instances)]
             assert sorted(r['owner'] for c in counters for r in c['rows']) == sorted(r['owner'] for r in rows)
@@ -74,7 +77,9 @@ def verify_journey(folder, head, tree, expected_instances=2, expected_pool=5):
         assert f['order_status'] == f['trips_state'] == 'COMPLETED'
         assert f['attempts'] == 1 and f['ledger_entries'] == 2
         assert f['capture_amount_minor'] == f['ledger_debit_minor'] == f['ledger_credit_minor'] == 16800
-    return {'metrics': metrics, 'schema': binding['schema'], 'head': head, 'application_tree': tree,
+    if not collect_shortfalls:
+        assert not shortfalls, 'JOURNEY_CONCURRENCY_SHORTFALL'
+    return {'concurrency_valid': not shortfalls, 'concurrency_shortfalls': shortfalls, 'metrics': metrics, 'schema': binding['schema'], 'head': head, 'application_tree': tree,
             'orders_verified': len(facts), 'environment': {k: binding[k] for k in
             ('cpu_count', 'cpu_model', 'python', 'platform', 'packages', 'postgresql')},
             'scope': 'Cold batch plus three continued bursts; not sustained capacity or HTTP latency'}

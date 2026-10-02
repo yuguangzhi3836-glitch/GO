@@ -44,3 +44,13 @@ def test_invalid_evidence_never_passes(mutation):
     elif mutation=='nonfinite':data[1]['stages'][1]['application_cpu_seconds']=float('nan')
     elif mutation=='twenty':data[1]['stages'][0]['pass']=False
     with pytest.raises(AssertionError):experiment.evaluate(data)
+
+
+def test_complete_budget_cannot_override_journey_shortfall():
+    data=rounds()
+    for r in data:r['journey']={'concurrency_valid':True}
+    assert experiment.evaluate(data)['meets_budget']
+    assert experiment.all_journeys_qualified(data)
+    data[1]['journey']['concurrency_valid']=False
+    assert experiment.all_journeys_qualified(data) is False
+    assert experiment.all_journeys_qualified(data[:3]) is False

@@ -28,6 +28,7 @@ from run import guard, write, imports
 
 TIERS = (20, 100)
 BATCHES = 4
+RELEASE_LEAD_NS = 100_000_000
 OPERATIONS = ('create_order', 'payment_confirm', 'order_query')
 
 
@@ -45,6 +46,8 @@ def summarize(rows):
         'p95_ms': values[math.ceil(len(values) * .95) - 1],
         'p99_ms': values[math.ceil(len(values) * .99) - 1],
         'max_ms': values[-1], 'observed_peak_inflight': peak,
+        'request_start_spread_ms': (max(r['start_ns'] for r in rows) - min(r['start_ns'] for r in rows)) / 1e6,
+        'all_requests_overlap_margin_ms': (min(r['end_ns'] for r in rows) - max(r['start_ns'] for r in rows)) / 1e6,
         'batch_span_seconds': seconds,
         'successful_per_second_in_burst': sum(r['ok'] for r in rows) / seconds,
         'pids': sorted({r['pid'] for r in rows})}
@@ -74,24 +77,33 @@ def atomic(path, data):
 def synchronized_batch(pool, tasks, invoke, ready_file, start_file):
     """One release watcher per process; request clocks stay inside invoke.
 
-    A shared coordinator marker releases both processes. Never hold request
+    A shared future monotonic deadline releases all request threads. Polling and
+    Event notification happen before that deadline, outside request clocks. Never hold request
     completion or move its start clock before admission to fabricate overlap.
     """
     barrier = threading.Barrier(len(tasks) + 1)
     released = threading.Event()
     cancelled = threading.Event()
+    release_at = [None]
     def admitted(task):
         barrier.wait(60)
         if not released.wait(130):
             raise TimeoutError('JOURNEY_RELEASE_TIMEOUT')
         if cancelled.is_set():
             raise RuntimeError('JOURNEY_RELEASE_CANCELLED')
+        # Sleep before entering the application; never delay its completion.
+        while (remaining := release_at[0] - time.monotonic_ns()) > 0:
+            time.sleep(remaining / 1e9)
         return invoke(task)
     futures = [pool.submit(admitted, task) for task in tasks]
     try:
         barrier.wait(60)
         atomic(ready_file, {'pid': os.getpid()})
         wait(start_file)
+        marker = json.loads(start_file.read_text())
+        deadline = marker['release_ns']
+        assert type(deadline) is int and 0 < deadline <= time.monotonic_ns() + 2_000_000_000, 'INVALID_RELEASE_DEADLINE'
+        release_at[0] = deadline
     except BaseException:
         cancelled.set()
         barrier.abort()
@@ -179,8 +191,8 @@ def measure(operation, batches, directory):
         for number, tasks in enumerate(batches):
             for index in range(instances):
                 wait(directory / f'worker-{index}/batch-{number}.ready', processes)
-            release_ns = time.monotonic_ns()
-            (directory / f'batch-{number}.start').touch()
+            release_ns = time.monotonic_ns() + RELEASE_LEAD_NS
+            atomic(directory / f'batch-{number}.start', {'release_ns': release_ns})
             rows = []; counters = []
             for index in range(instances):
                 path = directory / f'worker-{index}/batch-{number}.json'
@@ -318,6 +330,7 @@ def main():
     out = args.out or ROOT / 'journey-latency-evidence'; out.mkdir(exist_ok=False)
     schema = 'mi_' + uuid4().hex; engine = create_engine(url); code = 1
     binding = {'head': head, 'application_tree': app, 'baseline': frozen,
+        'release_mode': 'SCHEDULED_MONOTONIC_DEADLINE', 'release_lead_ns': RELEASE_LEAD_NS,
         'tiers': TIERS, 'batches_per_operation': BATCHES, 'instances_per_operation': args.instances_per_operation,
         'pool_per_instance': args.pool_per_instance, 'max_overflow': 0, 'schema': schema,
         'python': sys.version, 'platform': platform.platform(), 'cpu_count': os.cpu_count(),

@@ -27,7 +27,7 @@ state, full replay/conflict output, forfeiture parent protection, PostgreSQL
 same-key and amount races, disconnects before/after commits, process exit after
 AUTH, commit failure and lost CAPTURE commit acknowledgement. PostgreSQL jobs
 require zero skips. Import-time cold-mapper preservation and lazy query-shape reuse are also checked.
-The frozen 250 regressions and 32 harness tests also run.
+The frozen 250 regressions and 40 harness tests also run.
 
 The measurement definition is inherited from PR284's verified tools: 4 processes,
 pool4/overflow0, baseline/candidate/candidate/baseline, each at20 then100 actual
@@ -53,3 +53,20 @@ First attempt `9ba3c41b1401` is INVALID: import-time load_only configured all
 4.456s result is not accepted. Evidence remains on
 `evidence/query-cost-ride-query-20261002`. The corrected candidate builds and caches
 loader options only on first actual use, preserving the original cold boundary.
+
+Second attempt `9bc301b7d865` preserved the cold boundary but is incomplete: one
+continued order-query burst achieved 99/100 actual overlap and stopped the run.
+Evidence remains on `evidence/query-cost-ride-query-r2-20261002`.
+
+The third attempt changes only measurement orchestration. All ready workers receive
+a common monotonic release deadline 100 ms ahead, removing marker-poll release
+skew. Request clocks still begin at actual invocation; completion is never delayed
+to manufacture overlap. Start spread and the all-request overlap margin accompany
+the existing true-overlap calculation. The same application tree is retained.
+
+An isolated supplementary concurrency shortfall is recorded while the remaining
+ABBA rounds and diagnostics finish. Any such shortfall still invalidates adoption,
+even when the primary budget passes. Ledger, source-binding, cold-boundary and
+request-error failures still abort immediately. Serialized requests are explicitly
+tested to remain concurrency one. Evidence for this attempt is published to
+`evidence/query-cost-ride-query-r3-20261002`.

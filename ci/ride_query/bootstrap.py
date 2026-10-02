@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 ROOT=Path(__file__).resolve().parents[2]
 PYTHON='/workspaces/.go-capacity-venv/bin/python'
 NAME='literate-winner-vpqqjgwvpjprcp7gw'
-BRANCH='evidence/query-cost-ride-query-r2-20261002'
+BRANCH='evidence/query-cost-ride-query-r3-20261002'
 PG='go-query-cost-ride-query-pg'
 OUT=ROOT/'ride-query-qualification';OUT.mkdir(exist_ok=False)
 START=time.monotonic();DEADLINE=START+5400
@@ -37,6 +37,7 @@ try:
     (OUT/'hardware.json').write_text(json.dumps(runpy.run_path(str(ROOT/'ci/four_vcpu/run.py'))['capacity'](),indent=2)+'\n')
     (OUT/'packages.txt').write_text(subprocess.check_output([PYTHON,'-m','pip','freeze'],text=True))
     run([PYTHON,'-m','pytest','-p','no:cacheprovider','ci/ride_query/test_gate.py','ci/multi_instance/test_profiling_cost.py','ci/journey_latency/test_measure.py','ci/journey_latency/test_verify.py','-q','--junitxml='+str(OUT/'harness.xml')],log=OUT/'harness.log')
+    junit(OUT/'harness.xml',40)
     run(['docker','run','--name',PG,'--rm','-d','-e','POSTGRES_USER=go_ci','-e','POSTGRES_PASSWORD=isolated_multi_only','-e','POSTGRES_DB=go_c11_isolated','-p','127.0.0.1:5432:5432','postgres:18.4']);pg=True
     for _ in range(60):
         if run(['docker','exec',PG,'pg_isready','-U','go_ci','-d','go_c11_isolated'],check=False)==0:break

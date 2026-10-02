@@ -43,6 +43,9 @@ def evaluate(rounds):
         'candidate_100_pass':all(r['stages'][1]['pass'] for r in rounds if r['label']=='candidate'),
         'adoption_authorized':False}
 
+def all_journeys_qualified(rounds):
+    return len(rounds)==4 and all(r.get('journey',{}).get('concurrency_valid') is True for r in rounds)
+
 def run_round(checkout,out,sha,tree,diagnostic=False):
     env=dict(os.environ,EXPECTED_HEAD=sha,EXPECTED_APPLICATION_TREE=tree)
     args=[sys.executable,str(checkout/'ci/ride_query/round.py'),'--instances','4','--pool','4','--out',str(out)]
@@ -92,7 +95,7 @@ def main():
                 journey=out/f'{number}-{label}-journey'
                 with journey.with_suffix('.log').open('w') as log:
                     subprocess.run([sys.executable,str(checkout/'ci/journey_latency/measure.py'),'--instances-per-operation','4','--pool-per-instance','4','--application-tree',tree,'--out',str(journey)],env=dict(os.environ,EXPECTED_HEAD=sha),cwd=checkout,stdout=log,stderr=subprocess.STDOUT,check=True)
-                row['journey']=verify_journey(journey,sha,tree,4,4)
+                row['journey']=verify_journey(journey,sha,tree,4,4,collect_shortfalls=True)
                 diagnostic=out/f'{number}-{label}-diagnostic'
                 row['diagnostic']=run_round(checkout,diagnostic,sha,tree,True)
                 row['diagnostic_excluded_from_budget']=True
@@ -104,6 +107,8 @@ def main():
         assert len({r['journey']['schema'] for r in summary['rounds']})==4
         assert all(r['journey']['environment']==summary['rounds'][0]['journey']['environment'] for r in summary['rounds'])
         summary['budget']=evaluate(summary['rounds'])
+        if not all_journeys_qualified(summary['rounds']):
+            summary['status']='INVALID_JOURNEY_CONCURRENCY_NOT_ACCEPTED';return 1
         if not summary['budget']['meets_budget']:
             summary['status']='REJECT_BUDGET_NOT_MET';return 1
         if not summary['budget']['candidate_100_pass']:
