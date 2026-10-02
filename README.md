@@ -2,6 +2,8 @@
 
 > Status refreshed 2026-09-13. This README is the repository entry point for current product lineage, project operating context, and operational-source boundaries. It is descriptive project context, not Execution Authority.
 
+> **Current fast status:** read [docs/project/UPDATE_LOG.md](docs/project/UPDATE_LOG.md) for the short project timeline, and [docs/canonical-baseline/CURRENT_HK_RUNTIME.json](docs/canonical-baseline/CURRENT_HK_RUNTIME.json) for the current HK runtime pointer. The detailed runtime values below include a 2026-09-13/14 snapshot and must not be treated as today's live runtime identity.
+
 ## CURRENT ACTIVE HK BUSINESS RUNTIME — DEPTH48
 
 HK-STAGING is running the DEPTH48 business runtime since **2026-09-13**. The
