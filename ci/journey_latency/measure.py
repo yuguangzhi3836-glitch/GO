@@ -108,7 +108,7 @@ def worker(job_path):
     from go_hotel.db.session import engine
     operations = Operations()
     # Imports construct an engine but do not open its connections or configure mappers.
-    assert engine.pool.size() == 5 and engine.pool.checkedout() == 0
+    assert engine.pool.size() == int(os.environ['DATABASE_POOL_SIZE']) and engine.pool.checkedout() == 0
     assert engine.pool.checkedin() == 0, 'COLD_POOL_ALREADY_USED'
     from sqlalchemy.orm import Mapper
     # Passive inspection only: querying mapper.configured does not initialize it.

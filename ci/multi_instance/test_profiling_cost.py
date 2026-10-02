@@ -54,3 +54,27 @@ def test_child_thread_is_root_not_nested_cpu():
     p=data['service_calls']['parent']
     assert p['exclusive_calling_thread_cpu_seconds']==p['inclusive_calling_thread_cpu_seconds']
     engine.dispose()
+
+
+def test_reused_lease_and_inner_money_body_are_both_visible():
+    engine=create_engine('sqlite://',poolclass=QueuePool,pool_size=1,max_overflow=0)
+    m=Metrics(engine)
+    money=SimpleNamespace(create_in_session=lambda c:c.execute(text('select 1')).scalar())
+    money.create=lambda:None
+    def graph():
+        with engine.connect() as c:
+            for _ in range(2):
+                with c.begin():money.create_in_session(c)
+    bridge=SimpleNamespace(_ride_money_graph=graph)
+    bridge.checkout_contract=lambda:bridge._ride_money_graph()
+    m.track(money,'create','money.create')
+    m.track(bridge,'checkout_contract','bridge.checkout_contract')
+    bridge.checkout_contract()
+    data=m.snapshot()
+    assert data['connection_acquisitions']==data['connection_holds']==1
+    assert data['connection_by_service']['bridge._ride_money_graph']['hold_count']==1
+    assert data['sql_by_service']['money.create_in_session']['count']==2
+    assert data['dbapi_commits_by_service']['bridge._ride_money_graph']['calls']==2
+    assert data['service_calls']['money.create_in_session']['calls']==2
+    assert engine.pool.checkedout()==0
+    engine.dispose()

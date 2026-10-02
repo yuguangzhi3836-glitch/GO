@@ -1,5 +1,6 @@
 """Test-only diagnostics. No SQL parameters, URLs or application data recorded."""
 from collections import defaultdict
+import math
 from functools import wraps
 import hashlib
 import resource
@@ -22,6 +23,7 @@ class Metrics:
         self.queue_waits_by_service=defaultdict(list)
         self.holds_by_service=defaultdict(list)
         self.sql_by_service=defaultdict(lambda:[0,0.,0.])
+        self.tracked=set()
         def active_service():
             stack=getattr(self.local,'stack',())
             return stack[-1] if stack else 'unattributed'
@@ -98,6 +100,17 @@ class Metrics:
                 service=self.sql_by_service[active_service()]
                 service[0]+=1;service[1]+=elapsed;service[2]+=used
     def track(self,service,method,label):
+        identity=(id(service),method)
+        if identity in self.tracked:return
+        self.tracked.add(identity)
+        # The candidate bypasses money.create and explicitly owns a checkout.
+        # Observe its real body and enclosing lease, rather than reporting the
+        # disappeared wrapper's cost as a saving. Uninstrumented runs do not
+        # construct Metrics and retain the frozen workload unchanged.
+        if label=='money.create' and hasattr(service,'create_in_session'):
+            self.track(service,'create_in_session','money.create_in_session')
+        if label=='bridge.checkout_contract' and hasattr(service,'_ride_money_graph'):
+            self.track(service,'_ride_money_graph','bridge._ride_money_graph')
         original=getattr(service,method)
         @wraps(original)
         def measured(*args,**kwargs):
@@ -124,6 +137,8 @@ class Metrics:
         setattr(service,method,measured)
     def snapshot(self):
         usage=resource.getrusage(resource.RUSAGE_SELF)
+        def percentile(values):
+            return sorted(values)[math.ceil(len(values)*.95)-1] if values else 0
         return {'wall_seconds':time.monotonic()-self.started,
             'user_cpu_seconds':usage.ru_utime-self.cpu.ru_utime,'system_cpu_seconds':usage.ru_stime-self.cpu.ru_stime,
             'peak_rss_kib':usage.ru_maxrss,'connection_acquisitions':len(self.acquisitions),
@@ -139,8 +154,12 @@ class Metrics:
                        'acquisition_sum_seconds':sum(self.acquisitions_by_service[label]),
                        'queue_gets':len(self.queue_waits_by_service[label]),
                        'queue_sum_seconds':sum(self.queue_waits_by_service[label]),
+                       'queue_p95_seconds':percentile(self.queue_waits_by_service[label]),
+                       'queue_max_seconds':max(self.queue_waits_by_service[label],default=0),
                        'hold_count':len(self.holds_by_service[label]),
-                       'hold_sum_seconds':sum(self.holds_by_service[label])}
+                       'hold_sum_seconds':sum(self.holds_by_service[label]),
+                       'hold_p95_seconds':percentile(self.holds_by_service[label]),
+                       'hold_max_seconds':max(self.holds_by_service[label],default=0)}
                 for label in (self.acquisitions_by_service.keys() |
                               self.queue_waits_by_service.keys() |
                               self.holds_by_service.keys())},
