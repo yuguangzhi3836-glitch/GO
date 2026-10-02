@@ -111,7 +111,10 @@ def offer_terms(offer_id, total, currency, pickup, dropoff, pickup_at, current_m
 
 def freeze_in(s, order, offer_id, accepted_hash):
     quoted = offer_terms(offer_id, order.total_amount_minor, order.currency,
-                         order.pickup, order.dropoff, order.pickup_at, db_now_ms(s), session=s)
+                         # offer_terms samples database time after resolving the
+                         # policy when a session is supplied. An earlier sample
+                         # was discarded, adding a round trip without authority.
+                         order.pickup, order.dropoff, order.pickup_at, None, session=s)
     if quoted['state'] != 'POLICY_AVAILABLE':
         raise ValueError('RIDE_CANCELLATION_POLICY_UNAVAILABLE')
     if not isinstance(accepted_hash, str) or accepted_hash != quoted['policy_hash']:
