@@ -1,9 +1,11 @@
 """Fixed, isolated HK_STAGING_TEST_PR executor; no Compose or runtime bindings."""
 import hashlib
+import inspect
 import os
 import pathlib
 import re
 import shutil
+import shlex
 import stat
 import subprocess
 import tempfile
@@ -12,7 +14,7 @@ from . import artifact_store
 
 ACTION = "HK_STAGING_TEST_PR"
 PROFILE = "go-application-python-v1"   # the Task-facing contract: unchanged by V2
-EXECUTOR_VERSION = "test-pr-v3"
+EXECUTOR_VERSION = "test-pr-v4-runtime-root"
 REPOSITORY = "git@github.com:yuguangzhi3836-glitch/GO.git"
 DEPLOY_KEY = "/etc/go-hk-agent/keys/github-go-source-reader"
 DOCKERFILE = "/usr/local/libexec/go-hk-test-pr/Dockerfile.go-application-python-v2"
@@ -26,6 +28,9 @@ BUILDER_IMAGE = "go-hotel:depth48-runtime-6d0fd905"
 BUILDER_IMAGE_ID = "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"
 ARTIFACT_STORE = artifact_store.STORE_ROOT
 DEPENDENCY_PROFILE_SHA256 = "904ede5e7ee3408e5f80bc2957d5f4b4d32754be6797bf6a53cff545b2fc94aa"
+# Exact current GO profile: legacy requirements plus uvicorn[standard].
+# Acceptance still requires the frozen, networkless builder probe below.
+STANDARD_DEPENDENCY_PROFILE_SHA256 = "c3140ecf1e38bf7f635ff6a80758677441a56866d0aa18727a2f6193adc707e1"
 PYTHONPYCACHEPREFIX = "/tmp/pycache"
 SHA = re.compile(r"^[0-9a-f]{40}$")
 PR = re.compile(r"^[1-9][0-9]{0,8}$")
@@ -41,7 +46,9 @@ DURABILITY_REASON = "ARTIFACT_DURABILITY_REJECT"
 
 
 class Reject(Exception):
-    pass
+    def __init__(self, code):
+        super().__init__(code)
+        self.executor_version = EXECUTOR_VERSION
 
 
 def durability_reject(exc):
@@ -125,6 +132,94 @@ PROFILE_PROGRAM = (
 )
 
 
+STANDARD_DEPENDENCIES_PROGRAM = r"""
+import importlib.metadata as metadata
+import re
+import sys
+try:
+    from packaging.requirements import Requirement
+    from packaging.utils import canonicalize_name
+except ImportError:
+    from pip._vendor.packaging.requirements import Requirement
+    from pip._vendor.packaging.utils import canonicalize_name
+
+def verify_standard(distribution=metadata.distribution):
+    pending = [Requirement("uvicorn[standard]>=0.30")]
+    visited = set()
+    count = 0
+    while pending:
+        requirement = pending.pop()
+        count += 1
+        if count > 256 or requirement.url:
+            raise ValueError("DEPENDENCY_GRAPH_REJECT")
+        name = canonicalize_name(requirement.name)
+        if not re.fullmatch(r"[a-z0-9][a-z0-9.-]{0,127}", name):
+            raise ValueError("DEPENDENCY_NAME_REJECT")
+        try:
+            installed = distribution(name)
+        except metadata.PackageNotFoundError:
+            raise ValueError("DEPENDENCY_MISSING:" + name) from None
+        if not requirement.specifier.contains(
+                installed.version, prereleases=bool(requirement.specifier.prereleases)):
+            raise ValueError("DEPENDENCY_VERSION_REJECT:" + name)
+        extras = frozenset(canonicalize_name(item) for item in requirement.extras)
+        provided = {canonicalize_name(item) for item in
+                    installed.metadata.get_all("Provides-Extra", [])}
+        if not extras <= provided:
+            raise ValueError("DEPENDENCY_EXTRA_REJECT:" + name)
+        identity = (name, extras)
+        if identity in visited:
+            continue
+        visited.add(identity)
+        requires = installed.requires
+        # Uvicorn's standard extra has an actual dependency contract.  Missing
+        # Requires-Dist must never make an incomplete image vacuously pass.
+        if name == "uvicorn" and not requires:
+            raise ValueError("DEPENDENCY_METADATA_REJECT:uvicorn")
+        for raw in requires or []:
+            child = Requirement(raw)
+            if child.marker is None or any(
+                    child.marker.evaluate({"extra": extra}) for extra in ("", *sorted(extras))):
+                pending.append(child)
+    return "UVICORN_STANDARD_DEPS_OK"
+
+if __name__ == "__main__":
+    try:
+        print(verify_standard())
+    except Exception as error:
+        message = str(error)
+        if not re.fullmatch(r"DEPENDENCY_[A-Z_]+(?::[a-z0-9][a-z0-9.-]{0,127})?", message):
+            message = "DEPENDENCY_METADATA_REJECT"
+        print(message, file=sys.stderr)
+        raise SystemExit(1)
+"""
+
+
+def _verify_dependency_profile(profile, runner):
+    if profile == DEPENDENCY_PROFILE_SHA256:
+        return
+    if profile != STANDARD_DEPENDENCY_PROFILE_SHA256:
+        error = Reject("TEST_PR_DEPENDENCY_PROFILE_REJECT")
+        # Only a validated digest reaches this function; no candidate content
+        # or credentials are copied into the diagnostic channel.
+        error.stderr = "observed_profile_sha256=" + profile
+        raise error
+    try:
+        result = runner([
+            "/usr/bin/docker", "run", "--rm", "--network", "none",
+            "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
+            "--pids-limit", "32", "--memory", "128m", "--cpus", "0.25",
+            "--entrypoint", "python", BUILDER_IMAGE, "-I", "-c",
+            STANDARD_DEPENDENCIES_PROGRAM], timeout=60)
+    except Reject as exc:
+        error = Reject("TEST_PR_DEPENDENCY_ENVIRONMENT_REJECT")
+        for attribute in ("stdout", "stderr", "returncode"):
+            setattr(error, attribute, getattr(exc, attribute, None))
+        raise error from exc
+    if result.stdout.strip() != "UVICORN_STANDARD_DEPS_OK":
+        raise Reject("TEST_PR_DEPENDENCY_ENVIRONMENT_REJECT")
+
+
 def _dependency_profile(path, workspace, runner):
     try:
         resolved = path.resolve(strict=True)
@@ -148,6 +243,23 @@ def _builder_image(runner):
         raise Reject("TEST_PR_BUILDER_IMAGE_REJECT")
 
 
+def runtime_source_digest(root):
+    """Bind served frontend and imported Python bytes, including deleted files."""
+    digest = hashlib.sha256()
+    for name in ("src", "frontend", "alembic", "alembic.ini", "pyproject.toml"):
+        path = pathlib.Path(root) / name
+        paths = sorted(path.rglob("*")) if path.is_dir() else [path]
+        for item in paths:
+            if "__pycache__" in item.parts or item.suffix in (".pyc", ".pyo"):
+                continue
+            if item.is_symlink():
+                raise ValueError("runtime source symlink refused")
+            if item.is_file():
+                digest.update(item.relative_to(root).as_posix().encode() + b"\0")
+                digest.update(hashlib.sha256(item.read_bytes()).digest())
+    return digest.hexdigest()
+
+
 def execute(task, runner=_run):
     source = validate_parameters(task["parameters"])
     commit = source["commit_sha"]
@@ -167,8 +279,11 @@ def execute(task, runner=_run):
         if not (context / "pyproject.toml").is_file():
             raise Reject("TEST_PR_SOURCE_LAYOUT_REJECT")
         _builder_image(runner)
-        if _dependency_profile(context / "pyproject.toml", context, runner) != DEPENDENCY_PROFILE_SHA256:
-            raise Reject("TEST_PR_DEPENDENCY_PROFILE_REJECT")
+        _verify_dependency_profile(
+            _dependency_profile(context / "pyproject.toml", context, runner), runner)
+        source_check = ("import hashlib,pathlib\n" + inspect.getsource(runtime_source_digest)
+                        + "\nassert runtime_source_digest(pathlib.Path('/app')) == "
+                        + repr(runtime_source_digest(context)))
         runner(["/usr/bin/docker", "build", "--network", "none", "--pull=false", "--file", DOCKERFILE, "--tag", image, str(context)], timeout=900)
         image_id = runner(["/usr/bin/docker", "image", "inspect", image, "--format", "{{.Id}}"], timeout=30).stdout.strip()
         if not re.fullmatch(r"sha256:[0-9a-f]{64}", image_id):
@@ -176,8 +291,12 @@ def execute(task, runner=_run):
         runner(["/usr/bin/docker", "run", "--rm", "--network", "none", "--read-only", "--cap-drop", "ALL",
                 "--security-opt", "no-new-privileges", "--pids-limit", "128", "--memory", "768m", "--cpus", "1.00",
                 "--tmpfs", "/tmp:rw,nosuid,nodev,size=64m", "--env", "PYTHONPYCACHEPREFIX=" + PYTHONPYCACHEPREFIX,
+                "--env", "PYTHONPATH=/app/src", "--workdir", "/app",
                 "--entrypoint", "/bin/sh", image, "-c",
-                "python -m compileall -q /workspace/src && alembic heads"], timeout=180)
+                "python -c \"import importlib.util,pathlib; p=importlib.util.find_spec('go_hotel'); "
+                "assert p and pathlib.Path(p.origin).resolve()==pathlib.Path('/app/src/go_hotel/__init__.py')\" "
+                "&& python -c " + shlex.quote(source_check)
+                + " && python -m compileall -q /app/src && alembic heads"], timeout=180)
         # Only now, with every gate above already PASS, is the exact built image
         # made durable.  Sealing is the last step on purpose: an image that failed
         # a gate must never reach the store, and an image that passes is no longer
