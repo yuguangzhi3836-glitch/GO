@@ -1,0 +1,247 @@
+{
+  "diagnostic_only": true,
+  "source": {
+    "application_head": "a6361b9376ab59f05616338b8245ac4e2976dec3",
+    "application_tree": "6570b66bc977f89c0311d67bdc6b721cd70d4e09",
+    "harness_source": "afb6c469d518bd2386846fe3c9c7a2d6548f9aca",
+    "observer_source": "8a474830f47e93d8059522917c26d9e23e75c176",
+    "sha256": {
+      "ci/multi_instance/thread_switch_experiment.py": "17b34678343a6b54126465f55260ebb3984b4721648437fea51d6c02351bfc92",
+      "ci/multi_instance/test_thread_switch.py": "0cebc421f969cc88b55e42d92f8de816df0bf6f688b4ec02bed8d843a6ceb965",
+      "ci/multi_instance/admission_experiment.py": "e39e233afeabdfb7d13ba2d619572d1ffb477051bda1fc6d0b3f32447911cd3e",
+      "ci/multi_instance/pool_experiment.py": "b2ba0205b0dfc2fa19a2560333aea58caee3ad6a2b70ebf02588ba6e67729e2d",
+      "ci/multi_instance/profiling.py": "fae2c1cc9e8cf7a5098299dbabd413ef557b199bfdc8c95779dcbff189ca39c8",
+      "ci/multi_instance/test_profiling_cost.py": "a6eef375ffa22d398c001ba458818fcad59963dec6eb26fe7cbf1e14a4daee64",
+      "ci/multi_instance/ride_workload.py": "b5a97b55cd6815534b1844c99ba9073dafe1c534be57d00d2e10d0520e665d32",
+      "ci/multi_instance/run.py": "e274bc3cb2b114cd2ed9e024c30a5ebb71d1b3a4e26ba27a5c521b7d56889a5c",
+      "ci/process_pool/bootstrap.py": "5217dc19ed87c5ba20730d066eac2685e3eb1bb55259d967c605613f0dc9ebaa",
+      "ci/process_pool/experiment.py": "c802f669e7abdbe09f442db8716a06b22302c1182e1d3836842a71dbeaa8da91",
+      "ci/process_pool/test_run.py": "06f71850aa5ff6fe579a948839aa6cd2895292108dd8597d44e55e9da62a4955",
+      "ci/process_pool/run.py": "91f751abd1e2ccd75d93b1f8f8dee0c0a0d0b4c87748584294a840317f9dd384",
+      "ci/hold_cpu/adapter.py": "5a364ea5627f9476de3f1326013556e08f4cca1a0abd534dcfd68c2615acfae0",
+      "ci/hold_cpu/recompute_r3.py": "cbe131e0fa9d13164d1840596ac9d2db4ff7e5c86c2f47419665338de2e6cba2",
+      "ci/hold_cpu/observe.py": "8a2f1f834c3f5c9a723b36854dc7032466c12933ef541c9633abb1c8cfa07359",
+      "ci/hold_cpu/test_observe.py": "c128e2ad688aca507f02af514c85f337ceb309e5c280ad51f272346c6ec66465",
+      "ci/hold_cpu/run.py": "eecdd41849066bd4e68522e3b8778c02fff06c1a40372d2103feec0b0dd08d1d"
+    },
+    "diagnostic_only": true
+  },
+  "result": {
+    "admission_active_per_instance": 0,
+    "coordinator_switch_interval_ms": 5.0,
+    "correctness": "PASS",
+    "mode": "PROCESS_POOL_ATTRIBUTION_NOT_ACCEPTANCE",
+    "scope": "Isolated synthetic cold service actors; factorial attribution only, not HTTP or capacity acceptance",
+    "stages": [
+      {
+        "admission_wait_p95_ms": 0,
+        "completed_per_second": 9.449543915754878,
+        "concurrent_transactions": 20,
+        "errors": 0,
+        "observed_peak_executing": 20,
+        "observed_peak_inflight": 20,
+        "p95_ms": 2092.265572,
+        "p99_ms": 2113.625683,
+        "pass": true,
+        "process_ids": [
+          6630,
+          6631,
+          6632,
+          6633
+        ],
+        "sql": "PASS",
+        "transactions": 20
+      },
+      {
+        "admission_wait_p95_ms": 0,
+        "completed_per_second": 12.522407826664278,
+        "concurrent_transactions": 100,
+        "errors": 0,
+        "observed_peak_executing": 100,
+        "observed_peak_inflight": 100,
+        "p95_ms": 7845.096848,
+        "p99_ms": 7914.881919,
+        "pass": false,
+        "process_ids": [
+          6781,
+          6782,
+          6783,
+          6784
+        ],
+        "sql": "PASS",
+        "transactions": 100
+      }
+    ],
+    "status": "STOPPED_AT_FAILED_TIER"
+  },
+  "tiers": {
+    "20": {
+      "profiles": [
+        "group-60.json.profile.json",
+        "group-59.json.profile.json",
+        "group-57.json.profile.json",
+        "group-58.json.profile.json"
+      ],
+      "checkouts": 420,
+      "checkins": 420,
+      "held_phase_totals": {
+        "dbapi.execute": {
+          "wall_seconds": 10.490832967002461,
+          "cpu_seconds": 0.5078314160000017
+        },
+        "money.create_in_session": {
+          "wall_seconds": 0.6395238209992158,
+          "cpu_seconds": 0.24954335699999977
+        },
+        "ride.fulfill": {
+          "wall_seconds": 0.3919818039983056,
+          "cpu_seconds": 0.23665816199999937
+        },
+        "ride.create": {
+          "wall_seconds": 0.2562958020004089,
+          "cpu_seconds": 0.17308667599999922
+        },
+        "supplier.record_supplier_fact": {
+          "wall_seconds": 0.2764868219998107,
+          "cpu_seconds": 0.17186498499999966
+        },
+        "payment.create_intent": {
+          "wall_seconds": 0.261063466999758,
+          "cpu_seconds": 0.15317817700000005
+        },
+        "bridge.checkout_contract": {
+          "wall_seconds": 0.21013380099941514,
+          "cpu_seconds": 0.13592870999999954
+        },
+        "payment.simulate_result": {
+          "wall_seconds": 0.15367526100033047,
+          "cpu_seconds": 0.09493920899999986
+        },
+        "payment.execute": {
+          "wall_seconds": 0.1150970879992883,
+          "cpu_seconds": 0.07285814000000025
+        },
+        "source.decide_in": {
+          "wall_seconds": 0.08436270499976217,
+          "cpu_seconds": 0.04770780099999984
+        },
+        "idempotency.claim_idempotency": {
+          "wall_seconds": 0.06418365499939682,
+          "cpu_seconds": 0.043151260000000136
+        },
+        "dbapi.commit": {
+          "wall_seconds": 1.8182914430002484,
+          "cpu_seconds": 0.04089535800000016
+        },
+        "payment.select_channel": {
+          "wall_seconds": 0.03502186800017171,
+          "cpu_seconds": 0.026908389000000067
+        },
+        "dbapi.rollback": {
+          "wall_seconds": 0.3273972690003575,
+          "cpu_seconds": 0.018808426000000322
+        },
+        "bridge._confirm_contract_payment": {
+          "wall_seconds": 0.022053476000905903,
+          "cpu_seconds": 0.015157312000000048
+        },
+        "idempotency.complete_idempotency": {
+          "wall_seconds": 0.014849665000042478,
+          "cpu_seconds": 0.01170538900000024
+        },
+        "money.create": {
+          "wall_seconds": 0.01627900800099269,
+          "cpu_seconds": 0.011067113999999826
+        },
+        "other_while_held": {
+          "wall_seconds": 0.01677897199920153,
+          "cpu_seconds": 0.010553892000000006
+        }
+      }
+    },
+    "100": {
+      "profiles": [
+        "group-61.json.profile.json",
+        "group-64.json.profile.json",
+        "group-62.json.profile.json",
+        "group-63.json.profile.json"
+      ],
+      "checkouts": 2100,
+      "checkins": 2100,
+      "held_phase_totals": {
+        "dbapi.execute": {
+          "wall_seconds": 60.99931706200448,
+          "cpu_seconds": 2.6929667880000006
+        },
+        "supplier.record_supplier_fact": {
+          "wall_seconds": 1.9174776809991272,
+          "cpu_seconds": 1.187108552
+        },
+        "ride.fulfill": {
+          "wall_seconds": 1.8454092729956528,
+          "cpu_seconds": 1.1458177559999996
+        },
+        "money.create_in_session": {
+          "wall_seconds": 1.8577844250023645,
+          "cpu_seconds": 0.9212492219999999
+        },
+        "payment.create_intent": {
+          "wall_seconds": 1.5261589180017836,
+          "cpu_seconds": 0.8602645269999998
+        },
+        "ride.create": {
+          "wall_seconds": 1.3563750459984476,
+          "cpu_seconds": 0.6831556479999997
+        },
+        "bridge.checkout_contract": {
+          "wall_seconds": 0.9558235209954091,
+          "cpu_seconds": 0.5723683200000003
+        },
+        "payment.simulate_result": {
+          "wall_seconds": 0.7087107440008822,
+          "cpu_seconds": 0.36898308499999966
+        },
+        "payment.execute": {
+          "wall_seconds": 0.5378506089990651,
+          "cpu_seconds": 0.2846050059999999
+        },
+        "dbapi.commit": {
+          "wall_seconds": 11.499673187998837,
+          "cpu_seconds": 0.2053327789999986
+        },
+        "source.decide_in": {
+          "wall_seconds": 0.47394901999905414,
+          "cpu_seconds": 0.18233374299999985
+        },
+        "idempotency.claim_idempotency": {
+          "wall_seconds": 0.2623602250006343,
+          "cpu_seconds": 0.17964701900000035
+        },
+        "payment.select_channel": {
+          "wall_seconds": 0.18577271799904338,
+          "cpu_seconds": 0.11170448500000013
+        },
+        "dbapi.rollback": {
+          "wall_seconds": 2.6143148490033354,
+          "cpu_seconds": 0.093879571
+        },
+        "bridge._confirm_contract_payment": {
+          "wall_seconds": 0.10154405600076188,
+          "cpu_seconds": 0.06192597700000011
+        },
+        "money.create": {
+          "wall_seconds": 0.08669328599989967,
+          "cpu_seconds": 0.05788326300000023
+        },
+        "idempotency.complete_idempotency": {
+          "wall_seconds": 0.08888629000148285,
+          "cpu_seconds": 0.04904048800000001
+        },
+        "other_while_held": {
+          "wall_seconds": 0.04270850199986853,
+          "cpu_seconds": 0.03912217300000003
+        }
+      }
+    }
+  }
+}
