@@ -1,0 +1,147 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const path=require('node:path');
+const source=fs.readFileSync(path.join(__dirname,'../frontend/shared/app.js'),'utf8');
+const code=source.slice(source.indexOf('// Hotel selection is scoped'),source.indexOf('async function supplierPropertyProfile()'));
+async function setup(){
+ const nodes=new Map(),requests=[];let checked=[],mediaChecked=[],media=[],failure=null,response={status:'IMPORTED',room_types_created:0};
+ const $=id=>{if(!nodes.has(id))nodes.set(id,{value:'',textContent:'',innerHTML:'',disabled:false,files:[]});return nodes.get(id)};
+ const ctx={$,console,document:{querySelectorAll:selector=>selector.includes('publish-media')?mediaChecked.map(value=>({value})):checked.map(value=>({value}))},esc:x=>String(x??'').replace(/</g,'&lt;'),unwrap:x=>x?.data??x,supplierFriendlyValue:()=> '草稿',supplierStructuredShell:(_,body)=>body,notice:()=>{},window:{open:()=>{}},FileReader:class{readAsDataURL(){this.result='data:image/png;base64,aGVsbG8=';this.onload()}},api:{request:async(url,opts)=>{
+  if(!opts){if(url.endsWith('/providers'))return {providers:{CTRIP:{label:'携程'}}};if(url.endsWith('/product-graph'))return {room_types:[{room_type_id:'room-own',name_zh:'本酒店套房'}]};if(url.endsWith('/media-uploads'))return media;return [{property_id:'prop-test',name_zh:'测试酒店',publication_state:'DRAFT'},{property_id:'prop-second',name_zh:'第二酒店',publication_state:'DRAFT'}]}
+  requests.push({url,opts:JSON.parse(JSON.stringify(opts))});if(failure)throw new Error(failure);return response;
+ }}};
+ vm.createContext(ctx);vm.runInContext(code,ctx);ctx.route=()=>ctx.supplierOneClickBuild();await ctx.supplierOneClickBuild();$('#buildProvider').value='CTRIP';
+ return {$,requests,media:x=>{media=x},selectMedia:x=>{mediaChecked=x},select:x=>{checked=x},fail:x=>{failure=x},respond:x=>{response=x},ctx};
+}
+const pack={hotel:{name_zh:'新酒店',contacts:{phone:'123'},address:{city:'哈尔滨'}},room_types:[{name_zh:'房型',media:[{url:'https://example.test/old.jpg'}]}],media:[{url:'https://example.test/old.jpg'}]};
+async function preview(s){s.$('#hotelPackage').value=JSON.stringify(pack);await s.$('#previewHotelPackage').onclick()}
+test('preview is local and explicitly unsaved; only chosen fields are submitted without OTA images',async()=>{
+ const s=await setup();await preview(s);assert.equal(s.requests.length,0);assert.match(s.$('#hotelImportStatus').textContent,/未保存/);
+ s.select(['hotel.contacts','room_types']);await s.$('#importHotelPackage').onclick();
+ const body=s.requests[0].opts.body;assert.deepEqual(body.selected_fields,['hotel.contacts','room_types']);
+ assert.deepEqual(body.hotel_package,{hotel:{contacts:{phone:'123'}},room_types:[{name_zh:'房型'}]});assert.equal(body.hotel_package.media,undefined);
+ assert.match(s.$('#hotelImportStatus').textContent,/所选资料已保存/);
+});
+test('empty selection and stale preview never write hotel data',async()=>{
+ const s=await setup();await preview(s);await s.$('#importHotelPackage').onclick();assert.equal(s.requests.length,0);
+ s.select(['hotel.name_zh']);s.$('#hotelPackage').value='{}';await s.$('#importHotelPackage').onclick();assert.equal(s.requests.length,0);assert.equal(s.$('#importHotelPackage').disabled,true);
+});
+test('failed import retains text and choices and suppresses internal error codes',async()=>{
+ const s=await setup();await preview(s);s.select(['hotel.contacts']);s.fail('DATABASE_INTERNAL_FAILURE');await s.$('#importHotelPackage').onclick();
+ assert.equal(s.$('#hotelPackage').value,JSON.stringify(pack));assert.match(s.$('#hotelImportStatus').textContent,/选择已保留/);assert.doesNotMatch(s.$('#hotelImportStatus').textContent,/DATABASE/);
+ s.fail(null);await s.$('#importHotelPackage').onclick();assert.deepEqual(s.requests[1].opts.body.selected_fields,['hotel.contacts']);
+});
+test('unexpected import response cannot report success',async()=>{
+ const s=await setup();await preview(s);s.select(['hotel.name_zh']);s.respond({status:'PROCESSING'});await s.$('#importHotelPackage').onclick();assert.doesNotMatch(s.$('#hotelImportStatus').textContent,/已保存/);
+});
+function selectPhoto(s){s.$('#hotelMediaFile').files=[{name:'hotel.png',type:'image/png',size:1024}];s.$('#hotelMediaRole').value='GALLERY';s.$('#hotelMediaHolder').value='酒店';s.$('#hotelMediaEvidence').value='自有摄影记录';s.$('#hotelMediaRights').checked=true}
+test('direct image upload sends bytes and rights and reports verified dimensions as unpublished draft',async()=>{
+ const s=await setup();selectPhoto(s);s.respond({asset_id:'asset-1',state:'DRAFT',width:1920,height:1080,publishable:false});await s.$('#uploadHotelMedia').onclick();
+ assert.match(s.requests[0].url,/\/media-uploads$/);assert.equal(s.requests[0].opts.body.content_base64,'aGVsbG8=');assert.deepEqual(s.requests[0].opts.body.rights.usage_scope,['DISTRIBUTE_ON_GO']);assert.match(s.$('#hotelMediaStatus').textContent,/1920×1080/);assert.match(s.$('#hotelMediaStatus').textContent,/尚未发布/);
+});
+test('image rejection keeps file and rights available for retry with Chinese quality feedback',async()=>{
+ const s=await setup();selectPhoto(s);s.fail('MEDIA_IMAGE_TOO_SMALL');await s.$('#uploadHotelMedia').onclick();assert.match(s.$('#hotelMediaStatus').textContent,/清晰度不足/);assert.equal(s.$('#hotelMediaFile').files[0].name,'hotel.png');assert.equal(s.$('#hotelMediaRights').checked,true);assert.equal(s.$('#uploadHotelMedia').disabled,false);
+});
+test('missing rights or oversized file never sends an upload',async()=>{
+ const s=await setup();selectPhoto(s);s.$('#hotelMediaRights').checked=false;await s.$('#uploadHotelMedia').onclick();assert.equal(s.requests.length,0);
+ s.$('#hotelMediaRights').checked=true;s.$('#hotelMediaFile').files[0].size=16*1024*1024;await s.$('#uploadHotelMedia').onclick();assert.equal(s.requests.length,0);
+});
+test('invalid JSON never enables confirmation',async()=>{
+ const s=await setup();s.$('#hotelPackage').value='{';await s.$('#previewHotelPackage').onclick();assert.equal(s.$('#importHotelPackage').disabled,true);assert.equal(s.requests.length,0);
+});
+test('source room selection requires mapping confirmation without blocking hotel fields',async()=>{
+ const s=await setup();s.$('#hotelPackage').value=JSON.stringify({hotel:{name_zh:'酒店'},room_types:[{source_room_id:'ota-1',name_zh:'套房'}]});
+ await s.$('#previewHotelPackage').onclick();assert.match(s.$('#hotelImportPreview').innerHTML,/id="roomMap0"/);
+ s.select(['room_types']);await s.$('#importHotelPackage').onclick();assert.equal(s.requests.length,0);assert.match(s.$('#hotelImportStatus').textContent,/对应关系/);
+ s.select(['hotel.name_zh']);await s.$('#importHotelPackage').onclick();assert.deepEqual(s.requests[0].opts.body.hotel_package,{hotel:{name_zh:'酒店'}});
+});
+test('malformed room collection cannot enable import',async()=>{
+ for(const room_types of [{bad:true},[null],['room']]){const s=await setup();s.$('#hotelPackage').value=JSON.stringify({room_types});await s.$('#previewHotelPackage').onclick();assert.equal(s.$('#importHotelPackage').disabled,true);assert.match(s.$('#hotelImportStatus').textContent,/格式不正确/);assert.equal(s.requests.length,0)}
+});
+test('preview escapes supplied hotel markup',async()=>{
+ const s=await setup();s.$('#hotelPackage').value=JSON.stringify({hotel:{name_zh:'<img src=x onerror=alert(1)>'}});await s.$('#previewHotelPackage').onclick();assert.doesNotMatch(s.$('#hotelImportPreview').innerHTML,/<img/);assert.match(s.$('#hotelImportPreview').innerHTML,/&lt;img/);
+});
+test('upload response must confirm nonpublished draft and valid dimensions',async()=>{
+ for(const response of [{asset_id:'a',state:'DRAFT',width:1920,height:1080,publishable:true},{asset_id:'a',state:'DRAFT',width:-1,height:1080,publishable:false}]){const s=await setup();selectPhoto(s);s.respond(response);await s.$('#uploadHotelMedia').onclick();assert.doesNotMatch(s.$('#hotelMediaStatus').textContent,/上传成功/)}
+});
+test('double submission during pending import sends a single request',async()=>{
+ const s=await setup();await preview(s);s.select(['hotel.name_zh']);let resolve;s.respond(new Promise(done=>resolve=done));
+ const pending=s.$('#importHotelPackage').onclick();await s.$('#importHotelPackage').onclick();assert.equal(s.requests.length,1);resolve({status:'IMPORTED',room_types_created:0});await pending;assert.equal(s.$('#importHotelPackage').disabled,false);
+});
+
+test('explicit source room mapping sends confirmed target outside hotel package',async()=>{
+ const s=await setup();s.$('#hotelPackage').value=JSON.stringify({room_types:[{source_room_id:'ota-1',name_zh:'套房'}]});await s.$('#previewHotelPackage').onclick();s.select(['room_types']);s.$('#roomMap0').value='room-own';s.$('#roomMapConfirm0').checked=true;
+ await s.$('#importHotelPackage').onclick();assert.deepEqual(s.requests[0].opts.body.room_mappings,[{source_room_id:'ota-1',target_room_type_id:'room-own',confirmed:true}]);assert.equal(s.requests[0].opts.body.hotel_package.room_mappings,undefined);
+});
+test('new physical room is explicit and changing target clears confirmation',async()=>{
+ const s=await setup();s.$('#hotelPackage').value=JSON.stringify({room_types:[{source_room_id:'ota-2',name_zh:'套房'}]});await s.$('#previewHotelPackage').onclick();s.select(['room_types']);s.$('#roomMap0').value='__CREATE__';s.$('#roomMapConfirm0').checked=true;s.$('#roomMap0').onchange();await s.$('#importHotelPackage').onclick();assert.equal(s.requests.length,0);
+ s.$('#roomMapConfirm0').checked=true;await s.$('#importHotelPackage').onclick();assert.deepEqual(s.requests[0].opts.body.room_mappings,[{source_room_id:'ota-2',action:'CREATE',confirmed:true}]);
+});
+test('mapping refuses foreign target and duplicated target',async()=>{
+ const s=await setup();s.$('#hotelPackage').value=JSON.stringify({room_types:[{source_room_id:'ota-1',name_zh:'A'},{source_room_id:'ota-2',name_zh:'B'}]});await s.$('#previewHotelPackage').onclick();s.select(['room_types']);for(let i=0;i<2;i++){s.$('#roomMap'+i).value='room-own';s.$('#roomMapConfirm'+i).checked=true}await s.$('#importHotelPackage').onclick();assert.equal(s.requests.length,0);
+ s.$('#roomMap1').value='foreign-room';await s.$('#importHotelPackage').onclick();assert.equal(s.requests.length,0);
+});
+test('hotel selection scopes writes and preserves per-hotel import draft',async()=>{
+ const s=await setup();await preview(s);s.select(['hotel.contacts']);await s.ctx.supplierSwitchProperty('prop-second');s.$('#hotelPackage').value=JSON.stringify({hotel:{name_zh:'第二酒店更新'}});await s.$('#previewHotelPackage').onclick();s.select(['hotel.name_zh']);await s.$('#importHotelPackage').onclick();assert.match(s.requests[0].url,/properties\/prop-second\/one-click-import/);
+ await s.ctx.supplierSwitchProperty('prop-test');assert.equal(s.$('#hotelPackage').value,JSON.stringify(pack));
+});
+test('switch refused during in-flight mutation; completion cannot write to another hotel',async()=>{
+ const s=await setup();await preview(s);s.select(['hotel.name_zh']);let resolve;s.respond(new Promise(done=>resolve=done));const pending=s.$('#importHotelPackage').onclick();assert.equal(await s.ctx.supplierSwitchProperty('prop-second'),false);assert.equal(s.$('#supplierPropertySelect').value,'prop-test');resolve({status:'IMPORTED'});await pending;assert.match(s.requests[0].url,/properties\/prop-test\/one-click-import/);
+});
+
+test('binding uses current asset revision and selected property room',async()=>{
+ const s=await setup();s.media([{asset_id:'asset-1',revision:3,width:1920,height:1080,role:'GALLERY'}]);await s.$('#refreshHotelMedia').onclick();s.$('#mediaBindRole0').value='ROOM';s.$('#mediaBindRoom0').value='room-own';await s.$('#mediaBindSave0').onclick();assert.match(s.requests[0].url,/properties\/prop-test\/media-uploads\/asset-1\/binding/);assert.deepEqual(s.requests[0].opts.body,{expected_revision:3,role:'ROOM',room_type_id:'room-own'});assert.match(s.$('#hotelMediaPublicationStatus').textContent,/尚未发布/);
+});
+test('publication requires selection and confirmation, submission does not claim published',async()=>{
+ const s=await setup();s.media([{asset_id:'asset-1',revision:3,width:1920,height:1080}]);await s.$('#refreshHotelMedia').onclick();await s.$('#requestHotelMediaPublication').onclick();assert.equal(s.requests.length,0);s.selectMedia(['asset-1']);s.$('#hotelMediaPublishConfirm').checked=true;s.respond({state:'SUBMITTED',publication_state:'PUBLISH_REQUESTED'});await s.$('#requestHotelMediaPublication').onclick();assert.deepEqual(s.requests[0].opts.body,{asset_ids:['asset-1'],confirmed:true});assert.match(s.$('#hotelMediaPublicationStatus').textContent,/尚未发布/);assert.doesNotMatch(s.$('#hotelMediaPublicationStatus').textContent,/已发布/);
+});
+test('foreign asset cannot be submitted and failed binding remains actionable',async()=>{
+ const s=await setup();s.media([{asset_id:'asset-1',revision:3,width:1920,height:1080}]);await s.$('#refreshHotelMedia').onclick();s.selectMedia(['foreign-asset']);s.$('#hotelMediaPublishConfirm').checked=true;await s.$('#requestHotelMediaPublication').onclick();assert.equal(s.requests.length,0);s.$('#mediaBindRole0').value='GALLERY';s.fail('MEDIA_REVISION_CONFLICT');await s.$('#mediaBindSave0').onclick();assert.match(s.$('#hotelMediaPublicationStatus').textContent,/选择已保留/);assert.doesNotMatch(s.$('#hotelMediaPublicationStatus').textContent,/MEDIA_/);
+});
+const directManifest=()=>({schema:'HOTEL_DIRECT_SUBMISSION_V1',identity:{property_id:'prop-test',supplier_id:'supplier-own',canonical_hotel_id:'canonical-own',registration_id:'reg-own',association_evidence_reference:'酒店登记资料'},inventory:{complete_confirmed:true},room_mappings:[{partner_room_id:'room-own',canonical_room_id:'canonical-room',confirmed:true,evidence_reference:'已核对物理房型'}],assets:[{asset_id:'asset-own',property_id:'prop-test',supplier_id:'supplier-own',canonical_hotel_id:'canonical-own',role:'ROOM',partner_room_id:'room-own',canonical_room_id:'canonical-room',width:1920,height:1080,rights:{rights_holder:'酒店',evidence_reference:'自有原图'}}]});
+async function loadManifest(s,m=directManifest()){s.$('#directManifestFile').files=[{size:1200,text:async()=>JSON.stringify(m)}];await s.$('#directManifestFile').onchange()}
+test('trusted manifest is previewed without writing and requires explicit confirmation',async()=>{
+ const s=await setup();await loadManifest(s);assert.equal(s.requests.length,0);assert.equal(s.$('#submitDirectManifest').disabled,true);assert.match(s.$('#directManifestPreview').innerHTML,/canonical-room/);assert.match(s.$('#directManifestPreview').innerHTML,/酒店/);
+ await s.$('#submitDirectManifest').onclick();assert.equal(s.requests.length,0);
+ s.$('#directManifestConfirm').checked=true;s.$('#directManifestConfirm').onchange();s.respond({state:'SUBMITTED',review_id:'review-1'});await s.$('#submitDirectManifest').onclick();assert.match(s.requests[0].url,/\/properties\/prop-test\/direct-submission-reviews$/);assert.deepEqual(s.requests[0].opts.body.manifest,directManifest());assert.match(s.$('#directManifestStatus').textContent,/尚未批准或发布/);assert.equal(s.$('#submitDirectManifest').disabled,true);
+});
+test('foreign property, foreign image and duplicate room targets cannot be submitted',async()=>{
+ for(const change of [m=>m.identity.property_id='other',m=>m.assets[0].property_id='other',m=>m.room_mappings.push({...m.room_mappings[0]})]){const s=await setup(),m=directManifest();change(m);await loadManifest(s,m);s.$('#directManifestConfirm').checked=true;await s.$('#submitDirectManifest').onclick();assert.equal(s.requests.length,0);assert.equal(s.$('#submitDirectManifest').disabled,true);assert.doesNotMatch(s.$('#directManifestStatus').textContent,/DIRECT_SUBMISSION/)}
+});
+test('manifest preview escapes text and explicitly treats rights as declarations',async()=>{
+ const s=await setup(),m=directManifest();m.assets[0].rights.rights_holder='<img src=x onerror=alert(1)>';await loadManifest(s,m);assert.doesNotMatch(s.$('#directManifestPreview').innerHTML,/<img/);assert.match(s.$('#directManifestPreview').innerHTML,/&lt;img/);assert.match(s.$('#directManifestPreview').innerHTML,/清单声明/);
+});
+test('file read completing after hotel switch cannot update preview or post',async()=>{
+ const s=await setup();let release;s.$('#directManifestFile').files=[{size:1200,text:()=>new Promise(resolve=>release=resolve)}];const pending=s.$('#directManifestFile').onchange();await s.ctx.supplierSwitchProperty('prop-second');release(JSON.stringify(directManifest()));await pending;s.$('#directManifestConfirm').checked=true;await s.$('#submitDirectManifest').onclick();assert.equal(s.requests.length,0);assert.doesNotMatch(s.$('#directManifestPreview').innerHTML,/canonical-own/);
+});
+test('new file invalidates confirmation and older asynchronous read cannot replace it',async()=>{
+ const s=await setup();let release;s.$('#directManifestFile').files=[{size:1200,text:()=>new Promise(resolve=>release=resolve)}];const pending=s.$('#directManifestFile').onchange();await loadManifest(s);s.$('#directManifestConfirm').checked=true;s.$('#directManifestConfirm').onchange();const old=directManifest();old.identity.canonical_hotel_id='stale-hotel';release(JSON.stringify(old));await pending;assert.doesNotMatch(s.$('#directManifestPreview').innerHTML,/stale-hotel/);assert.equal(s.$('#submitDirectManifest').disabled,false);
+});
+test('approved review is not announced publicly available without successful server read',async()=>{
+ const s=await setup();s.ctx.api.request=async url=>url.endsWith('/direct-submission-reviews')?{items:[{review_id:'review-1',state:'APPROVED'}]}:{review:{state:'APPROVED'},publication:{publicly_available:false,live_read_verified:false},conflicts:[{code:'INTERNAL_PRIVATE_DETAIL'}]};await s.$('#refreshDirectReviews').onclick();await s.$('#directReviewDetail0').onclick();assert.match(s.$('#directReviewResult0').textContent,/尚未确认可公开访问/);assert.match(s.$('#directReviewResult0').textContent,/1项/);assert.doesNotMatch(s.$('#directReviewResult0').textContent,/INTERNAL_PRIVATE_DETAIL/);
+ s.ctx.api.request=async()=>({review:{state:'APPROVED'},publication:{publicly_available:true,live_read_verified:true},conflicts:[]});await s.$('#directReviewDetail0').onclick();assert.match(s.$('#directReviewResult0').textContent,/已发布，服务端页面回读通过/);
+});
+test('trusted submit failure preserves file and confirmation but never leaks internal error',async()=>{
+ const s=await setup();await loadManifest(s);s.$('#directManifestConfirm').checked=true;s.fail('DIRECT_SUBMISSION_PRIVATE_INTERNAL');await s.$('#submitDirectManifest').onclick();assert.match(s.$('#directManifestStatus').textContent,/清单已保留/);assert.doesNotMatch(s.$('#directManifestStatus').textContent,/PRIVATE_INTERNAL/);assert.equal(s.$('#directManifestFile').disabled,false);assert.equal(s.$('#directManifestConfirm').checked,true);
+});
+test('supplier review history paginates beyond first 25 and stale detail cannot overwrite new list',async()=>{
+ const s=await setup(),urls=[];let release;
+ s.ctx.api.request=async url=>{urls.push(url);if(url.includes('/review-'))return new Promise(resolve=>release=resolve);const second=url.includes('offset=25');return {items:Array.from({length:second?1:25},(_,i)=>({review_id:'review-'+(second?25:i),state:'SUBMITTED'})),total:26}};
+ await s.$('#refreshDirectReviews').onclick();assert.match(s.$('#directReviews').innerHTML,/共26条/);const pending=s.$('#directReviewDetail0').onclick();await s.$('#directReviewsNext').onclick();assert.match(urls.at(-1),/offset=25&limit=25/);assert.match(s.$('#directReviews').innerHTML,/26–26/);release({state:'APPROVED',publication:{publicly_available:true,live_read_verified:true}});await pending;assert.doesNotMatch(s.$('#directReviewResult0').textContent,/已发布/);await s.$('#directReviewsPrev').onclick();assert.match(s.$('#directReviews').innerHTML,/1–25/);
+});
+test('trusted manifest submit rejects concurrent duplicate click and hotel switch',async()=>{
+ const s=await setup();await loadManifest(s);s.$('#directManifestConfirm').checked=true;let release,writes=0;
+ s.ctx.api.request=async(url,opts)=>{if(opts){writes++;return new Promise(resolve=>release=resolve)}return {items:[]}};
+ const pending=s.$('#submitDirectManifest').onclick();await s.$('#submitDirectManifest').onclick();assert.equal(writes,1);assert.equal(await s.ctx.supplierSwitchProperty('prop-second'),false);release({state:'SUBMITTED',review_id:'review-1'});await pending;assert.match(s.$('#directManifestStatus').textContent,/正式审核已提交/);
+});
+test('session cookie change during manifest read cannot render prior session or submit',async()=>{
+ const s=await setup();let cookie='session-a';s.ctx.api.csrf=()=>cookie;await s.ctx.supplierOneClickBuild();let release;
+ s.$('#directManifestFile').files=[{size:1200,text:()=>new Promise(resolve=>release=resolve)}];const pending=s.$('#directManifestFile').onchange();cookie='session-b';release(JSON.stringify(directManifest()));await pending;s.$('#directManifestConfirm').checked=true;await s.$('#submitDirectManifest').onclick();assert.equal(s.requests.length,0);assert.doesNotMatch(s.$('#directManifestPreview').innerHTML,/canonical-own/);
+});
+test('session cookie change invalidates already previewed manifest and pending review detail',async()=>{
+ const s=await setup();let cookie='session-a';s.ctx.api.csrf=()=>cookie;await s.ctx.supplierOneClickBuild();await loadManifest(s);s.$('#directManifestConfirm').checked=true;let release;
+ s.ctx.api.request=async url=>url.endsWith('/direct-submission-reviews')?{items:[{review_id:'review-1',state:'SUBMITTED'}]}:new Promise(resolve=>release=resolve);
+ await s.$('#refreshDirectReviews').onclick();const pending=s.$('#directReviewDetail0').onclick();cookie='session-b';release({state:'APPROVED',publication:{publicly_available:true,live_read_verified:true}});await pending;await s.$('#submitDirectManifest').onclick();assert.equal(s.requests.length,0);assert.doesNotMatch(s.$('#directReviewResult0').textContent,/已发布/);
+});

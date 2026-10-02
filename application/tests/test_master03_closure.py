@@ -1,3 +1,5 @@
+from ride_cancellation_fixture import post_ride_order
+from registration_terms_test_support import register_synthetic_consumer
 from tests.attraction_fixtures import quoted_attraction
 from datetime import date, timedelta
 import json
@@ -70,7 +72,7 @@ def test_autonomy_without_qualification_registry_is_denied():
     assert not result.allowed and result.code=='AUTONOMY_QUALIFICATION_REGISTRY_REQUIRED'
 
 def book_all(client):
-    r=client.post('/v1/consumer/auth/register',json={'email':'master-03@example.test','password':'StrongPass123!','display_name':'ACCOUNT NICKNAME'})
+    r=register_synthetic_consumer(client, json={'email':'master-03@example.test','password':'StrongPass123!','display_name':'ACCOUNT NICKNAME'})
     assert r.status_code==200,r.text
     uid=r.json()['data']['profile']['user_id']
     token=client.post('/v1/mobile/auth/login',json={'email':'master-03@example.test','password':'StrongPass123!'}).json()['data']['access_token']
@@ -88,7 +90,11 @@ def book_all(client):
         out[vertical]=post(base+'/orders',{'prebook_id':pb['prebook_id'],'traveler_ids':[tid]})
     for vertical,base,body in [('RIDE','/v1/mobility/rides',{'pickup':'PVG','dropoff':'Bund','pickup_at':d+'T10:00:00','currency':'CNY'}),('RENTAL','/v1/mobility/rentals',{'pickup_location':'NRT','return_location':'NRT','pickup_at':d+'T10:00:00','return_at':end+'T10:00:00','currency':'CNY'})]:
         offer=post(base+'/search',body)['items'][0]
-        out[vertical]=post(base+'/orders',{**body,'offer_id':offer['offer_id'],'traveler_ids':[tid]})
+        request={**body,'offer_id':offer['offer_id'],'traveler_ids':[tid]}
+        if vertical=='RIDE':
+            ride=post_ride_order(client,headers=headers,body=request);assert ride.status_code==200,ride.text
+            out[vertical]=ride.json()['data']
+        else:out[vertical]=post(base+'/orders',request)
     offer=post('/v1/attractions/search',{'destination':'东京','visit_date':d})['items'][0]
     out['ATTRACTION']=post('/v1/attractions/orders',quoted_attraction(client,{'offer_id':offer['offer_id'],'visit_date':d,'quantity':1,'traveler_ids':[tid]}))
     return headers,out
@@ -117,7 +123,11 @@ def test_all_six_explicit_checkouts_bind_amount_and_capture_once(client,monkeypa
         else:
             route={'FLIGHT':'flights','RAIL':'rail','RENTAL':'mobility','RIDE':'mobility','ATTRACTION':'attractions'}[vertical]
             action='cancel' if vertical in {'RENTAL','RIDE'} else 'refund'
-            refunded=client.post(f"/v1/{route}/orders/{order['order_id']}/{action}",headers={**headers,'Idempotency-Key':f'refund:{vertical}'})
+            if vertical=='RIDE':
+                q=client.get(f"/v1/{route}/orders/{order['order_id']}/refund-quote",headers=headers).json()['data']
+                refunded=client.post(f"/v1/{route}/orders/{order['order_id']}/refund-confirmed",headers={**headers,'Idempotency-Key':f'refund:{vertical}'},json={'quote_hash':q['quote_hash'],'confirmed':True})
+            else:
+                refunded=client.post(f"/v1/{route}/orders/{order['order_id']}/{action}",headers={**headers,'Idempotency-Key':f'refund:{vertical}'})
         assert refunded.status_code==200,refunded.text
         with SessionLocal() as s:
             refunds=s.scalars(select(OmnichannelMoneyMovementRow).where(OmnichannelMoneyMovementRow.root_payment_intent_id==root.payment_intent_id,OmnichannelMoneyMovementRow.movement_type=='REFUND')).all()

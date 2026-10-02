@@ -1,9 +1,10 @@
 """Isolated HTTP acceptance; no browser or Hong Kong execution is implied."""
+from registration_terms_test_support import register_synthetic_consumer
 import pytest
 
 
 def identities(client, actor='supplier_owner', password='change-me-supplier'):
-    r = client.post('/v1/consumer/auth/register', json={
+    r = register_synthetic_consumer(client, json={
         'email': 'depth27@example.test', 'password': 'Isolated-Depth27-Only!',
         'display_name': 'Isolated traveler',
     })

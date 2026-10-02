@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, Field
 from fastapi import Body
-from go_hotel.security.deps import consumer_principal, admin_principal, optional_consumer_principal
+from go_hotel.security.deps import consumer_principal, order_admin_principal, optional_consumer_principal
 from go_hotel.security.service import Principal
 from go_hotel.rail.service import rail_service
 from go_hotel.api.idempotency import run_idempotent
@@ -76,7 +76,7 @@ def refund(order_id:str,p:Principal=Depends(consumer_principal),idempotency_key:
     return run_idempotent('RAIL_REFUND',idempotency_key,payload,lambda:wrap(rail_service.refund,p.user_id,order_id))
 
 @router.post('/internal/v1/admin/rail/orders/{order_id}/external-state')
-def admin_external_state(order_id:str,body:ExternalStateBody,p:Principal=Depends(admin_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
+def admin_external_state(order_id:str,body:ExternalStateBody,p:Principal=Depends(order_admin_principal),idempotency_key:str|None=Header(default=None,alias='Idempotency-Key')):
     payload={'actor':p.user_id,'order_id':order_id,**body.model_dump()}
     return run_idempotent('RAIL_ADMIN_EXTERNAL_STATE',idempotency_key,payload,lambda:wrap(rail_service.admin_external_state,order_id,body.state,body.evidence_reference,p.user_id,body.supplier_reference,body.ticket_numbers,body.quote_id))
 

@@ -16,6 +16,8 @@ from go_hotel.db.models import (
     RailRefundRow, AttractionRefundRow, RailChangeQuoteRow,
     OmnichannelMoneyMovementRow as Movement, OmnichannelPaymentIntentRow as Intent,
     PaymentOrderRootRow as Root,
+    JourneyRecoveryEvidenceChainRow as Evidence,
+    PaymentOrderFactBindingRow as Binding, OmnichannelLedgerEntryRow as Entry,
 )
 from go_hotel.domain.models import new_id
 from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence
@@ -67,8 +69,14 @@ def _confirmed_money_in(s, row, result):
         root = s.scalar(select(Root).where(Root.business_type == business_type,
                                            Root.business_id == business_id))
         intent = s.get(Intent, root.payment_intent_id) if root else None
-        if not intent or intent.payer_id != row.account_id or intent.currency != row.quote_json['currency']:
+        if (not intent or intent.payer_id != row.account_id or intent.currency != row.quote_json['currency']
+                or intent.business_type != business_type or intent.business_id != business_id):
             raise ValueError('REFUND_PAYMENT_OWNER_OR_CURRENCY_INVALID')
+        bindings=list(s.scalars(select(Binding).where(Binding.payment_intent_id==intent.payment_intent_id)))
+        if len(bindings)!=1 or (bindings[0].business_type,bindings[0].business_id,bindings[0].payer_id,
+                bindings[0].payee_id,bindings[0].currency,bindings[0].amount_minor)!=(
+                intent.business_type,intent.business_id,intent.payer_id,intent.payee_id,intent.currency,intent.amount_minor):
+            raise ValueError('REFUND_PAYMENT_BINDING_INVALID')
         allowed.add(root.payment_intent_id)
     total = 0
     for mid in ids:
@@ -78,12 +86,59 @@ def _confirmed_money_in(s, row, result):
                 or money.root_payment_intent_id not in allowed or not parent
                 or parent.movement_type != 'CAPTURE' or parent.state != 'CONFIRMED'
                 or parent.root_payment_intent_id != money.root_payment_intent_id
-                or money.currency != row.quote_json['currency']):
+                or money.currency != row.quote_json['currency'] or parent.currency != money.currency
+                or money.amount_minor <= 0 or money.amount_minor > parent.amount_minor):
             raise ValueError('REFUND_MONEY_NOT_CONFIRMED')
+        for movement in (parent,money):
+            intent=s.get(Intent,movement.root_payment_intent_id)
+            if (movement.business_type,movement.business_id)!=(intent.business_type,intent.business_id):
+                raise ValueError('REFUND_MONEY_BINDING_INVALID')
+            entries=list(s.scalars(select(Entry).where(Entry.transaction_id==movement.money_movement_id)))
+            if len(entries)!=2 or {e.direction for e in entries}!={'DEBIT','CREDIT'} or any(
+                (e.payment_intent_id,e.amount_minor,e.currency,e.entry_type)!=(
+                    intent.payment_intent_id,movement.amount_minor,movement.currency,movement.movement_type) for e in entries):
+                raise ValueError('REFUND_LEDGER_INVALID')
+            from go_hotel.services.unified_money_movement import business_ledger_account_code, digest as money_digest
+            pairs={(f'PAYMENT_CLEARING:{intent.selected_channel}','CREDIT' if movement.movement_type=='REFUND' else 'DEBIT'),
+                   (business_ledger_account_code(intent.business_type,intent.business_id),'DEBIT' if movement.movement_type=='REFUND' else 'CREDIT')}
+            if {(e.account_code,e.direction) for e in entries}!=pairs or any(
+                    e.evidence_hash!=money_digest({'movement':movement.money_movement_id}) for e in entries):
+                raise ValueError('REFUND_LEDGER_INVALID')
+        refunds=list(s.scalars(select(Movement).where(Movement.parent_movement_id==parent.money_movement_id,
+            Movement.movement_type=='REFUND',Movement.state=='CONFIRMED')))
+        if sum(m.amount_minor for m in refunds)>parent.amount_minor:
+            raise ValueError('REFUND_EXCEEDS_CAPTURE')
         total += money.amount_minor
     if total != row.quote_json['refund_amount_minor']:
         raise ValueError('REFUND_CONFIRMED_AMOUNT_MISMATCH')
     return ids
+
+
+def _completed_in(s, op, order):
+    """A durable receipt is not permission to ignore changed underlying money."""
+    from go_hotel.services.ticket_operations import _events
+    _events(s, op.vertical, op.order_id)  # Validate the complete native audit chain.
+    if order.status != 'REFUNDED' or not isinstance(op.result_json, dict):
+        raise ValueError('REFUND_ORDER_STATE_INVALID')
+    entries = list(s.scalars(select(Evidence).where(
+        Evidence.execution_id == f'rc20:{op.vertical}:{op.order_id}',
+        Evidence.evidence_kind == 'REFUND_COMPLETED')))
+    if len(entries) != 1:
+        raise ValueError('REFUND_COMPLETION_EVIDENCE_INVALID')
+    facts = entries[0].evidence_json['payload']
+    record = s.get(MODELS[op.vertical][1], op.result_json.get('refund_id'))
+    if not record or record.order_id != op.order_id:
+        raise ValueError('REFUND_COMPLETION_EVIDENCE_INVALID')
+    expected = {'refund_id': record.refund_id, 'order_id': record.order_id,
+                'status': record.status, 'refund_fee_minor': record.refund_fee_minor,
+                'refund_amount_minor': record.refund_amount_minor, 'currency': record.currency}
+    if (op.result_json != expected or record.status != 'REFUND_COMPLETED'
+            or any(facts.get(k) != v for k, v in expected.items())
+            or any(expected[k] != op.quote_json[k] for k in
+                   ('refund_fee_minor', 'refund_amount_minor', 'currency'))):
+        raise ValueError('REFUND_COMPLETION_EVIDENCE_INVALID')
+    _confirmed_money_in(s, op, facts)
+    return dict(expected)
 
 
 def refund(vertical, account, order_id, quote_in, accepted_hash=None):
@@ -97,13 +152,13 @@ def refund(vertical, account, order_id, quote_in, accepted_hash=None):
             _verify(op, account)
             refund_consent.verify(op.quote_json, accepted_hash)
             if op.state == 'COMPLETED':
-                if order.status != 'REFUNDED':
-                    raise ValueError('REFUND_ORDER_STATE_INVALID')
-                return dict(op.result_json)
+                return _completed_in(s, op, order)
             if order.status != 'REFUND_PENDING':
                 raise ValueError('REFUND_ORDER_STATE_INVALID')
         else:
-            if order.status != MODELS[vertical][2]:
+            allowed = {MODELS[vertical][2]}
+            if vertical == 'ATTRACTION': allowed.add('CLOSED_BY_SUPPLIER')
+            if order.status not in allowed:
                 raise ValueError(f'{vertical}_ORDER_NOT_REFUNDABLE')
             quote = refund_consent.bind(vertical, order, quote_in(s, order))
             refund_consent.verify(quote, accepted_hash)
@@ -144,7 +199,7 @@ def refund(vertical, account, order_id, quote_in, accepted_hash=None):
             op = _operation(s, vertical, order_id)
             _verify(op, account)
             if op.state == 'COMPLETED':
-                return dict(op.result_json)
+                return _completed_in(s, op, order)
             if op.lease_token != token or op.lease_until_ms <= db_now_ms(s):
                 raise ValueError('REFUND_LEASE_LOST')
             if order.status != 'REFUND_PENDING':

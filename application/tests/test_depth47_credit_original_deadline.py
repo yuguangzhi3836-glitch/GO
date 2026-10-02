@@ -1,4 +1,5 @@
 """Credit conversion must not renew the original hotel booking's fixed year."""
+from registration_terms_test_support import register_synthetic_consumer
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -148,7 +149,7 @@ def test_catalog_expiry_during_prebook_cannot_start_payment_or_supplier_booking(
 def test_actual_native_credit_helper_matches_owner_checked_mobile_api(client):
     from tests.test_depth30_native_api_contract import bridge
     from tests.test_master03_closure import profile
-    registered = client.post('/v1/consumer/auth/register', json={'email': 'depth47-native@example.test', 'password': 'IsolatedPass47!', 'display_name': 'ISOLATED CREDIT TEST'})
+    registered = register_synthetic_consumer(client, json={'email': 'depth47-native@example.test', 'password': 'IsolatedPass47!', 'display_name': 'ISOLATED CREDIT TEST'})
     assert registered.status_code == 200, registered.text
     uid = registered.json()['data']['profile']['user_id']
     token = client.post('/v1/mobile/auth/login', json={'email': 'depth47-native@example.test', 'password': 'IsolatedPass47!'}).json()['data']['access_token']

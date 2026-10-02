@@ -2,8 +2,10 @@ from datetime import date, timedelta
 from go_hotel.flight.service import flight_service
 from tests.vertical_transaction_helpers import confirm_existing_fulfillment
 def auth(client,email='flight@example.com'):
-    r=client.post('/v1/consumer/auth/register',json={'email':email,'password':'StrongPass123!','display_name':'Flight Traveler'})
-    assert r.status_code==200,r.text
+    # Existing-account fixture for transaction tests. Signup admission has its
+    # own suite; shipped draft terms must remain closed in this combined tree.
+    from go_hotel.consumer.service import consumer_service
+    consumer_service.register(email,'StrongPass123!','Flight Traveler')
     t=client.post('/v1/mobile/auth/login',json={'email':email,'password':'StrongPass123!'}).json()['data']
     client.cookies.clear()
     return {'Authorization':f"Bearer {t['access_token']}"}

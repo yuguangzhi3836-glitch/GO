@@ -1,3 +1,4 @@
+from ride_cancellation_fixture import reserve_agent
 import asyncio,time
 import pytest
 from go_hotel.agent_gateway.a2a import A2AAdapter
@@ -14,6 +15,7 @@ def ctx(protocol=AgentProtocol.REST):return AgentContext('r','t','agent-life',pr
 def run(x):return asyncio.run(x)
 
 def reserve(gw,v,search,booking,key):
+ if v=='RIDE':return reserve_agent(gw,ctx(),v,search,booking,key)
  c=ctx();o=run(gw.offers(c,OfferRequest(v,search))).data['items'][0]
  return run(gw.reserve(c,ReserveRequest(o['offer_id'],o['quote_hash'],search,booking,key))).data
 
@@ -48,9 +50,9 @@ def test_refund_and_change_execute_against_native_order_and_money_truth():
  x=run(gw.lifecycle_execute(c,LifecycleExecuteRequest(flight['order_id'],'REFUND',q.get('quote_id'),q['quote_hash'],{},None,'rx'))).data
  assert x['order_truth']['status']=='REFUNDED' and x['native_result']['status']=='REFUND_COMPLETED'
  ride=committed(gw,'RIDE',{'pickup':'PVG','dropoff':'Hotel','pickup_at':'2026-10-22T10:00:00','currency':'CNY'},{'passengers':[{'full_name':'A'}]},'ride')
- changes={'new_time':'2026-10-22T11:00:00'};q=run(gw.lifecycle_quote(c,LifecycleQuoteRequest(ride['order_id'],'CHANGE',changes,'cq'))).data
+ changes={'new_time':'2026-10-22T11:00:00+08:00'};q=run(gw.lifecycle_quote(c,LifecycleQuoteRequest(ride['order_id'],'CHANGE',changes,'cq'))).data
  x=run(gw.lifecycle_execute(c,LifecycleExecuteRequest(ride['order_id'],'CHANGE',q['quote_id'],q['quote_hash'],changes,None,'cx'))).data
- assert x['order_truth']['evidence']['native']['pickup_at']=='2026-10-22T11:00:00'
+ assert x['order_truth']['evidence']['native']['pickup_at']=='2026-10-22T11:00:00+08:00'
 
 def test_four_protocol_contexts_share_one_lifecycle_idempotency_fact():
  gw=AgentTransactionGateway(GoTransactionCore());flight=committed(gw,'FLIGHT',{'origin':'SHA','destination':'PEK','departure_date':'2026-10-23','currency':'CNY','adults':1},{'passengers':[{'full_name':'A','type':'ADT'}]},'par');oid=flight['order_id']
@@ -65,10 +67,10 @@ def test_four_protocol_contexts_share_one_lifecycle_idempotency_fact():
  assert r==m==a==p and r['order_truth']['status']=='REFUNDED'
 
 def test_change_quote_hash_mismatch_fails_closed_before_native_mutation():
- gw=AgentTransactionGateway(GoTransactionCore());c=ctx();ride=committed(gw,'RIDE',{'pickup':'PVG','dropoff':'Hotel','pickup_at':'2026-10-24T10:00:00','currency':'CNY'},{'passengers':[{'full_name':'A'}]},'ride-hash');changes={'new_time':'2026-10-24T12:00:00'}
+ gw=AgentTransactionGateway(GoTransactionCore());c=ctx();ride=committed(gw,'RIDE',{'pickup':'PVG','dropoff':'Hotel','pickup_at':'2026-10-24T10:00:00+08:00','currency':'CNY'},{'passengers':[{'full_name':'A'}]},'ride-hash');changes={'new_time':'2026-10-24T12:00:00'}
  q=run(gw.lifecycle_quote(c,LifecycleQuoteRequest(ride['order_id'],'CHANGE',changes,'hash-q'))).data
  with pytest.raises(ValueError,match='CHANGE_QUOTE_RECONFIRM_REQUIRED'):run(gw.lifecycle_execute(c,LifecycleExecuteRequest(ride['order_id'],'CHANGE',q['quote_id'],'0'*64,changes,None,'hash-x')))
- truth=run(gw.order(c,ride['order_id'])).data;assert truth['evidence']['native']['pickup_at']=='2026-10-24T10:00:00'
+ truth=run(gw.order(c,ride['order_id'])).data;assert truth['evidence']['native']['pickup_at']=='2026-10-24T10:00:00+08:00'
 
 def test_hotel_cancel_and_change_use_native_fare_engine():
  gw=AgentTransactionGateway(GoTransactionCore());c=ctx();hotel=committed(gw,'HOTEL',{'city_code':'TYO','check_in':'2026-10-25','check_out':'2026-10-26','currency':'CNY'},{'fare_confirmed':True,'simulation_fixture':True},'hotel-cancel')

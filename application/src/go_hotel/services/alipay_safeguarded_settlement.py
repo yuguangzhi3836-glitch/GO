@@ -57,12 +57,12 @@ class Service:
    if not r:raise ValueError('RESERVATION_NOT_FOUND')
    old=s.scalar(select(AlipayAuthorizationRow).where(AlipayAuthorizationRow.idempotency_key==key))
    if old:
-    if (old.hosted_reservation_id,old.amount_minor,old.currency)!=(reservation_id,r.amount_minor,r.currency):raise ValueError('AUTHORIZATION_IDEMPOTENCY_CONFLICT')
+    if old.hosted_reservation_id!=reservation_id:raise ValueError('AUTHORIZATION_IDEMPOTENCY_CONFLICT')
     return out(old)
    if r.reservation_state not in {'PENDING_HOTEL_CONFIRMATION','HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING'}:raise ValueError('RESERVATION_NOT_AUTHORIZABLE')
    active=s.scalars(select(AlipayAuthorizationRow).where(AlipayAuthorizationRow.hosted_reservation_id==reservation_id,AlipayAuthorizationRow.state!='CONTRACT_RELEASED_NOT_ALIPAY')).all()
    if active:
-    if len(active)!=1 or active[0].amount_minor!=r.amount_minor:raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+    if len(active)!=1 or (active[0].amount_minor,active[0].currency)!=(r.amount_minor,r.currency):raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
     return out(active[0])
    if s.scalar(select(AlipayAuthorizationRow).where(AlipayAuthorizationRow.hosted_reservation_id==reservation_id)):raise ValueError('RELEASED_AUTHORIZATION_REBOOK_REQUIRED')
    a=AlipayAuthorizationRow(authorization_id=ident('aauth'),hosted_reservation_id=reservation_id,amount_minor=r.amount_minor,currency=r.currency,state='CONTRACT_FROZEN_NOT_ALIPAY',external_invoked=False,external_authorization_reference=None,settlement_eligible=False,idempotency_key=key,updated_at=now());s.add(a);s.flush();self._event(s,a.authorization_id,'AUTHORIZATION_CONTRACT_FROZEN',{'amount_minor':a.amount_minor},False,False)
@@ -98,9 +98,20 @@ class Service:
   with transaction() as s:
    a,r,stay=locked_authorization(s,authorization_id)
    if a.state=='CONTRACT_CAPTURED_NOT_ALIPAY_NOT_SETTLED' or a.state=='CONTRACT_RELEASED_NOT_ALIPAY' and a.settlement_eligible:return out(a)
-   if a.state!='FULFILLED_ELIGIBLE_FOR_CONTRACT_CAPTURE' or not a.settlement_eligible or a.external_invoked:raise ValueError('FULFILLMENT_SETTLEMENT_GATE_REQUIRED')
+   from go_hotel.services.hosted_credit_value import allocation
    from go_hotel.services import hosted_money
-   amount=hosted_money.settle(s,r,stay,a) if hosted_money.root(s,a) else a.amount_minor
+   credited=allocation(s,r.hosted_reservation_id)
+   credited_minor=credited.applied_minor if credited else 0
+   cash_amount,cash_currency=a.amount_minor,a.currency
+   payment_root=hosted_money.root(s,a)
+   if payment_root and payment_root.business_type=='HOSTED_HOTEL_FARE_CHANGE':
+    from go_hotel.db.models import OmnichannelPaymentIntentRow
+    current_intent=s.get(OmnichannelPaymentIntentRow,payment_root.payment_intent_id)
+    if not current_intent or current_intent.state!='SUCCEEDED':raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+    cash_amount,cash_currency=current_intent.amount_minor,current_intent.currency
+   if a.currency!=r.currency or cash_currency!=r.currency or cash_amount+credited_minor!=r.amount_minor:raise ValueError('PAYMENT_RECONCILIATION_REQUIRED')
+   if a.state!='FULFILLED_ELIGIBLE_FOR_CONTRACT_CAPTURE' or not a.settlement_eligible or a.external_invoked:raise ValueError('FULFILLMENT_SETTLEMENT_GATE_REQUIRED')
+   amount=hosted_money.settle(s,r,stay,a) if payment_root else a.amount_minor
    a.state='CONTRACT_CAPTURED_NOT_ALIPAY_NOT_SETTLED' if amount else 'CONTRACT_RELEASED_NOT_ALIPAY';a.updated_at=now()
    if r.payment_state=='CONTRACT_AUTHORIZED_NOT_ALIPAY':r.payment_state='CONTRACT_CAPTURED_NOT_ALIPAY' if amount else 'NO_PAYMENT_NO_REFUND_REQUIRED';r.updated_at=now()
    if r.payment_state=='CONTRACT_CREDIT_AND_AUTHORIZED':r.payment_state='CONTRACT_CREDIT_PAID';r.updated_at=now()

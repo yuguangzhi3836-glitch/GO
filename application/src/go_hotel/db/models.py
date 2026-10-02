@@ -51,6 +51,50 @@ class VerticalCapacityClaimRow(Base):
         CheckConstraint('quantity > 0', name='ck_capacity_claim_quantity'),
     )
 
+class FlightCouponRow(Base):
+    __tablename__ = 'flight_coupon'
+    coupon_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    order_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    account_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    leg_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    passenger_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    state: Mapped[str] = mapped_column(String(24), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    ticket_number: Mapped[str | None] = mapped_column(String(64))
+    supplier_reference: Mapped[str | None] = mapped_column(String(16))
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    paid_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    refunded_amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    leg_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    change_policy: Mapped[dict] = mapped_column(JSON, nullable=False)
+    refund_policy: Mapped[dict] = mapped_column(JSON, nullable=False)
+    __table_args__ = (
+        UniqueConstraint('order_id', 'leg_index', 'passenger_index', name='uq_flight_coupon_position'),
+        CheckConstraint("state IN ('UNISSUED','ISSUED','REFUND_PENDING','REFUNDED')", name='ck_flight_coupon_state'),
+        CheckConstraint('leg_index >= 0 AND passenger_index >= 0 AND version >= 0', name='ck_flight_coupon_position'),
+        CheckConstraint('paid_amount_minor >= 0 AND refunded_amount_minor >= 0 AND refunded_amount_minor <= paid_amount_minor', name='ck_flight_coupon_money'),
+    )
+
+class FlightCouponRefundRow(Base):
+    __tablename__ = 'flight_coupon_refund'
+    refund_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    order_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    account_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    state: Mapped[str] = mapped_column(String(16), nullable=False)
+    quote_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    quote_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    money_plan_json: Mapped[list | None] = mapped_column(JSON)
+    execution_hash: Mapped[str | None] = mapped_column(String(64))
+    result_json: Mapped[dict | None] = mapped_column(JSON)
+    lease_token: Mapped[str | None] = mapped_column(String(64))
+    lease_until_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    expires_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    __table_args__ = (
+        CheckConstraint("state IN ('QUOTED','PREPARED','COMPLETED')", name='ck_flight_coupon_refund_state'),
+        CheckConstraint('lease_until_ms >= 0 AND expires_ms > created_ms', name='ck_flight_coupon_refund_time'),
+    )
+
 class FlightChangePlanRow(Base):
     __tablename__ = 'flight_change_plan'
     quote_id: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -5294,6 +5338,36 @@ class HotelPartnerAuditEventRow(Base):
     actor_id: Mapped[str]=mapped_column(String(64),nullable=False)
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False,index=True)
 
+class HotelPartnerImportAuthorizationRow(Base):
+    __tablename__='hotel_partner_import_authorization'
+    authorization_id: Mapped[str]=mapped_column(String(64),primary_key=True)
+    property_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
+    supplier_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
+    provider: Mapped[str]=mapped_column(String(32),nullable=False,index=True)
+    state_hash: Mapped[str]=mapped_column(String(64),nullable=False,unique=True)
+    status: Mapped[str]=mapped_column(String(24),nullable=False,index=True)
+    requested_by: Mapped[str]=mapped_column(String(64),nullable=False)
+    created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
+    expires_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False,index=True)
+    consumed_at: Mapped[datetime|None]=mapped_column(DateTime(timezone=True))
+
+class HotelPartnerImportJobRow(Base):
+    __tablename__='hotel_partner_import_job'
+    import_job_id: Mapped[str]=mapped_column(String(64),primary_key=True)
+    property_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
+    supplier_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
+    provider: Mapped[str]=mapped_column(String(32),nullable=False,index=True)
+    method: Mapped[str]=mapped_column(String(32),nullable=False)
+    idempotency_key: Mapped[str]=mapped_column(String(160),nullable=False)
+    request_hash: Mapped[str]=mapped_column(String(64),nullable=False)
+    status: Mapped[str]=mapped_column(String(24),nullable=False,index=True)
+    result_json: Mapped[dict]=mapped_column(JSON,nullable=False,default=dict)
+    error_code: Mapped[str|None]=mapped_column(String(96))
+    created_by: Mapped[str]=mapped_column(String(64),nullable=False)
+    created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
+    completed_at: Mapped[datetime|None]=mapped_column(DateTime(timezone=True))
+    __table_args__=(UniqueConstraint('supplier_id','property_id','idempotency_key',name='uq_partner_import_idempotency'),)
+
 # Mother Plan Production Build 2 — Commercial Constitution + GO Admin Commercial OS.
 class CommercialPolicyVersionRow(Base):
     __tablename__='commercial_policy_version'
@@ -5420,7 +5494,7 @@ class OmnichannelMerchantBindingRow(Base):
     credential_reference: Mapped[str]=mapped_column(String(512),nullable=False)
     webhook_key_reference: Mapped[str]=mapped_column(String(512),nullable=False)
     capabilities_json: Mapped[list]=mapped_column(JSON,nullable=False)
-    state: Mapped[str]=mapped_column(String(24),nullable=False,index=True)
+    state: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     updated_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
     __table_args__=(UniqueConstraint('owner_type','owner_id','channel','market',name='uq_omni_merchant_channel'),)
 
@@ -5474,7 +5548,7 @@ class OmnichannelLedgerEntryRow(Base):
     ledger_entry_id: Mapped[str]=mapped_column(String(64),primary_key=True)
     transaction_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     payment_intent_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
-    account_code: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
+    account_code: Mapped[str]=mapped_column(String(128),nullable=False,index=True)
     direction: Mapped[str]=mapped_column(String(8),nullable=False)
     amount_minor: Mapped[int]=mapped_column(BigInteger,nullable=False)
     currency: Mapped[str]=mapped_column(String(3),nullable=False)
@@ -6288,7 +6362,7 @@ class HostedDirectReservationRow(Base):
     check_out: Mapped[str]=mapped_column(String(10),nullable=False)
     amount_minor: Mapped[int]=mapped_column(Integer,nullable=False)
     currency: Mapped[str]=mapped_column(String(8),nullable=False)
-    reservation_state: Mapped[str]=mapped_column(String(40),nullable=False,index=True)
+    reservation_state: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     payment_state: Mapped[str]=mapped_column(String(40),nullable=False,index=True)
     hotel_confirmation_reference: Mapped[str|None]=mapped_column(String(128))
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
@@ -6355,6 +6429,8 @@ class HostedContentApprovalRow(Base):
     decided_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
 class HostedMediaAssetRow(Base):
     __tablename__='hosted_media_asset'
+    submitted_by: Mapped[str|None]=mapped_column(String(64))
+    submitter_binding_hash: Mapped[str|None]=mapped_column(String(64))
     media_asset_id: Mapped[str]=mapped_column(String(64),primary_key=True)
     hosted_hotel_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     asset_role: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
@@ -6463,7 +6539,7 @@ class HostedActionApprovalRow(Base):
     requester_id: Mapped[str]=mapped_column(String(64),nullable=False)
     checker_id: Mapped[str|None]=mapped_column(String(64))
     evidence_reference: Mapped[str|None]=mapped_column(String(512))
-    state: Mapped[str]=mapped_column(String(24),nullable=False,index=True)
+    state: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
 class HostedDailyCloseRow(Base):
     __tablename__='hosted_daily_close'
@@ -6514,7 +6590,7 @@ class AlipayCredentialBindingRow(Base):
     alipay_public_key_reference: Mapped[str]=mapped_column(String(512),nullable=False)
     kms_private_key_reference: Mapped[str]=mapped_column(String(512),nullable=False)
     certificate_mode: Mapped[bool]=mapped_column(Boolean,nullable=False)
-    state: Mapped[str]=mapped_column(String(32),nullable=False,index=True)
+    state: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     updated_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
 class AlipayAuthorizationRow(Base):
     __tablename__='alipay_authorization'
@@ -6558,7 +6634,7 @@ class AlipayReconciliationRow(Base):
     payment_amount_minor: Mapped[int]=mapped_column(Integer,nullable=False)
     refund_amount_minor: Mapped[int]=mapped_column(Integer,nullable=False)
     settlement_amount_minor: Mapped[int]=mapped_column(Integer,nullable=False)
-    decision: Mapped[str]=mapped_column(String(32),nullable=False,index=True)
+    decision: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     evidence_hash: Mapped[str]=mapped_column(String(64),nullable=False)
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
 
@@ -6899,6 +6975,7 @@ class VerticalSourceDecisionRow(Base):
     reason_codes_json: Mapped[list]=mapped_column(JSON,nullable=False)
     decision_hash: Mapped[str]=mapped_column(String(64),nullable=False,unique=True)
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False,index=True)
+    __table_args__=(Index('ix_vertical_source_latest', 'vertical', 'business_id', 'created_at'),)
 
 # P0 remediation 0098 — server-resolved payment truth and scoped financial close.
 class PaymentOrderFactBindingRow(Base):
@@ -7126,6 +7203,22 @@ class GoAIRequestRow(Base):
     selected_model: Mapped[str | None] = mapped_column(String(128))
     response_hash: Mapped[str | None] = mapped_column(String(64))
     failure_code: Mapped[str | None] = mapped_column(String(96))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class GoAIExecutionRow(Base):
+    """GO AI-specific execution ownership; not shared with other worker domains."""
+    __tablename__ = "go_ai_execution"
+    go_ai_request_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    owner_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    fencing_token: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    lease_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    state: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    checkpoint_json: Mapped[dict | None] = mapped_column(JSON)
+    checkpoint_hash: Mapped[str | None] = mapped_column(String(64))
+    checkpoint_complete: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    provider_outcome: Mapped[str] = mapped_column(String(32), nullable=False, default="NOT_STARTED")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
@@ -7897,7 +7990,9 @@ class CatalogCreditSourceRow(Base):
     __tablename__ = 'catalog_credit_source'
     capture_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     credit_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    payment_intent_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    # Every movement checks whether its root payment funds a catalog credit.
+    # Without this index an unrelated large credit ledger scans on money ingress.
+    payment_intent_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     funded_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
     prior_refund_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
     excluded_minor: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
@@ -7995,3 +8090,106 @@ class CatalogOrderFareSnapshotRow(Base):
     accepted_by: Mapped[str] = mapped_column(String(64), nullable=False)
     acceptance_kind: Mapped[str] = mapped_column(String(40), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+class HostedMoneyUnknownEpisodeRow(Base):
+    __tablename__ = 'hosted_money_unknown_episode'
+    __table_args__ = (
+        UniqueConstraint('money_movement_id', 'episode_generation', name='uq_hosted_money_unknown_generation'),
+    )
+    episode_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    authorization_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    hosted_reservation_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    money_movement_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    funding_leg: Mapped[str] = mapped_column(String(40), nullable=False)
+    episode_generation: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    open_evidence_reference: Mapped[str] = mapped_column(String(512), nullable=False)
+    open_evidence_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    resolution_decision: Mapped[str | None] = mapped_column(String(32))
+    resolution_evidence_reference: Mapped[str | None] = mapped_column(String(512))
+    resolution_evidence_digest: Mapped[str | None] = mapped_column(String(64))
+    opened_by: Mapped[str] = mapped_column(String(64), nullable=False)
+    resolved_by: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class HostedMoneyUnknownEpisodeAuditRow(Base):
+    __tablename__ = 'hosted_money_unknown_episode_audit'
+    __table_args__ = (
+        UniqueConstraint('episode_id', 'sequence', name='uq_hosted_money_unknown_audit_sequence'),
+    )
+    audit_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    episode_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    actor_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    evidence_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    previous_hash: Mapped[str | None] = mapped_column(String(64))
+    event_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+
+class HostedPublicationReviewRow(Base):
+    __tablename__ = 'hosted_publication_review'
+    publication_review_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    hosted_hotel_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    manifest_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    manifest_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    reviewer_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    binding_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    decision: Mapped[str] = mapped_column(String(24), nullable=False)
+    evidence_reference: Mapped[str] = mapped_column(String(512), nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+class RegistrationChallengeRow(Base):
+    __tablename__ = 'registration_challenge'
+    subject_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    challenge_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    code_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    policy_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    state: Mapped[str] = mapped_column(String(16), nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False)
+    expires_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    consumed_by: Mapped[str | None] = mapped_column(String(64))
+
+
+class RegistrationRateRow(Base):
+    __tablename__ = 'registration_rate'
+    bucket_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    count: Mapped[int] = mapped_column(Integer, nullable=False)
+    expires_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+
+class RegistrationDecisionRow(Base):
+    __tablename__ = 'registration_decision'
+    decision_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    audience: Mapped[str] = mapped_column(String(16), nullable=False)
+    decisions: Mapped[dict] = mapped_column(JSON, nullable=False)
+    versions: Mapped[dict] = mapped_column(JSON, nullable=False)
+    hashes: Mapped[dict] = mapped_column(JSON, nullable=False)
+    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    expires_ms: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+
+
+class RegistrationMaintenanceRow(Base):
+    __tablename__ = 'registration_maintenance'
+    key: Mapped[str] = mapped_column(String(40), primary_key=True)
+    success_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+
+class PrivacyRequestRow(Base):
+    __tablename__ = 'privacy_request'
+    request_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False)
+    created_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    due_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    updated_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    resolution: Mapped[dict] = mapped_column(JSON, nullable=False)

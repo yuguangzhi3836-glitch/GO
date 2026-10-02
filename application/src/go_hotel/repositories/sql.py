@@ -4,6 +4,8 @@ import json
 from datetime import timedelta
 from sqlalchemy import select, or_, text
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from go_hotel.db.models import (
     OfferRow, PrebookRow, OrderRow, PaymentRow, EventRow, OutboxRow, IdempotencyRow,
     ExternalOperationRow, WebhookInboxRow, ConnectorCursorRow, ConnectorCertificationRow, ConnectorHealthRow, ReconciliationRunRow,
@@ -335,6 +337,27 @@ class SqlRepository:
         digest = self.hash_payload(payload)
         try:
             with SessionLocal.begin() as s:
+                dialect = s.get_bind().dialect.name
+                if dialect in {'postgresql', 'sqlite'}:
+                    # Expected duplicate keys are a normal result, not a failed
+                    # transaction followed by another connection acquisition.
+                    # Only this composite key is ignored; other integrity errors
+                    # must still propagate. The database chooses the sole winner.
+                    factory = pg_insert if dialect == 'postgresql' else sqlite_insert
+                    stmt = factory(IdempotencyRow.__table__).values(
+                        idempotency_key=key, operation=operation, request_hash=digest,
+                        response_code=102, response_body={'status': 'IN_PROGRESS'},
+                        resource_id=None, created_at=now_utc(),
+                    ).on_conflict_do_nothing(index_elements=['idempotency_key', 'operation'])
+                    inserted = s.scalar(stmt.returning(IdempotencyRow.idempotency_key))
+                    if inserted is not None:
+                        return 'CLAIMED', None
+                    r = s.get(IdempotencyRow, {'idempotency_key': key, 'operation': operation})
+                    if not r or r.request_hash != digest:
+                        raise ValueError('IDEMPOTENCY_CONFLICT')
+                    rec = {'request_hash': r.request_hash, 'response_code': r.response_code,
+                           'response': r.response_body, 'resource_id': r.resource_id}
+                    return ('IN_PROGRESS' if r.response_code == 102 else 'REPLAY'), rec
                 s.add(IdempotencyRow(
                     idempotency_key=key, operation=operation, request_hash=digest,
                     response_code=102, response_body={"status":"IN_PROGRESS"},
@@ -342,6 +365,8 @@ class SqlRepository:
                 ))
             return "CLAIMED", None
         except IntegrityError:
+            if dialect in {'postgresql', 'sqlite'}:
+                raise
             rec = self.get_idempotency(operation, key)
             if not rec or rec["request_hash"] != digest:
                 raise ValueError("IDEMPOTENCY_CONFLICT")
@@ -351,29 +376,39 @@ class SqlRepository:
 
     def complete_idempotency(self, operation: str, key: str, payload: dict, response: dict, resource_id: str | None = None, response_code: int = 200) -> dict:
         digest = self.hash_payload(payload)
+        table = IdempotencyRow.__table__
         with SessionLocal.begin() as s:
-            r = s.get(IdempotencyRow, {"idempotency_key": key, "operation": operation})
-            if not r or r.request_hash != digest:
+            # Recheck ownership in the write itself: a preceding read can become
+            # stale if another transaction releases and replaces the claim.
+            changed = s.execute(table.update().where(
+                table.c.operation == operation,
+                table.c.idempotency_key == key,
+                table.c.request_hash == digest,
+            ).values(response_code=response_code, response_body=response,
+                     resource_id=resource_id)).rowcount
+            if changed != 1:
                 raise ValueError("IDEMPOTENCY_CLAIM_LOST")
-            r.response_code = response_code
-            r.response_body = response
-            r.resource_id = resource_id
         return response
 
     def release_idempotency_claim(self, operation: str, key: str, payload: dict) -> None:
         """Release only an unfinished claim owned by the same request fingerprint."""
         digest = self.hash_payload(payload)
+        table = IdempotencyRow.__table__
         with SessionLocal.begin() as s:
-            r = s.get(IdempotencyRow, {"idempotency_key": key, "operation": operation})
-            if r and r.request_hash == digest and r.response_code == 102:
-                s.delete(r)
+            # A concurrent completion must leave its receipt replayable.
+            s.execute(table.delete().where(
+                table.c.operation == operation,
+                table.c.idempotency_key == key,
+                table.c.request_hash == digest,
+                table.c.response_code == 102,
+            ))
 
     def bind_idempotency_resource(self, operation, key, payload, resource_id, token, *, new_claim):
-        """Bind before effects, or exclusively acquire a quiescent failed call.
+        """Bind a Flight recovery command to a fenced, renewable local lease.
 
-        RUNNING is never reclaimed by a timeout: a lease is not a fence around
-        an external side effect. A dead process therefore requires review.
-        """
+        The lease only permits automatic recovery after payment_snapshot proves
+        that no external payment was invoked. It is never an external fence."""
+        
         if not isinstance(resource_id, str) or not 1 <= len(resource_id) <= 64:
             raise ValueError("IDEMPOTENCY_RESOURCE_INVALID")
         digest = self.hash_payload(payload)
@@ -431,9 +466,80 @@ class SqlRepository:
             elif guard.response_body.get('status') != 'UNCLAIMED':
                 return 'IN_PROGRESS', None
             row.resource_id = resource_id
-            row.response_body = {'status': 'RUNNING', 'execution_token': token}
-            guard.response_body = {'status': 'RUNNING', 'execution_token': token}
+            lease_until_ms = int(now_utc().timestamp() * 1000) + 15000
+            running = {'status': 'RUNNING', 'execution_token': token, 'lease_until_ms': lease_until_ms,
+                       'heartbeat_ms': lease_until_ms - 15000, 'payload': payload}
+            row.response_body = running
+            guard.response_body = dict(running)
             return mode, None
+
+    def heartbeat_recoverable_idempotency(self, operation, key, resource_id, token, lease_ms=15000):
+        """Renew a running Flight command only while both request and resource fences match."""
+        if not 1000 <= lease_ms <= 60000:
+            raise ValueError('IDEMPOTENCY_LEASE_INVALID')
+        with SessionLocal.begin() as s:
+            if s.bind.dialect.name == 'sqlite':
+                s.execute(text('BEGIN IMMEDIATE'))
+            row = s.get(IdempotencyRow, {'operation': operation, 'idempotency_key': key}, with_for_update=True)
+            guard = s.get(IdempotencyRow, {'operation': 'RESOURCE:' + operation, 'idempotency_key': resource_id}, with_for_update=True)
+            if not row or not guard or row.resource_id != resource_id or guard.resource_id != resource_id:
+                raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
+            for record in (row, guard):
+                body = record.response_body
+                if record.response_code != 102 or body.get('status') != 'RUNNING' or body.get('execution_token') != token:
+                    raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
+            now_ms = int(now_utc().timestamp() * 1000)
+            body = {**row.response_body, 'heartbeat_ms': now_ms, 'lease_until_ms': now_ms + lease_ms}
+            row.response_body = body
+            guard.response_body = dict(body)
+            return body['lease_until_ms']
+
+    def claim_expired_flight_recovery(self, limit=20, lease_ms=15000):
+        """Atomically take over only a stale Flight local-simulation command.
+
+        The caller must still validate payment_snapshot before replaying it.
+        """
+        if not 1 <= limit <= 100 or not 1000 <= lease_ms <= 60000:
+            raise ValueError('IDEMPOTENCY_LEASE_INVALID')
+        claimed = []
+        with SessionLocal.begin() as s:
+            if s.bind.dialect.name == 'sqlite':
+                s.execute(text('BEGIN IMMEDIATE'))
+            now_ms = int(now_utc().timestamp() * 1000)
+            # Match bind/heartbeat/finish lock order: request, then resource.
+            # The old resource-first order could deadlock with a live heartbeat.
+            rows = s.scalars(select(IdempotencyRow).where(
+                IdempotencyRow.operation.in_(['FLIGHT_CHECKOUT', 'FLIGHT_EXECUTE_CHANGE']),
+                IdempotencyRow.response_code == 102).with_for_update(skip_locked=True)).all()
+            for request in rows:
+                body = dict(request.response_body or {})
+                if body.get('status') != 'RUNNING' or int(body.get('lease_until_ms') or now_ms + 1) > now_ms:
+                    continue
+                operation = request.operation
+                guard = s.get(IdempotencyRow, {'operation': 'RESOURCE:' + operation,
+                    'idempotency_key': request.resource_id}, with_for_update=True)
+                if (not guard or guard.response_code != 102
+                        or guard.response_body.get('status') != 'RUNNING'
+                        or guard.response_body.get('execution_token') != body.get('execution_token')
+                        or guard.request_hash != request.request_hash
+                        or int(guard.response_body.get('lease_until_ms') or now_ms + 1) > now_ms):
+                    continue
+                # The request row is authoritative for the reconstructable
+                # command payload; the resource row is its exclusion fence.
+                payload = request.response_body.get('payload')
+                if not isinstance(payload, dict):
+                    # Legacy RUNNING rows cannot be reconstructed; retain the fence.
+                    continue
+                token = new_id('flight_recovery')
+                next_body = {'status': 'RUNNING', 'execution_token': token, 'heartbeat_ms': now_ms,
+                             'lease_until_ms': now_ms + lease_ms, 'payload': payload, 'recovered_from': body.get('execution_token')}
+                request.response_body = next_body
+                guard.response_body = dict(next_body)
+                claimed.append({'operation': operation, 'key': request.idempotency_key,
+                    'resource_id': guard.resource_id, 'payload': payload, 'token': token})
+                if len(claimed) >= limit:
+                    break
+        return claimed
 
     def finish_recoverable_idempotency(self, operation, key, payload, resource_id, token, action, response=None):
         """Fence every completion, failure marker and safe release by token."""
@@ -452,13 +558,15 @@ class SqlRepository:
                 if action == 'RECOVERY_REQUIRED' and row.response_code == 200:
                     return
                 raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
-            if row.response_body != {'status': 'RUNNING', 'execution_token': token}:
+            if (row.response_body.get('status') != 'RUNNING'
+                    or row.response_body.get('execution_token') != token):
                 raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
             guard = s.get(IdempotencyRow, {'operation': 'RESOURCE:' + operation,
                 'idempotency_key': resource_id}, with_for_update=True)
             if (not guard or guard.request_hash != digest or guard.resource_id != resource_id
                     or guard.response_code != 102
-                    or guard.response_body != {'status': 'RUNNING', 'execution_token': token}):
+                    or guard.response_body.get('status') != 'RUNNING'
+                    or guard.response_body.get('execution_token') != token):
                 raise ValueError('IDEMPOTENCY_EXECUTION_LOST')
             if action == 'RELEASE':
                 s.delete(row)
@@ -562,7 +670,11 @@ class SqlRepository:
 
     def append_event(self, event: Event) -> None:
         with SessionLocal.begin() as s:
-            self._append_event_and_outbox(s, event)
+            self.append_event_in_session(s, event)
+
+    def append_event_in_session(self, s, event: Event) -> None:
+        """Stage an event/outbox pair in the caller's existing transaction."""
+        self._append_event_and_outbox(s, event)
 
     def _append_event_and_outbox(self, s, event: Event) -> None:
         s.add(EventRow(event_id=event.event_id, event_type=event.event_type, aggregate_type=event.aggregate_type, aggregate_id=event.aggregate_id, payload=event.payload, occurred_at=event.occurred_at))

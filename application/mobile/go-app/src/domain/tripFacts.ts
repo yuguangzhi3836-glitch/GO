@@ -41,15 +41,16 @@ export function flightCells(order: any, result: any, now = Date.now()) {
   const belongs = result?.flight_order_id === order.order_id;
   return (order.itinerary || []).flatMap((leg: any, legIndex: number) =>
     (order.passengers || []).map((person: any, passengerIndex: number) => {
-      const matches = belongs && Array.isArray(result.items) ? result.items.filter((x: any) =>
+      const coupon = order.coupons?.find((c:any)=>c.leg_index===legIndex&&c.passenger_index===passengerIndex);
+      const matches = (!order.coupons?.length||coupon?.usable) && belongs && Array.isArray(result.items) ? result.items.filter((x: any) =>
         x.leg_index === legIndex && x.passenger_index === passengerIndex) : [];
       const fact = matches.length === 1 ? matches[0] : null;
       const fresh = fact && typeof fact.fact_id === 'string' && fact.fact_id.length > 0 &&
         Number.isFinite(fact.observed_ms) && Number.isFinite(fact.expires_ms) &&
         fact.observed_ms <= now && fact.expires_ms > now;
-      const state = fresh && checkinStates.has(fact.state) ? fact.state : 'CHECK_IN_UNVERIFIED';
-      return {legIndex, passengerIndex, leg, person, state,
-        officialUrl: state !== 'CHECK_IN_UNVERIFIED' ? httpsLink(fact.official_check_in_url) : null,
+      const state = coupon&&!coupon.usable ? (coupon.state==='REFUNDED'?'COUPON_REFUNDED':'COUPON_UNAVAILABLE') : fresh && checkinStates.has(fact.state) ? fact.state : 'CHECK_IN_UNVERIFIED';
+      return {legIndex, passengerIndex, leg:coupon?.leg||leg, person, state,
+        officialUrl: checkinStates.has(state) ? httpsLink(fact.official_check_in_url) : null,
         passUrl: state === 'BOARDING_PASS_AVAILABLE' ? httpsLink(fact.boarding_pass_reference) : null};
     }));
 }

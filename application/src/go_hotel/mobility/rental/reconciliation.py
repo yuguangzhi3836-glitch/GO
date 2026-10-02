@@ -17,7 +17,7 @@ def inspect_refund(account, order_id, refund_id):
         if (not order or order.account_id != account or not refund
                 or refund.order_id != order_id or refund.vertical != 'RENTAL'):
             raise ValueError('RENTAL_REFUND_NOT_FOUND')
-        findings, ids, plan_proven, money_confirmed = [], [], False, False
+        findings, ids, plan_proven, money_confirmed, receipts = [], [], False, False, []
         try:
             records = consent.records(session, order, 'RENTAL')
             if not records:
@@ -37,7 +37,6 @@ def inspect_refund(account, order_id, refund_id):
             findings.append('FROZEN_PLAN_UNAVAILABLE_OR_INVALID')
             plan_proven = False
         elif plan_proven:
-            receipts = []
             for item in plan:
                 matches = list(session.scalars(select(Movement).where(
                     Movement.root_payment_intent_id == item['payment_intent_id'],
@@ -73,8 +72,18 @@ def inspect_refund(account, order_id, refund_id):
             status, next_action = 'PENDING_MONEY', 'RECONCILE_FROZEN_PLAN_RECEIPTS'
         else:
             status, next_action = 'CONTRADICTION', 'REVIEW_ORDER_AND_REFUND_STATE_AGAINST_LEDGER'
+        def observed(value):
+            return value.isoformat() if value is not None else None
+        evidence_observed_at = {
+            'order_updated_at': observed(order.updated_at),
+            'refund_created_at': observed(refund.created_at),
+            'confirmed_movements': sorted([
+                {'money_movement_id': row.money_movement_id, 'created_at': observed(getattr(row, 'created_at', None))}
+                for row in receipts if row.money_movement_id in ids
+            ], key=lambda item: item['money_movement_id']),
+        }
         return {'order_id': order_id, 'refund_id': refund_id, 'status': status,
             'order_status': order.status, 'refund_status': refund.status,
             'plan_proven': plan_proven, 'money_confirmed': money_confirmed,
-            'confirmed_movement_ids': ids, 'findings': sorted(set(findings)),
+            'confirmed_movement_ids': ids, 'evidence_observed_at': evidence_observed_at, 'findings': sorted(set(findings)),
             'next_action': next_action, 'read_only': True, 'automatic_repair': False}

@@ -61,7 +61,7 @@ def for_order(terms, visit_date, session_time):
 
 def guard(window, current_ms):
     if window['state'] == 'LEGACY_UNVERIFIED':
-        return
+        raise ValueError('ATTRACTION_VALIDITY_REVIEW_REQUIRED')
     opened = datetime.fromisoformat(window['opens_at'])
     closed = datetime.fromisoformat(window['closes_at'])
     current = datetime.fromtimestamp(current_ms / 1000, UTC)

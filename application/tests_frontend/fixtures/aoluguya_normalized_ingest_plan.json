@@ -1,0 +1,204 @@
+{
+  "mode": "REVIEW_ONLY_NO_NETWORK_MUTATIONS",
+  "selected_existing_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+  "protected_secondary_id": "hotel_d17851be16724affb355375cacc5e58c",
+  "operations": [
+    {
+      "method": "POST",
+      "path": "/internal/v1/hotel-autopage/factory/hotels/hotel_ac72aa53c89d4c3984b72436cb85f617/publication",
+      "body": {
+        "action": "UNPUBLISH"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/internal/v1/hotel-autopage/sources/ingest",
+      "body": {
+        "canonical_hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+        "external_hotel_id": "HRBUB",
+        "rights_status": "PUBLIC_BUSINESS_FACT",
+        "source_key": "aoluguya-official-info-20260917",
+        "source_type": "OFFICIAL_WEBSITE",
+        "source_url": "https://www.hyatt.com/unbound-collection/en-US/hrbub-aoluguya/hotel-info",
+        "confidence_bps": 9500,
+        "payload": {
+          "name": "敖麓谷雅",
+          "name_en": "AOLUGUYA",
+          "address": "黑龙江省哈尔滨市松北区创新三路800号",
+          "website": "https://www.hyatt.com/unbound-collection/zh-CN/hrbub-aoluguya",
+          "phone": "+86 451 8880 0808"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/internal/v1/hotel-autopage/sources/ingest",
+      "body": {
+        "canonical_hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+        "external_hotel_id": "HRBUB",
+        "rights_status": "PUBLIC_BUSINESS_FACT",
+        "source_key": "aoluguya-official-faq-20260917",
+        "source_type": "OFFICIAL_WEBSITE",
+        "source_url": "https://www.hyatt.com/unbound-collection/zh-CN/hrbub-aoluguya/faqs",
+        "confidence_bps": 9500,
+        "payload": {
+          "facilities": [
+            {
+              "code": "WIFI",
+              "scope": "客房及公共区域",
+              "free": true
+            },
+            {
+              "code": "CRIB",
+              "availability": "按需向前台申请"
+            },
+            {
+              "code": "BED_RAIL",
+              "availability": "按需向前台申请"
+            }
+          ],
+          "policies": {
+            "deposit_refund": "退房后通常3–7个工作日，到账时间依支付渠道",
+            "self_drive": "卧云及以上房型每次入住免费提供自驾用车一次；车型随机，须预约且受车辆库存限制",
+            "executive_privileges": "卧云及以上房型提供行政礼遇"
+          }
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/internal/v1/hotel-autopage/sources/ingest",
+      "body": {
+        "canonical_hotel_id": "hotel_ac72aa53c89d4c3984b72436cb85f617",
+        "external_hotel_id": "HRBUB",
+        "rights_status": "PUBLIC_BUSINESS_FACT",
+        "source_key": "aoluguya-golden-rooms-20260905-recovery",
+        "source_type": "PUBLIC_SOURCE",
+        "source_url": "https://sg.trip.com/hotels/harbin-hotel-detail-2670932/aoluguya-spa-by-loccitane-the-unbound-collection-by-hyatt-hotel/?locale=zh-SG",
+        "confidence_bps": 5000,
+        "payload": {
+          "rooms": [
+            {
+              "room_type_id": "SUN_KING",
+              "name": "撮罗子·映日大床房",
+              "physical_media_family_id": "FAMILY_DREAMWEAVER_KING",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "ROUND_DREAM_KING",
+              "name": "撮罗子·圆梦大床房",
+              "physical_media_family_id": "FAMILY_DREAMWEAVER_KING",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "WATER_KING",
+              "name": "撮罗子·乐水大床房",
+              "physical_media_family_id": "FAMILY_DREAMWEAVER_KING",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "SUN_TWIN",
+              "name": "撮罗子·映日双床房",
+              "physical_media_family_id": "FAMILY_DREAMWEAVER_TWIN",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "ROUND_DREAM_TWIN",
+              "name": "撮罗子·圆梦双床房",
+              "physical_media_family_id": "FAMILY_DREAMWEAVER_TWIN",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "WATER_TWIN",
+              "name": "撮罗子·乐水双床房",
+              "physical_media_family_id": "FAMILY_DREAMWEAVER_TWIN",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "PILLOW_MOON_KING",
+              "name": "撮罗子·枕月大床房",
+              "physical_media_family_id": "FAMILY_CLOUDSPIRE_KING",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "SLEEPING_CLOUD_KING",
+              "name": "撮罗子·卧云大床房",
+              "physical_media_family_id": "FAMILY_CLOUDSPIRE_KING",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "RIVER_KING",
+              "name": "撮罗子·阅江大床房",
+              "physical_media_family_id": "FAMILY_CLOUDSPIRE_KING",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "PILLOW_MOON_TWIN",
+              "name": "撮罗子·枕月双床房",
+              "physical_media_family_id": "FAMILY_CLOUDSPIRE_TWIN",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "SLEEPING_CLOUD_TWIN",
+              "name": "撮罗子·卧云双床房",
+              "physical_media_family_id": "FAMILY_CLOUDSPIRE_TWIN",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "RIVER_TWIN",
+              "name": "撮罗子·阅江双床房",
+              "physical_media_family_id": "FAMILY_CLOUDSPIRE_TWIN",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "SUNSET_KING",
+              "name": "撮罗子·栖霞大床房",
+              "physical_media_family_id": "FAMILY_SUNSET_KING",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "STARDUST_FAMILY_SUITE",
+              "name": "撮罗子·牵星家庭套房",
+              "physical_media_family_id": "FAMILY_STAR_FAMILY_SUITE",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "MOON_EMBRACE_SUITE",
+              "name": "撮罗子·抱月套房",
+              "physical_media_family_id": "FAMILY_LUAR_EBRACE_SUITE",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "RAINBOW_FAMILY_SUITE",
+              "name": "撮罗子·握虹家庭套房",
+              "physical_media_family_id": "FAMILY_LUAR_EBRACE_SUITE",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            },
+            {
+              "room_type_id": "PUYUE_SUITE",
+              "name": "撮罗子·朴悦套房",
+              "physical_media_family_id": "FAMILY_MARIA_SUO_SUITE",
+              "source_record": "AOLUGUYA_17_ROOM_MEDIA_COVERAGE.json"
+            }
+          ],
+          "recovery_source_manifest_sha256": "81e6551228e483e88e3365f16a5588ed0a0a34c3df7e71f6d18b8160649e7532"
+        }
+      }
+    }
+  ],
+  "media_imported": false,
+  "rights": "HOLD",
+  "live_execution": false,
+  "preflight_requirements": [
+    "Authenticated principal with admin:rules; GO_READ_ONLY must fail before any mutation",
+    "Fresh precise deployed candidate evidence",
+    "Inspect all chosen-field existing provenance; higher rank rooms with differing payload must STOP",
+    "Verify no canonical source identity conflict before UNPUBLISH",
+    "Snapshot/contacts/events preserved; no deletion or source priority manipulation"
+  ],
+  "expected_limitations": [
+    "Immutable source conflict evidence remains REVIEW_REQUIRED where sources disagree",
+    "No catalog_manifest or official room IDs fabricated",
+    "No media candidates/media claims imported; admin images separate future step"
+  ]
+}

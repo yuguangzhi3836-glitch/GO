@@ -23,6 +23,11 @@ CATALOG={
  "teamlab_planets":{"name":"teamLab Planets TOKYO","type":"EXPERIENCE","destination":"东京","ticket_type":"标准入场","price":26000,"session":"18:30","sessions":["18:30"],"eligibility":{"age":"all","id_required":False},"voucher_type":"QR_CODE","inventory":8,"changeable":True,"refundable":False},
  "tokyo_concert":{"name":"Tokyo Live Night","type":"EVENT","destination":"东京","ticket_type":"指定席 A","price":68000,"session":"19:30","sessions":["19:30"],"eligibility":{"age":"6+","id_required":True},"voucher_type":"E_TICKET","inventory":4,"changeable":False,"refundable":True},
 }
+# These are versioned engineering fixtures, never asserted as actual supplier rules.
+for _product in CATALOG.values():
+ _product['supplier_validity_policy']={'destination_timezone':'Asia/Tokyo',
+  'opens_minutes_before_session':30,'closes_minutes_after_session':120,
+  'policy_reference':'engineering-fixture://attraction/session-window/v1'}
 class AttractionService:
  def _catalog(self,offer_id,visit_date,session_time=None,currency='CNY'):
   x=CATALOG.get(offer_id)
@@ -62,6 +67,8 @@ class AttractionService:
    items.append({"offer_id":pid,"product_id":pid,"product_name":x["name"],"product_type":x["type"],"destination":x["destination"],"visit_date":visit_date,"session_time":x["session"],"available_sessions":x["sessions"],"price_basis":"PER_TICKET","unit_amount_minor":x["price"],"ticket_type":x["ticket_type"],"total_amount_minor":x["price"],"currency":currency,"inventory_units":x["inventory"],"eligibility":x["eligibility"],"voucher_type":x["voucher_type"],"changeable":x["changeable"],"refundable":x["refundable"],"external_live":False})
   with transaction(SessionLocal) as s:
    for item in items:
+    item['redemption_window']=validity.freeze(CATALOG[item['offer_id']].get('supplier_validity_policy'),visit_date,item['session_time'])
+    item['validity_source']='ENGINEERING_FIXTURE_ONLY'
     available={session:capacity.available_in(s,'ATTRACTION',capacity.attraction_resource(item['offer_id'],visit_date,session),CATALOG[item['offer_id']]['inventory']) for session in item['available_sessions']}
     item['inventory_by_session']=available;item['inventory_units']=available[item['session_time']]
   return items
@@ -110,48 +117,79 @@ class AttractionService:
    s.add(o);s.flush();reservation_expiry.issue_in(s,'ATTRACTION',o);contracts.consume_in(s,contract,account,o.order_id,request)
    append_vertical_evidence(s,'ATTRACTION',o.order_id,'ORDER_CREATED',o.status,{'prebook_id':contract.prebook_id,'terms_hash':contract.terms_hash,'external_live':False})
    result=self.out(o)
-  vertical_source_runtime_service.decide('ATTRACTION',result['order_id'],[{'source_id':'attraction-engineering-source','source_type':'ATTRACTION_OFFICIAL','authorized':True,'available':True,'evidence_reference':f"attraction-prebook://{b['prebook_id']}"}])
+   vertical_source_runtime_service.decide_in(s,'ATTRACTION',result['order_id'],[{'source_id':'attraction-engineering-source','source_type':'ATTRACTION_OFFICIAL','authorized':True,'available':True,'evidence_reference':f"attraction-prebook://{b['prebook_id']}"}])
   return result
  def _window_in(self,s,o):
   if s is None:return {'state':'LEGACY_UNVERIFIED'}
   row=s.scalar(select(VerticalPrebookContractRow).where(VerticalPrebookContractRow.vertical=='ATTRACTION',VerticalPrebookContractRow.order_id==o.order_id))
   if not row:return {'state':'LEGACY_UNVERIFIED'}
   return validity.for_order(self._order_terms(s,o.order_id),o.visit_date,o.session_time)
+ def _entry_projection(self,o):
+  s=object_session(o)
+  reason='ATTRACTION_NOT_CONFIRMED'
+  if o.status=='CONFIRMED' and s is not None:
+   try:
+    validity.guard(self._window_in(s,o),db_now_ms(s))
+    reason=None if o.voucher_code and o.supplier_reference else 'ATTRACTION_RECONCILIATION_VOUCHER_REQUIRED'
+   except ValueError as error:reason=str(error)
+  return {'can_redeem':reason is None,'redemption_blocker':reason,
+   'supplier_closed_refund':o.status=='CLOSED_BY_SUPPLIER'}
  def out(self,o): return {"vertical":"ATTRACTION","order_id":o.order_id,"status":o.status,"product_id":o.product_id,"product_name":o.product_name,"product_type":o.product_type,"destination":o.destination,"visit_date":o.visit_date,"session_time":o.session_time,"ticket_type":o.ticket_type,"quantity":o.quantity,"eligibility":o.eligibility,"voucher_type":o.voucher_type,"voucher_code":o.voucher_code if o.status=="CONFIRMED" else None,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"attendees":o.attendees,"supplier_reference":o.supplier_reference if o.status=="CONFIRMED" else None,"external_live":False,"redemption_window":self._window_in(object_session(o),o)} | reservation_expiry.projection('ATTRACTION',o)
  def get(self,account,order_id):
   with SessionLocal() as s:
    o=s.get(AttractionOrderRow,order_id,with_for_update=True)
    if not o or o.account_id!=account: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
-   out=self.out(o);out["evidence"]=list_vertical_evidence(s,"ATTRACTION",order_id);return out
+   out=self.out(o)|self._entry_projection(o);out["evidence"]=list_vertical_evidence(s,"ATTRACTION",order_id);return out
  def trips(self,account):
   with SessionLocal() as s:return [self.out(x) for x in s.scalars(select(AttractionOrderRow).where(AttractionOrderRow.account_id==account)).all()]
  def change_quote(self,account,order_id,new_visit_date,new_session_time=None):
   production_truth_required("ATTRACTION", "CHANGE_QUOTE")
-  order=self.get(account,order_id)
-  with SessionLocal() as read:x=self._order_terms(read,order_id)
-  self._catalog(order["product_id"],new_visit_date,new_session_time or order["session_time"],order["currency"])
-  if order["status"]!="CONFIRMED": raise ValueError("ATTRACTION_ORDER_NOT_CHANGEABLE")
-  if not x["changeable"]: raise ValueError("ATTRACTION_NOT_CHANGEABLE")
   with transaction(SessionLocal) as s:
-   q=AttractionChangeQuoteRow(quote_id=new_id("attr_chg"),order_id=order_id,new_visit_date=new_visit_date,new_session_time=new_session_time or order["session_time"],change_fee_minor=0,total_due_minor=0,currency=order["currency"],status="QUOTED",expires_at=now()+timedelta(minutes=10),created_at=now());s.add(q);s.flush();return {"quote_id":q.quote_id,"order_id":order_id,"new_visit_date":q.new_visit_date,"new_session_time":q.new_session_time,"change_fee_minor":0,"total_due_minor":0,"currency":q.currency,"expires_at":q.expires_at.isoformat()}
+   o=s.get(AttractionOrderRow,order_id,with_for_update=True)
+   if not o or o.account_id!=account:raise ValueError('ATTRACTION_ORDER_NOT_FOUND')
+   x=self._order_terms(s,order_id)
+   self._catalog(o.product_id,new_visit_date,new_session_time or o.session_time,o.currency)
+   if o.status!='CONFIRMED':raise ValueError('ATTRACTION_ORDER_NOT_CHANGEABLE')
+   if not x['changeable']:raise ValueError('ATTRACTION_NOT_CHANGEABLE')
+   validity.for_order(x,new_visit_date,new_session_time or o.session_time)
+   q=AttractionChangeQuoteRow(quote_id=new_id('attr_chg'),order_id=order_id,new_visit_date=new_visit_date,new_session_time=new_session_time or o.session_time,change_fee_minor=0,total_due_minor=0,currency=o.currency,status='QUOTED',expires_at=now()+timedelta(minutes=10),created_at=now());s.add(q);s.flush()
+   result={'quote_id':q.quote_id,'order_id':order_id,'new_visit_date':q.new_visit_date,'new_session_time':q.new_session_time,'change_fee_minor':0,'total_due_minor':0,'currency':q.currency,'expires_at':q.expires_at.isoformat()}
+   append_vertical_evidence(s,'ATTRACTION',order_id,'CHANGE_QUOTED',o.status,{'quote':result,'order_revision':self._change_revision(o)})
+   return result
+ def _change_revision(self,o):
+  return digest([o.order_id,o.account_id,o.product_id,o.visit_date,o.session_time,o.quantity,
+   o.total_amount_minor,o.currency,o.attendees,o.voucher_code,o.supplier_reference,str(o.updated_at)])
  def execute_change(self,account,order_id,quote_id):
   production_truth_required("ATTRACTION", "EXECUTE_CHANGE")
   self.get(account,order_id)
   with transaction(SessionLocal) as s:
    o=s.get(AttractionOrderRow,order_id,with_for_update=True);q=s.get(AttractionChangeQuoteRow,quote_id,with_for_update=True)
+   if o and o.account_id==account and q and q.order_id==order_id and q.status=='PENDING_SUPPLIER' and o.status=='UNKNOWN_EXTERNAL_STATE':return self.out(o)
    if not o or o.account_id!=account or o.status!="CONFIRMED" or not q or q.order_id!=order_id or q.status!="QUOTED" or q.expires_at<now(): raise ValueError("ATTRACTION_CHANGE_QUOTE_NOT_FOUND")
+   from go_hotel.services.ticket_operations import _events
+   _events(s,'ATTRACTION',order_id)
+   evidence=[x['payload'] for x in list_vertical_evidence(s,'ATTRACTION',order_id) if x['kind']=='CHANGE_QUOTED' and x['payload'].get('quote',{}).get('quote_id')==quote_id]
+   expected={'quote_id':q.quote_id,'order_id':order_id,'new_visit_date':q.new_visit_date,'new_session_time':q.new_session_time,'change_fee_minor':q.change_fee_minor,'total_due_minor':q.total_due_minor,'currency':q.currency,'expires_at':q.expires_at.isoformat()}
+   if len(evidence)!=1 or evidence[0].get('quote')!=expected or evidence[0].get('order_revision')!=self._change_revision(o):
+    raise ValueError('ATTRACTION_CHANGE_QUOTE_STALE_REQUOTE_REQUIRED')
    current,_=self._catalog(o.product_id,q.new_visit_date,q.new_session_time,o.currency)
    capacity.prepare_change_in(s,'ATTRACTION',order_id,quote_id,capacity.attraction_resource(o.product_id,q.new_visit_date,q.new_session_time),current['inventory'],o.quantity)
    q.status='PENDING_SUPPLIER';o.status='UNKNOWN_EXTERNAL_STATE';o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",o.order_id,"CHANGE_SUBMITTED_AWAITING_SUPPLIER",o.status,{"quote_id":quote_id,"previous_voucher_code":o.voucher_code,"previous_supplier_reference":o.supplier_reference});project_vertical_lifecycle(s,"ATTRACTION",o,"change-pending:"+quote_id,facts={"quote_id":quote_id});return self.out(o)
  def _refund_quote_in(self,s,o):
   x=self._order_terms(s,o.order_id)
-  fee=0 if x['refundable'] else o.total_amount_minor
-  return {'order_id':o.order_id,'refund_fee_minor':fee,'refund_amount_minor':o.total_amount_minor-fee,'currency':o.currency,'refund_to':'ORIGINAL_PAYMENT_METHOD','refundable':x['refundable']}
+  supplier_closed=o.status=='CLOSED_BY_SUPPLIER'
+  fee=0 if supplier_closed or x['refundable'] else o.total_amount_minor
+  return {'order_id':o.order_id,'refund_fee_minor':fee,'refund_amount_minor':o.total_amount_minor-fee,'currency':o.currency,'refund_to':'ORIGINAL_PAYMENT_METHOD','refundable':supplier_closed or x['refundable'],'reason':'SUPPLIER_CLOSED' if supplier_closed else 'CUSTOMER_CANCELLATION'}
  def refund_quote(self,account,order_id):
   production_truth_required('ATTRACTION','REFUND_QUOTE')
   with transaction(SessionLocal) as s:
    o=s.get(AttractionOrderRow,order_id,with_for_update=True)
-   if not o or o.account_id!=account or o.status!='CONFIRMED':raise ValueError('ATTRACTION_ORDER_NOT_REFUNDABLE')
+   if o and o.account_id==account and o.status=='REFUND_PENDING':
+    op=vertical_refund_recovery._operation(s,'ATTRACTION',order_id)
+    if not op:raise ValueError('REFUND_OPERATION_INTEGRITY_INVALID')
+    vertical_refund_recovery._verify(op,account)
+    return dict(op.quote_json)
+   if not o or o.account_id!=account or o.status not in {'CONFIRMED','CLOSED_BY_SUPPLIER'}:raise ValueError('ATTRACTION_ORDER_NOT_REFUNDABLE')
    from go_hotel.services.refund_consent import bind
    return bind('ATTRACTION',o,self._refund_quote_in(s,o))
  def refund(self,account,order_id,accepted_hash=None):
@@ -164,33 +202,48 @@ class AttractionService:
    o=s.get(AttractionOrderRow,order_id,with_for_update=True)
    if not o or o.account_id!=account: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
    if o.status!="CONFIRMED": raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
+   if not str(o.voucher_code or '').strip() or not str(o.supplier_reference or '').strip():
+    raise ValueError('ATTRACTION_RECONCILIATION_VOUCHER_REQUIRED')
    window=validity.for_order(self._order_terms(s,order_id),o.visit_date,o.session_time);validity.guard(window,db_now_ms(s))
    voucher_code=o.voucher_code; supplier_reference=o.supplier_reference
    o.status="FULFILLED";o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",order_id,"VOUCHER_REDEEMED",o.status,{"evidence_reference":evidence_reference,"voucher_code":voucher_code,"supplier_reference":supplier_reference,"redemption_window":window,"external_live":False});project_vertical_lifecycle(s,"ATTRACTION",o,evidence_reference,facts={"voucher_code":voucher_code,"supplier_reference":supplier_reference});return self.out(o)
- def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,voucher_code=None):
+ def admin_external_state(self,order_id,state,evidence_reference,actor,supplier_reference=None,voucher_code=None,quote_id=None):
+  with transaction(SessionLocal) as s:
+   return self.admin_external_state_in(s,order_id,state,evidence_reference,actor,supplier_reference,voucher_code,quote_id)
+ def admin_external_state_in(self,s,order_id,state,evidence_reference,actor,supplier_reference=None,voucher_code=None,quote_id=None):
   if not str(evidence_reference or '').strip() or not str(actor or '').strip(): raise ValueError('EXTERNAL_STATE_ACTOR_AND_EVIDENCE_REQUIRED')
   state=state.upper()
-  with transaction(SessionLocal) as s:
-   o=s.get(AttractionOrderRow,order_id,with_for_update=True)
-   if not o: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
-   pending=s.scalar(select(AttractionChangeQuoteRow).where(AttractionChangeQuoteRow.order_id==order_id,AttractionChangeQuoteRow.status=='PENDING_SUPPLIER').order_by(AttractionChangeQuoteRow.created_at.desc()))
-   if state=="UNKNOWN_EXTERNAL_STATE":
-    if o.status!="CONFIRMED": raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
-    o.status=state;kind="EXTERNAL_STATE_UNKNOWN"
-   elif state=="CLOSED_BY_SUPPLIER":
-    if o.status not in {"CONFIRMED","UNKNOWN_EXTERNAL_STATE"}: raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
-    if pending:pending.status='FAILED'
-    capacity.release_all_in(s,'ATTRACTION',order_id)
-    o.status=state;kind="SUPPLIER_CLOSED"
-   elif state=="CONFIRMED":
-    if o.status!="UNKNOWN_EXTERNAL_STATE": raise ValueError("ATTRACTION_RECONCILIATION_NOT_REQUIRED")
-    if pending:
-     if not str(supplier_reference or '').strip() or not str(voucher_code or '').strip(): raise ValueError('ATTRACTION_RECONCILIATION_VOUCHER_REQUIRED')
-     capacity.complete_change_in(s,'ATTRACTION',order_id,pending.quote_id,True)
-     o.visit_date=pending.new_visit_date;o.session_time=pending.new_session_time;pending.status='APPLIED';o.supplier_reference=supplier_reference;o.voucher_code=voucher_code;kind='CHANGE_RECONCILED_TO_CONFIRMED'
-    else:kind="RECONCILED_TO_CONFIRMED"
-    o.status=state
-   else: raise ValueError("ATTRACTION_EXTERNAL_STATE_INVALID")
-   o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",order_id,kind,o.status,{"evidence_reference":evidence_reference,"actor":actor,"supplier_reference":o.supplier_reference,"voucher_code":o.voucher_code,"quote_id":pending.quote_id if pending else None,"external_live":False});project_vertical_lifecycle(s,"ATTRACTION",o,evidence_reference,facts={"actor":actor,"supplier_reference":o.supplier_reference,"voucher_code":o.voucher_code,"quote_id":pending.quote_id if pending else None});return self.out(o)
+  o=s.get(AttractionOrderRow,order_id,with_for_update=True)
+  if not o: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
+  pending=s.scalar(select(AttractionChangeQuoteRow).where(AttractionChangeQuoteRow.order_id==order_id,AttractionChangeQuoteRow.status=='PENDING_SUPPLIER').order_by(AttractionChangeQuoteRow.created_at.desc()))
+  if quote_id is not None and (not pending or pending.quote_id!=quote_id):
+   raise ValueError('ATTRACTION_RESOLUTION_QUOTE_INVALID')
+  if pending and quote_id is None:
+   # Even the first change may follow an ordinary UNKNOWN recovery. Require
+   # its identity so that an old unbound recovery cannot confirm this change.
+   raise ValueError('ATTRACTION_RESOLUTION_QUOTE_ID_REQUIRED')
+  if state=="UNKNOWN_EXTERNAL_STATE":
+   if o.status!="CONFIRMED": raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
+   o.status=state;kind="EXTERNAL_STATE_UNKNOWN"
+  elif state=="CLOSED_BY_SUPPLIER":
+   if o.status not in {"CONFIRMED","UNKNOWN_EXTERNAL_STATE"}: raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
+   if pending:pending.status='FAILED'
+   capacity.release_all_in(s,'ATTRACTION',order_id)
+   o.status=state;kind="SUPPLIER_CLOSED"
+  elif state=="CONFIRMED":
+   if o.status!="UNKNOWN_EXTERNAL_STATE": raise ValueError("ATTRACTION_RECONCILIATION_NOT_REQUIRED")
+   resolved_supplier=supplier_reference if supplier_reference is not None else o.supplier_reference
+   resolved_voucher=voucher_code if voucher_code is not None else o.voucher_code
+   if not str(resolved_supplier or '').strip() or not str(resolved_voucher or '').strip():
+    raise ValueError('ATTRACTION_RECONCILIATION_VOUCHER_REQUIRED')
+   if pending:
+    if not str(supplier_reference or '').strip() or not str(voucher_code or '').strip(): raise ValueError('ATTRACTION_RECONCILIATION_VOUCHER_REQUIRED')
+    capacity.complete_change_in(s,'ATTRACTION',order_id,pending.quote_id,True)
+    o.visit_date=pending.new_visit_date;o.session_time=pending.new_session_time;pending.status='APPLIED';o.supplier_reference=supplier_reference;o.voucher_code=voucher_code;kind='CHANGE_RECONCILED_TO_CONFIRMED'
+   else:
+    kind="RECONCILED_TO_CONFIRMED";o.supplier_reference=resolved_supplier;o.voucher_code=resolved_voucher
+   o.status=state
+  else: raise ValueError("ATTRACTION_EXTERNAL_STATE_INVALID")
+  o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",order_id,kind,o.status,{"evidence_reference":evidence_reference,"actor":actor,"supplier_reference":o.supplier_reference,"voucher_code":o.voucher_code,"quote_id":pending.quote_id if pending else None,"external_live":False});project_vertical_lifecycle(s,"ATTRACTION",o,evidence_reference,facts={"actor":actor,"supplier_reference":o.supplier_reference,"voucher_code":o.voucher_code,"quote_id":pending.quote_id if pending else None});return self.out(o)
 
 attraction_service=AttractionService()

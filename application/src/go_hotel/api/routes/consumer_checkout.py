@@ -95,8 +95,13 @@ async def checkout(vertical: str, order_id: str, body: CheckoutConfirmation,
             tx=vertical_transaction_bridge.checkout_contract(vertical, order_id, p.user_id,
                 f'{vertical.lower()}-engineering-source', f'contract-simulator://{vertical}/{order_id}')
             ref=f'SIM-{order_id}'
+            if vertical=='FLIGHT':
+                # The persisted PNR column is 16 characters on PostgreSQL.
+                # Keep the complete order identity in external_operation_id.
+                import hashlib
+                ref='SIM'+hashlib.sha256(order_id.encode()).hexdigest()[:13]
             fact={'state':'SUPPLIER_CONFIRMED','supplier_confirmation_reference':ref,
-                  'external_operation_id':ref,'evidence_reference':f'contract-simulator://{vertical}/{order_id}'}
+                  'external_operation_id':f'SIM-{order_id}','evidence_reference':f'contract-simulator://{vertical}/{order_id}'}
             if vertical in {'FLIGHT','RAIL'}:
                 passenger_count=len(order.passengers or []) or 1
                 independent_legs=len(order.current_itinerary or []) if vertical=='FLIGHT' else 1

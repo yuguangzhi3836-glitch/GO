@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import time, uuid, hmac, json
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import IdentityUserRow, AuthSessionRow, RefreshTokenRow, ApprovalRequestRow, AuditEventRow
 from go_hotel.core.config import settings
@@ -30,7 +31,19 @@ class IdentityService:
             row=s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==username))
             if row: return row.user_id
             t=now(); row=IdentityUserRow(user_id=uid('usr'),username=username,password_hash=hash_password(password),actor_type=actor_type,supplier_id=supplier_id,roles=roles,status='ACTIVE',token_version=1,created_at=t,updated_at=t)
-            s.add(row); s.commit(); return row.user_id
+            s.add(row)
+            try:
+                s.commit()
+            except IntegrityError:
+                # Another process may have bootstrapped this username after our
+                # read. Re-read after rollback; never overwrite its credentials
+                # or roles, and never hide an unrelated constraint failure.
+                s.rollback()
+                existing = s.scalar(select(IdentityUserRow).where(IdentityUserRow.username == username))
+                if existing is None:
+                    raise
+                return existing.user_id
+            return row.user_id
     def create_user(self, username,password,actor_type,supplier_id,roles): return self.ensure_user(username,password,actor_type,supplier_id,roles)
     def _create_session(self, s, u, client_ip=None, user_agent=None, auth_method='PASSWORD', mfa_verified_at=None):
         t=now(); sid=uid('ses'); csrf=random_token()
@@ -83,12 +96,13 @@ class IdentityService:
         out={'access_token':encode_jwt(claims),'token_type':'bearer','expires_in':settings.access_token_minutes*60,'refresh_token':refresh}
         if csrf: out['csrf_token']=csrf
         return out
-    def authenticate(self, token:str)->Principal:
+    def authenticate(self, token:str, *, touch_session:bool=True)->Principal:
         c=decode_jwt(token)
         with SessionLocal() as s:
             u=s.get(IdentityUserRow,c['sub']); ses=s.get(AuthSessionRow,c['sid'])
             if not u or u.status!='ACTIVE' or u.token_version!=c.get('ver') or not ses or ses.status!='ACTIVE' or aware(ses.expires_at)<now(): raise ValueError('SESSION_REVOKED')
-            ses.last_seen_at=now(); s.commit()
+            if touch_session:
+                ses.last_seen_at=now(); s.commit()
             return Principal(u.user_id,u.username,u.actor_type,u.supplier_id,list(u.roles or []),ses.session_id,permissions_for(list(u.roles or [])))
     def refresh(self, refresh_token:str, *, allowed_actor_types=None):
         h=token_hash(refresh_token)
