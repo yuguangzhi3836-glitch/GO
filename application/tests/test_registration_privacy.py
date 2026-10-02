@@ -85,6 +85,43 @@ def test_gate_requires_operational_evidence_and_fresh_cleanup(client,delivery,mo
     privacy.cleanup_once();assert verification.ready()
 
 
+@pytest.mark.parametrize('deferred_term', ['data_processing_terms', 'electronic_signature_authorization'])
+def test_supplier_registration_rejects_bundled_authorization(client, delivery, deferred_term):
+    # Expected decisions are explicit, independent of the implementation helper.
+    expected = {'supplier_service_terms': 'CONTRACT_ACCEPTED',
+                'platform_operating_rules': 'CONTRACT_ACCEPTED',
+                'privacy_policy': 'NOTICE_ACKNOWLEDGED',
+                'data_processing_terms': 'DEFERRED',
+                'electronic_signature_authorization': 'DEFERRED'}
+    body = payload(client, 'supplier', 'supplier@example.test')
+    body['registration_decisions'] = expected
+    bundled = expected | {deferred_term: 'CONTRACT_ACCEPTED'}
+    challenge_body = {k: v for k, v in body.items() if k != 'password'} | {'audience': 'supplier'}
+    bad = client.post('/v1/registration/challenges', json=challenge_body | {'registration_decisions': bundled})
+    assert bad.status_code == 422, bad.text
+    assert bad.json()['detail'] == 'REGISTRATION_SEPARATE_DECISIONS_REQUIRED'
+    assert delivery == []
+    issued = client.post('/v1/registration/challenges', json=challenge_body)
+    assert issued.status_code == 200, issued.text
+    body.update(challenge_id=issued.json()['data']['challenge_id'], verification_code=delivery[-1][1],
+                organization_name='隔离测试企业', contact_name='测试联系人')
+    endpoint = '/bff/auth/supplier/register'
+    bad = client.post(endpoint, json=body | {'registration_decisions': bundled})
+    assert bad.status_code == 409, bad.text
+    with SessionLocal() as s:
+        assert s.scalar(select(func.count()).select_from(Decision)) == 0
+        assert s.scalar(select(Challenge)).state == 'SENT'
+    registered = client.post(endpoint, json=body)
+    assert registered.status_code in (200, 201), registered.text
+    with SessionLocal() as s:
+        receipt = s.scalar(select(Decision))
+        assert receipt.audience == 'supplier'
+        assert receipt.decisions == expected
+        assert receipt.hashes == body['term_hashes']
+        assert receipt.versions == body['term_versions']
+        assert s.scalar(select(Challenge)).state == 'CONSUMED'
+
+
 def test_evidence_manifest_missing_expired_or_wrong_terms_never_ready(tmp_path,monkeypatch):
     p=tmp_path/'evidence.json';monkeypatch.setattr(settings,'registration_privacy_evidence_path',str(p))
     assert not privacy.operational_evidence_status()['ready']
