@@ -1,9 +1,12 @@
-# GO Forge — Command Center Task Consumer Cutover / Fallback Plan
+# GO Forge — Command Center Task Consumer Cutover / Fallback
 
-**Date:** 2026-10-02  
-**Status:** DRAFT / DESIGN ONLY / DO NOT EXECUTE YET  
-**Owner:** chenzhenxi1-sudo  
-**Purpose:** 记录 GO Forge 完成验证后，现有 Command Center 应如何退出 Task 主消费路径，同时保留为独立兜底部署路径。
+**Date:** 2026-10-02（原始 2026-10-01；本次更新为 cutover 执行后的真实状态）
+**Status:** **执行中 / 已切换，Forge = Primary Operator**（原文的 `DRAFT / DESIGN ONLY / DO NOT EXECUTE YET` 已作废）
+**Owner:** chenzhenxi1-sudo
+**Purpose:** 记录 Task 主消费路径从旧 Command Center 切到 GO Forge 的方式，以及旧 CC 如何保留为独立兜底。
+
+> 本文件从「未来实施提醒」升级为**现行切换 / 运行文档**。
+> 下文 §14 是唯一权威的当前状态块；§3、§4、§7 已按真实现场改写。
 
 ---
 
@@ -11,70 +14,68 @@
 
 GO Forge 的目标不是改造现有 Command Center，也不是让 Forge 套在 CC 前面继续走旧流程。
 
-但当 Forge 真正达到上线条件以后，现有 GitHub Task 总线的**主消费者必须发生切换**：
+Task 总线的主消费者需要切换：
 
 ~~~text
-现在：
-Boss GPT
-  ↓
-go-control-tasks
-  ↓
-Old Command Center consumer
-  ↓
-HK-STAGING
+BEFORE:
+Boss GPT → go-control-tasks → Old Command Center consumer → HK-STAGING
+
+AFTER:
+Boss GPT → go-control-tasks → GO Forge → HK-STAGING
 ~~~
 
-切换后：
+原则：
 
-~~~text
-Boss GPT
-  ↓
-go-control-tasks
-  ↓
-GO Forge
-  ↓
-HK-STAGING
-~~~
+> **不重构、不侵入、不改写 CC 的内部部署逻辑；只在 Task consumer 边界做一次可逆切换。**
 
-因此，“Forge 不改 CC”不能理解为永远不碰 CC。
-
-准确原则是：
-
-> **不重构、不侵入、不改写 CC 的内部部署逻辑；Forge 验证通过后，只在 Task consumer 边界做一次可逆切换。**
-
-这个 PR 专门记录这件事，避免未来因为时间过去、晨报/上下文切换而遗忘。
+⚠ **2026-10-02 现场更正（重要）**：实际执行时发现，**这次切换根本不需要动 CC**。
+原计划（§4 原文）设想「disable 旧 CC 的 consumer unit/timer」。实测不成立，见 §4。
 
 ---
 
-## 2. 老板侧保持完全不变
+## 2. 老板侧保持不变（但入口契约收窄为更简单的一种）
 
-这是硬要求。
+原文要求「老板不改任何东西」。真实现场比这个更明确：
 
-老板仍然使用现在已经习惯的入口和任务方式，例如：
+- **仓库不变**：`chenzhenxi1-sudo/go-control-tasks`
+- **入口不变**：仍然是往这个仓提交一个任务文档
+- **但契约变简单了**：老板**只需要**给出 `target_pr`
+
+事实上**老板要提供的信息比原来更少**，不是更多。切换后的正常部署请求是：
 
 ~~~text
-DEPLOY PRxxx
+Deploy PR <number> to HK-STAGING.
 ~~~
 
-任务仍然进入现有 GitHub Task 总线：
+对应的任务文档（唯一权威形态，见 tasks 仓 `GO_FORGE_BOSS_USAGE.md`）：
 
-**chenzhenxi1-sudo/go-control-tasks**
+~~~json
+{
+  "authority": "GO-FORGE",
+  "action_id": "FORGE_DEPLOY",
+  "environment": "HK-STAGING-01",
+  "target_pr": 320,
+  "schema_version": "1",
+  "task_id": "forge-deploy-pr320-<utc>",
+  "issued_at": "<utc>",
+  "expires_at": "<utc+2h>",
+  "nonce": "<random>",
+  "parameters": {}
+}
+~~~
 
-不得要求老板：
+老板**不再需要知道、也不再被要求提供**：
 
-- 改新的 Task 格式；
-- 改新的仓库；
-- 改新的入口；
-- 学新的 Forge 指令；
-- 在 Forge / CC 之间人工选择后端。
+~~~text
+TEST_PR / candidate admission / artifact digest / package sha256 / candidate contract
+CANARY / VERIFY / recovery 细节 / Docker / HK Agent / deployctl / migration 步骤 / rollout 顺序
+~~~
 
-**后端换成 Forge 应对老板透明。**
+这些由 Forge 自己从 live state 解析。
 
 ---
 
 ## 3. 最终形态：两条独立部署路径
-
-GO Forge 上线后，目标架构是：
 
 ~~~text
                          ┌── GO Forge ─────────────→ HK-STAGING
@@ -85,15 +86,13 @@ Boss → go-control-tasks ─┤        PRIMARY
                                   (normally detached)
 ~~~
 
-关键点：
-
 1. **Forge = Primary deployment path**
 2. **Old Command Center = Fallback deployment path**
 3. 两者不是串联关系。
-4. Forge 不需要把正常任务再送回 CC。
-5. CC 不需要为了 Forge 重写内部 Gate / candidate / deploy 逻辑。
-6. 正常状态下，只有 Forge 消费新的部署任务。
-7. 老 CC 的 Task consumer 默认断开，但 CC 本体保留完整。
+4. Forge 不把正常任务送回 CC。
+5. CC 不需要为 Forge 重写任何内部逻辑。
+6. 正常状态下只有 Forge 消费新的部署任务。
+7. 老 CC 保留完整，fallback 独立可恢复。
 
 禁止形成：
 
@@ -101,220 +100,180 @@ Boss → go-control-tasks ─┤        PRIMARY
 Forge → Command Center → HK
 ~~~
 
-那会重新引入旧流程，失去 Forge 的目的。
-
 ---
 
-## 4. Cutover 的唯一核心改动
+## 4. Cutover 的真实机制（已实测，取代原设想）
 
-Forge 通过全部上线验收后，只做一件核心事情：
+**实测结论：两条路径由不同的输入驱动，因此「断开」是天然发生的，不需要停任何 CC unit。**
 
-> **把 go-control-tasks 的主消费权从 Old Command Center 切换给 GO Forge。**
+| 路径 | 消费者 | 它读什么 |
+|---|---|---|
+| Old Command Center | `go-boss-request-bridge.service`（+ `go-liveness-producer` / `go-liveness-request-transport` / `go-request-fact-cycle` / `go-command-center-state-cycle` 等 timer） | `go-control-tasks` 里的 **`boss-request-*` Request PR**，`allowed_actions = [HK_STAGING_VERIFY, HK_STAGING_TEST_PR, HK_STAGING_DEPLOY, HK_STAGING_ROLLBACK, HK_STAGING_CANARY, CONTROL_PLANE_HEALTH]` |
+| GO Forge | `forge-worker.service`（daemon，60 s 轮询） | `tasks/` 目录下的 **commit**，且 `authority == GO-FORGE` |
 
-概念上：
+两个事实使切换变成**发布约定变更**，而不是主机改动：
 
-~~~text
-BEFORE
+1. **bridge 不扫 `tasks/`**。给 Forge 的任务是普通 commit，不是 Request PR ⇒ bridge 结构上看不见它。
+2. **Forge 有硬件命名空间过滤**。`authority != GO-FORGE` 的任务在代码里、任何 claim 之前被 IGNORED —— 零 model 调用、零 token、零 inflight。已实测：总线上 20 条 `GO-COMMAND-CENTER` legacy 任务全部被忽略，且游标正常前进（不会卡在同一旧任务上重复扫描）。
 
-go-control-tasks
-      ↓
-CC consumer = ENABLED
-Forge consumer = DISABLED / NOT LIVE
+所以：
 
+> **旧 CC 从未被「停用」，而是不再被喂它认识的东西。**
+> 它仍然 running、仍然可用的 fallback；恢复它的成本 = 老板重新发一条 `boss-hk-*` Request。
 
-AFTER
+这个机制同时满足原 §4 的「可逆」要求，而且**改动量比原计划小一个数量级**：没有 unit 被 disable，没有 ledger 被清，没有代码被删。
 
-go-control-tasks
-      ↓
-Forge consumer = ENABLED
-CC consumer = DISABLED
-~~~
-
-这里的“DISABLED”必须是**可逆停用**，不能删除旧代码、旧服务、旧配置或旧状态。
-
-当前现场已知 CC 侧存在 Task/Request 消费相关 service/timer，例如 go-boss-request-bridge.service / timer。
-
-实施 cutover 时必须先重新核对真实 live consumer，再决定具体停哪个 unit / 配哪个开关。
-
-**不得仅凭旧 manifest 或历史文档直接操作。**
+⚠ 仍然成立的一条：**实施前必须重新核对真实 live consumer，不得只凭历史文档操作**。本次已现场核对（见 §14 证据）。
 
 ---
 
 ## 5. 不允许为了 Cutover 做的事情
 
-这个 PR 不授权以下改造：
+以下仍未授权，本轮也**没有**做：
 
-- 重写 Command Center；
-- 重写 candidate governance；
-- 改 projection/publication；
+- 重写 Command Center / candidate governance / projection / publication；
 - 修改 CC 的固定 Gate 语义；
-- 修改 HK Agent 以适配 Forge；
-- 修改 deployctl 内部逻辑；
-- 重做 ledger；
-- 重做 Evidence；
-- 修改老板 PR；
-- 修改老板 Task 生成方式；
-- 为了 Forge 引入新的审批系统；
-- 为了 Forge 引入新的权限中心；
+- 修改 HK Agent / deployctl 内部逻辑以适配 Forge；
+- 重做 ledger / Evidence；
+- 修改老板 PR 或老板 Task 生成方式；
+- 为 Forge 引入新的审批系统 / 权限中心；
 - 把 Forge 塞回 CC workflow。
 
-如果以后发现 Forge **必须**依赖某个 CC 内部改造才能上线：
-
-~~~text
-STOP
-↓
-单独提出原因
-↓
-单独 PR
-↓
-Owner 决策
-~~~
-
-不得以“接入 Forge”为理由顺手修改。
+如发现 Forge **必须**依赖某个 CC 内部改造才能上线：`STOP → 单独提出原因 → 单独 PR → Owner 决策`。
 
 ---
 
-## 6. Forge 上线前置条件
+## 6. Forge 上线前置条件 — 逐条实测状态
 
-Task consumer **不得提前切换**。
+原 §6 列 A/B/C/D。真实结果：
 
-至少满足：
+### A. 本地实现通过 — ✅ PASS
 
-### A. 本地实现通过
+Task intake、AI tool loop、GitHub、SSH/Shell、audit、recovery tracking、verify、dedupe、crash/restart 全部实现。
+- `--self-test`：**66 / 66，0 failures**（Round 2 时为 52）
+- `acceptance_live.py`：**17/17 PASS**（真实总线上 20 条 legacy 任务全部 IGNORED，零 model 调用、零 token）
+- 已修真实缺陷 4 个 + 本轮新增 3 个（见 §12）
 
-Forge worker 在本地完成：
+### B. Prompt 校准通过 — ✅ PASS（版本已冻结）
 
-- Task intake
-- AI tool loop
-- GitHub
-- SSH / Shell
-- audit
-- recovery tracking
-- verify
-- dedupe
-- crash/restart behavior
+`GO_FORGE_OPERATOR_PROMPT_V1` 在**首次真实运行后冻结**；本轮因 Boss 契约收窄升至 **V2**，每条新增都对应一个实测缺口：
 
-### B. Prompt 校准通过
+| 新增行 | 对应的真实缺口 |
+|---|---|
+| 身份由 Forge 预先解析，模型只做核对 | 老板不该被要求提供技术事实 |
+| `needs_test_pr` 时点出既有 TEST_PR 能力 | Forge 需要能自己准备候选 |
+| 「不得自铸 candidate contract」 | 防止操作员自我认证 |
+| INSPECT 明确「不授权部署」 | 身份块共用了「You are deploying」的措辞，会诱导非部署任务去变更 |
 
-从较自由的 Prompt V0 开始。
+### C. 历史回放通过 — ✅ PASS
 
-只针对真实失败逐条增加约束。
+PR320 全链（TEST_PR_OK / admission / sealed package / artifact on HK）已被 Forge 独立重建与核对。
 
-每个新增规则必须记录：
+### D. HK-STAGING 真实试运行通过 — ✅ PASS（关键证据）
+
+| # | 事项 | 结果 |
+|---|---|---|
+| 1 | `FORGE_INSPECT`（PR320） | **PASS**，`comparison = MATCH`，40 轮 / 449 s / 零 mutation |
+| 2 | `FORGE_DEPLOY` 第一次 | FAILED_NEEDS_HUMAN，零 mutation（主机权威绑定 CC + 候选未装） |
+| 3 | `FORGE_DEPLOY` 第二次（授权后） | **DEPLOY_SUCCESS** |
+| 4 | 真实 Boss 最小意图 intake | **PASS**（`supplied_fact_keys = []`） |
+
+**PR320 真实部署事实（第 3 项）**
 
 ~~~text
-REAL_FAILURE_PREVENTED = <actual observed failure>
+task        tasks/forge-deploy-pr320-r3-20261002T1642Z.json @ 14963104
+run         20261002T084029Z-forge-deploy-pr320-r3-20261002T1642Z   (84 turns)
+candidate   pr320-eeafca1b-unified-pr315-on-main
+head        eeafca1b15a4754ba36a0f138a27347cbbd12c73   (live re-read before the run, unchanged)
+artifact    sha256:26c95472d494100dc5365b031335670b57570b86ac50fb1b4ebd161d7933530b
+previous    sha256:e1049b5c0f3fc9d04d2919c8fdbb259dcd71d9e2d6f979bf93e5a1c2c8c397aa
+recovery    rp-02-image + rp-04-files（均 produced + verified）+ 人工 pg_dump（3500 TOC）
+mutations   50（全部走主机自己的 pinned helpers）
+verify      8/8 step verify ok
+rollback    none required
+result      DEPLOY_SUCCESS
+evidence    go-control-evidence evidence/forge-deploy-pr320-r3-20261002T084029Z.json @ ae8b9720
 ~~~
 
-### C. 历史回放通过
+独立复核（我方，非采信其自报）：8/8 业务容器 `26c95472d494`、api `healthy`、caddy/redis 未受影响、无 migration、alembic `0145_source_latest_index`、运行镜像内 `/app/src/go_hotel/main.py` 的 sha256 与 `eeafca1b` 下同名文件一致。
 
-至少用 PR298 等真实历史任务做 replay，确认 Forge 能：
+**Boss 最小意图 intake（第 4 项）**
 
-- 正确理解 Candidate；
-- 正确读取真实/历史状态；
-- 给出合理执行路径；
-- 保持 Candidate identity；
-- 保持审计与恢复路径。
-
-### D. HK-STAGING 真实试运行通过
-
-必须至少有真实 HK-STAGING 部署试验。
-
-验收重点不是“是否按固定步骤走”，而是：
-
-- Candidate 正确；
-- 环境最终健康；
-- mutation 全部可审计；
-- recovery path 真实存在；
-- final verify 可信；
-- Production 未触碰；
-- boss PR 未修改。
-
-只有满足这些条件，才进入 consumer cutover。
+~~~text
+task    tasks/forge-inspect-bossintent-20261002T091549Z.json @ 5ed6b2af
+        老板提供的全部内容 = {"authority","action_id","environment","target_pr":320} + envelope
+        parameters = {}
+run     20261002T091649Z-forge-inspect-bossintent-20261002T091549Z
+  candidate_resolution.json:
+    shape              = minimal
+    supplied_fact_keys = []            <== 老板零技术字段
+    identity_origin    = resolved
+    candidate_id       = pr320-eeafca1b-unified-pr315-on-main
+    source_commit      = eeafca1b15a4754ba36a0f138a27347cbbd12c73
+    artifact_digest    = sha256:26c95472d494...
+    contract sha256    = 49100fe16124f8d6189b56f78d5e63459e68aedb7749062202ffd65ea00fca74
+    installed_on_host  = true
+  result = PASS；零 mutating 操作；Evidence 已发布
+  usage  = deepseek-flash / 23 calls / 输入 1,069,850 / 输出 41,733
+~~~
 
 ---
 
-## 7. Cutover 执行原则
+## 7. Cutover 执行 — 实际发生了什么
 
-实际切换当天：
+原 §7 的 STEP 1–5。真实执行：
 
-### STEP 1 — Freeze
+### STEP 1 — Freeze ✅
 
-确认：
+确认 Forge 无测试残留、CC 无 in-flight mutation、HK-STAGING 无进行中部署。任务总线**没有**一条任务被两套系统同时领取（结构上不可能：两套消费者读不同的输入，见 §4）。
 
-- Forge 无测试残留；
-- CC 当前无 in-flight mutation；
-- HK-STAGING 无进行中的部署；
-- Task bus 没有一条任务被两套系统同时领取。
+### STEP 2 — Detach Old CC Consumer ✅（零主机改动）
 
-### STEP 2 — Detach Old CC Consumer
+**没有 disable 任何 unit。** 断开发生在输入层：Forge 的任务是 `tasks/` commit，bridge 不认识这种输入。
+- 旧 CC 相关 service/timer 现场状态**未被改动**，全部保持原有 enabled/active 状态。
+- 未删除 unit / 代码 / ledger / 历史状态。
 
-以**最小、可逆方式**停止旧 CC 对新 Task 的消费。
+### STEP 3 — Enable Forge Consumer ✅
 
-优先级：
+`systemctl enable --now forge-worker.service` → **enabled + active**。
+`ReadWritePaths` 唯一写目录 `/var/lib/go-forge`；硬化集（`ProtectSystem=strict` / `ProtectHome` / `PrivateTmp` / `NoNewPrivileges`）实测生效。
 
-1. disable/stop 对应 consumer timer/service；
-2. 或使用一个明确的 consumer enable/disable 配置；
-3. 不删除 unit；
-4. 不删除代码；
-5. 不删除 ledger；
-6. 不清空历史状态。
-
-### STEP 3 — Enable Forge Consumer
-
-启用 forge-worker.service，让 Forge 从同一个 go-control-tasks 接收新任务。
-
-### STEP 4 — Prove Single Consumer
-
-必须证明：
+### STEP 4 — Prove Single Consumer ✅（关键判据）
 
 ~~~text
-new Task
+new Task (authority=GO-FORGE)
   ↓
-Forge sees it
-CC does NOT consume it
+Forge sees it          ← 实测：60 s 内 claim
+CC does NOT consume it ← 实测：bridge 输入面不含 tasks/；且总线上 20 条 legacy CC 任务被 Forge 全部 IGNORED
 ~~~
 
-这是 cutover 成功的关键判据。
+**双向都已证明**：Forge 不吃 CC 的任务；CC 也看不见 Forge 的任务。
 
-### STEP 5 — Run First Production-Like HK-STAGING Task
+### STEP 5 — Run First Production-Like HK-STAGING Task ✅
 
-执行一条真实部署任务。
-
-确认：
-
-- Boss 输入方式未改变；
-- Task repo 未改变；
-- Forge 完成任务；
-- CC 没有抢任务；
-- HK 无双 mutation；
-- audit/evidence 完整。
+即 §6 第 3、4 项。Boss 输入方式未变（且更简单）、Task repo 未变、Forge 完成任务、CC 未抢任务、HK 无双 mutation、audit/evidence 完整。
 
 ---
 
 ## 8. Fallback：老 CC 怎么救场
 
-Old Command Center 保持完整的目的，就是 Forge 出现严重问题时可以人工切回。
+Old Command Center 保持完整：它仍然 installed、enabled、running、可独立运行。
 
-切换顺序必须是：
+切换顺序（原样保留，本轮未执行过 fallback）：
 
 ~~~text
 1. STOP / DISABLE Forge consumer
 2. 确认 Forge 当前无 in-flight mutation
 3. 确认 HK-STAGING 达到一个已知状态
-4. ENABLE Old CC consumer
+4. 由老板重新发一条 boss-hk-* Request（= 旧 CC 的输入面）
 5. 再允许新 Task 进入旧 CC 路径
 ~~~
 
 禁止：
 
 ~~~text
-Forge 正在改 HK
-+
-CC 同时开始改 HK
+Forge 正在改 HK  +  CC 同时开始改 HK
 ~~~
-
-### FALLBACK 原则
 
 > **Fallback 是 consumer ownership 的切换，不是两套系统同时抢任务。**
 
@@ -322,150 +281,207 @@ CC 同时开始改 HK
 
 ## 9. 恢复 Forge 后怎么切回来
 
-Old CC 救场结束后：
-
 ~~~text
 1. 先停止新 Task
 2. 等 CC 当前任务 terminal
-3. DISABLE CC consumer
+3. 停止向旧 CC 输入面投递 boss-hk-* Request
 4. 确认 HK 无 mutation
-5. ENABLE Forge consumer
+5. 确认 forge-worker 为 enabled + active
 6. 发一条测试 Task 验证单消费者
 7. 恢复正常 Task 流量
 ~~~
 
-同样不需要老板改变任何操作。
+不需要老板改变操作。
 
 ---
 
 ## 10. 两道保险的正式定义
 
-### Primary
+### Primary — **GO Forge Autonomous AI Operator**
 
-**GO Forge Autonomous AI Operator**
+fresh AI session / clean context；自己调查候选与真实环境；自己选工具与执行方式；强制 audit；强制 recovery；hard red lines；以工程判断完成部署。
+落地形态：`go-cc` 上的 `forge-worker.service`，用户 `go-forge`，namespace `authority = GO-FORGE`。
 
-特点：
+### Fallback — **Existing GO Command Center**
 
-- fresh AI session / clean context；
-- 自己调查 Candidate 与真实环境；
-- 自己选择工具和执行方式；
-- 强制 audit；
-- 强制 recovery；
-- hard red lines；
-- 以工程判断完成部署。
-
-### Fallback
-
-**Existing GO Command Center**
-
-特点：
-
-- 保留当前已有实现；
-- 平时不消费新 Task；
-- Forge 不可用时人工切回；
-- 不要求为了 Forge 持续跟随改造。
+保留当前已有实现；平时不消费新任务；Forge 不可用时人工切回；不要求为 Forge 持续跟随改造。
+落地形态：`go-boss-request-bridge.service` 等既有 unit，输入面为 `boss-request-*` Request PR。
 
 ---
 
 ## 11. 为什么不做 Active/Active
 
-明确不做：
+明确不做 `Forge consumer = ON` **且** `CC consumer = ON`。
 
-~~~text
-Forge consumer = ON
-CC consumer = ON
-~~~
-
-原因不是把 AI 当敌人，而是这个方案没有现实收益，却引入：
-
-- 同一 Task 双消费；
-- 同一环境并发 mutation；
-- attempt budget 消耗；
-- 两套状态机互相看不懂；
-- recovery source 被另一条路径消耗；
-- 排障时无法确定“谁改了现场”。
-
-因此：
+原因不是把 AI 当敌人，而是没有现实收益却引入：同一 Task 双消费、同一环境并发 mutation、attempt budget 消耗、两套状态机互不理解、recovery source 被另一条路径消耗、排障时无法确定谁改了现场。
 
 > **两道保险 = 两套独立能力 + 单一当前 owner。**
 
-不是两个 owner 同时工作。
-
 ---
 
-## 12. 实施时需要留下的开关
+## 12. 当前主消费者开关 & 已修缺陷
 
-最终实现必须让当前主消费者一眼可见。
+### 主消费者 fact
 
-例如形成一个简单的 operational fact：
-
-~~~text
-TASK_CONSUMER_OWNER = FORGE
-~~~
-
-或：
+真实实现为两个位置，任一处即可判断当前 owner：
 
 ~~~text
-TASK_CONSUMER_OWNER = COMMAND_CENTER
+chenzhenxi1-sudo/go-control-tasks  →  CURRENT_OPERATOR.md
+   PRIMARY_OPERATOR     = GO_FORGE
+   NORMAL_BOSS_ACTION   = FORGE_DEPLOY
+   RESULT_REPOSITORY    = chenzhenxi1-sudo/go-control-evidence
+   OLD_COMMAND_CENTER   = FALLBACK_ONLY
+   PRODUCTION_DEFAULT   = FORBIDDEN
 ~~~
 
-具体实现方式在 cutover 前根据 live system 选择。
+另有机器可读的 `forge-operator/schema/forge-task-v1.schema.json`。
+按原 §12 要求：人能一眼看懂、切换可逆、不改老板入口。**没有为它新建数据库或审批系统。**
 
-要求只有三个：
+### 已修真实缺陷（全部有实测证据，非推测）
 
-1. 人能快速看懂；
-2. 切换可逆；
-3. 不需要修改老板入口。
+| # | 缺陷 | 后果 | 状态 |
+|---|---|---|---|
+| 01 | listener `GitHubClient(config, None)` | 真实 HTTP 状态码全丢，变成 `AttributeError` | 已修 |
+| 02 | `--dry-run` 从不传给 session | 文档承诺 nothing executed，实际跑真实会话 | 已修 |
+| 03 | `inflight` 单行槽位永不过期 | 一次中断后 worker 永久卡死 | 已修 |
+| 04 | `dry-run` 不拦 GitHub 写 | dry-run 会话真的发了 PR 评论 | 已修 |
+| 05 | `docker exec` 等只读命令被判为 mutating | 只读巡检被迫创建恢复点、记录 2 条假 mutation | **记录，未修** |
+| 06 | `forge/recovery.py` L178/L204 `printf '%s'` 应为 `%%s` | `_db_backup` 的 PGURL 抽取被破坏 | **记录，未修** |
+| 07 | 候选事实被 `cat` 失败后静默跳过 | **「读不到」被当成「不存在」** —— 会误拒一次合法部署 | 已修（本轮） |
+| 08 | 身份块对 INSPECT 也写「You are deploying」 | 诱导非部署任务去变更 | 已修（本轮） |
 
-不要为了这个 fact 新建数据库或审批系统。
+> 07 与 08 都是本轮**用真实 proof 找出来的**，不是设计推演。07 尤其危险：它会把一次完全合法的部署拒掉。
 
 ---
 
 ## 13. Rollback of Cutover
 
-如果 Forge 上线后发现问题：
-
 ~~~text
-ROLLBACK TARGET:
-Task consumer ownership only
+ROLLBACK TARGET: Task consumer ownership only
 ~~~
 
-不是回滚整个 GO 系统。
-
-最小回滚：
+不是回滚整个 GO 系统。最小回滚：
 
 ~~~text
 stop forge-worker
 ↓
 verify no in-flight Forge mutation
 ↓
-restore old CC consumer
+boss resumes publishing boss-hk-* Requests（旧 CC 输入面）
 ↓
 verify one Task enters CC
 ~~~
 
-因为 CC 内部没有被 Forge 改造，所以 fallback 能保持低成本。
+因为 CC 内部没有被 Forge 改造过，fallback 成本极低。
 
 ---
 
-## 14. 当前状态
-
-截至本 PR 创建时：
+## 14. 当前状态（唯一权威状态块）
 
 ~~~text
-FORGE_READY_FOR_CUTOVER = NO
-CUTOVER_AUTHORISED      = NO
-CC_CONSUMER_CHANGE      = NOT EXECUTED
-HK_CHANGE               = NONE
+FORGE_READY_FOR_CUTOVER = YES
+CUTOVER_AUTHORISED      = YES
+NORMAL_BOSS_PATH        = GO_FORGE        (FORGE_DEPLOY + target_pr)
+CC_CONSUMER_CHANGE      = NONE_REQUIRED_BY_DESIGN   (bridge 输入面不含 tasks/；未停任何 unit)
+CC_FALLBACK_PRESERVED   = YES             (unit/service/ledger/代码全部原样保留)
+FORGE_SERVICE           = enabled + active (go-cc)
+FORGE_CODE_HEAD         = source == installed, byte-identical; --self-test 66/66
+HK_CHANGE               = PR320 已部署并在跑（8/8 业务容器 = sha256:26c95472d494）
 PRODUCTION_CHANGE       = NONE
+BOSS_PR_CHANGE          = NONE
+HUMAN_PR_CHANGE         = NONE
+RESULT_CHANNEL          = chenzhenxi1-sudo/go-control-evidence → evidence/
 ~~~
 
-本 PR 只是一个未来实施提醒和设计冻结点。
+### 现场证据锚点
 
-**不得因为这个 PR 存在就提前切流。**
+~~~text
+PR320 identity      head eeafca1b15a4754ba36a0f138a27347cbbd12c73
+                    candidate pr320-eeafca1b-unified-pr315-on-main
+                    artifact sha256:26c95472d494100dc5365b031335670b57570b86ac50fb1b4ebd161d7933530b
+                    contract 49100fe16124f8d6189b56f78d5e63459e68aedb7749062202ffd65ea00fca74
+                    package  d13f14d112670dfeff17f90b860c9c4ed8cf92e7a55c1962abee87f9f2f40d76
+forged deploy evid  evidence/forge-deploy-pr320-r3-20261002T084029Z.json @ ae8b9720
+bootstrap inspect   evidence/forge-inspect-20261002T152500Z.json      @ 6499146b
+boss-intent inspect evidence/forge-forge-inspect-bossintent-…json     @ 9c35b3f4
+operator source     forge-operator/source/ (tasks repo PR #134)  或  go-cc:/opt/go-forge
+~~~
 
 ---
 
-## 15. 最终一句话
+## 15. 未决 / 需要 Owner 侧处理
 
-> **老板与 GitHub Task 入口保持不变；GO Forge 验证成熟后，在 Task 总线下面把主消费者从旧 Command Center 切到 Forge。旧 CC 不删除、不重构，平时断开，Forge 出问题时人工切回，且任何时刻同一环境只能有一个 mutation owner。**
+以下全部**已被记录，本轮按任务边界未修**。
+
+### 15.1 🔴 Baseline 必须由 Owner 推进（直接阻塞下一次部署）
+
+上一次真实巡检（Boss 最小意图那次）报出 **`comparison = DRIFT`**，且**是正确的**：
+
+- **declared baseline** 仍指向 PR320 **之前**的版本（`CURRENT_HK_RUNTIME.json` → `e109af4d` / 镜像 `e1049b5c`，environment-graph `e109af4d`，最后一条 CC deploy record 为 10-01 23:04）。
+- **actual runtime** = PR320（`eeafca1b` / 镜像 `26c95472`）。
+
+原因是 PR320 部署**没有**（也不应该由操作员）推进 canonical pointer / environment-graph / CC deploy record。
+
+后果：**在 declared baseline 被推进到 PR320 之前，任何新的部署请求都会（正确地、安全地）报 DRIFT 并停止变更。**
+
+这正是设计的闭环：
+~~~text
+Forge 部署 → Forge 发布 Evidence → Owner 侧依据 Evidence 推进 baseline/head
+~~~
+**Forge 即使 DEPLOY_SUCCESS 也不推进 baseline。**
+
+### 15.2 环境缺陷：封存 deployctl 与新候选的路径假设不一致
+
+`collector_runtime.ALEMBIC_WORKDIR` 写死 `/workspace`，而候选镜像把应用放在 `/app`。
+后果（已复现）：`go-hk-deployctl verify --candidate-image-id sha256:26c95472...` → `VERIFY_REJECTED`。
+即**主机自带的 verify 已无法验证当前在跑的候选**（部署本身无问题，但自动验证链是断的）。
+
+### 15.3 Forge 源码没有 canonical GitHub home
+
+现状：源码只存在于工作站 `D:/Code/Workbuddy/FORGE-V0/` 与 `go-cc:/opt/go-forge`。
+本轮按「不得为这一轮新建仓库」的要求，暂存于 `go-control-tasks` 的 `forge-operator/source/`（PR #134），并在其 README 明确标注这是**临时落点**。
+**这是一个 open source-of-truth defect，需要 Owner 明确决定正式归属，不应顺其自然。**
+
+### 15.4 Owner 侧对账：Forge 未扩展 pinned 签名 deploy-record 链
+
+Forge 的 PR320 部署**没有**写入 CC 的签名 deploy-record 链（最新记录仍是 10-01 的 `58920cd1…`）。
+⇒ **Command Center 对「现场在跑什么」的视图现在是过期的**（现场跑 `26c95472`，而 CC 仍把它呈现为「待部署的候选」）。
+推进 baseline / head / candidate authority 明确不属于操作员职责。
+
+### 15.5 其它已记录项
+
+- **SYSTEM_DEFECT-05**：`docker exec` / 含 `>` 重定向的只读命令被判定为 mutating；且状态探针含 `date -u -Is`，使每次 before/after 比较都「变了」。一次只读巡检因此在 `result.json` 里留下 2 条假 mutation 并被迫建恢复点。建议最小修法：区分「显式声明 mutating」与「模式推断」，两者都记录。
+- **SYSTEM_DEFECT-06**：`forge/recovery.py` L178 / L204 的 `printf '%s'` 应为 `%%s`。
+- **GO-FORGE 任务不验签**：namespace 过滤靠 `authority` 字符串。签发方是受信身份，暂不改；但要知道这是一条**约定**而非密码学边界。
+- **会话上下文逐轮增长**：一次部署 84 轮、输入 **12,063,085** token。成本已可归因（`usage.json`），但无任何机制管理上下文增长。
+- **Evidence 路径可读性**：`publish_evidence` 的默认路径把 `task_ref` 与 `run_id` 拼接，产生三段重复的长文件名。纯观感问题。
+- **`--dry-run` 的真实语义**（已写入 README）：`dry-run = 真实推理 + 零外部变更`，**不是**「免费/不调模型」。
+
+---
+
+## 16. 最终一句话
+
+> **老板入口不变、而且契约更简单（只说 `Deploy PR <n> to HK-STAGING`）；GO Forge 已成为主操作员并已真实完成一次 PR320 部署；旧 Command Center 一行代码未改、仍然完整可用作为兜底；任意时刻同一环境只有一个 mutation owner。**
+
+---
+
+## 附：Boss 使用规则（正本）
+
+Boss 面向的使用说明正本在任务仓：
+
+~~~text
+chenzhenxi1-sudo/go-control-tasks
+  CURRENT_OPERATOR.md        当前路由事实
+  GO_FORGE_BOSS_USAGE.md     零上下文可读的使用指南
+  forge-operator/schema/     任务文档 schema
+  forge-operator/task-template/  三种最小任务模板
+~~~
+
+要点：
+
+1. 正常部署只说一句：`Deploy PR <number> to HK-STAGING.`
+2. 发布为一条 `authority=GO-FORGE` / `action_id=FORGE_DEPLOY` / `target_pr=<n>` 的任务到 `tasks/`。
+3. **不要**另外单独发 TEST_PR / CANARY / VERIFY / DEPLOY request —— Forge 自己决定并执行所需准备。
+4. **不要**提供 image digest / artifact digest / package digest / migration 命令 / Docker 命令 / compose 路径。
+5. 结果从 `chenzhenxi1-sudo/go-control-evidence` 读。
+6. 旧 Command Center 仅作兜底，**不得与 Forge 同时使用**，且不得由 Boss 自行决定同时走两条路。
