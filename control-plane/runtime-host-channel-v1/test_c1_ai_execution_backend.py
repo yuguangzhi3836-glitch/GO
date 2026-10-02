@@ -251,6 +251,20 @@ class WorkflowContractTests(unittest.TestCase):
         execution = self._execution_step()
         self.assertIn('--model "$C1_AI_MODEL"', execution["run"])
 
+    def test_the_output_budget_is_repo_side_and_only_for_a_real_task(self):
+        # The budget follows the model: repository-side configuration, never a dispatch
+        # input, so a dispatch can neither raise nor lower it.
+        self.assertEqual(int(self.document["env"]["C1_AI_MAX_OUTPUT_TOKENS"]),
+                         backend.REAL_TASK_MAX_OUTPUT_TOKENS)
+        for forbidden in ("max_output_tokens", "output_budget", "tokens"):
+            self.assertNotIn(forbidden, self.triggers["workflow_dispatch"]["inputs"])
+        # ... and it is passed only for a real task: the smoke's budget belongs to the
+        # smoke contract, so the flag sits behind the same guard as the task's own kind.
+        lines = [line.strip() for line in self._execution_step()["run"].splitlines()
+                 if "--max-output-tokens" in line]
+        self.assertEqual(len(lines), 1, lines)
+        self.assertTrue(lines[0].startswith('if [ -n "${C1_TASK_KIND:-}" ]'), lines[0])
+
     def _execution_step(self):
         found = [s for s in self.steps
                  if "c1_ai_execution_backend.py run" in str(s.get("run", ""))]

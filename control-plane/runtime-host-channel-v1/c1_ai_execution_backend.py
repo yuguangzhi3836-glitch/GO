@@ -58,8 +58,43 @@ from c1_execution_contract import (  # noqa: E402
 
 API_KEY_ENV = "OPENAI_API_KEY"
 HTTP_TIMEOUT_S = 45
-MAX_OUTPUT_TOKENS = 32
+# The smoke's own budget. It belongs to the smoke contract rather than to the runner's
+# configuration: the deployed smoke expects a fixed ten-token literal, and nothing about
+# that expectation may move.
+SMOKE_MAX_OUTPUT_TOKENS = 32
+# Back-compatible name for the smoke budget, and the default of `call_responses_api`.
+MAX_OUTPUT_TOKENS = SMOKE_MAX_OUTPUT_TOKENS
+# A real task asks an open question, and the model spends tokens on its reasoning before
+# it answers - 32 is not enough for that. 1024 is comfortably above a bounded answer while
+# still bounded: an unbounded answer is a defect either way.
+REAL_TASK_MAX_OUTPUT_TOKENS = 1024
+# The range a runner-supplied override may take, so a bad configuration value fails closed
+# instead of silently truncating every answer to nothing.
+MAX_OUTPUT_TOKENS_MIN = 1
+MAX_OUTPUT_TOKENS_MAX = 32768
 MAX_RESPONSE_BYTES = 1024 * 1024
+
+
+def output_token_budget(task_kind: str, override=None) -> int:
+    """How many output tokens this execution may spend.
+
+    A property of the task class, not of the caller. The smoke keeps its own budget
+    whatever the runner is configured with, so the one path that has already been paid
+    for cannot be changed from outside. A real task may be given a bounded override,
+    because its right budget depends on the model the repository has configured - the
+    same reason the model name itself is a repository-side value.
+    """
+    if task_kind != REAL_TASK_KIND:
+        return SMOKE_MAX_OUTPUT_TOKENS
+    if override is None:
+        return REAL_TASK_MAX_OUTPUT_TOKENS
+    try:
+        value = int(override)
+    except (TypeError, ValueError):
+        raise Refused("MAX_OUTPUT_TOKENS_OUT_OF_RANGE") from None
+    if not MAX_OUTPUT_TOKENS_MIN <= value <= MAX_OUTPUT_TOKENS_MAX:
+        raise Refused("MAX_OUTPUT_TOKENS_OUT_OF_RANGE")
+    return value
 
 
 def extract_output_text(document) -> str:
@@ -81,20 +116,21 @@ def extract_output_text(document) -> str:
 
 
 def call_responses_api(*, api_key: str, model: str, prompt: str = PROMPT,
+                       max_output_tokens: int = MAX_OUTPUT_TOKENS,
                        opener=urllib.request.urlopen):
     """One real model call. The key is used and then goes out of scope.
 
-    `prompt` is supplied by the caller, which obtained it from the shared contract's
-    derivation for this exact task. The default is the fixed smoke prompt, matching
-    `prompt_sha256()`'s own convention, so a direct call with no task in hand behaves
-    exactly as it did before the real-task contract existed.
+    `prompt` and `max_output_tokens` are supplied by the caller, which obtained both from
+    the task it holds. Their defaults are the fixed smoke prompt and the smoke's own
+    budget, matching `prompt_sha256()`'s convention, so a direct call with no task in hand
+    behaves exactly as it did before the real-task contract existed.
     """
     if not api_key:
         raise Refused("MISSING_OPENAI_API_KEY")
     body = canonical({
         "model": model,
         "input": prompt,
-        "max_output_tokens": MAX_OUTPUT_TOKENS,
+        "max_output_tokens": max_output_tokens,
         "store": False,
     }).encode("utf-8")
     request = urllib.request.Request(
@@ -197,11 +233,11 @@ def reuse_terminal_result(path, request_id):
 def run_execution(*, runtime_task_id, attempt, model, github_run_id, github_run_attempt,
                   execution_request_id_given=None, existing_result=None, stub=False,
                   api_key="", opener=urllib.request.urlopen, task_kind: str = KIND,
-                  payload=None) -> dict:
+                  payload=None, max_output_tokens=None) -> dict:
     """Execute exactly one already-bound task and seal exactly one result.
 
-    The task's kind and payload decide BOTH the identity and the prompt, and both are
-    re-derived here through the same shared contract the requester used. A dispatch that
+    The task's kind and payload decide the identity, the prompt AND the output budget, and
+    all three are re-derived here rather than taken from the caller. A dispatch that
     carries a payload other than the one its `execution_request_id` was built from is
     therefore refused rather than executed - which is what stops a valid-looking dispatch
     from substituting one task's content for another's.
@@ -217,10 +253,13 @@ def run_execution(*, runtime_task_id, attempt, model, github_run_id, github_run_
         if reused is not None:
             return dict(reused, reused_terminal_result=True)
 
+    # Resolved for every path - including the offline stub - so a bad runner-supplied
+    # budget fails the run instead of being silently ignored until a live call.
+    budget = output_token_budget(task_kind, max_output_tokens)
     prompt = prompt_for_spec(spec)
     reply = (stub_response(model=model, task_kind=task_kind, prompt=prompt) if stub
              else call_responses_api(api_key=api_key, model=model, prompt=prompt,
-                                     opener=opener))
+                                     max_output_tokens=budget, opener=opener))
     document = sealed_result(
         runtime_task_id=runtime_task_id, attempt=attempt, request_id=derived, reply=reply,
         github_run_id=github_run_id, github_run_attempt=github_run_attempt, reused=False,
@@ -287,6 +326,9 @@ def main(argv=None) -> int:
     run.add_argument("--github-run-attempt", type=int, required=True)
     run.add_argument("--out", required=True)
     run.add_argument("--existing-result", default=None)
+    run.add_argument("--max-output-tokens", type=int, default=None,
+                     help="runner-side override for a REAL task's output budget; the "
+                          "fixed smoke always keeps its own")
     run.add_argument("--stub", action="store_true",
                      help="no network, no credential - offline/CI path")
 
@@ -318,6 +360,7 @@ def main(argv=None) -> int:
             api_key=api_key,
             task_kind=args.task_kind,
             payload=payload,
+            max_output_tokens=args.max_output_tokens,
         )
         assert_no_credential_material(document, api_key)
         write_result(document, args.out)

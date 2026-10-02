@@ -17,8 +17,8 @@ name: C1 real AI execution backend (V1)
 # GitHub Actions as the execution location for every cell.
 #
 # Dispatch inputs: the identity triple, plus - for a real task only - the task's kind and
-# its payload. The requester still cannot name a prompt, a model, an endpoint, a
-# repository, a branch or a C id: those are fixed here and in
+# its payload. The requester still cannot name a prompt, a model, an endpoint, an output
+# budget, a repository, a branch or a C id: those are fixed here and in
 # control-plane/runtime-host-channel-v1/c1_execution_contract.py, which both sides import.
 # A payload is not a prompt: the prompt is DERIVED from the payload by the shared contract
 # on the Runtime side and re-derived here, and the payload is what the execution identity
@@ -70,8 +70,14 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Repo-side controlled value: the model is NOT a dispatch input.
+  # Repo-side controlled values: neither the model nor the output budget is a dispatch
+  # input, so a dispatch can neither choose a model nor raise (or lower) the budget.
   C1_AI_MODEL: "gpt-5.6-sol"
+  # The output budget for a REAL task. It follows the model for the same reason: the right
+  # value depends on which model the repository has configured. The fixed smoke never
+  # receives this value - its budget belongs to the smoke contract, in the backend - so
+  # changing it cannot change the smoke.
+  C1_AI_MAX_OUTPUT_TOKENS: "1024"
 
 jobs:
   c1-ai-execution:
@@ -111,6 +117,10 @@ jobs:
           TASK_ARGS=()
           if [ -n "${C1_TASK_KIND:-}" ]; then TASK_ARGS+=(--task-kind "$C1_TASK_KIND"); fi
           if [ -n "${C1_TASK_PAYLOAD:-}" ]; then TASK_ARGS+=(--task-payload "$C1_TASK_PAYLOAD"); fi
+          # The output budget follows the same rule as the model: it is repository-side,
+          # and it is passed only for a real task. The smoke's budget belongs to the smoke
+          # contract, so it never receives this argument at all.
+          if [ -n "${C1_TASK_KIND:-}" ]; then TASK_ARGS+=(--max-output-tokens "$C1_AI_MAX_OUTPUT_TOKENS"); fi
           python control-plane/runtime-host-channel-v1/c1_ai_execution_backend.py run \
             --runtime-task-id "${{ inputs.runtime_task_id }}" \
             --attempt "${{ inputs.attempt }}" \

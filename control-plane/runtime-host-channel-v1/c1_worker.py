@@ -86,6 +86,7 @@ DEFAULT_RESUME_LIMIT = 10
 STATUS_FIELDS = (
     "status", "verb", "claimed", "resumed", "unfinished", "kind", "runtime_task_id",
     "attempt", "action", "dispatch_status", "reused", "renewed", "reason", "detail",
+    "conclusion", "runtime_told", "failure_reason",
     "claimed_kinds", "runtime_db", "outbox_db", "credential",
 )
 
