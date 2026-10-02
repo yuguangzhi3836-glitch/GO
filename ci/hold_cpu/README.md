@@ -104,3 +104,61 @@ python ci/hold_cpu/recompute_r3.py /path/to/R3/raw.zip
 Command Center baseline reconciliation and #240 signed-receipt readback remain a
 separate live prerequisite. This source-only diagnostic does not reconcile the
 baseline, create a Task, merge, install or deploy anything.
+
+## Same-host PostgreSQL readback — 2026-10-02
+
+Executed in the original `literate-winner-vpqqjgwvpjprcp7gw` 4-core/16GB
+Codespace, Python 3.12.3, SQLAlchemy 2.1.1 and PostgreSQL 18.4. The eight
+observer tests passed there. Application remained the historical baseline
+`a6361b9376ab59f05616338b8245ac4e2976dec3`, application tree
+`6570b66bc977f89c0311d67bdc6b721cd70d4e09`; R3 harness source was
+`afb6c469d518bd2386846fe3c9c7a2d6548f9aca`. No application edits.
+
+Raw evidence and executed wrapper are archived at evidence commit
+`13a08ec261cc1618b7cada5a2b64bd438b848621`, directory
+`ci/hold_cpu/evidence/same-host-20261002`. Raw ZIP SHA256:
+`a720dd9adfbddeb90c19a16ef862a56f156237d4616405e4dbfa893f67cc8c88`.
+`SAME_HOST_20261002.json` contains the remote-read-back summary, per-service
+breakdown and original harness validation. The ZIP includes the exact executed
+wrapper bytes, source hashes, raw worker profiles/results, logs and SQL checks.
+
+Original validator passed evidence hashes, 13 correctness scenarios, all 120
+completed orders, actual 20/100 concurrent actors and the 4x4/overflow0 binding.
+All eight worker profiles report valid balanced leases: 420/420 at 20 actors,
+2100/2100 at 100. The workload stopped at 100's failed latency tier:
+
+| Diagnostic tier | P95 ms | P99 ms | Application CPU s | Lifetime CPU s |
+| --- | ---: | ---: | ---: | ---: |
+| 20 | 2092.266 | 2113.626 | 5.574459 | 24.656433 |
+| 100 | 7845.097 | 7914.882 | 14.610175 | 33.918239 |
+
+These include observer overhead, are not uninstrumented ABBA, and show **no
+performance improvement or capacity acceptance**. There was no 250+ run.
+
+At 100 actors, exclusive held-thread buckets total 9.697388 CPU seconds and
+87.060809 concurrent wall seconds. DBAPI execute accounts for 2.692967 CPU
+seconds and 60.999317 wall seconds (70.1% of held-thread wall). Commit accounts
+for 11.499673 wall seconds. These are not database-server CPU measurements;
+SQL wall includes transport, scheduling and driver work.
+
+Per-service existing SQL counters locate the largest SQL wall total in
+`money.create_in_session`: 2000 statements / 9.309649 seconds, with 14.063154
+seconds of lease holds and 228.726702 seconds of summed queue wait. `ride.create`
+records 1500 statements / 8.703242 seconds, 13.015083 seconds held and 210.509434
+seconds summed queue wait. Queue sums are concurrent waiting, not CPU.
+
+Mapper configuration consumes 2.848120 thread-CPU seconds in the original
+collector but has **no held-connection bucket** in this run. It is a cold-start
+cost, not the measured lease-occupation hotspot. Largest non-DB held CPU buckets
+are supplier.record_supplier_fact (1.187109 s), ride.fulfill (1.145818 s), then
+money.create_in_session (0.921249 s); ride.create is 0.683156 s.
+
+The next implementation target is money's database round trips while holding
+its transaction, followed by ride's queries. This report does not establish
+that a specific query is redundant. Preserve credit-source/reservation guards,
+root and movement locks, global idempotency conflicts and durable AUTH/CAPTURE
+commits. Combining locked reads needs concurrency/MVCC tests; returning a stale
+joined row after waiting for a lock is not an acceptable query-count saving.
+An application optimization has **not** yet been implemented or qualified by
+this diagnostic. The historical baseline is not current main or deployed #320;
+performance numbers must not be transferred to those different application trees.
