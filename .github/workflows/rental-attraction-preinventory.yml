@@ -5,13 +5,31 @@ on:
       - application/**
       - .github/workflows/rental-attraction-preinventory.yml
       - docs/acceptance/rental-attractions/**
+      - ci/evidence_hygiene/**
 permissions:
   contents: read
 concurrency:
   group: rental-attraction-preinventory-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 jobs:
+  evidence-hygiene:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'pytest>=8,<9'
+      - name: Exercise failure reports, JUnit, sanitization and rejected uploads
+        run: python -m pytest ci/evidence_hygiene/test_guard.py -q
+      - name: Scan tracked rental and attraction evidence
+        run: python application/tests/evidence_hygiene.py scan docs/acceptance/rental-attractions
   postgres:
+    needs: evidence-hygiene
     strategy:
       fail-fast: false
       matrix:
@@ -79,25 +97,21 @@ jobs:
             independent) suites=(tests/independent_rental_attractions) ;;
             *) exit 1 ;;
           esac
-          python -m pytest "${suites[@]}" --junitxml=../rental-attraction-evidence/junit.xml 2>&1 | tee ../rental-attraction-evidence/pytest.log
-      - name: Hash raw evidence including failures
+          python -m pytest "${suites[@]}" --junitxml=../rental-attraction-evidence/junit.xml 2>&1 | python tests/evidence_hygiene.py stream | tee ../rental-attraction-evidence/pytest.log
+      - name: Sanitize and validate evidence before hashing and upload
+        id: sanitized
         if: always()
-        run: |
-          python - <<'PY'
-          import hashlib,json
-          from pathlib import Path
-          root=Path('rental-attraction-evidence');root.mkdir(exist_ok=True)
-          hashes={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir() if p.is_file()}
-          (root/'SHA256.json').write_text(json.dumps(hashes,indent=2)+'\n')
-          PY
+        run: python application/tests/evidence_hygiene.py prepare rental-attraction-evidence rental-attraction-publish
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{ always() && steps.sanitized.outcome == 'success' }}
         with:
+          if-no-files-found: error
           name: rental-attraction-preinventory-${{ github.event.pull_request.head.sha }}-${{ matrix.suite }}
-          path: rental-attraction-evidence/
+          path: rental-attraction-publish/
           retention-days: 90
 
   browser:
+    needs: evidence-hygiene
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -132,15 +146,22 @@ jobs:
             if curl -fsS http://127.0.0.1:4187/__acceptance/binding > "$RUNNER_TEMP/ticket-runtime-binding.json"; then break; fi
             sleep 1
           done
-          TICKET_BROWSER_ROOT="$ROOT" TICKET_BROWSER_STATE="$STATE" PLAYWRIGHT_MODULE="$RUNNER_TEMP/ticket-browser-deps/node_modules/playwright" node application/scripts/rental-attraction-acceptance/browser.mjs
-      - uses: actions/upload-artifact@v4
+          TICKET_BROWSER_ROOT="$ROOT" TICKET_BROWSER_STATE="$STATE" PLAYWRIGHT_MODULE="$RUNNER_TEMP/ticket-browser-deps/node_modules/playwright" node application/scripts/rental-attraction-acceptance/browser.mjs 2>&1 | python application/tests/evidence_hygiene.py stream
+      - name: Sanitize browser evidence before upload
+        id: sanitized_browser
         if: always()
+        run: |
+          set -euo pipefail
+          RAW="$RUNNER_TEMP/ticket-evidence-raw"
+          mkdir -p "$RAW"
+          for source in "$RUNNER_TEMP/ticket-browser-source/rental-attractions-evidence" "$RUNNER_TEMP/ticket-browser-source/binding.json" "$RUNNER_TEMP/ticket-browser-source/fingerprint.json" "$RUNNER_TEMP/ticket-runtime-binding.json" "$RUNNER_TEMP/ticket-runtime.log"; do
+            if [ -e "$source" ]; then cp -R "$source" "$RAW/"; fi
+          done
+          python application/tests/evidence_hygiene.py prepare "$RAW" rental-attraction-browser-publish
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && steps.sanitized_browser.outcome == 'success' }}
         with:
           name: rental-attraction-browser-${{ github.event.pull_request.head.sha }}
-          path: |
-            ${{ runner.temp }}/ticket-browser-source/rental-attractions-evidence
-            ${{ runner.temp }}/ticket-browser-source/binding.json
-            ${{ runner.temp }}/ticket-browser-source/fingerprint.json
-            ${{ runner.temp }}/ticket-runtime-binding.json
-            ${{ runner.temp }}/ticket-runtime.log
+          path: rental-attraction-browser-publish/
+          if-no-files-found: error
           retention-days: 14
