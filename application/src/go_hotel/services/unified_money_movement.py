@@ -1,5 +1,6 @@
 from datetime import datetime,timezone,timedelta
 import hashlib,json,uuid
+from functools import lru_cache
 from sqlalchemy import select,text,bindparam
 from sqlalchemy.orm import load_only
 from go_hotel.db.session import SessionLocal
@@ -15,12 +16,15 @@ from go_hotel.db.models import (
 # still reads the database and acquires the original FOR UPDATE locks.
 _INTENT_LOCK = select(Intent).where(Intent.payment_intent_id==bindparam('intent_id')).with_for_update()
 _MOVEMENT_KEY_LOCK = select(Movement).where(Movement.idempotency_key==bindparam('movement_key')).with_for_update()
-# Budget/parent validation needs these six fields, not historical evidence JSON
-# or timestamps. Retain ORM identity/pending-state semantics and all row locks.
-_MOVEMENTS_LOCK = (select(Movement).options(load_only(
- Movement.money_movement_id, Movement.parent_movement_id, Movement.movement_type,
- Movement.amount_minor, Movement.state, Movement.idempotency_key))
- .where(Movement.root_payment_intent_id==bindparam('intent_id')).with_for_update())
+# Construct loader options on first use: load_only() configures ORM mappers,
+# so building it at import time would silently move first-request work to startup.
+# Cache the immutable shape only; rows, parameters and locks remain per execution.
+@lru_cache(maxsize=1)
+def _movements_lock():
+ return (select(Movement).options(load_only(
+  Movement.money_movement_id, Movement.parent_movement_id, Movement.movement_type,
+  Movement.amount_minor, Movement.state, Movement.idempotency_key))
+  .where(Movement.root_payment_intent_id==bindparam('intent_id')).with_for_update())
 _FULFILLMENT_LOCK = select(Fulfillment).where(Fulfillment.payment_intent_id==bindparam('intent_id')).with_for_update()
 def now():return datetime.now(timezone.utc)
 def ident(p):return f'{p}_{uuid.uuid4().hex}'
@@ -79,7 +83,7 @@ class UnifiedMoneyMovementService:
   assert_cash_fare_money_action(s,i,typ,amount,b.get('parent_movement_id'),key)
   if i.state!='SUCCEEDED':raise ValueError('ROOT_PAYMENT_SUCCESS_REQUIRED')
   if amount<=0:raise ValueError('POSITIVE_MOVEMENT_AMOUNT_REQUIRED')
-  movements=s.scalars(_MOVEMENTS_LOCK,{'intent_id':intent_id}).all()
+  movements=s.scalars(_movements_lock(),{'intent_id':intent_id}).all()
   auth=sum(x.amount_minor for x in movements if x.movement_type=='AUTHORIZATION' and x.state=='CONFIRMED')
   captured=sum(x.amount_minor for x in movements if x.movement_type=='CAPTURE' and x.state=='CONFIRMED')
   released=sum(x.amount_minor for x in movements if x.movement_type=='RELEASE' and x.state=='CONFIRMED')

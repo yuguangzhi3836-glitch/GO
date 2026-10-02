@@ -21,12 +21,13 @@ This is a small candidate, not a claimed 20% CPU gain. It removes one SQL call p
 RIDE create and avoids unused history payload processing. First mapper setup is
 reported separately; it is not moved before timing or removed via warm-up.
 
-Fifteen behavior tests cover policy time after resolution/expiry, consent rollback,
+Sixteen behavior tests cover policy time after resolution/expiry, consent rollback,
 actual history SELECT columns and deferred-read counts, caller-owned pending ORM
 state, full replay/conflict output, forfeiture parent protection, PostgreSQL
 same-key and amount races, disconnects before/after commits, process exit after
 AUTH, commit failure and lost CAPTURE commit acknowledgement. PostgreSQL jobs
-require zero skips. The frozen 250 regressions and 32 harness tests also run.
+require zero skips. Import-time cold-mapper preservation and lazy query-shape reuse are also checked.
+The frozen 250 regressions and 32 harness tests also run.
 
 The measurement definition is inherited from PR284's verified tools: 4 processes,
 pool4/overflow0, baseline/candidate/candidate/baseline, each at20 then100 actual
@@ -46,3 +47,9 @@ the Codespace. Use a new clean dedicated worktree; verify no other experiment an
 port5432 free before launch. Never run this on HK or production.
 
     /workspaces/.go-capacity-venv/bin/python ci/ride_query/bootstrap.py
+
+First attempt `9ba3c41b1401` is INVALID: import-time load_only configured all
+563 mappers before request timing. The cold-worker guard caught this; its apparent
+4.456s result is not accepted. Evidence remains on
+`evidence/query-cost-ride-query-20261002`. The corrected candidate builds and caches
+loader options only on first actual use, preserving the original cold boundary.

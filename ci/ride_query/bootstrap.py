@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 ROOT=Path(__file__).resolve().parents[2]
 PYTHON='/workspaces/.go-capacity-venv/bin/python'
 NAME='literate-winner-vpqqjgwvpjprcp7gw'
-BRANCH='evidence/query-cost-ride-query-20261002'
+BRANCH='evidence/query-cost-ride-query-r2-20261002'
 PG='go-query-cost-ride-query-pg'
 OUT=ROOT/'ride-query-qualification';OUT.mkdir(exist_ok=False)
 START=time.monotonic();DEADLINE=START+5400
@@ -45,7 +45,7 @@ try:
     test_env=dict(ENV,GO_TEST_DATABASE_URL=ENV['GO_MULTI_DATABASE_URL'],GO_REQUIRE_POSTGRES='1')
     state['status']='BOUNDARY_SAFETY';save()
     run([PYTHON,'-m','pytest','-p','no:cacheprovider','-x','tests/payments/test_ride_money_query_cost.py','-o','junit_family=xunit1','--junitxml='+str(OUT/'boundaries.xml')],cwd=ROOT/'application',env=test_env,log=OUT/'boundaries.log')
-    junit(OUT/'boundaries.xml',15)
+    junit(OUT/'boundaries.xml',16)
     import yaml
     steps=yaml.safe_load((ROOT/'.github/workflows/multi-instance-transactions.yml').read_text())['jobs']['isolated']['steps']
     step=next(s for s in steps if s.get('name')=='Payment recovery and payment-inventory boundary regressions')
@@ -54,7 +54,7 @@ try:
     state['status']='FROZEN_250_REGRESSIONS';save()
     run([PYTHON,'-m','pytest','-p','no:cacheprovider',*args,'--junitxml='+str(OUT/'regressions.xml')],cwd=ROOT/'application',env=test_env,log=OUT/'regressions.log')
     junit(OUT/'regressions.xml',250)
-    safety={'head':HEAD,'application_tree':TREE,'status':'PASS','regressions':250,'boundary_tests':15,'junit_sha256':{n:hashlib.sha256((OUT/n).read_bytes()).hexdigest() for n in ('boundaries.xml','regressions.xml')}}
+    safety={'head':HEAD,'application_tree':TREE,'status':'PASS','regressions':250,'boundary_tests':16,'junit_sha256':{n:hashlib.sha256((OUT/n).read_bytes()).hexdigest() for n in ('boundaries.xml','regressions.xml')}}
     (OUT/'safety.json').write_text(json.dumps(safety,indent=2)+'\n')
     state['status']='ABBA_RUNNING';save()
     state['experiment_exit_code']=run([PYTHON,'ci/ride_query/experiment.py'],check=False,log=OUT/'experiment.log')
@@ -80,7 +80,7 @@ finally:
         for name,source in [('summary.json',ROOT/'ride-query-evidence/summary.json'),('safety.json',OUT/'safety.json')]:
             if source.exists():(dest/name).write_bytes(source.read_bytes())
         subprocess.run(['git','add',str(dest.relative_to(ROOT))],cwd=ROOT,check=True,timeout=30)
-        subprocess.run(['git','commit','-m','test: archive PR284 safety and bounded ABBA evidence'],cwd=ROOT,check=True,timeout=30)
+        subprocess.run(['git','commit','-m','test: archive query-cost safety and bounded ABBA evidence'],cwd=ROOT,check=True,timeout=30)
         subprocess.run(['git','push','origin','HEAD:refs/heads/'+BRANCH],cwd=ROOT,check=True,timeout=120)
         print('EVIDENCE_PUBLISHED',flush=True)
     finally:subprocess.run(['gh','api','-X','POST','/user/codespaces/'+NAME+'/stop'],cwd=ROOT,timeout=60,check=False)

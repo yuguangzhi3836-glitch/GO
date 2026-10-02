@@ -59,7 +59,7 @@ def main():
     assert git('rev-parse',BASELINE+':application')==BASELINE_TREE
     safety=json.loads((ROOT/'ride-query-qualification/safety.json').read_text())
     assert safety['head']==head and safety['application_tree']==git('rev-parse',head+':application')
-    assert safety['regressions']==250 and safety['boundary_tests']==15 and safety['status']=='PASS'
+    assert safety['regressions']==250 and safety['boundary_tests']==16 and safety['status']=='PASS'
     for name,digest in safety['junit_sha256'].items():
         assert hashlib.sha256((ROOT/'ride-query-qualification'/name).read_bytes()).hexdigest()==digest
     out=ROOT/'ride-query-evidence';out.mkdir(exist_ok=False)

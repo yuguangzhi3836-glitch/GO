@@ -246,3 +246,18 @@ def test_lost_capture_commit_ack_does_not_duplicate_money(postgres_only,monkeypa
     assert calls==[True] and engine.pool.checkedout()==0
     before=facts();assert before[1:]==(10000,10000,2)
     move('CAPTURE','cap',parent=auth['money_movement_id']);assert facts()==before
+
+
+def test_import_preserves_cold_mappers_and_lazy_shape_is_reused():
+    script = """from go_hotel.db.models import Base
+assert sum(m.configured for m in Base.registry.mappers) == 0
+from go_hotel.services import unified_money_movement as module
+assert sum(m.configured for m in Base.registry.mappers) == 0
+assert module._movements_lock.cache_info().currsize == 0
+shape = module._movements_lock()
+assert sum(m.configured for m in Base.registry.mappers) > 0
+assert module._movements_lock() is shape
+"""
+    child = subprocess.run([sys.executable, '-c', script], env=dict(os.environ),
+        capture_output=True, text=True, timeout=30)
+    assert child.returncode == 0, child.stderr[-1000:]
