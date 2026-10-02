@@ -1,3 +1,4 @@
+from ride_cancellation_fixture import post_ride_order
 from tests.attraction_fixtures import quoted_attraction
 import pytest
 from datetime import date, timedelta
@@ -18,8 +19,16 @@ def test_flight_old_quote_cannot_execute_after_refund(client):
     h=flight_auth(client,'terminal-flight@example.com'); oid=create_ticketed(client,h)
     q=client.post(f'/v1/flights/orders/{oid}/change-quote',headers=h,json={'new_departure_date':(date.today()+timedelta(days=12)).isoformat()}).json()['data']
     assert client.post(f'/v1/flights/orders/{oid}/refund',headers=h).status_code==200
+    from go_hotel.db.models import OmnichannelMoneyMovementRow as Movement
+    before=client.get(f'/v1/flights/orders/{oid}',headers=h).json()['data']
+    with SessionLocal() as session:
+        money_before=list(session.execute(select(Movement.money_movement_id,Movement.state,Movement.amount_minor,Movement.currency).order_by(Movement.money_movement_id)))
     r=client.post(f"/v1/flights/orders/{oid}/execute-change/{q['quote_id']}",headers=h)
-    assert r.status_code in {404,422}
+    assert r.status_code==409,r.text
+    assert r.json()['detail']=='FLIGHT_CHANGE_COUPONS_CHANGED_REQUOTE_REQUIRED'
+    assert client.get(f'/v1/flights/orders/{oid}',headers=h).json()['data']==before
+    with SessionLocal() as session:
+        assert list(session.execute(select(Movement.money_movement_id,Movement.state,Movement.amount_minor,Movement.currency).order_by(Movement.money_movement_id)))==money_before
 
 
 def test_attraction_expired_quote_fails_closed(client):
@@ -37,12 +46,15 @@ def test_attraction_expired_quote_fails_closed(client):
 def test_ride_unknown_from_in_progress_restores_in_progress(client):
     h=mobility_auth(client)
     off=client.post('/v1/mobility/rides/search',json={'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']['items'][0]
-    o=client.post('/v1/mobility/rides/orders',headers=h,json={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
+    o=post_ride_order(client,headers=h,body={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
     pay_and_confirm(client,h,'RIDE_ORDER',o['order_id'],'RIDE-'+o['order_id'][-6:])
     assert client.post(f"/v1/mobility/orders/{o['order_id']}/fulfillment",headers=h,json={'action':'START','evidence_reference':'ride-start'}).json()['data']['status']=='IN_PROGRESS'
     x=mobility_service.admin_external_state(o['order_id'],'UNKNOWN_EXTERNAL_STATE','unknown-proof','ops')
     assert x['status']=='UNKNOWN_EXTERNAL_STATE'
-    y=mobility_service.admin_external_state(o['order_id'],'CONFIRMED','reconcile-proof','ops')
+    from go_hotel.mobility.ride.recovery_evidence import current_unknown_episode
+    with SessionLocal() as s:
+        _,episode=current_unknown_episode(s,s.get(MobilityRideOrderRow,o['order_id']))
+    y=mobility_service.admin_external_state(o['order_id'],'CONFIRMED','reconcile-proof','ops',episode)
     assert y['status']=='IN_PROGRESS'
     repeat=client.post(f"/v1/mobility/orders/{o['order_id']}/fulfillment",headers=h,json={'action':'START','evidence_reference':'repeat-start'})
     assert repeat.status_code in {404,422}
@@ -51,7 +63,7 @@ def test_ride_unknown_from_in_progress_restores_in_progress(client):
 def test_late_supplier_fact_cannot_resurrect_completed_ride(client):
     h=mobility_auth(client)
     off=client.post('/v1/mobility/rides/search',json={'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']['items'][0]
-    o=client.post('/v1/mobility/rides/orders',headers=h,json={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
+    o=post_ride_order(client,headers=h,body={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
     pay_and_confirm(client,h,'RIDE_ORDER',o['order_id'],'RIDE-'+o['order_id'][-6:])
     client.post(f"/v1/mobility/orders/{o['order_id']}/fulfillment",headers=h,json={'action':'START','evidence_reference':'start'})
     client.post(f"/v1/mobility/orders/{o['order_id']}/fulfillment",headers=h,json={'action':'COMPLETE','evidence_reference':'complete'})
@@ -66,18 +78,24 @@ def test_late_supplier_fact_cannot_resurrect_completed_ride(client):
 def test_ride_unknown_can_converge_to_failed(client):
     h=mobility_auth(client)
     off=client.post('/v1/mobility/rides/search',json={'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']['items'][0]
-    o=client.post('/v1/mobility/rides/orders',headers=h,json={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
+    o=post_ride_order(client,headers=h,body={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
     pay_and_confirm(client,h,'RIDE_ORDER',o['order_id'],'RIDE-'+o['order_id'][-6:])
     assert mobility_service.admin_external_state(o['order_id'],'UNKNOWN_EXTERNAL_STATE','unknown-proof','ops')['status']=='UNKNOWN_EXTERNAL_STATE'
-    assert mobility_service.admin_external_state(o['order_id'],'FAILED','supplier-failed-proof','ops')['status']=='FAILED'
+    from go_hotel.mobility.ride.recovery_evidence import current_unknown_episode
+    with SessionLocal() as s:
+        _,episode=current_unknown_episode(s,s.get(MobilityRideOrderRow,o['order_id']))
+    assert mobility_service.admin_external_state(o['order_id'],'FAILED','supplier-failed-proof','ops',episode)['status']=='FAILED'
 
 
-def test_attraction_redeem_evidence_keeps_consumed_credential(client):
+def test_attraction_redeem_evidence_keeps_consumed_credential(client,monkeypatch):
     from go_hotel.services.rc20_vertical_evidence import list_vertical_evidence
     h=attr_auth(client)
     off=client.post('/v1/attractions/search',json={'destination':'东京','visit_date':'2026-09-03'}).json()['data']['items'][0]
     o=client.post('/v1/attractions/orders',headers=h,json=quoted_attraction(client,{'offer_id':off['offer_id'],'visit_date':'2026-09-03','quantity':1})).json()['data']
     pay_and_confirm(client,h,'ATTRACTION_ORDER',o['order_id'],'ATTR-'+o['order_id'][-6:],voucher_code='VOUCH-'+o['order_id'][-6:])
+    from datetime import datetime
+    from go_hotel.attractions import service
+    monkeypatch.setattr(service,'db_now_ms',lambda s:int(datetime.fromisoformat('2026-09-03T07:00:00+00:00').timestamp()*1000))
     assert client.post(f"/v1/attractions/orders/{o['order_id']}/redeem",headers=h,json={'evidence_reference':'gate-scan'}).status_code==200
     with SessionLocal() as s:
         evidence=list_vertical_evidence(s,'ATTRACTION',o['order_id'])
@@ -90,7 +108,7 @@ def test_same_supplier_fact_replay_does_not_append_events(client):
     from go_hotel.db.models import OrderSupplierFulfillmentEventRow, ConsumerUnifiedLifecycleEventRow, ConsumerUnifiedLifecycleRow
     h=mobility_auth(client)
     off=client.post('/v1/mobility/rides/search',json={'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']['items'][0]
-    o=client.post('/v1/mobility/rides/orders',headers=h,json={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
+    o=post_ride_order(client,headers=h,body={'offer_id':off['offer_id'],'pickup':'PVG','dropoff':'Bund','pickup_at':'2026-09-02T10:00:00','currency':'CNY'}).json()['data']
     pay_and_confirm(client,h,'RIDE_ORDER',o['order_id'],'RIDE-'+o['order_id'][-6:])
     with SessionLocal() as s:
         f=s.scalar(select(OrderSupplierFulfillmentRow).where(OrderSupplierFulfillmentRow.business_id==o['order_id']))

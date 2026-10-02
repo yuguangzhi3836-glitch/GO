@@ -1,3 +1,4 @@
+from ride_cancellation_fixture import post_ride_order
 """HTTP/SQLite acceptance with synthetic orders; no browser or live payment."""
 from datetime import date, timedelta, datetime, timezone
 
@@ -42,8 +43,8 @@ def six_orders(client, headers):
             'pickup_at':day+'T09:00:00','return_at':end+'T09:00:00'}, {'drivers':[person]}),
     ):
         offer = data(client.post(f'/v1/mobility/{path}/search', json=criteria))['items'][0]
-        orders[vertical] = data(client.post(f'/v1/mobility/{path}/orders', headers=headers,
-            json=criteria | party | {'offer_id':offer['offer_id']}))
+        body=criteria | party | {'offer_id':offer['offer_id']}
+        orders[vertical] = data(post_ride_order(client,headers=headers,body=body) if vertical=='RIDE' else client.post(f'/v1/mobility/{path}/orders', headers=headers,json=body))
     offer = data(client.post('/v1/attractions/search', json={'destination':'东京','visit_date':day}))['items'][0]
     orders['ATTRACTION'] = data(client.post('/v1/attractions/orders', headers=headers,
         json=quoted_attraction(client, {'offer_id':offer['offer_id'],'visit_date':day,

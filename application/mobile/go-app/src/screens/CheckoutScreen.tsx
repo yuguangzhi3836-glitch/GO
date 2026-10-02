@@ -1,4 +1,4 @@
-import React,{useCallback,useRef,useState} from 'react';
+import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {ActivityIndicator,ScrollView,Text,View} from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
 import {api,sessionVersion} from '../api/client';
@@ -17,6 +17,11 @@ export default function CheckoutScreen({route,navigation,vertical}:any) {
   const [view,setView]=useState<any>(null),[travelers,setTravelers]=useState<any[]>([]),[selected,setSelected]=useState<string[]>([]);
   const [consent,setConsent]=useState(false),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState('');
   const [fareConfirmed,setFareConfirmed]=useState(false);
+  const [cancellationAcceptedHash,setCancellationAcceptedHash]=useState<string|null>(null);
+  const cancellation=(params.offer||params.x)?.cancellation,rideTerms=cancellation?.terms,ridePolicy=rideTerms?.policy;
+  const seconds=ridePolicy?.cutoff_seconds,policyLead=seconds>0&&seconds%86400===0?`${seconds/86400}天`:seconds>0&&seconds%3600===0?`${seconds/3600}小时`:seconds>0&&seconds%60===0?`${seconds/60}分钟`:`${seconds}秒`;
+  const cancellationIdentity=JSON.stringify({hash:cancellation?.policy_hash,search:params.search,offer:(params.offer||params.x)?.offer_id});
+  useEffect(()=>{setCancellationAcceptedHash(null);},[cancellationIdentity]);
   const sequence=useRef(0),operation=useRef(false),creationUnknown=useRef(false);
   const load=useCallback(async()=>{
     const ticket=++sequence.current,version=sessionVersion(),current=()=>ticket===sequence.current&&version===sessionVersion();setLoading(true);setBusy(false);setError('');setView(null);
@@ -33,7 +38,7 @@ export default function CheckoutScreen({route,navigation,vertical}:any) {
     operation.current=true;setBusy(true);setError('');const ticket=sequence.current,version=sessionVersion();
     const current=()=>ticket===sequence.current&&version===sessionVersion();
     try{
-      const intent=bookingIntent(v,params,auth.profile?.user_id,selected,consent,fareConfirmed);
+      const intent=bookingIntent(v,params,auth.profile?.user_id,selected,consent,fareConfirmed,cancellationAcceptedHash);
       let result:any;
       try{result=await api(intent.path,intent.init);}catch(e:any){if(e.uncertain)creationUnknown.current=true;throw e;}
       if(!current())return;
@@ -58,8 +63,9 @@ export default function CheckoutScreen({route,navigation,vertical}:any) {
     {!!notice&&<Text style={screen.sub}>{notice}</Text>}
     {id&&view&&<View style={screen.card}><Text style={screen.h2}>原订单 {id}</Text><StatusPill text={view.order.status||'状态待核对'}/>
       {Number.isSafeInteger(view.order.total_amount_minor)?<Price minor={view.order.total_amount_minor} currency={view.order.currency}/>:<Text>金额待核对</Text>}
-      <Text style={screen.sub}>{view.simulation?'隔离模拟支付：不产生真实扣款或实际旅行凭证。':'当前没有可用的付款通道，订单会保留。'}</Text>
-      <Btn title={busy?'正在核对…':'确认金额并模拟支付'} disabled={busy||loading||!view.simulation||!payable(view.order)} onPress={()=>{void pay();}}/>
+      <Text style={screen.sub}>{view.simulation?'当前支付服务不可用于实际扣款，订单会保留。':'当前没有可用的付款通道，订单会保留。'}</Text>
+      {v==='RIDE'&&view.order.cancellation?.state!=='BOOKING_ACCEPTED'&&<Text style={screen.sub}>该订单缺少已确认的取消条款，暂不能继续支付。</Text>}
+      <Btn title={busy?'正在核对…':'确认金额并验证支付'} disabled={busy||loading||!view.simulation||!payable(view.order)} onPress={()=>{void pay();}}/>
       <Btn title="查看原订单详情" secondary disabled={busy} onPress={details}/>
     </View>}
     {!id&&!loading&&<View style={screen.card}><Text style={screen.h2}>先建立待付款订单</Text><Text style={screen.sub}>建立订单与完成支付分别确认。出行资料按本次业务所需字段使用，权限不足时不会创建订单。</Text>
@@ -68,7 +74,8 @@ export default function CheckoutScreen({route,navigation,vertical}:any) {
         <Btn title={consent?'已确认本次必要资料使用':'确认使用所选出行人的必要资料'} secondary disabled={busy||!selected.length||creationUnknown.current} onPress={()=>setConsent(!consent)}/>
       </>
       {v==='HOTEL'&&<><HotelFareTerms fare={params.prebook?.fare_rule} currency={params.prebook?.currency}/><Btn title={fareConfirmed?'已确认本次酒店规则':'确认上述酒店退改规则'} secondary disabled={busy||!params.prebook?.fare_rule?.rules} onPress={()=>setFareConfirmed(!fareConfirmed)}/></>}
-      <Btn title={busy?'正在建立…':'建立订单并核对金额'} disabled={busy||!!error||creationUnknown.current||!consent||(v==='HOTEL'&&!fareConfirmed)} onPress={()=>{void create();}}/>
+      {v==='RIDE'&&(cancellation?.state==='POLICY_AVAILABLE'&&ridePolicy?<View><Text style={screen.h2}>接送取消条款</Text><Text style={screen.sub}>隔离测试条款，不代表真实车队收费。版本 {ridePolicy.version}</Text><Text style={screen.sub}>{rideTerms.pickup} → {rideTerms.dropoff} · {rideTerms.booked_pickup_at}</Text><Text style={screen.sub}>按{ridePolicy.time_basis==='BOOKED_PICKUP'?'预订时接车时间':'当前已确认接车时间'}提前 {policyLead} 划分：分界前取消费</Text><Price minor={ridePolicy.before_fee_minor} currency={rideTerms.currency}/><Text style={screen.sub}>分界时及之后取消费</Text><Price minor={ridePolicy.after_fee_minor} currency={rideTerms.currency}/><Text style={screen.sub}>适用报价期间 {ridePolicy.effective_from} 至 {ridePolicy.effective_until}</Text><Btn title={cancellationAcceptedHash===cancellation.policy_hash?'已同意本次取消条款':'阅读并同意本次取消条款'} secondary disabled={busy||creationUnknown.current} onPress={()=>setCancellationAcceptedHash(cancellationAcceptedHash===cancellation.policy_hash?null:cancellation.policy_hash)}/></View>:<Text style={screen.sub}>接送取消条款尚待核验，暂不能预订此方案。</Text>)}
+      <Btn title={busy?'正在建立…':'建立订单并核对金额'} disabled={busy||!!error||creationUnknown.current||!consent||(v==='HOTEL'&&!fareConfirmed)||(v==='RIDE'&&(!ridePolicy||cancellation?.state!=='POLICY_AVAILABLE'||cancellationAcceptedHash!==cancellation.policy_hash))} onPress={()=>{void create();}}/>
     </View>}
     <Btn title="刷新当前资料" secondary disabled={busy||loading} onPress={()=>{void load();}}/>
     <Btn title="返回 GO Trips 核对订单" secondary disabled={busy} onPress={()=>navigation.navigate('Main',{screen:'Trips'})}/>

@@ -36,3 +36,70 @@ def test_go_offer_system_generation_requires_isolated_authorized_supply():
 def test_go_offer_and_commercial_value_never_buy_recommendation():
     p=prop();svc.upsert_offer_authority(SID,ACT,p['property_id'],{'requirement_type':'MEETING_OR_EVENT','quote_mode':'MANUAL_QUOTE'})
     c=svc.command_center(SID,p['property_id']);assert c['guardrails']['recommendation_value_separated'] is True and c['guardrails']['ai_may_mutate_supplier_price_inventory_rule'] is False
+
+def test_one_click_hotel_library_import_requires_owner_and_rejects_ota_credentials():
+    p=prop();pid=p['property_id']
+    with pytest.raises(ValueError,match='OTA_CREDENTIALS_NOT_ACCEPTED'):
+        svc.one_click_import(SID,ACT,pid,{'provider':'CTRIP','method':'DATA_EXPORT','password':'secret','hotel_package':{}})
+    result=svc.one_click_import(SID,ACT,pid,{'provider':'CTRIP','method':'DATA_EXPORT','hotel_package':{'hotel':{'brand_name':'GO Brand'},'room_types':[{'name_zh':'大床房','physical_room_count':2,'occupancy':{'max_occupancy':2,'max_adults':2,'max_children':0}}]}})
+    assert result['status']=='IMPORTED' and result['room_types_created']==1
+    with pytest.raises(ValueError,match='PROPERTY_NOT_FOUND'):
+        svc.one_click_import('another_supplier',ACT,pid,{'provider':'CTRIP','method':'DATA_EXPORT','hotel_package':{}})
+
+def test_one_click_media_import_is_fail_closed_without_rights_evidence():
+    p=prop()
+    with pytest.raises(ValueError,match='MEDIA_RIGHTS_EVIDENCE_REQUIRED'):
+        svc.one_click_import(SID,ACT,p['property_id'],{'provider':'MEITUAN','method':'FILE_UPLOAD','hotel_package':{'media':[{'url':'https://example.test/hotel.jpg'}]}})
+
+def test_import_is_atomic_and_idempotent_and_rejects_payload_drift():
+    p=prop();pid=p['property_id'];body={'provider':'CTRIP','method':'DATA_EXPORT','hotel_package':{'hotel':{'brand_name':'Imported'},'room_types':[{'name_zh':'有效房型','physical_room_count':2,'occupancy':{'max_occupancy':2,'max_adults':2,'max_children':0}}]}}
+    first=svc.one_click_import(SID,ACT,pid,body,'stable-key')
+    replay=svc.one_click_import(SID,ACT,pid,body,'stable-key')
+    assert replay['idempotent_replay'] is True and replay['import_job_id']==first['import_job_id']
+    assert len(svc.graph(SID,pid)['room_types'])==1
+    changed={**body,'hotel_package':{'hotel':{'brand_name':'Changed'},'room_types':[]}}
+    with pytest.raises(ValueError,match='IDEMPOTENCY_PAYLOAD_MISMATCH'):svc.one_click_import(SID,ACT,pid,changed,'stable-key')
+
+def test_invalid_later_room_does_not_partially_mutate_library():
+    p=prop();pid=p['property_id']
+    package={'hotel':{'brand_name':'Must Not Persist'},'room_types':[{'name_zh':'有效房型','physical_room_count':1,'occupancy':{'max_occupancy':1,'max_adults':1,'max_children':0}},{'name_zh':'坏房型','physical_room_count':1,'occupancy':{'max_occupancy':4,'max_adults':2,'max_children':1}}]}
+    with pytest.raises(ValueError,match='INVALID_OCCUPANCY'):svc.one_click_import(SID,ACT,pid,{'provider':'CTRIP','method':'FILE_UPLOAD','hotel_package':package},'atomic-key')
+    graph=svc.graph(SID,pid)
+    assert graph['property']['brand_name'] is None and graph['room_types']==[]
+
+def test_media_rights_must_cover_distribution_scope_and_every_asset():
+    p=prop();body={'provider':'BOOKING','method':'FILE_UPLOAD','hotel_package':{'media':[{'source_reference':'booking://asset/1'}]},'media_rights':{'status':'DISTRIBUTION_LICENSE','rights_holder':'Hotel Ltd','evidence_reference':'contract://1','usage_scope':['INTERNAL_REVIEW'],'applies_to_all_assets':True}}
+    with pytest.raises(ValueError,match='MEDIA_DISTRIBUTION_SCOPE_REQUIRED'):svc.one_click_import(SID,ACT,p['property_id'],body,'rights-key')
+    body['media_rights']={'status':'DISTRIBUTION_LICENSE','rights_holder':'Hotel Ltd','evidence_reference':'contract://1','usage_scope':['DISTRIBUTE_ON_GO'],'asset_references':[]}
+    with pytest.raises(ValueError,match='MEDIA_ASSET_RIGHTS_INCOMPLETE'):svc.one_click_import(SID,ACT,p['property_id'],body,'rights-key-2')
+
+def test_supplier_account_holder_gets_provider_hosted_login(monkeypatch):
+    monkeypatch.setenv('GO_CTRIP_SUPPLIER_AUTHORIZATION_URL','https://open.ctrip.example/oauth/authorize?client_id=go')
+    p=prop();result=svc.one_click_import(SID,ACT,p['property_id'],{'provider':'CTRIP','method':'OFFICIAL_AUTHORIZATION'})
+    assert result['status']=='AUTHORIZATION_REQUIRED'
+    assert result['authorization_url'].startswith('https://open.ctrip.example/')
+    assert 'state=' in result['authorization_url']
+    assert result['credentials_received_by_go'] is False
+
+def test_provider_hosted_state_is_tenant_bound_single_use(monkeypatch):
+    import hashlib,hmac,json
+    from urllib.parse import parse_qs,urlparse
+    monkeypatch.setenv('GO_CTRIP_SUPPLIER_AUTHORIZATION_URL','https://open.ctrip.example/oauth/authorize?client_id=go')
+    monkeypatch.setenv('GO_CTRIP_SUPPLIER_CALLBACK_SECRET','provider-adapter-secret')
+    p=prop();start=svc.one_click_import(SID,ACT,p['property_id'],{'provider':'CTRIP','method':'OFFICIAL_AUTHORIZATION'})
+    state=parse_qs(urlparse(start['authorization_url']).query)['state'][0]
+    proof={'provider_account_subject':'hotel-123','authorization_evidence_reference':'ctrip-oauth://grant/1','state':state}
+    signature=hmac.new(b'provider-adapter-secret',json.dumps(proof,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode(),hashlib.sha256).hexdigest()
+    payload={'provider':'CTRIP','method':'OFFICIAL_AUTHORIZATION','authorization_code':'opaque-code','authorization_state':state,'authorization_proof':proof,'authorization_signature':signature,'hotel_package':{}}
+    completed=svc.one_click_import(SID,ACT,p['property_id'],payload,'oauth-import')
+    assert completed['status']=='IMPORTED'
+    with pytest.raises(ValueError,match='SUPPLIER_PROVIDER_STATE_INVALID'):svc.one_click_import(SID,ACT,p['property_id'],payload,'oauth-import-2')
+
+def test_provider_authorization_code_alone_is_not_trusted(monkeypatch):
+    from urllib.parse import parse_qs,urlparse
+    monkeypatch.setenv('GO_CTRIP_SUPPLIER_AUTHORIZATION_URL','https://open.ctrip.example/oauth/authorize?client_id=go')
+    monkeypatch.setenv('GO_CTRIP_SUPPLIER_CALLBACK_SECRET','provider-adapter-secret')
+    p=prop();start=svc.one_click_import(SID,ACT,p['property_id'],{'provider':'CTRIP','method':'OFFICIAL_AUTHORIZATION'})
+    state=parse_qs(urlparse(start['authorization_url']).query)['state'][0]
+    with pytest.raises(ValueError,match='SUPPLIER_PROVIDER_AUTHORIZATION_UNVERIFIED'):
+        svc.one_click_import(SID,ACT,p['property_id'],{'provider':'CTRIP','method':'OFFICIAL_AUTHORIZATION','authorization_code':'attacker-code','authorization_state':state,'hotel_package':{}},'forged-oauth')

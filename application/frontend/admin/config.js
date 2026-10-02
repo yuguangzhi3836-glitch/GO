@@ -21,3 +21,5 @@ window.GO_CONSOLE.nav.splice(2,0,
 window.GO_CONSOLE.nav.splice(1,0,{route:'/r8-readiness',label:'R8 预发布就绪度',custom:'adminR8Readiness'});
 
 window.GO_CONSOLE.nav.splice(2,0,{route:'/hotel-page-factory',label:'酒店数字基础设施',custom:'adminHotelPageFactory'});
+
+window.GO_CONSOLE.nav.push({route:"/ride-policy-operations",label:"用车取消政策",custom:"adminRidePolicyOperations"});

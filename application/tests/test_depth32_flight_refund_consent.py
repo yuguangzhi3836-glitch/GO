@@ -17,7 +17,7 @@ def booked():
     oid=order['order_id']
     tx=vertical_transaction_bridge.checkout_contract('FLIGHT',oid,owner,'test-source','isolated://flight-consent')
     supplier.record_supplier_fact(tx['supplier_fulfillment_id'],{'state':'SUPPLIER_CONFIRMED',
-        'external_operation_id':'op-'+oid,'supplier_confirmation_reference':'PNR-'+oid,
+        'external_operation_id':'op-'+oid,'supplier_confirmation_reference':'TESTPNR',
         'ticket_numbers':['TICKET-'+oid],'evidence_reference':'isolated://flight-confirmed'})
     assert svc.order(owner,oid)['status']=='TICKETED'
     return owner,oid

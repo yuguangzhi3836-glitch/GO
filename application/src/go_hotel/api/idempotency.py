@@ -4,6 +4,7 @@ from go_hotel.repositories.sql import repo
 import logging
 from uuid import uuid4
 from go_hotel.services.mutation_boundary import MutationBoundary
+from go_hotel.services.flight_command_lease import flight_command_lease
 
 _PROD = {"prod", "production"}
 _RECOVERABLE = {'FLIGHT_CHECKOUT', 'FLIGHT_EXECUTE_CHANGE'}
@@ -46,7 +47,10 @@ def run_recoverable_idempotent(operation, key, payload, resource_id, fn, recover
         raise HTTPException(409, detail={'code': 'IDEMPOTENCY_IN_PROGRESS', 'message': 'Execution is active or requires recovery review'})
     boundary = MutationBoundary(recovering=mode == 'RECOVER')
     try:
-        response = (recover if boundary.recovering else fn)(boundary)
+        # A real, fenced heartbeat means a live command is not reclaimed while
+        # it crosses its local transactional/money boundary.
+        with flight_command_lease(operation, key, resource_id, token):
+            response = (recover if boundary.recovering else fn)(boundary)
     except BaseException:
         try:
             repo.finish_recoverable_idempotency(operation, key, payload, resource_id, token,
@@ -70,7 +74,7 @@ def _require_key(key: str | None) -> None:
     if settings.app_env.strip().lower() in _PROD and not key:
         raise HTTPException(status_code=428, detail={"code":"IDEMPOTENCY_KEY_REQUIRED","message":"Idempotency-Key is required for production mutations"})
 
-def run_idempotent(operation: str, key: str | None, payload: dict, fn, resource_id_fn=None):
+def run_idempotent(operation: str, key: str | None, payload: dict, fn, resource_id_fn=None, replay_fn=None):
     _require_key(key)
     if not key:
         return fn()
@@ -81,7 +85,7 @@ def run_idempotent(operation: str, key: str | None, payload: dict, fn, resource_
             raise HTTPException(status_code=409, detail={"code":"IDEMPOTENCY_CONFLICT","message":"Idempotency key reused with different payload"})
         raise
     if state == "REPLAY":
-        return rec["response"]
+        return replay_fn(rec["response"]) if replay_fn else rec["response"]
     if state == "IN_PROGRESS":
         raise HTTPException(status_code=409, detail={"code":"IDEMPOTENCY_IN_PROGRESS","message":"Request with this idempotency key is still in progress"})
     try:

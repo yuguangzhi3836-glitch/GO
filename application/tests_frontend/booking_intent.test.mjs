@@ -48,3 +48,17 @@ test('party confirmation returns only the explicitly selected traveler reference
 test('party selection cannot submit without confirming adult travelers and purpose',async()=>{
  const s=partySetup();const pending=s.booking.travelers('FLIGHT',2);await tick();const d=s.dialog();d.selectedTravelers=[{value:'person-a'},{value:'person-b'}];await d.querySelector('form').onsubmit({preventDefault(){}});assert.match(d.querySelector('[role=alert]').textContent,/用途/);assert.equal(s.calls.length,1);d.cancel();assert.equal(await pending,null);
 });
+
+function ridePolicySetup(){
+ const s=setup();s.context.state.rideSearch=[{offer_id:'ride_standard',cancellation:{state:'POLICY_AVAILABLE',policy_hash:'a'.repeat(64),terms:{pickup:'A',dropoff:'B',booked_pickup_at:'2030-01-01T12:00:00Z',total_amount_minor:16800,currency:'CNY',policy:{version:'isolated-v1',cutoff_seconds:3600,before_fee_minor:123,after_fee_minor:456,time_basis:'BOOKED_PICKUP',effective_from:'2020',effective_until:'2099'}}}}];return s;
+}
+test('RIDE browser policy cannot be accepted without a fresh checked consent',async()=>{
+ const s=ridePolicySetup(),pending=s.booking.acceptRide('ride_standard');await tick();const d=s.dialog();
+ assert.match(d.innerHTML,/1.23/);assert.match(d.innerHTML,/4.56/);assert.match(d.innerHTML,/isolated-v1/);
+ await d.querySelector('form').onsubmit({preventDefault(){}});assert.match(d.querySelector('[role=alert]').textContent,/确认取消条款/);assert.equal(s.calls.length,0);
+ d.querySelector('[data-policy-consent]').checked=true;await d.querySelector('form').onsubmit({preventDefault(){}});assert.equal(await pending,'a'.repeat(64));
+});
+test('RIDE missing policy and cancelled consent create no orders',async()=>{
+ const s=setup();await assert.rejects(s.booking.acceptRide('ride_standard'),/尚待核验/);assert.equal(s.calls.length,0);
+ const other=ridePolicySetup(),pending=other.booking.acceptRide('ride_standard');await tick();other.dialog().cancel();assert.equal(await pending,null);assert.equal(other.calls.length,0);
+});

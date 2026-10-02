@@ -12,3 +12,20 @@ class RefundConfirmation(BaseModel):
         if value is not True:
             raise ValueError('EXPLICIT_REFUND_CONFIRMATION_REQUIRED')
         return value
+
+
+def revalidate_completed_receipt(read_order, verify_receipt, cached, vertical):
+    """A generic HTTP replay cache cannot certify current financial truth."""
+    from fastapi import HTTPException
+    try:
+        order = read_order()
+        if order.get('vertical') != vertical:
+            return cached  # Other verticals retain their existing replay contract.
+        if order.get('status') != 'REFUNDED':
+            raise ValueError('REFUND_COMPLETION_EVIDENCE_INVALID')
+        verified = verify_receipt()
+        if verified != cached:
+            raise ValueError('REFUND_COMPLETION_EVIDENCE_INVALID')
+        return verified
+    except ValueError as exc:
+        raise HTTPException(409, detail=str(exc)) from exc

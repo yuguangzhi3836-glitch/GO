@@ -54,6 +54,9 @@ class GOAITaskPlanner:
                 "Identify transaction, payment, refund, supplier-fact or authorization risks. Advisory only; deterministic GO systems retain authority.\nUser request:\n" + message,
             ))
 
-        # Stable bounded plan; orchestration may execute in parallel.
+        # This list is bounded by the known task catalogue (at most nine).
+        # max_parallel_tasks limits simultaneous work in orchestrate(), not
+        # required work: slicing here could discard constraints and risk checks
+        # precisely when a request spans the most travel products.
         dedup: dict[str, PlannedTask] = {t.task_id: t for t in tasks}
-        return list(dedup.values())[: max(1, assessment.max_parallel_tasks)]
+        return list(dedup.values())

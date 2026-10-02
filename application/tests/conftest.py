@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import tempfile
 import uuid
@@ -6,9 +7,21 @@ import hashlib
 from pathlib import Path
 import pytest
 
+# Apply to every application test before terminal/JUnit evidence is emitted.
+_application_root = str(Path(__file__).resolve().parents[1])
+if _application_root not in sys.path:
+    sys.path.insert(0, _application_root)
+from tests.evidence_hygiene_plugin import pytest_runtest_makereport, pytest_make_collect_report
+
 # tempfile is portable across the Windows review workstation and Linux Staging.
-DB = Path(os.getenv("GO_TEST_DB_PATH", str(Path(tempfile.gettempdir()) / f"go_hotel_test_{os.getpid()}_{uuid.uuid4().hex}.db")))
-os.environ["DATABASE_URL"] = f"sqlite+pysqlite:///{DB}"
+# Isolated PostgreSQL evidence jobs set GO_TEST_DATABASE_URL explicitly. All
+# other tests retain the deterministic SQLite snapshot; no runtime environment is touched.
+_test_database_url=os.getenv("GO_TEST_DATABASE_URL")
+if _test_database_url:
+    os.environ["DATABASE_URL"]=_test_database_url
+else:
+    DB = Path(os.getenv("GO_TEST_DB_PATH", str(Path(tempfile.gettempdir()) / f"go_hotel_test_{os.getpid()}_{uuid.uuid4().hex}.db")))
+    os.environ["DATABASE_URL"] = f"sqlite+pysqlite:///{DB}"
 os.environ["SAGA_RETRY_SECONDS"] = "0"
 os.environ["OUTBOX_MAX_ATTEMPTS"] = "5"
 

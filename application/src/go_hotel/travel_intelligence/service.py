@@ -5,13 +5,40 @@ from typing import Any
 from sqlalchemy import select, func
 
 from go_hotel.db.session import SessionLocal
+from go_hotel.services import catalog_scope
 from go_hotel.db.models import (
-    TravelEntityRow, TravelEntityAliasRow, TravelEntityFactRow, TravelEntityRelationRow, TravelIntentRow, TravelIntentConstraintRow,
+    HotelContentSourceSnapshotRow, TravelEntityRow, TravelEntityAliasRow, TravelEntityFactRow, TravelEntityRelationRow, TravelIntentRow, TravelIntentConstraintRow,
     TravelBehaviorEventRow, AIDecisionRow, AIDecisionModelCallRow, TransactionRelationRow, TravelerProfileRow
 )
 from .contracts import EVENT_TYPES, ACTOR_TYPES, SOURCES, PRIVACY_CLASSES, RETENTION_CLASSES, ENTITY_TYPES, TRANSACTION_TRUTH_DOMAINS
 from .cost_governor import model_cost_governor
 from .preferences import TravelPreferenceMixin
+
+
+def _visible_entity_aliases(session, aliases):
+    """Hide catalog projections; keep independent aliases on shared entities."""
+    return [a for a in aliases if a.source_type != "GO_HOTEL_CANONICAL"
+            or catalog_scope.visible_hotel(session, a.source_entity_id)]
+
+
+def _entity_aliases_for_read(session, entity_id):
+    aliases = session.scalars(select(TravelEntityAliasRow).where(TravelEntityAliasRow.go_entity_id == entity_id)).all()
+    visible = _visible_entity_aliases(session, aliases)
+    if aliases and not visible:
+        raise ValueError("TRAVEL_ENTITY_NOT_FOUND")
+    return visible
+
+
+def _visible_catalog_fact(session, fact):
+    if not catalog_scope.state(session):
+        return True
+    if fact.fact_type == "HOTEL_CANONICAL_PROFILE":
+        hotel_id = (fact.fact_value or {}).get("hotel_id")
+        return bool(hotel_id and catalog_scope.visible_hotel(session, hotel_id))
+    if fact.fact_type == "HOTEL_SOURCE_SNAPSHOT":
+        snapshot = session.get(HotelContentSourceSnapshotRow, fact.evidence_ref) if fact.evidence_ref else None
+        return bool(snapshot and snapshot.canonical_hotel_id and catalog_scope.visible_hotel(session, snapshot.canonical_hotel_id))
+    return True
 
 UTC=timezone.utc
 def now(): return datetime.now(UTC)
@@ -69,6 +96,9 @@ class TravelIntelligenceService(TravelPreferenceMixin):
         if entity_type not in ENTITY_TYPES: raise ValueError("TRAVEL_ENTITY_TYPE_INVALID")
         eid=uuid.uuid4(); t=now()
         with SessionLocal.begin() as s:
+            if (source_type or "").upper() == "GO_HOTEL_CANONICAL":
+                catalog_scope.scope_lock(s)
+                catalog_scope.require_hotel(s, source_entity_id)
             s.add(TravelEntityRow(go_entity_id=eid,entity_type=entity_type,canonical_name=canonical_name.strip(),status="ACTIVE",created_at=t,updated_at=t))
             if source_type and source_entity_id:
                 s.add(TravelEntityAliasRow(alias_id=uuid.uuid4(),go_entity_id=eid,source_type=source_type.upper(),source_entity_id=source_entity_id,normalized_name=canonical_name.strip().casefold(),created_at=t))
@@ -78,16 +108,20 @@ class TravelIntelligenceService(TravelPreferenceMixin):
         with SessionLocal() as s:
             row=s.get(TravelEntityRow,_uuid(entity_id))
             if not row: raise ValueError("TRAVEL_ENTITY_NOT_FOUND")
-            aliases=s.scalars(select(TravelEntityAliasRow).where(TravelEntityAliasRow.go_entity_id==row.go_entity_id)).all()
+            aliases=_entity_aliases_for_read(s, row.go_entity_id)
             return {"go_entity_id":str(row.go_entity_id),"entity_type":row.entity_type,"canonical_name":row.canonical_name,"status":row.status,"aliases":[{"source_type":a.source_type,"source_entity_id":a.source_entity_id} for a in aliases]}
 
     def resolve_entity(self, *, source_type:str, source_entity_id:str)->dict:
         with SessionLocal() as s:
+            if source_type.upper() == "GO_HOTEL_CANONICAL" and not catalog_scope.visible_hotel(s, source_entity_id):
+                raise ValueError("TRAVEL_ENTITY_ALIAS_NOT_FOUND")
             rows=s.scalars(select(TravelEntityAliasRow).where(TravelEntityAliasRow.source_type==source_type.upper(),TravelEntityAliasRow.source_entity_id==source_entity_id)).all()
             if not rows: raise ValueError("TRAVEL_ENTITY_ALIAS_NOT_FOUND")
             ids={r.go_entity_id for r in rows}
             if len(ids)!=1: raise ValueError("TRAVEL_ENTITY_RESOLUTION_AMBIGUOUS")
             row=s.get(TravelEntityRow,next(iter(ids)))
+            if not row: raise ValueError("TRAVEL_ENTITY_NOT_FOUND")
+            _entity_aliases_for_read(s, row.go_entity_id)
             return {"go_entity_id":str(row.go_entity_id),"entity_type":row.entity_type,"canonical_name":row.canonical_name,"resolution":"EXACT_ALIAS"}
 
     def append_event(self, event:dict)->dict:
@@ -147,6 +181,9 @@ class TravelIntelligenceService(TravelPreferenceMixin):
         entity_type=entity_type.upper(); source_type=source_type.upper()
         if entity_type not in ENTITY_TYPES: raise ValueError("TRAVEL_ENTITY_TYPE_INVALID")
         with SessionLocal.begin() as s:
+            if source_type == "GO_HOTEL_CANONICAL":
+                catalog_scope.scope_lock(s)
+                catalog_scope.require_hotel(s, source_entity_id)
             alias=s.scalar(select(TravelEntityAliasRow).where(TravelEntityAliasRow.source_type==source_type,TravelEntityAliasRow.source_entity_id==source_entity_id))
             if alias:
                 row=s.get(TravelEntityRow,alias.go_entity_id)
@@ -161,6 +198,12 @@ class TravelIntelligenceService(TravelPreferenceMixin):
         if confidence<0 or confidence>1: raise ValueError("TRAVEL_ENTITY_FACT_CONFIDENCE_INVALID")
         fp=canonical_hash({"entity_id":str(eid),"fact_type":fact_type,"fact_value":fact_value,"provenance":provenance,"source_id":source_id,"evidence_ref":evidence_ref})
         with SessionLocal.begin() as s:
+            if fact_type in {"HOTEL_CANONICAL_PROFILE", "HOTEL_SOURCE_SNAPSHOT"}:
+                catalog_scope.scope_lock(s)
+                from types import SimpleNamespace
+                projection = SimpleNamespace(fact_type=fact_type, fact_value=fact_value, evidence_ref=evidence_ref)
+                if not _visible_catalog_fact(s, projection):
+                    raise ValueError("CATALOG_RECORD_ARCHIVED")
             if not s.get(TravelEntityRow,eid): raise ValueError("TRAVEL_ENTITY_NOT_FOUND")
             rows=s.scalars(select(TravelEntityFactRow).where(TravelEntityFactRow.go_entity_id==eid,TravelEntityFactRow.fact_type==fact_type)).all()
             for r in rows:
@@ -197,8 +240,17 @@ class TravelIntelligenceService(TravelPreferenceMixin):
 
     def entity_evidence(self, entity_id:str, *, limit:int=50)->list[dict]:
         with SessionLocal() as s:
-            rows=s.scalars(select(TravelEntityFactRow).where(TravelEntityFactRow.go_entity_id==_uuid(entity_id)).order_by(TravelEntityFactRow.observed_at.desc()).limit(limit)).all()
-            return [{"fact_id":str(r.fact_id),"fact_type":r.fact_type,"value":r.fact_value,"provenance":r.provenance,"source_id":r.source_id,"confidence":r.confidence,"verification_state":r.verification_state,"evidence_ref":r.evidence_ref,"observed_at":r.observed_at.isoformat()} for r in rows]
+            _entity_aliases_for_read(s, _uuid(entity_id))
+            # Apply the public limit after scope filtering. A page of archived facts
+            # must not hide older, still-visible evidence on a shared entity.
+            rows=[]; offset=0; page_size=max(50, min(limit, 200))
+            while len(rows) < limit:
+                page=s.scalars(select(TravelEntityFactRow).where(TravelEntityFactRow.go_entity_id==_uuid(entity_id)).order_by(TravelEntityFactRow.observed_at.desc(), TravelEntityFactRow.fact_id.desc()).offset(offset).limit(page_size)).all()
+                if not page: break
+                rows.extend(r for r in page if _visible_catalog_fact(s, r))
+                offset += len(page)
+                if len(page) < page_size: break
+            return [{"fact_id":str(r.fact_id),"fact_type":r.fact_type,"value":r.fact_value,"provenance":r.provenance,"source_id":r.source_id,"confidence":r.confidence,"verification_state":r.verification_state,"evidence_ref":r.evidence_ref,"observed_at":r.observed_at.isoformat()} for r in rows[:limit]]
 
     def model_cost_summary(self, *, session_id:str, cost_scope:str|None=None, business_reference_id:str|None=None)->dict:
         with SessionLocal() as s:
@@ -257,3 +309,4 @@ class TravelIntelligenceService(TravelPreferenceMixin):
         return {"relation_id":str(rid),"projection_only":True}
 
 travel_intelligence_service=TravelIntelligenceService()
+

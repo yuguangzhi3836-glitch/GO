@@ -24,6 +24,7 @@ from go_hotel.api.routes.dashboard import router as dashboard_router
 from go_hotel.api.routes.auth import router as auth_router
 from go_hotel.api.routes.interactive import router as interactive_router
 from go_hotel.api.routes.bff import router as bff_router
+from go_hotel.api.routes.registration_terms import router as registration_terms_router
 from go_hotel.api.routes.observability import router as observability_router
 from go_hotel.api.routes.consumer import router as consumer_router
 from go_hotel.api.routes.consumer_identity import router as consumer_identity_router
@@ -31,6 +32,11 @@ from go_hotel.api.routes.mobile import router as mobile_router
 from go_hotel.api.routes.flight import router as flight_router
 from go_hotel.api.routes.rail import router as rail_router
 from go_hotel.api.routes.mobility import router as mobility_router
+from go_hotel.api.routes.rental_damage import router as rental_damage_router
+from go_hotel.api.routes.rental_deposit import router as rental_deposit_router
+from go_hotel.api.routes.rental_deposit_money import router as rental_deposit_money_router
+from go_hotel.api.routes.rental_operations import router as rental_operations_router
+from go_hotel.api.routes.ride_policy_operations import router as ride_policy_operations_router
 from go_hotel.api.routes.attractions import router as attractions_router
 from go_hotel.api.routes.journey import router as journey_router
 from go_hotel.api.routes.journey_intelligence import router as journey_intelligence_router
@@ -161,9 +167,14 @@ async def booking_data_release_error(request, exc):
     from fastapi.responses import JSONResponse
     return JSONResponse({'detail':str(exc)},status_code=409,headers={'Cache-Control':'no-store, private'})
 
-for r in [health_router, observability_router, bff_router, auth_router, hotel_router, consumer_router, consumer_identity_router, mobile_router, flight_router, rail_router, mobility_router, attractions_router, journey_router, journey_intelligence_router, journey_recovery_router, journey_recovery_execution_router, recovery_reconciliation_router, recovery_control_plane_router, recovery_reliability_router, recovery_strategy_governance_router, recovery_experimentation_router, recovery_learning_registry_router, recovery_data_governance_router, recovery_learning_incident_router, recovery_release_governance_router, recovery_runtime_verification_router, recovery_runtime_observability_router, recovery_runtime_telemetry_governance_router, recovery_runtime_telemetry_trust_router, recovery_runtime_identity_lifecycle_router, recovery_runtime_identity_reissuance_router, recovery_credential_authority_router, recovery_federated_trust_router, recovery_external_trust_witness_router, recovery_transparency_gossip_router, recovery_trust_plane_dr_router, recovery_trust_plane_chaos_router, recovery_continuous_chaos_router, recovery_waiver_exposure_governance_router, recovery_exception_debt_burndown_router, recovery_enterprise_risk_portfolio_router, recovery_enterprise_risk_appetite_router, recovery_enterprise_risk_forecast_router, recovery_risk_forecast_calibration_router, recovery_forecast_model_promotion_router, recovery_forecast_statistical_promotion_router, recovery_forecast_drift_governance_router, recovery_forecast_training_governance_router, recovery_forecast_artifact_governance_router, recovery_forecast_serving_governance_router, recovery_forecast_traffic_governance_router, recovery_forecast_online_feedback_router, recovery_forecast_online_segment_governance_router, recovery_forecast_segment_remediation_router, recovery_forecast_generalization_router, recovery_forecast_portfolio_governance_router, recovery_forecast_champion_governance_router, booking_router, fare_router, catalog_fare_router, compensation_router, truth_router, judgment_router, dashboard_router, interactive_router, outbox_router, webhook_router, ops_router, connectors_router, onboarding_router, routing_router, merge_router, go_ai_router]:
+for r in [registration_terms_router, health_router, observability_router, bff_router, auth_router, hotel_router, consumer_router, consumer_identity_router, mobile_router, flight_router, rail_router, mobility_router, attractions_router, journey_router, journey_intelligence_router, journey_recovery_router, journey_recovery_execution_router, recovery_reconciliation_router, recovery_control_plane_router, recovery_reliability_router, recovery_strategy_governance_router, recovery_experimentation_router, recovery_learning_registry_router, recovery_data_governance_router, recovery_learning_incident_router, recovery_release_governance_router, recovery_runtime_verification_router, recovery_runtime_observability_router, recovery_runtime_telemetry_governance_router, recovery_runtime_telemetry_trust_router, recovery_runtime_identity_lifecycle_router, recovery_runtime_identity_reissuance_router, recovery_credential_authority_router, recovery_federated_trust_router, recovery_external_trust_witness_router, recovery_transparency_gossip_router, recovery_trust_plane_dr_router, recovery_trust_plane_chaos_router, recovery_continuous_chaos_router, recovery_waiver_exposure_governance_router, recovery_exception_debt_burndown_router, recovery_enterprise_risk_portfolio_router, recovery_enterprise_risk_appetite_router, recovery_enterprise_risk_forecast_router, recovery_risk_forecast_calibration_router, recovery_forecast_model_promotion_router, recovery_forecast_statistical_promotion_router, recovery_forecast_drift_governance_router, recovery_forecast_training_governance_router, recovery_forecast_artifact_governance_router, recovery_forecast_serving_governance_router, recovery_forecast_traffic_governance_router, recovery_forecast_online_feedback_router, recovery_forecast_online_segment_governance_router, recovery_forecast_segment_remediation_router, recovery_forecast_generalization_router, recovery_forecast_portfolio_governance_router, recovery_forecast_champion_governance_router, booking_router, fare_router, catalog_fare_router, compensation_router, truth_router, judgment_router, dashboard_router, interactive_router, outbox_router, webhook_router, ops_router, connectors_router, onboarding_router, routing_router, merge_router, go_ai_router]:
     app.include_router(r)
 app.include_router(autonomy_execution_router)
+app.include_router(rental_damage_router)
+app.include_router(rental_deposit_router)
+app.include_router(rental_deposit_money_router)
+app.include_router(rental_operations_router)
+app.include_router(ride_policy_operations_router)
 app.include_router(hotel_partner_core_router)
 app.include_router(commercial_constitution_router)
 app.include_router(supplier_commercial_router)
@@ -221,7 +232,7 @@ app.add_middleware(Sprint1RAuditMiddleware)
 
 class Sprint1USecurityMiddleware(BaseHTTPMiddleware):
     SAFE={"GET","HEAD","OPTIONS"}
-    EXEMPT={"/bff/auth/login","/bff/auth/supplier/register","/bff/auth/sso/start","/bff/auth/sso/callback","/v1/consumer/auth/register","/v1/consumer/auth/login","/v1/mobile/auth/login","/v1/mobile/auth/refresh"}
+    EXEMPT={"/v1/registration/challenges","/bff/auth/login","/bff/auth/supplier/register","/bff/auth/sso/start","/bff/auth/sso/callback","/v1/consumer/auth/register","/v1/consumer/auth/login","/v1/mobile/auth/login","/v1/mobile/auth/refresh"}
     async def dispatch(self, request, call_next):
         if request.method not in self.SAFE and request.url.path not in self.EXEMPT:
             # Bearer/service clients preserve API compatibility. Browser cookie sessions require CSRF.
@@ -332,3 +343,9 @@ if _frontend_root.exists():
     app.mount("/go-admin", StaticFiles(directory=str(_frontend_root / "admin"), html=True), name="go-admin")
     app.mount("/console-assets", StaticFiles(directory=str(_frontend_root / "shared")), name="console-assets")
     app.mount("/go-app", StaticFiles(directory=str(_frontend_root / "consumer"), html=True), name="go-consumer-app")
+
+from go_hotel.api.routes.registration_verification import router as registration_verification_router
+app.include_router(registration_verification_router)
+
+from go_hotel.api.routes.registration_privacy import router as registration_privacy_router
+app.include_router(registration_privacy_router)

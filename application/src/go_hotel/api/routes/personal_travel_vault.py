@@ -1,7 +1,7 @@
 from fastapi import APIRouter,Depends,HTTPException
 from pydantic import BaseModel, StrictBool
 from fastapi.responses import JSONResponse
-from go_hotel.security.deps import consumer_principal,admin_principal
+from go_hotel.security.deps import consumer_principal,admin_principal,connector_admin_principal
 from go_hotel.security.service import Principal
 from go_hotel.services.personal_travel_vault import personal_travel_vault_service as svc
 
@@ -11,10 +11,12 @@ class PermissionBody(BaseModel):
     allowed: StrictBool
 class ConfirmationBody(BaseModel):
     confirmed: StrictBool
+class DisconnectBody(BaseModel):
+    delete_imported_values: StrictBool=False
 def call(fn,*a):
     try:return {'data':fn(*a)}
     except ValueError as e:
-        code=404 if str(e) in {'PROFILE_IMPORT_NOT_FOUND','PROFILE_IMPORT_ITEM_NOT_FOUND','TRAVELER_NOT_FOUND','PROFILE_FACT_NOT_FOUND','CONSENT_NOT_FOUND','PROFILE_SOURCE_NOT_FOUND'} else 409
+        code=404 if str(e) in {'PROFILE_IMPORT_NOT_FOUND','PROFILE_IMPORT_ITEM_NOT_FOUND','TRAVELER_NOT_FOUND','PROFILE_FACT_NOT_FOUND','CONSENT_NOT_FOUND','PROFILE_SOURCE_NOT_FOUND','PROFILE_PROVIDER_CONNECTION_NOT_FOUND'} else 409
         raise HTTPException(code,detail=str(e))
 
 @router.post('/v1/consumer/profile/vault/bootstrap',status_code=201)
@@ -22,6 +24,20 @@ def bootstrap_vault(b:P,p:Principal=Depends(consumer_principal)):return call(svc
 
 @router.post('/v1/consumer/profile/imports',status_code=201)
 def create_import(b:P,p:Principal=Depends(consumer_principal)):return call(svc.create_import,p.user_id,b.model_dump(exclude_none=True))
+@router.get('/v1/consumer/profile/provider-connections/options')
+def provider_connection_options(p:Principal=Depends(consumer_principal)):return {'data':svc.provider_options()}
+@router.get('/v1/consumer/profile/provider-connections')
+def provider_connections(p:Principal=Depends(consumer_principal)):return call(svc.provider_connections,p.user_id)
+@router.post('/v1/consumer/profile/provider-connections',status_code=201)
+def create_provider_connection(b:P,p:Principal=Depends(consumer_principal)):return call(svc.create_provider_connection,p.user_id,b.model_dump(exclude_none=True))
+@router.post('/v1/consumer/profile/provider-connections/{connection_id}/upload',status_code=201)
+def upload_provider_export(connection_id:str,b:P,p:Principal=Depends(consumer_principal)):return call(svc.upload_provider_export,p.user_id,connection_id,b.model_dump(exclude_none=True))
+@router.post('/v1/consumer/profile/provider-connections/{connection_id}/disconnect')
+def disconnect_provider_connection(connection_id:str,b:DisconnectBody,p:Principal=Depends(consumer_principal)):return call(svc.disconnect_provider_connection,p.user_id,connection_id,b.delete_imported_values)
+@router.delete('/v1/consumer/profile/provider-connections/{connection_id}')
+def delete_provider_connection(connection_id:str,p:Principal=Depends(consumer_principal)):return call(svc.disconnect_provider_connection,p.user_id,connection_id,True)
+@router.post('/internal/v1/profile/provider-connections/{connection_id}/complete')
+def complete_provider_connection(connection_id:str,b:P,p:Principal=Depends(connector_admin_principal)):return call(svc.complete_provider_connection,connection_id,b.model_dump(exclude_none=True))
 @router.get('/v1/consumer/profile/imports')
 def import_list(p:Principal=Depends(consumer_principal)):return call(svc.import_list,p.user_id)
 @router.get('/v1/consumer/profile/sources')

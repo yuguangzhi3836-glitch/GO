@@ -1,3 +1,5 @@
+from contextlib import nullcontext
+from ride_cancellation_fixture import synthetic_policy
 """Six real API journeys and independent money checks; not browser/device E2E."""
 from datetime import date, timedelta
 import json
@@ -72,8 +74,10 @@ def six_orders(client, headers):
         ('RENTAL', '/v1/mobility/rentals', {'pickup_location': 'NRT', 'return_location': 'NRT',
             'pickup_at': day + 'T10:00:00+09:00', 'return_at': end + 'T10:00:00+09:00'}),
     ]:
-        offer = post(base + '/search', body)['items'][0]
-        result[vertical] = post(base + '/orders', {**body, 'offer_id': offer['offer_id'], 'traveler_ids': people[:1]})
+        with synthetic_policy() if vertical == 'RIDE' else nullcontext():
+            offer = post(base + '/search', body)['items'][0]
+            accepted = {'cancellation_policy_hash': offer['cancellation']['policy_hash']} if vertical == 'RIDE' else {}
+            result[vertical] = post(base + '/orders', {**body, 'offer_id': offer['offer_id'], 'traveler_ids': people[:1], **accepted})
     offer = post('/v1/attractions/search', {'destination': '东京', 'visit_date': day})['items'][0]
     params = {'offer_id': offer['offer_id'], 'visit_date': day, 'session_time': offer.get('session_time'), 'quantity': 2}
     pb = post('/v1/attractions/prebook', params)

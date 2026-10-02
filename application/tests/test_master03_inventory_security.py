@@ -2,6 +2,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 import pytest
+from tests.hosted_review_support import legacy_publication,fare_hash
 from sqlalchemy import select
 from go_hotel.core.config import settings
 from go_hotel.db.session import SessionLocal
@@ -21,7 +22,8 @@ def inventory():
     with SessionLocal() as s:
         v=s.scalar(select(HostedDirectRateVariantRow))
         offer,pool=v.hosted_offer_id,v.inventory_pool_id
-    body={'hosted_offer_id':offer,'guest_name':'TEST GUEST','guest_contact':'13800000000',
+    legacy_publication(h['hosted_hotel_id'])
+    body={'hosted_offer_id':offer,'expected_fare_rule_hash':fare_hash(offer),'guest_name':'TEST GUEST','guest_contact':'13800000000',
         'check_in':start.isoformat(),'check_out':(start+timedelta(days=2)).isoformat(),'adults':1,'children':0}
     return h['hosted_hotel_id'],pool,body
 

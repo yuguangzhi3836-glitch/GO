@@ -1,8 +1,15 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 class Settings(BaseSettings):
     app_env: str = "local"
     database_url: str = "postgresql+psycopg://go:go@localhost:5432/go_hotel"
+    # Per engine/process, NOT a cluster-wide budget. Keep SQLAlchemy's existing
+    # defaults; tune only with an aggregate API + worker + rollout budget.
+    database_pool_size: int = Field(default=5, ge=1)
+    database_max_overflow: int = Field(default=10, ge=0)
+    database_pool_timeout_seconds: float = Field(default=30.0, gt=0, allow_inf_nan=False)
+    database_pool_recycle_seconds: int = Field(default=-1, ge=-1)
     outbox_batch_size: int = 100
     outbox_poll_seconds: float = 0.5
     outbox_max_attempts: int = 5
@@ -49,6 +56,12 @@ class Settings(BaseSettings):
     allowed_origins: str = ""
     trace_sample_rate: float = 1.0
     slow_request_ms: int = 1500
+    # Registration cannot open until a real outbound verification service and its
+    # delivery/receipt acceptance evidence have been approved for the environment.
+    registration_privacy_evidence_path: str = ""
+    registration_verification_enabled: bool = False
+    registration_email_config_path: str = ""
+    registration_terms_version: str = "2026-09-19-draft-v2"
     mobile_push_mode: str = "mock"
     expo_push_url: str = "https://exp.host/--/api/v2/push/send"
     mobile_push_batch_size: int = 100
