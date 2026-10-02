@@ -18,7 +18,13 @@ The model here, deliberately without Redis, queues or distributed locks:
   5. a terminal result is immutable: identical bytes are idempotent, different
      bytes fail closed;
   6. completion reuses the Runtime's own attempt fencing - this module stores the
-     attempt to pass as expected_attempt and never touches Runtime state itself.
+     attempt to pass as expected_attempt and never touches Runtime state itself;
+  7. an execution that can never produce a result is SETTLED rather than retried: the
+     Runtime refused its completion (ABANDONED), or the run itself finished without
+     succeeding (RUN_FAILED, whose no-result outcome is reported to the Runtime by
+     `c1_result_pull.fail_after_pull`). Either way `unfinished()` stops reporting it, so
+     a settled identity can never hold the worker forever - and neither state is a route
+     back to a second POST.
 
 This module performs no network I/O and holds no credential. `send` and `find_run`
 are injected by the caller (the Agent), which is what makes the timeout and
@@ -52,12 +58,24 @@ COMPLETED = "COMPLETED"                  # Runtime.complete() done
 # task comes back as the NEXT attempt. Retrying is pointless, so the identity is
 # settled instead of left in flight - otherwise it would block the worker forever.
 ABANDONED = "ABANDONED"
+# The GitHub run finished without succeeding. No artifact from such a run can be trusted,
+# so no sealed result can ever exist for this identity either - and leaving it in flight is
+# what made the worker renew its lease forever and never claim anything again. It is
+# settled for the same reason ABANDONED is, but it records a different fact: ABANDONED
+# means "the Runtime refused this identity", RUN_FAILED means "the execution ran and
+# failed". Both are final.
+RUN_FAILED = "RUN_FAILED"
 
 IN_FLIGHT_STATES = (INTENT, DISPATCH_AMBIGUOUS, RUN_BOUND)
-TERMINAL_STATES = (RESULT_SEALED, COMPLETED)
+# Everything an identity can end as (ABANDONED keeps its own branches, so it is not listed
+# here even though it is equally final).
+TERMINAL_STATES = (RESULT_SEALED, COMPLETED, RUN_FAILED)
 # Everything that still holds work, including a sealed result whose completion was
-# interrupted: that is exactly the case a restart has to pick up.
+# interrupted: that is exactly the case a restart has to pick up. Both settled states are
+# deliberately absent - a settled identity must never block the worker again.
 UNFINISHED_STATES = (INTENT, DISPATCH_AMBIGUOUS, RUN_BOUND, RESULT_SEALED)
+# Nothing may be sent, sealed or adopted for an identity in one of these.
+SETTLED_STATES = (ABANDONED, RUN_FAILED)
 
 # The outward-facing dispatch_status vocabulary. The internal state names are kept
 # because they say exactly what the outbox actually knows (in particular the
@@ -70,6 +88,7 @@ DISPATCH_STATUS = {
     RESULT_SEALED: "COMPLETED",
     COMPLETED: "COMPLETED",
     ABANDONED: "FAILED",
+    RUN_FAILED: "FAILED",
 }
 DISPATCH_STATUS_VALUES = ("CREATED", "DISPATCHED", "RUNNING", "COMPLETED", "FAILED")
 
@@ -86,6 +105,7 @@ CREATE TABLE IF NOT EXISTS c1_dispatch (
     result_sha256        TEXT,
     reused_from          TEXT,
     abandon_reason       TEXT,
+    failure_reason       TEXT,
     request_json         TEXT,
     updated_at           TEXT NOT NULL
 );
@@ -113,6 +133,11 @@ class DispatchOutbox:
             self._db.execute("ALTER TABLE c1_dispatch ADD COLUMN reused_from TEXT")
         if "abandon_reason" not in present:
             self._db.execute("ALTER TABLE c1_dispatch ADD COLUMN abandon_reason TEXT")
+        if "failure_reason" not in present:
+            # Rows written before the failed-run settlement have no failure reason. They
+            # are not broken: the column is only ever read for a RUN_FAILED row, and none
+            # can predate it. Nothing is rewritten here.
+            self._db.execute("ALTER TABLE c1_dispatch ADD COLUMN failure_reason TEXT")
         if "request_json" not in present:
             # Rows written before the real-task contract have no stored request. They are
             # not broken: `stored_request()` returns None for them and the caller falls
@@ -136,15 +161,16 @@ class DispatchOutbox:
             "UPDATE c1_dispatch SET %s, updated_at=? WHERE execution_request_id=?" % sets, values
         )
 
-    def _refuse_if_abandoned(self, request_id) -> None:
-        """An abandoned identity is settled: nothing may be sent, sealed or adopted for it.
+    def _refuse_if_settled(self, request_id) -> None:
+        """A settled identity is final: nothing may be sent, sealed or adopted for it.
 
-        This is the guard that keeps `abandon` from ever becoming a route back to a
-        second dispatch.
+        This is the guard that keeps `abandon` and `record_run_failed` from ever becoming
+        a route back to a second dispatch.
         """
         row = self._row(request_id)
-        if row is not None and row["state"] == ABANDONED:
-            raise Refused("EXECUTION_ABANDONED")
+        if row is not None and row["state"] in SETTLED_STATES:
+            raise Refused("EXECUTION_ABANDONED" if row["state"] == ABANDONED
+                          else "EXECUTION_RUN_FAILED")
 
     # --------------------------------------------------------------- registration
     def register(self, runtime_task_id, attempt, *, request=None) -> dict:
@@ -231,6 +257,9 @@ class DispatchOutbox:
         state = row["state"]
         if state == ABANDONED:
             return ABANDONED
+        if state == RUN_FAILED:
+            # Settled: there is no result to reuse and nothing may be dispatched.
+            return RUN_FAILED
         if state in TERMINAL_STATES:
             return "REUSE_TERMINAL"
         if state == INTENT:
@@ -270,7 +299,7 @@ class DispatchOutbox:
         would keep the caller from ever doing anything else, which is the failure this
         whole module exists to avoid.
 
-        It cannot become a route back to a second dispatch: an abandoned row is never
+        It cannot become a route back to a second dispatch: a settled row is never
         selected by `unfinished()`, `record_dispatch_sent` refuses it outright, and
         `next_action` reports ABANDONED rather than DISPATCH or LOOKUP_RUN. A result
         already sealed for it stays visible to `terminal_for_task`, so if the Runtime
@@ -282,10 +311,51 @@ class DispatchOutbox:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
         if row["state"] == COMPLETED:
             raise Refused("CANNOT_ABANDON_A_COMPLETED_EXECUTION")
-        if row["state"] == ABANDONED:
-            return ABANDONED
+        if row["state"] in SETTLED_STATES:
+            # Already settled - and a RUN_FAILED must not be rewritten as an abandoned
+            # one, because the two record different facts.
+            return row["state"]
         self._update(request_id, state=ABANDONED, abandon_reason=str(reason)[:200])
         return ABANDONED
+
+    def record_run_failed(self, request_id, reason, github_run_id=None) -> str:
+        """Settle an identity whose GitHub run finished without succeeding.
+
+        No artifact from such a run can be trusted, so no sealed result can ever exist for
+        this identity. Leaving it in flight is what made the worker renew its lease on
+        every tick and never claim anything again - the defect this replaces. Terminal in
+        exactly the way `abandon` is, with every route back to a POST closed the same way
+        - and it stores no result, so a later attempt of the same Runtime task can never
+        adopt a failure as if it were an answer.
+        """
+        row = self._row(request_id)
+        if row is None:
+            raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
+        if row["state"] == COMPLETED:
+            raise Refused("CANNOT_FAIL_A_COMPLETED_EXECUTION")
+        if row["state"] in SETTLED_STATES:
+            return row["state"]
+        self._update(request_id, state=RUN_FAILED, failure_reason=str(reason)[:200],
+                     github_run_id=row["github_run_id"] or github_run_id)
+        return RUN_FAILED
+
+    def failed_for_task(self, runtime_task_id, *, exclude_request_id=None):
+        """A run already settled as failed for this Runtime task, whatever attempt it was.
+
+        The twin of `terminal_for_task`, for the case where there is nothing to adopt. The
+        Runtime hands a requeued task out as a NEW attempt, and a new attempt is a new
+        execution identity - so without this, a task whose first run failed would be
+        dispatched, and paid for, all over again.
+        """
+        row = self._db.execute(
+            "SELECT * FROM c1_dispatch WHERE runtime_task_id=? AND state=?"
+            " AND execution_request_id != ? ORDER BY attempt ASC LIMIT 1",
+            (runtime_task_id, RUN_FAILED, exclude_request_id or ""),
+        ).fetchone()
+        if row is None:
+            return None
+        return {"execution_request_id": row["execution_request_id"],
+                "attempt": row["attempt"], "failure_reason": row["failure_reason"]}
 
     # ------------------------------------------------------------------- dispatch
     def record_dispatch_sent(self, request_id, github_run_id=None) -> None:
@@ -298,7 +368,7 @@ class DispatchOutbox:
         row = self._row(request_id)
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
-        self._refuse_if_abandoned(request_id)
+        self._refuse_if_settled(request_id)
         if row["dispatches_sent"] >= 1:
             raise Refused("SECOND_DISPATCH_FORBIDDEN")
         self._update(request_id, dispatches_sent=row["dispatches_sent"] + 1,
@@ -310,7 +380,7 @@ class DispatchOutbox:
         row = self._row(request_id)
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
-        self._refuse_if_abandoned(request_id)
+        self._refuse_if_settled(request_id)
         if row["state"] in TERMINAL_STATES:
             return
         if not isinstance(github_run_id, int) or github_run_id <= 0:
@@ -323,7 +393,7 @@ class DispatchOutbox:
         row = self._row(request_id)
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
-        self._refuse_if_abandoned(request_id)
+        self._refuse_if_settled(request_id)
         # Validated against this identity's own task class, never a default: a real task's
         # result must not be judged by the smoke's fixed-literal rule, and the smoke's must
         # not be relaxed by the real rule.
@@ -352,7 +422,7 @@ class DispatchOutbox:
         row = self._row(request_id)
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
-        self._refuse_if_abandoned(request_id)
+        self._refuse_if_settled(request_id)
         if row["state"] == COMPLETED:
             return
         if row["state"] != RESULT_SEALED:
@@ -391,7 +461,7 @@ class DispatchOutbox:
         row = self._row(request_id)
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
-        self._refuse_if_abandoned(request_id)
+        self._refuse_if_settled(request_id)
         if row["result_json"] is not None:
             if row["result_json"] == source["result_json"]:
                 return
@@ -463,6 +533,11 @@ def drive_once(outbox: DispatchOutbox, runtime_task_id, attempt, *, send, find_r
         # Settled as uncompletable. `send` is not called, and never will be for this
         # execution identity.
         return {"action": ABANDONED, "execution_request_id": request_id}
+
+    if action == RUN_FAILED:
+        # Settled: the run finished without succeeding. `send` is not called, and never
+        # will be for this execution identity.
+        return {"action": RUN_FAILED, "execution_request_id": request_id}
 
     if action == "DISPATCH":
         outcome = send(request)

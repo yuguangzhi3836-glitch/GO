@@ -54,6 +54,7 @@ from c1_dispatch_outbox import (
     ABANDONED,
     COMPLETED,
     RESULT_SEALED,
+    RUN_FAILED,
     drive_once,
 )
 from c1_execution_contract import (
@@ -67,22 +68,10 @@ from c1_execution_contract import (
     task_spec,
     validate_task_payload,
 )
-from c1_result_pull import complete_after_pull
+from c1_result_pull import complete_after_pull, fail_after_pull, is_a_fenced_refusal
 
 # The lease the worker asks for, and re-asks for on every unfinished tick.
 DEFAULT_LEASE_S = 120
-
-# The one exception type the deployed kernel uses for every refusal from its lease and
-# attempt fence (renew_task, complete). Matching on the type *name* rather than
-# importing the kernel keeps this module free of any dependency on the installed
-# Runtime, while still separating "the Runtime will not accept this identity, ever" -
-# which is permanent and must not be retried - from a transport error or a defect of
-# ours, which must be raised so it is seen.
-FENCED_REFUSAL_TYPES = ("RuntimeErrorInvariant",)
-
-
-def _is_a_fenced_refusal(exc) -> bool:
-    return type(exc).__name__ in FENCED_REFUSAL_TYPES
 
 
 def _not_our_task(claimed) -> dict | None:
@@ -218,6 +207,14 @@ def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clo
                 "state": outbox.dispatch_status(request_id),
                 "reused": False, "renewed": False}
 
+    if action == RUN_FAILED:
+        # Settled by an earlier tick: the run finished without succeeding. Terminal, and
+        # never a dispatch. Renewing here is what used to hold the worker forever.
+        return {"action": RUN_FAILED, "execution_request_id": request_id,
+                "runtime_task_id": task_id, "attempt": attempt,
+                "state": outbox.dispatch_status(request_id),
+                "reused": False, "renewed": False}
+
     # ---- already answered for this exact execution identity -------------------
     # Reachable from a fresh claim, a resume, or an adoption, so it is routed through
     # _complete() like everything else - which is what makes "the Runtime refused this
@@ -238,6 +235,15 @@ def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clo
                            worker_id=worker_id, lease_s=lease_s, reused=True,
                            source_request_id=earlier["execution_request_id"],
                            source_attempt=earlier["attempt"])
+        already_failed = outbox.failed_for_task(task_id, exclude_request_id=request_id)
+        if already_failed is not None:
+            # A run for this Runtime task already ended without succeeding, so there is
+            # nothing to adopt - no answer exists. Dispatching is the only thing this
+            # branch could do, and it would be a second paid model call for a task that
+            # has already been tried. Settle this identity the same way instead.
+            return _fail(outbox, runtime, task_id, attempt, request=request,
+                         worker_id=worker_id,
+                         conclusion="PRIOR_ATTEMPT_RUN_FAILED")
 
     # ---- dispatch leg: at most one POST per execution identity ----------------
     if action in ("DISPATCH", "LOOKUP_RUN"):
@@ -266,7 +272,7 @@ def _complete(outbox, runtime, task_id, attempt, *, client, worker_id, lease_s,
         outcome = complete_after_pull(outbox, runtime, task_id, attempt,
                                       client=client, worker_id=worker_id, request=request)
     except Exception as exc:                                # noqa: BLE001 - re-raised below
-        if not _is_a_fenced_refusal(exc):
+        if not is_a_fenced_refusal(exc):
             # A transport failure, a defect of ours, anything else - NOT permanent.
             # Raise it, leave the row in flight, and let the next tick try again.
             raise
@@ -280,8 +286,39 @@ def _complete(outbox, runtime, task_id, attempt, *, client, worker_id, lease_s,
                 "accepted": outcome.get("accepted"),
                 "reused": False, "renewed": False}
 
+    if outcome["action"] == RUN_FAILED:
+        # The run finished without succeeding, so `complete_after_pull` has already
+        # settled this identity and told the Runtime. There is nothing left to renew -
+        # and renewing was exactly the loop that used to hold the worker forever.
+        return _settled(request_id, task_id, attempt, outbox, outcome)
+
     return _pending(outbox, runtime, task_id, attempt, request=request,
                     worker_id=worker_id, lease_s=lease_s, leg="RESULT", step=outcome)
+
+
+def _fail(outbox, runtime, task_id, attempt, *, request, worker_id, conclusion,
+          run_id=None) -> dict:
+    """Settle an execution whose run failed, through the same path the pull leg uses.
+
+    Reached from the dispatch branch when this Runtime task already had a run that failed:
+    the Runtime hands a requeued task out as a NEW attempt, and a new attempt is a new
+    execution identity - so without this the task would be dispatched, and paid for, a
+    second time.
+    """
+    outcome = fail_after_pull(outbox, runtime, task_id, attempt, worker_id=worker_id,
+                              request_id=request["execution_request_id"],
+                              conclusion=conclusion, run_id=run_id)
+    return _settled(request["execution_request_id"], task_id, attempt, outbox, outcome)
+
+
+def _settled(request_id, task_id, attempt, outbox, outcome) -> dict:
+    """The terminal report for an identity that was settled rather than completed."""
+    return {"action": outcome["action"], "execution_request_id": request_id,
+            "runtime_task_id": task_id, "attempt": attempt,
+            "state": outbox.dispatch_status(request_id),
+            "reason": outcome.get("conclusion") or outcome.get("reason"),
+            "runtime_told": outcome.get("runtime_told"),
+            "reused": False, "renewed": False}
 
 
 def _abandon(outbox, task_id, attempt, *, request, reason) -> dict:

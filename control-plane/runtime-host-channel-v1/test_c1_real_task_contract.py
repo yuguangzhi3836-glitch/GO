@@ -26,6 +26,9 @@ What each class proves, mapped to the acceptance list:
   MalformedResultsAreRefused     E
   ResumeNeverDispatchesTwice     F  dispatch once, crash, resume, still one dispatch
   ProbeStaysIsolated             G
+  ARunThatFailedIsSettledNotRetried   D1 (2026-10-02)
+  AFailedTaskIsNeverDispatchedAgain   D1 (2026-10-02)
+  TheOutputBudgetFollowsTheTaskKind   D2 (2026-10-02)
 """
 import hashlib
 import json
@@ -40,6 +43,9 @@ HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
+import yaml  # noqa: E402
+
+import c1_ai_execution_backend as backend_mod  # noqa: E402
 import c1_dispatch_outbox as outbox_mod  # noqa: E402
 import c1_execution_contract as contract  # noqa: E402
 import c1_execution_loop as loop_mod  # noqa: E402
@@ -47,6 +53,7 @@ import c1_worker as worker_mod  # noqa: E402
 from c1_result_pull import artifact_name, pull_result  # noqa: E402
 
 BACKEND = HERE / "c1_ai_execution_backend.py"
+WORKFLOW = HERE.parents[1] / ".github" / "workflows" / "c1-ai-execution-backend-v1.yml"
 STUB_MODEL = "c1-offline-stub"
 WORKER = "c1-real-task-test"
 LEASE_S = 120
@@ -79,6 +86,9 @@ class Clock:
 
     def __call__(self):
         return self.now
+
+    def advance(self, seconds):
+        self.now += seconds
 
 
 class Task:
@@ -155,6 +165,27 @@ class RuntimeDouble:
         task.result = result
         task.lease_owner = None
         task.lease_until = None
+
+    def recover_stale(self):
+        """The kernel's own recovery, and the reason D1 has a second half.
+
+        An expired RUNNING task is requeued while attempts remain, and escalated once they
+        are exhausted. A requeued task is handed out as the NEXT attempt - a new execution
+        identity - which is how one Runtime task can end up dispatching twice.
+        """
+        requeued = escalated = 0
+        for task in self.tasks.values():
+            if task.status != "RUNNING" or task.lease_until is None:
+                continue
+            if task.lease_until > self.clock():
+                continue
+            if task.attempts < task.max_attempts:
+                task.status, task.lease_owner, task.lease_until = "QUEUED", None, None
+                requeued += 1
+            else:
+                task.status, task.lease_owner, task.lease_until = "ESCALATED", None, None
+                escalated += 1
+        return {"requeued": requeued, "escalated": escalated, "stale_agents": 0}
 
     def status_of(self, task_id):
         return self.tasks[task_id].status
@@ -796,6 +827,368 @@ class CellIdentityIsCanonical(Case):
         for bad in ("C0", "C00", "C010", "C15", "C99", "X1", "", None, 7):
             with self.assertRaises(contract.Refused, msg=repr(bad)):
                 contract.canonical_cell_id(bad)
+
+
+class FailingGitHub(StubGitHub):
+    """A GitHub double whose run finishes, but not successfully.
+
+    Everything else is the real offline path: the dispatch is sent, the run is materialised
+    by the real executor, and an artifact exists. Only the conclusion differs - which is
+    exactly the situation `pull_result` refuses to seal.
+    """
+
+    def __init__(self, conclusion="failure", **kwargs):
+        super().__init__(**kwargs)
+        self.conclusion = conclusion
+
+    def get_run(self, run_id):
+        run = self.runs.get(run_id)
+        if run is None:
+            return None
+        return dict(run, status="completed", conclusion=self.conclusion)
+
+
+def real_request_id(task_id, payload, attempt=1):
+    return contract.build_dispatch_request(
+        task_id, attempt, contract.task_spec(contract.REAL_TASK_KIND, payload)
+    )["execution_request_id"]
+
+
+class ARunThatFailedIsSettledNotRetried(Case):
+    """D1 - a failed run must not hold the worker forever, and must not be retried.
+
+    The defect this pins: `pull_result` reports RUN_DID_NOT_SUCCEED for a run whose
+    conclusion was not `success`, and the loop treated that as "not finished yet". So it
+    renewed the lease on every tick, `unfinished()` therefore stayed non-empty forever, and
+    the worker never claimed anything again - however many attempts the task had left.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.github = FailingGitHub()
+        self.addCleanup(self.github.close)
+
+    def test_a_failed_run_is_reported_to_the_runtime_and_settles_the_identity(self):
+        payload = payload_a()
+        task_id = self.enqueue_real(payload)
+        outcome = self.tick(self.claim_real(task_id))
+        request_id = real_request_id(task_id, payload)
+
+        self.assertEqual(outcome["action"], "RUN_FAILED", outcome)
+        self.assertIs(outcome["runtime_told"], True)
+        self.assertIs(outcome["renewed"], False, "a settled identity has no lease to renew")
+        self.assertEqual(outcome["reason"], "failure")
+        self.assertEqual(self.github.dispatch_calls, 1)
+
+        snapshot = self.outbox.snapshot(request_id)
+        self.assertEqual(snapshot["state"], outbox_mod.RUN_FAILED)
+        self.assertEqual(snapshot["failure_reason"], "RUN_DID_NOT_SUCCEED:failure")
+        self.assertIsNone(snapshot["result_json"], "a failure is not a result")
+        self.assertEqual(self.outbox.dispatch_status(request_id), "FAILED")
+
+        # The Runtime was told, in its own vocabulary, and the reason is on the record.
+        self.assertEqual(self.runtime.status_of(task_id), "FAILED")
+        self.assertEqual(self.runtime.tasks[task_id].result["outcome"], "RUN_FAILED")
+        self.assertEqual(self.runtime.tasks[task_id].result["conclusion"], "failure")
+
+    def test_the_identity_stops_holding_the_worker_immediately(self):
+        # This is the whole point of D1: `unfinished()` is what the worker's resume phase
+        # reads, so a settled identity has to leave it - and the next tick must claim.
+        task_id = self.enqueue_real(payload_a())
+        self.tick(self.claim_real(task_id))
+        self.assertEqual(self.outbox.unfinished(), [])
+
+        second = self.enqueue_real(payload_b())
+        status = worker_mod.tick(self.runtime, self.outbox, self.github, worker_id=WORKER,
+                                 lease_s=LEASE_S, clock=self.clock)
+        self.assertEqual(status["status"], "ADVANCED", status)
+        self.assertEqual(status["runtime_task_id"], second)
+
+    def test_a_settled_failed_identity_can_never_be_dispatched_again(self):
+        payload = payload_a()
+        task_id = self.enqueue_real(payload)
+        self.tick(self.claim_real(task_id))
+        request_id = real_request_id(task_id, payload)
+
+        self.assertEqual(self.outbox.next_action(request_id), outbox_mod.RUN_FAILED)
+        with self.assertRaises(contract.Refused) as caught:
+            self.outbox.record_dispatch_sent(request_id)
+        self.assertEqual(caught.exception.reason, "EXECUTION_RUN_FAILED")
+        self.assertEqual(self.outbox.unfinished(), [])
+        self.assertEqual(pull_result(self.outbox, task_id, 1,
+                                     client=self.github)["action"], "RUN_FAILED")
+
+        stepped = outbox_mod.drive_once(self.outbox, task_id, 1, send=self.github.send,
+                                        find_run=self.github.find_run)
+        self.assertEqual(stepped["action"], "RUN_FAILED")
+        resumed = self.resume(task_id, 1)
+        self.assertEqual(resumed["action"], "RUN_FAILED")
+        self.assertIs(resumed["renewed"], False)
+        self.assertEqual(self.github.dispatch_calls, 1)
+
+    def test_a_failure_is_never_stored_as_a_result_a_later_attempt_could_adopt(self):
+        task_id = self.enqueue_real(payload_a())
+        self.tick(self.claim_real(task_id))
+        request_id = real_request_id(task_id, payload_a())
+
+        self.assertIsNone(self.outbox.terminal_result(request_id))
+        self.assertIsNone(self.outbox.terminal_for_task(task_id),
+                          "a failure must never look like an answer")
+        self.assertIsNotNone(self.outbox.failed_for_task(task_id))
+
+    def test_a_refused_runtime_completion_still_settles_the_identity(self):
+        # The Runtime's fence is consulted first. If the lease already expired the failure
+        # cannot be recorded against that attempt - but the run really did fail, so the
+        # identity is settled anyway, and `runtime_told` is what keeps that honest.
+        payload = payload_a()
+        task_id = self.enqueue_real(payload)
+        claimed = self.claim_real(task_id)
+        self.clock.advance(LEASE_S + 1)
+        outcome = self.tick(claimed)
+
+        self.assertEqual(outcome["action"], "RUN_FAILED", outcome)
+        self.assertIs(outcome["runtime_told"], False)
+        self.assertEqual(self.outbox.snapshot(real_request_id(task_id, payload))["state"],
+                         outbox_mod.RUN_FAILED)
+        self.assertEqual(self.runtime.status_of(task_id), "RUNNING")
+        self.assertEqual(self.outbox.unfinished(), [])
+
+    def test_a_completed_execution_is_never_rewritten_as_failed(self):
+        self.github.conclusion = "success"
+        payload = payload_a()
+        task_id = self.enqueue_real(payload)
+        self.assertEqual(self.tick(self.claim_real(task_id))["action"], "COMPLETED")
+        with self.assertRaises(contract.Refused) as caught:
+            self.outbox.record_run_failed(real_request_id(task_id, payload), "why not")
+        self.assertEqual(caught.exception.reason, "CANNOT_FAIL_A_COMPLETED_EXECUTION")
+
+    def test_the_smoke_path_settles_a_failed_run_the_same_way(self):
+        task_id = self.runtime.enqueue("C1", contract.KIND, contract.PAYLOAD,
+                                       idempotency_key="smoke-failed")
+        claimed = self.runtime.claim("C1", worker_id=WORKER, lease_s=LEASE_S,
+                                     kinds=worker_mod.CLAIM_KINDS)
+        outcome = self.tick(claimed)
+        request_id = contract.build_dispatch_request(task_id, 1)["execution_request_id"]
+
+        self.assertEqual(outcome["action"], "RUN_FAILED", outcome)
+        self.assertEqual(self.outbox.snapshot(request_id)["state"], outbox_mod.RUN_FAILED)
+        self.assertEqual(self.runtime.status_of(task_id), "FAILED")
+        self.assertEqual(self.outbox.unfinished(), [])
+
+
+class AFailedTaskIsNeverDispatchedAgain(Case):
+    """The other half of D1: settling must not become a route to a second paid call.
+
+    `recover_stale()` requeues a task whose lease expired while attempts remain, and the
+    Runtime then hands it out as a NEW attempt - which is a new execution identity. With no
+    result to adopt, remembering that this Runtime task has already been tried and failed is
+    the only thing that stops a second real model call.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.github = FailingGitHub()
+        self.addCleanup(self.github.close)
+
+    def test_a_requeued_task_whose_first_run_failed_is_settled_rather_than_dispatched(self):
+        task_id = self.enqueue_real(payload_a(), max_attempts=2)
+        claimed = self.claim_real(task_id)
+        self.clock.advance(LEASE_S + 1)   # the lease dies, so the failure cannot be
+        first = self.tick(claimed)        # recorded against the Runtime task
+        self.assertEqual(first["action"], "RUN_FAILED", first)
+        self.assertIs(first["runtime_told"], False)
+        self.assertEqual(self.github.dispatch_calls, 1)
+
+        # The Runtime requeues it and hands it out as attempt 2.
+        self.assertEqual(self.runtime.recover_stale(),
+                         {"requeued": 1, "escalated": 0, "stale_agents": 0})
+        second = self.runtime.claim("C1", worker_id=WORKER, lease_s=LEASE_S,
+                                    kinds=worker_mod.CLAIM_KINDS)
+        self.assertEqual(second.task_id, task_id)
+        self.assertEqual(second.attempts, 2)
+
+        again = self.tick(second)
+
+        self.assertEqual(again["action"], "RUN_FAILED", again)
+        self.assertEqual(again["reason"], "PRIOR_ATTEMPT_RUN_FAILED")
+        self.assertEqual(self.github.dispatch_calls, 1, "attempt 2 must not pay")
+        self.assertEqual(self.runtime.status_of(task_id), "FAILED")
+        self.assertEqual(self.outbox.unfinished(), [])
+
+    def test_the_failed_run_guard_is_scoped_to_one_runtime_task(self):
+        failed = self.enqueue_real(payload_a(), max_attempts=2)
+        other = self.enqueue_real(payload_b(), max_attempts=2)
+        self.clock.advance(LEASE_S + 1)
+        self.tick(self.claim_real(failed))
+
+        self.assertIsNotNone(self.outbox.failed_for_task(failed))
+        self.assertIsNone(self.outbox.failed_for_task(other),
+                          "one task's failure must not silence another task")
+        self.assertIsNone(self.outbox.failed_for_task(failed,
+                                                      exclude_request_id=
+                                                      real_request_id(failed, payload_a())))
+
+
+class TheOutputBudgetFollowsTheTaskKind(Case):
+    """D2 - the smoke keeps its budget; a real task gets one it can answer within.
+
+    The defect this pins: the output budget was 32 for everything. The smoke expects a
+    ten-token literal, so 32 was enough for it and for nothing else - and an open question
+    spends tokens on its reasoning before it answers.
+    """
+
+    def test_the_smoke_budget_is_exactly_what_it_was(self):
+        self.assertEqual(backend_mod.MAX_OUTPUT_TOKENS, 32)
+        self.assertEqual(backend_mod.SMOKE_MAX_OUTPUT_TOKENS, 32)
+        self.assertEqual(backend_mod.output_token_budget(contract.KIND), 32)
+
+    def test_a_real_task_no_longer_inherits_the_smoke_budget(self):
+        budget = backend_mod.output_token_budget(contract.REAL_TASK_KIND)
+        self.assertEqual(budget, backend_mod.REAL_TASK_MAX_OUTPUT_TOKENS)
+        self.assertGreater(budget, backend_mod.SMOKE_MAX_OUTPUT_TOKENS)
+
+    def test_a_runner_override_can_only_reach_a_real_task(self):
+        self.assertEqual(backend_mod.output_token_budget(contract.REAL_TASK_KIND, 512), 512)
+        self.assertEqual(backend_mod.output_token_budget(contract.REAL_TASK_KIND, "4096"),
+                         4096)
+        self.assertEqual(backend_mod.output_token_budget(contract.KIND, 4096), 32,
+                         "the smoke's budget belongs to the smoke contract")
+
+    def test_an_out_of_range_override_fails_closed(self):
+        for bad in (0, -1, backend_mod.MAX_OUTPUT_TOKENS_MAX + 1, "many", "", object()):
+            with self.assertRaises(contract.Refused, msg=repr(bad)) as caught:
+                backend_mod.output_token_budget(contract.REAL_TASK_KIND, bad)
+            self.assertEqual(caught.exception.reason, "MAX_OUTPUT_TOKENS_OUT_OF_RANGE")
+
+    def test_the_budget_is_not_part_of_the_execution_identity(self):
+        # An execution-side value must not travel in the identity: if it did, re-running a
+        # task with a different budget would look like new work and pay a second time.
+        request = contract.build_dispatch_request(
+            "rt_budget", 1, contract.task_spec(contract.REAL_TASK_KIND, payload_a()))
+        self.assertNotIn("max_output_tokens", contract.canonical(request))
+        self.assertEqual(set(contract.dispatch_inputs(request)),
+                         {"runtime_task_id", "attempt", "execution_request_id",
+                          "task_kind", "task_payload"})
+
+    def test_the_budget_reaches_the_model_request_and_the_smoke_is_untouched(self):
+        transport = _RecordingTransport()
+        spec = contract.task_spec(contract.REAL_TASK_KIND, payload_a())
+        request = contract.build_dispatch_request("rt_budget", 1, spec)
+        backend_mod.run_execution(
+            runtime_task_id="rt_budget", attempt=1, model="m", github_run_id=1,
+            github_run_attempt=1,
+            execution_request_id_given=request["execution_request_id"],
+            api_key="sk-test", opener=transport.opener, task_kind=contract.REAL_TASK_KIND,
+            payload=payload_a(), max_output_tokens=2048)
+
+        self.assertEqual(transport.sent[0]["max_output_tokens"], 2048)
+        self.assertEqual(transport.sent[0]["input"], contract.prompt_for_spec(spec))
+
+        backend_mod.run_execution(
+            runtime_task_id="rt_budget", attempt=1, model="m", github_run_id=1,
+            github_run_attempt=1, api_key="sk-test", opener=transport.opener,
+            max_output_tokens=2048)               # no task facts: this is the smoke
+
+        self.assertEqual(transport.sent[1]["max_output_tokens"], 32,
+                         "the smoke must not inherit a runner-supplied budget")
+        self.assertEqual(transport.sent[1]["input"], contract.PROMPT)
+
+    def test_the_workflow_carries_the_budget_side_by_side_with_the_model(self):
+        workflow = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+        self.assertEqual(int(workflow["env"]["C1_AI_MAX_OUTPUT_TOKENS"]),
+                         backend_mod.REAL_TASK_MAX_OUTPUT_TOKENS)
+        self.assertNotIn("max_output_tokens",
+                         workflow[True]["workflow_dispatch"]["inputs"])
+
+    def test_the_smoke_result_is_byte_identical_with_and_without_the_flag(self):
+        task = "rt_smoke_budget"
+        request_id = contract.execution_request_id(task, 1)
+        without = self._run_stub_smoke(task, request_id, extra=[])
+        with_flag = self._run_stub_smoke(task, request_id,
+                                         extra=["--max-output-tokens", "4096"])
+        self.assertEqual(without, with_flag)
+        self.assertIn(b"GO_C1_REAL_AI_WORKER_V1_OK", without)
+
+    def test_a_real_task_accepts_the_runner_flag(self):
+        payload = payload_a()
+        spec = contract.task_spec(contract.REAL_TASK_KIND, payload)
+        request = contract.build_dispatch_request("rt_budget_flag", 1, spec)
+        out = Path(tempfile.mkdtemp(prefix="c1-budget-")) / "result.json"
+        completed = subprocess.run(
+            [sys.executable, str(BACKEND), "run",
+             "--runtime-task-id", "rt_budget_flag", "--attempt", "1",
+             "--execution-request-id", request["execution_request_id"],
+             "--task-kind", contract.REAL_TASK_KIND,
+             "--task-payload", contract.canonical(payload),
+             "--max-output-tokens", "2048",
+             "--model", STUB_MODEL, "--github-run-id", "7", "--github-run-attempt", "1",
+             "--stub", "--out", str(out)],
+            capture_output=True, text=True, check=False,
+            env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1", OPENAI_API_KEY=""))
+        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+        document = json.loads(out.read_text(encoding="utf-8"))
+        contract.validate_result(document, runtime_task_id="rt_budget_flag", attempt=1,
+                                 execution_request_id_=request["execution_request_id"],
+                                 task_kind=contract.REAL_TASK_KIND)
+        self.assertTrue(document["accepted"])
+
+    def test_a_bad_runner_flag_fails_closed_end_to_end(self):
+        payload = payload_a()
+        spec = contract.task_spec(contract.REAL_TASK_KIND, payload)
+        request = contract.build_dispatch_request("rt_budget_bad", 1, spec)
+        completed = subprocess.run(
+            [sys.executable, str(BACKEND), "run",
+             "--runtime-task-id", "rt_budget_bad", "--attempt", "1",
+             "--execution-request-id", request["execution_request_id"],
+             "--task-kind", contract.REAL_TASK_KIND,
+             "--task-payload", contract.canonical(payload),
+             "--max-output-tokens", "0",
+             "--model", STUB_MODEL, "--github-run-id", "7", "--github-run-attempt", "1",
+             "--stub", "--out", str(Path(tempfile.mkdtemp(prefix="c1-budget-")) / "r.json")],
+            capture_output=True, text=True, check=False,
+            env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1", OPENAI_API_KEY=""))
+        self.assertEqual(completed.returncode, 3, completed.stdout + completed.stderr)
+        self.assertIn("MAX_OUTPUT_TOKENS_OUT_OF_RANGE", completed.stdout)
+
+    def _run_stub_smoke(self, task, request_id, *, extra):
+        out = Path(tempfile.mkdtemp(prefix="c1-budget-")) / "result.json"
+        completed = subprocess.run(
+            [sys.executable, str(BACKEND), "run", "--runtime-task-id", task,
+             "--attempt", "1", "--execution-request-id", request_id, "--model", STUB_MODEL,
+             "--github-run-id", "7", "--github-run-attempt", "1", "--stub", "--out", str(out)]
+            + list(extra),
+            capture_output=True, text=True, check=False,
+            env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1", OPENAI_API_KEY=""))
+        self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+        return out.read_bytes()
+
+
+class _RecordingTransport:
+    """A fake model transport that records the JSON body each call would have sent."""
+
+    def __init__(self, text="an answer"):
+        self.sent = []
+        self._text = text
+
+    def opener(self, request, timeout=None):  # noqa: ARG002
+        self.sent.append(json.loads(request.data.decode("utf-8")))
+        text = self._text
+
+        class _Response:
+            def read(self, _n=-1):
+                return json.dumps({
+                    "id": "resp_budget", "model": "m", "status": "completed",
+                    "output": [{"type": "message",
+                                "content": [{"type": "output_text", "text": text}]}],
+                }).encode("utf-8")
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_exc):
+                return False
+
+        return _Response()
 
 
 if __name__ == "__main__":
