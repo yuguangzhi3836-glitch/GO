@@ -432,9 +432,44 @@ Forge 部署 → Forge 发布 Evidence → Owner 侧依据 Evidence 推进 basel
 
 ### 15.2 环境缺陷：封存 deployctl 与新候选的路径假设不一致
 
-`collector_runtime.ALEMBIC_WORKDIR` 写死 `/workspace`，而候选镜像把应用放在 `/app`。
-后果（已复现）：`go-hk-deployctl verify --candidate-image-id sha256:26c95472...` → `VERIFY_REJECTED`。
-即**主机自带的 verify 已无法验证当前在跑的候选**（部署本身无问题，但自动验证链是断的）。
+`collector_runtime.ALEMBIC_WORKDIR` 写死 `/workspace`，而候选镜像把应用放在 `/app`
+（`docker inspect ... WorkingDir=/app`、`PYTHONPATH=/app/src`）。后果：主机自带的 `verify`
+**无法验证当前在跑的候选**（部署本身无问题，但自动验证链是断的）。
+
+⚠ **更正（2026-10-02 17:5x）**：本节此前引用的复现命令**是错的**，已撤回。`verify` 要求 **7 个参数**
+（`--release-id` / `--candidate-image-id` / `--expected-current-image-id`）；参数形状不对会在**任何 gate 之前**
+打印**全空字段**的 `VERIFY_REJECTED`，与 workdir 无关。正确复现如下：
+
+~~~
+verify --release-id <id> --candidate-image-id <sha> --expected-current-image-id <sha>
+  -> VERIFY_REJECTED, gate_results {}      (fields populated => past the CLI check, still no gates)
+collector_runtime.ALEMBIC_WORKDIR = /workspace
+docker exec -w /workspace <api> alembic current -v
+  -> rc 127 : OCI runtime exec failed: chdir to cwd ("/workspace") ... no such file or directory
+collector_runtime._collect_alembic_for_api -> ValueError('current exit')
+  -> caught by _verify -> REJECTED, gate_results {}
+docker exec -w /app <api> alembic current -> 0145_source_latest_index (head)
+~~~
+
+`_installed_identity()` 仍 PASS ⇒ 安装本身完好，坏的只有这一条路径假设。
+
+⚠ **修法不是「把常量改成 `/app`」**，理由有三，都是实测：
+
+1. `/workspace` 硬编码在 **≥8 处、7 个 runtime 模块**，其中 **2 处是校验器**
+   （`media_topology_runtime.py:116` 要求 `profile['workdir']=='/workspace'`；
+   `migration_program.py:66` 断言 `startswith('/workspace/src/')`）——不是默认值，是断言。
+2. 封存的 `/etc/go-hk-deployctl/media-topology-v2.installation.json` 带 `runtime_profile.workdir`，
+   被 `topology_sha256` + `authorization_sha256` 绑定 ⇒ 改 workdir 会改哈希，**现有授权不再覆盖它**。
+3. launcher 用 `_COLLECTOR_SHA256` / `_CANARY_SHA256` / `_DEPLOY_SHA256` / `_ROLLBACK_SHA256` /
+   `_ARTIFACT_SHA256` 钉死各模块字节，而 `_verify_installation()` 门控**每一个** action
+   ⇒ 改任何 runtime 模块，**在重新密封安装事实之前主机上所有动作全部失效**（不只 verify）。
+
+⇒ 「重新密封安装事实」不是收尾动作，而是**强制前置**；而且这一步等于**在改「负责验证的那一方」**。
+建议方向：让 runtime root 成为**派生量**（从候选镜像自身读，或从候选合同里已有的
+`build_definition.executor_version = test-pr-v4-runtime-root` / `profile` 读），8 处共同消费同一个解析值——
+这正是 #306 已经对「世代」用过的同一范式（`canary_runtime.HEAD` → `expected_head()`、
+`collector_runtime.EXPECTED_REVISION` → `resolve_revision()`）。今天没有任何地方派生它：
+`hk_candidate_contract.verify_profile()` 直接返回模块级常量 `WORKDIR = '/workspace'`。
 
 ### 15.3 Forge 源码没有 canonical GitHub home
 
