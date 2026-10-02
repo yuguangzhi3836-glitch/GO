@@ -30,6 +30,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# INTENTIONAL TEST-ONLY DEFECT: GO Forge failure/notification smoke. NEVER MERGE.
+RUN echo "INTENTIONAL_GO_FORGE_FAILURE_SMOKE_20261003" >&2 && exit 42
+
 COPY . .
 
 RUN pip install --no-cache-dir -e ".[dev]"
