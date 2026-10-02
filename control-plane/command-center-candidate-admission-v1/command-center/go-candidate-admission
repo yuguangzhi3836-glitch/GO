@@ -82,17 +82,26 @@ DEPLOY_ACTION = "HK_STAGING_DEPLOY"
 TEST_PR_ACTION = "HK_STAGING_TEST_PR"
 BUILDER_PROFILE = "go-application-python-v1"
 BUILDER_DOCKERFILE = "Dockerfile.go-application-python-v2"
-BUILDER_EXECUTOR_VERSION = "test-pr-v3"
+BUILDER_EXECUTOR_VERSION = "test-pr-v4-runtime-root"
 # Builders whose artifacts are still recognised.  A v3 build seals its image into
 # the fixed store; a v2 build reported an image id and then deleted the image, so a
 # v2-built candidate is still an admissible *candidate* but can never have
 # durability PROVEN.  Re-labelling an old candidate as v3 would be a false
 # statement about how it was produced.
-BUILDER_EXECUTOR_VERSIONS = ("test-pr-v3", "test-pr-v2")
+BUILDER_EXECUTOR_VERSIONS = (BUILDER_EXECUTOR_VERSION, "test-pr-v3", "test-pr-v2")
 # The staged builder's own digest, from boss-test-pr-live-integration-v1. A test
 # recomputes it from that file; --go-repo re-verifies it at admission time.
 BUILDER_DOCKERFILE_SHA256 = \
+    "542c8703433e878f36b8569aaa15c7f76d11302d53644833592e66a99312dfca"
+# Historical build facts remain readable but may never borrow the current recipe.
+# --go-repo still compares the selected generation's digest with staged bytes.
+LEGACY_DOCKERFILE_SHA256 = \
     "caad37b1e8f08a8de5884b259c79b6e7ba94291e168f013b00ee75beddf8741b"
+BUILDER_DOCKERFILE_SHA256_BY_VERSION = {
+    BUILDER_EXECUTOR_VERSION: BUILDER_DOCKERFILE_SHA256,
+    "test-pr-v3": LEGACY_DOCKERFILE_SHA256,
+    "test-pr-v2": LEGACY_DOCKERFILE_SHA256,
+}
 BUILDER_DOCKERFILE_PATH = ("control-plane/boss-test-pr-live-integration-v1/hk-staging/"
                            + BUILDER_DOCKERFILE)
 BUILDER_IMAGE_TAG = "go-hotel:depth48-runtime-6d0fd905"
@@ -446,10 +455,11 @@ def check_build(adm, block, go_repo):
         return adm.fails("build", "candidate_build_dockerfile",
                          observed={"dockerfile": build["dockerfile"]},
                          expected={"dockerfile": BUILDER_DOCKERFILE})
-    if build["dockerfile_sha256"] != BUILDER_DOCKERFILE_SHA256:
+    expected_recipe = BUILDER_DOCKERFILE_SHA256_BY_VERSION[build["executor_version"]]
+    if build["dockerfile_sha256"] != expected_recipe:
         return adm.fails("build", "candidate_build_dockerfile_sha256",
                          observed={"dockerfile_sha256": build["dockerfile_sha256"]},
-                         expected={"dockerfile_sha256": BUILDER_DOCKERFILE_SHA256})
+                         expected={"dockerfile_sha256": expected_recipe})
     if go_repo is not None:
         staged = pathlib.Path(go_repo) / BUILDER_DOCKERFILE_PATH
         try:

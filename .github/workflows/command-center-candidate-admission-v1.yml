@@ -64,7 +64,7 @@ jobs:
       - name: Confirm the readiness suite still passes
         working-directory: control-plane/command-center-deploy-readiness-v1
         run: python -m unittest discover -s tests -q
-      - name: Prove the canonical candidate is admitted, and that YES needs one
+      - name: Verify historical evidence and current staged-builder admission
         run: |
           python - <<'PY'
           import json
@@ -106,20 +106,21 @@ jobs:
           check('every_refusal_reason_is_declared',
                 len(contract['x-go-refusals']['source']) >= 40)
 
-          # 2. the real CLI, on the real canonical candidate, with its real evidence
+          # 2. Preserve the real historical fact and signed evidence against its pinned recipe.
+          # This is historical validation, not admission against today's staged builder.
           canonical = repo / A.LINEAGE_POINTER
           evidence = t.REAL_EVIDENCE
           check('the_canonical_candidate_is_in_this_checkout', canonical.is_file())
           check('the_signed_test_pr_evidence_is_in_this_checkout', evidence.is_file())
-          out = work / 'admission'
+          out = work / 'historical-admission'
           proc = subprocess.run(
               [sys.executable, str(cli), '--candidate', str(canonical),
-               '--test-pr-evidence', str(evidence), '--go-repo', str(repo),
+               '--test-pr-evidence', str(evidence), '--go-repo', str(t.HISTORICAL_GO),
                '--out', str(out)],
               cwd=str(repo), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-          check('the_real_candidate_is_admitted', proc.returncode == 0, proc.stdout[-800:])
+          check('the_historical_candidate_is_consistent', proc.returncode == 0, proc.stdout[-800:])
           admitted = json.loads((out / A.OUTPUT_NAME).read_text(encoding='utf-8'))
-          check('the_admission_reports_accept',
+          check('the_historical_admission_reports_accept',
                 admitted['verdict']['admission'] == 'ACCEPT', admitted['verdict'])
           check('the_admission_names_the_candidate_it_admitted',
                 admitted['release_candidate']['candidate_id']
@@ -127,6 +128,31 @@ jobs:
           check('the_admission_authorises_nothing',
                 sorted(k for k, v in admitted['authority_boundary'].items()
                        if v and k != 'may_read_the_candidate_and_its_evidence') == [])
+
+          # Independently run the real CLI against CURRENT repository bytes. Never
+          # replace this gate with the historical check above. A green CI result
+          # here proves the expected HOLD, not a release approval for the old image.
+          current_out = work / 'current-staged-admission'
+          current_proc = subprocess.run(
+              [sys.executable, str(cli), '--candidate', str(canonical),
+               '--test-pr-evidence', str(evidence), '--go-repo', str(repo),
+               '--out', str(current_out)],
+              cwd=str(repo), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+          current = json.loads((current_out / A.OUTPUT_NAME).read_text(encoding='utf-8'))
+          historical_build = json.loads(canonical.read_text())['release_candidate_v1']['build_definition']
+          requires_rebuild = historical_build['dockerfile_sha256'] != A.BUILDER_DOCKERFILE_SHA256
+          if requires_rebuild:
+              check('current_staged_builder_rejects_historical_candidate',
+                    current_proc.returncode != 0
+                    and current['verdict']['admission'] == 'REJECT'
+                    and current['verdict']['rejected'] == ['candidate_build_dockerfile_sha256']
+                    and not current['deployability']['deployable_artifact_established'],
+                    current['verdict'])
+              print('CURRENT_CANDIDATE_HOLD: fresh v4 TEST_PR evidence required', flush=True)
+          else:
+              check('current_candidate_is_admitted_against_current_staged_bytes',
+                    current_proc.returncode == 0 and current['verdict']['admission'] == 'ACCEPT',
+                    current['verdict'])
 
           # 3. the artifact binding is to the artifact the test result actually produced
           block = json.loads(canonical.read_text(encoding='utf-8'))['release_candidate_v1']
@@ -142,7 +168,7 @@ jobs:
               document = json.loads(canonical.read_text(encoding='utf-8'))
               mutation(document['release_candidate_v1'])
               scratch.write_text(json.dumps(document), encoding='utf-8')
-              result = A.admit(component / A.CONTRACT_FILE, scratch, evidence, None, repo)
+              result = A.admit(component / A.CONTRACT_FILE, scratch, evidence, None, t.HISTORICAL_GO)
               return (result['verdict']['admission'] == 'REJECT'
                       and reason in result['verdict']['rejected']), result['verdict']
 
@@ -158,7 +184,9 @@ jobs:
               # Which one that is depends on the evidence, so the case keeps meaning
               # the same thing after a reconciliation moves the candidate to v3.
               others = [v for v in A.BUILDER_EXECUTOR_VERSIONS
-                        if v != signed['executor_version']]
+                        if v != signed['executor_version']
+                        and A.BUILDER_DOCKERFILE_SHA256_BY_VERSION[v]
+                        == block['build_definition']['dockerfile_sha256']]
               value['build_definition']['executor_version'] = others[0]
 
 
@@ -194,7 +222,7 @@ jobs:
           #    package (B4-B1.5), an evidence-less run refuses that claim by name --
           #    no proof covers it -- and records the absent evidence as the unknown it
           #    is, rather than reporting either as the other.
-          result = A.admit(component / A.CONTRACT_FILE, canonical, None, None, repo)
+          result = A.admit(component / A.CONTRACT_FILE, canonical, None, None, t.HISTORICAL_GO)
           check('an_absent_test_result_context_is_never_accepted',
                 result['verdict']['admission'] != 'ACCEPT'
                 and not result['verdict']['accepted']
@@ -228,5 +256,7 @@ jobs:
         if: always()
         with:
           name: cc-candidate-admission-checks
-          path: ${{ runner.temp }}/cc-candidate-admission-checks
+          path: |
+            ${{ runner.temp }}/cc-candidate-admission-checks
+            ${{ runner.temp }}/ccv1-admission
           if-no-files-found: warn

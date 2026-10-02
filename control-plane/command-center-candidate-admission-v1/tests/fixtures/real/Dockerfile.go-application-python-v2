@@ -10,10 +10,6 @@
 # so the build and the runtime check need no network at all.
 
 FROM go-hotel:depth48-runtime-6d0fd905
-# The deploy Compose fixes PYTHONPATH=/app/src. Never leave the base image's
-# old application there while putting the candidate at a different root.
-# This deletion is confined to the disposable image layer, not the HK host.
-RUN rm -rf /app
-WORKDIR /app
-COPY . /app
-ENV PYTHONPATH=/app/src
+WORKDIR /workspace
+COPY . /workspace
+ENV PYTHONPATH=/workspace/src

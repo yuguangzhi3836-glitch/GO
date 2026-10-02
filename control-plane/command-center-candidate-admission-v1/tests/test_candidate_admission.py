@@ -59,6 +59,13 @@ BRIDGE = DEPLOY_COMPONENT / "go-boss-request-bridge"
 DEPLOY_GATE = DEPLOY_COMPONENT / "go_deploy_request.py"
 TEST_PR = (GO / "control-plane" / "boss-test-pr-live-integration-v1" / "hk-staging"
            / "hk_agent" / "test_pr.py")
+# Immutable historical recipe from main 4931fc3374b61e0fa03a1c98f0fae38bce4301ae.
+# These real signed records describe that builder, not the staged v4 builder.
+_HISTORY_ROOT = tempfile.TemporaryDirectory(prefix="ccv1-historical-builder-")
+HISTORICAL_GO = pathlib.Path(_HISTORY_ROOT.name)
+_history_recipe = HISTORICAL_GO / A.BUILDER_DOCKERFILE_PATH
+_history_recipe.parent.mkdir(parents=True, exist_ok=True)
+_history_recipe.write_bytes((ROOT / "tests/fixtures/real/Dockerfile.go-application-python-v2").read_bytes())
 AT = dt.datetime(2026, 9, 16, 1, 0, tzinfo=dt.timezone.utc)
 
 COMMIT = "b" * 40
@@ -112,6 +119,11 @@ def candidate(**over):
             value[key] = merged
         else:
             value[key] = patch
+    build_patch = over.get("build_definition", {})
+    if "executor_version" in build_patch and "dockerfile_sha256" not in build_patch:
+        build = value["build_definition"]
+        build["dockerfile_sha256"] = A.BUILDER_DOCKERFILE_SHA256_BY_VERSION.get(
+            build["executor_version"], DOCKERFILE_SHA)
     return value
 
 
@@ -631,7 +643,7 @@ class LiveConstantTests(unittest.TestCase):
 
 
 class RealCandidateTests(unittest.TestCase):
-    """The canonical candidate, its real signed TEST_PR, and the staged builder."""
+    """The historical canonical fact, its signed TEST_PR, and its pinned recipe."""
 
     def setUp(self):
         if not CANONICAL.is_file() or not REAL_EVIDENCE.is_file():
@@ -639,7 +651,7 @@ class RealCandidateTests(unittest.TestCase):
 
     def result(self, **over):
         return A.admit(CONTRACT, CANONICAL, REAL_EVIDENCE, over.pop("plan", None),
-                       GO, AT, AT)
+                       HISTORICAL_GO, AT, AT)
 
     def test_the_canonical_candidate_is_a_release_candidate_v1(self):
         result = self.result()
@@ -698,7 +710,7 @@ class RealCandidateTests(unittest.TestCase):
         document["release_candidate_v1"]["artifact_digest"] = OTHER_ARTIFACT
         scratch = pathlib.Path(tempfile.mkdtemp(prefix="ccv1-admission-real-")) / "c.json"
         scratch.write_text(json.dumps(document), encoding="utf-8")
-        result = A.admit(CONTRACT, scratch, REAL_EVIDENCE, None, GO, AT, AT)
+        result = A.admit(CONTRACT, scratch, REAL_EVIDENCE, None, HISTORICAL_GO, AT, AT)
         self.assertEqual(result["verdict"]["admission"], "REJECT", result["verdict"])
         self.assertIn("candidate_test_result_artifact_digest", result["verdict"]["rejected"])
 
@@ -725,7 +737,7 @@ class RealCandidateTests(unittest.TestCase):
         document["release_candidate_v1"]["build_definition"]["executor_version"] = others[0]
         scratch = pathlib.Path(tempfile.mkdtemp(prefix="ccv1-admission-real-")) / "c.json"
         scratch.write_text(json.dumps(document), encoding="utf-8")
-        result = A.admit(CONTRACT, scratch, REAL_EVIDENCE, None, GO, AT, AT)
+        result = A.admit(CONTRACT, scratch, REAL_EVIDENCE, None, HISTORICAL_GO, AT, AT)
         self.assertEqual(result["verdict"]["admission"], "REJECT", result["verdict"])
         self.assertIn("candidate_test_result_evidence_builder_version",
                       result["verdict"]["rejected"])
@@ -769,7 +781,7 @@ class PairedReconciliationTests(unittest.TestCase):
     def admit(self, document, evidence=REAL_EVIDENCE):
         scratch = pathlib.Path(tempfile.mkdtemp(prefix="ccv1-admission-pair-")) / "c.json"
         scratch.write_text(json.dumps(document), encoding="utf-8")
-        return A.admit(CONTRACT, scratch, evidence, None, GO, AT, AT)
+        return A.admit(CONTRACT, scratch, evidence, None, HISTORICAL_GO, AT, AT)
 
     def mutated(self, **changes):
         document = json.loads(json.dumps(self.document))
@@ -942,7 +954,7 @@ class ArtifactDurabilityTests(Base):
         document = json.loads(CANONICAL.read_text(encoding="utf-8"))
         scratch = pathlib.Path(tempfile.mkdtemp(prefix="ccv1-admission-real-")) / "c.json"
         scratch.write_text(json.dumps(document), encoding="utf-8")
-        result = A.admit(CONTRACT, scratch, REAL_EVIDENCE, None, GO, AT, AT)
+        result = A.admit(CONTRACT, scratch, REAL_EVIDENCE, None, HISTORICAL_GO, AT, AT)
         self.assertEqual(result["artifact_durability"]["state"], "PROVEN")
         self.assertEqual(result["artifact_durability"]["package_sha256"], CURRENT_PACKAGE)
 
@@ -1018,6 +1030,60 @@ class ArtifactDurabilityTests(Base):
     def test_a_builder_that_was_never_staged_is_refused(self):
         self.rejected(self.write(candidate(build_definition={"executor_version": "test-pr-v9"})),
                       "candidate_build_profile")
+
+
+class RuntimeRootBindingTests(Base):
+    def test_current_v4_candidate_is_accepted_with_current_staged_bytes(self):
+        result = self.write(candidate(), go_repo=GO)
+        self.assertEqual(result["verdict"]["admission"], "ACCEPT", result["verdict"])
+
+    def test_historical_canonical_is_rejected_against_current_staged_bytes(self):
+        result = A.admit(CONTRACT, CANONICAL, REAL_EVIDENCE, None, GO, AT, AT)
+        self.rejected(result, "candidate_build_dockerfile_sha256")
+        self.assertFalse(result["deployability"]["deployable_artifact_established"])
+        self.assertIsNone(result["candidate_contract_sha256"])
+
+    def test_current_builder_rejects_old_recipe_and_legacy_rejects_new_recipe(self):
+        for version, recipe in ((A.BUILDER_EXECUTOR_VERSION, A.LEGACY_DOCKERFILE_SHA256),
+                                ("test-pr-v3", A.BUILDER_DOCKERFILE_SHA256),
+                                ("test-pr-v2", A.BUILDER_DOCKERFILE_SHA256)):
+            with self.subTest(version=version):
+                self.rejected(self.write(candidate(build_definition={
+                    "executor_version": version, "dockerfile_sha256": recipe}),
+                    evidence_value=evidence(executor_version=version)),
+                    "candidate_build_dockerfile_sha256")
+
+    def test_current_candidate_cannot_use_a_v3_result_or_the_reverse(self):
+        for declared, signed in ((A.BUILDER_EXECUTOR_VERSION, "test-pr-v3"),
+                                 ("test-pr-v3", A.BUILDER_EXECUTOR_VERSION)):
+            with self.subTest(declared=declared, signed=signed):
+                self.rejected(self.write(candidate(build_definition={
+                    "executor_version": declared}), evidence_value=evidence(executor_version=signed)),
+                    "candidate_test_result_evidence_builder_version")
+
+    def test_current_candidate_with_old_staged_recipe_is_rejected(self):
+        self.rejected(self.write(candidate(), go_repo=HISTORICAL_GO),
+                      "candidate_build_dockerfile_sha256")
+
+    def test_staged_recipe_tamper_is_rejected(self):
+        staged = self.root / A.BUILDER_DOCKERFILE_PATH
+        staged.parent.mkdir(parents=True)
+        staged.write_bytes((GO / A.BUILDER_DOCKERFILE_PATH).read_bytes() + b"# drift\n")
+        self.rejected(self.write(candidate(), go_repo=self.root),
+                      "candidate_build_dockerfile_sha256")
+
+    def test_relabelled_real_v3_image_cannot_become_v4(self):
+        document = json.loads(CANONICAL.read_text())
+        document["release_candidate_v1"]["build_definition"].update(
+            executor_version=A.BUILDER_EXECUTOR_VERSION,
+            dockerfile_sha256=A.BUILDER_DOCKERFILE_SHA256)
+        self.rejected(self.write(document=document,
+                      evidence_value=json.loads(REAL_EVIDENCE.read_text()), go_repo=GO),
+                      "candidate_test_result_evidence_builder_version")
+
+    def test_historical_fixture_is_the_pinned_recipe(self):
+        self.assertEqual(hashlib.sha256(_history_recipe.read_bytes()).hexdigest(),
+                         A.LEGACY_DOCKERFILE_SHA256)
 
 
 if __name__ == "__main__":

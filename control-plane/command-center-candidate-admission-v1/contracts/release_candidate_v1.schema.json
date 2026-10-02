@@ -68,7 +68,7 @@
         "builder_image_tag",
         "builder_image_id"
       ],
-      "description": "How the artifact was built. The artifact is only trustworthy because this is the controlled builder's own definition and not something the caller chose.",
+      "description": "How the artifact was built. Executor version and Dockerfile SHA256 form a pinned pair; recognising both separately does not permit cross-generation combinations. Historical facts retain their original pair and signed Evidence. When --go-repo is supplied, its staged recipe must also match; a valid historical fact can therefore be REJECTED against the current checkout until rebuilt and reconciled.",
       "properties": {
         "profile": {
           "type": "string",

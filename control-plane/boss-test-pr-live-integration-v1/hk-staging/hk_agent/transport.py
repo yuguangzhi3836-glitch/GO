@@ -55,6 +55,11 @@ FAILURE_REASON_CODES = frozenset({
     "EXECUTOR_NONZERO_EXIT", "EXECUTOR_OUTPUT_REJECTED", "EXECUTOR_RESULT_REJECT",
     "GITHUB_TRANSPORT_REJECT", "ROLLBACK_HANDOFF_REJECT", "ROLLBACK_SOURCE_REJECT",
     "TASK_ID_REJECT", "TASK_NOT_FOUND",
+    "TEST_PR_PARAMETERS_REJECT", "TEST_PR_SOURCE_REJECT",
+    "TEST_PR_BUILD_ROOT_REJECT", "TEST_PR_FETCH_MISMATCH",
+    "TEST_PR_SOURCE_LAYOUT_REJECT", "TEST_PR_BUILDER_IMAGE_REJECT",
+    "TEST_PR_DEPENDENCY_PROFILE_REJECT", "TEST_PR_DEPENDENCY_ENVIRONMENT_REJECT",
+    "TEST_PR_IMAGE_ID_REJECT", "TEST_PR_SUBPROCESS_REJECT",
 })
 FAILURE_REASON_FALLBACK = "UNCLASSIFIED_REJECT"
 
@@ -236,7 +241,11 @@ def failure_evidence(task, exc, stage=None):
         "status":FAILURE_STATUS,
         "started_at":stamp,"completed_at":stamp,
         "agent_version":VERSION,
-        "executor_version":"unreported" if stage in EXECUTION_STAGES else "not_dispatched",
+        "executor_version": (
+            test_pr.EXECUTOR_VERSION
+            if task["action_id"] == test_pr.ACTION
+            and getattr(exc, "executor_version", None) == test_pr.EXECUTOR_VERSION
+            else "unreported" if stage in EXECUTION_STAGES else "not_dispatched"),
         "executor_result":FAILURE_EXECUTOR_RESULT,
         "gate_results":failure_gate_results(stage),
         "failure":{
@@ -439,7 +448,7 @@ def _staged(exc, default_stage):
     """
     stage = getattr(exc, "stage", None) or default_stage
     replacement = Reject(str(exc), stage=stage)
-    for attribute in ("stdout", "stderr", "returncode"):
+    for attribute in ("stdout", "stderr", "returncode", "executor_version"):
         setattr(replacement, attribute, getattr(exc, attribute, None))
     return replacement
 

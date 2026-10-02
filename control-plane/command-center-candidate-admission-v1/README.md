@@ -207,3 +207,27 @@ name.
   and no more.
 * No business acceptance: whether the release gates PASS is the operator's signed
   declaration on the deploy plan, not something re-derived here.
+
+## Runtime-root builder transition (#311)
+
+The current source profile is `test-pr-v4-runtime-root`, with Dockerfile SHA256
+`542c8703433e878f36b8569aaa15c7f76d11302d53644833592e66a99312dfca`.
+The recognised v2/v3 records retain recipe SHA256
+`caad37b1e8f08a8de5884b259c79b6e7ba94291e168f013b00ee75beddf8741b`.
+Admission pins version and recipe as a pair and still checks staged bytes when
+`--go-repo` is supplied. Recognising historical provenance does not make the old
+candidate admissible against the v4 checkout. Never omit `--go-repo` from the
+current staged-builder admission check to turn that rejection into acceptance.
+
+The real fixture recipe is byte-for-byte from main commit
+`4931fc3374b61e0fa03a1c98f0fae38bce4301ae`, at the builder Dockerfile path. It is
+used only for historical evidence tests, not installed or selected by the executor.
+The workflow separately retains a current-checkout admission result and explicitly
+reports HOLD for the v3 canonical candidate. CI PASS means these assertions hold;
+it does not mean CURRENT_CANDIDATE is deployable with the v4 builder.
+
+Do not relabel CURRENT_CANDIDATE or edit its signed v3 Evidence. A later authorised
+fresh v4 TEST_PR must supply a coherent new source/build/image/Evidence/package
+set. Recompute `candidate_contract_sha256` with `candidate_fact.py`; regenerate
+all candidate-bound plans and reviews. No installation, TEST_PR, or deployment
+authority is created by this source patch.
