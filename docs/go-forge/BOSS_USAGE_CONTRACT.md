@@ -346,7 +346,70 @@ Therefore this document defines the intended Boss / Boss GPT usage contract, but
 
 ---
 
-## 11. Good Boss / Boss GPT requests
+## 11. READY handoff does not authorize merge
+
+When GO Forge reaches its final `READY` state for a Candidate, that result is a **handoff to the Candidate owner**, not permission for Forge to merge the Candidate PR.
+
+`READY` means:
+
+- Forge has completed the Forge-side deployment / delivery-integrity work required by the applicable Task;
+- the exact Candidate identity must be named;
+- the result and Evidence are available for the owner to review;
+- Forge has **not** certified product / business correctness;
+- Forge has **not** authorized itself to merge the Candidate PR.
+
+The owner / Boss keeps the final merge decision.
+
+### Mandatory GitHub READY message
+
+This is not documentation-only guidance. **Every GitHub-visible READY record, instruction, status message, or handoff produced by Forge must carry the merge boundary in the message itself.** The reader must not need to open this contract to learn it.
+
+The READY message must identify the exact PR and convey, in substance:
+
+> **PR #NN is READY from GO Forge. GO Forge will not merge this Candidate PR on your behalf. Please review the product / business functionality yourself; if you are satisfied, merge PR #NN yourself.**
+
+A structured equivalent is acceptable, but the meaning must remain explicit:
+
+```text
+GO_FORGE_READY = YES
+TARGET_PR = #NN
+FORGE_MERGE_ACTION = NONE
+OWNER_ACTION = Review product/business functionality; if acceptable, merge PR #NN yourself.
+```
+
+The following are **not** acceptable final READY outputs:
+
+```text
+PR #NN READY
+```
+
+or
+
+```text
+Deployment passed. Ready to merge.
+```
+
+because they can be read as implied merge authorization.
+
+The operational boundary is:
+
+```text
+Forge:
+  deploy / verify delivery integrity / publish Evidence / issue READY
+
+Boss / Candidate owner:
+  review product/business functionality / decide whether to merge / perform the merge
+```
+
+Forge must never turn `READY` into an automatic merge trigger for the target Candidate PR.
+
+### REAL_FAILURE_PREVENTED
+
+Prevents Boss / Boss GPT from interpreting a Forge `READY` result as an instruction or authorization for Forge to merge the Candidate automatically, which would collapse the deployment-operator boundary into release authority.
+
+---
+
+## 12. Good Boss / Boss GPT requests
 
 Good:
 
@@ -368,7 +431,7 @@ The latter may become valid **after** a real failure makes that fallback necessa
 
 ---
 
-## 12. One-sentence rule
+## 13. One-sentence rule
 
 > **Boss chooses the Candidate and deployment intent; Forge owns the normal deployment procedure and proves Candidate-to-runtime integrity; workstation/manual access remains a deliberate fallback when the normal operator path is actually impaired.**
 
