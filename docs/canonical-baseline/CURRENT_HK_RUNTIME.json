@@ -4,17 +4,31 @@
   "environment": "HK-STAGING",
   "host": "i-j6ccs8t04f1p4d8pe69z",
   "runtime_generation": "DEPTH48",
-  "deployed_date": "2026-10-01",
+  "deployed_date": "2026-10-02",
 
   "pointer_update": {
-    "at": "2026-10-01",
-    "note": "Re-pointed at the runtime that is actually running on HK-STAGING. Before this the pointer still described the 2026-09-13 DEPTH48 deployment and was wrong in the two fields machinery reads: the installer copies database.alembic_head verbatim into the host's environment-graph-v1.json, and the Control State projector compares image.image_config_id against the image a signed VERIFY proves. Left alone on purpose: product_source_identity, canonical_runtime_identity and fresh_checkout_build describe the DEPTH48 integration into main and remain true as history; PR #298 is not merged, so replacing them with its tree would assert something false. runtime_generation stays DEPTH48 -- this update moves the pointer, it does not relabel a lineage.",
+    "at": "2026-10-02",
+    "note": "Re-pointed at the runtime that is actually running on HK-STAGING, after GO Forge deployed the admitted candidate for PR #320 and verified it (formal deployctl VERIFY = VERIFY_OK, exit 0). Scope: the identity fields for the running runtime, plus the two measured values below. No candidate was modified, nothing was deployed by this change, no migration was run, and no baseline mechanism was refactored. Left alone on purpose: product_source_identity, canonical_runtime_identity and fresh_checkout_build describe the DEPTH48 integration into main and remain true as history; PR #320 is not merged, so replacing them with its tree would assert something false. runtime_generation stays DEPTH48 -- this update moves the pointer, it does not relabel a lineage. database.alembic_head was re-read and did NOT change (0145_source_latest_index), so the host's environment-graph-v1.json -- which the installer copies that field into -- needed no change either. Provenance, recorded because it is otherwise silently missing: the runtime was advanced on 2026-10-02T08:49:13Z by GO Forge (task forge-deploy-pr320-r3-20261002T1642Z, run 20261002T084029Z), which by design writes no Command Center DEPLOY record; the absence of such a record is a known owner-side reconciliation and not a property of this pointer.",
     "measured_against": {
       "host": "HK-STAGING-01 (i-j6ccs8t04f1p4d8pe69z)",
-      "image": "docker inspect <container>.Image over the eight business services",
-      "alembic_head": "alembic_version and the api container's `alembic heads`",
-      "tables_after_migration": "information_schema.tables, current schema",
-      "migration_steps": "the eight revisions applied on 2026-10-01, 0138..0145"
+      "image": "docker inspect <container>.Image over the eight business services, which report one value; docker images for the tag",
+      "alembic_head": "alembic current inside the running api container, from its own WorkingDir",
+      "tables_after_migration": "information_schema.tables where table_schema='public', read over the live database",
+      "openapi_paths": "the running api's /openapi.json, path count",
+      "corroborating_evidence": [
+        "yuguangzhi3836-glitch/GO pull 320 head eeafca1b15a4754ba36a0f138a27347cbbd12c73, application tree 6f97ac5d572dae1de0b3e38b6201da2a6de14216",
+        "chenzhenxi1-sudo/go-control-evidence evidence/forge-forge-final-verify-v3-20261002T111155Z-20261002T111234Z-forge-final-verify-v3-20261002T111155Z.json (formal VERIFY, VERIFY_OK, exit 0)",
+        "/etc/go-command-center/current-candidate-override-v1.json: candidate pr320-eeafca1b-unified-pr315-on-main, artifact sha256:26c95472d494100dc5365b031335670b57570b86ac50fb1b4ebd161d7933530b"
+      ]
+    },
+    "superseded_2026_10_01": {
+      "deployed_date": "2026-10-01",
+      "image_config_id": "sha256:e1049b5c0f3fc9d04d2919c8fdbb259dcd71d9e2d6f979bf93e5a1c2c8c397aa",
+      "image_id_short": "e1049b5c0f3f",
+      "image_tag": "go-hk-test-pr:e109af4dc4ae84f27f63d0104aa42c8d6b64b34d",
+      "alembic_head": "0145_source_latest_index",
+      "tables_after_migration": 564,
+      "openapi_paths": 972
     },
     "superseded_2026_09_13": {
       "deployed_date": "2026-09-13",
@@ -27,6 +41,7 @@
       "migration_steps": 19
     }
   },
+
   "source_of_truth": {
     "statement": "This file is the single authoritative pointer for the runtime that is actually running on HK-STAGING. Live state, Human Approval, Signed Task, installed artifact, durable previous-state record and Signed Evidence outrank this file for any execution decision.",
     "business_source": "application/",
@@ -64,10 +79,10 @@
   },
 
   "image": {
-    "image_tag": "go-hk-test-pr:e109af4dc4ae84f27f63d0104aa42c8d6b64b34d",
-    "image_config_id": "sha256:e1049b5c0f3fc9d04d2919c8fdbb259dcd71d9e2d6f979bf93e5a1c2c8c397aa",
-    "image_id_short": "e1049b5c0f3f",
-    "image_config_id_note": "Re-measured 2026-10-01 against `docker inspect <container>.Image` over all eight business services, which report one value. It previously carried the DEPTH48 image sha256:1c9598d699c2...; the deploy of PR #298 replaced it. The earlier correction of 2026-09-16 (a config id that was not an image on the host) is preserved here: this field carries the running image identity and is what the Control State projector and the Deploy Readiness evaluator compare against the image a signed VERIFY proves.",
+    "image_tag": "go-hk-test-pr:eeafca1b15a4754ba36a0f138a27347cbbd12c73",
+    "image_config_id": "sha256:26c95472d494100dc5365b031335670b57570b86ac50fb1b4ebd161d7933530b",
+    "image_id_short": "26c95472d494",
+    "image_config_id_note": "Re-measured 2026-10-02 against `docker inspect <container>.Image` over all eight business services, which report one value. It previously carried the PR #298 image sha256:e1049b5c0f3f...; GO Forge's deploy of the admitted PR #320 candidate replaced it. The earlier correction of 2026-09-16 (a config id that was not an image on the host) is preserved here: this field carries the running image identity and is what the Control State projector and the Deploy Readiness evaluator compare against the image a signed VERIFY proves.",
     "base_image": "python:3.12-slim",
     "startup": "uvicorn go_hotel.main:app --host 0.0.0.0 --port 8000"
   },
@@ -118,7 +133,7 @@
     "local": "http://127.0.0.1:8000/health",
     "public": "https://staging-api.goaidirect.com/health",
     "expected_body": "{\"status\":\"ok\",\"service\":\"go-hotel-platform\"}",
-    "openapi_paths": 972
+    "openapi_paths": 1059
   },
 
   "runtime_env": {
