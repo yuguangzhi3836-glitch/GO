@@ -258,7 +258,51 @@ def admitted_canary_binding(admission=None, verify_baseline=None):
     return {"candidate_image_id":image,"candidate_package_sha256":package,
             "expected_current_image_id":expected}
 
-def derive(request, baseline, at=None):
+def verify_current_image(records,read_evidence=None,authority_key=None,hk_key=None,at=None):
+    """The image a manual VERIFY asserts: derived, not hand-kept.
+
+    A VERIFY states a fact -- "the host is running X" -- and asks the host to confirm or
+    refute it.  Until this revision that X was read from the root-owned static baseline,
+    a hand-kept copy of something the Command Center already derives from signed bytes
+    for its own automatic post-action VERIFY.  Two copies of one fact are two answers,
+    and the static one has no writer: nothing advances it after a deployment, so it goes
+    on describing the image the host ran *before* that deployment, and the next manual
+    VERIFY asserts a state the host has already left.  That is the whole of CCV1-308 --
+    the host was on e1049b5c, the baseline still said 3652b1d6, the Request produced a
+    Task asserting 3652, and the executor refused it, correctly, on the fact it was
+    handed.
+
+    The image now comes from where the automatic VERIFY takes it: the newest published
+    DEPLOY or ROLLBACK and its signed Evidence, verified against the authority and Hong
+    Kong keys.  The static file is demoted to the bootstrap value and is read only when
+    no mutating action has ever been published -- the one case with no signed bytes to
+    derive from.  It is never preferred over a signed record, and advancing it is no
+    longer a step of any deployment.
+
+    There is deliberately no freshness window: `post_verify_target` applies one for the
+    automatic VERIFY, where a stale source manufactures a failure about a host the
+    action no longer describes, but the question here is "which image is the newest
+    signed mutation about", and an older answer is still the newest answer.  A source
+    that exists and cannot be turned into an image is refused rather than papered over
+    with the static value: asserting the older file is the defect this replaces.
+    """
+    # The keys are only needed once there is a record to verify, and loading them can
+    # fail on a host that has none -- a fresh environment must still be able to serve a
+    # VERIFY from its bootstrap value.
+    if newest_mutating(records) is None: return load_baseline()["image_id"]
+    if read_evidence is None: read_evidence=globals()["read_evidence"]
+    if authority_key is None or hk_key is None: authority_key,hk_key=deploy_gate.load_keys()
+    _task,_action,image,reason=post_verify_target(records,read_evidence,authority_key,hk_key,at or now(),max_age=None)
+    if image is not None: return image
+    raise Reject("verify_current_image_unresolved")
+
+def derive(request, image, at=None):
+    """The VERIFY Task asserting `image`, the one `verify_current_image` derived.
+
+    Pure: it names the image it was handed and derives nothing.  The image used to be
+    read here, from a file, which is how a stale file became a Task asserting the state
+    a deployment had already replaced.
+    """
     at = at or now(); stamp = at.strftime("%Y%m%dT%H%M%SZ")
     # Seconds alone are insufficient for a persistent channel: two independent
     # PRs can be accepted in one poll.  The request-id digest makes task and
@@ -269,7 +313,7 @@ def derive(request, baseline, at=None):
     return {"schema_version":"1", "task_id":"go-boss-request-verify-" + unique_stamp,
       "nonce":secrets.token_urlsafe(24), "issued_at":iso(at), "expires_at":iso(at + dt.timedelta(minutes=15)),
       "authority":"GO-COMMAND-CENTER", "environment":POLICY["environment"], "action_id":POLICY["action_id"],
-      "parameters":{"release_id":"boss-request-verify-" + unique_stamp, "candidate_image_id":baseline["image_id"], "expected_current_image_id":baseline["image_id"]}}
+      "parameters":{"release_id":"boss-request-verify-" + unique_stamp, "candidate_image_id":image, "expected_current_image_id":image}}
 
 def derive_canary(request, baseline, at=None):
     """A candidate canary Task. It takes nothing at all from the Request.
@@ -562,7 +606,7 @@ def derive_health(request, at=None):
       "authority":"GO-COMMAND-CENTER", "environment":POLICY["environment"],
       "action_id":HEALTH_ACTION, "parameters":dict(HEALTH_PARAMETERS)}
 
-def derive_formal_task(request, at=None, resolver=resolve_pr):
+def derive_formal_task(request, records=None, at=None, resolver=resolve_pr):
     # Explicit dispatch, fail-closed. Every named action is bound to its own builder
     # and anything else is refused. The order matters for readability only; no branch
     # can hand a Request to another action's builder, and there is no fallthrough:
@@ -570,7 +614,7 @@ def derive_formal_task(request, at=None, resolver=resolve_pr):
     action = request["action_id"]
     if action == HEALTH_ACTION: return derive_health(request, at)
     if action == TEST_ACTION: return derive_test_pr(request, at, resolver)
-    if action == POLICY["action_id"]: return derive(request, load_baseline(), at)
+    if action == POLICY["action_id"]: return derive(request, verify_current_image(records, at=at), at)
     if action == CANARY_ACTION: return derive_canary(request, admitted_canary_binding(), at)
     if action == deploy_gate.ACTION: raise Reject("deployment_context_required")
     if action == deploy_gate.ROLLBACK_ACTION: raise Reject("rollback_context_required")
@@ -736,7 +780,7 @@ def process(number, head, ledger_root, key_path, reader=read_pr):
             if record.get("request_id")==request["request_id"]: raise Reject("duplicate_request_id")
         data["requests"][key]={"status":"claiming","request_id":request["request_id"]}
         temp=ledger.root/"ledger.tmp"; temp.write_bytes(canonical(data)); os.chmod(temp,0o600); os.replace(temp,ledger.path)
-        preview=sign(derive(request,{"image_id":"sha256:"+"0"*64}),key_path)
+        preview=sign(derive(request,"sha256:"+"0"*64),key_path)
         data["requests"][key]={"status":"dry_run_consumed","request_id":request["request_id"],"task_id":preview["task_id"],"task_sha256":__import__("hashlib").sha256(canonical(preview)).hexdigest(),"publish_enabled":False}
         return {"status":"dry_run_consumed","task_id":preview["task_id"],"publish_enabled":False}
     finally:
@@ -870,7 +914,7 @@ def action_result_proof(action,task,evidence,authority_key,hk_key):
             "source_deploy_record_id":source_record,
             "source_deploy_record_sha256":source_record_sha256}
 
-def post_verify_target(records,read_evidence,authority_key,hk_key,at):
+def post_verify_target(records,read_evidence,authority_key,hk_key,at,max_age=POST_VERIFY_MAX_AGE):
     """The newest finished action and the image a VERIFY of it would assert.
 
     Returns `(task, action, image, reason)`.  `image` is None when there is nothing to
@@ -878,6 +922,11 @@ def post_verify_target(records,read_evidence,authority_key,hk_key,at):
     superseded or stale action is a decision already taken.  Nothing here reads a
     Request, a caller, or a file this process chose -- the image comes out of the two
     signed objects and, for a rollback, out of the source deployment's own proof.
+
+    `max_age` is the freshness window the *automatic* post-action VERIFY needs: there a
+    stale source would manufacture a failure about a host the action no longer
+    describes.  A caller that only wants to know which image the newest signed mutation
+    is about passes None -- the answer to that question does not expire.
     """
     pair=newest_mutating(records)
     if pair is None: return None,None,None,"no_published_action"
@@ -907,8 +956,9 @@ def post_verify_target(records,read_evidence,authority_key,hk_key,at):
         image=source_proof["expected_current_image_id"]
     if not isinstance(image,str) or IMAGE_ID.fullmatch(image) is None:
         return task,action,None,"image_unresolved"
-    age=at-proof["completed_at"]
-    if age>POST_VERIFY_MAX_AGE: return task,action,None,"source_stale_seconds:%d" % int(age.total_seconds())
+    if max_age is not None:
+        age=at-proof["completed_at"]
+        if age>max_age: return task,action,None,"source_stale_seconds:%d" % int(age.total_seconds())
     return task,action,image,None
 
 def derive_post_action_verify(source_task,image,at=None):
@@ -1040,7 +1090,7 @@ def armed_process(number, head, ledger_root, key_path, arm_path):
         if request['action_id']!=POLICY['action_id']: raise Reject('legacy_mode_verify_only')
         if request["request_id"] != arm["expected_request_id"] or arm["state"] != "ARMED" or not arm["publish_enabled"]: raise Reject("request_not_currently_armed")
         if any(x.get("request_id")==request["request_id"] for x in data["requests"].values()): raise Reject("duplicate_request_id")
-        task=sign(derive(request,load_baseline()),key_path)
+        task=sign(derive(request,verify_current_image(data["requests"])),key_path)
         data["requests"][key]={"status":"prepared","request_id":request["request_id"],"task":task,"task_sha256":hashlib.sha256(canonical(task)).hexdigest()}
     finally:
         try: next(tx)
@@ -1245,7 +1295,7 @@ def persistent_process(number, head, ledger_root, key_path, channel_path):
             # block *is* the content, so the publish-time recheck compares it directly
             # instead of loading a plan file back.
             extra={k:v for k,v in context.items() if k not in {'deadline','action_id','completed_at'}}
-        else: unsigned=derive_formal_task(request)
+        else: unsigned=derive_formal_task(request,data['requests'])
         task=sign(unsigned,key_path)
         if task['action_id'] in deploy_gate.MUTATING_ACTIONS:
             # One environment, one mutation.  The check and the reservation are here,
@@ -1392,10 +1442,10 @@ def run_tests():
         with self.assertRaises(Reject): validate_request(self.request(requested_at="2020-01-01T00:00:00Z"))
         with self.assertRaises(Reject): validate_request(b"x"*(POLICY["max_bytes"]+1))
       def test_derivation(self):
-        task=derive(validate_request(self.request()),{"image_id":"sha256:"+"0"*64}); self.assertEqual(set(task["parameters"]),{"release_id","candidate_image_id","expected_current_image_id"}); self.assertEqual(task["action_id"],"HK_STAGING_VERIFY")
+        task=derive(validate_request(self.request()),"sha256:"+"0"*64); self.assertEqual(set(task["parameters"]),{"release_id","candidate_image_id","expected_current_image_id"}); self.assertEqual(task["action_id"],"HK_STAGING_VERIFY")
       def test_task_inputs_not_caller_controlled(self):
         request=validate_request(self.request())
-        task=derive(request,{"image_id":"sha256:"+"0"*64})
+        task=derive(request,"sha256:"+"0"*64)
         self.assertNotIn("force_recreate",task["parameters"]); self.assertNotIn("compose_path",task["parameters"]); self.assertNotIn("runtime_env_path",task["parameters"])
       def test_path_rule(self): self.assertTrue(REQUEST_RE.fullmatch("requests/request-abc.json")); self.assertFalse(REQUEST_RE.fullmatch("requests/../tasks/x.json"))
       def test_request_path_rejects_extra_files(self):
@@ -1409,7 +1459,7 @@ def run_tests():
       def test_signature_roundtrip(self):
         with tempfile.NamedTemporaryFile() as key:
           private=__import__("cryptography.hazmat.primitives.asymmetric.ed25519",fromlist=["Ed25519PrivateKey"]).Ed25519PrivateKey.generate(); key.write(private.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())); key.flush()
-          task=derive(validate_request(self.request()),{"image_id":"sha256:"+"0"*64}); signed=sign(task,key.name); private.public_key().verify(bytes.fromhex(signed.pop("signature")),canonical(signed))
+          task=derive(validate_request(self.request()),"sha256:"+"0"*64); signed=sign(task,key.name); private.public_key().verify(bytes.fromhex(signed.pop("signature")),canonical(signed))
       def test_replay_and_duplicate(self):
         with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key:
           private=__import__("cryptography.hazmat.primitives.asymmetric.ed25519",fromlist=["Ed25519PrivateKey"]).Ed25519PrivateKey.generate(); key.write(private.private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption())); key.flush()
@@ -1443,6 +1493,64 @@ def run_tests():
           baseline.write(canonical(valid)); baseline.flush(); self.assertEqual(load_baseline(baseline.name)["image_id"],valid["image_id"])
           valid["image_id"]="not-an-image"; baseline.seek(0); baseline.truncate(); baseline.write(canonical(valid)); baseline.flush()
           with self.assertRaises(Reject): load_baseline(baseline.name)
+      def published_mutation(self,action=deploy_gate.ACTION):
+        # A ledger record `newest_mutating` accepts: a published DEPLOY or ROLLBACK.
+        return {"1:"+"a"*40:{"status":"published",
+                             "task":{"action_id":action,"task_id":"go-boss-deploy-synthetic",
+                                     "issued_at":"2026-10-01T15:04:55Z"}}}
+      def derived_target(self,image,reason=None):
+        # Stands in for the newest signed record: what `post_verify_target` returns for
+        # it, plus an assertion that the manual path asks for no freshness window --
+        # the automatic VERIFY's window has no meaning for this question.
+        def target(records,read,authority,hk,at,max_age=POST_VERIFY_MAX_AGE):
+          self.assertIsNone(max_age,"a manual VERIFY must not apply the automatic freshness window")
+          return None,None,image,reason
+        return target
+      def test_a_manual_verify_takes_its_image_from_the_signed_record(self):
+        # CCV1-308: the manual VERIFY asserted the static baseline, which no deployment
+        # advances, so it asserted the image the host had already replaced and the host
+        # refused the Task -- correctly, on the fact it was handed.  It now takes the
+        # same derived image the automatic post-action VERIFY takes.
+        live="sha256:"+"7"*64; original=globals()["post_verify_target"]
+        try:
+          globals()["post_verify_target"]=self.derived_target(live)
+          self.assertEqual(verify_current_image(self.published_mutation(),read_evidence=lambda task:{},
+                                                authority_key="authority",hk_key="hk"),live)
+        finally: globals()["post_verify_target"]=original
+      def test_a_manual_verify_uses_the_static_file_only_as_a_bootstrap_value(self):
+        # No mutating action has ever been published: there are no signed bytes to
+        # derive from, and a VERIFY still has to assert something.  This is the one case
+        # the root-owned file is read in, and its only remaining job.
+        original_target=globals()["post_verify_target"]; original_baseline=globals()["load_baseline"]
+        try:
+          globals()["post_verify_target"]=self.derived_target(None,"no_published_action")
+          globals()["load_baseline"]=lambda:{"image_id":"sha256:"+"1"*64}
+          self.assertEqual(verify_current_image({},read_evidence=lambda task:{},
+                                                authority_key="authority",hk_key="hk"),"sha256:"+"1"*64)
+        finally:
+          globals()["post_verify_target"]=original_target; globals()["load_baseline"]=original_baseline
+      def test_a_manual_verify_refuses_rather_than_assert_the_stale_file(self):
+        # A record exists and cannot be turned into an image.  Falling back to the file
+        # would assert a state the record already superseded -- the defect, not a
+        # recovery -- so the Request is refused, with its own token.
+        original=globals()["post_verify_target"]
+        try:
+          globals()["post_verify_target"]=self.derived_target(None,"source_evidence_unavailable:boom")
+          with self.assertRaises(Reject) as caught:
+            verify_current_image(self.published_mutation(),read_evidence=lambda task:{},
+                                 authority_key="authority",hk_key="hk")
+        finally: globals()["post_verify_target"]=original
+        self.assertEqual(str(caught.exception),"verify_current_image_unresolved")
+      def test_a_manual_verify_request_derives_the_image_on_its_way_to_a_task(self):
+        # End to end through the dispatcher: the Request carries nothing, and what the
+        # Task ends up asserting is the derived image on both sides of the VERIFY.
+        live="sha256:"+"5"*64; original=globals()["verify_current_image"]
+        try:
+          globals()["verify_current_image"]=lambda *args,**kwargs: live
+          task=derive_formal_task(validate_request(self.request()),{"any":"record"})
+          self.assertEqual(task["parameters"]["candidate_image_id"],live)
+          self.assertEqual(task["parameters"]["expected_current_image_id"],live)
+        finally: globals()["verify_current_image"]=original
       def test_ambiguous_push_recovery_fails_closed(self):
         with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key:
           task={"task_id":"synthetic-one-shot"}; pathlib.Path(root,"ledger.json").write_bytes(canonical({"version":1,"requests":{"6:"+"f"*40:{"status":"publishing","task":task}}}))
@@ -1552,11 +1660,11 @@ def run_tests():
                         "CONTROL_PLANE_HEALTH"):
           with self.assertRaises(Reject): channel_v4({"version":4,"mode":"PERSISTENT","publish_enabled":True,"allowed_actions":actions,"allowed_environment":"HK-STAGING-01","deployment_authorization":"request"})
       def test_existing_actions_are_unchanged_by_the_health_extension(self):
-        baseline={"image_id":"sha256:"+"3"*64}
-        verify=derive(validate_request(self.request()),baseline)
+        image="sha256:"+"3"*64
+        verify=derive(validate_request(self.request()),image)
         self.assertEqual(verify["action_id"],POLICY["action_id"])
         self.assertEqual(set(verify["parameters"]),{"release_id","candidate_image_id","expected_current_image_id"})
-        self.assertEqual(verify["parameters"]["candidate_image_id"],baseline["image_id"])
+        self.assertEqual(verify["parameters"]["candidate_image_id"],image)
         with self.assertRaises(Reject): derive_test_pr(validate_request(self.request(action_id=TEST_ACTION,pr_number="1")),resolver=lambda number:(_ for _ in ()).throw(Reject("pr_head_not_found")))
       def test_persistent_health_request_publishes_a_read_only_task(self):
         with tempfile.TemporaryDirectory() as root, tempfile.NamedTemporaryFile() as key:
