@@ -1,0 +1,66 @@
+[Unit]
+Description=GO Runtime Host C01 issue consumer (GitHub open C01 issues -> Runtime.enqueue(AI_TASK_V1)); GitHub GET only
+# Shipped disabled. `systemctl enable` is a separate, authorised decision: this file
+# existing on the host must not be enough to start enqueuing tasks.
+#
+# It is NOT installed into /opt/go/runtime-host-agent. The Management Agent's
+# executor_sha256 is computed over every *.py in that directory and is bound by the
+# registration, so adding a file there changes the Agent's identity and makes it refuse
+# to start with local_executor_mismatch until a new registration is issued.
+#
+# It shares /opt/go/runtime-host-c1-worker with the ingress and the C1 worker on purpose.
+# The consumer imports c1_issue_ingress, which imports c1_execution_contract, so a
+# separate directory would mean a second copy of those modules that can drift from the
+# installed ones. The worker does not enumerate its own directory (verified: it imports
+# named modules only), so an extra file there cannot change the worker's behaviour.
+ConditionPathExists=/opt/go/runtime-host-c1-worker/c1_issue_consumer.py
+ConditionPathExists=/opt/go/runtime-host-c1-worker/c1_issue_ingress.py
+# Fail closed on the credential: without it the consumer could only read nothing, and a
+# half-configured poller is worse than an inactive one.
+ConditionPathExists=/etc/go-runtime-c1/github-token
+After=go-c1-c14-runtime.service
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=go-runtime
+Group=go-runtime
+WorkingDirectory=/opt/go/runtime-host-c1-worker
+ExecStart=/usr/bin/python3 -B /opt/go/runtime-host-c1-worker/c1_issue_consumer.py
+# Refuse to run on anything but the installed bytes: a syntax error or a missing
+# dependency must fail here rather than in a loop that half-polls.
+ExecStartPre=/usr/bin/python3 -B /opt/go/runtime-host-c1-worker/c1_issue_consumer.py --check
+Restart=on-failure
+RestartSec=10
+UMask=0077
+
+# The GitHub credential, read from a path only this account can reach. It is a GitHub
+# credential and NOT a model credential: OPENAI_API_KEY stays a repository secret and
+# must never exist on this host.
+Environment=C1_GITHUB_TOKEN_PATH=/etc/go-runtime-c1/github-token
+Environment=PYTHONDONTWRITEBYTECODE=1
+
+# The enable switch is the ingress's own, and it is NOT set here. Unset means the
+# consumer polls, parses and reports the task it *would* create, and never touches the
+# Runtime. Setting C01_RUNTIME_INGRESS_ENABLED=true is the cutover action and belongs to
+# the Operator, not to this file.
+
+# Outbound network is needed, and only to reach api.github.com for a read-only issue
+# listing. Nothing here listens and nothing else is reachable by design.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+PrivateDevices=true
+
+# Reads the installed Runtime source. Writes only the Runtime state directory, and only
+# when the ingress is enabled (Runtime.enqueue). Nothing else is writable.
+ReadOnlyPaths=/opt/go/c1-c14-runtime
+ReadWritePaths=/var/lib/go-c-runtime
+
+[Install]
+WantedBy=multi-user.target
