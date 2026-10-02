@@ -1,0 +1,34 @@
+name: VERIFY refusal boundary
+on:
+  pull_request:
+    paths:
+      - 'hk-staging/source/executor/go-hk-deployctl'
+      - 'hk-staging/source/executor/runtime/verify_refusal_regression.py'
+      - '.github/workflows/verify-refusal-boundary.yml'
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify refusal confidentiality and failure categories
+        run: python hk-staging/source/executor/runtime/verify_refusal_regression.py
+      - name: Check unchanged environment lock discipline
+        run: python hk-staging/source/executor/runtime/environment_lock_regression.py
+      - name: Check changed source hashes
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          paths = {'hk-staging/source/executor/go-hk-deployctl', 'hk-staging/source/executor/runtime/verify_refusal_regression.py'}
+          rows = dict(line.split('  ', 1)[::-1] for line in Path('hk-staging/SOURCE_SHA256SUMS.txt').read_text().splitlines())
+          for path in paths:
+              assert hashlib.sha256(Path(path).read_bytes()).hexdigest() == rows[path], path
+          PY

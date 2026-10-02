@@ -345,18 +345,60 @@ def _rollback(release,source_task_id,binding,runner=None):
         return out,2
 
 
+
+# Only these source-defined codes may cross the VERIFY refusal boundary. Never
+# serialize exception text: OS paths, runner stderr and malformed input can carry
+# credentials. Installation detail suffixes identify files/digests and stay local.
+_VERIFY_REFUSAL_MESSAGES = {
+    message: "E_VERIFY_" + message.upper().replace(" ", "_")
+    for message in (
+        "release id", "candidate image", "expected image", "collector result",
+        "collector runtime rejected", "collector loader", "collector import source",
+        "expected revision", "environment graph", "api selection", "inspect",
+        "inspect parse", "api gate", "worker", "state", "drift", "current parse",
+        "head parse", "api id", "current exit", "heads exit", "revision drift",
+        "compose baseline", "env baseline",
+    )
+}
+_VERIFY_INSTALL_CODES = frozenset("E_INSTALL_FACT_" + suffix for suffix in (
+    "MODULE", "MODULES", "UNTRUSTED", "ABSENT", "CRYPTO_UNAVAILABLE",
+    "KEY_INVALID", "SIGNATURE", "SIGNER_UNKNOWN", "SIGNER_MISMATCH", "SCHEMA",
+    "FIELDS", "CANDIDATE_SET", "ENVIRONMENT_GRAPH", "LAUNCHER", "RUNTIME_DIGEST",
+    "MODULE_MISSING", "MODULE_DRIFT", "MODULE_VERSION", "CANDIDATE_SET_MISSING",
+    "CANDIDATE_SET_DRIFT", "ENVIRONMENT_GRAPH_MISSING", "ENVIRONMENT_GRAPH_DRIFT",
+    "UNREADABLE",
+))
+
+
+def _verify_refusal_code(exc, stage):
+    if isinstance(exc, ValueError):
+        message = str(exc)
+        if message in _VERIFY_REFUSAL_MESSAGES:
+            return _VERIFY_REFUSAL_MESSAGES[message]
+        code = message.split(":", 1)[0]
+        if code in _VERIFY_INSTALL_CODES:
+            return code
+    # stage is set only by this function's caller, never by task/runner input.
+    kind = "OS_ERROR" if isinstance(exc, OSError) else "TYPE_ERROR" if isinstance(exc, TypeError) else "VALUE_ERROR"
+    return "E_VERIFY_" + stage + "_" + kind
+
+
 def _verify(release_id, candidate_image_id, expected_current_image_id,
             runner=None, inputs=None, sleeper=None):
     gates = {}
+    stage = "INSTALLATION"
     try:
         identity = _installed_identity()
+        stage = "INPUT"
         if not isinstance(release_id, str) or not _RELEASE.fullmatch(release_id):
             raise ValueError("release id")
         if not isinstance(candidate_image_id, str) or not _IMAGE.fullmatch(candidate_image_id):
             raise ValueError("candidate image")
         if not isinstance(expected_current_image_id, str) or not _IMAGE.fullmatch(expected_current_image_id):
             raise ValueError("expected image")
+        stage = "COLLECTOR_LOAD"
         collector = _load_collector()
+        stage = "COLLECT"
         result = collector._collect_verify(
             runner or collector.ProductionRunner(),
             candidate_image_id,
@@ -364,6 +406,7 @@ def _verify(release_id, candidate_image_id, expected_current_image_id,
             inputs or collector._PRODUCTION_VERIFY_INPUTS,
             sleeper or __import__("time").sleep,
         )
+        stage = "RESULT"
         gates = {
             "compose_baseline": "PASS",
             "env_baseline": "PASS",
@@ -383,12 +426,8 @@ def _verify(release_id, candidate_image_id, expected_current_image_id,
     except (OSError, ValueError, TypeError) as exc:
         out = _document("REJECTED", release_id, candidate_image_id,
                         expected_current_image_id, gates, "VERIFY_REJECTED")
-        # DEPLOY, CANARY and ROLLBACK all report why they refused; VERIFY did not, and a
-        # refusal nobody can read is the most expensive kind of refusal.  CCV1-308 spent
-        # a whole round reconstructing the executor's own words from the collector
-        # because this line was missing: the Evidence said VERIFY_REJECTED, gate_results
-        # was empty, and the actual stop condition existed only in a discarded handler.
-        out["error_code"] = str(exc)[:80]
+        # Preserve a useful refusal category without exporting exception text.
+        out["error_code"] = _verify_refusal_code(exc, stage)
         return out, 2
 
 
