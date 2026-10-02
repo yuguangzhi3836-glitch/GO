@@ -1,0 +1,53 @@
+{
+  "base_commit": "eeafca1b15a4754ba36a0f138a27347cbbd12c73",
+  "database": "temporary SQLite",
+  "python": "3.12.14",
+  "dependencies": {
+    "SQLAlchemy": "2.1.2",
+    "fastapi": "0.142.2",
+    "pydantic": "2.13.5",
+    "pytest": "9.1.1",
+    "psycopg": "3.3.6"
+  },
+  "suite": {
+    "tests": "90",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "26.715"
+  },
+  "source_sha256": {
+    "application/src/go_hotel/mobility/rental/changes.py": "b3d646295ebd7affb7ea2fdf0aaaca13711a1775e38b518bdd09b536b2f2bf63",
+    "application/src/go_hotel/mobility/rental/change_receipts.py": "cb3cce659e5ddb497025bfb06b68562f83195e139dddbfe05658c37e73908ad4",
+    "application/src/go_hotel/services/personal_travel_vault.py": "5a31334d53fc6fae1832e1a0b3dcaf9a0ffaf7344069308d5b60f1140bb17628",
+    "application/tests/test_current_rental_vault_guards.py": "143e70413ab19c8b0e02e4aceb6aab352c24b02d9dec83d6d84b952a30a42b90",
+    ".github/workflows/current-rental-vault-guards.yml": "0de5d6bac368f6651600368648ace20d9bc352d6b9d00dd6e0a308416fd7b60c"
+  },
+  "baseline_counterexamples": [
+    "test_client_reserved_metadata_rejected_before_insert[connection_intent]",
+    "test_topup_requires_durable_bound_capture[missing]",
+    "test_refund_receipt_must_match_frozen_plan[key]"
+  ],
+  "unrelated_baseline_failures": [
+    "test_attraction_redemption_unknown_recovery_closed_and_illegal_states",
+    "test_attraction_supplier_closure_blocks_consumer_mutations"
+  ],
+  "postgres": {
+    "candidate": "725f9d9ff28427262088b0b4aa119279a66d5607",
+    "run_id": 37023384124,
+    "passed": 90
+  },
+  "C14": "NOT_RUN",
+  "C13": "NOT_RUN",
+  "merged": false,
+  "deployed": false,
+  "hk_readonly_preflight": "NOT_RUN",
+  "suite_candidate": "725f9d9ff28427262088b0b4aa119279a66d5607",
+  "c13_preparation": {
+    "change": "isolate media cache in writable pytest temporary directory",
+    "tests": 34,
+    "failures": 0,
+    "errors": 0,
+    "time_seconds": 14.49
+  }
+}

@@ -10,6 +10,7 @@ from go_hotel.services.omnichannel_payment import digest, out
 from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence
 from go_hotel.services.vertical_lifecycle_projection import project_vertical_lifecycle
 from go_hotel.services.vertical_money_bridge import vertical_money_bridge as money
+from go_hotel.mobility.rental import change_receipts
 
 
 def now():
@@ -81,7 +82,10 @@ def execute(account, order_id, quote_id, expected_difference_minor, currency):
         if not q or q.order_id!=order_id:raise ValueError('RENTAL_CHANGE_QUOTE_NOT_FOUND')
         if type(expected_difference_minor) is not int or (q.difference_minor,q.currency)!=(expected_difference_minor,currency):
             raise ValueError('RENTAL_CHANGE_AMOUNT_CHANGED_RECONFIRM_REQUIRED')
-        if q.status=='EXECUTED':return {**out(q),'data_mode':'SIMULATION','external_live':False}
+        if q.status=='EXECUTED':
+            change_receipts.completed_in(s,order,q,adjustment_ids(s,order_id))
+            return {**out(q),'data_mode':'SIMULATION','external_live':False}
+        change_receipts.intent_in(s,order,'RENTAL_ORDER',order_id)
         if q.status=='QUOTED':
             if order.status!='CONFIRMED':raise ValueError('MOBILITY_ORDER_NOT_CHANGEABLE')
             if q.expires_at<=now():raise ValueError('RENTAL_CHANGE_QUOTE_EXPIRED')
@@ -97,6 +101,8 @@ def execute(account, order_id, quote_id, expected_difference_minor, currency):
             project_vertical_lifecycle(s,'RENTAL',order,'rental-change://'+quote_id)
         elif q.status!='MONEY_PENDING' or order.status!='CHANGE_PENDING':
             raise ValueError('RENTAL_CHANGE_QUOTE_NOT_EXECUTABLE')
+        if q.difference_minor<0:
+            change_receipts.refund_plan_in(s,order,q,adjustment_ids(s,order_id))
         q.updated_at=now();difference=q.difference_minor;plan=q.refund_plan_json
     # Each money component has a durable identity. Keep the order held until all complete.
     evidence='contract-simulator://rental-change/'+quote_id
@@ -104,17 +110,19 @@ def execute(account, order_id, quote_id, expected_difference_minor, currency):
         prepared=money.prepare_adjustment('RENTAL',order_id,quote_id,difference,evidence)
         if prepared['released']:raise ValueError('RENTAL_CHANGE_RELEASED_RECONCILIATION_REQUIRED')
         movement=money.capture_adjustment('RENTAL',quote_id,difference,evidence)
-        movement_ids=[movement['capture_id']]
+        if not isinstance(movement,dict):raise ValueError('RENTAL_CHANGE_CAPTURE_NOT_CONFIRMED')
     elif difference<0:
         movement=money.execute_refund_plan(plan,evidence)
         if movement['state']!='CONFIRMED':raise ValueError('RENTAL_REFUND_MONEY_NOT_CONFIRMED')
-        movement_ids=movement['money_movement_ids']
-    else:movement_ids=[]
+    else:movement={}
     with transaction() as s:
         order=owned(s,account,order_id);q=s.get(Quote,quote_id,with_for_update=True)
-        if q.status=='EXECUTED':return {**out(q),'data_mode':'SIMULATION','external_live':False}
+        if q.status=='EXECUTED':
+            change_receipts.completed_in(s,order,q,adjustment_ids(s,order_id))
+            return {**out(q),'data_mode':'SIMULATION','external_live':False}
         if q.status!='MONEY_PENDING' or order.status!='CHANGE_PENDING':
             raise ValueError('RENTAL_CHANGE_RECONCILIATION_REQUIRED')
+        movement_ids=change_receipts.confirmed_in(s,order,q,movement,adjustment_ids(s,order_id))
         order.pickup_at=q.new_pickup_at;order.return_at=q.new_return_at
         order.total_amount_minor=q.new_amount_minor;order.status='CONFIRMED';order.updated_at=now()
         q.status='EXECUTED';q.updated_at=now()
