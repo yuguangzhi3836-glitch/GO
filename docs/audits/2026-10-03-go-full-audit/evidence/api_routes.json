@@ -1,0 +1,8785 @@
+[
+{
+"method": "GET",
+"path": "/v1/ai-infrastructure/manifest",
+"deps": [],
+"file": "api\\routes\\ai_travel_infrastructure.py"
+},
+{
+"method": "POST",
+"path": "/v1/ai-infrastructure/identity-release-plan",
+"deps": [],
+"file": "api\\routes\\ai_travel_infrastructure.py"
+},
+{
+"method": "POST",
+"path": "/v1/ai-infrastructure/booking-orchestration-plan",
+"deps": [],
+"file": "api\\routes\\ai_travel_infrastructure.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/aoluguya-supply-truth/connector/ensure",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\aoluguya_supply_truth.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/aoluguya-supply-truth/official-snapshot",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\aoluguya_supply_truth.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/aoluguya-supply-truth/gate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\aoluguya_supply_truth.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/aoluguya-supply-truth/official-snapshot-template",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\aoluguya_supply_truth.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/aoluguya-supply-truth/project",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\aoluguya_supply_truth.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/aoluguya-supply-truth/rollback-cutover",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\aoluguya_supply_truth.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/aoluguya-supply-truth/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\aoluguya_supply_truth.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/aoluguya-supply-truth/fallback-governance",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\aoluguya_supply_truth.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/aoluguya-supply-truth/route",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\aoluguya_supply_truth.py"
+},
+{
+"method": "POST",
+"path": "/v1/attractions/search",
+"deps": [
+"consumer_principal",
+"optional_consumer_principal"
+],
+"file": "api\\routes\\attractions.py"
+},
+{
+"method": "POST",
+"path": "/v1/attractions/prebook",
+"deps": [
+"consumer_principal",
+"optional_consumer_principal"
+],
+"file": "api\\routes\\attractions.py"
+},
+{
+"method": "POST",
+"path": "/v1/attractions/orders",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\attractions.py"
+},
+{
+"method": "GET",
+"path": "/v1/attractions/orders/{order_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\attractions.py"
+},
+{
+"method": "GET",
+"path": "/v1/attractions/trips",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\attractions.py"
+},
+{
+"method": "POST",
+"path": "/v1/attractions/orders/{order_id}/change-quote",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\attractions.py"
+},
+{
+"method": "POST",
+"path": "/v1/attractions/orders/{order_id}/execute-change/{quote_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\attractions.py"
+},
+{
+"method": "GET",
+"path": "/v1/attractions/orders/{order_id}/refund-quote",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\attractions.py"
+},
+{
+"method": "POST",
+"path": "/v1/attractions/orders/{order_id}/refund",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\attractions.py"
+},
+{
+"method": "POST",
+"path": "/v1/attractions/orders/{order_id}/redeem",
+"deps": [
+"consumer_principal",
+"order_admin_principal"
+],
+"file": "api\\routes\\attractions.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/attractions/orders/{order_id}/external-state",
+"deps": [
+"consumer_principal",
+"order_admin_principal"
+],
+"file": "api\\routes\\attractions.py"
+},
+{
+"method": "POST",
+"path": "/v1/attractions/orders/{order_id}/cancel-unpaid",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\attractions.py"
+},
+{
+"method": "POST",
+"path": "/v1/attractions/orders/{order_id}/refund-confirmed",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\attractions.py"
+},
+{
+"method": "POST",
+"path": "/v1/auth/login",
+"deps": [
+"current_principal"
+],
+"file": "api\\routes\\auth.py"
+},
+{
+"method": "POST",
+"path": "/v1/auth/refresh",
+"deps": [
+"current_principal",
+"perm:admin:approve"
+],
+"file": "api\\routes\\auth.py"
+},
+{
+"method": "POST",
+"path": "/v1/auth/logout",
+"deps": [
+"current_principal",
+"perm:admin:approve"
+],
+"file": "api\\routes\\auth.py"
+},
+{
+"method": "GET",
+"path": "/v1/auth/me",
+"deps": [
+"current_principal",
+"perm:admin:approve"
+],
+"file": "api\\routes\\auth.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/identity/users",
+"deps": [
+"current_principal",
+"perm:admin:approve"
+],
+"file": "api\\routes\\auth.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/approvals",
+"deps": [
+"current_principal",
+"perm:admin:approve"
+],
+"file": "api\\routes\\auth.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/approvals/{approval_id}/approve",
+"deps": [
+"perm:admin:approve",
+"perm:admin:read"
+],
+"file": "api\\routes\\auth.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/audit-events",
+"deps": [
+"perm:admin:read"
+],
+"file": "api\\routes\\auth.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/autonomy/cells",
+"deps": [
+"operator",
+"reader"
+],
+"file": "api\\routes\\autonomy_execution.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/autonomy/tasks",
+"deps": [
+"operator",
+"reader"
+],
+"file": "api\\routes\\autonomy_execution.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/autonomy/tasks/{task_id}",
+"deps": [
+"operator",
+"reader"
+],
+"file": "api\\routes\\autonomy_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/autonomy/observe",
+"deps": [
+"operator"
+],
+"file": "api\\routes\\autonomy_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/autonomy/cells/{cell_id}/control",
+"deps": [
+"operator"
+],
+"file": "api\\routes\\autonomy_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/autonomy/tasks/{task_id}/resume",
+"deps": [
+"operator"
+],
+"file": "api\\routes\\autonomy_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/autonomy/tasks/{task_id}/cancel",
+"deps": [
+"operator"
+],
+"file": "api\\routes\\autonomy_execution.py"
+},
+{
+"method": "GET",
+"path": "/bff/auth/policy",
+"deps": [],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "GET",
+"path": "/bff/auth/supplier/registration-terms",
+"deps": [],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "POST",
+"path": "/bff/auth/supplier/register",
+"deps": [],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "POST",
+"path": "/bff/auth/login",
+"deps": [],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "POST",
+"path": "/bff/auth/refresh",
+"deps": [
+"current_principal"
+],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "POST",
+"path": "/bff/auth/logout",
+"deps": [
+"current_principal",
+"supplier_account_principal"
+],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "GET",
+"path": "/bff/auth/me",
+"deps": [
+"current_principal",
+"supplier_account_principal"
+],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "GET",
+"path": "/bff/supplier/onboarding",
+"deps": [
+"supplier_account_principal"
+],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "PUT",
+"path": "/bff/supplier/onboarding/profile",
+"deps": [
+"admin_principal",
+"supplier_account_principal"
+],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "POST",
+"path": "/bff/supplier/onboarding/profile/submit",
+"deps": [
+"admin_principal",
+"supplier_account_principal"
+],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/supplier-onboarding/{supplier_id}/profile-decision",
+"deps": [
+"admin_principal",
+"supplier_account_principal"
+],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "POST",
+"path": "/bff/supplier/onboarding/contract",
+"deps": [
+"admin_principal",
+"supplier_account_principal"
+],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/supplier-onboarding/{supplier_id}/contract-decision",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "POST",
+"path": "/bff/auth/mfa/enroll/start",
+"deps": [
+"current_principal"
+],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "POST",
+"path": "/bff/auth/mfa/enroll/confirm",
+"deps": [
+"current_principal"
+],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "POST",
+"path": "/bff/auth/mfa/setup",
+"deps": [
+"current_principal"
+],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "POST",
+"path": "/bff/auth/mfa/confirm",
+"deps": [
+"current_principal"
+],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "GET",
+"path": "/bff/auth/sso/start",
+"deps": [],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "GET",
+"path": "/bff/auth/sso/callback",
+"deps": [],
+"file": "api\\routes\\bff.py"
+},
+{
+"method": "POST",
+"path": "/v1/orders",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/orders/{order_id}/payments",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/orders/{order_id}/confirm",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\booking.py"
+},
+{
+"method": "GET",
+"path": "/v1/orders/{order_id}",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/orders/{order_id}/events",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/orders/{order_id}/payment-orchestration",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\booking.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/catalog-fare/offers",
+"deps": [
+"perm:supplier:read",
+"supplier_principal"
+],
+"file": "api\\routes\\catalog_fare.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/catalog-fare/offers/{offer_id}",
+"deps": [
+"perm:supplier:fare-rules",
+"perm:supplier:read",
+"supplier_principal"
+],
+"file": "api\\routes\\catalog_fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/catalog-fare/offers/{offer_id}/publish",
+"deps": [
+"perm:supplier:fare-rules",
+"perm:supplier:read",
+"supplier_principal"
+],
+"file": "api\\routes\\catalog_fare.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/commercial/policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/commercial/policies/{policy_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/commercial/pool-decisions",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/commercial/distribution-authorities/{property_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/commercial/subscriptions/{supplier_id}/qualifying-orders",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/commercial/subscriptions/{supplier_id}/invoices/{period}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/commercial/waivers/{waiver_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/commercial/finance-status",
+"deps": [
+"admin_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/commercial/hotel-net-guard/assess",
+"deps": [
+"admin_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/commercial/cases",
+"deps": [
+"admin_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/commercial/dashboard",
+"deps": [
+"admin_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/commercial/t20",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/commercial/cohort/{property_id}",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/commercial/waivers",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\commercial_constitution.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/suppliers/{supplier_id}/financial-account",
+"deps": [
+"(require_permiss",
+"perm:admin:finance"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/suppliers/{supplier_id}/financial-account",
+"deps": [
+"perm:admin:finance",
+"supplier_principal"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/suppliers/{supplier_id}/future-settlement",
+"deps": [
+"perm:admin:finance",
+"supplier_principal"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/orders/{order_id}/unable-to-fulfill",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/supplier-fault-cases/{case_id}",
+"deps": [
+"consumer_principal",
+"perm:admin:finance"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/supplier-liabilities/{liability_id}",
+"deps": [
+"consumer_principal",
+"perm:admin:finance"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/orders/{order_id}/supplier-cancellation-remedy",
+"deps": [
+"consumer_principal",
+"perm:admin:finance"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/supplier-fault/governance",
+"deps": [
+"perm:admin:finance"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/supplier-fault-cases/{case_id}/evidence",
+"deps": [
+"perm:admin:finance"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/supplier-fault-cases/{case_id}/review",
+"deps": [
+"perm:admin:finance"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/supplier-fault-cases/{case_id}/execute",
+"deps": [
+"perm:admin:finance"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/supplier-fault-cases/{case_id}/reconcile",
+"deps": [
+"perm:admin:finance"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/suppliers/{supplier_id}/fault-finance",
+"deps": [
+"perm:admin:finance"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/suppliers/{supplier_id}/fault-mandates",
+"deps": [
+"consumer_principal",
+"perm:admin:finance"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/supplier-fault-mandates/{mandate_id}/revoke",
+"deps": [
+"consumer_principal",
+"perm:admin:finance"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/orders/{order_id}/supplier-cancellation-remedy/retry",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/supplier-fault/cases",
+"deps": [
+"perm:admin:finance",
+"supplier_principal"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/orders/{order_id}/supplier-cancellation",
+"deps": [
+"(supplier_pr",
+"supplier_principal"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/orders/{order_id}/supplier-cancellation/evidence",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\compensation.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/connector-activation-readiness/dashboard",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\connector_activation_readiness.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/connector-activation-readiness/templates/{vertical}",
+"deps": [
+"(admin_principal",
+"admin_principal"
+],
+"file": "api\\routes\\connector_activation_readiness.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/connector-activation-readiness/connectors/{connector_id}/profile",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\connector_activation_readiness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/connector-activation-readiness/connectors/{connector_id}/kms-bindings",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\connector_activation_readiness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/connector-activation-readiness/connectors/{connector_id}/production-accounts",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\connector_activation_readiness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/connector-activation-readiness/connectors/{connector_id}/ip-allowlists",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\connector_activation_readiness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/connector-activation-readiness/connectors/{connector_id}/webhook-endpoints",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\connector_activation_readiness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/connector-activation-readiness/webhook-endpoints/{endpoint_id}/rotate-key",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\connector_activation_readiness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/connector-activation-readiness/connectors/{connector_id}/certifications",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\connector_activation_readiness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/connector-activation-readiness/connectors/{connector_id}/drills",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\connector_activation_readiness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/connector-activation-readiness/connectors/{connector_id}/financial-closure",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\connector_activation_readiness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/connector-activation-readiness/connectors/{connector_id}/assess",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\connector_activation_readiness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/connectors/{connector_id}/certify",
+"deps": [],
+"file": "api\\routes\\connectors.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/connectors/health/all",
+"deps": [],
+"file": "api\\routes\\connectors.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/connectors/reconciliation/run-once",
+"deps": [],
+"file": "api\\routes\\connectors.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/home",
+"deps": [],
+"file": "api\\routes\\consumer.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/hotels/{hotel_id}",
+"deps": [],
+"file": "api\\routes\\consumer.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/orders/{order_id}/checkout",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\consumer.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/trips",
+"deps": [],
+"file": "api\\routes\\consumer.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/orders/{order_id}/detail",
+"deps": [],
+"file": "api\\routes\\consumer.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/demo/orders/{order_id}/complete-stay",
+"deps": [],
+"file": "api\\routes\\consumer.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/checkout-capabilities",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_checkout.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/checkout/{vertical}/{order_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_checkout.py"
+},
+{
+"method": "GET",
+"path": "/v1/hotels/{hotel_id}/value-layers",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\consumer_growth_direct_value.py"
+},
+{
+"method": "PUT",
+"path": "/v1/supplier/direct-value/hotels/{hotel_id}/offer",
+"deps": [
+"admin_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\consumer_growth_direct_value.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/direct-value/hotels/{hotel_id}/economics/simulate",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\consumer_growth_direct_value.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/direct-value/hotels/{hotel_id}/economics",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\consumer_growth_direct_value.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/direct-value/benchmarks",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_growth_direct_value.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/direct-value/overview",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_growth_direct_value.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/growth/events",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_growth_direct_value.py"
+},
+{
+"method": "POST",
+"path": "/v1/trips/journeys/{journey_id}/invites",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_growth_direct_value.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/growth/trip-invites/{token}/join",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_growth_direct_value.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/travelers/{traveler_id}/claim-requests",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_growth_direct_value.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/traveler-claims/{token}/accept",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_growth_direct_value.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/trips/import-intents",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_growth_direct_value.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/consumer-growth/metrics",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\consumer_growth_direct_value.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/auth/registration",
+"deps": [],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/auth/register",
+"deps": [],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/auth/login",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/auth/refresh",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/auth/logout",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/me",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/travelers",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/travelers",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "DELETE",
+"path": "/v1/consumer/travelers/{traveler_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/wallet/payment-methods/tokenize",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/wallet",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "DELETE",
+"path": "/v1/consumer/wallet/payment-methods/{payment_method_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/orders",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/orders/{order_id}/secure-checkout",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/reviews/pending",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/reviews/{review_id}/second-trigger",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/reviews/{review_id}/star",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/reviews/{review_id}/tags",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/reviews/{review_id}/complete",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_identity.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/consumer-lifecycle/project",
+"deps": [
+"admin_principal",
+"connector_admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_unified_lifecycle.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/unified-trips",
+"deps": [
+"connector_admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_unified_lifecycle.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/unified-trips/external-orders",
+"deps": [
+"connector_admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_unified_lifecycle.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/consumer-lifecycle/external-orders/project",
+"deps": [
+"connector_admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_unified_lifecycle.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/unified-trips/{lid}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\consumer_unified_lifecycle.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/transaction-orders",
+"deps": [
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/transaction-orders/{vertical}/{order_id}",
+"deps": [
+"consumer_principal",
+"perm:admin:finance",
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/transaction-orders/{vertical}/{order_id}",
+"deps": [
+"consumer_principal",
+"perm:admin:finance",
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/transaction-orders/{vertical}/{order_id}",
+"deps": [
+"perm:admin:finance",
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/dashboard",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/orders",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/refunds",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/stay-credits",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/liabilities",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/risk-cases",
+"deps": [
+"perm:admin:read",
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/judgments",
+"deps": [
+"perm:admin:read",
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/connectors",
+"deps": [
+"perm:admin:orders",
+"perm:admin:read",
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/dashboard",
+"deps": [
+"perm:admin:finance",
+"perm:admin:orders",
+"perm:admin:read"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/queues",
+"deps": [
+"perm:admin:finance",
+"perm:admin:orders",
+"perm:admin:read"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/orders",
+"deps": [
+"perm:admin:finance",
+"perm:admin:orders"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/refunds",
+"deps": [
+"(require_permiss",
+"perm:admin:finance",
+"perm:admin:trust"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/liabilities",
+"deps": [
+"perm:admin:connector",
+"perm:admin:finance",
+"perm:admin:trust"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/risk-cases",
+"deps": [
+"perm:admin:connector",
+"perm:admin:finance",
+"perm:admin:trust"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/judgments",
+"deps": [
+"perm:admin:connector",
+"perm:admin:finance",
+"perm:admin:trust"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/connectors",
+"deps": [
+"perm:admin:connector",
+"perm:admin:finance"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/settlement",
+"deps": [
+"perm:admin:finance"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/ticket-operations/{vertical}/{order_id}",
+"deps": [
+"admin_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/ticket-operations/{vertical}/{order_id}",
+"deps": [
+"admin_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/ticket-operations/{vertical}/{order_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/ticket-operations/{vertical}/{order_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\dashboard.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/external-sandbox-certification/dashboard",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\external_sandbox_certification.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/external-sandbox-certification/intakes",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\external_sandbox_certification.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/external-sandbox-certification/intakes/{intake_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\external_sandbox_certification.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/external-sandbox-certification/intakes/{intake_id}/credential-bindings",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\external_sandbox_certification.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/external-sandbox-certification/intakes/{intake_id}/assess",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\external_sandbox_certification.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/external-sandbox-certification/intakes/{intake_id}/suites",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\external_sandbox_certification.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/external-sandbox-certification/suites/{suite_id}/execute",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\external_sandbox_certification.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/external-sandbox-certification/runs/{run_id}/evidence",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\external_sandbox_certification.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/external-sandbox-certification/runs/{run_id}/callback-proofs",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\external_sandbox_certification.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/external-sandbox-certification/runs/{run_id}/decision",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\external_sandbox_certification.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/external-sandbox-certification/runs/{run_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\external_sandbox_certification.py"
+},
+{
+"method": "POST",
+"path": "/v1/orders/{order_id}/fare-options",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/orders/{order_id}/cancellation-quote",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/orders/{order_id}/cancel",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/orders/{order_id}/change-quote",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/orders/{order_id}/change",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "GET",
+"path": "/v1/orders/{order_id}/cash-after-sales",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/orders/{order_id}/cash-after-sales/{operation_id}/reconcile",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/orders/{order_id}/cash-after-sales/{operation_id}/retry-payment",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/orders/{order_id}/stay-credit-quote",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/orders/{order_id}/convert-to-stay-credit",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "GET",
+"path": "/v1/stay-credits/{credit_id}",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/stay-credits/{credit_id}/redemption-quote",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/stay-credits/{credit_id}/redeem",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/stay-credits/{credit_id}/reconcile-conversion",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/stay-credits/{credit_id}/redemptions/{redemption_id}/reconcile",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/stay-credits/{credit_id}/redemptions/{redemption_id}/retry-payment",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/stay-credits/{credit_id}/redemptions/{redemption_id}/cancellation-quote",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/stay-credits/{credit_id}/redemptions/{redemption_id}/cancel",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/stay-credits/{credit_id}/redemptions/{redemption_id}/reconcile-cancellation",
+"deps": [
+"legacy_order_access"
+],
+"file": "api\\routes\\fare.py"
+},
+{
+"method": "POST",
+"path": "/v1/flights/search",
+"deps": [],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "POST",
+"path": "/v1/flights/journeys/search",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "POST",
+"path": "/v1/flights/journeys/compose",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "GET",
+"path": "/v1/flights/offers/{offer_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "POST",
+"path": "/v1/flights/offers/{offer_id}/prebook",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "POST",
+"path": "/v1/flights/orders",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "POST",
+"path": "/v1/flights/orders/{order_id}/checkout",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "GET",
+"path": "/v1/flights/orders/{order_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "GET",
+"path": "/v1/flights/trips",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "POST",
+"path": "/v1/flights/orders/{order_id}/change-quote",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "POST",
+"path": "/v1/flights/orders/{order_id}/execute-change/{quote_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "GET",
+"path": "/v1/flights/orders/{order_id}/refund-quote",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "POST",
+"path": "/v1/flights/orders/{order_id}/coupon-refund-quotes",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "POST",
+"path": "/v1/flights/orders/{order_id}/coupon-refunds/{refund_id}",
+"deps": [
+"consumer_principal",
+"order_admin_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "POST",
+"path": "/v1/flights/orders/{order_id}/refund",
+"deps": [
+"consumer_principal",
+"order_admin_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/flights/orders/{order_id}/external-state",
+"deps": [
+"consumer_principal",
+"order_admin_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "POST",
+"path": "/v1/flights/orders/{order_id}/refund-confirmed",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\flight.py"
+},
+{
+"method": "POST",
+"path": "/v1/go-ai/orchestrate",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\go_ai.py"
+},
+{
+"method": "POST",
+"path": "/v1/go-ai",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\go_ai.py"
+},
+{
+"method": "POST",
+"path": "/v1/go-ai/hotel-recommendations",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\go_ai.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/go-ai/providers",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\go_ai.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/go-ai/providers/reload",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\go_ai.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/go-ai/requests/{request_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\go_ai.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/go-identity/credentials",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/go-identity/credentials",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/go-identity/credentials/{credential_id}/owner-privilege",
+"deps": [
+"(supplier_principa",
+"consumer_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/go-identity/credentials/{credential_id}/friends-family-invitations",
+"deps": [
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/go-identity/entitlement",
+"deps": [
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "PUT",
+"path": "/v1/supplier/go-identity/programs/{program_type}",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/go-identity/programs",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/go-identity/configuration",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "PUT",
+"path": "/v1/supplier/go-identity/configuration",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/go-identity/friends-family-invitations/{invitation_id}/consume",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/go-identity/credentials/{credential_id}/evidence",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/go-identity/credentials/{credential_id}/transition",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/go-identity/credentials",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/go-identity/revalidation/tick",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/go-identity/credentials/{credential_id}/risk-signals",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\go_identity_entitlements.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/judgment/good-hotel-standards/{version_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\good_hotel_standard.py"
+},
+{
+"method": "GET",
+"path": "/health",
+"deps": [],
+"file": "api\\routes\\health.py"
+},
+{
+"method": "GET",
+"path": "/v1/direct/{slug}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/{slug}/reservations",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/v1/direct/reservations/{reservation_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/reservations/{reservation_id}/cancel",
+"deps": [
+"consumer_principal",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/v1/direct/{slug}/catalog",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/{slug}/availability",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hosted-direct/dashboard",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/aoluguya/configure",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/offers",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/publish",
+"deps": [
+"hosted_admin",
+"perm:admin:rules"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/reservations/{reservation_id}/decision",
+"deps": [
+"hosted_admin",
+"perm:admin:approve",
+"perm:admin:rules"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/reservations/{reservation_id}/cancel",
+"deps": [
+"hosted_admin",
+"perm:admin:approve",
+"perm:admin:rules"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/content-snapshots",
+"deps": [
+"hosted_admin",
+"perm:admin:approve",
+"perm:admin:rules"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/content-snapshots/{snapshot_id}/approve",
+"deps": [
+"consumer_principal",
+"hosted_admin",
+"perm:admin:approve",
+"perm:admin:rules"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/media-assets",
+"deps": [
+"consumer_principal",
+"hosted_admin",
+"perm:admin:rules"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/operations-gate",
+"deps": [
+"consumer_principal",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/{slug}/managed-reservations",
+"deps": [
+"consumer_principal",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/calendar/bootstrap",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/hosted-direct/inventory-pools/{pool_id}/days/{stay_date}",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/hosted-direct/rate-variants/{variant_id}/days/{stay_date}",
+"deps": [
+"(",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/{slug}/phone-reservations",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/managed-reservations/{reservation_id}/actions",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/managed-reservations/{reservation_id}/reschedule",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/managed-reservations/expire-pending",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/operations-dashboard",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/staff-roles",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/shift-handovers",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/reservations/{reservation_id}/guest-access",
+"deps": [
+"(hosted_",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/{slug}/governed-phone-reservations",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/reservations/{reservation_id}/action-approvals",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/action-approvals/{approval_id}/approve",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/sla-escalations/run",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hosted-direct/reservations/{reservation_id}/arrival-voucher",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/daily-closes",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/uat-scenarios",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/frontdesk-command-center",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/alipay/hotels/{hotel_id}/merchant-binding",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/alipay/merchant-bindings/{binding_id}/credentials",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/alipay/hotels/{hotel_id}/activation-gate",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/alipay/reservations/{reservation_id}/authorizations",
+"deps": [
+"(h",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/alipay/authorizations/{authorization_id}/release",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/alipay/authorizations/{authorization_id}/fulfill",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/alipay/authorizations/{authorization_id}/capture",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/alipay/authorizations/{authorization_id}/adjustments",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/alipay/adjustments/{approval_id}/approve",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/webhooks/alipay/safeguarded-settlement",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/alipay/authorizations/{authorization_id}/reconcile",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/alipay/authorizations/{authorization_id}/funding-movements/{movement_id}/unknown-episodes",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/alipay/unknown-funding-episodes/{episode_id}/resolve",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/stays/reservations/{reservation_id}",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/stays/{stay_id}/identity-evidence",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/stays/{stay_id}/arrive",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/stays/{stay_id}/room-assignment",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/stays/{stay_id}/check-in",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/stays/{stay_id}/extend",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/stays/{stay_id}/check-out",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/stays/{stay_id}/no-show",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/stays/{stay_id}/disputes",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/stays/{stay_id}/settlement-eligibility",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/stays/{stay_id}/timeline",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/post-stay/stays/{stay_id}/cases",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/post-stay/cases/{case_id}/evidence",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/post-stay/cases/{case_id}/responses",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/post-stay/cases/{case_id}/escalate",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/post-stay/cases/{case_id}/mediation",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/post-stay/cases/{case_id}/decisions",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/post-stay/decisions/{decision_id}/approve",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/post-stay/decisions/{decision_id}/refund-eligibility",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/post-stay/refund-eligibilities/{eligibility_id}/execute",
+"deps": [
+"consumer_principal",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/post-stay/cases/{case_id}/reconcile",
+"deps": [
+"consumer_principal",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/post-stay/cases/{case_id}/close",
+"deps": [
+"consumer_principal",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/reservations/{reservation_id}/checkout",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/direct-reservations",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/reservations/{reservation_id}/cases",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/reservations/{reservation_id}/refunds/{eligibility_id}/retry",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/reservations/{reservation_id}/fare/cancellation-quote",
+"deps": [
+"consumer_principal",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/reservations/{reservation_id}/fare/cancel",
+"deps": [
+"consumer_principal",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/offers/{offer_id}/fare-rules",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/reservations/{reservation_id}/fare/no-show-quote",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/reservations/{reservation_id}/fare/no-show-review",
+"deps": [
+"consumer_principal",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/reservations/{reservation_id}/fare/change-quote",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/reservations/{reservation_id}/fare/change",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/reservations/{reservation_id}/fare/credit-quote",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/reservations/{reservation_id}/fare/convert-credit",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/stay-credits",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/stay-credits/{credit_id}/quote",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/stay-credits/{credit_id}/redeem",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/stay-credits/expire",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/reservations/{reservation_id}/disruptions",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hosted-direct/disruptions/{case_id}",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/disruptions/{case_id}/evidence",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/disruptions/{case_id}/review",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/disruptions/{case_id}/execute",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/fault-mandates",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/fault-mandates/{mandate_id}/revoke",
+"deps": [
+"consumer_principal",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/fault-recoveries",
+"deps": [
+"consumer_principal",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/direct/reservations/{reservation_id}/disruption/retry",
+"deps": [
+"consumer_principal",
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hosted-direct/disruptions",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hosted-direct/disruption-candidates",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/fault-finance",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/publication-preview",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hosted-direct/hotels/{hotel_id}/publication-review",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "GET",
+"path": "/v1/direct/{slug}/media/{media_id}",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/hosted-direct/inventory-pools/{pool_id}/room-registry",
+"deps": [
+"hosted_admin"
+],
+"file": "api\\routes\\hosted_direct_booking.py"
+},
+{
+"method": "POST",
+"path": "/v1/search/hotels",
+"deps": [
+"(consumer"
+],
+"file": "api\\routes\\hotel.py"
+},
+{
+"method": "POST",
+"path": "/v1/search/hotels/member-context",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\hotel.py"
+},
+{
+"method": "POST",
+"path": "/v1/offers/{offer_id}/prebook",
+"deps": [],
+"file": "api\\routes\\hotel.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-autopage/factory/overview",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-autopage/factory/hotels/{hotel_id}",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-autopage/factory/hotels/{hotel_id}/publication",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-autopage/sources/ingest",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-autopage/hotels/{hotel_id}/compose",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-autopage/hotels/{hotel_id}/contacts",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-autopage/go-direct-registrations/{registration_direct_id}/decision",
+"deps": [
+"catalog_writer",
+"supplier_account_principal"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-autopage/contacts/{contact_id}/suppress",
+"deps": [
+"catalog_writer",
+"supplier_account_principal"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/v1/hotel-pages/{slug}",
+"deps": [
+"catalog_writer",
+"supplier_account_principal"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/hotels/{hotel_id}/go-direct-registration",
+"deps": [
+"catalog_writer",
+"supplier_account_principal"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-autopage/media/harvest",
+"deps": [
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-autopage/media/harvest-batch",
+"deps": [
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-autopage/media/{asset_id}/rights",
+"deps": [
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-autopage/media/assets",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-autopage/media/{asset_id}/content",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/v1/hotel-media/{asset_id}",
+"deps": [],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-discovery/seeds",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-discovery/seeds",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-discovery/jobs/{job_id}/run",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-discovery/jobs/{job_id}/retry",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-discovery/jobs/{job_id}",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-discovery/jobs/{job_id}/snapshots",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-discovery/batches/run",
+"deps": [
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-infrastructure/build-runs",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-infrastructure/build-runs",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-infrastructure/exceptions",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-infrastructure/build-runs/{run_id}/retry",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-infrastructure/clean-slate/harbin/preview",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-infrastructure/clean-slate/harbin/execute",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-infrastructure/golden-build/aoluguya",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-infrastructure/hotels/{hotel_id}/completeness-gate",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-infrastructure/hotels/{hotel_id}/travel-graph-project",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-infrastructure/build-runs/{run_id}/advance-after-acceptance",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-infrastructure/catalog-scope/preview",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-infrastructure/catalog-scope/activate",
+"deps": [
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-infrastructure/catalog-scope/status",
+"deps": [
+"admin_principal",
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-infrastructure/catalog-scope/nationwide/preview",
+"deps": [
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-infrastructure/catalog-scope/nationwide/activate",
+"deps": [
+"catalog_writer"
+],
+"file": "api\\routes\\hotel_autopage_factory.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/properties/{property_id}/direct-submission-reviews",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_direct_submission.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/properties/{property_id}/direct-submission-reviews",
+"deps": [
+"supplier_principal",
+"writer"
+],
+"file": "api\\routes\\hotel_direct_submission.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/properties/{property_id}/direct-submission-reviews/{review_id}",
+"deps": [
+"supplier_principal",
+"writer"
+],
+"file": "api\\routes\\hotel_direct_submission.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-autopage/direct-submission-reviews",
+"deps": [
+"writer"
+],
+"file": "api\\routes\\hotel_direct_submission.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-autopage/direct-submission-reviews/{review_id}/inspection",
+"deps": [
+"writer"
+],
+"file": "api\\routes\\hotel_direct_submission.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-autopage/direct-submission-reviews/{review_id}/media/{asset_id}",
+"deps": [
+"writer"
+],
+"file": "api\\routes\\hotel_direct_submission.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-autopage/direct-submission-reviews/{review_id}",
+"deps": [
+"writer"
+],
+"file": "api\\routes\\hotel_direct_submission.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-autopage/direct-submission-reviews/{review_id}/approve",
+"deps": [
+"writer"
+],
+"file": "api\\routes\\hotel_direct_submission.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-autopage/direct-submission-reviews/{review_id}/revoke",
+"deps": [
+"writer"
+],
+"file": "api\\routes\\hotel_direct_submission.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-autopage/direct-submission-reviews/{review_id}/publish",
+"deps": [
+"writer"
+],
+"file": "api\\routes\\hotel_direct_submission.py"
+},
+{
+"method": "GET",
+"path": "/v1/hotel-pages/direct-submissions/{review_id}/media/{asset_id}",
+"deps": [],
+"file": "api\\routes\\hotel_direct_submission.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/properties",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/properties",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/one-click-import/providers",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/properties/{property_id}/one-click-import",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "PATCH",
+"path": "/v1/supplier/properties/{property_id}",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/properties/{property_id}/command-center",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/properties/{property_id}/product-graph",
+"deps": [
+"(supplier_pri",
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/properties/{property_id}/operating-snapshot",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/hotel-webpage",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/properties/{property_id}/room-types",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/properties/{property_id}/sellable-products",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/properties/{property_id}/rate-plans",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "PUT",
+"path": "/v1/supplier/properties/{property_id}/facilities",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "PUT",
+"path": "/v1/supplier/properties/{property_id}/policies",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "PUT",
+"path": "/v1/supplier/properties/{property_id}/ari/date-override",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/properties/{property_id}/operational-inbox",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/operational-inbox/{item_id}/transition",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "PUT",
+"path": "/v1/supplier/properties/{property_id}/go-offer-authority",
+"deps": [
+"(supp",
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/properties/{property_id}/media-uploads",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/properties/{property_id}/media-uploads",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/properties/{property_id}/media-uploads/{asset_id}/binding",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/properties/{property_id}/media-publication-requests",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/properties/{property_id}/media-publication-requests",
+"deps": [
+"(",
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/properties/{property_id}/direct-submission-verification",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/properties/{property_id}/media-uploads/{asset_id}/original",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\hotel_partner_core.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-supply-sandbox/dashboard",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\hotel_supply_sandbox.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-supply-sandbox/connectors",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\hotel_supply_sandbox.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-supply-sandbox/connectors/{connector_id}/authority",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\hotel_supply_sandbox.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-supply-sandbox/connectors/{connector_id}/credential",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\hotel_supply_sandbox.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-supply-sandbox/connectors/{connector_id}/mapping",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\hotel_supply_sandbox.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-supply-sandbox/connectors/{connector_id}/readiness",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\hotel_supply_sandbox.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-supply-sandbox/connectors/{connector_id}/provider-adapter-contract",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\hotel_supply_sandbox.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/hotel-supply-sandbox/connectors/{connector_id}/provider-adapter-readiness",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\hotel_supply_sandbox.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-supply-sandbox/connectors/{connector_id}/framework-certify",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\hotel_supply_sandbox.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/hotel-supply-sandbox/connectors/{connector_id}/external-certify",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\hotel_supply_sandbox.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/orders/{order_id}/workbench",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\interactive.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/orders/{order_id}/cancellation-quote",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\interactive.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/orders/{order_id}/cancel",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\interactive.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/orders/{order_id}/change-quote",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\interactive.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/orders/{order_id}/change",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\interactive.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/risk-cases/{risk_id}/workbench",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\interactive.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/liabilities/{liability_id}/workbench",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\interactive.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/settlement/{supplier_id}",
+"deps": [
+"perm:admin:finance"
+],
+"file": "api\\routes\\interactive.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/judgments/{judgment_id}/evidence-replay",
+"deps": [
+"perm:admin:trust"
+],
+"file": "api\\routes\\interactive.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/connector-onboardings",
+"deps": [
+"perm:admin:connector",
+"perm:admin:read"
+],
+"file": "api\\routes\\interactive.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/approvals",
+"deps": [
+"perm:admin:read"
+],
+"file": "api\\routes\\interactive.py"
+},
+{
+"method": "POST",
+"path": "/v1/trips/journeys",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey.py"
+},
+{
+"method": "GET",
+"path": "/v1/trips/journeys",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey.py"
+},
+{
+"method": "GET",
+"path": "/v1/trips/journeys/{journey_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey.py"
+},
+{
+"method": "POST",
+"path": "/v1/trips/journeys/{journey_id}/items",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey.py"
+},
+{
+"method": "POST",
+"path": "/v1/trips/journeys/{journey_id}/disruptions/evaluate",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey_intelligence.py"
+},
+{
+"method": "GET",
+"path": "/v1/trips/journeys/{journey_id}/disruptions/latest",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey_intelligence.py"
+},
+{
+"method": "POST",
+"path": "/v1/trips/journeys/{journey_id}/advice/{advice_id}/acknowledge",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey_intelligence.py"
+},
+{
+"method": "POST",
+"path": "/v1/trips/journeys/{journey_id}/recovery-plans",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey_recovery.py"
+},
+{
+"method": "GET",
+"path": "/v1/trips/journeys/{journey_id}/recovery-plans/{plan_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey_recovery.py"
+},
+{
+"method": "POST",
+"path": "/v1/trips/journeys/{journey_id}/recovery-plans/{plan_id}/select",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey_recovery.py"
+},
+{
+"method": "POST",
+"path": "/v1/trips/journeys/{journey_id}/recovery-executions",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey_recovery_execution.py"
+},
+{
+"method": "POST",
+"path": "/v1/trips/journeys/{journey_id}/recovery-executions/{execution_id}/confirm",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey_recovery_execution.py"
+},
+{
+"method": "GET",
+"path": "/v1/trips/journeys/{journey_id}/recovery-executions/{execution_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey_recovery_execution.py"
+},
+{
+"method": "POST",
+"path": "/v1/trips/journeys/{journey_id}/recovery-executions/{execution_id}/items/{item_id}/resolve",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\journey_recovery_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/judgments/{hotel_id}/reevaluate",
+"deps": [],
+"file": "api\\routes\\judgment.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/judgment-hooks/{hook_id}/process",
+"deps": [],
+"file": "api\\routes\\judgment.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/judgment-hooks/process-pending",
+"deps": [],
+"file": "api\\routes\\judgment.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/judgments/{judgment_id}",
+"deps": [],
+"file": "api\\routes\\judgment.py"
+},
+{
+"method": "GET",
+"path": "/v1/hotels/{hotel_id}/judgment",
+"deps": [],
+"file": "api\\routes\\judgment.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/merge/room-mappings",
+"deps": [],
+"file": "api\\routes\\merge.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/merge/decisions/{decision_id}",
+"deps": [],
+"file": "api\\routes\\merge.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/merge/drift",
+"deps": [],
+"file": "api\\routes\\merge.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/auth/login",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/auth/refresh",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/devices",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobile/devices",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "DELETE",
+"path": "/v1/mobile/devices/{device_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobile/notifications",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/notifications/{notification_id}/read",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/deep-links/resolve",
+"deps": [
+"(consumer_princip",
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/app-open",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/orders/{order_id}/fare-options",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/orders/{order_id}/cancellation-quote",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobile/orders/{order_id}/cancellation-quotes/{quote_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/orders/{order_id}/cancel",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/orders/{order_id}/change-quote",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/orders/{order_id}/change",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobile/orders/{order_id}/cash-after-sales",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/orders/{order_id}/cash-after-sales/{operation_id}/reconcile",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/orders/{order_id}/cash-after-sales/{operation_id}/retry-payment",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/orders/{order_id}/stay-credit-quote",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobile/orders/{order_id}/convert-to-stay-credit",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/mobile/engagement/ingest",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/mobile/engagement/process-due",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/mobile/engagement/jobs",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/mobile/push-receipts/process",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/mobile/notifications/{notification_id}/push-receipts",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\mobile.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/rides/search",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/rides/orders",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/rentals/search",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/rentals/orders",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobility/orders/{order_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobility/trips",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/orders/{order_id}/modify",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobility/orders/{order_id}/refund-quote",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/orders/{order_id}/refund-confirmed",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/orders/{order_id}/cancel",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/orders/{order_id}/fulfillment",
+"deps": [
+"consumer_principal",
+"order_admin_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/mobility/orders/{order_id}/external-state",
+"deps": [
+"order_admin_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/rentals/orders/{order_id}/change-quotes",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/rentals/orders/{order_id}/changes/{quote_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\mobility.py"
+},
+{
+"method": "GET",
+"path": "/v1/flights/orders/{order_id}/check-in",
+"deps": [
+"consumer_principal",
+"travel_admin"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/flights/orders/{order_id}/check-in/facts",
+"deps": [
+"consumer_principal",
+"travel_admin"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "PUT",
+"path": "/v1/mobility/rides/orders/{ride_id}/flight-tracking",
+"deps": [
+"consumer_principal",
+"travel_admin"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobility/rides/orders/{ride_id}/flight-tracking",
+"deps": [
+"consumer_principal",
+"travel_admin"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobility/rides/orders/{ride_id}/flight-tracking/options",
+"deps": [
+"consumer_principal",
+"travel_admin"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/mobility/flight-adjustments",
+"deps": [
+"travel_admin"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/mobility/flight-events/verified",
+"deps": [
+"consumer_principal",
+"travel_admin"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/travel-fact-authorities",
+"deps": [
+"consumer_principal",
+"travel_admin"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/travel-fact-authorities/{authority_id}/review",
+"deps": [
+"consumer_principal",
+"supplier_principal",
+"travel_admin"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "POST",
+"path": "/v1/go-offer/requirements",
+"deps": [
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "GET",
+"path": "/v1/go-offer/requirements/{requirement_id}",
+"deps": [
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/go-offer/requirements/{requirement_id}/quotes",
+"deps": [
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "POST",
+"path": "/v1/go-offer/requirements/{requirement_id}/quotes/{quote_id}/select",
+"deps": [
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "POST",
+"path": "/v1/go-offer/requirements/{requirement_id}/quotes/{quote_id}/prebook-revalidate",
+"deps": [
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/go-offer/prebooks/{prebook_id}/revalidate",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "POST",
+"path": "/v1/go-offer/prebooks/{prebook_id}/order-handoff",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/go-offer/requirements",
+"deps": [
+"admin_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/go-offer/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\mother_plan_p0.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/named-supplier-execution/dashboard",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\named_supplier_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/named-supplier-execution/intakes/{intake_id}/adapters",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\named_supplier_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/named-supplier-execution/adapters/{adapter_id}/bindings",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\named_supplier_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/named-supplier-execution/suites/{suite_id}/authorizations",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\named_supplier_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/named-supplier-execution/authorizations/{authorization_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\named_supplier_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/named-supplier-execution/authorizations/{authorization_id}/execute",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\named_supplier_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/named-supplier-execution/attempts/{attempt_id}/transport-evidence",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\named_supplier_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/named-supplier-execution/attempts/{attempt_id}/decision",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\named_supplier_external_execution.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/named-supplier-execution/attempts/{attempt_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\named_supplier_external_execution.py"
+},
+{
+"method": "GET",
+"path": "/metrics",
+"deps": [
+"perm:admin:read"
+],
+"file": "api\\routes\\observability.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/ops/slo",
+"deps": [
+"perm:admin:approve",
+"perm:admin:read"
+],
+"file": "api\\routes\\observability.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/ops/incident-controls",
+"deps": [
+"perm:admin:approve",
+"perm:admin:read"
+],
+"file": "api\\routes\\observability.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/ops/incident-controls/{scope}/activate",
+"deps": [
+"perm:admin:approve"
+],
+"file": "api\\routes\\observability.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/ops/incident-controls/{scope}/deactivate",
+"deps": [
+"perm:admin:approve",
+"perm:admin:read"
+],
+"file": "api\\routes\\observability.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/security/signals",
+"deps": [
+"perm:admin:approve",
+"perm:admin:read"
+],
+"file": "api\\routes\\observability.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/ops/readiness",
+"deps": [
+"perm:admin:approve",
+"perm:admin:read"
+],
+"file": "api\\routes\\observability.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/ops/readiness/run",
+"deps": [
+"perm:admin:approve"
+],
+"file": "api\\routes\\observability.py"
+},
+{
+"method": "POST",
+"path": "/v1/payments/intents",
+"deps": [
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\omnichannel_payment.py"
+},
+{
+"method": "POST",
+"path": "/v1/payments/intents/{iid}/channel",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\omnichannel_payment.py"
+},
+{
+"method": "GET",
+"path": "/v1/payments",
+"deps": [
+"(admin_principa",
+"admin_principal",
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\omnichannel_payment.py"
+},
+{
+"method": "GET",
+"path": "/v1/payments/intents/{iid}/checkout-readiness",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\omnichannel_payment.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/payment-finance",
+"deps": [
+"admin_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\omnichannel_payment.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payments/merchant-bindings",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\omnichannel_payment.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payments/intents/{iid}/execute",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\omnichannel_payment.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payments/attempts/{aid}/simulate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\omnichannel_payment.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payments/intents/{iid}/reconcile",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\omnichannel_payment.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payments/intents/{iid}/psp-settlement-lines",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\omnichannel_payment.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payments/bank-statement-lines",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\omnichannel_payment.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/payments/finance-status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\omnichannel_payment.py"
+},
+{
+"method": "POST",
+"path": "/v1/webhooks/payments/{channel}",
+"deps": [],
+"file": "api\\routes\\omnichannel_payment.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/supplier-connectors/{onboarding_id}",
+"deps": [],
+"file": "api\\routes\\onboarding.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/supplier-connectors/{onboarding_id}/credentials",
+"deps": [],
+"file": "api\\routes\\onboarding.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/supplier-connectors/{onboarding_id}/credentials",
+"deps": [],
+"file": "api\\routes\\onboarding.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/supplier-connectors/{onboarding_id}/property-mappings",
+"deps": [],
+"file": "api\\routes\\onboarding.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/supplier-connectors/{onboarding_id}/property-mappings",
+"deps": [],
+"file": "api\\routes\\onboarding.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/supplier-connectors/property-mappings/{mapping_id}/review",
+"deps": [],
+"file": "api\\routes\\onboarding.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/supplier-connectors/{onboarding_id}/certify",
+"deps": [
+"perm:admin:connector"
+],
+"file": "api\\routes\\onboarding.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/supplier-connectors/{onboarding_id}/activation-request",
+"deps": [
+"perm:admin:connector"
+],
+"file": "api\\routes\\onboarding.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/supplier-connectors/{onboarding_id}/activate",
+"deps": [
+"perm:admin:connector"
+],
+"file": "api\\routes\\onboarding.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/supplier-connectors/{onboarding_id}/rollout",
+"deps": [
+"perm:admin:connector"
+],
+"file": "api\\routes\\onboarding.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/supplier-connectors/{onboarding_id}/suspend",
+"deps": [
+"perm:admin:connector"
+],
+"file": "api\\routes\\onboarding.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/operations/verticals/{vertical}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\operations_console.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/operations/reconciliations/rental/{order_id}/{refund_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\operations_console.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/operations/product-completeness",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\operations_console.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/operations/suppliers",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\operations_console.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/operations/reviews",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\operations_console.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/operations/recommendations",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\operations_console.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/operations/stars",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\operations_console.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/operations/truth",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\operations_console.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/operations/trips",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\operations_console.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/ops/outbox/run-once",
+"deps": [],
+"file": "api\\routes\\ops.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/ops/saga-recovery/run-once",
+"deps": [],
+"file": "api\\routes\\ops.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/order-supplier-fulfillments/{fid}",
+"deps": [
+"admin_principal",
+"order_admin_principal"
+],
+"file": "api\\routes\\order_supplier_fulfillment.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/order-supplier-fulfillments/{fid}/supplier-fact",
+"deps": [
+"order_admin_principal"
+],
+"file": "api\\routes\\order_supplier_fulfillment.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/outbox/drain",
+"deps": [],
+"file": "api\\routes\\outbox.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/p0/design-code-freeze/status",
+"deps": [],
+"file": "api\\routes\\p0_design_code_freeze.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/p0/design-code-freeze/providers",
+"deps": [],
+"file": "api\\routes\\p0_design_code_freeze.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/p0/design-code-freeze/cancel-refund-state-machine",
+"deps": [],
+"file": "api\\routes\\p0_design_code_freeze.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/p0/final-closure/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\p0_final_closure.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/p0/final-closure/seal",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\p0_final_closure.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/paired-connector-pilot/dashboard",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\paired_connector_pilot.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/paired-connector-pilot/pairs",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\paired_connector_pilot.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/paired-connector-pilot/pairs/{pair_id}/scenarios",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\paired_connector_pilot.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/paired-connector-pilot/pairs/{pair_id}/drill-gate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\paired_connector_pilot.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/paired-connector-pilot/pairs/{pair_id}/kill-switch",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\paired_connector_pilot.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/paired-connector-pilot/scenarios/{scenario_id}/execute",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\paired_connector_pilot.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/paired-connector-pilot/executions/{execution_id}/callbacks",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\paired_connector_pilot.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/paired-connector-pilot/executions/{execution_id}/reconcile",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\paired_connector_pilot.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/paired-connector-pilot/executions/{execution_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\paired_connector_pilot.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payment-sandbox/aoluguya/readiness",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\payment_sandbox_runtime.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/payment-sandbox/aoluguya/readiness",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\payment_sandbox_runtime.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/payment-sandbox/aoluguya/certification-preflight",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\payment_sandbox_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payment-sandbox/aoluguya/certify",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\payment_sandbox_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payment-sandbox/intents/{intent_id}/payment-link",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\payment_sandbox_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payment-sandbox/intents/{intent_id}/settlement-release-gate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\payment_sandbox_runtime.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/payment-sandbox/aoluguya/cutover-safety",
+"deps": [
+"(ad",
+"admin_principal"
+],
+"file": "api\\routes\\payment_sandbox_runtime.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/payment-sandbox/aoluguya/evidence-ledger",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\payment_sandbox_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payment-sandbox/aoluguya/{channel}/certification-revoke",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\payment_sandbox_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payment-sandbox/aoluguya/{channel}/credential-rotate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\payment_sandbox_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payment-sandbox/aoluguya/{channel}/executor-kill-switch",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\payment_sandbox_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payment-sandbox/aoluguya/{channel}/cutover-request",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\payment_sandbox_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/payment-sandbox/aoluguya/cutover-approvals/{approval_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\payment_sandbox_runtime.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/vault/bootstrap",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/imports",
+"deps": [
+"(consumer_princ",
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/profile/provider-connections/options",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/profile/provider-connections",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/provider-connections",
+"deps": [
+"(consumer_principa",
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/provider-connections/{connection_id}/upload",
+"deps": [
+"(connector_admin_prin",
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/provider-connections/{connection_id}/disconnect",
+"deps": [
+"connector_admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "DELETE",
+"path": "/v1/consumer/profile/provider-connections/{connection_id}",
+"deps": [
+"(consumer_princip",
+"connector_admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/profile/provider-connections/{connection_id}/complete",
+"deps": [
+"connector_admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/profile/imports",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/profile/sources",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/sources/{source_fingerprint}/connection",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/profile/imports/{import_job_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/imports/{import_job_id}/items/{item_id}/inspect",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/imports/{import_job_id}/items/{item_id}/traveler",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/imports/{import_job_id}/items/{item_id}/review",
+"deps": [
+"(consumer_",
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/imports/{import_job_id}/commit",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/profile/vault",
+"deps": [
+"(consumer_princip",
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/profile/completeness",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/profile/consents",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/export",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "DELETE",
+"path": "/v1/consumer/profile/travelers/{traveler_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "PATCH",
+"path": "/v1/consumer/profile/travelers/{traveler_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "PATCH",
+"path": "/v1/consumer/profile/facts/{fact_id}",
+"deps": [
+"(consumer_princip",
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/consents",
+"deps": [
+"(consu",
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "DELETE",
+"path": "/v1/consumer/profile/consents/{consent_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/profile/data-release",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "PUT",
+"path": "/v1/consumer/profile/travelers/{traveler_id}/permissions/{permission_type}",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "DELETE",
+"path": "/v1/consumer/profile/facts/{fact_id}",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "DELETE",
+"path": "/v1/consumer/profile/sources/{source_fingerprint}",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/profile/imports",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/profile/data-releases",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\personal_travel_vault.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/phase1-closure/capability-matrix",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\phase1_closure.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/phase1-closure/source-selection",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\phase1_closure.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/phase1-closure/evidence-policy",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\phase1_closure.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connectors/{connector_id}/runtime/authorize",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connector_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connectors/{connector_id}/runtime/operations",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connector_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connector-runtime/operations/{operation_id}/dispatch",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connector_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connector-runtime/operations/{operation_id}/poll-observations",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connector_runtime.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/production-connector-runtime/operations/{operation_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connector_runtime.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/production-connector-runtime/reconciliations/due",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connector_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connector-runtime/reconciliations/{reconciliation_id}/claim",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connector_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connector-runtime/reconciliations/{reconciliation_id}/renew",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connector_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connector-runtime/reconciliations/{reconciliation_id}/resolution",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connector_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connector-runtime/reconciliations/{reconciliation_id}/review",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connector_runtime.py"
+},
+{
+"method": "POST",
+"path": "/v1/webhooks/production-connectors/{connector_id}",
+"deps": [],
+"file": "api\\routes\\production_connector_runtime.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/production-connectors/dashboard",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connectors.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connectors/{connector_id}/capabilities",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connectors.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connectors/{connector_id}/authority",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connectors.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connectors/{connector_id}/credential-references",
+"deps": [
+"(adm",
+"admin_principal"
+],
+"file": "api\\routes\\production_connectors.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connectors/{connector_id}/certifications",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connectors.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/production-connectors/{connector_id}/runtime-health",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connectors.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connectors/{connector_id}/live-gate-assessments",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connectors.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connectors/{connector_id}/activation-changes",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connectors.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/production-connectors/activation-changes/{change_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connectors.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/production-connectors/{connector_id}/kill-switch",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\production_connectors.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/r8/readiness",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\r8_release.py"
+},
+{
+"method": "POST",
+"path": "/v1/rail/search",
+"deps": [
+"optional_consumer_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "GET",
+"path": "/v1/rail/offers/{offer_id}",
+"deps": [
+"consumer_principal",
+"optional_consumer_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "POST",
+"path": "/v1/rail/offers/{offer_id}/prebook",
+"deps": [
+"consumer_principal",
+"optional_consumer_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "POST",
+"path": "/v1/rail/orders",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "POST",
+"path": "/v1/rail/orders/{order_id}/checkout",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "GET",
+"path": "/v1/rail/orders/{order_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "GET",
+"path": "/v1/rail/trips",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "POST",
+"path": "/v1/rail/orders/{order_id}/change-quote",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "POST",
+"path": "/v1/rail/orders/{order_id}/execute-change/{quote_id}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "GET",
+"path": "/v1/rail/orders/{order_id}/refund-quote",
+"deps": [
+"consumer_principal",
+"order_admin_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "POST",
+"path": "/v1/rail/orders/{order_id}/refund",
+"deps": [
+"consumer_principal",
+"order_admin_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/rail/orders/{order_id}/external-state",
+"deps": [
+"consumer_principal",
+"order_admin_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "POST",
+"path": "/v1/rail/orders/{order_id}/refund-confirmed",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "POST",
+"path": "/v1/rail/orders/{order_id}/cancel-unpaid",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\rail.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/operations/module-depth",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\rc20_module_depth.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/p0/0100/readiness",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\real_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/p0/0100/payment-intents/{intent_id}/execute",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\real_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/p0/0100/fulfillments/{fulfillment_id}/execute",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\real_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/v1/webhooks/p0/0100/payment/{operation_id}",
+"deps": [],
+"file": "api\\routes\\real_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/v1/webhooks/p0/0100/supplier/{operation_id}",
+"deps": [],
+"file": "api\\routes\\real_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/v1/webhooks/p0/0100/psp-settlement/{operation_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\real_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/v1/webhooks/p0/0100/bank-feed/{provider_key}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\real_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/p0/0100/payment-intents/{intent_id}/reconcile",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\real_external_execution.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/chaos/schedules",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_continuous_chaos.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/chaos/scheduler/tick",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_continuous_chaos.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/trend/evaluate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_continuous_chaos.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/waivers",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_continuous_chaos.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/waivers/{waiver_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_continuous_chaos.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/continuous-status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_continuous_chaos.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/control-plane/cases",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_control_plane.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/control-plane/cases/{case_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_control_plane.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/control-plane/cases/{case_id}/assign",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_control_plane.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/control-plane/cases/{case_id}/acknowledge",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_control_plane.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/control-plane/sla-policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_control_plane.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/control-plane/queues",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_control_plane.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/control-plane/sla/tick",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_control_plane.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/control-plane/cases/{case_id}/transfer",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_control_plane.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/control-plane/cases/{case_id}/close",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_control_plane.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/credential-authority/trust-roots",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_credential_authority.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/credential-authority/issuers",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_credential_authority.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/credential-authority/policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_credential_authority.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/credential-authority/issuances",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_credential_authority.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/credential-authority/issuances/{issuance_id}/verify",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_credential_authority.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/credential-authority/issuances/{issuance_id}/issue",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_credential_authority.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/credential-authority/revocation-sync",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_credential_authority.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/credential-authority/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_credential_authority.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/learning/data-quality/tick",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_data_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/learning/data-quality",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_data_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/learning/quarantine",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_data_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/learning/supplier-mappings",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_data_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/learning/supplier-mappings",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_data_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/learning/privacy-budgets",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_data_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/learning/kill-switches",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_data_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/learning/kill-switches",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_data_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/appetite",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_appetite.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/appetite/{appetite_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_appetite.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/stress-scenarios",
+"deps": [
+"(ad",
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_appetite.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/stress/evaluate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_appetite.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/stress-freeze/release",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_appetite.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/appetite/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_appetite.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast/policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_forecast.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast/policies/{policy_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_forecast.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/indicators",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_forecast.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast/evaluate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_forecast.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast/restriction/release",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_forecast.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_forecast.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/limits",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_portfolio.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/limits/{limit_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_portfolio.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/positions",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_portfolio.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/portfolio/evaluate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_portfolio.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/portfolio-freeze/release",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_portfolio.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_enterprise_risk_portfolio.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/exception-debt/burn-down/policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_exception_debt_burndown.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/exception-debt/aging/evaluate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_exception_debt_burndown.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/exception-debt/burn-down/plans",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_exception_debt_burndown.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/exception-debt/burn-down/milestones/{milestone_id}/complete",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_exception_debt_burndown.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/exception-debt/governance/tick",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_exception_debt_burndown.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/exception-debt/burn-down/plans/{plan_id}/executive-risk-acceptance",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_exception_debt_burndown.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/exception-debt/executive-risk-acceptances/{acceptance_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_exception_debt_burndown.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/waiver-freeze/release",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_exception_debt_burndown.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/exception-debt/burn-down/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_exception_debt_burndown.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/experimentation/experiments",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_experimentation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/experimentation/experiments",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_experimentation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/experimentation/experiments/{experiment_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_experimentation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/experimentation/experiments/{experiment_id}/start",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_experimentation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/experimentation/experiments/{experiment_id}/evaluate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_experimentation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/experimentation/experiments/{experiment_id}/calibrate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_experimentation.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/experimentation/decisions",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_experimentation.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/experimentation/calibrations",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_experimentation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/external-trust/checkpoints",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_external_trust_witness.py"
+},
+{
+"method": "GET",
+"path": "/v1/trust/transparency/merkle/checkpoint",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_external_trust_witness.py"
+},
+{
+"method": "GET",
+"path": "/v1/trust/transparency/merkle/proof/{sequence_no}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_external_trust_witness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/external-trust/witnesses",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_external_trust_witness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/external-trust/checkpoints/{checkpoint_id}/cosign",
+"deps": [
+"(admin_",
+"admin_principal"
+],
+"file": "api\\routes\\recovery_external_trust_witness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/external-trust/region-replicas",
+"deps": [
+"(admin_p",
+"admin_principal"
+],
+"file": "api\\routes\\recovery_external_trust_witness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/external-trust/admission-policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_external_trust_witness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/external-trust/admission/evaluate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_external_trust_witness.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/external-trust/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_external_trust_witness.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/federated-trust/federations",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_federated_trust.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/federated-trust/credentials/{credential_id}/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_federated_trust.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/federated-trust/admission-policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_federated_trust.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/federated-trust/admission/evaluate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_federated_trust.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/federated-trust/issuer-compromise",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_federated_trust.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/federated-trust/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_federated_trust.py"
+},
+{
+"method": "GET",
+"path": "/v1/trust/credentials/{credential_id}/status",
+"deps": [],
+"file": "api\\routes\\recovery_federated_trust.py"
+},
+{
+"method": "GET",
+"path": "/v1/trust/transparency/checkpoint",
+"deps": [],
+"file": "api\\routes\\recovery_federated_trust.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-artifacts/policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_artifact_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-artifacts/policies/{policy_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_artifact_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-artifacts/registry",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_artifact_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-artifacts/sbom",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_artifact_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-artifacts/attestations",
+"deps": [
+"(admin_princ",
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_artifact_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-artifacts/integrity",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_artifact_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-artifacts/promotion-bindings",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_artifact_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-artifacts/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_artifact_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-portfolio-champions",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_champion_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-portfolio-champions/continuity",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_champion_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-portfolio-champions/challenges",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_champion_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-portfolio-champions/compare",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_champion_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-portfolio-champions/replacement-decision",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_champion_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-portfolio-champions/transition",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_champion_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-portfolio-champions/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_champion_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-drift/policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_drift_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-drift/policies/{policy_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_drift_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-drift/assess",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_drift_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-drift/retraining-requests",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_drift_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-drift/challengers",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_drift_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-drift/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_drift_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-generalization/policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_generalization.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-generalization/policies/{policy_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_generalization.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-generalization/adjacent",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_generalization.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-generalization/holdout",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_generalization.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-generalization/post-promotion-proof",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_generalization.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-generalization/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_generalization.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-model-governance/roles",
+"deps": [
+"(admin_principa",
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_model_promotion.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-model-governance/backtests",
+"deps": [
+"(adm",
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_model_promotion.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-model-governance/shadow",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_model_promotion.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-model-governance/promote",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_model_promotion.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-model-governance/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_model_promotion.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-feedback/outcomes",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_online_feedback.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-feedback/assessments",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_online_feedback.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-feedback/auto-degrade/release",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_online_feedback.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-feedback/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_online_feedback.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-segments/policies",
+"deps": [
+"(a",
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_online_segment_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-segments/policies/{policy_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_online_segment_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-segments/observations",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_online_segment_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-segments/assessments",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_online_segment_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-segments/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_online_segment_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation-portfolios",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_portfolio_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation-portfolios/conflicts",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_portfolio_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation-portfolios/candidates",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_portfolio_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation-portfolios/assess",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_portfolio_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation-portfolios/arbitrate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_portfolio_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation-portfolios/promotion-gate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_portfolio_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation-portfolios/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_portfolio_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation/policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_segment_remediation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation/policies/{policy_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_segment_remediation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation/targets",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_segment_remediation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation/validate-target",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_segment_remediation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation/cross-segment",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_segment_remediation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation/assess",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_segment_remediation.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-remediation/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_segment_remediation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-serving/policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_serving_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-serving/policies/{policy_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_serving_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-serving/deployments",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_serving_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-serving/runtime-identities",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_serving_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-serving/attestations",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_serving_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-serving/safety/release",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_serving_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-serving/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_serving_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-model-statistics/policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_statistical_promotion.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-model-statistics/policies/{policy_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_statistical_promotion.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-model-statistics/assess",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_statistical_promotion.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-model-statistics/promote",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_statistical_promotion.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-model-statistics/probation/tick",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_statistical_promotion.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-model-statistics/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_statistical_promotion.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-traffic/policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_traffic_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-traffic/policies/{policy_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_traffic_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-traffic/predictions",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_traffic_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-traffic/shadow-comparisons",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_traffic_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-traffic/budget-assessments",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_traffic_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-traffic/canary/progress",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_traffic_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-traffic/canary/rollback",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_traffic_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-traffic/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_traffic_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-training/policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_training_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-training/policies/{policy_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_training_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-training/features",
+"deps": [
+"(admin_principa",
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_training_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-training/datasets",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_training_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-training/data-quality",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_training_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-training/lineage",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_training_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-training/manifests",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_training_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-training/reproducibility",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_training_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-training/eligibility",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_training_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-training/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_forecast_training_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/learning/incidents",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_incident.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/learning/incidents",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_incident.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/learning/incidents/{incident_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_incident.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/learning/incidents/{incident_id}/postmortem",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_incident.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/learning/incidents/{incident_id}/resume-requests",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_incident.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/learning/change-requests/{change_request_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_incident.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/learning/change-requests/{change_request_id}/execute",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_incident.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/learning/incidents/{incident_id}/close",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_incident.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/learning/registry",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_registry.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/learning/rebuild",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_registry.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/learning/registry/{registry_id}/provenance",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_registry.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/learning/benchmarks",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_registry.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/learning/drift/tick",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_registry.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/learning/drift",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_registry.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/learning/registry/{registry_id}/revalidate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_learning_registry.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/adapters/{adapter_key}/webhooks",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_reconciliation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/reconciliation/run",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_reconciliation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/reconciliation/jobs/{job_id}/resolve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_reconciliation.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/adapters",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_reconciliation.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/releases/config-versions",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_release_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/releases/config-versions",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_release_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/releases/environment-bindings",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_release_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/releases/manifests",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_release_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/releases/manifests",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_release_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/releases/manifests/{manifest_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_release_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/releases/manifests/{manifest_id}/dry-run",
+"deps": [
+"(admin_prin",
+"admin_principal"
+],
+"file": "api\\routes\\recovery_release_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/releases/manifests/{manifest_id}/staging-evidence",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_release_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/releases/manifests/{manifest_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_release_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/releases/manifests/{manifest_id}/promote",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_release_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/releases/manifests/{manifest_id}/rollback",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_release_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/releases/drift/check",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_release_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/releases/drift",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_release_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/reliability/rebuild",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_reliability.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/reliability/profiles",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_reliability.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-calibration/models",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_risk_forecast_calibration.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-calibration/models/{model_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_risk_forecast_calibration.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-calibration/outcomes",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_risk_forecast_calibration.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-calibration/assess",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_risk_forecast_calibration.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-calibration/conservative-baseline/release",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_risk_forecast_calibration.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/enterprise-risk/forecast-calibration/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_risk_forecast_calibration.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/identity-lifecycle/identities/{identity_id}/keys",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_identity_lifecycle.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/identity-lifecycle/identities/{identity_id}/rotate-key",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_identity_lifecycle.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/identity-lifecycle/identities/{identity_id}/revoke",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_identity_lifecycle.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/identity-lifecycle/identities/{identity_id}/security-incidents",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_identity_lifecycle.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/identity-lifecycle/security-incidents/{incident_id}/contain",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_identity_lifecycle.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/identity-lifecycle/key-overlap/retire-expired",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_identity_lifecycle.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/identity-lifecycle/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_identity_lifecycle.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/identity-reissuance/requests",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_identity_reissuance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/identity-reissuance/requests/{request_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_identity_reissuance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/identity-reissuance/requests/{request_id}/attestation",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_identity_reissuance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/identity-reissuance/requests/{request_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_identity_reissuance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/identity-reissuance/requests/{request_id}/issue",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_identity_reissuance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/identity-reissuance/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_identity_reissuance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/observations",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_observability.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/safety/assess",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_observability.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/safety/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_observability.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/safety/unfreeze",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_observability.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/rollback-recommendations/{recommendation_id}/acknowledge",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_observability.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/telemetry/sources",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/telemetry/sources",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/telemetry/sources/{source_id}/state",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/telemetry/ingest",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/slo-policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/safety/governed-assess",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/incidents/correlate/{safety_assessment_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/telemetry/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust/identities",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_trust.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust/identities/{identity_id}/state",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_trust.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust/automation-policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_trust.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust/telemetry-ingest",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_trust.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust/assess",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_trust.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust/governed-safety-assess",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_trust.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_telemetry_trust.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/fingerprint",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_verification.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/releases/manifests/{manifest_id}/attest",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_verification.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/attestations/{attestation_id}/verify",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_verification.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/verifications/{verification_id}/rollback",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_verification.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/verifications/{verification_id}/seal",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_verification.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_runtime_verification.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/strategy-governance/strategies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_strategy_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/strategy-governance/strategies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_strategy_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/strategy-governance/strategies/{strategy_id}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_strategy_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/strategy-governance/strategies/{strategy_id}/activate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_strategy_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/strategy-governance/strategies/{strategy_id}/rollback",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_strategy_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/strategy-governance/guardrail/tick",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_strategy_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/strategy-governance/evaluations",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_strategy_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-gossip/observations",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_transparency_gossip.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-gossip/witness-federations",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_transparency_gossip.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-gossip/consistency-proofs",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_transparency_gossip.py"
+},
+{
+"method": "GET",
+"path": "/v1/trust/transparency/consistency/{proof_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_transparency_gossip.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-gossip/split-view/detect",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_transparency_gossip.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-gossip/incidents/{incident_id}/recover",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_transparency_gossip.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-gossip/recoveries/{recovery_id}/rejoin",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_transparency_gossip.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-gossip/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_transparency_gossip.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/chaos/policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_chaos.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/chaos/campaigns",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_chaos.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/chaos/campaigns/{campaign_id}/run",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_chaos.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/chaos/campaigns/{campaign_id}/assess",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_chaos.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/{assessment_id}/gate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_chaos.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_chaos.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/operators",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_dr.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/witness-bindings",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_dr.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/independence-policies",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_dr.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/federations/{federation_id}/assess",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_dr.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/cross-operator-gossip",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_dr.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/cross-operator-gossip/detect",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_dr.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/checkpoints/{checkpoint_id}/archive",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_dr.py"
+},
+{
+"method": "GET",
+"path": "/v1/trust/transparency/archive/{archive_id}/verify",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_dr.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/disasters",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_dr.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/disasters/{incident_id}/rebuild",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_dr.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/disasters/{incident_id}/complete",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_dr.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/disasters/{incident_id}/drills",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_dr.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_trust_plane_dr.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/waiver-exposure/policies",
+"deps": [
+"(admin_p",
+"admin_principal"
+],
+"file": "api\\routes\\recovery_waiver_exposure_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/exception-debt/evaluate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_waiver_exposure_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/remediation/tick",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_waiver_exposure_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/remediations/{remediation_id}/acknowledge",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_waiver_exposure_governance.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/remediations/{remediation_id}/resolve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_waiver_exposure_governance.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/recovery/runtime/trust-plane/readiness/waiver-exposure/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\recovery_waiver_exposure_governance.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/privacy",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\registration_privacy.py"
+},
+{
+"method": "GET",
+"path": "/bff/privacy",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"privacy_operator",
+"supplier_principal"
+],
+"file": "api\\routes\\registration_privacy.py"
+},
+{
+"method": "POST",
+"path": "/v1/consumer/privacy/requests",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"privacy_operator",
+"supplier_principal"
+],
+"file": "api\\routes\\registration_privacy.py"
+},
+{
+"method": "POST",
+"path": "/bff/privacy/requests",
+"deps": [
+"admin_principal",
+"privacy_operator",
+"supplier_principal"
+],
+"file": "api\\routes\\registration_privacy.py"
+},
+{
+"method": "GET",
+"path": "/internal/privacy/requests",
+"deps": [
+"privacy_operator"
+],
+"file": "api\\routes\\registration_privacy.py"
+},
+{
+"method": "POST",
+"path": "/internal/privacy/requests/{request_id}/resolution",
+"deps": [
+"privacy_operator"
+],
+"file": "api\\routes\\registration_privacy.py"
+},
+{
+"method": "GET",
+"path": "/v1/registration-terms",
+"deps": [],
+"file": "api\\routes\\registration_terms.py"
+},
+{
+"method": "GET",
+"path": "/v1/registration-terms/{term_id}/{version}",
+"deps": [],
+"file": "api\\routes\\registration_terms.py"
+},
+{
+"method": "POST",
+"path": "/v1/registration/challenges",
+"deps": [],
+"file": "api\\routes\\registration_verification.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/mobility/rentals/orders/{order_id}/damage-cases",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\rental_damage.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/rentals/orders/{order_id}/damage-cases/{case_id}/response",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"current_principal"
+],
+"file": "api\\routes\\rental_damage.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/mobility/rentals/orders/{order_id}/damage-cases/{case_id}/decision",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"current_principal"
+],
+"file": "api\\routes\\rental_damage.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobility/rentals/orders/{order_id}/damage-cases/{case_id}",
+"deps": [
+"admin_principal",
+"consumer_principal",
+"current_principal"
+],
+"file": "api\\routes\\rental_damage.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/rentals/orders/{order_id}/damage-cases/{case_id}/appeal",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\rental_damage.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/mobility/rentals/orders/{order_id}/damage-cases/{case_id}/appeal-decision",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\rental_damage.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobility/rentals/orders/{order_id}/deposit-obligation",
+"deps": [
+"consumer_principal",
+"current_principal"
+],
+"file": "api\\routes\\rental_deposit.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/rentals/orders/{order_id}/deposit-obligation",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\rental_deposit.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/rentals/orders/{order_id}/deposit-obligation/{obligation_id}/accept",
+"deps": [
+"consumer_principal",
+"current_principal"
+],
+"file": "api\\routes\\rental_deposit.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/rentals/orders/{order_id}/deposit-obligation/{obligation_id}/renew",
+"deps": [
+"consumer_principal",
+"current_principal"
+],
+"file": "api\\routes\\rental_deposit.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobility/rentals/orders/{order_id}/damage-cases",
+"deps": [
+"admin_principal",
+"current_principal"
+],
+"file": "api\\routes\\rental_deposit.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/mobility/rentals/orders/{order_id}/deposit-obligation/{obligation_id}/cases/{case_id}/decision",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\rental_deposit.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/mobility/rentals/orders/{order_id}/deposit-obligation/{obligation_id}/return-review",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\rental_deposit.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/mobility/rentals/orders/{order_id}/deposit-obligation/{obligation_id}/release",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\rental_deposit.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/admin/mobility/rentals/orders/{order_id}/deposit-money-review",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\rental_deposit_money.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobility/rentals/orders/{order_id}/deposit-money/{obligation_id}",
+"deps": [
+"admin_principal",
+"current_principal"
+],
+"file": "api\\routes\\rental_deposit_money.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/mobility/rentals/orders/{order_id}/deposit-money/{obligation_id}/authorize",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\rental_deposit_money.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/mobility/rentals/orders/{order_id}/deposit-money/{obligation_id}/settle",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\rental_deposit_money.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/mobility/rentals/orders/{order_id}/deposit-money/{obligation_id}/release",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\rental_deposit_money.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/mobility/rentals/orders/{order_id}/deposit-money/{obligation_id}/compensate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\rental_deposit_money.py"
+},
+{
+"method": "GET",
+"path": "/v1/mobility/rentals/orders/{order_id}/operations",
+"deps": [
+"consumer_principal",
+"current_principal"
+],
+"file": "api\\routes\\rental_operations.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/rentals/orders/{order_id}/operations/cases/{case_id}/response",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\rental_operations.py"
+},
+{
+"method": "POST",
+"path": "/v1/mobility/rentals/orders/{order_id}/operations/cases/{case_id}/appeal",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\rental_operations.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/mobility/rentals/orders/{order_id}/operations/cases",
+"deps": [
+"admin_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\rental_operations.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/mobility/rentals/orders/{order_id}/operations/cases",
+"deps": [
+"admin_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\rental_operations.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/mobility/rentals/orders/{order_id}/operations/cases/{case_id}/decision",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\rental_operations.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/mobility/rentals/orders/{order_id}/operations/cases/{case_id}/appeal-decision",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\rental_operations.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/admin/mobility/rentals/orders/{order_id}/operations/obligations/{obligation_id}/return-review",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\rental_operations.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/ride-policy-operations/drafts",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\ride_policy_operations.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/ride-policy-operations/{policy_id}/activate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\ride_policy_operations.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/ride-policy-operations/{policy_id}/revoke",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\ride_policy_operations.py"
+},
+{
+"method": "PUT",
+"path": "/internal/v1/routing/sla/{connector_id}",
+"deps": [],
+"file": "api\\routes\\routing.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/routing/sla/{connector_id}",
+"deps": [],
+"file": "api\\routes\\routing.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/routing/decisions/{decision_id}",
+"deps": [],
+"file": "api\\routes\\routing.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/routing/canary-bucket/{connector_id}",
+"deps": [],
+"file": "api\\routes\\routing.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/staging-execution-evidence/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\staging_execution_evidence.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/staging-execution-evidence/stages/{stage}/advance",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\staging_execution_evidence.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/staging-execution-evidence/operator/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\staging_execution_evidence.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/staging-execution-evidence/operator/export",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\staging_execution_evidence.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/staging-execution-evidence/operator/checkpoints/{stage}/seal",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\staging_execution_evidence.py"
+},
+{
+"method": "PUT",
+"path": "/v1/supplier/verticals/{vertical}/capabilities/{capability}",
+"deps": [
+"admin_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\supplier_multivertical.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/verticals",
+"deps": [
+"admin_principal",
+"supplier_principal"
+],
+"file": "api\\routes\\supplier_multivertical.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/suppliers/{supplier_id}/verticals/{vertical}/certify",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\supplier_multivertical.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/operations/reviews",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\supplier_operations.py"
+},
+{
+"method": "GET",
+"path": "/v1/supplier/operations/judgment",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\supplier_operations.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/travel-intelligence/intents",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/travel-intelligence/intents/{intent_id}/refine",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/travel-entities/{entity_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/travel-entities/resolve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/travel-entities",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/judgment/evaluate",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/judgment/decisions/{decision_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/model-gateway/invoke",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/travel-events",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/travelers/{traveler_id}/preferences",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "PUT",
+"path": "/v1/consumer/travelers/{traveler_id}/preferences/{preference_key}",
+"deps": [
+"consumer_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "GET",
+"path": "/v1/consumer/travelers/{traveler_id}/preferences",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "DELETE",
+"path": "/v1/consumer/travelers/{traveler_id}/preferences/{preference_id}",
+"deps": [
+"admin_principal",
+"consumer_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/intelligence/entities/{entity_id}/evidence",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/intelligence/decisions/{decision_id}/explain",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/travel-entities/{entity_id}/facts",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/travel-entities/relations",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/travelers/{traveler_id}/graph",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/judgment/evaluate-independent",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\travel_intelligence.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/orders/{order_id}/reviews/eligibility",
+"deps": [],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/reviews/{review_id}/first-invite",
+"deps": [],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/reviews/{review_id}/mark-not-reviewed",
+"deps": [],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "GET",
+"path": "/v1/reviews/pending",
+"deps": [],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "POST",
+"path": "/v1/reviews/{review_id}/second-trigger",
+"deps": [],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "POST",
+"path": "/v1/reviews/{review_id}/star",
+"deps": [],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "POST",
+"path": "/v1/reviews/{review_id}/tags",
+"deps": [],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "POST",
+"path": "/v1/reviews/{review_id}/content",
+"deps": [],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "POST",
+"path": "/v1/reviews/{review_id}/complete",
+"deps": [
+"supplier_principal"
+],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "GET",
+"path": "/v1/reviews/{review_id}",
+"deps": [
+"(require_permission('",
+"supplier_principal"
+],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/risk-events/{risk_event_id}",
+"deps": [
+"perm:admin:trust",
+"supplier_principal"
+],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/risk-cases/{risk_event_id}/evidence",
+"deps": [
+"perm:admin:trust",
+"supplier_principal"
+],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/risk-events/{risk_event_id}/decision",
+"deps": [
+"perm:admin:trust",
+"supplier_principal"
+],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "POST",
+"path": "/v1/supplier/risk-cases/{risk_event_id}/remediation",
+"deps": [
+"perm:admin:trust",
+"supplier_principal"
+],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/risk-events/{risk_event_id}/verify-remediation",
+"deps": [
+"perm:admin:trust"
+],
+"file": "api\\routes\\truth.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/finance/payment-intents/{iid}/movements",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\unified_money_movement.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/finance/scoped-closes",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\unified_money_movement.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/finance/scoped-closes/{cid}/approve",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\unified_money_movement.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/finance/status",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\unified_money_movement.py"
+},
+{
+"method": "GET",
+"path": "/internal/v1/vertical-source-decisions/{vertical}/{business_id}",
+"deps": [
+"admin_principal"
+],
+"file": "api\\routes\\vertical_source_runtime.py"
+},
+{
+"method": "POST",
+"path": "/internal/v1/connectors/{connector_id}/webhooks",
+"deps": [],
+"file": "api\\routes\\webhooks.py"
+}
+]

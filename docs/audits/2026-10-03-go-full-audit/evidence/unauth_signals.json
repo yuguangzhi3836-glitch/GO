@@ -1,0 +1,494 @@
+[
+ {
+  "method": "POST",
+  "path": "/bff/auth/login",
+  "file": "api/routes/bff.py",
+  "sig": "def nonblank_identity(cls,value):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/bff/auth/policy",
+  "file": "api/routes/bff.py",
+  "sig": "def nonblank_identity(cls,value):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/bff/auth/sso/callback",
+  "file": "api/routes/bff.py",
+  "sig": "def nonblank_identity(cls,value):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/bff/auth/sso/start",
+  "file": "api/routes/bff.py",
+  "sig": "def nonblank_identity(cls,value):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/bff/auth/supplier/register",
+  "file": "api/routes/bff.py",
+  "sig": "def nonblank_identity(cls,value):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/bff/auth/supplier/registration-terms",
+  "file": "api/routes/bff.py",
+  "sig": "def nonblank_identity(cls,value):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/health",
+  "file": "api/routes/health.py",
+  "sig": "def health():",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/internal/v1/connectors/health/all",
+  "file": "api/routes/connectors.py",
+  "sig": "def list_connectors(): return {\"data\":[{\"connector_id\":m.connector_id,\"display_name\":m.display_name,\"version\":m.version,\"capabilities\":m.capabilities.__dict__} for m in registry.list()]}",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/connectors/reconciliation/run-once",
+  "file": "api/routes/connectors.py",
+  "sig": "def list_connectors(): return {\"data\":[{\"connector_id\":m.connector_id,\"display_name\":m.display_name,\"version\":m.version,\"capabilities\":m.capabilities.__dict__} for m in registry.list()]}",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/connectors/{connector_id}/certify",
+  "file": "api/routes/connectors.py",
+  "sig": "def list_connectors(): return {\"data\":[{\"connector_id\":m.connector_id,\"display_name\":m.display_name,\"version\":m.version,\"capabilities\":m.capabilities.__dict__} for m in registry.list()]}",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/connectors/{connector_id}/webhooks",
+  "file": "api/routes/webhooks.py",
+  "sig": "def connector_webhook(connector_id: str, request: Request, x_go_signature: str | None = Header(default=None, alias=\"X-GO-Signature\")):",
+  "body_signals": [
+   "explicit 401"
+  ]
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/demo/orders/{order_id}/complete-stay",
+  "file": "api/routes/consumer.py",
+  "sig": "def _iso(v):",
+  "body_signals": [
+   "consumer session helper (raises 401)"
+  ]
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/judgment-hooks/process-pending",
+  "file": "api/routes/judgment.py",
+  "sig": "def reevaluate(hotel_id:str,body:ReevaluateRequest=ReevaluateRequest()):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/judgment-hooks/{hook_id}/process",
+  "file": "api/routes/judgment.py",
+  "sig": "def reevaluate(hotel_id:str,body:ReevaluateRequest=ReevaluateRequest()):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/judgments/{hotel_id}/reevaluate",
+  "file": "api/routes/judgment.py",
+  "sig": "def reevaluate(hotel_id:str,body:ReevaluateRequest=ReevaluateRequest()):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/internal/v1/judgments/{judgment_id}",
+  "file": "api/routes/judgment.py",
+  "sig": "def reevaluate(hotel_id:str,body:ReevaluateRequest=ReevaluateRequest()):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/internal/v1/merge/decisions/{decision_id}",
+  "file": "api/routes/merge.py",
+  "sig": "def put_room_mapping(body:RoomMapRequest):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/internal/v1/merge/drift",
+  "file": "api/routes/merge.py",
+  "sig": "def list_drift(hotel_id:str|None=None,status:str=\"OPEN\",limit:int=100):",
+  "body_signals": []
+ },
+ {
+  "method": "PUT",
+  "path": "/internal/v1/merge/room-mappings",
+  "file": "api/routes/merge.py",
+  "sig": "def put_room_mapping(body:RoomMapRequest):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/ops/outbox/run-once",
+  "file": "api/routes/ops.py",
+  "sig": "def outbox_once(limit: int = 100):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/ops/saga-recovery/run-once",
+  "file": "api/routes/ops.py",
+  "sig": "def outbox_once(limit: int = 100):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/orders/{order_id}/reviews/eligibility",
+  "file": "api/routes/truth.py",
+  "sig": "def idem(operation,key,payload):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/outbox/drain",
+  "file": "api/routes/outbox.py",
+  "sig": "def drain_outbox(limit: int = 100):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/internal/v1/p0/design-code-freeze/cancel-refund-state-machine",
+  "file": "api/routes/p0_design_code_freeze.py",
+  "sig": "def cancel_refund_state_machine():",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/internal/v1/p0/design-code-freeze/providers",
+  "file": "api/routes/p0_design_code_freeze.py",
+  "sig": "def providers():",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/internal/v1/p0/design-code-freeze/status",
+  "file": "api/routes/p0_design_code_freeze.py",
+  "sig": "def status():",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/reviews/{review_id}/first-invite",
+  "file": "api/routes/truth.py",
+  "sig": "def idem(operation,key,payload):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/reviews/{review_id}/mark-not-reviewed",
+  "file": "api/routes/truth.py",
+  "sig": "def idem(operation,key,payload):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/internal/v1/routing/canary-bucket/{connector_id}",
+  "file": "api/routes/routing.py",
+  "sig": "def put_sla(connector_id:str, body:SlaSnapshotRequest):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/internal/v1/routing/decisions/{decision_id}",
+  "file": "api/routes/routing.py",
+  "sig": "def put_sla(connector_id:str, body:SlaSnapshotRequest):",
+  "body_signals": []
+ },
+ {
+  "method": "PUT",
+  "path": "/internal/v1/routing/sla/{connector_id}",
+  "file": "api/routes/routing.py",
+  "sig": "def put_sla(connector_id:str, body:SlaSnapshotRequest):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/internal/v1/routing/sla/{connector_id}",
+  "file": "api/routes/routing.py",
+  "sig": "def put_sla(connector_id:str, body:SlaSnapshotRequest):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/supplier-connectors/property-mappings/{mapping_id}/review",
+  "file": "api/routes/onboarding.py",
+  "sig": "def actor(x_actor_id:str|None): return x_actor_id or \"system\"",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/internal/v1/supplier-connectors/{onboarding_id}",
+  "file": "api/routes/onboarding.py",
+  "sig": "def get_one(onboarding_id:str): return call(onboarding_service._row,onboarding_id)",
+  "body_signals": []
+ },
+ {
+  "method": "PUT",
+  "path": "/internal/v1/supplier-connectors/{onboarding_id}/credentials",
+  "file": "api/routes/onboarding.py",
+  "sig": "def actor(x_actor_id:str|None): return x_actor_id or \"system\"",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/internal/v1/supplier-connectors/{onboarding_id}/credentials",
+  "file": "api/routes/onboarding.py",
+  "sig": "def actor(x_actor_id:str|None): return x_actor_id or \"system\"",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/internal/v1/supplier-connectors/{onboarding_id}/property-mappings",
+  "file": "api/routes/onboarding.py",
+  "sig": "def actor(x_actor_id:str|None): return x_actor_id or \"system\"",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/internal/v1/supplier-connectors/{onboarding_id}/property-mappings",
+  "file": "api/routes/onboarding.py",
+  "sig": "def actor(x_actor_id:str|None): return x_actor_id or \"system\"",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/v1/ai-infrastructure/booking-orchestration-plan",
+  "file": "api/routes/ai_travel_infrastructure.py",
+  "sig": "def booking_orchestration_plan(req: BookingOrchestrationRequest):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/v1/ai-infrastructure/identity-release-plan",
+  "file": "api/routes/ai_travel_infrastructure.py",
+  "sig": "def identity_release_plan(req: IdentityReleaseRequest):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/v1/ai-infrastructure/manifest",
+  "file": "api/routes/ai_travel_infrastructure.py",
+  "sig": "def capability_manifest():",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/v1/consumer/auth/register",
+  "file": "api/routes/consumer_identity.py",
+  "sig": "def valid_email(cls, value):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/v1/consumer/auth/registration",
+  "file": "api/routes/consumer_identity.py",
+  "sig": "def valid_email(cls, value):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/v1/consumer/home",
+  "file": "api/routes/consumer.py",
+  "sig": "def _iso(v):",
+  "body_signals": [
+   "consumer session helper (raises 401)"
+  ]
+ },
+ {
+  "method": "GET",
+  "path": "/v1/consumer/hotels/{hotel_id}",
+  "file": "api/routes/consumer.py",
+  "sig": "def _iso(v):",
+  "body_signals": [
+   "consumer session helper (raises 401)"
+  ]
+ },
+ {
+  "method": "GET",
+  "path": "/v1/consumer/orders/{order_id}/detail",
+  "file": "api/routes/consumer.py",
+  "sig": "def _iso(v):",
+  "body_signals": [
+   "consumer session helper (raises 401)"
+  ]
+ },
+ {
+  "method": "GET",
+  "path": "/v1/consumer/trips",
+  "file": "api/routes/consumer.py",
+  "sig": "def _iso(v):",
+  "body_signals": [
+   "consumer session helper (raises 401)"
+  ]
+ },
+ {
+  "method": "POST",
+  "path": "/v1/flights/search",
+  "file": "api/routes/flight.py",
+  "sig": "def wrap(fn,*args,**kwargs):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/v1/hotel-media/{asset_id}",
+  "file": "api/routes/hotel_autopage_factory.py",
+  "sig": "def catalog_writer(p:Principal=Depends(admin_principal)):",
+  "body_signals": [
+   "principal helper"
+  ]
+ },
+ {
+  "method": "GET",
+  "path": "/v1/hotel-pages/direct-submissions/{review_id}/media/{asset_id}",
+  "file": "api/routes/hotel_direct_submission.py",
+  "sig": "def writer(p: Principal = Depends(admin_principal)):",
+  "body_signals": [
+   "principal helper"
+  ]
+ },
+ {
+  "method": "GET",
+  "path": "/v1/hotels/{hotel_id}/judgment",
+  "file": "api/routes/judgment.py",
+  "sig": "def reevaluate(hotel_id:str,body:ReevaluateRequest=ReevaluateRequest()):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/v1/offers/{offer_id}/prebook",
+  "file": "api/routes/hotel.py",
+  "sig": "def search_hotels(body: SearchRequest):",
+  "body_signals": [
+   "principal helper"
+  ]
+ },
+ {
+  "method": "GET",
+  "path": "/v1/registration-terms",
+  "file": "api/routes/registration_terms.py",
+  "sig": "def terms_index(response: Response, audience: Literal['consumer', 'supplier'] = Query(...)):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/v1/registration-terms/{term_id}/{version}",
+  "file": "api/routes/registration_terms.py",
+  "sig": "def terms_index(response: Response, audience: Literal['consumer', 'supplier'] = Query(...)):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/v1/registration/challenges",
+  "file": "api/routes/registration_verification.py",
+  "sig": "def send_registration_code(body: ChallengeBody, request: Request, response: Response):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/v1/reviews/pending",
+  "file": "api/routes/truth.py",
+  "sig": "def idem(operation,key,payload):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/v1/reviews/{review_id}/content",
+  "file": "api/routes/truth.py",
+  "sig": "def idem(operation,key,payload):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/v1/reviews/{review_id}/second-trigger",
+  "file": "api/routes/truth.py",
+  "sig": "def idem(operation,key,payload):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/v1/reviews/{review_id}/star",
+  "file": "api/routes/truth.py",
+  "sig": "def idem(operation,key,payload):",
+  "body_signals": []
+ },
+ {
+  "method": "POST",
+  "path": "/v1/reviews/{review_id}/tags",
+  "file": "api/routes/truth.py",
+  "sig": "def idem(operation,key,payload):",
+  "body_signals": []
+ },
+ {
+  "method": "GET",
+  "path": "/v1/trust/credentials/{credential_id}/status",
+  "file": "api/routes/recovery_federated_trust.py",
+  "sig": "def call(fn,*a):",
+  "body_signals": [
+   "principal helper"
+  ]
+ },
+ {
+  "method": "GET",
+  "path": "/v1/trust/transparency/checkpoint",
+  "file": "api/routes/recovery_federated_trust.py",
+  "sig": "def call(fn,*a):",
+  "body_signals": [
+   "principal helper"
+  ]
+ },
+ {
+  "method": "POST",
+  "path": "/v1/webhooks/p0/0100/payment/{operation_id}",
+  "file": "api/routes/real_external_execution.py",
+  "sig": "def call(fn,*a):",
+  "body_signals": [
+   "principal helper"
+  ]
+ },
+ {
+  "method": "POST",
+  "path": "/v1/webhooks/p0/0100/supplier/{operation_id}",
+  "file": "api/routes/real_external_execution.py",
+  "sig": "def call(fn,*a):",
+  "body_signals": [
+   "principal helper"
+  ]
+ },
+ {
+  "method": "POST",
+  "path": "/v1/webhooks/payments/{channel}",
+  "file": "api/routes/omnichannel_payment.py",
+  "sig": "def call(fn,*a):",
+  "body_signals": [
+   "principal helper"
+  ]
+ },
+ {
+  "method": "POST",
+  "path": "/v1/webhooks/production-connectors/{connector_id}",
+  "file": "api/routes/production_connector_runtime.py",
+  "sig": "def call(fn,*args):",
+  "body_signals": [
+   "principal helper"
+  ]
+ }
+]
