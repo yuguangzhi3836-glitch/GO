@@ -27,8 +27,6 @@ jobs:
       APP_ENV: test
       DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_registration_ci
       JWT_SIGNING_KEY: registration-ci-only-signing-key
-      BOOTSTRAP_ADMIN_PASSWORD: registration-ci-admin-password
-      BOOTSTRAP_SUPPLIER_PASSWORD: registration-ci-supplier-password
     steps:
       - uses: actions/checkout@v4
         with:
