@@ -59,6 +59,7 @@ from c1_dispatch_outbox import (
 )
 from c1_execution_contract import (
     CLAIMABLE_KINDS,
+    canonical_cell_id,
     KIND,
     OWNER_C,
     PAYLOAD,
@@ -74,7 +75,7 @@ from c1_result_pull import complete_after_pull, fail_after_pull, is_a_fenced_ref
 DEFAULT_LEASE_S = 120
 
 
-def _not_our_task(claimed) -> dict | None:
+def _not_our_task(claimed, expected_owner=OWNER_C) -> dict | None:
     """Refuse anything that is not a C1 task this channel owns.
 
     Two kinds are ours: the fixed smoke (`AI_WORK_V1`, whose payload must be the literal)
@@ -94,15 +95,17 @@ def _not_our_task(claimed) -> dict | None:
     owner_c = getattr(claimed, "owner_c", None)
     kind = getattr(claimed, "kind", None)
     payload = getattr(claimed, "payload", None)
-    if owner_c != OWNER_C:
+    if owner_c != canonical_cell_id(expected_owner):
         return {"action": "NOT_A_C1_TASK", "reason": "OWNER_C_MISMATCH", "owner_c": owner_c}
     if kind not in CLAIMABLE_KINDS:
         return {"action": "NOT_A_C1_TASK", "reason": "KIND_MISMATCH", "kind": kind}
-    if kind == KIND and payload != PAYLOAD:
+    if kind == KIND and (owner_c != OWNER_C or payload != PAYLOAD):
         return {"action": "NOT_A_C1_TASK", "reason": "PAYLOAD_MISMATCH", "payload": payload}
     if kind == REAL_TASK_KIND:
         try:
-            validate_task_payload(payload)
+            normalised = validate_task_payload(payload)
+            if normalised["cell_id"] != owner_c:
+                raise Refused("TASK_OWNER_PAYLOAD_MISMATCH")
         except Refused as refusal:
             # A real task whose payload is not a valid task is not ours to execute, and
             # must never be registered - the same guarantee the smoke payload check gives.
@@ -132,13 +135,13 @@ def _renew(runtime, task_id, attempt, *, worker_id, lease_s) -> bool:
 
 
 def advance(outbox, runtime, claimed, *, worker_id: str, client,
-            lease_s: int = DEFAULT_LEASE_S, clock=time.time) -> dict:
+            lease_s: int = DEFAULT_LEASE_S, clock=time.time, owner_c=OWNER_C) -> dict:
     """One bounded tick for a task that was just claimed. Never dispatches twice.
 
     `claimed` is what `Runtime.claim()` returned (task_id, owner_c, kind, payload,
     attempts, lease_until).
     """
-    refusal = _not_our_task(claimed)
+    refusal = _not_our_task(claimed, expected_owner=owner_c)
     if refusal is not None:
         return refusal
     # The request is built from what was actually claimed - for a real task that is the
@@ -150,7 +153,7 @@ def advance(outbox, runtime, claimed, *, worker_id: str, client,
 
 
 def resume(outbox, runtime, runtime_task_id, attempt, *, worker_id: str, client,
-           lease_s: int = DEFAULT_LEASE_S, clock=time.time) -> dict:
+           lease_s: int = DEFAULT_LEASE_S, clock=time.time, owner_c=OWNER_C) -> dict:
     """One bounded tick for an execution identity this outbox already owns.
 
     This is the half the first deployment was missing. A task the worker has claimed is
@@ -168,6 +171,9 @@ def resume(outbox, runtime, runtime_task_id, attempt, *, worker_id: str, client,
     offline - it must expose `send`, `find_run`, `find_run_by_name`, `get_run` and
     `download_artifact`.
     """
+    stored = outbox.stored_request(runtime_task_id, attempt) or build_dispatch_request(runtime_task_id, attempt)
+    if stored["owner_c"] != canonical_cell_id(owner_c):
+        raise Refused("RESUME_OWNER_MISMATCH")
     return _drive(outbox, runtime, runtime_task_id, attempt, worker_id=worker_id,
                   client=client, lease_s=lease_s, clock=clock)
 
@@ -390,3 +396,4 @@ def loop_state(outbox, runtime_task_id, attempt) -> dict:
             "reused_from": snapshot.get("reused_from"),
             "abandon_reason": snapshot.get("abandon_reason"),
             "terminal": snapshot["state"] in (RESULT_SEALED, COMPLETED, ABANDONED)}
+

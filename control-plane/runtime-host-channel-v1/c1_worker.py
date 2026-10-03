@@ -55,6 +55,7 @@ import os
 import sys
 import time
 
+from c1_execution_contract import canonical_cell_id
 from c1_dispatch_outbox import DispatchOutbox
 from c1_execution_loop import DEFAULT_LEASE_S, advance, resume
 
@@ -144,7 +145,7 @@ def credential_refusal(loader=None):
 
 def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_S,
          clock=time.time, claim_kinds=CLAIM_KINDS,
-         resume_limit=DEFAULT_RESUME_LIMIT) -> dict:
+         resume_limit=DEFAULT_RESUME_LIMIT, owner_c=OWNER_C) -> dict:
     """One bounded tick: resume what is in flight, and only then claim new work.
 
     Phase 1 is not an optimisation, it is the fix for the defect that stopped the first
@@ -167,13 +168,14 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
     would start new paid work while an existing one is unresolved. The identity stays in
     the outbox and the next tick tries again, so a transient fault costs time, not money.
     """
+    owner_c = canonical_cell_id(owner_c)
     unfinished = outbox.unfinished(limit=resume_limit)
     if unfinished:
         row = unfinished[0]
         try:
             outcome = resume(outbox, runtime, row["runtime_task_id"], row["attempt"],
                              worker_id=worker_id, client=client, lease_s=lease_s,
-                             clock=clock)
+                             clock=clock, owner_c=owner_c)
         except Exception as exc:  # noqa: BLE001 -- one bad task must not stop the worker
             return {"status": "BLOCKED", "claimed": False, "resumed": True,
                     "unfinished": len(unfinished),
@@ -188,13 +190,13 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
                 "reused": bool(outcome.get("reused")),
                 "renewed": bool(outcome.get("renewed"))}
 
-    claimed = runtime.claim(OWNER_C, worker_id=worker_id, lease_s=lease_s,
+    claimed = runtime.claim(owner_c, worker_id=worker_id, lease_s=lease_s,
                             kinds=claim_kinds)
     if claimed is None:
         return {"status": "IDLE", "claimed": False, "resumed": False, "unfinished": 0}
     try:
         outcome = advance(outbox, runtime, claimed, worker_id=worker_id, client=client,
-                          lease_s=lease_s, clock=clock)
+                          lease_s=lease_s, clock=clock, owner_c=owner_c)
     except Exception as exc:  # noqa: BLE001 -- one bad task must not stop the worker
         # Nothing is completed here. The outbox keeps its durable state, so the next
         # tick resumes from it - and because the dispatch counter survives, a failure
@@ -281,3 +283,4 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
+

@@ -771,10 +771,10 @@ class ProbeStaysIsolated(Case):
         rows = self.outbox._db.execute("SELECT COUNT(*) AS n FROM c1_dispatch").fetchone()
         self.assertEqual(rows["n"], 0)
 
-    def test_a_real_task_for_another_cell_is_refused(self):
+    def test_a_real_task_for_an_unknown_cell_is_refused(self):
         with self.assertRaises(contract.Refused) as caught:
-            payload_a(cell_id="C02")
-        self.assertEqual(caught.exception.reason, "TASK_PAYLOAD_CELL_IS_NOT_C1")
+            payload_a(cell_id="C15")
+        self.assertEqual(caught.exception.reason, "CELL_ID_NOT_A_KNOWN_RESPONSIBILITY_DOMAIN")
 
     def test_post_execution_facts_are_refused_as_task_input(self):
         for field in ("candidate_sha", "artifact_id", "pr_number", "c14_verdict",
@@ -1193,3 +1193,4 @@ class _RecordingTransport:
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+

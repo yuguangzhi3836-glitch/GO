@@ -86,7 +86,7 @@ RUNS_ENDPOINT = "/repos/%s/actions/runs" % REPO
 
 # ------------------------------------------------- canonical responsibility identity
 # The kernel's own canonical spelling: `C1`, never `C01`.
-OWNER_C = "C1"
+OWNER_C = "C1"  # legacy smoke owner; real tasks bind their own cell
 
 # The Owner writes `C01`, `C02`, ... The kernel only knows `C1`, `C2`, ...
 _EXTERNAL_PADDED_CELL = re.compile(r"^C0([1-9])$")
@@ -276,9 +276,6 @@ def validate_task_payload(payload) -> dict:
         "scope": _bounded_text(payload["scope"], limit=MAX_SCOPE,
                                reason="TASK_PAYLOAD_SCOPE_INVALID"),
     }
-    if normalised["cell_id"] != OWNER_C:
-        # This contract belongs to C1. Another cell's task is another cell's business.
-        raise Refused("TASK_PAYLOAD_CELL_IS_NOT_C1")
     for name in TASK_PAYLOAD_TRACE_ONLY:
         if name not in payload:
             continue
@@ -341,8 +338,9 @@ def prompt_for_task(task_kind: str, payload) -> str:
     if task_kind != REAL_TASK_KIND:
         raise Refused("TASK_KIND_UNKNOWN")
     normalised = validate_task_payload(payload)
-    return (
-        "GO C1 real task (AI_TASK_V1).\n"
+    # Preserve every existing C1 prompt/identity byte; new cells name themselves.
+    heading = "GO %s real task (AI_TASK_V1).\n" % normalised["cell_id"]
+    return heading + (
         "cell: %s\nexternal_task_id: %s\n"
         "\nOBJECTIVE\n%s\n"
         "\nSCOPE\n%s\n"
@@ -414,7 +412,7 @@ def task_binding(runtime_task_id, attempt, spec=None) -> dict:
     return {
         "schema_version": SCHEMA_VERSION,
         "kind": REQUEST_KIND,
-        "owner_c": OWNER_C,
+        "owner_c": payload["cell_id"],
         "task_kind": REAL_TASK_KIND,
         "payload": payload,
         "payload_sha256": sha256_hex(canonical(payload)),
@@ -536,3 +534,4 @@ def validate_result(document, *, runtime_task_id, attempt, execution_request_id_
     if not document["accepted"] and "failure_reason" not in document:
         raise Refused("RESULT_FAILED_WITHOUT_A_REASON")
     return document
+
