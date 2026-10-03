@@ -75,3 +75,37 @@ raw per-call data and rank new AUTH/CAPTURE SQL separately from replays. Any
 later concurrent diagnostic retains existing correctess and 20/100 stop rules;
 instrumented timing cannot qualify a performance candidate. No original
 Codespace database was accessed and no business optimization was selected here.
+
+
+## Execution connection recovered — 2026-10-03
+
+Browser terminal successfully reconnected to original Codespace
+`literate-winner-vpqqjgwvpjprcp7gw`. Desktop Commander availability is not a
+prerequisite for that browser-terminal route. Existing authorized workspace
+trust was restored. No new account, credentials or access grant was created.
+
+Observed base workspace: /workspaces/GO, branch
+integration/capacity-foundation-20260928, HEAD
+40d59f85bc667754707c2d40ca1eedbf95e239d4; historical diagnostic worktrees and
+local modifications remain intact. The original isolated virtual environment
+/workspaces/.go-capacity-venv/bin/python remains Python 3.12.3, SQLAlchemy 2.1.1,
+psycopg 3.3.6. Default shell Python is different; do not use it for comparison.
+
+Fetched fixed observer 70022e643febbef3692a7f713d7aa1850a391b71 into a new detached
+/workspaces/GO-call-sql-20261003 worktree. Eight test_call_sql behavior tests
+passed there in 0.181s (SQLite tests under original dependencies).
+
+No Docker containers were present at reconnection. Cached postgres:18.4 was
+available. Started a NEW isolated fixture container go-call-sql-pg-20261003 on
+127.0.0.1:55436, database go_c11_isolated. It is not the old diagnostic database
+or its original row population. Read-back server version: PostgreSQL 18.4
+(Debian 18.4-1.pgdg13+1). A Python SQLAlchemy SELECT 1 / commit / checkin smoke
+with CallSQL returned valid=true, one cursor event and one balanced lease.
+The fixture label fresh_AUTH in this smoke is only a collector label; this
+was NOT a money AUTH transaction or money correctness/performance test.
+
+Connection blocker resolved. Still pending: integrate fixture-asserted call
+labels into the bounded money workload, bind application/source/scale, collect
+SQL-by-path timings and source/index/plan evidence, then select a defensible
+optimization. No historical database cardinality restored or inferred, no
+business query edit, external load test, merge, deployment or performance PASS.
