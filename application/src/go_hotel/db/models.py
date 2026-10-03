@@ -7897,7 +7897,7 @@ class CatalogCreditSourceRow(Base):
     __tablename__ = 'catalog_credit_source'
     capture_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     credit_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    payment_intent_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    payment_intent_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     funded_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
     prior_refund_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
     excluded_minor: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
