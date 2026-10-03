@@ -1,0 +1,93 @@
+name: HK unified registration acceptance
+
+on:
+  push:
+    branches:
+      - chenzhenxi/hk-unified-pr365-registration-20261003
+  pull_request:
+    branches: [main]
+    paths:
+      - application/**
+      - .github/workflows/hk-unified-registration-acceptance.yml
+
+permissions:
+  contents: read
+
+jobs:
+  hk-registration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_hk_registration_ci
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_hk_registration_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      APP_ENV: test
+      DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_hk_registration_ci
+      GO_TEST_DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_hk_registration_ci
+      JWT_SIGNING_KEY: isolated-registration-ci-signing-key-32bytes
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13.5'
+
+      - name: Install application test dependencies
+        run: python -m pip install -e './application[dev]'
+
+      - name: Python and JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q application/src
+          node --check application/frontend/shared/api.js
+          node --check application/frontend/shared/app.js
+          node --check application/frontend/shared/registration-terms.js
+          node --check application/frontend/shared/registration-verification.js
+          node --check application/frontend/consumer/app.js
+
+      - name: Prove live-line migration 0145 to 0146 and legacy supplier compatibility
+        working-directory: application
+        shell: bash
+        run: |
+          set -euo pipefail
+          alembic upgrade 0145_source_latest_index
+          python - <<'PY'
+          from go_hotel.security.service import identity_service
+          identity_service.bootstrap()
+          PY
+          alembic upgrade head
+          python - <<'PY'
+          from sqlalchemy import select
+          from go_hotel.core.config import settings
+          from go_hotel.db.models import SupplierOnboardingRow
+          from go_hotel.db.session import SessionLocal
+          with SessionLocal() as s:
+              row=s.scalar(select(SupplierOnboardingRow).where(
+                  SupplierOnboardingRow.supplier_id==settings.bootstrap_supplier_id))
+              assert row is not None
+              assert row.state == 'CONTRACT_ACTIVE'
+          print('HK_LINE_0145_TO_0146=PASS')
+          print('LEGACY_SUPPLIER_ACCESS_BACKFILL=PASS')
+          PY
+
+      - name: Registration and preserved PR365 regressions on PostgreSQL 18.4
+        working-directory: application
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pytest             tests/test_supplier_onboarding_hk_unified.py             tests/test_registration_verification.py             tests/test_registration_privacy.py             tests/test_sprint1y_consumer_identity.py             tests/test_sprint1u_production_bff.py             tests/test_current_rental_vault_guards.py
