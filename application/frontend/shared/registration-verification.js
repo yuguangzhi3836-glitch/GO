@@ -18,10 +18,9 @@
   function decisions(){
    const p=policy();if(!p?.enabled)throw Error('注册条款尚未就绪。');
    const out={},deferred=new Set(p.deferred||[]);for(const key of Object.keys(p.versions)){
-    if(deferred.has(key)){out[key]='DEFERRED';continue}
     if(!decisionInputs[key]?.checked)throw Error('请分别确认协议与隐私告知。');
     out[key]=key==='privacy_policy'?'NOTICE_ACKNOWLEDGED':'CONTRACT_ACCEPTED';
-   }return out;
+   }for(const key of deferred)out[key]='DEFERRED';return out;
   }
   function renderDecisions(){
    const p=policy();if(!decisionContainer||!p)return;
