@@ -25,8 +25,22 @@ def require_permission(permission:str):
         return p
     return dep
 
-def supplier_principal(p:Principal=Depends(current_principal)):
-    if p.actor_type!='SUPPLIER_USER' or not p.supplier_id: raise HTTPException(403,detail='SUPPLIER_IDENTITY_REQUIRED')
+def supplier_account_principal(p:Principal=Depends(current_principal)):
+    if p.actor_type!='SUPPLIER_USER' or not p.supplier_id:
+        raise HTTPException(403,detail='SUPPLIER_IDENTITY_REQUIRED')
+    return p
+
+def supplier_principal(p:Principal=Depends(supplier_account_principal)):
+    with SessionLocal() as s:
+        onboarding=s.scalar(select(SupplierOnboardingRow).where(SupplierOnboardingRow.supplier_id==p.supplier_id))
+    if onboarding is None:
+        # The built-in local/test supplier predates the staged onboarding model.
+        # Production migrations seed all existing supplier identities as active.
+        if p.supplier_id==settings.bootstrap_supplier_id:
+            return p
+        raise HTTPException(403,detail='SUPPLIER_ONBOARDING_REQUIRED')
+    if onboarding.state not in {'CONTRACT_ACTIVE','BUSINESS_ENABLED'}:
+        raise HTTPException(403,detail='SUPPLIER_ONBOARDING_INCOMPLETE')
     return p
 
 def admin_principal(p:Principal=Depends(current_principal)):
@@ -35,7 +49,7 @@ def admin_principal(p:Principal=Depends(current_principal)):
 
 from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
-from go_hotel.db.models import OrderRow, RiskEventRuntimeRow
+from go_hotel.db.models import OrderRow, RiskEventRuntimeRow, SupplierOnboardingRow
 
 def assert_supplier_order(p:Principal, order_id:str):
     with SessionLocal() as s:
