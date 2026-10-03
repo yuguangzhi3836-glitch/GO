@@ -1,3 +1,6 @@
+from datetime import datetime, timezone
+from go_hotel.db.models import HotelRegistrationDirectRow
+from go_hotel.db.session import SessionLocal
 from go_hotel.services.supplier_onboarding_state import supplier_onboarding_state_service
 
 
@@ -87,8 +90,21 @@ def test_onboarding_resumes_and_only_unlocks_after_profile_and_contract_review(c
     assert submitted.status_code == 200, submitted.text
     assert submitted.json()["data"]["state"] == "UNDER_REVIEW"
 
+    with SessionLocal.begin() as s:
+        s.add(HotelRegistrationDirectRow(
+            hotel_registration_direct_id="hregdir_test",
+            hotel_id="hotel_test",
+            supplier_id=supplier_id,
+            state="APPROVED",
+            evidence_json=[{"reference": "upload://business-license/1"}],
+            official_supplement_json={"name": "测试酒店"},
+            requested_by=client.get("/bff/auth/me").json()["data"]["user_id"],
+            reviewed_by="admin-test",
+            created_at=datetime.now(timezone.utc),
+            reviewed_at=datetime.now(timezone.utc),
+        ))
     supplier_onboarding_state_service.decide_profile(
-        supplier_id, "admin-test", "APPROVE", "主体资料通过"
+        supplier_id, "admin-test", "APPROVE", "主体资料通过", "hregdir_test"
     )
     me = client.get("/bff/auth/me").json()["data"]
     assert me["onboarding"]["state"] == "VERIFIED"
