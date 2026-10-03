@@ -17,7 +17,8 @@ Derived, never sent by a caller as an independent value:
 Nothing here performs I/O, holds a credential, or knows about the Runtime database.
 
 --------------------------------------------------------------------- task classes
-There are exactly two task classes, and they are deliberately separate:
+There are exactly three task classes. They are deliberately separate, and each belongs
+to exactly ONE executor:
 
   SMOKE  kind `AI_WORK_V1`   payload `SMOKE_PAYLOAD`  prompt + accepted output fixed
          The deployed, already-PASS end-to-end smoke. Its binding, its execution
@@ -29,13 +30,22 @@ There are exactly two task classes, and they are deliberately separate:
          brand new one and a second paid model call would become possible.
 
   REAL   kind `AI_TASK_V1`   payload = a validated real-task payload  prompt DERIVED
-         The new capability. It carries one real task's execution input, derives the
-         prompt from the claimed task's payload, and accepts any well-formed non-empty
-         model output instead of one fixed literal.
+         The first real capability. It carries one real task's execution input, derives
+         the prompt from the claimed task's payload, and accepts any well-formed
+         non-empty model output instead of one fixed literal. Executed by
+         `c1_worker.py` - one OpenAI Responses call per execution.
 
-The two classes can never collide: their bindings have different key sets, so no real
-payload can derive a smoke execution identity (or the reverse). That is what keeps a
-smoke result and a real result from being interchangeable.
+  REAL   kind `GHAW_BUILDER_V1`  payload = the SAME validated real-task payload
+         The same task shape, a different execution: a gh-aw workflow that runs its own
+         agent. Owned by `c1_ghaw_builder_worker.py` and by no one else. Its binding
+         carries `provider = GITHUB_AGENTIC_WORKFLOWS` instead of the Responses
+         endpoint, so the two real classes can never share an execution identity even
+         for the same Runtime task and attempt.
+
+The classes can never collide: their bindings have different key sets (smoke vs real) or
+different kinds and providers (the two real classes), so no payload can derive a binding
+belonging to another class. That is what keeps one class's result from being accepted as
+another's.
 
 ------------------------------------------------------------- canonical cell identity
 The deployed kernel's responsibility set is
@@ -204,6 +214,67 @@ MAX_OBJECTIVE = 4000
 MAX_SCOPE = 4000
 MAX_SOURCE_ANCHOR = 200
 
+# ------------------------------------------------------------- gh-aw Builder (V1)
+# The kind the formal gh-aw Builder executor owns, and the ONLY kind it may claim.
+#
+# Why a separate kind rather than reusing `AI_TASK_V1`: a task kind is what decides
+# which executor picks a task up. `Runtime.claim()` filters on kind and hands each
+# matching task to whichever worker asks for it, so two executors sharing one kind is
+# not a sharing arrangement - it is a race, and the loser is whichever executor was
+# restarted. One kind therefore belongs to exactly ONE executor:
+#
+#     AI_WORK_V1, AI_TASK_V1   -> c1_worker.py               (the Responses-API executor)
+#     GHAW_BUILDER_V1          -> c1_ghaw_builder_worker.py  (the gh-aw Builder executor)
+#
+# Nothing here routes a task; this module only names the kinds. The ownership sets live
+# with the executors themselves, and `test_c1_executor_boundary` asserts they are
+# disjoint, so neither executor can silently grow into the other's kinds.
+#
+# It carries the same real-task payload as `AI_TASK_V1` - the objective and the scope are
+# what the Builder is asked to work on - so nothing about the task shape is new. What is
+# new is that its execution is a different kind of execution: a gh-aw workflow that runs
+# its own agent, not a single OpenAI Responses call. That difference is recorded in the
+# binding (`provider`), which is why the two classes can never produce the same
+# `execution_request_id`.
+GHAW_BUILDER_KIND = "GHAW_BUILDER_V1"
+PROVIDER_GHAW_BUILDER = "GITHUB_AGENTIC_WORKFLOWS"
+# The workflow a gh-aw Builder dispatch is aimed at. DECLARED, NOT REGISTERED: this round
+# deliberately adds no workflow file and sends no dispatch (that is U1). It is declared
+# here because leaving a task's own recorded dispatch target pointing at the Responses
+# backend would be a false record of where that task goes.
+GHAW_BUILDER_WORKFLOW_FILE = "c1-gh-aw-builder-v1.lock.yml"
+
+# Every task kind this contract knows. A kind outside this set has no payload shape, no
+# prompt and no acceptance rule, and is refused rather than guessed at.
+KNOWN_TASK_KINDS = (KIND, REAL_TASK_KIND, GHAW_BUILDER_KIND)
+
+
+def provider_for_kind(task_kind: str) -> str:
+    """The executor identity fixed for a task class. NEVER a caller input.
+
+    It is inside `task_binding`, so it is part of the execution identity: a task executed
+    by a single Responses call and a task executed by a gh-aw workflow can never resolve
+    to the same `execution_request_id`.
+    """
+    if task_kind == GHAW_BUILDER_KIND:
+        return PROVIDER_GHAW_BUILDER
+    if task_kind in (KIND, REAL_TASK_KIND):
+        return PROVIDER
+    raise Refused("TASK_KIND_UNKNOWN")
+
+
+def workflow_file_for_kind(task_kind: str) -> str:
+    """The workflow a dispatch for this class is aimed at. Fixed config, never a request.
+
+    Only reached for a class this contract knows; the smoke and real-task values are the
+    one this channel has always used, byte for byte.
+    """
+    if task_kind == GHAW_BUILDER_KIND:
+        return GHAW_BUILDER_WORKFLOW_FILE
+    if task_kind in (KIND, REAL_TASK_KIND):
+        return WORKFLOW_FILE
+    raise Refused("TASK_KIND_UNKNOWN")
+
 
 def canonical(document) -> str:
     return json.dumps(document, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
@@ -314,17 +385,36 @@ def build_task_payload(*, cell_id, external_task_id, objective, scope,
     return validate_task_payload(payload)
 
 
-def real_idempotency_key(cell_id, external_task_id) -> str:
-    """The Runtime-side idempotency key for one real task.
+def task_idempotency_key(task_kind, cell_id, external_task_id) -> str:
+    """The Runtime-side idempotency key for one external task, per executor kind.
 
     Derived, not chosen, so the same external task presented twice cannot become two
     Runtime tasks. Reuses the Runtime's own `idempotency_key` mechanism - there is no
     second de-duplication system anywhere in this channel.
+
+    The kind is part of the key because the Runtime's UNIQUE(idempotency_key) is the only
+    de-duplication there is: two executors deriving the same key for the same external
+    task would collapse into ONE Runtime task, which would then carry whichever kind was
+    enqueued first and be invisible to the other executor for as long as it existed.
+    Deriving the key from the kind as well keeps "the same task for a different executor"
+    a different task, which is what it is.
     """
-    return "c1-ai-task-v1:%s:%s" % (
+    if task_kind == REAL_TASK_KIND:
+        prefix = "c1-ai-task-v1"
+    elif task_kind == GHAW_BUILDER_KIND:
+        prefix = "c1-ghaw-builder-v1"
+    else:
+        raise Refused("TASK_KIND_UNKNOWN")
+    return "%s:%s:%s" % (
+        prefix,
         canonical_cell_id(cell_id),
         _bounded_text(external_task_id, limit=MAX_EXTERNAL_TASK_ID,
                       reason="TASK_PAYLOAD_EXTERNAL_TASK_ID_INVALID"))
+
+
+def real_idempotency_key(cell_id, external_task_id) -> str:
+    """The `AI_TASK_V1` idempotency key, unchanged: `c1-ai-task-v1:<cell>:<task id>`."""
+    return task_idempotency_key(REAL_TASK_KIND, cell_id, external_task_id)
 
 
 # --------------------------------------------------------------- prompt derivation
@@ -338,19 +428,35 @@ def prompt_for_task(task_kind: str, payload) -> str:
     """
     if task_kind == KIND:
         return PROMPT
-    if task_kind != REAL_TASK_KIND:
-        raise Refused("TASK_KIND_UNKNOWN")
-    normalised = validate_task_payload(payload)
-    return (
-        "GO C1 real task (AI_TASK_V1).\n"
-        "cell: %s\nexternal_task_id: %s\n"
-        "\nOBJECTIVE\n%s\n"
-        "\nSCOPE\n%s\n"
-        "\nAnswer the objective within the scope. Reply with the task result as plain "
-        "text and nothing else. You have no authority to change money, state, "
-        "deployment, release or configuration, and you must not claim any."
-        % (normalised["cell_id"], normalised["external_task_id"],
-           normalised["objective"], normalised["scope"]))
+    if task_kind == REAL_TASK_KIND:
+        normalised = validate_task_payload(payload)
+        return (
+            "GO C1 real task (AI_TASK_V1).\n"
+            "cell: %s\nexternal_task_id: %s\n"
+            "\nOBJECTIVE\n%s\n"
+            "\nSCOPE\n%s\n"
+            "\nAnswer the objective within the scope. Reply with the task result as plain "
+            "text and nothing else. You have no authority to change money, state, "
+            "deployment, release or configuration, and you must not claim any."
+            % (normalised["cell_id"], normalised["external_task_id"],
+               normalised["objective"], normalised["scope"]))
+    if task_kind == GHAW_BUILDER_KIND:
+        # The gh-aw Builder derives its own prompt from its workflow; this one exists so
+        # the execution identity has a commitment to what this task asked for. It is a
+        # different literal from the real-task prompt on purpose: two classes that
+        # happened to produce the same bytes would defeat the `prompt_sha256` commitment.
+        normalised = validate_task_payload(payload)
+        return (
+            "GO C1 gh-aw Builder task (GHAW_BUILDER_V1).\n"
+            "cell: %s\nexternal_task_id: %s\n"
+            "\nOBJECTIVE\n%s\n"
+            "\nSCOPE\n%s\n"
+            "\nDeliver the objective within the scope. You have no authority to change "
+            "money, state, deployment, release or configuration, and you must not claim "
+            "any."
+            % (normalised["cell_id"], normalised["external_task_id"],
+               normalised["objective"], normalised["scope"]))
+    raise Refused("TASK_KIND_UNKNOWN")
 
 
 # --------------------------------------------------------------------- task specs
@@ -365,8 +471,11 @@ def task_spec(task_kind: str, payload) -> dict:
         if payload != PAYLOAD:
             raise Refused("SMOKE_PAYLOAD_MISMATCH")
         return {"task_class": TASK_CLASS_SMOKE, "task_kind": KIND, "payload": PAYLOAD}
-    if task_kind == REAL_TASK_KIND:
-        return {"task_class": TASK_CLASS_REAL, "task_kind": REAL_TASK_KIND,
+    if task_kind in (REAL_TASK_KIND, GHAW_BUILDER_KIND):
+        # One real-task payload shape, two executors. The spec keeps the kind, so the
+        # class travels with the identity and a resume does not have to guess which
+        # executor a row belonged to.
+        return {"task_class": TASK_CLASS_REAL, "task_kind": task_kind,
                 "payload": validate_task_payload(payload)}
     raise Refused("TASK_KIND_UNKNOWN")
 
@@ -411,17 +520,22 @@ def task_binding(runtime_task_id, attempt, spec=None) -> dict:
             "prompt_sha256": prompt_sha256(),
         }
     payload = spec["payload"]
+    task_kind = spec["task_kind"]
+    # `task_kind` and `provider` are read from the spec rather than fixed here: the class
+    # is what decides them, and both are inside the hash. For `AI_TASK_V1` this produces
+    # the same document, byte for byte, that it always has - the class is exactly the one
+    # this branch used to assume.
     return {
         "schema_version": SCHEMA_VERSION,
         "kind": REQUEST_KIND,
         "owner_c": OWNER_C,
-        "task_kind": REAL_TASK_KIND,
+        "task_kind": task_kind,
         "payload": payload,
         "payload_sha256": sha256_hex(canonical(payload)),
         "external_task_id": payload["external_task_id"],
         "runtime_task_id": runtime_task_id,
         "attempt": attempt,
-        "provider": PROVIDER,
+        "provider": provider_for_kind(task_kind),
         "prompt_sha256": prompt_sha256(prompt_for_spec(spec)),
     }
 
@@ -432,11 +546,17 @@ def execution_request_id(runtime_task_id, attempt, spec=None) -> str:
 
 
 def build_dispatch_request(runtime_task_id, attempt, spec=None) -> dict:
-    """The canonical request the Runtime forms before anything is sent anywhere."""
+    """The canonical request the Runtime forms before anything is sent anywhere.
+
+    `repo`, `workflow_file` and `ref` are transport configuration, added *after* the
+    identity is hashed, so they are not part of `execution_request_id` - which is exactly
+    why the class that will execute the task has to be visible in the binding instead
+    (`task_kind`, `provider`), not in the target it is sent to.
+    """
     request = dict(task_binding(runtime_task_id, attempt, spec))
     request["execution_request_id"] = sha256_hex(canonical(request))
     request["repo"] = REPO
-    request["workflow_file"] = WORKFLOW_FILE
+    request["workflow_file"] = workflow_file_for_kind(request.get("task_kind", KIND))
     request["ref"] = REF
     return request
 
@@ -454,8 +574,9 @@ def dispatch_inputs(request: dict) -> dict:
         "attempt": request["attempt"],
         "execution_request_id": request["execution_request_id"],
     }
-    if request.get("task_kind") == REAL_TASK_KIND:
-        inputs["task_kind"] = REAL_TASK_KIND
+    task_kind = request.get("task_kind", KIND)
+    if task_kind in (REAL_TASK_KIND, GHAW_BUILDER_KIND):
+        inputs["task_kind"] = task_kind
         inputs["task_payload"] = canonical(validate_task_payload(request["payload"]))
     return inputs
 
@@ -477,14 +598,17 @@ def validate_result(document, *, runtime_task_id, attempt, execution_request_id_
     Fails closed on: wrong field set, wrong kind/version, wrong task, wrong attempt,
     wrong execution_request_id, inconsistent accepted/status, mismatched output hash.
 
-    `task_kind` selects only what "accepted" means:
+    `task_kind` selects two things, and both of them are facts about the class rather
+    than about the text:
       * SMOKE - the output must be the fixed smoke literal (unchanged, so the deployed
         smoke keeps the acceptance rule it has always had);
-      * REAL  - any non-empty model output is accepted. Judging the quality of that
-        output is not this contract's job, and no fixed literal may be reintroduced
-        here: what ties a result to its task is the identity triple, not the text.
+      * REAL (`AI_TASK_V1` and `GHAW_BUILDER_V1`) - any non-empty model output is
+        accepted, together with the provider the class's own executor reports. Judging
+        the quality of that output is not this contract's job, and no fixed literal may
+        be reintroduced here: what ties a result to its task is the identity triple, not
+        the text.
     """
-    if task_kind not in (KIND, REAL_TASK_KIND):
+    if task_kind not in KNOWN_TASK_KINDS:
         raise Refused("RESULT_TASK_KIND_UNKNOWN")
     if type(document) is not dict:
         raise Refused("RESULT_NOT_AN_OBJECT")
@@ -516,7 +640,7 @@ def validate_result(document, *, runtime_task_id, attempt, execution_request_id_
         raise Refused("RESULT_GITHUB_RUN_ID_INVALID")
     if type(document["github_run_attempt"]) is not int or document["github_run_attempt"] < 1:
         raise Refused("RESULT_GITHUB_RUN_ATTEMPT_INVALID")
-    if document["provider"] != PROVIDER:
+    if document["provider"] != provider_for_kind(task_kind):
         raise Refused("RESULT_PROVIDER_MISMATCH")
     if not isinstance(document["output"], str):
         raise Refused("RESULT_OUTPUT_NOT_A_STRING")
