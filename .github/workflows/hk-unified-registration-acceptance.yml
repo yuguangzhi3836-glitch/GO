@@ -64,29 +64,31 @@ jobs:
           node --check application/frontend/shared/registration-verification.js
           node --check application/frontend/consumer/app.js
 
-      - name: Prove live-line migration 0145 to 0146 and legacy supplier compatibility
+      - name: Prove live database head stays 0145 and legacy suppliers need no backfill
         working-directory: application
         shell: bash
         run: |
           set -euo pipefail
-          alembic upgrade 0145_source_latest_index
-          python - <<'PY'
-          from go_hotel.security.service import identity_service
-          identity_service.bootstrap()
-          PY
           alembic upgrade head
           python - <<'PY'
-          from sqlalchemy import select
+          from sqlalchemy import select, text
           from go_hotel.core.config import settings
-          from go_hotel.db.models import SupplierOnboardingRow
+          from go_hotel.db.models import CommercialCaseRow, IdentityUserRow
           from go_hotel.db.session import SessionLocal
+          from go_hotel.security.service import identity_service
+          identity_service.bootstrap()
           with SessionLocal() as s:
-              row=s.scalar(select(SupplierOnboardingRow).where(
-                  SupplierOnboardingRow.supplier_id==settings.bootstrap_supplier_id))
-              assert row is not None
-              assert row.state == 'CONTRACT_ACTIVE'
-          print('HK_LINE_0145_TO_0146=PASS')
-          print('LEGACY_SUPPLIER_ACCESS_BACKFILL=PASS')
+              revision=s.execute(text("select version_num from alembic_version")).scalar_one()
+              assert revision == "0145_source_latest_index", revision
+              supplier=s.scalar(select(IdentityUserRow).where(
+                  IdentityUserRow.supplier_id==settings.bootstrap_supplier_id))
+              assert supplier is not None
+              case=s.scalar(select(CommercialCaseRow).where(
+                  CommercialCaseRow.case_type=="SUPPLIER_ONBOARDING",
+                  CommercialCaseRow.supplier_id==settings.bootstrap_supplier_id))
+              assert case is None
+          print('HK_DATABASE_HEAD_UNCHANGED_0145=PASS')
+          print('LEGACY_SUPPLIER_ZERO_BACKFILL=PASS')
           PY
 
       - name: Registration and preserved PR365 regressions on PostgreSQL 18.4
