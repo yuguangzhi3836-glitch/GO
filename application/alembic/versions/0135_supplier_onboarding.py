@@ -17,7 +17,8 @@ def upgrade():
         sa.Column("state", sa.String(32), nullable=False),
         sa.Column("profile_json", sa.JSON(), nullable=False),
         sa.Column("contract_json", sa.JSON(), nullable=False),
-        sa.Column("property_id", sa.String(64)),
+        sa.Column("hotel_id", sa.String(64)),
+        sa.Column("hotel_registration_direct_id", sa.String(64)),
         sa.Column("review_note", sa.Text()),
         sa.Column("reviewed_by", sa.String(64)),
         sa.Column("contract_review_note", sa.Text()),
@@ -33,7 +34,8 @@ def upgrade():
     op.create_index("ix_supplier_onboarding_supplier_id", "supplier_onboarding", ["supplier_id"])
     op.create_index("ix_supplier_onboarding_owner_user_id", "supplier_onboarding", ["owner_user_id"])
     op.create_index("ix_supplier_onboarding_state", "supplier_onboarding", ["state"])
-    op.create_index("ix_supplier_onboarding_property_id", "supplier_onboarding", ["property_id"])
+    op.create_index("ix_supplier_onboarding_hotel_id", "supplier_onboarding", ["hotel_id"])
+    op.create_index("ix_supplier_onboarding_registration_id", "supplier_onboarding", ["hotel_registration_direct_id"])
 
     # Preserve existing suppliers as already active. New registrations explicitly
     # create REGISTERED rows and therefore enter the staged onboarding flow.
@@ -48,7 +50,8 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_index("ix_supplier_onboarding_property_id", table_name="supplier_onboarding")
+    op.drop_index("ix_supplier_onboarding_registration_id", table_name="supplier_onboarding")
+    op.drop_index("ix_supplier_onboarding_hotel_id", table_name="supplier_onboarding")
     op.drop_index("ix_supplier_onboarding_state", table_name="supplier_onboarding")
     op.drop_index("ix_supplier_onboarding_owner_user_id", table_name="supplier_onboarding")
     op.drop_index("ix_supplier_onboarding_supplier_id", table_name="supplier_onboarding")
