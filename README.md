@@ -1,147 +1,230 @@
 # GO
 
-> Status refreshed 2026-09-13. This README is the repository entry point for current product lineage, project operating context, and operational-source boundaries. It is descriptive project context, not Execution Authority.
+GO 主项目仓库。
 
-## CURRENT ACTIVE HK BUSINESS RUNTIME — DEPTH48
+本 README 只负责**导航、事实来源和工作边界**，不保存容易变化的 runtime 版本号、PR 清单、migration revision 或 image tag。
 
-HK-STAGING is running the DEPTH48 business runtime since **2026-09-13**. The
-machine-readable pointer is
-[`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](docs/canonical-baseline/CURRENT_HK_RUNTIME.json).
+> **开始任何实质性 GO 工作前，先重新读取 live state。不要从 README、旧 PR、旧 Evidence 或历史聊天直接推断当前状态。**
+
+## Start here
+
+按下面顺序获取当前事实：
+
+1. **GitHub 当前 `main`**
+2. 当前任务对应的 **PR / branch / commit / diff**
+3. [GO Update Log](docs/project/UPDATE_LOG.md) — 最近重大变化的短时间线
+4. [OPERATING_CONTEXT.md](docs/project/OPERATING_CONTEXT.md) — 人员、职责和工作方式
+5. [GO_CURRENT_STATE.md](docs/project/GO_CURRENT_STATE.md) — 项目状态快照；注意其 checkpoint 日期，可能落后
+6. [CONTEXT_CHECKPOINT.json](docs/project/CONTEXT_CHECKPOINT.json) — current-state 快照实际绑定的 main
+7. 涉及 HK-STAGING 时，再读对应的 live runtime / deploy / Evidence / Runbook
+
+### 当前 HK runtime 去哪里看
+
+不要从 README 的文字、PR 编号或历史部署记录猜。
+
+机器可读入口：
+
+- [CURRENT_HK_RUNTIME.json](docs/canonical-baseline/CURRENT_HK_RUNTIME.json)
+
+业务运行定义：
+
+- [deploy/hk-staging/README.md](deploy/hk-staging/README.md)
+- `application/`
+- `application/Dockerfile`
+- `deploy/hk-staging/docker-compose.business-runtime.yml`
+- `deploy/hk-staging/RUNTIME_ENV_CONTRACT.md`
+
+Control Plane / HK 操作入口：
+
+- [docs/control-plane/hk-staging/README.md](docs/control-plane/hk-staging/README.md)
+
+如果仓库指针与真实机器 / 当前 Evidence 冲突，以更直接的 live Evidence 为准，并记录 reconciliation；不要静默把历史改成今天的样子。
+
+## Truth priority
+
+GO 的事实优先级：
 
 ```text
-business source    application/
-build definition   application/Dockerfile
-runtime compose    deploy/hk-staging/docker-compose.business-runtime.yml
-env contract       deploy/hk-staging/RUNTIME_ENV_CONTRACT.md
-runtime state      docs/canonical-baseline/CURRENT_HK_RUNTIME.json
-image              go-hotel:depth48-runtime-6d0fd905
-database head      0133_flight_change_plan  (PostgreSQL 18.4, 551 tables)
-business services  api + outbox / recovery / reconciliation / judgment /
-                   mobile-engagement / mobile-push / mobile-push-receipt workers
-protected          caddy, redis, PostgreSQL/RDS data, media volumes, HK Agent,
-                   Executor, signing keys, Task/Evidence/ledger, Control Plane, SSH
-```
-
-> The block above describes the **running** DEPTH48 runtime. Repository-side facts are tracked separately: canonical `main`, `main:application` tree, source fingerprint, the **repository** migration head, the gate/release state and the open candidate PRs. See [`docs/project/GO_CURRENT_STATE.md`](docs/project/GO_CURRENT_STATE.md) and [`docs/project/CONTEXT_CHECKPOINT.json`](docs/project/CONTEXT_CHECKPOINT.json).
+GitHub live state / real environment / current Evidence
 >
-> As of the 2026-09-14 context refresh the running database revision is `0133_flight_change_plan`, while the repository migration head is `0134_flight_status_width` and **has not been applied** to HK. A running-database revision is not a repository migration head.
-
-Build from a fresh clone, with no host-side file, previous parent, or sealed
-package:
-
-```sh
-docker build -t go-hotel:depth48-runtime application/
+repository current-state documents
+>
+historical PR / README / old handoff
+>
+AI memory / historical conversation
 ```
 
-Read [`deploy/hk-staging/README.md`](deploy/hk-staging/README.md) before building,
-running, or cutting over the business runtime.
+未知事实写成 `UNKNOWN`，不要自动补齐。
 
-### Status of the other lineage artifacts
+## Three things that must stay separate
 
-| Item | Status |
+### 1. Source
+
+GitHub 中当前源码、PR、branch、commit、tree。
+
+**Merged into main ≠ 已经部署。**
+
+### 2. Candidate / delivery
+
+被选中的 candidate、构建产物、image、migration plan、deploy Evidence。
+
+**Candidate READY / CI PASS ≠ 已经在真实环境运行。**
+
+### 3. Runtime / business acceptance
+
+真实 HK-STAGING 或 Production 正在运行的 artifact，以及产品功能是否通过业务验收。
+
+**Runtime 正常 ≠ 产品已经完成验收。**
+
+同样：
+
+**Product correctness** 和 **Delivery correctness** 是两件事。
+
+部署链负责证明指定 Candidate 是否被正确安装；它不会自动证明业务逻辑、UI、支付行为或性能已经符合产品要求。
+
+## Main project vs GO Forge
+
+**GO** 是主产品项目。
+
+**GO Forge** 是部署辅助子项目，不等于 GO 主项目本身。
+
+在 GO 仓库中，只保留与 Forge 对 GO 的部署接口、candidate / runtime reconciliation 等必要上下文。Forge 自身源码、Forge Task、Forge rebuild、Forge notifier 等工作应在 GO Forge 的专用工作空间中处理。
+
+不要为了接入 Forge 而把 GO 主项目重新包成一套新的治理体系。
+
+## Repository map
+
+| Path | Purpose |
 | --- | --- |
-| `application/` on current main | **ACTIVE business source.** |
-| `deploy/hk-staging/` | **ACTIVE runtime definition.** |
-| `control-plane/`, `command-center/`, `hk-staging/source/{agent,executor}` | Separate **Control Plane** axis. Not the business runtime. |
-| `CP11_DEPTH46_CONSOLIDATED_PARENT_20260913` | **SUPERSEDED** historical runtime parent. |
-| old `R3.x` HK runtime images | **SUPERSEDED** historical HK runtime. |
-| `CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913` | **SOURCE INPUT / ASSEMBLY ARTIFACT.** Its inner image carries source at `/opt/go/source/` and has no runtime entrypoint; it is not a runnable business image. |
-| `hk-staging/` (2026-09-11 snapshot) | **HISTORICAL SNAPSHOT.** Archive of the previous HK runtime generation; not active. |
-| `deliverables/`, `evidence/` | **HISTORICAL EVIDENCE**, bound to their original commit and scope. Not current authority. |
+| `application/` | GO 业务应用源码 |
+| `deploy/hk-staging/` | HK-STAGING 业务运行定义 |
+| `docs/canonical-baseline/CURRENT_HK_RUNTIME.json` | 当前 HK runtime 的机器可读指针 |
+| `docs/project/UPDATE_LOG.md` | 最近重大变化时间线 |
+| `docs/project/` | 项目上下文、current-state、decision、handoff |
+| `docs/state/` | 模块级状态快照 |
+| `command-center/` | Command Center 相关源码/归档 |
+| `control-plane/` | Control Plane 源码与契约 |
+| `hk-staging/` | 历史/控制面相关 HK 快照；不要把它当当前业务 runtime 定义 |
+| `ci/` | 测试、gate、candidate/retention 相关定义 |
+| `evidence/`, `journey-evidence/` | 与原始 commit / scope 绑定的历史 Evidence |
+| `deliverables/` | 历史交付物 / archive |
+| `packaging/` | candidate / package / restore 相关材料 |
 
-Do not treat a historical parent, sealed package, or archived snapshot as the
-active runtime.
+历史索引可从 [GO_REPOSITORY_INDEX.md](GO_REPOSITORY_INDEX.md) 进入，但其中带具体版本号的段落必须结合其更新时间阅读，不能天然视为今天状态。
 
+## People and authority
 
-## Project operating context
+- **Boss / 余总** — 产品 Owner；决定产品方向、业务需求、优先级和最终业务取舍。
+- **Eason / 陈震曦** — 技术执行、集成、审核和运行协调负责人。
+- **Eason's ChatGPT** — technical coordination + review + context + task decomposition。
+- **WorkBuddy / Codex** — 执行 Agent。
 
-Before taking over GO work, read [`docs/project/OPERATING_CONTEXT.md`](docs/project/OPERATING_CONTEXT.md).
+能 Shell / Git / SSH 不等于拥有 merge、deploy 或 Production mutation authority。
 
-It defines the current human / AI / workstation responsibilities:
+完整职责背景：
 
-- **余总 / Boss** — product owner and final business-direction decision maker.
-- **Boss GPT** — product exploration/development agent that creates candidate designs, branches, and PRs; its output is not automatically canonical or deployment-authorized.
-- **陈震曦 / Eason** — technical operator, integrator, reviewer, and execution coordinator who connects product candidates to real Git, test, packaging, Control Plane, and HK-STAGING work.
-- **Eason's ChatGPT** — technical coordination, context, review, and task-decomposition layer; not product owner or execution authority.
-- **Codex / WorkBuddy** — local execution agents under Eason's control.
-- **Eason-8845** — default Codex main execution workstation; direct SSH paths to HK-STAGING and Command Center are verified.
-- **Eason-13490** (Windows hostname `EASON`) — default WorkBuddy / second development workstation; verified primary ECS path is **direct SSH key access** (`ssh hk-staging` / `ssh go-cc`), with Alibaba Cloud Workbench CLI as fallback.
+- [OPERATING_CONTEXT.md](docs/project/OPERATING_CONTEXT.md)
+- [AGENTS.md](AGENTS.md)
 
-Both fixed workstations are operated by Eason. A workstation or AI agent does not independently own a branch, decide product direction, or gain deployment authority merely because it can execute commands.
+## PR ownership
 
-Access channels and verified connection state are recorded in [OPERATING_CONTEXT.md](docs/project/OPERATING_CONTEXT.md) (section 「服务器访问通道」), with the detailed identity inventory and recovery commands in [CONNECTION_AND_IDENTITY_RUNBOOK.md](docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md).
+严格区分 PR Owner。
 
-## Important: PR numbers are not DEPTH numbers
+### `chenzhenxi1-sudo`
 
-**PR #40 is not “DEPTH40”.** These are two different numbering systems and must not be treated as equivalent.
+可以在 Eason 自有 branch / PR 内：
 
-- **PR #40** (`archive: add canonical HK-STAGING source snapshot`) is an archive of the observed HK-STAGING runtime/source state. It is **not a new GO product version**.
-- **DEPTH40** is a product-candidate generation in the application lineage. Its sealed P0.3 parent was validated separately and later received deployment-compatibility/package work.
-- Product generations advanced through DEPTH45 source repairs and the DEPTH46 consolidated parent; PR47 is now merged. DEPTH47 repairs continue from that merged main.
+- 修改
+- 推送
+- 复核
+- 整合
+- 准备 candidate
 
-Do not infer product generation from a Pull Request number.
+### `yuguangzhi3836-glitch`
 
-## Current product working baseline — refreshed 2026-09-13
+Boss-owned PR：
 
-本轮源码集成记录为 [PR52](https://github.com/yuguangzhi3836-glitch/GO/pull/52)，已纳入 DEPTH47 额度期限、DEPTH48 酒店金额与多航段改签、PR53 独立资金审计。产品源码应用树仍为 `ad7d1de1190f86ad29d1c6cdafbcedd592e27206`，1323 文件。本地 1796 项后端通过／6 项 PostgreSQL 跳过、270 项前端通过；六模块同单三角色接口、刷新／重登及独立 SQL 通过。详见 [本轮修复和明确边界](docs/canonical-baseline/DEPTH48_ORDERED_REPAIRS.md)。
+- 可以读取
+- 可以审核
+- 可以定位问题
+- 可以给出建议
 
-**本轮之后产品源码已不再只是候选**：DEPTH48 已作为业务运行时在 HK-STAGING 真实构建、启动、迁移并通过端到端健康检查。运行定义（`application/Dockerfile`、`deploy/hk-staging/`）已回写本仓库，当前状态见 [CURRENT_HK_RUNTIME.json](docs/canonical-baseline/CURRENT_HK_RUNTIME.json)。加上运行构建文件后的可运行应用树为 `06206c8127afb35de2f2307b6d0a529e54aa8f10`（1325 文件）——它与上面的 1323 文件产品源码树是两个不同身份，不要混用。
+但不直接接管、push、rewrite 或替 Boss 修改。
 
-`CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913` 仍作为**源码输入／装配件**保留，其中的镜像不是业务运行镜像（只有 `COPY application/ /opt/go/source/`，无 CMD、无依赖安装）。[下载与清单指纹](docs/canonical-baseline/CURRENT_SOURCE_PARENT.json)。固定运行时 CI、完整三端可见页面、Sealed Node 与最终发布仍为 HOLD。下列 DEPTH46 身份只描述已生成的历史运行父包，已被当前 DEPTH48 运行时代替。
+如果 Boss PR 的内容需要我方修复，优先在我方 branch / PR 中处理，并明确来源。
 
+PR 编号不是产品 generation，也不能用“编号更新”判断哪个 candidate 更正确。
 
-PR47 was merged as `1c9847c82725b888d239686572f1f44b6dafc2cc` after isolated checks. **DEPTH46 is now a SUPERSEDED historical runtime parent** — it was replaced on HK-STAGING by the DEPTH48 runtime on 2026-09-13. It remains the last complete independently restorable *historical* parent and is retained for audit, not as the active runtime. See [current module work](docs/canonical-baseline/DEPTH47_MODULE_BOUNDARIES.md) for its separate source identity and evidence.
+## Mutation boundary
 
-- DEPTH46 packaged application source: `a09a32e8cc6da10785e8bcf6be025013aec50931`.
-- Application Git tree: `365b848d419ca5517b2cf711c271694bde346e33`; 1311 files.
-- Source SHA256 tree: `0b2c140ae8edf532704b022d345da8892e7863947f4ff5b34e3a0a40a7000077`.
-- Business rules: hotel date changes have zero change fee, a fixed 365-day period from original booking, higher-price differences payable and lower-price differences forfeited. Cancellation uses the accepted refund terms.
-- Exact-source isolated CI 34703772217: 1751 Python passes and 6 PostgreSQL skips; 254 frontend, 34 compatibility and 148 HTTP checks; 53 browser scenarios with independent original-payment and hotel-change money audits.
-- Current artifacts and unresolved scopes: [candidate](docs/canonical-baseline/CURRENT_CANDIDATE.json), [remaining work](docs/canonical-baseline/REMAINING_GAPS.md), [DEPTH46 build](packaging/depth46-consolidated-parent/README.md).
+调查、分析、审核、对比、设计默认 **read-only**。
 
-The new parent combines the unchanged DEPTH45 application with a rebuilt, source-bound image and an independently preserved PR51 deployment-entry supplement. The supplement remains disabled and uninstalled. Package build/restore and archive results are recorded separately from application CI. DEPTH46 package build and restore passed; its 314,723,816-byte ZIP has SHA256 `cc9b16be9555a2499db29a9ce0ebc25879fedd2953577bedc1f5e6e833451ce9`. All 16 archive parts were read back. Build run 34718705172 succeeded at the build step and failed later because the branch moved; independent archive run 34719241031 succeeded. [Parent identity](docs/canonical-baseline/CURRENT_PARENT.json) records these separately.
+真实 mutation 前至少确认：
 
-Full three-end UX, physical devices, PostgreSQL, complete Sealed Node and external provider/bank acceptance remain separate unfinished scopes. Source integration is not final release acceptance. Production remains HOLD. The HK-STAGING business runtime is no longer "HOLD": it is running DEPTH48 as of 2026-09-13 — see [CURRENT_HK_RUNTIME.json](docs/canonical-baseline/CURRENT_HK_RUNTIME.json). PR48 is historical source/evidence and is not a parallel development baseline.
+1. **TARGET**
+2. **SCOPE**
+3. **RECOVERY / ROLLBACK**
+4. **AUDIT / EVIDENCE**
+5. **AUTHORIZATION**
 
-## PR #40 and later: classification
+未经明确授权，不自动：
 
-| PR | Classification | Product-line meaning |
-| --- | --- | --- |
-| [#40](https://github.com/yuguangzhi3836-glitch/GO/pull/40) | HK-STAGING archive | **Not a product version.** Captures observed HK runtime/source/configuration. |
-| [#41](https://github.com/yuguangzhi3836-glitch/GO/pull/41) | Governance / topology | Versioned deployment-topology and change-control proposal; not product-feature progression. |
-| [#42](https://github.com/yuguangzhi3836-glitch/GO/pull/42) | DEPTH40 source consolidation | Materializes the DEPTH40 P0.3 application source directly under `application/`; an earlier consolidation candidate, not a new feature generation by itself. |
-| [#43](https://github.com/yuguangzhi3836-glitch/GO/pull/43) | DEPTH40 deployment compatibility | Runtime/deployment compatibility and rollback-safety repair; business source identity remains DEPTH40. |
-| [#44](https://github.com/yuguangzhi3836-glitch/GO/pull/44) | DEPTH40 packaging | Builds a self-contained DEPTH40 P0.3 compatibility-V2 parent. |
-| [#45](https://github.com/yuguangzhi3836-glitch/GO/pull/45) | Artifact archive | Persists the verified DEPTH40 parent bytes/evidence; not product progression. |
-| [#46](https://github.com/yuguangzhi3836-glitch/GO/pull/46) | Control Plane | Candidate-only `HK_STAGING_TEST_PR` chain; not application product progression. |
-| [#47](https://github.com/yuguangzhi3836-glitch/GO/pull/47) | **DEPTH46 consolidated parent** | Merged at `1c9847c82725`; fixed application, rebuilt image, PR51 supplement and complete restore receipts. |
-| [#48](https://github.com/yuguangzhi3836-glitch/GO/pull/48) | DEPTH41 acceptance / product fix | Cross-end journey acceptance and business-depth repair; selected changes are folded into #47. |
-| [#49](https://github.com/yuguangzhi3836-glitch/GO/pull/49) | Control-plane connection documentation | Workstation / Git / ECS access and identity recovery documentation; not application product progression. |
+- merge PR
+- 部署 HK
+- 执行 migration
+- 修改 Production
+- 接管 Boss PR
+- 新增长期基础设施
+- 重写历史 Evidence
 
-## Source integration status
+## Engineering principle
 
-PR47 is merged at `1c9847c82725b888d239686572f1f44b6dafc2cc` under the user's explicit repository/CI/PR-merge authorization. New work starts from current main `application/`; PR48 remains historical. Earlier DEPTH17/18 and DEPTH40/41 packages remain historical artifacts with their own recorded source and runtime identities.
+GO 不追求流程最多、服务最多或控制最多。
 
-## Historical deliverables
+长期原则：
 
-Historical DEPTH17/DEPTH18 restoration and evidence remain preserved under `deliverables/` and should not be deleted merely because the product lineage has advanced.
+```text
+Simple
+Traceable
+Reversible
+```
 
-- [DEPTH17 archive](deliverables/CP11_DEPTH17_20260908/README.md)
-- [DEPTH18 archive](deliverables/CP11_DEPTH18_20260908/README.md)
+新增长期控制前先回答：
 
-## GO Command Center source
+```text
+REAL_FAILURE_PREVENTED = ?
+```
 
-The archived 2026-09-11 Command Center source and observed runtime configuration are under [`command-center/`](command-center/). This includes the unpacked web source and the exact installed Boss Request Bridge; private keys, runtime `.env` values, databases, and secrets are intentionally excluded.
+优先复用已有 capability，不因为已有一个旧 workflow 就继承整个旧流程。
 
-Operational reference: [`docs/control-plane/command-center/README.md`](docs/control-plane/command-center/README.md).
+不要重复：
 
-## HK-STAGING source and operations
+```text
+process
+-> verifier
+-> verifier of verifier
+-> more governance
+```
 
-The observed 2026-09-11 HK-STAGING runtime source, Agent, Executor, Compose, systemd, Caddy configuration, sanitized configuration, and source/build identity evidence are archived under [`hk-staging/`](hk-staging/). This archive is descriptive evidence only and is not Execution Authority.
+安全也遵循同一原则：能力或暴露面变化时重新评估；只有真实风险或高价值资产需要时，才增加最小必要控制。
 
-**`hk-staging/` is a HISTORICAL SNAPSHOT of the previous HK runtime generation.** It is not the active business runtime. The active runtime definition lives in [`deploy/hk-staging/`](deploy/hk-staging/). Use `hk-staging/` for Agent/Executor and control-plane reasoning; do not use it to determine the current business image, business source, or business service set.
+## Historical evidence
 
+历史的：
 
-Before any HK-STAGING deployment, rollback, verification planning, execution, or Boss GPT/mobile control request, read [`docs/control-plane/hk-staging/README.md`](docs/control-plane/hk-staging/README.md) and the action-specific guidance it links.
+- parent
+- sealed package
+- snapshot
+- old Evidence
+- old Candidate
+- old runtime pointer
 
-Boss ChatGPT/Codex sessions that need to submit an HK-STAGING request should follow the linked **Boss GPT / mobile Request Channel** guide there. Do not reconstruct the control-plane procedure from AI memory or prior chats.
+用于审计和理解历史。
+
+它们不是 current authority，也不应该为了与今天一致而被改写。
+
+## Quick rule for new sessions
+
+如果你只能记住一句：
+
+> **先读 live state，再判断 Source、Candidate、Runtime 分别是什么；不要从 PR 数字、README 旧快照或 AI 记忆推断当前真实环境。**
