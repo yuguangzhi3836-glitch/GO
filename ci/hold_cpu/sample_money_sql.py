@@ -44,9 +44,12 @@ sessions=sessionmaker(bind=engine,expire_on_commit=False,autoflush=False)
 money.SessionLocal=sessions
 service=money.UnifiedMoneyMovementService()
 catalog={}
+execution_batches={}
 probe=CallSQL(engine)
 def catalog_sql(conn,cursor,statement,parameters,context,many):
-    if probe._current() is not None:
+    current=probe._current()
+    if current is not None:
+        execution_batches.setdefault(current['call_id'],[]).append({'executemany':bool(many),'parameter_sets':len(parameters) if many else 1})
         catalog[hashlib.sha256(statement.encode()).hexdigest()]=' '.join(statement.split())
 event.listen(engine,'before_cursor_execute',catalog_sql)
 def create_pair(n):
@@ -96,6 +99,11 @@ for n in range(23):
     create_pair(n)
 snapshot=probe.snapshot()
 assert snapshot['valid'],snapshot['errors']
+for row in snapshot['calls']:
+    batches=execution_batches[row['call_id']]
+    assert len(batches)==len(row['sql'])
+    for q,b in zip(row['sql'],batches):
+        q.update(b)
 warmup=snapshot['calls'][:15]
 measured=snapshot['calls'][15:]
 expected_counts={'fresh_AUTH':5,'fresh_CAPTURE':9,'replay_AUTH':2,'replay_CAPTURE':2,'conflict':2}
@@ -132,6 +140,7 @@ probe.close()
 event.remove(engine,'before_cursor_execute',catalog_sql)
 engine.dispose();admin.dispose()
 result={'scope':'isolated rebuilt serial RIDE_ORDER fixture, historical application; not ABBA/load/release evidence',
+    'runner_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
     'time_utc':datetime.now(timezone.utc).isoformat(),'app_head':git('rev-parse','HEAD'),
     'app_tree':expected,'probe_head':subprocess.check_output(['git','-C',str(Path(__file__).resolve().parent),'rev-parse','HEAD'],text=True).strip(),
     'python':platform.python_version(),'sqlalchemy':sqlalchemy.__version__,'psycopg':psycopg.__version__,
