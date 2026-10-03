@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - chenzhenxi/hk-unified-pr365-registration-20261003
+      - fix/registration-config-384
   pull_request:
     branches: [main]
     paths:
@@ -96,4 +97,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pytest             tests/test_supplier_onboarding_hk_unified.py             tests/test_registration_verification.py             tests/test_registration_privacy.py             tests/test_sprint1y_consumer_identity.py             tests/test_sprint1u_production_bff.py             tests/test_current_rental_vault_guards.py
+          python -m pytest             tests/test_supplier_onboarding_hk_unified.py             tests/test_registration_verification.py             tests/test_registration_email_configuration.py             tests/test_registration_privacy.py             tests/test_sprint1y_consumer_identity.py             tests/test_sprint1u_production_bff.py             tests/test_current_rental_vault_guards.py
