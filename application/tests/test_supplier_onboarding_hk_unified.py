@@ -8,7 +8,7 @@ from go_hotel.db.models import (
 )
 from go_hotel.db.session import SessionLocal
 from go_hotel.services.supplier_onboarding_state import supplier_onboarding_state_service
-from test_registration_verification import send
+from test_registration_verification import send, delivery
 
 
 def csrf(client):
