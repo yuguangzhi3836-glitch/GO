@@ -24,6 +24,8 @@ class MFAConfirmBody(BaseModel): code:str
 SUPPLIER_REGISTRATION_TERMS={
     "supplier_service_terms":"2026-08-25-v1",
     "privacy_policy":"2026-08-25-v1",
+    "data_processing_terms":"2026-08-25-v1",
+    "electronic_signature_authorization":"2026-08-25-v1",
     "platform_operating_rules":"2026-08-25-v1",
 }
 class SupplierRegisterBody(BaseModel):
