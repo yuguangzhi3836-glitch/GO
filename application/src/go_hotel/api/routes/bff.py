@@ -54,7 +54,7 @@ class SupplierProfileBody(BaseModel):
 class SupplierReviewBody(BaseModel):
     decision:Literal['APPROVE','NEEDS_CHANGES']
     note:str|None=None
-    property_id:str|None=None
+    registration_direct_id:str|None=None
 
 class SupplierContractBody(BaseModel):
     contract_ref:str
@@ -119,7 +119,7 @@ def supplier_register(body:SupplierRegisterBody,request:Request,response:Respons
             audit_id=uid('aud'),actor_id=user_id,actor_type='SUPPLIER_USER',supplier_id=supplier_id,roles=['SUPPLIER_OWNER'],session_id=None,
             action='SUPPLIER_REGISTRATION_TERMS_ACCEPTED',resource_type='SUPPLIER_REGISTRATION',resource_id=supplier_id,request_id=getattr(request.state,'request_id',None),
             client_ip=request.client.host if request.client else None,http_method='POST',path='/bff/auth/supplier/register',before_state=None,
-            after_state={'registration_state':'ACCOUNT_CREATED_TERMS_ACCEPTED'},decision_id=None,evidence_id=None,approval_id=None,
+            after_state={'registration_state':'REGISTERED','next_step':'COMPLETE_PROFILE'},decision_id=None,evidence_id=None,approval_id=None,
             metadata_json={'organization_name':body.organization_name,'contact_name':body.contact_name,'phone_provided':bool(body.phone),'term_versions':SUPPLIER_REGISTRATION_TERMS,'deferred_terms':SUPPLIER_DEFERRED_TERMS,'accepted_once':True},created_at=t,
         ));s.commit()
     supplier_onboarding_state_service.create_registered(
@@ -176,7 +176,7 @@ def supplier_onboarding_submit(p:Principal=Depends(supplier_account_principal)):
 
 @router.post('/internal/v1/supplier-onboarding/{supplier_id}/profile-decision')
 def supplier_onboarding_profile_decision(supplier_id:str,body:SupplierReviewBody,p:Principal=Depends(admin_principal)):
-    try:return {'data':supplier_onboarding_state_service.decide_profile(supplier_id,p.user_id,body.decision,body.note,body.property_id)}
+    try:return {'data':supplier_onboarding_state_service.decide_profile(supplier_id,p.user_id,body.decision,body.note,body.registration_direct_id)}
     except ValueError as e:raise HTTPException(409,detail=str(e))
 
 @router.post('/bff/supplier/onboarding/contract')
