@@ -36,14 +36,19 @@ def digest(value):
 def ready():
     try:
         digest('readiness')
-        from go_hotel.services import registration_privacy
-        return registration_email.ready() and registration_privacy.ready()
+        return registration_email.ready()
     except ValueError:
         return False
 
 
 def policy_digest(policy):
-    return hashlib.sha256(json.dumps({'versions': policy['versions'], 'hashes': policy['term_hashes']}, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    bound={
+        'versions':policy['versions'],
+        'hashes':policy['term_hashes'],
+        'deferred':sorted(policy.get('deferred') or []),
+        'account_stage':policy.get('account_stage') is True,
+    }
+    return hashlib.sha256(json.dumps(bound,sort_keys=True,separators=(',',':')).encode()).hexdigest()
 
 
 def subject(audience, email):

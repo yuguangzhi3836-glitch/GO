@@ -11,19 +11,29 @@ from go_hotel.api.routes.bff import SUPPLIER_REGISTRATION_TERMS
 def hashes(versions):
     return {k:hashlib.sha256(('SYNTHETIC TEST BODY '+k).encode()).hexdigest() for k in versions}
 
+def account_versions(audience):
+    source=CONSUMER_REGISTRATION_TERMS if audience=='consumer' else SUPPLIER_REGISTRATION_TERMS
+    ids=('consumer_service_terms','privacy_policy') if audience=='consumer' else (
+        'supplier_service_terms','privacy_policy','platform_operating_rules')
+    return {k:source[k] for k in ids}
+
 def approved_terms_fixture(monkeypatch):
     # Synthetic fixture models an approved verification runtime only for local
     # identity-flow tests. It never approves the shipped legal drafts.
     from go_hotel.core.config import settings
     synthetic_mail_runtime(monkeypatch)
     def policy(audience):
-        versions=CONSUMER_REGISTRATION_TERMS if audience=='consumer' else SUPPLIER_REGISTRATION_TERMS
+        versions=account_versions(audience)
         digest=hashes(versions)
-        return {'acceptance_enabled':True,'versions':dict(versions),'term_hashes':digest,
+        deferred=['personal_vault_terms'] if audience=='consumer' else ['data_processing_terms','electronic_signature_authorization']
+        return {'acceptance_enabled':True,'enabled':True,'account_stage':True,'formal_approval_pending':False,
+                'versions':dict(versions),'term_hashes':digest,'deferred':deferred,
                 'documents':[{'id':k,'title':k,'version':v,'sha256':digest[k],'status':'APPROVED',
                 'content_url':'/v1/registration-terms/'+k+'/'+v} for k,v in versions.items()]}
     monkeypatch.setattr(terms,'registration_terms_status',policy)
     monkeypatch.setattr(terms,'require_registration_terms_ready',policy)
+    monkeypatch.setattr(terms,'account_registration_terms_status',policy)
+    monkeypatch.setattr(terms,'require_account_registration_terms_ready',policy)
 
 
 def register_synthetic_consumer(client, *, json):
@@ -35,9 +45,10 @@ def register_synthetic_consumer(client, *, json):
     import pytest
     with pytest.MonkeyPatch.context() as patch:
         approved_terms_fixture(patch)
+        versions=account_versions('consumer')
         payload = {**json, 'accepted_terms': True,
-                   'term_versions': dict(CONSUMER_REGISTRATION_TERMS),
-                   'term_hashes': hashes(CONSUMER_REGISTRATION_TERMS)}
+                   'term_versions': versions,
+                   'term_hashes': hashes(versions)}
         payload = with_verification(payload, 'consumer')
         return client.post('/v1/consumer/auth/register', json=payload)
 
@@ -50,7 +61,6 @@ def synthetic_mail_runtime(monkeypatch):
     monkeypatch.setattr(registration_privacy, 'operational_evidence_status', lambda: {'ready': True, 'digest': 'synthetic-only'})
     registration_privacy.cleanup_once()
     monkeypatch.setattr(settings, 'registration_verification_enabled', True)
-    monkeypatch.setattr(settings, 'jwt_signing_key', 'isolated-registration-test-key-32bytes-only')
     monkeypatch.setattr(registration_email, 'configuration', lambda: ({'test_only': True}, 'not-a-real-password'))
 
 
@@ -60,6 +70,8 @@ def with_verification(payload, audience):
     sent=[]
     with pytest.MonkeyPatch.context() as patch:
         patch.setattr(registration_email, 'send_code', lambda email,code: sent.append(code))
-        result=verification.issue(audience,payload['email'],'fixture-only',{'versions':payload['term_versions'],'term_hashes':payload['term_hashes']})
+        deferred=['personal_vault_terms'] if audience=='consumer' else ['data_processing_terms','electronic_signature_authorization']
+        result=verification.issue(audience,payload['email'],'fixture-only',{'versions':payload['term_versions'],'term_hashes':payload['term_hashes'],'deferred':deferred,'account_stage':True})
     from go_hotel.services.registration_privacy import required_decisions
-    return {**payload,'registration_decisions':required_decisions({'versions':payload['term_versions']}),'challenge_id':result['challenge_id'],'verification_code':sent[-1]}
+    deferred=['personal_vault_terms'] if audience=='consumer' else ['data_processing_terms','electronic_signature_authorization']
+    return {**payload,'registration_decisions':required_decisions({'versions':payload['term_versions'],'deferred':deferred}),'challenge_id':result['challenge_id'],'verification_code':sent[-1]}

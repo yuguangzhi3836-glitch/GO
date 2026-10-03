@@ -75,14 +75,14 @@ def test_separate_decisions_required_before_mail_and_atomic_registration(client,
     assert len(page.json()['data']['decisions'])==1
 
 
-def test_gate_requires_operational_evidence_and_fresh_cleanup(client,delivery,monkeypatch):
-    monkeypatch.setattr(privacy,'operational_evidence_status',lambda:{'ready':False})
-    assert not verification.ready()
-    assert not client.get('/v1/consumer/auth/registration').json()['data']['enabled']
-    monkeypatch.setattr(privacy,'operational_evidence_status',lambda:{'ready':True})
+def test_account_verification_is_independent_from_operational_privacy_readiness(client,delivery,monkeypatch):
+    monkeypatch.setattr(privacy,'operational_evidence_status',lambda:{'ready':False,'digest':None})
+    assert not privacy.ready()
+    assert verification.ready()
+    assert client.get('/v1/consumer/auth/registration').json()['data']['enabled']
     with SessionLocal.begin() as s:s.get(RegistrationMaintenanceRow,'cleanup').success_ms=0
-    assert not verification.ready()
-    privacy.cleanup_once();assert verification.ready()
+    assert not privacy.ready()
+    assert verification.ready()
 
 
 def test_evidence_manifest_missing_expired_or_wrong_terms_never_ready(tmp_path,monkeypatch):
@@ -135,3 +135,35 @@ def test_privacy_migration_and_rollback_guard(tmp_path):
             with pytest.raises(RuntimeError,match='PRIVACY_RECORDS_PRESENT'):migration.downgrade()
             conn.execute(text('DELETE FROM privacy_request'));migration.downgrade()
             assert not inspect(conn).get_table_names()
+
+
+@pytest.mark.parametrize(
+    "audience,required,deferred",
+    [
+        ("consumer", ("consumer_service_terms","privacy_policy"), ("personal_vault_terms",)),
+        ("supplier", ("supplier_service_terms","privacy_policy","platform_operating_rules"),
+         ("data_processing_terms","electronic_signature_authorization")),
+    ],
+)
+def test_account_policy_does_not_require_deferred_document_bytes(monkeypatch,audience,required,deferred):
+    from go_hotel.services import registration_terms as terms
+    docs=[
+        {"id":term_id,"title":term_id,"version":"account-v1","file":term_id+".md",
+         "sha256":"a"*64,"status":"DRAFT","approval":None}
+        for term_id in required
+    ]
+    monkeypatch.setattr(terms,"_load_registry",lambda:{
+        "documents":docs,"release_status":"DRAFT","unresolved":[],
+    })
+    monkeypatch.setattr(terms,"_document",lambda registry,term_id,version:{
+        "id":term_id,"title":term_id,"version":version,"status":"DRAFT",
+        "sha256":"a"*64,"content_url":"/terms/"+term_id,"content":"account body",
+        "content_type":"text/markdown","effective_at":None,
+    })
+    policy=terms.account_registration_terms_status(audience)
+    assert tuple(policy["versions"])==required
+    assert tuple(policy["deferred"])==deferred
+    decisions=privacy.required_decisions(policy)
+    for term_id in deferred:
+        assert decisions[term_id]=="DEFERRED"
+        assert term_id not in policy["term_hashes"]

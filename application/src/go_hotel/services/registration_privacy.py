@@ -23,9 +23,13 @@ def now_ms():
 
 
 def required_decisions(policy):
-    return {k: ('NOTICE_ACKNOWLEDGED' if k == 'privacy_policy' else
-                'DEFERRED' if k == 'personal_vault_terms' else 'CONTRACT_ACCEPTED')
-            for k in policy['versions']}
+    out = {k: ('NOTICE_ACKNOWLEDGED' if k == 'privacy_policy' else 'CONTRACT_ACCEPTED')
+           for k in policy['versions']}
+    for key in policy.get('deferred') or ():
+        if key in out:
+            raise ValueError('REGISTRATION_DEFERRED_TERM_OVERLAP')
+        out[key] = 'DEFERRED'
+    return out
 
 
 def validate_decisions(policy, decisions):
