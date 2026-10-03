@@ -380,9 +380,16 @@ def _verify(release_id, candidate_image_id, expected_current_image_id,
         return _document("SUCCESS", release_id, candidate_image_id,
                          expected_current_image_id, gates, "VERIFY_OK",
                          identity), 0
-    except (OSError, ValueError, TypeError):
-        return _document("REJECTED", release_id, candidate_image_id,
-                         expected_current_image_id, gates, "VERIFY_REJECTED"), 2
+    except (OSError, ValueError, TypeError) as exc:
+        out = _document("REJECTED", release_id, candidate_image_id,
+                        expected_current_image_id, gates, "VERIFY_REJECTED")
+        # DEPLOY, CANARY and ROLLBACK all report why they refused; VERIFY did not, and a
+        # refusal nobody can read is the most expensive kind of refusal.  CCV1-308 spent
+        # a whole round reconstructing the executor's own words from the collector
+        # because this line was missing: the Evidence said VERIFY_REJECTED, gate_results
+        # was empty, and the actual stop condition existed only in a discarded handler.
+        out["error_code"] = str(exc)[:80]
+        return out, 2
 
 
 def main(argv=None, runner=None, inputs=None, sleeper=None):
