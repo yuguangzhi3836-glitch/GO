@@ -19,11 +19,15 @@ def approved_terms_fixture(monkeypatch):
     def policy(audience):
         versions=CONSUMER_REGISTRATION_TERMS if audience=='consumer' else SUPPLIER_REGISTRATION_TERMS
         digest=hashes(versions)
-        return {'acceptance_enabled':True,'versions':dict(versions),'term_hashes':digest,
+        deferred=['personal_vault_terms'] if audience=='consumer' else ['data_processing_terms','electronic_signature_authorization']
+        return {'acceptance_enabled':True,'enabled':True,'account_stage':True,'formal_approval_pending':False,
+                'versions':dict(versions),'term_hashes':digest,'deferred':deferred,
                 'documents':[{'id':k,'title':k,'version':v,'sha256':digest[k],'status':'APPROVED',
                 'content_url':'/v1/registration-terms/'+k+'/'+v} for k,v in versions.items()]}
     monkeypatch.setattr(terms,'registration_terms_status',policy)
     monkeypatch.setattr(terms,'require_registration_terms_ready',policy)
+    monkeypatch.setattr(terms,'account_registration_terms_status',policy)
+    monkeypatch.setattr(terms,'require_account_registration_terms_ready',policy)
 
 
 def register_synthetic_consumer(client, *, json):
@@ -62,4 +66,5 @@ def with_verification(payload, audience):
         patch.setattr(registration_email, 'send_code', lambda email,code: sent.append(code))
         result=verification.issue(audience,payload['email'],'fixture-only',{'versions':payload['term_versions'],'term_hashes':payload['term_hashes']})
     from go_hotel.services.registration_privacy import required_decisions
-    return {**payload,'registration_decisions':required_decisions({'versions':payload['term_versions']}),'challenge_id':result['challenge_id'],'verification_code':sent[-1]}
+    deferred=['personal_vault_terms'] if audience=='consumer' else ['data_processing_terms','electronic_signature_authorization']
+    return {**payload,'registration_decisions':required_decisions({'versions':payload['term_versions'],'deferred':deferred}),'challenge_id':result['challenge_id'],'verification_code':sent[-1]}
