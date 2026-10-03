@@ -1,0 +1,63 @@
+name: PR376 candidate admission
+
+on:
+  push:
+    branches:
+      - chenzhenxi/pr376-candidate-admission-20261003
+
+permissions:
+  contents: read
+
+jobs:
+  admission:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate converged candidate identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, pathlib, sys
+          root=pathlib.Path(".")
+          fact_dir=root/"docs/candidate-admission/pr376"
+          expected="2184081d144c0ad103a6f9f71559bf7c8f38c8986b88132b4e00f5dc156cca84"
+          sys.path.insert(0,str(root/"hk-staging/source/executor/runtime"))
+          import candidate_fact
+          raw=json.loads((fact_dir/(expected+".json")).read_text())
+          wrapper=json.loads((fact_dir/"CURRENT_CANDIDATE.json").read_text())
+          source=json.loads((fact_dir/"SOURCE_IDENTITY.json").read_text())
+          candidate_fact.validate_converged(raw)
+          observed=candidate_fact.candidate_contract_sha256(raw)
+          assert observed==expected,(observed,expected)
+          assert wrapper["candidate_contract_sha256"]==expected
+          assert wrapper["release_candidate_v1"]==raw
+          assert raw["source_commit"]==source["source_commit"]
+          assert raw["application_tree"]==source["application_tree"]
+          assert raw["source_fingerprint"]==source["source_fingerprint"]
+          assert raw["migration_head"]=="0145_source_latest_index"
+          assert raw["migration_required"] is False
+          print("CANDIDATE_CONTRACT_SHA256="+observed)
+          print("MIGRATION_REQUIRED=false")
+          PY
+
+      - name: Run canonical candidate admission
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/pr376-admission"
+          python control-plane/command-center-candidate-admission-v1/command-center/go-candidate-admission             --candidate docs/candidate-admission/pr376/CURRENT_CANDIDATE.json             --test-pr-evidence docs/candidate-admission/pr376/TEST_PR_EVIDENCE.json             --go-repo "$GITHUB_WORKSPACE"             --out "$out"
+          cat "$out/RELEASE_CANDIDATE_ADMISSION.json"
+          python - "$out/RELEASE_CANDIDATE_ADMISSION.json" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          assert d["verdict"]["accepted"] is True,d["verdict"]
+          assert d["deployability"]["deployable_artifact_established"] is True,d["deployability"]
+          assert d["candidate_contract_sha256"]=="2184081d144c0ad103a6f9f71559bf7c8f38c8986b88132b4e00f5dc156cca84"
+          assert d["release_candidate"]["source_commit"]=="9f889acfcd36a82c7565b723261ee046c2615314"
+          print("ADMISSION=ACCEPT")
+          print("DEPLOYABLE_ARTIFACT=PROVEN")
+          PY
