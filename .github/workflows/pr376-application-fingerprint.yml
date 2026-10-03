@@ -1,0 +1,38 @@
+name: PR376 application fingerprint
+on:
+  push:
+    branches:
+      - chenzhenxi/pr376-fingerprint-20261003
+permissions:
+  contents: read
+jobs:
+  fingerprint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Compute immutable application identity
+        shell: bash
+        env:
+          TARGET_SHA: 9f889acfcd36a82c7565b723261ee046c2615314
+          EXPECTED_TREE: dd745a7d7ab58b05c3f14c7794ca7ab826488bf3
+        run: |
+          set -euo pipefail
+          actual_tree="$(git rev-parse "$TARGET_SHA:application")"
+          test "$actual_tree" = "$EXPECTED_TREE"
+          python - <<'PY'
+          import hashlib, pathlib, subprocess, os
+          sha=os.environ["TARGET_SHA"]
+          names=subprocess.check_output(["git","ls-tree","-r","--name-only",f"{sha}:application"],text=True).splitlines()
+          rows=[]
+          for name in names:
+              data=subprocess.check_output(["git","show",f"{sha}:application/{name}"])
+              rows.append(f"{name}\0{hashlib.sha256(data).hexdigest()}\n")
+          digest=hashlib.sha256("".join(sorted(rows)).encode()).hexdigest()
+          print("SOURCE_COMMIT="+sha)
+          print("APPLICATION_TREE="+os.environ["EXPECTED_TREE"])
+          print("SOURCE_FILES="+str(len(names)))
+          print("SOURCE_FINGERPRINT="+digest)
+          PY
