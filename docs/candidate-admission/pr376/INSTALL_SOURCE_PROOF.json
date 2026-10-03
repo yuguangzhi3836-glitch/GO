@@ -1,0 +1,263 @@
+{
+  "application_path": null,
+  "authority": {
+    "activates": false,
+    "authorises": false,
+    "calls_the_network": false,
+    "deploys": false,
+    "may_read_the_candidate_and_its_evidence": true,
+    "may_read_the_repository": true,
+    "note": "The proof answers one question -- are these bytes canonical. It grants nothing.",
+    "publishes": false,
+    "signs": false,
+    "writes_to_the_repository": false
+  },
+  "authorized_deploy_commit": "7e7aedd556eac986210f1a5474c7b31e04d37a29",
+  "candidate_contract_sha256": null,
+  "canonical_commit": "7e7aedd556eac986210f1a5474c7b31e04d37a29",
+  "canonical_ref": "origin/main",
+  "codes": [
+    "E_COMMIT_NOT_CANONICAL",
+    "E_TREE_MISMATCH",
+    "E_ARTIFACT_MISMATCH",
+    "E_BLOB_DRIFT",
+    "E_INSTALL_DRIFT"
+  ],
+  "conditions": [
+    "UNRESOLVABLE",
+    "PROVENANCE_BROKEN",
+    "DRIFT",
+    "NOT_THE_AUTHORIZED_COMMIT"
+  ],
+  "contract": "CANONICAL_SOURCE_INVARIANT",
+  "drift": [],
+  "modules": [
+    {
+      "blob": "33a61938e6a8011c6e108316b0f2a6bcd9303596",
+      "name": "artifact_runtime",
+      "path": "hk-staging/source/executor/runtime/artifact_runtime.py",
+      "sha256": "736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b"
+    },
+    {
+      "blob": "edb8fbf3f7de07c3f35ee1f5caa733d46acd9208",
+      "name": "canary_runtime",
+      "path": "hk-staging/source/executor/runtime/canary_runtime.py",
+      "sha256": "50284e007947730feeec57e1bcbebabb80b7ac4766524214d8da6424c606181a"
+    },
+    {
+      "blob": "0ff11c54335fceb54fa22e3c81e2408534aa136c",
+      "name": "candidate_fact",
+      "path": "hk-staging/source/executor/runtime/candidate_fact.py",
+      "sha256": "b378a4724633a963526409ed98dfbfa90a1ab601aa123771edcf4c6567cde0fd"
+    },
+    {
+      "blob": "2df319544f717afe63b49a121d22fda8a9e22137",
+      "name": "candidate_source",
+      "path": "hk-staging/source/executor/runtime/candidate_source.py",
+      "sha256": "f9855b4c706678f9dfd79eac46343ca79fd7e8f3536fd92e60d8c4e37178c373"
+    },
+    {
+      "blob": "580c60f6c52986f0342baca2c032ed5935525d3c",
+      "name": "collector_runtime",
+      "path": "hk-staging/source/executor/runtime/collector_runtime.py",
+      "sha256": "a7f55a7c1133a6cae17075d76b91ac6c894d41bbf619feab02af894bbed82b5a"
+    },
+    {
+      "blob": "50e0f286ff4a42e26c8e4b838330e0de2f821341",
+      "name": "collector_runtime_regression",
+      "path": "hk-staging/source/executor/runtime/collector_runtime_regression.py",
+      "sha256": "47c730df3b63b8670574874f0461006503fbc9aef685da5f9684ea816dd2f309"
+    },
+    {
+      "blob": "000af6de3ce9142b83ffa5c8d65fdcb2f4492c4e",
+      "name": "deploy_runtime",
+      "path": "hk-staging/source/executor/runtime/deploy_runtime.py",
+      "sha256": "7d185ce7dd73e62bbafdba55386b4f98c679aa522364ef61ab0463b1b26dbdb4"
+    },
+    {
+      "blob": "5f383276e7a0f8eb659a83342516a3b4be110e0f",
+      "name": "environment_lock_regression",
+      "path": "hk-staging/source/executor/runtime/environment_lock_regression.py",
+      "sha256": "3e6e6fdbbb0ab28bcdd88fcf5ec744ddb54e61a3eadd2a4b33a890329310b6c3"
+    },
+    {
+      "blob": "2df05b52894e553f521ee0cc22ea756063f3e6d5",
+      "name": "install_fact",
+      "path": "hk-staging/source/executor/runtime/install_fact.py",
+      "sha256": "86cf09ba43f17651b7d758d8e4c446fd78630c8dd32c73ef8c1e6adcde91fa3a"
+    },
+    {
+      "blob": "47ad1ce1b2dfd3f10b746dcbfc564049af8a3998",
+      "name": "media_mount",
+      "path": "hk-staging/source/executor/runtime/media_mount.py",
+      "sha256": "92af6bfc444510f44819719a48a6309e1712393916e69a4fc95f9037914fd059"
+    },
+    {
+      "blob": "14f12f219afe71294a39ed9e3aeec25346e63596",
+      "name": "migration_guard",
+      "path": "hk-staging/source/executor/runtime/migration_guard.py",
+      "sha256": "89a0cc3007eafe7533ba88f6f8eb2982a10fa9a1c90789f480530329cda5634a"
+    },
+    {
+      "blob": "c6f319ffc8f9a26f3be711ff7aab30db7e49ceb2",
+      "name": "rollback_runtime",
+      "path": "hk-staging/source/executor/runtime/rollback_runtime.py",
+      "sha256": "8467c240f7e3f7a096515f6e47a6760033d3c5ab20fbb452cfb504133bf8db1f"
+    },
+    {
+      "blob": "32c49369c3370fcf8767a01331a39911ff939fcd",
+      "name": "rollback_runtime_regression",
+      "path": "hk-staging/source/executor/runtime/rollback_runtime_regression.py",
+      "sha256": "4f601c43594b1982402ab7015828e770f48600bd0f00213cf0a2e4aab7cdfe01"
+    }
+  ],
+  "phase": "INSTALL_SOURCE",
+  "refusal": null,
+  "schema": "go.canonical-source-invariant.v1",
+  "source_tree": "4a24e552f82d699a8e9cab555087e4c1db23f561",
+  "steps": [
+    {
+      "code": null,
+      "condition": null,
+      "drift": [],
+      "observed": {
+        "canonical_commit": "7e7aedd556eac986210f1a5474c7b31e04d37a29",
+        "source_commit": "7e7aedd556eac986210f1a5474c7b31e04d37a29"
+      },
+      "state": "PASS",
+      "step": "commit_is_canonical"
+    },
+    {
+      "code": null,
+      "condition": null,
+      "drift": [],
+      "observed": {
+        "declared_tree": "4a24e552f82d699a8e9cab555087e4c1db23f561",
+        "tree_path": "."
+      },
+      "state": "PASS",
+      "step": "application_tree_matches"
+    },
+    {
+      "code": null,
+      "condition": null,
+      "drift": [],
+      "observed": {
+        "reason": "not_part_of_this_proof"
+      },
+      "state": "NOT_EVALUATED",
+      "step": "artifact_matches_the_signed_result"
+    },
+    {
+      "code": null,
+      "condition": null,
+      "drift": [],
+      "observed": {
+        "reason": "not_part_of_this_proof"
+      },
+      "state": "NOT_EVALUATED",
+      "step": "installed_identity_is_the_authorized_commit"
+    },
+    {
+      "code": null,
+      "condition": null,
+      "drift": [],
+      "modules": [
+        {
+          "blob": "33a61938e6a8011c6e108316b0f2a6bcd9303596",
+          "name": "artifact_runtime",
+          "path": "hk-staging/source/executor/runtime/artifact_runtime.py",
+          "sha256": "736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b"
+        },
+        {
+          "blob": "edb8fbf3f7de07c3f35ee1f5caa733d46acd9208",
+          "name": "canary_runtime",
+          "path": "hk-staging/source/executor/runtime/canary_runtime.py",
+          "sha256": "50284e007947730feeec57e1bcbebabb80b7ac4766524214d8da6424c606181a"
+        },
+        {
+          "blob": "0ff11c54335fceb54fa22e3c81e2408534aa136c",
+          "name": "candidate_fact",
+          "path": "hk-staging/source/executor/runtime/candidate_fact.py",
+          "sha256": "b378a4724633a963526409ed98dfbfa90a1ab601aa123771edcf4c6567cde0fd"
+        },
+        {
+          "blob": "2df319544f717afe63b49a121d22fda8a9e22137",
+          "name": "candidate_source",
+          "path": "hk-staging/source/executor/runtime/candidate_source.py",
+          "sha256": "f9855b4c706678f9dfd79eac46343ca79fd7e8f3536fd92e60d8c4e37178c373"
+        },
+        {
+          "blob": "580c60f6c52986f0342baca2c032ed5935525d3c",
+          "name": "collector_runtime",
+          "path": "hk-staging/source/executor/runtime/collector_runtime.py",
+          "sha256": "a7f55a7c1133a6cae17075d76b91ac6c894d41bbf619feab02af894bbed82b5a"
+        },
+        {
+          "blob": "50e0f286ff4a42e26c8e4b838330e0de2f821341",
+          "name": "collector_runtime_regression",
+          "path": "hk-staging/source/executor/runtime/collector_runtime_regression.py",
+          "sha256": "47c730df3b63b8670574874f0461006503fbc9aef685da5f9684ea816dd2f309"
+        },
+        {
+          "blob": "000af6de3ce9142b83ffa5c8d65fdcb2f4492c4e",
+          "name": "deploy_runtime",
+          "path": "hk-staging/source/executor/runtime/deploy_runtime.py",
+          "sha256": "7d185ce7dd73e62bbafdba55386b4f98c679aa522364ef61ab0463b1b26dbdb4"
+        },
+        {
+          "blob": "5f383276e7a0f8eb659a83342516a3b4be110e0f",
+          "name": "environment_lock_regression",
+          "path": "hk-staging/source/executor/runtime/environment_lock_regression.py",
+          "sha256": "3e6e6fdbbb0ab28bcdd88fcf5ec744ddb54e61a3eadd2a4b33a890329310b6c3"
+        },
+        {
+          "blob": "2df05b52894e553f521ee0cc22ea756063f3e6d5",
+          "name": "install_fact",
+          "path": "hk-staging/source/executor/runtime/install_fact.py",
+          "sha256": "86cf09ba43f17651b7d758d8e4c446fd78630c8dd32c73ef8c1e6adcde91fa3a"
+        },
+        {
+          "blob": "47ad1ce1b2dfd3f10b746dcbfc564049af8a3998",
+          "name": "media_mount",
+          "path": "hk-staging/source/executor/runtime/media_mount.py",
+          "sha256": "92af6bfc444510f44819719a48a6309e1712393916e69a4fc95f9037914fd059"
+        },
+        {
+          "blob": "14f12f219afe71294a39ed9e3aeec25346e63596",
+          "name": "migration_guard",
+          "path": "hk-staging/source/executor/runtime/migration_guard.py",
+          "sha256": "89a0cc3007eafe7533ba88f6f8eb2982a10fa9a1c90789f480530329cda5634a"
+        },
+        {
+          "blob": "c6f319ffc8f9a26f3be711ff7aab30db7e49ceb2",
+          "name": "rollback_runtime",
+          "path": "hk-staging/source/executor/runtime/rollback_runtime.py",
+          "sha256": "8467c240f7e3f7a096515f6e47a6760033d3c5ab20fbb452cfb504133bf8db1f"
+        },
+        {
+          "blob": "32c49369c3370fcf8767a01331a39911ff939fcd",
+          "name": "rollback_runtime_regression",
+          "path": "hk-staging/source/executor/runtime/rollback_runtime_regression.py",
+          "sha256": "4f601c43594b1982402ab7015828e770f48600bd0f00213cf0a2e4aab7cdfe01"
+        }
+      ],
+      "observed": {
+        "modules": 13
+      },
+      "state": "PASS",
+      "step": "installed_modules_are_the_commit_blobs"
+    },
+    {
+      "code": null,
+      "condition": null,
+      "drift": [],
+      "observed": {
+        "reason": "not_part_of_this_proof"
+      },
+      "state": "NOT_EVALUATED",
+      "step": "disk_blobs_match_the_commit"
+    }
+  ],
+  "verdict": "PASS"
+}
