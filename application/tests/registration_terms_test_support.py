@@ -54,7 +54,6 @@ def synthetic_mail_runtime(monkeypatch):
     monkeypatch.setattr(registration_privacy, 'operational_evidence_status', lambda: {'ready': True, 'digest': 'synthetic-only'})
     registration_privacy.cleanup_once()
     monkeypatch.setattr(settings, 'registration_verification_enabled', True)
-    monkeypatch.setattr(settings, 'jwt_signing_key', 'isolated-registration-test-key-32bytes-only')
     monkeypatch.setattr(registration_email, 'configuration', lambda: ({'test_only': True}, 'not-a-real-password'))
 
 
