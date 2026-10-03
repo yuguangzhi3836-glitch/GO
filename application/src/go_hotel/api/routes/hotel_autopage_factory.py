@@ -1,7 +1,7 @@
 from fastapi import APIRouter,Depends,HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from go_hotel.security.deps import admin_principal,supplier_principal
+from go_hotel.security.deps import admin_principal,supplier_principal,supplier_account_principal
 from go_hotel.security.service import Principal
 from go_hotel.services.hotel_autopage_factory import hotel_autopage_factory_service as svc
 from go_hotel.services.media_harvester import media_harvester_service as media_svc
@@ -49,7 +49,7 @@ def suppress(contact_id:str,b:Payload,p:Principal=Depends(catalog_writer)):retur
 @router.get('/v1/hotel-pages/{slug}')
 def page(slug:str):return call(svc.public_page,slug)
 @router.post('/v1/supplier/hotels/{hotel_id}/go-direct-registration')
-def register_go_direct(hotel_id:str,b:Payload,p:Principal=Depends(supplier_principal)):return call(svc.register_for_go_direct,hotel_id,p.supplier_id,p.user_id,b.model_dump(exclude_none=True))
+def register_go_direct(hotel_id:str,b:Payload,p:Principal=Depends(supplier_account_principal)):return call(svc.register_for_go_direct,hotel_id,p.supplier_id,p.user_id,b.model_dump(exclude_none=True))
 
 @router.post('/internal/v1/hotel-autopage/media/harvest')
 def media_harvest(b:Payload,p:Principal=Depends(catalog_writer)):
