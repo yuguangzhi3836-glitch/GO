@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import uuid
 from sqlalchemy import select
 
-from go_hotel.db.models import SupplierOnboardingRow
+from go_hotel.db.models import SupplierOnboardingRow, HotelRegistrationDirectRow
 from go_hotel.db.session import SessionLocal
 
 
@@ -53,7 +53,8 @@ class SupplierOnboardingService:
             "state": row.state,
             "next_step": _next_step(row.state),
             "business_ready": row.state in BUSINESS_READY,
-            "property_id": row.property_id,
+            "hotel_id": row.hotel_id,
+            "hotel_registration_direct_id": row.hotel_registration_direct_id,
             "profile": dict(row.profile_json or {}),
             "contract": dict(row.contract_json or {}),
             "review_note": row.review_note,
@@ -79,7 +80,7 @@ class SupplierOnboardingService:
             profile = {k: v for k, v in (initial_profile or {}).items() if v not in (None, "")}
             row = SupplierOnboardingRow(
                 onboarding_id=_id(), supplier_id=supplier_id, owner_user_id=owner_user_id,
-                state="REGISTERED", profile_json=profile, contract_json={}, property_id=None,
+                state="REGISTERED", profile_json=profile, contract_json={}, hotel_id=None, hotel_registration_direct_id=None,
                 review_note=None, reviewed_by=None, contract_review_note=None, contract_reviewed_by=None,
                 submitted_at=None, reviewed_at=None, contract_submitted_at=None, contract_reviewed_at=None,
                 created_at=t, updated_at=t,
@@ -119,7 +120,7 @@ class SupplierOnboardingService:
             s.commit(); s.refresh(row)
             return self.serialize(row)
 
-    def decide_profile(self, supplier_id: str, actor: str, decision: str, note: str | None = None, property_id: str | None = None) -> dict:
+    def decide_profile(self, supplier_id: str, actor: str, decision: str, note: str | None = None, registration_direct_id: str | None = None) -> dict:
         with SessionLocal() as s:
             row = s.scalar(select(SupplierOnboardingRow).where(SupplierOnboardingRow.supplier_id == supplier_id))
             if not row or row.state != "UNDER_REVIEW":
@@ -127,9 +128,15 @@ class SupplierOnboardingService:
             decision = str(decision or "").upper()
             if decision not in {"APPROVE", "NEEDS_CHANGES"}:
                 raise ValueError("INVALID_SUPPLIER_PROFILE_DECISION")
-            row.state = "VERIFIED" if decision == "APPROVE" else "NEEDS_CHANGES"
-            if property_id:
-                row.property_id = property_id
+            if decision == "APPROVE":
+                registration = s.get(HotelRegistrationDirectRow, registration_direct_id) if registration_direct_id else None
+                if not registration or registration.supplier_id != supplier_id or registration.state != "APPROVED":
+                    raise ValueError("APPROVED_HOTEL_REGISTRATION_REQUIRED")
+                row.state = "VERIFIED"
+                row.hotel_id = registration.hotel_id
+                row.hotel_registration_direct_id = registration.hotel_registration_direct_id
+            else:
+                row.state = "NEEDS_CHANGES"
             row.review_note = note
             row.reviewed_by = actor
             row.reviewed_at = _now()
