@@ -1,8 +1,18 @@
-import pw from 'file:///C:/Users/Eason/.workbuddy/binaries/node/workspace/node_modules/playwright-core/index.js';
-const { chromium } = pw;
+// Site-surface probe (read-only GET). Baseline: see ../README.md
+//
+//   PW_CORE  optional absolute path to playwright-core/index.js
+//            (default: bare specifier 'playwright-core', resolved from cwd/node_modules)
+//   OUT      optional screenshot output dir (default: ./shots next to this script)
+//
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dir = path.dirname(fileURLToPath(import.meta.url));
+const PW_CORE = process.env.PW_CORE || 'playwright-core';
+const { chromium } = await import(PW_CORE);
 const B = 'https://staging-api.goaidirect.com';
-const OUT = 'D:/Code/Workbuddy/GO-FULLAUDIT/shots';
+const OUT = process.env.OUT || path.join(__dir, 'shots');
 fs.mkdirSync(OUT, { recursive: true });
 const targets = [
   { name: 'root-404', url: B + '/', vp: { width: 1440, height: 900 } },
@@ -47,4 +57,4 @@ for (const t of targets) {
   await ctx.close();
 }
 await b.close();
-fs.writeFileSync('D:/Code/Workbuddy/GO-FULLAUDIT/surface-results.json', JSON.stringify(out, null, 2));
+fs.writeFileSync(path.join(OUT, '..', 'surface-results.json'), JSON.stringify(out, null, 2));

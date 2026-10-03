@@ -1,6 +1,12 @@
-import re, os, json, collections
+import re, os, json, collections, sys
 
-WT = "D:/Code/Workbuddy/GO-SUPAUDIT376/wt/application"
+# Path to the AUDITED source tree (PR376 head). Not a fixed machine path.
+#   git fetch origin pull/376/head:refs/remotes/origin/pr376
+#   git worktree add --detach /tmp/pr376 refs/remotes/origin/pr376
+#   python inv_db.py /tmp/pr376/application                  # or: GO_AUDIT_SRC=...
+WT = (sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GO_AUDIT_SRC"))
+if not WT:
+    raise SystemExit("usage: inv_db.py <path>/application   (or set GO_AUDIT_SRC)")
 SRC = os.path.join(WT, "src", "go_hotel")
 MODELS = os.path.join(SRC, "db", "models.py")
 

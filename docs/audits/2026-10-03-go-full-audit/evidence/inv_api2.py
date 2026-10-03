@@ -1,6 +1,13 @@
-import re, os, json, collections
+import re, os, json, collections, sys
 
-ROOT = "D:/Code/Workbuddy/GO-SUPAUDIT376/wt/application/src/go_hotel"
+# Path to the AUDITED source tree (PR376 head). Not a fixed machine path.
+#   git fetch origin pull/376/head:refs/remotes/origin/pr376
+#   git worktree add --detach /tmp/pr376 refs/remotes/origin/pr376
+#   python inv_api2.py /tmp/pr376/application/src/go_hotel      # or: GO_AUDIT_SRC=...
+ROOT = (sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GO_AUDIT_SRC"))
+if not ROOT:
+    raise SystemExit("usage: inv_api2.py <path>/application/src/go_hotel   (or set GO_AUDIT_SRC)")
+
 
 def balanced(t, i):
     j, d = i, 0

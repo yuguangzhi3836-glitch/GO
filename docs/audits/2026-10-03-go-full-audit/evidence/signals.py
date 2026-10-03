@@ -1,7 +1,14 @@
-import json, os, re
+import json, os, re, sys
 
-WT = "D:/Code/Workbuddy/GO-SUPAUDIT376/wt/application/src/go_hotel"
-raw = json.load(open('unauth_raw.json'))
+# Path to the AUDITED source tree (PR376 head). Not a fixed machine path.
+GO_SRC = (sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GO_AUDIT_SRC"))
+if not GO_SRC:
+    raise SystemExit("usage: signals.py <path>/application/src/go_hotel   (or set GO_AUDIT_SRC)")
+WT = GO_SRC
+
+RS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'api_routes.json')))
+
+raw = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'unauth_raw.json')))
 
 SIGNALS = [
     ('_consumer_account', 'consumer session helper (raises 401)'),

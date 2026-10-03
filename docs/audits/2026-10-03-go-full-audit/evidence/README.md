@@ -49,30 +49,47 @@ RESULT: CLEAN (no secret-like pattern found in text evidence)
 
 ## 可复现方式（只读）
 
+脚本**不含任何机器相关路径**：被审源码树通过**命令行参数**或 `GO_AUDIT_SRC` 环境变量传入。
+
 ```bash
+cd docs/audits/2026-10-03-go-full-audit/evidence
+
 # 0) 取基线
-git fetch origin main && git rev-parse origin/main            # 应为 7e7aedd5…
+git fetch origin main && git rev-parse origin/main               # 应为 7e7aedd5…（审计当日）
 
 # 1) 复现被审源码树（PR376 head，只读）
 git fetch origin pull/376/head:refs/remotes/origin/pr376
 git worktree add --detach /tmp/pr376 refs/remotes/origin/pr376   # 9f889acf…
 
-# 2) 复算路由统计（脚本内的 ROOT 需指向该 PR376 检出）
-python evidence/inv_api2.py      # 输出 ROUTES / AUTH DEPS / NO-AUTH ROUTES
-python evidence/classify.py      # 输出 unauth_raw.json
-python evidence/signals.py       # 输出 unauth_signals.json
+# 2) 复算路由统计（输出现场使用的 api_routes.json）
+python inv_api2.py /tmp/pr376/application/src/go_hotel   # ROUTES 1082 / NO-AUTH 66
+python classify.py /tmp/pr376/application/src/go_hotel   # 输出 unauth_raw.json（66）
+python signals.py  /tmp/pr376/application/src/go_hotel   # 输出 unauth_signals.json
 
-# 3) 复算表引用
-python evidence/inv_db.py        # 输出 db_tables.json
+# 3) 复算表引用（输出 db_tables.json）
+python inv_db.py /tmp/pr376/application                  # 563 / 560 / 1 / 2
 
 # 4) 复现现场 surface（匿名只读）
-node evidence/surf.mjs
+PW_CORE=<path-to>/playwright-core/index.js node surf.mjs   # 截图写入 ./shots
 
-# 5) 本包 secret 扫描
-python evidence/secret_scan.py
+# 5) secret 扫描（默认扫本目录，可传 ROOT）
+python secret_scan.py .
 ```
 
-> 脚本内含**审计当天的本地绝对路径**（如临时检出目录）。这些路径不是证据指针，仅为复现方便；**不需要**按原路径摆放，改 `ROOT` 常量即可。
+> 也可改用环境变量：`GO_AUDIT_SRC=/tmp/pr376/application/src/go_hotel python inv_api2.py`。
+
+### 复现一致性（已实测）
+
+在审计当时的 PR376 检出上重跑四个脚本，**四个 JSON 与归档版本内容完全一致**（仅行尾差异）：
+
+```
+api_routes.json      identical=True  json_equal=True  1082 vs 1082
+db_tables.json       identical=True  json_equal=True   563 vs  563
+unauth_raw.json      identical=True  json_equal=True    66 vs   66
+unauth_signals.json  identical=True  json_equal=True    66 vs   66
+```
+
+> 注：脚本以 Python 文本模式写出，在 Windows 上会产生 CRLF；归档版本为 LF。**内容一致，仅行尾不同。**
 
 ## 边界声明
 

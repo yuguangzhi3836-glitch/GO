@@ -1,7 +1,12 @@
-import json, os, re
+import json, os, re, sys
 
-RS = json.load(open('api_routes.json'))
-WT = "D:/Code/Workbuddy/GO-SUPAUDIT376/wt/application/src/go_hotel"
+# Path to the AUDITED source tree (PR376 head). Not a fixed machine path.
+GO_SRC = (sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GO_AUDIT_SRC"))
+if not GO_SRC:
+    raise SystemExit("usage: classify.py <path>/application/src/go_hotel   (or set GO_AUDIT_SRC)")
+WT = GO_SRC
+
+RS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'api_routes.json')))
 
 n = [r for r in RS if not r['deps']]
 out = []
