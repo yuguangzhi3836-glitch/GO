@@ -135,3 +135,35 @@ def test_privacy_migration_and_rollback_guard(tmp_path):
             with pytest.raises(RuntimeError,match='PRIVACY_RECORDS_PRESENT'):migration.downgrade()
             conn.execute(text('DELETE FROM privacy_request'));migration.downgrade()
             assert not inspect(conn).get_table_names()
+
+
+@pytest.mark.parametrize(
+    "audience,required,deferred",
+    [
+        ("consumer", ("consumer_service_terms","privacy_policy"), ("personal_vault_terms",)),
+        ("supplier", ("supplier_service_terms","privacy_policy","platform_operating_rules"),
+         ("data_processing_terms","electronic_signature_authorization")),
+    ],
+)
+def test_account_policy_does_not_require_deferred_document_bytes(monkeypatch,audience,required,deferred):
+    from go_hotel.services import registration_terms as terms
+    docs=[
+        {"id":term_id,"title":term_id,"version":"account-v1","file":term_id+".md",
+         "sha256":"a"*64,"status":"DRAFT","approval":None}
+        for term_id in required
+    ]
+    monkeypatch.setattr(terms,"_load_registry",lambda:{
+        "documents":docs,"release_status":"DRAFT","unresolved":[],
+    })
+    monkeypatch.setattr(terms,"_document",lambda registry,term_id,version:{
+        "id":term_id,"title":term_id,"version":version,"status":"DRAFT",
+        "sha256":"a"*64,"content_url":"/terms/"+term_id,"content":"account body",
+        "content_type":"text/markdown","effective_at":None,
+    })
+    policy=terms.account_registration_terms_status(audience)
+    assert tuple(policy["versions"])==required
+    assert tuple(policy["deferred"])==deferred
+    decisions=required_decisions(policy)
+    for term_id in deferred:
+        assert decisions[term_id]=="DEFERRED"
+        assert term_id not in policy["term_hashes"]
