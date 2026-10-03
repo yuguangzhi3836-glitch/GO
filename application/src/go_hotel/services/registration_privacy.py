@@ -23,8 +23,9 @@ def now_ms():
 
 
 def required_decisions(policy):
+    deferred = set(policy.get('deferred') or ())
     return {k: ('NOTICE_ACKNOWLEDGED' if k == 'privacy_policy' else
-                'DEFERRED' if k == 'personal_vault_terms' else 'CONTRACT_ACCEPTED')
+                'DEFERRED' if k in deferred else 'CONTRACT_ACCEPTED')
             for k in policy['versions']}
 
 
