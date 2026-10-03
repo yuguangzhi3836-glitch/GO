@@ -163,7 +163,7 @@ def test_account_policy_does_not_require_deferred_document_bytes(monkeypatch,aud
     policy=terms.account_registration_terms_status(audience)
     assert tuple(policy["versions"])==required
     assert tuple(policy["deferred"])==deferred
-    decisions=required_decisions(policy)
+    decisions=privacy.required_decisions(policy)
     for term_id in deferred:
         assert decisions[term_id]=="DEFERRED"
         assert term_id not in policy["term_hashes"]
