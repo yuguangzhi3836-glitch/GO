@@ -1,3 +1,4 @@
+import pytest
 from datetime import datetime, timezone
 from go_hotel.db.models import HotelRegistrationDirectRow
 from go_hotel.db.session import SessionLocal
@@ -89,6 +90,12 @@ def test_onboarding_resumes_and_only_unlocks_after_profile_and_contract_review(c
     )
     assert submitted.status_code == 200, submitted.text
     assert submitted.json()["data"]["state"] == "UNDER_REVIEW"
+
+    with pytest.raises(ValueError, match="APPROVED_HOTEL_REGISTRATION_REQUIRED"):
+        supplier_onboarding_state_service.decide_profile(
+            supplier_id, "admin-test", "APPROVE", "不能自证认证通过"
+        )
+    assert client.get("/bff/auth/me").json()["data"]["onboarding"]["state"] == "UNDER_REVIEW"
 
     with SessionLocal.begin() as s:
         s.add(HotelRegistrationDirectRow(
