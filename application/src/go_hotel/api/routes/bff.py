@@ -3,12 +3,13 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from go_hotel.core.config import settings
 from go_hotel.security.service import identity_service, Principal, uid, now
-from go_hotel.security.deps import current_principal
+from go_hotel.security.deps import current_principal, supplier_account_principal, admin_principal
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import AuditEventRow, IdentityUserRow
 from sqlalchemy import select
 import uuid
 from typing import Literal
+from go_hotel.services.supplier_onboarding_state import supplier_onboarding_state_service
 
 router=APIRouter(tags=['production-bff'])
 
@@ -21,18 +22,48 @@ class MFAConfirmBody(BaseModel): code:str
 SUPPLIER_REGISTRATION_TERMS={
     "supplier_service_terms":"2026-08-25-v1",
     "privacy_policy":"2026-08-25-v1",
+    "platform_operating_rules":"2026-08-25-v1",
+}
+SUPPLIER_DEFERRED_TERMS={
     "data_processing_terms":"2026-08-25-v1",
     "electronic_signature_authorization":"2026-08-25-v1",
-    "platform_operating_rules":"2026-08-25-v1",
 }
 class SupplierRegisterBody(BaseModel):
     email:str
     password:str=Field(min_length=10)
-    organization_name:str=Field(min_length=2,max_length=160)
-    contact_name:str=Field(min_length=1,max_length=80)
+    organization_name:str|None=Field(default=None,max_length=160)
+    contact_name:str|None=Field(default=None,max_length=80)
     phone:str|None=None
     accepted_terms:bool=False
     term_versions:dict[str,str]={}
+
+class SupplierProfileBody(BaseModel):
+    organization_name:str|None=None
+    hotel_name:str|None=None
+    contact_name:str|None=None
+    phone:str|None=None
+    province:str|None=None
+    city:str|None=None
+    street_address:str|None=None
+    business_license_ref:str|None=None
+    legal_representative_name:str|None=None
+    identity_document_ref:str|None=None
+    storefront_photo_ref:str|None=None
+    authorization_ref:str|None=None
+
+class SupplierReviewBody(BaseModel):
+    decision:Literal['APPROVE','NEEDS_CHANGES']
+    note:str|None=None
+    registration_direct_id:str|None=None
+
+class SupplierContractBody(BaseModel):
+    contract_ref:str
+    contract_version:str|None=None
+    note:str|None=None
+
+class SupplierContractReviewBody(BaseModel):
+    decision:Literal['APPROVE','NEEDS_CHANGES']
+    note:str|None=None
 
 class MFAEnrollStartBody(BaseModel):
     username:str
@@ -62,11 +93,12 @@ def bff_auth_policy():
 @router.get('/bff/auth/supplier/registration-terms')
 def supplier_registration_terms():
     return {'data':{'required':True,'versions':SUPPLIER_REGISTRATION_TERMS,'titles':{
-        'supplier_service_terms':'GO 合作伙伴服务协议',
+        'supplier_service_terms':'GO 合作伙伴账号与平台服务条款',
         'privacy_policy':'隐私政策',
-        'data_processing_terms':'数据处理条款',
-        'electronic_signature_authorization':'电子签约授权',
         'platform_operating_rules':'平台运营规范',
+    },'deferred':{
+        'versions':SUPPLIER_DEFERRED_TERMS,
+        'reason':'DATA_PROCESSING_AND_E_SIGNATURE_ARE_AUTHORIZED_LATER',
     }}}
 
 @router.post('/bff/auth/supplier/register',status_code=201)
@@ -87,12 +119,15 @@ def supplier_register(body:SupplierRegisterBody,request:Request,response:Respons
             audit_id=uid('aud'),actor_id=user_id,actor_type='SUPPLIER_USER',supplier_id=supplier_id,roles=['SUPPLIER_OWNER'],session_id=None,
             action='SUPPLIER_REGISTRATION_TERMS_ACCEPTED',resource_type='SUPPLIER_REGISTRATION',resource_id=supplier_id,request_id=getattr(request.state,'request_id',None),
             client_ip=request.client.host if request.client else None,http_method='POST',path='/bff/auth/supplier/register',before_state=None,
-            after_state={'registration_state':'ACCOUNT_CREATED_TERMS_ACCEPTED'},decision_id=None,evidence_id=None,approval_id=None,
-            metadata_json={'organization_name':body.organization_name,'contact_name':body.contact_name,'phone_provided':bool(body.phone),'term_versions':SUPPLIER_REGISTRATION_TERMS,'accepted_once':True},created_at=t,
+            after_state={'registration_state':'REGISTERED','next_step':'COMPLETE_PROFILE'},decision_id=None,evidence_id=None,approval_id=None,
+            metadata_json={'organization_name':body.organization_name,'contact_name':body.contact_name,'phone_provided':bool(body.phone),'term_versions':SUPPLIER_REGISTRATION_TERMS,'deferred_terms':SUPPLIER_DEFERRED_TERMS,'accepted_once':True},created_at=t,
         ));s.commit()
+    supplier_onboarding_state_service.create_registered(
+        supplier_id,user_id,{'organization_name':body.organization_name,'contact_name':body.contact_name,'phone':body.phone}
+    )
     tokens=identity_service.login(email,body.password,request.client.host if request.client else None,request.headers.get('user-agent'))
     set_session_cookies(response,tokens)
-    return {'data':{'authenticated':True,'supplier_id':supplier_id,'registration_state':'ACCOUNT_CREATED_TERMS_ACCEPTED','next_step':'ENTERPRISE_IDENTITY_AND_PROPERTY_BINDING'}}
+    return {'data':{'authenticated':True,'supplier_id':supplier_id,'registration_state':'REGISTERED','next_step':'COMPLETE_PROFILE'}}
 
 @router.post('/bff/auth/login')
 def bff_login(body:LoginBody,request:Request,response:Response):
@@ -120,7 +155,39 @@ def bff_logout(response:Response,p:Principal=Depends(current_principal)):
 
 @router.get('/bff/auth/me')
 def bff_me(p:Principal=Depends(current_principal)):
-    return {'data':{'user_id':p.user_id,'username':p.username,'actor_type':p.actor_type,'supplier_id':p.supplier_id,'roles':p.roles,'permissions':sorted(p.permissions),'session_id':p.session_id}}
+    onboarding=supplier_onboarding_state_service.get(p.supplier_id) if p.actor_type=='SUPPLIER_USER' and p.supplier_id else None
+    return {'data':{'user_id':p.user_id,'username':p.username,'actor_type':p.actor_type,'supplier_id':p.supplier_id,'roles':p.roles,'permissions':sorted(p.permissions),'session_id':p.session_id,'onboarding':onboarding}}
+
+@router.get('/bff/supplier/onboarding')
+def supplier_onboarding_status(p:Principal=Depends(supplier_account_principal)):
+    onboarding=supplier_onboarding_state_service.get(p.supplier_id)
+    if not onboarding: raise HTTPException(404,detail='SUPPLIER_ONBOARDING_NOT_FOUND')
+    return {'data':onboarding}
+
+@router.put('/bff/supplier/onboarding/profile')
+def supplier_onboarding_profile(body:SupplierProfileBody,p:Principal=Depends(supplier_account_principal)):
+    try:return {'data':supplier_onboarding_state_service.save_profile(p.supplier_id,body.model_dump(exclude_none=True))}
+    except ValueError as e:raise HTTPException(409,detail=str(e))
+
+@router.post('/bff/supplier/onboarding/profile/submit')
+def supplier_onboarding_submit(p:Principal=Depends(supplier_account_principal)):
+    try:return {'data':supplier_onboarding_state_service.submit_profile(p.supplier_id)}
+    except ValueError as e:raise HTTPException(409,detail=str(e))
+
+@router.post('/internal/v1/supplier-onboarding/{supplier_id}/profile-decision')
+def supplier_onboarding_profile_decision(supplier_id:str,body:SupplierReviewBody,p:Principal=Depends(admin_principal)):
+    try:return {'data':supplier_onboarding_state_service.decide_profile(supplier_id,p.user_id,body.decision,body.note,body.registration_direct_id)}
+    except ValueError as e:raise HTTPException(409,detail=str(e))
+
+@router.post('/bff/supplier/onboarding/contract')
+def supplier_onboarding_contract(body:SupplierContractBody,p:Principal=Depends(supplier_account_principal)):
+    try:return {'data':supplier_onboarding_state_service.submit_contract(p.supplier_id,body.model_dump(exclude_none=True))}
+    except ValueError as e:raise HTTPException(409,detail=str(e))
+
+@router.post('/internal/v1/supplier-onboarding/{supplier_id}/contract-decision')
+def supplier_onboarding_contract_decision(supplier_id:str,body:SupplierContractReviewBody,p:Principal=Depends(admin_principal)):
+    try:return {'data':supplier_onboarding_state_service.decide_contract(supplier_id,p.user_id,body.decision,body.note)}
+    except ValueError as e:raise HTTPException(409,detail=str(e))
 
 @router.post('/bff/auth/mfa/enroll/start')
 def mfa_enroll_start(body:MFAEnrollStartBody):
