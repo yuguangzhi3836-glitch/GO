@@ -3,9 +3,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from sqlalchemy import select
 
-from go_hotel.db.models import SupplierOnboardingRow, HotelRegistrationDirectRow, HotelCanonicalProfileRow
+from go_hotel.db.models import CommercialCaseRow, HotelRegistrationDirectRow, HotelCanonicalProfileRow
 from go_hotel.db.session import SessionLocal
 
+CASE_TYPE = "SUPPLIER_ONBOARDING"
 PROFILE_EDITABLE = {"REGISTERED", "PROFILE_DRAFT", "NEEDS_CHANGES"}
 PROFILE_SUBMITTABLE = {"PROFILE_DRAFT", "NEEDS_CHANGES"}
 CONTRACT_SUBMITTABLE = {"VERIFIED", "CONTRACT_NEEDS_CHANGES"}
@@ -18,6 +19,10 @@ REQUIRED_PROFILE_FIELDS = {
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _iso(value: datetime | None) -> str | None:
+    return value.isoformat() if value else None
 
 
 def _next_step(state: str) -> str:
@@ -36,39 +41,50 @@ def _next_step(state: str) -> str:
 
 
 class SupplierOnboardingStateService:
-    def serialize(self, row: SupplierOnboardingRow) -> dict:
+    def _row(self, session, supplier_id: str) -> CommercialCaseRow | None:
+        return session.scalar(
+            select(CommercialCaseRow).where(
+                CommercialCaseRow.case_type == CASE_TYPE,
+                CommercialCaseRow.supplier_id == supplier_id,
+            )
+        )
+
+    def serialize(self, row: CommercialCaseRow) -> dict:
+        payload = dict(row.payload_json or {})
         return {
             "supplier_id": row.supplier_id,
             "state": row.state,
             "next_step": _next_step(row.state),
             "business_ready": row.state in BUSINESS_READY,
-            "hotel_id": row.hotel_id,
-            "hotel_registration_direct_id": row.hotel_registration_direct_id,
-            "profile": dict(row.profile_json or {}),
-            "contract": dict(row.contract_json or {}),
-            "review_note": row.review_note,
-            "contract_review_note": row.contract_review_note,
-            "submitted_at": row.submitted_at.isoformat() if row.submitted_at else None,
-            "reviewed_at": row.reviewed_at.isoformat() if row.reviewed_at else None,
-            "contract_submitted_at": row.contract_submitted_at.isoformat() if row.contract_submitted_at else None,
-            "contract_reviewed_at": row.contract_reviewed_at.isoformat() if row.contract_reviewed_at else None,
+            "hotel_id": payload.get("hotel_id"),
+            "hotel_registration_direct_id": payload.get("hotel_registration_direct_id"),
+            "profile": dict(payload.get("profile") or {}),
+            "contract": dict(payload.get("contract") or {}),
+            "review_note": payload.get("review_note"),
+            "contract_review_note": payload.get("contract_review_note"),
+            "submitted_at": payload.get("submitted_at"),
+            "reviewed_at": payload.get("reviewed_at"),
+            "contract_submitted_at": payload.get("contract_submitted_at"),
+            "contract_reviewed_at": payload.get("contract_reviewed_at"),
             "updated_at": row.updated_at.isoformat(),
         }
 
     def get(self, supplier_id: str) -> dict | None:
         with SessionLocal() as s:
-            row = s.scalar(select(SupplierOnboardingRow).where(SupplierOnboardingRow.supplier_id == supplier_id))
+            row = self._row(s, supplier_id)
             return self.serialize(row) if row else None
 
     def save_profile(self, supplier_id: str, profile: dict) -> dict:
         with SessionLocal() as s:
-            row = s.scalar(select(SupplierOnboardingRow).where(SupplierOnboardingRow.supplier_id == supplier_id))
+            row = self._row(s, supplier_id)
             if not row:
                 raise ValueError("SUPPLIER_ONBOARDING_NOT_FOUND")
             if row.state not in PROFILE_EDITABLE:
                 raise ValueError("SUPPLIER_PROFILE_NOT_EDITABLE")
+            payload = dict(row.payload_json or {})
             clean = {str(k): v for k, v in profile.items() if v not in (None, "")}
-            row.profile_json = {**(row.profile_json or {}), **clean}
+            payload["profile"] = {**(payload.get("profile") or {}), **clean}
+            row.payload_json = payload
             row.state = "PROFILE_DRAFT"
             row.updated_at = _now()
             s.commit(); s.refresh(row)
@@ -76,30 +92,34 @@ class SupplierOnboardingStateService:
 
     def submit_profile(self, supplier_id: str) -> dict:
         with SessionLocal() as s:
-            row = s.scalar(select(SupplierOnboardingRow).where(SupplierOnboardingRow.supplier_id == supplier_id))
+            row = self._row(s, supplier_id)
             if not row:
                 raise ValueError("SUPPLIER_ONBOARDING_NOT_FOUND")
             if row.state not in PROFILE_SUBMITTABLE:
                 raise ValueError("SUPPLIER_PROFILE_NOT_SUBMITTABLE")
-            profile = row.profile_json or {}
+            payload = dict(row.payload_json or {})
+            profile = payload.get("profile") or {}
             missing = sorted(k for k in REQUIRED_PROFILE_FIELDS if not str(profile.get(k) or "").strip())
             if missing:
                 raise ValueError("SUPPLIER_PROFILE_INCOMPLETE:" + ",".join(missing))
+            now = _now()
             row.state = "UNDER_REVIEW"
-            row.submitted_at = _now()
-            row.review_note = None
-            row.updated_at = row.submitted_at
+            payload["submitted_at"] = _iso(now)
+            payload["review_note"] = None
+            row.payload_json = payload
+            row.updated_at = now
             s.commit(); s.refresh(row)
             return self.serialize(row)
 
     def decide_profile(self, supplier_id: str, actor: str, decision: str, note: str | None = None, registration_direct_id: str | None = None) -> dict:
         with SessionLocal() as s:
-            row = s.scalar(select(SupplierOnboardingRow).where(SupplierOnboardingRow.supplier_id == supplier_id))
+            row = self._row(s, supplier_id)
             if not row or row.state != "UNDER_REVIEW":
                 raise ValueError("SUPPLIER_PROFILE_NOT_REVIEWABLE")
             decision = str(decision or "").upper()
             if decision not in {"APPROVE", "NEEDS_CHANGES"}:
                 raise ValueError("INVALID_SUPPLIER_PROFILE_DECISION")
+            payload = dict(row.payload_json or {})
             if decision == "APPROVE":
                 registration = s.get(HotelRegistrationDirectRow, registration_direct_id) if registration_direct_id else None
                 profile = s.get(HotelCanonicalProfileRow, registration.hotel_id) if registration else None
@@ -111,47 +131,56 @@ class SupplierOnboardingStateService:
                 ):
                     raise ValueError("APPROVED_HOTEL_REGISTRATION_REQUIRED")
                 row.state = "VERIFIED"
-                row.hotel_id = registration.hotel_id
-                row.hotel_registration_direct_id = registration.hotel_registration_direct_id
+                row.property_id = registration.hotel_id
+                payload["hotel_id"] = registration.hotel_id
+                payload["hotel_registration_direct_id"] = registration.hotel_registration_direct_id
             else:
                 row.state = "NEEDS_CHANGES"
-            row.review_note = note
-            row.reviewed_by = actor
-            row.reviewed_at = _now()
-            row.updated_at = row.reviewed_at
+            now = _now()
+            payload["review_note"] = note
+            payload["reviewed_by"] = actor
+            payload["reviewed_at"] = _iso(now)
+            row.payload_json = payload
+            row.updated_at = now
             s.commit(); s.refresh(row)
             return self.serialize(row)
 
     def submit_contract(self, supplier_id: str, contract: dict) -> dict:
         with SessionLocal() as s:
-            row = s.scalar(select(SupplierOnboardingRow).where(SupplierOnboardingRow.supplier_id == supplier_id))
+            row = self._row(s, supplier_id)
             if not row:
                 raise ValueError("SUPPLIER_ONBOARDING_NOT_FOUND")
             if row.state not in CONTRACT_SUBMITTABLE:
                 raise ValueError("SUPPLIER_CONTRACT_NOT_SUBMITTABLE")
             if not str(contract.get("contract_ref") or "").strip():
                 raise ValueError("SUPPLIER_CONTRACT_REFERENCE_REQUIRED")
-            row.contract_json = {str(k): v for k, v in contract.items() if v not in (None, "")}
+            payload = dict(row.payload_json or {})
+            payload["contract"] = {str(k): v for k, v in contract.items() if v not in (None, "")}
+            now = _now()
             row.state = "CONTRACT_UNDER_REVIEW"
-            row.contract_submitted_at = _now()
-            row.contract_review_note = None
-            row.updated_at = row.contract_submitted_at
+            payload["contract_submitted_at"] = _iso(now)
+            payload["contract_review_note"] = None
+            row.payload_json = payload
+            row.updated_at = now
             s.commit(); s.refresh(row)
             return self.serialize(row)
 
     def decide_contract(self, supplier_id: str, actor: str, decision: str, note: str | None = None) -> dict:
         with SessionLocal() as s:
-            row = s.scalar(select(SupplierOnboardingRow).where(SupplierOnboardingRow.supplier_id == supplier_id))
+            row = self._row(s, supplier_id)
             if not row or row.state != "CONTRACT_UNDER_REVIEW":
                 raise ValueError("SUPPLIER_CONTRACT_NOT_REVIEWABLE")
             decision = str(decision or "").upper()
             if decision not in {"APPROVE", "NEEDS_CHANGES"}:
                 raise ValueError("INVALID_SUPPLIER_CONTRACT_DECISION")
+            payload = dict(row.payload_json or {})
+            now = _now()
             row.state = "CONTRACT_ACTIVE" if decision == "APPROVE" else "CONTRACT_NEEDS_CHANGES"
-            row.contract_review_note = note
-            row.contract_reviewed_by = actor
-            row.contract_reviewed_at = _now()
-            row.updated_at = row.contract_reviewed_at
+            payload["contract_review_note"] = note
+            payload["contract_reviewed_by"] = actor
+            payload["contract_reviewed_at"] = _iso(now)
+            row.payload_json = payload
+            row.updated_at = now
             s.commit(); s.refresh(row)
             return self.serialize(row)
 
