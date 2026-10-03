@@ -40,6 +40,32 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -e '.[dev]'
+      - name: Prepare synthetic registration verification runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          secret="$RUNNER_TEMP/registration-mail-password"
+          config="$RUNNER_TEMP/registration-mail.json"
+          printf '%s' 'isolated-ci-only-password' > "$secret"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])
+          (root/"registration-mail.json").write_text(json.dumps({
+              "sender":"postmaster@goaidirect.com",
+              "credential_reference":"hk-staging-registration-email",
+              "host":"smtp.test.invalid",
+              "port":465,
+              "tls":"SSL",
+              "username":"postmaster@goaidirect.com",
+              "password_file":str(root/"registration-mail-password"),
+          }))
+          PY
+          {
+            echo "REGISTRATION_VERIFICATION_ENABLED=true"
+            echo "JWT_SIGNING_KEY=isolated-guard-registration-signing-key-32bytes"
+            echo "REGISTRATION_EMAIL_CONFIG_PATH=$config"
+          } >> "$GITHUB_ENV"
       - name: Run bound receipt and provider import regressions
         env:
           GO_MEDIA_CACHE_DIR: ${{ runner.temp }}/go-guard-media
