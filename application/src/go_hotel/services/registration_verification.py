@@ -36,8 +36,7 @@ def digest(value):
 def ready():
     try:
         digest('readiness')
-        from go_hotel.services import registration_privacy
-        return registration_email.ready() and registration_privacy.ready()
+        return registration_email.ready()
     except ValueError:
         return False
 
