@@ -75,14 +75,14 @@ def test_separate_decisions_required_before_mail_and_atomic_registration(client,
     assert len(page.json()['data']['decisions'])==1
 
 
-def test_gate_requires_operational_evidence_and_fresh_cleanup(client,delivery,monkeypatch):
-    monkeypatch.setattr(privacy,'operational_evidence_status',lambda:{'ready':False})
-    assert not verification.ready()
-    assert not client.get('/v1/consumer/auth/registration').json()['data']['enabled']
-    monkeypatch.setattr(privacy,'operational_evidence_status',lambda:{'ready':True})
+def test_account_verification_is_independent_from_operational_privacy_readiness(client,delivery,monkeypatch):
+    monkeypatch.setattr(privacy,'operational_evidence_status',lambda:{'ready':False,'digest':None})
+    assert not privacy.ready()
+    assert verification.ready()
+    assert client.get('/v1/consumer/auth/registration').json()['data']['enabled']
     with SessionLocal.begin() as s:s.get(RegistrationMaintenanceRow,'cleanup').success_ms=0
-    assert not verification.ready()
-    privacy.cleanup_once();assert verification.ready()
+    assert not privacy.ready()
+    assert verification.ready()
 
 
 def test_evidence_manifest_missing_expired_or_wrong_terms_never_ready(tmp_path,monkeypatch):
