@@ -1,0 +1,43 @@
+{
+  "archived_at_utc": "2026-10-03T11:20:52.494116+00:00",
+  "success": true,
+  "calls": 19,
+  "observer_errors": [],
+  "sql_contained_block_samples": [
+    {
+      "group": "calibration",
+      "sql_ordinal": 1,
+      "wait_type": "Lock",
+      "wait_event": "transactionid",
+      "samples": 1
+    },
+    {
+      "group": "same_root_new_keys",
+      "sql_ordinal": 1,
+      "wait_type": "Lock",
+      "wait_event": "transactionid",
+      "samples": 6
+    },
+    {
+      "group": "same_root_same_key",
+      "sql_ordinal": 1,
+      "wait_type": "Lock",
+      "wait_event": "transactionid",
+      "samples": 10
+    }
+  ],
+  "raw_sha256": "c90adaaa332c2ce677cea8f51ecd168c7166595a8d2f9b8d7357b15d38b915b0",
+  "runner_sha256": "c1608d0ff791260c7b1db3e255f60bdb91b14fbf89221b62a81a5a49e7a0b9eb",
+  "app_tree": "6570b66bc977f89c0311d67bdc6b721cd70d4e09",
+  "scope": "bounded two-business-connection CAPTURE contention diagnostic; not load/ABBA/production",
+  "limitations": [
+    "CAPTURE only measured; AUTH separately committed in setup",
+    "bounded diagnostic rounds, not warmed performance comparison; synthetic six-table fixture",
+    "1ms requested sampling interval is not guaranteed; missing lock samples do not prove no waiting",
+    "one independent observer connection in addition to two business connections",
+    "pool pre-ping/acquisition before checkout not separated into pure queue",
+    "client SQL wall excludes fetch/materialization; overhead present; not server CPU",
+    "same-root new-key uses two half captures; other cases use full capture; not equal-work performance A/B",
+    "calibration artificial blocking is excluded from natural-group inference"
+  ]
+}
