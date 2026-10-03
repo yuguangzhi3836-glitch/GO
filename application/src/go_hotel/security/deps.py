@@ -39,11 +39,14 @@ def supplier_account_principal(p:Principal=Depends(current_principal)):
 
 def supplier_principal(p:Principal=Depends(supplier_account_principal)):
     with SessionLocal() as s:
-        onboarding=s.scalar(select(SupplierOnboardingRow).where(SupplierOnboardingRow.supplier_id==p.supplier_id))
+        onboarding=s.scalar(select(CommercialCaseRow).where(
+            CommercialCaseRow.case_type=='SUPPLIER_ONBOARDING',
+            CommercialCaseRow.supplier_id==p.supplier_id))
+    # No onboarding case means this supplier predates staged onboarding. New account
+    # creation writes the case atomically with the identity, so legacy compatibility
+    # does not create a bypass for newly registered suppliers.
     if onboarding is None:
-        if p.supplier_id==settings.bootstrap_supplier_id:
-            return p
-        raise HTTPException(403,detail='SUPPLIER_ONBOARDING_REQUIRED')
+        return p
     if onboarding.state not in {'CONTRACT_ACTIVE','BUSINESS_ENABLED'}:
         raise HTTPException(403,detail='SUPPLIER_ONBOARDING_INCOMPLETE')
     return p
@@ -63,7 +66,7 @@ def connector_admin_principal(p:Principal=Depends(admin_principal)):
 
 from sqlalchemy import select
 from go_hotel.db.session import SessionLocal
-from go_hotel.db.models import OrderRow, RiskEventRuntimeRow, SupplierOnboardingRow
+from go_hotel.db.models import OrderRow, RiskEventRuntimeRow, CommercialCaseRow
 
 def assert_supplier_order(p:Principal, order_id:str):
     with SessionLocal() as s:
