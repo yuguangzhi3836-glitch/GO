@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 
-from go_hotel.db.models import HotelPartnerPropertyRow, IdentityUserRow, SupplierOnboardingRow
+from go_hotel.db.models import HotelPartnerPropertyRow, IdentityUserRow, CommercialCaseRow
 from go_hotel.db.session import SessionLocal
 from go_hotel.security.deps import current_principal
 from go_hotel.security.service import Principal
@@ -73,8 +73,9 @@ def test_supplier_bff_registration_creates_account_before_hotel_and_keeps_busine
     data = response.json()['data']
     assert data['next_step'] == 'COMPLETE_PROFILE'
     with SessionLocal() as session:
-        onboarding=session.scalar(select(SupplierOnboardingRow).where(
-            SupplierOnboardingRow.supplier_id==data['supplier_id']))
+        onboarding=session.scalar(select(CommercialCaseRow).where(
+            CommercialCaseRow.case_type=='SUPPLIER_ONBOARDING',
+            CommercialCaseRow.supplier_id==data['supplier_id']))
         assert onboarding is not None
         assert onboarding.state == 'PROFILE_DRAFT'
         assert session.scalar(select(HotelPartnerPropertyRow).where(
