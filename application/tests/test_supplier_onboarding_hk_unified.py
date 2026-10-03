@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from go_hotel.db.models import (
     HotelCanonicalProfileRow, HotelRegistrationDirectRow,
-    HotelPartnerPropertyRow, RegistrationDecisionRow,
+    HotelPartnerPropertyRow, RegistrationDecisionRow, CommercialCaseRow,
 )
 from go_hotel.db.session import SessionLocal
 from go_hotel.services.supplier_onboarding_state import supplier_onboarding_state_service
@@ -51,6 +51,12 @@ def test_supplier_account_is_created_before_hotel_and_deferred_authorizations(cl
     with SessionLocal() as s:
         assert s.scalar(select(HotelPartnerPropertyRow).where(
             HotelPartnerPropertyRow.supplier_id==supplier_id)) is None
+        onboarding=s.scalar(select(CommercialCaseRow).where(
+            CommercialCaseRow.case_type=="SUPPLIER_ONBOARDING",
+            CommercialCaseRow.supplier_id==supplier_id))
+        assert onboarding is not None
+        assert onboarding.state=="REGISTERED"
+        assert onboarding.payload_json["profile"]=={}
         receipt=s.scalar(select(RegistrationDecisionRow).where(
             RegistrationDecisionRow.user_id==me["user_id"]))
         assert receipt.decisions["privacy_policy"]=="NOTICE_ACKNOWLEDGED"
