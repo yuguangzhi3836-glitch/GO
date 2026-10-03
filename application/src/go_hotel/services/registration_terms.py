@@ -119,15 +119,20 @@ def account_registration_terms_status(audience: str) -> dict:
     entries = {x['id']: x for x in registry['documents']}
     if len(entries) != len(registry['documents']):
         raise ValueError('REGISTRATION_TERMS_INTEGRITY_ERROR')
-    ids = _ACCOUNT_REQUIRED[audience] + _ACCOUNT_DEFERRED[audience]
     documents = []
-    for ident in ids:
+    formal_ready = registry.get('release_status') == 'APPROVED'
+    for ident in _ACCOUNT_REQUIRED[audience]:
         if ident not in entries:
             raise ValueError('REGISTRATION_TERMS_INTEGRITY_ERROR')
         item = entries[ident]
         doc = _document(registry, ident, item['version'])
         documents.append({k: v for k, v in doc.items() if k != 'content'})
-    formal_ready = registration_terms_status(audience)['acceptance_enabled']
+        approval = item.get('approval') or {}
+        formal_ready = formal_ready and (
+            item.get('status') == 'APPROVED'
+            and approval.get('sha256') == doc['sha256']
+            and all(approval.get(k) for k in ('reviewer','approved_at','evidence_ref'))
+        )
     return {
         'audience': audience,
         'status': 'APPROVED' if formal_ready else 'DRAFT',
