@@ -16,7 +16,8 @@ from go_hotel.api.idempotency import run_idempotent_async
 from datetime import datetime, timezone
 
 router=APIRouter(tags=["sprint1y-consumer-identity"])
-CONSUMER_REGISTRATION_TERMS={"consumer_service_terms":"2026-08-25-v1","privacy_policy":"2026-08-25-v1","personal_vault_terms":"2026-08-25-v1"}
+CONSUMER_REGISTRATION_TERMS={"consumer_service_terms":"2026-08-25-v1","privacy_policy":"2026-08-25-v1"}
+CONSUMER_DEFERRED_TERMS={"personal_vault_terms":"2026-08-25-v1"}
 class RegisterBody(BaseModel):
     email:str
     password:str=Field(min_length=10)
@@ -47,14 +48,20 @@ def _clear(response):
 @router.post("/v1/consumer/auth/register")
 def register(body:RegisterBody,request:Request,response:Response):
     try:
-        if body.accepted_terms is True and body.term_versions and any(body.term_versions.get(k)!=v for k,v in CONSUMER_REGISTRATION_TERMS.items()):
-            raise HTTPException(409,detail="CONSUMER_TERMS_VERSION_MISMATCH")
+        production=settings.app_env.lower() not in {'local','test','demo'}
+        if production and body.accepted_terms is not True:
+            raise HTTPException(422,detail="CONSUMER_TERMS_ACCEPTANCE_REQUIRED")
+        if body.accepted_terms is True:
+            if body.term_versions != CONSUMER_REGISTRATION_TERMS:
+                raise HTTPException(409,detail="CONSUMER_TERMS_VERSION_MISMATCH")
+        elif body.term_versions:
+            raise HTTPException(422,detail="CONSUMER_TERMS_ACCEPTANCE_REQUIRED")
         profile=consumer_service.register(body.email,body.password,body.display_name,body.phone)
         if body.accepted_terms is True:
             with SessionLocal() as s:
-                s.add(AuditEventRow(audit_id=new_id("aud"),actor_id=profile["user_id"],actor_type="CONSUMER",supplier_id=None,roles=["CONSUMER"],session_id=None,action="CONSUMER_REGISTRATION_TERMS_ACCEPTED",resource_type="CONSUMER_REGISTRATION",resource_id=profile["user_id"],request_id=getattr(request.state,"request_id",None),client_ip=request.client.host if request.client else None,http_method="POST",path="/v1/consumer/auth/register",before_state=None,after_state={"registration_state":"ACCOUNT_CREATED"},decision_id=None,evidence_id=None,approval_id=None,metadata_json={"term_versions":CONSUMER_REGISTRATION_TERMS,"accepted_once":True,"personal_vault_opt_in":False},created_at=datetime.now(timezone.utc)));s.commit()
+                s.add(AuditEventRow(audit_id=new_id("aud"),actor_id=profile["user_id"],actor_type="CONSUMER",supplier_id=None,roles=["CONSUMER"],session_id=None,action="CONSUMER_REGISTRATION_TERMS_ACCEPTED",resource_type="CONSUMER_REGISTRATION",resource_id=profile["user_id"],request_id=getattr(request.state,"request_id",None),client_ip=request.client.host if request.client else None,http_method="POST",path="/v1/consumer/auth/register",before_state=None,after_state={"registration_state":"ACCOUNT_CREATED","personal_vault_state":"NOT_ENABLED"},decision_id=None,evidence_id=None,approval_id=None,metadata_json={"term_versions":CONSUMER_REGISTRATION_TERMS,"deferred_terms":CONSUMER_DEFERRED_TERMS,"accepted_once":True,"personal_vault_opt_in":False},created_at=datetime.now(timezone.utc)));s.commit()
         t=consumer_service.login(body.email,body.password,request.client.host if request.client else None,request.headers.get("user-agent")); _set(response,t)
-        return {"data":{"authenticated":True,"profile":profile,"terms":CONSUMER_REGISTRATION_TERMS}}
+        return {"data":{"authenticated":True,"profile":profile,"terms":CONSUMER_REGISTRATION_TERMS,"deferred_terms":CONSUMER_DEFERRED_TERMS,"personal_vault_opt_in":False}}
     except ValueError as e: raise HTTPException(409,detail=str(e))
 
 @router.post("/v1/consumer/auth/login")
