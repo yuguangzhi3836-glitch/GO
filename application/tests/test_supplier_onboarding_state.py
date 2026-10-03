@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime, timezone
-from go_hotel.db.models import HotelRegistrationDirectRow
+from go_hotel.db.models import HotelRegistrationDirectRow, HotelCanonicalProfileRow
 from go_hotel.db.session import SessionLocal
 from go_hotel.services.supplier_onboarding_state import supplier_onboarding_state_service
 
@@ -98,6 +98,20 @@ def test_onboarding_resumes_and_only_unlocks_after_profile_and_contract_review(c
     assert client.get("/bff/auth/me").json()["data"]["onboarding"]["state"] == "UNDER_REVIEW"
 
     with SessionLocal.begin() as s:
+        now = datetime.now(timezone.utc)
+        s.add(HotelCanonicalProfileRow(
+            hotel_id="hotel_test",
+            slug="hotel-test",
+            canonical_json={"name": "测试酒店", "address": "测试街道 1 号"},
+            field_provenance_json={},
+            source_snapshot_ids_json=[],
+            completeness_bps=0,
+            go_direct_state="GO_DIRECT_VERIFIED",
+            page_state="DRAFT",
+            version=1,
+            created_at=now,
+            updated_at=now,
+        ))
         s.add(HotelRegistrationDirectRow(
             hotel_registration_direct_id="hregdir_test",
             hotel_id="hotel_test",
