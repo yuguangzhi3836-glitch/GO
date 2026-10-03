@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import uuid
 from sqlalchemy import select
 
-from go_hotel.db.models import SupplierOnboardingRow, HotelRegistrationDirectRow
+from go_hotel.db.models import SupplierOnboardingRow, HotelRegistrationDirectRow, HotelCanonicalProfileRow
 from go_hotel.db.session import SessionLocal
 
 
@@ -130,7 +130,16 @@ class SupplierOnboardingService:
                 raise ValueError("INVALID_SUPPLIER_PROFILE_DECISION")
             if decision == "APPROVE":
                 registration = s.get(HotelRegistrationDirectRow, registration_direct_id) if registration_direct_id else None
-                if not registration or registration.supplier_id != supplier_id or registration.state != "APPROVED":
+                profile = s.get(HotelCanonicalProfileRow, registration.hotel_id) if registration else None
+                if (
+                    not registration
+                    or registration.supplier_id != supplier_id
+                    or registration.state != "APPROVED"
+                    or not registration.reviewed_by
+                    or not registration.reviewed_at
+                    or not profile
+                    or profile.go_direct_state not in {"GO_DIRECT_VERIFIED", "GO_DIRECT_LIVE"}
+                ):
                     raise ValueError("APPROVED_HOTEL_REGISTRATION_REQUIRED")
                 row.state = "VERIFIED"
                 row.hotel_id = registration.hotel_id
