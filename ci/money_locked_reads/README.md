@@ -79,12 +79,66 @@ Child exit tests use the selected source module and same isolated schema.
 
 ## Gate
 
-GO: review this small reversible candidate; scoped local correctness passed.
-HOLD / NO-GO: formal ABBA admission, performance adoption, merge and deployment.
-Before performance admission, repeat correctness on PostgreSQL 18.4 with the
-target dependency versions; review the changed lock footprint, long-history
-replays, query plan and existing identity-map/isolation assumptions. Any future
-ABBA needs separate authorization, fixed current-main/candidate identities and
-unchanged CPU -20%, P95 -15%, 100-actor P95 <=5s gates.
+**NO-GO for the current candidate**, following the PostgreSQL 18.4 replay-cost
+retest below. Do not advance it into formal ABBA or adopt/merge/deploy it merely
+because correctness passed. Preserve this rejected shape and its evidence for
+review; any revised implementation needs fresh correctness and cost evidence.
+Any future ABBA needs separate authorization, fixed current-main/candidate
+identities and unchanged CPU -20%, P95 -15%, 100-actor P95 <=5s gates.
 
 Rollback is the single candidate commit revert; there is no migration.
+
+## PostgreSQL 18.4 follow-up: correctness passes, replay cost rejects candidate
+
+The exact `f44c3e21f08906569ea404d9f7fcc2d33bbb28d3` application and original
+correctness test hashes were preserved. PostgreSQL 18.4 was built from the
+official source after SHA256 verification; SQLAlchemy was pinned to 2.1.1.
+Python 3.12.14 / psycopg 3.3.6; READ COMMITTED, fsync and synchronous_commit on.
+This was a new local socket server, not the historical Codespace or any external
+database. Build options and source checksum are in `PG18_REPLAY_RESULT.json`.
+
+All 32 original correctness test instances passed on 18.4. Ten additional
+diagnostic instances also completed as expected; these explicitly demonstrate
+replay degradation and **are not performance passes**.
+
+Each serial probe has 3 warmups and 30 samples, with 8000 unrelated synthetic
+background rows and ANALYZE. Extra root history is FAILED AUTHORIZATION data,
+so it does not alter confirmed budgets. Latencies are whole money.create replay
+calls including commit; CPU is calling-thread CPU, not server/application-wide
+CPU. There is no concurrent load, ABBA, cold-start or P95/P99 result.
+
+| Root history rows | Base replay rows | Candidate replay rows | Base median ms | Candidate median ms | Base/candidate thread CPU ms |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 2 | 1 | 2 | 0.681 | 0.855 | 0.576 / 0.642 |
+| 20 | 1 | 20 | 0.942 | 0.972 | 0.736 / 0.764 |
+| 200 | 1 | 200 | 0.749 | 2.662 | 0.601 / 2.066 |
+| 2000 | 1 | 2000 | 0.687 | 18.959 | 0.586 / 15.481 |
+
+Small-history timing differences are not statistically qualified. The decisive
+finding is that a same-key replay changes from one-row lookup to whole-history
+ORM materialization and locking, although both paths still issue two SELECTs.
+EXPLAIN ANALYZE shows base `Index Scan -> LockRows`; candidate uses `BitmapOr ->
+Bitmap Heap Scan -> Sort -> LockRows`. At 2000 rows the observed top-level shared
+buffer hits are 4 vs 2050, with executor times 0.016 vs 2.258 ms. Full plans and
+all timing samples are preserved in the JSON; plans are not inferred from text.
+
+A separate two-session witness locks only the AUTH row, without the root.
+Base CAPTURE replay returns in 1.875 ms; candidate hits the configured 150 ms
+lock timeout (SQLSTATE 55P03, measured 152.592 ms). After rollback/unlock both
+recover correctly. This proves a new row-lock dependency, **not** an observed
+production deadlock or evidence that existing root-first writers use this
+schedule. The history-cardinality regression alone is sufficient to reject
+this candidate's unconditional-OR replay shape.
+
+Reproduce probes after the original suite on an isolated PostgreSQL 18.4 socket:
+
+```sh
+MONEY_READ_TEST_URL='postgresql+psycopg://postgres@/postgres?host=/tmp/go-money-pg18-socket&port=55440' \
+MONEY_REPLAY_OUTPUT=/tmp/go-money-pg18-probes \
+python -m pytest ci/money_locked_reads/test_correctness.py ci/money_locked_reads/test_replay_cost.py -q -s
+```
+
+A follow-up design must preserve the one-row idempotent replay path, including
+conflicts, and only load history on a genuinely new movement. It must retain
+the independent root statement, global key semantics and all guards. No revised
+business implementation is included in this evidence-only follow-up.
