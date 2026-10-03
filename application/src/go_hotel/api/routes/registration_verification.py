@@ -3,7 +3,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 from go_hotel.services import registration_verification as verification
-from go_hotel.services.registration_terms import require_registration_terms_ready
+from go_hotel.services.registration_terms import require_account_registration_terms_ready
 
 router = APIRouter(tags=['registration-verification'])
 
@@ -24,7 +24,7 @@ def send_registration_code(body: ChallengeBody, request: Request, response: Resp
     if not body.accepted_terms:
         raise HTTPException(422, detail='REGISTRATION_TERMS_ACCEPTANCE_REQUIRED')
     try:
-        policy = require_registration_terms_ready(body.audience)
+        policy = require_account_registration_terms_ready(body.audience)
         if body.term_versions != policy['versions'] or body.term_hashes != policy['term_hashes']:
             raise ValueError('REGISTRATION_TERMS_VERSION_MISMATCH')
         registration_privacy.validate_decisions(policy,body.registration_decisions)
