@@ -42,7 +42,13 @@ def ready():
 
 
 def policy_digest(policy):
-    return hashlib.sha256(json.dumps({'versions': policy['versions'], 'hashes': policy['term_hashes']}, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    bound={
+        'versions':policy['versions'],
+        'hashes':policy['term_hashes'],
+        'deferred':sorted(policy.get('deferred') or []),
+        'account_stage':policy.get('account_stage') is True,
+    }
+    return hashlib.sha256(json.dumps(bound,sort_keys=True,separators=(',',':')).encode()).hexdigest()
 
 
 def subject(audience, email):
