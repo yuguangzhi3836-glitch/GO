@@ -1,0 +1,121 @@
+{
+  "archive_sha256": "a720dd9adfbddeb90c19a16ef862a56f156237d4616405e4dbfa893f67cc8c88",
+  "archive_commit": "13a08ec261cc1618b7cada5a2b64bd438b848621",
+  "application_commit": "a6361b9376ab59f05616338b8245ac4e2976dec3",
+  "live_retest_completed": false,
+  "source_row_count": null,
+  "source_indexes_observed": null,
+  "source_explain_plan": null,
+  "auth_capture_replay_timing_split": null,
+  "fingerprints": {
+    "root_lock": "SELECT ba18dcdfa270b944",
+    "idempotency_key_lock": "SELECT 03639411c9292a8d",
+    "credit_source_guard": "SELECT fe2bd82b1cfb7d50",
+    "history_lock": "SELECT aabf51292b44cda8",
+    "movement_insert": "INSERT c4a2f3d5c0d4632f",
+    "fulfillment_lock": "SELECT 479fe6ff69bf324b",
+    "ledger_insert": "INSERT cfdf660d6e6454da",
+    "fulfillment_event_insert_shared": "INSERT fe1b159e8a38023f",
+    "fulfillment_update": "UPDATE 3c756db0d8cc92eb"
+  },
+  "tiers": {
+    "20": {
+      "money_service_totals": {
+        "sql_count": 400,
+        "sql_wall_seconds": 1.6869682060003015,
+        "hold_count": 100,
+        "hold_seconds": 2.7788424879996683,
+        "queue_seconds": 1.454457986998932
+      },
+      "global_fingerprint_totals_not_service_joined": {
+        "root_lock": {
+          "count": 100,
+          "wall_seconds": 0.5952814920000264
+        },
+        "idempotency_key_lock": {
+          "count": 100,
+          "wall_seconds": 0.35206520100041416
+        },
+        "credit_source_guard": {
+          "count": 40,
+          "wall_seconds": 0.1331842960000813
+        },
+        "history_lock": {
+          "count": 40,
+          "wall_seconds": 0.15405386700024337
+        },
+        "movement_insert": {
+          "count": 40,
+          "wall_seconds": 0.1331546079996997
+        },
+        "fulfillment_lock": {
+          "count": 20,
+          "wall_seconds": 0.08189578899975913
+        },
+        "ledger_insert": {
+          "count": 20,
+          "wall_seconds": 0.11144595500002197
+        },
+        "fulfillment_event_insert_shared": {
+          "count": 60,
+          "wall_seconds": 0.18340658600016013
+        },
+        "fulfillment_update": {
+          "count": 20,
+          "wall_seconds": 0.06819115900020734
+        }
+      },
+      "guard_wall_over_money_sql": 0.07894890699561738,
+      "root_and_key_wall_over_money_sql": 0.5615676037229781
+    },
+    "100": {
+      "money_service_totals": {
+        "sql_count": 2000,
+        "sql_wall_seconds": 9.309649022998542,
+        "hold_count": 500,
+        "hold_seconds": 14.063154191999502,
+        "queue_seconds": 228.7267022730008
+      },
+      "global_fingerprint_totals_not_service_joined": {
+        "root_lock": {
+          "count": 500,
+          "wall_seconds": 2.893788840000525
+        },
+        "idempotency_key_lock": {
+          "count": 500,
+          "wall_seconds": 2.0119433830005846
+        },
+        "credit_source_guard": {
+          "count": 200,
+          "wall_seconds": 0.917240534000257
+        },
+        "history_lock": {
+          "count": 200,
+          "wall_seconds": 0.8445303969988345
+        },
+        "movement_insert": {
+          "count": 200,
+          "wall_seconds": 0.8759438909992241
+        },
+        "fulfillment_lock": {
+          "count": 100,
+          "wall_seconds": 0.4548291099997641
+        },
+        "ledger_insert": {
+          "count": 100,
+          "wall_seconds": 0.5886214959995186
+        },
+        "fulfillment_event_insert_shared": {
+          "count": 300,
+          "wall_seconds": 1.0742015429995035
+        },
+        "fulfillment_update": {
+          "count": 100,
+          "wall_seconds": 0.36911097400036397
+        }
+      },
+      "guard_wall_over_money_sql": 0.09852579100826545,
+      "root_and_key_wall_over_money_sql": 0.526951360989227
+    }
+  }
+}
