@@ -133,6 +133,7 @@ def account_registration_terms_status(audience: str) -> dict:
         'status': 'APPROVED' if formal_ready else 'DRAFT',
         'acceptance_enabled': True,
         'enabled': True,
+        'account_stage': True,
         'versions': {x['id']: x['version'] for x in documents},
         'term_hashes': {x['id']: x['sha256'] for x in documents},
         'documents': documents,
