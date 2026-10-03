@@ -116,7 +116,7 @@ def facts(db, captures=1):
 def selects(db):
     rows = []
     def record(conn, cursor, statement, parameters, context, many):
-        if statement.lstrip().upper().startswith('SELECT'):
+        if statement.lstrip().upper().startswith(('SELECT', 'WITH')):
             rows.append((statement, cursor.rowcount))
     event.listen(db.engine, 'after_cursor_execute', record)
     try:
@@ -137,8 +137,8 @@ def test_sql_budget_and_replay_rows(db):
             assert datetime.fromisoformat(replay[timestamp]) == datetime.fromisoformat(cap[timestamp])
         assert {k: v for k, v in replay.items() if k not in ('created_at', 'updated_at')} == {k: v for k, v in cap.items() if k not in ('created_at', 'updated_at')}
     assert (len(a), len(c), len(r)) == ((3, 4, 2) if db.candidate else (4, 5, 2))
-    # Honest replay cost: candidate locks/returns both AUTH and CAPTURE.
-    assert r[1][1] == (2 if db.candidate else 1)
+    # R2 preserves the one-row hit; history must not leak into replay results.
+    assert r[1][1] == 1
     print('SQL_SELECT_COUNTS', db.candidate, len(a), len(c), len(r), 'REPLAY_MOVEMENT_ROWS', r[1][1])
     facts(db)
 

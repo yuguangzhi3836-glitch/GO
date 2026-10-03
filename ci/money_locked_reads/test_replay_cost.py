@@ -53,7 +53,7 @@ def test_serial_replay_cardinality_and_plan(db, history_size):
         assert result['money_movement_id'] == cap
     statements = []
     def record(conn, cursor, statement, parameters, context, many):
-        if statement.startswith('SELECT'):
+        if statement.startswith(('SELECT', 'WITH')):
             statements.append((statement, parameters, cursor.rowcount))
     event.listen(db.engine, 'after_cursor_execute', record)
     try:
@@ -61,7 +61,7 @@ def test_serial_replay_cardinality_and_plan(db, history_size):
     finally:
         event.remove(db.engine, 'after_cursor_execute', record)
     assert len(statements) == 2
-    assert statements[1][2] == (history_size if db.candidate else 1)
+    assert statements[1][2] == 1
     sql, parameters, _ = statements[1]
     with db.engine.connect() as c:
         cursor = c.connection.cursor()
@@ -69,6 +69,15 @@ def test_serial_replay_cardinality_and_plan(db, history_size):
         plan = cursor.fetchone()[0]
         cursor.close()
         c.rollback()
+    if db.candidate:
+        def walk(node):
+            yield node
+            for child in node.get('Plans', []):
+                yield from walk(child)
+        history_plans = [n for n in walk(plan[0]['Plan']) if n.get('Subplan Name') == 'CTE money_history']
+        assert len(history_plans) == 1
+        scans = [n for n in walk(history_plans[0]) if n.get('Relation Name') == Movement.__tablename__]
+        assert scans and all(n['Actual Loops'] == 0 for n in scans)
     output = dict(history_size=history_size, background_rows=8000,
                   implementation='candidate' if db.candidate else 'baseline',
                   samples=30, warmup=3, sequential_only=True, performance_acceptance=False,
@@ -82,11 +91,14 @@ def test_serial_replay_cardinality_and_plan(db, history_size):
     facts(db)
 
 
-def test_unrelated_auth_row_lock_changes_replay_dependency(db):
+@pytest.mark.parametrize('request_kind', ['replay', 'amount_conflict', 'root_conflict'])
+def test_unrelated_auth_row_lock_does_not_block_replay(db, request_kind):
     """A lock-footprint witness, not proof of a production writer's lock order."""
     root(db)
     auth = move(db, 'AUTHORIZATION', 'auth')['money_movement_id']
     cap = move(db, 'CAPTURE', 'cap', parent=auth)['money_movement_id']
+    if request_kind == 'root_conflict':
+        root(db, 'other')
     with db.sessions() as blocker:
         # Deliberately hold AUTH alone. Existing root-first money calls cannot
         # form this schedule; this exposes the newly introduced row dependency.
@@ -95,14 +107,18 @@ def test_unrelated_auth_row_lock_changes_replay_dependency(db):
             replay.execute(text("SET LOCAL lock_timeout='150ms'"))
             start = time.perf_counter()
             try:
-                result = db.service.create_in_session(replay, 'root', body('CAPTURE', parent=auth), 'cap', 'test')
-                assert result['money_movement_id'] == cap
-                outcome = 'returned'
-                assert not db.candidate
+                iid = 'other' if request_kind == 'root_conflict' else 'root'
+                request = body('CAPTURE', amount=101 if request_kind == 'amount_conflict' else 100, parent=auth)
+                if request_kind == 'replay':
+                    result = db.service.create_in_session(replay, iid, request, 'cap', 'test')
+                    assert result['money_movement_id'] == cap
+                    outcome = 'returned'
+                else:
+                    with pytest.raises(ValueError, match='MONEY_MOVEMENT_IDEMPOTENCY_CONFLICT'):
+                        db.service.create_in_session(replay, iid, request, 'cap', 'test')
+                    outcome = 'idempotency_conflict'
             except DBAPIError as exc:
-                assert db.candidate
-                assert exc.orig.sqlstate == '55P03'
-                outcome = 'lock_timeout_55P03'
+                pytest.fail('Replay acquired an unrelated history lock: ' + str(exc.orig.sqlstate))
             finally:
                 elapsed = (time.perf_counter() - start) * 1000
                 replay.rollback()
@@ -112,5 +128,82 @@ def test_unrelated_auth_row_lock_changes_replay_dependency(db):
     output = dict(implementation='candidate' if db.candidate else 'baseline',
                   outcome=outcome, wall_ms=elapsed, lock_timeout_ms=150,
                   production_writer_schedule_proven=False)
-    save(db, 'auth-lock-witness', output)
+    save(db, 'auth-lock-witness-' + request_kind, output)
     print('REPLAY_LOCK', output)
+
+
+def test_hit_keeps_matching_movement_locked_until_transaction_end(db):
+    root(db)
+    auth = move(db, 'AUTHORIZATION', 'auth')['money_movement_id']
+    cap = move(db, 'CAPTURE', 'cap', parent=auth)['money_movement_id']
+    with db.sessions() as hit:
+        result = db.service.create_in_session(hit, 'root', body('CAPTURE', parent=auth), 'cap', 'test')
+        assert result['money_movement_id'] == cap
+        with db.sessions() as contender:
+            with pytest.raises(DBAPIError) as error:
+                contender.scalar(select(Movement).where(Movement.money_movement_id == cap).with_for_update(nowait=True))
+            assert error.value.orig.sqlstate == '55P03'
+            contender.rollback()
+        hit.rollback()
+    with db.sessions() as released:
+        assert released.scalar(select(Movement).where(Movement.money_movement_id == cap).with_for_update(nowait=True))
+
+
+def test_waiting_same_key_sees_committed_hit(db):
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+    from test_correctness import wait_blocked
+    root(db)
+    ready = threading.Event(); ids = {}
+    with db.sessions() as first:
+        auth = db.service.create_in_session(first, 'root', body('AUTHORIZATION'), 'auth', 'test')
+        def second():
+            with db.sessions() as s:
+                ids['pid'] = s.scalar(text('SELECT pg_backend_pid()'))
+                ready.set()
+                result = db.service.create_in_session(s, 'root', body('AUTHORIZATION'), 'auth', 'test')
+                s.commit()
+                return result
+        with ThreadPoolExecutor(1) as pool:
+            future = pool.submit(second)
+            try:
+                assert ready.wait(5)
+                wait_blocked(db, ids['pid'])
+            finally:
+                first.commit()
+            assert future.result(timeout=10)['money_movement_id'] == auth['money_movement_id']
+    assert len(facts(db, captures=0)) == 1
+
+
+def test_serial_money_slice_budget(db):
+    """Five money calls only; no order/API/transport or concurrency load."""
+    measurements = []
+    for index in range(23):
+        iid = f'slice-{index}'
+        root(db, iid)
+        counts = []
+        def count(conn, cursor, statement, parameters, context, many):
+            counts.append(statement.split(None, 1)[0])
+        event.listen(db.engine, 'after_cursor_execute', count)
+        try:
+            wall, cpu = time.perf_counter(), time.thread_time()
+            auth = move(db, 'AUTHORIZATION', iid + ':auth', iid=iid)['money_movement_id']
+            cap = move(db, 'CAPTURE', iid + ':cap', parent=auth, iid=iid)['money_movement_id']
+            for _ in range(2):
+                assert move(db, 'CAPTURE', iid + ':cap', parent=auth, iid=iid)['money_movement_id'] == cap
+            with pytest.raises(ValueError, match='MONEY_MOVEMENT_IDEMPOTENCY_CONFLICT'):
+                move(db, 'CAPTURE', iid + ':cap', amount=101, parent=auth, iid=iid)
+            wall_ms, cpu_ms = (time.perf_counter() - wall) * 1000, (time.thread_time() - cpu) * 1000
+        finally:
+            event.remove(db.engine, 'after_cursor_execute', count)
+        assert len(counts) == (18 if db.candidate else 20)
+        if index >= 3:
+            measurements.append(dict(wall_ms=wall_ms, calling_thread_cpu_ms=cpu_ms, statements=len(counts)))
+    result = dict(implementation='candidate' if db.candidate else 'baseline',
+                  warmup=3, samples=measurements, serial_money_slice_only=True,
+                  full_transaction_or_abba=False,
+                  median_wall_ms=median(x['wall_ms'] for x in measurements),
+                  median_calling_thread_cpu_ms=median(x['calling_thread_cpu_ms'] for x in measurements))
+    save(db, 'money-slice', result)
+    print('MONEY_SLICE', result['implementation'], round(result['median_wall_ms'], 3),
+          round(result['median_calling_thread_cpu_ms'], 3), measurements[0]['statements'])
