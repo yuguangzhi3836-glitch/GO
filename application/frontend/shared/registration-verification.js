@@ -17,8 +17,8 @@
   let decisionVersion=null,decisionInputs={};
   function decisions(){
    const p=policy();if(!p?.enabled)throw Error('注册条款尚未就绪。');
-   const out={};for(const key of Object.keys(p.versions)){
-    if(key==='personal_vault_terms'){out[key]='DEFERRED';continue}
+   const out={},deferred=new Set(p.deferred||[]);for(const key of Object.keys(p.versions)){
+    if(deferred.has(key)){out[key]='DEFERRED';continue}
     if(!decisionInputs[key]?.checked)throw Error('请分别确认协议与隐私告知。');
     out[key]=key==='privacy_policy'?'NOTICE_ACKNOWLEDGED':'CONTRACT_ACCEPTED';
    }return out;
@@ -27,9 +27,15 @@
    const p=policy();if(!decisionContainer||!p)return;
    const version=JSON.stringify([p.versions,p.hashes,p.enabled]);if(version===decisionVersion)return;
    decisionVersion=version;decisionInputs={};decisionContainer.replaceChildren();
+   const deferred=new Set(p.deferred||[]);
    for(const key of Object.keys(p.versions)){
     const label=document.createElement('label');label.style.display='block';
-    if(key==='personal_vault_terms'){label.textContent='旅行资料库为可选功能，注册时不开通或授权。';decisionContainer.append(label);continue}
+    if(deferred.has(key)){
+     const deferredText=key==='personal_vault_terms'?'旅行资料库为可选功能，注册时不开通或授权。':
+      key==='data_processing_terms'?'数据协作条款将在启用相应业务能力时另行确认。':
+      key==='electronic_signature_authorization'?'电子签约授权将在合同阶段另行确认。':'该条款将在对应业务阶段另行确认。';
+     label.textContent=deferredText;decisionContainer.append(label);continue
+    }
     const input=document.createElement('input');input.type='checkbox';input.required=true;input.disabled=!p.enabled;input.dataset.term=key;
     input.addEventListener('change',update);decisionInputs[key]=input;label.append(input);
     const title=({privacy_policy:'隐私政策',consumer_service_terms:'用户服务条款',supplier_service_terms:'供应商服务条款',data_processing_terms:'数据处理条款',electronic_signature_authorization:'电子签署授权',platform_operating_rules:'平台运营规则'})[key]||key;
