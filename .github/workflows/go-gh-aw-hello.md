@@ -5,6 +5,14 @@ intent: "Prove the transport leg Runtime -> gh-aw -> Runtime: a durable Runtime 
 labels: ["runtime", "gh-aw", "executor"]
 
 on:
+  # The push trigger exists ONLY so GitHub registers this workflow: a workflow that
+  # declares nothing but `workflow_dispatch` and lives on a non-default branch is not in
+  # the repository's workflow registry, so `POST .../dispatches` answers 404 and the
+  # Runtime cannot wake it at all. The run this trigger causes is made free by the
+  # `steps:` noop below, which stops the engine before any AI Credits are spent.
+  push:
+    branches:
+      - smoke/gh-aw-hello-20261003
   workflow_dispatch:
     inputs:
       runtime_task_id:
@@ -50,6 +58,15 @@ safe-outputs:
   # write capability from the run (activation/detection/conclusion otherwise get
   # `issues: write`), so the whole workflow becomes read-only against GitHub.
   report-failure-as-issue: false
+
+# Pre-agent hook. On any event that is NOT the Runtime's dispatch, stop the engine before
+# it starts by writing the `noop` entry the harness checks for: zero AI Credits, zero model
+# calls. This is what makes the registration run free.
+steps:
+  - name: Registration-only run (skip the agent)
+    if: github.event_name != 'workflow_dispatch'
+    run: |
+      printf '%s\n' '{"type":"noop","message":"registration-only run; agent intentionally skipped"}' >> "$GH_AW_SAFE_OUTPUTS"
 
 post-steps:
   - name: Seal the C1 result
