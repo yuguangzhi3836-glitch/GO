@@ -217,7 +217,7 @@ def _parse_explicit_field(body: str, names) -> str | None:
     return None
 
 
-def parse_c01_issue(issue) -> dict:
+def parse_c01_issue(issue, *, owner_c=INGRESS_OWNER_C) -> dict:
     """Parse one already-open C01 issue into the facts a Runtime task needs.
 
     Fails closed on anything unexpected. In particular:
@@ -252,8 +252,8 @@ def parse_c01_issue(issue) -> dict:
         raise Refused("INGRESS_TASK_ID_TITLE_BODY_MISMATCH")
 
     cell_id = canonical_cell_id(title_cell)
-    if cell_id != INGRESS_OWNER_C:
-        # This ingress owns C01 only. Another cell's issue is another cell's business.
+    if cell_id != canonical_cell_id(owner_c):
+        # Each configured ingress owns exactly one cell (legacy default: C1).
         raise Refused("INGRESS_ISSUE_IS_NOT_C01")
 
     parsed = {
@@ -270,14 +270,14 @@ def parse_c01_issue(issue) -> dict:
     return parsed
 
 
-def plan_ingress(issue, *, environ=None) -> dict:
+def plan_ingress(issue, *, environ=None, owner_c=INGRESS_OWNER_C) -> dict:
     """Compute the Runtime call this issue would produce. Never enqueues.
 
     There is no Runtime parameter here on purpose: this function is not able to
     enqueue anything, in any configuration, so the disabled path cannot be bypassed
     by passing one in.
     """
-    parsed = parse_c01_issue(issue)
+    parsed = parse_c01_issue(issue, owner_c=owner_c)
     payload = build_task_payload(
         cell_id=parsed["cell_id"],
         external_task_id=parsed["external_task_id"],
@@ -299,7 +299,7 @@ def plan_ingress(issue, *, environ=None) -> dict:
         "external_task_id": parsed["external_task_id"],
         "payload_sha256": sha256_hex(canonical(payload)),
         "would_enqueue": {
-            "owner_c": INGRESS_OWNER_C,
+            "owner_c": parsed["cell_id"],
             "kind": INGRESS_KIND,
             "payload": payload,
             "idempotency_key": idempotency_key,
@@ -308,13 +308,13 @@ def plan_ingress(issue, *, environ=None) -> dict:
     }
 
 
-def ingest(issue, *, runtime=None, environ=None) -> dict:
+def ingest(issue, *, runtime=None, environ=None, owner_c=INGRESS_OWNER_C) -> dict:
     """Plan, and enqueue only when explicitly enabled and given a Runtime.
 
     The refusal when enabled-without-a-Runtime is deliberate: "enabled but nothing to
     enqueue into" must be a loud error, not a silent no-op that looks like success.
     """
-    plan = plan_ingress(issue, environ=environ)
+    plan = plan_ingress(issue, environ=environ, owner_c=owner_c)
     if not plan["enabled"]:
         return plan
     if runtime is None:
@@ -376,6 +376,22 @@ def main(argv=None) -> int:
         return 2
     print(canonical(plan))
     return 0
+
+
+def looks_like_cell(issue, *, owner_c=INGRESS_OWNER_C):
+    """Cheap cell filter; parsing and all validation still happen before enqueue."""
+    if type(issue) is not dict or "pull_request" in issue:
+        return False
+    title = issue.get("title")
+    if not isinstance(title, str):
+        return False
+    parts = [p.strip() for p in TITLE_SEPARATOR.split(title.strip())]
+    if len(parts) != 3 or not all(parts):
+        return False
+    try:
+        return canonical_cell_id(parts[0]) == canonical_cell_id(owner_c)
+    except Refused:
+        return False
 
 
 if __name__ == "__main__":

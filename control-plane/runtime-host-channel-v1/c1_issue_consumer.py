@@ -63,8 +63,9 @@ from c1_github_actions_client import (
 )
 from c1_issue_ingress import (
     INGRESS_ENABLED_ENV,
-    TITLE_CELL,
+    TITLE_CELL,  # compatibility exports; parser remains in ingress
     TITLE_SEPARATOR,
+    looks_like_cell,
     ingress_enabled,
     ingest,
     plan_ingress,
@@ -107,7 +108,7 @@ def poll_interval_s(environ=None) -> int:
 
 
 # --------------------------------------------------------------------- filtering
-def looks_like_c01(issue) -> bool:
+def looks_like_c01(issue, owner_c="C1") -> bool:
     """Cheap pre-filter: is this worth handing to the ingress parser at all?
 
     It decides nothing about identity - it only avoids asking the parser about the
@@ -115,17 +116,7 @@ def looks_like_c01(issue) -> bool:
     passes is still parsed and validated by `c1_issue_ingress`, which remains the only
     authority on what a C01 task is.
     """
-    if type(issue) is not dict:
-        return False
-    if "pull_request" in issue:
-        return False
-    title = issue.get("title")
-    if not isinstance(title, str):
-        return False
-    parts = [p.strip() for p in TITLE_SEPARATOR.split(title.strip())]
-    if len(parts) != 3 or not all(parts):
-        return False
-    return bool(TITLE_CELL.match(parts[0])) and parts[0].upper() == "C01"
+    return looks_like_cell(issue, owner_c=owner_c)
 
 
 # ------------------------------------------------------------------ read-only client
@@ -180,7 +171,8 @@ class GitHubIssuesReader:
 
 # ------------------------------------------------------------------------- polling
 def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
-              pages=DEFAULT_PAGES) -> dict:
+              pages=DEFAULT_PAGES, owner_c="C1",
+              max_candidates=MAX_CANDIDATES_PER_POLL) -> dict:
     """One poll. Never writes to GitHub; only enqueues when the ingress is enabled."""
     env = os.environ if environ is None else environ
     enabled = ingress_enabled(env)
@@ -200,13 +192,13 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
                 "reason": type(error).__name__, "enabled": enabled}
 
     issues = listing["issues"]
-    candidates = [issue for issue in issues if looks_like_c01(issue)]
+    candidates = [issue for issue in issues if looks_like_c01(issue, owner_c)]
     planned, refused, enqueued = [], [], []
     runtime_error = None
 
-    for issue in candidates[:MAX_CANDIDATES_PER_POLL]:
+    for issue in candidates[:max_candidates]:
         try:
-            plan = plan_ingress(issue, environ=env)
+            plan = plan_ingress(issue, environ=env, owner_c=owner_c)
         except Refused as refusal:
             # malformed / closed / not-C01-after-all: fail closed, and say which.
             refused.append({"issue_number": issue.get("number"),
@@ -230,7 +222,7 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
             # pretending to have done something.
             runtime_error = "RUNTIME_UNAVAILABLE"
             continue
-        result = ingest(issue, runtime=runtime, environ=env)
+        result = ingest(issue, runtime=runtime, environ=env, owner_c=owner_c)
         enqueued.append(dict(entry, runtime_task_id=result["runtime_task_id"]))
 
     # The status says what the poll actually did, most informative first: a missing
@@ -325,3 +317,4 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

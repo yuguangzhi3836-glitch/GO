@@ -178,7 +178,8 @@ def complete_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attemp
     binding = outbox.completion_binding(request_id)
     document = outbox.terminal_result(request_id)
     runtime.complete(
-        "C1",
+        (outbox.stored_request(runtime_task_id, attempt) or
+         build_dispatch_request(runtime_task_id, attempt))["owner_c"],
         binding["runtime_task_id"],
         worker_id=worker_id,
         expected_attempt=binding["expected_attempt"],
@@ -240,7 +241,9 @@ def fail_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attempt, *
                             conclusion=conclusion)
     runtime_told = True
     try:
-        runtime.complete("C1", runtime_task_id, worker_id=worker_id,
+        owner = (outbox.stored_request(runtime_task_id, attempt) or
+                 build_dispatch_request(runtime_task_id, attempt))["owner_c"]
+        runtime.complete(owner, runtime_task_id, worker_id=worker_id,
                          expected_attempt=attempt, success=False, error=reason,
                          result=record)
     except Exception as exc:                        # noqa: BLE001 - re-raised below
@@ -263,3 +266,4 @@ def is_pending(outbox: DispatchOutbox, runtime_task_id, attempt) -> bool:
         return outbox.snapshot(request["execution_request_id"])["state"] == INTENT
     except Refused:
         return False
+

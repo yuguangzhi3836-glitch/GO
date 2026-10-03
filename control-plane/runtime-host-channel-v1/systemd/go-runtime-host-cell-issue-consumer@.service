@@ -1,0 +1,34 @@
+[Unit]
+Description=GO Runtime cell %i issue-consumer
+ConditionPathExists=/opt/go/runtime-host-c1-worker/cell_issue_consumer.py
+ConditionPathExists=/etc/go-runtime-c1/github-token
+After=go-c1-c14-runtime.service
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=go-runtime
+Group=go-runtime
+WorkingDirectory=/opt/go/runtime-host-c1-worker
+Environment=C1_GITHUB_TOKEN_PATH=/etc/go-runtime-c1/github-token
+Environment=PYTHONDONTWRITEBYTECODE=1
+EnvironmentFile=/etc/go-runtime-cells/%i.env
+ExecStartPre=/usr/bin/python3 -B /opt/go/runtime-host-c1-worker/cell_issue_consumer.py --cell %i --check
+ExecStart=/usr/bin/python3 -B /opt/go/runtime-host-c1-worker/cell_issue_consumer.py --cell %i
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+PrivateDevices=true
+ReadOnlyPaths=/opt/go/c1-c14-runtime
+ReadWritePaths=/var/lib/go-c-runtime
+
+[Install]
+WantedBy=multi-user.target
