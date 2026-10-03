@@ -12,6 +12,10 @@ export class ApiClient{
   async login(username,password,totp_code=null){await this.raw('/bff/auth/login',{method:'POST',body:{username,password,totp_code,expected_actor_type:this.expectedActor}},false);return this.me()}
   async supplierRegistrationTerms(){return this.raw('/bff/auth/supplier/registration-terms',{},false)}
   async supplierRegister(body){await this.raw('/bff/auth/supplier/register',{method:'POST',body},false);return this.me()}
+  async supplierOnboarding(){return this.request('/bff/supplier/onboarding')}
+  async saveSupplierOnboardingProfile(body){return this.request('/bff/supplier/onboarding/profile',{method:'PUT',body})}
+  async submitSupplierOnboardingProfile(){return this.request('/bff/supplier/onboarding/profile/submit',{method:'POST',body:{}})}
+  async submitSupplierOnboardingContract(body){return this.request('/bff/supplier/onboarding/contract',{method:'POST',body})}
   async startMfaEnrollment(username,password){return this.raw('/bff/auth/mfa/enroll/start',{method:'POST',body:{username,password}},false)}
   async confirmMfaEnrollment(enrollment_token,code){await this.raw('/bff/auth/mfa/enroll/confirm',{method:'POST',body:{enrollment_token,code}},false);return this.me()}
   async refresh(){this.refreshPending ||= this.raw('/bff/auth/refresh',{method:'POST'},false).finally(()=>{this.refreshPending=null});return this.refreshPending}
