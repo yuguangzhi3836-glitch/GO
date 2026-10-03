@@ -1,3 +1,62 @@
+# Current R2 status — semantics repaired, performance NO-GO
+
+R2 source commit: `7a4b7e530c49dcd1dd9b64e23da8a0a92893a88d`.
+Baseline remains `05b108cc63b008aad4da732ac97c7e453cf59220`.
+
+R2 replaces the rejected unconditional OR read with a materialized global key
+locking CTE and a history locking CTE guarded by NOT EXISTS(key). They are
+combined with UNION ALL, in a statement strictly AFTER the separate root lock.
+A hit (including a conflicting key from another root) returns and locks only
+that key's single movement. A miss reads/locks the current root history.
+All business guards, idempotency fields, budgets, DML, commits and non-RIDE /
+non-AUTH-CAPTURE paths remain as before. No cross-commit connection reuse.
+
+PostgreSQL 18.4 / SQLAlchemy 2.1.1 / Python 3.12.14 / psycopg 3.3.6 local tests:
+- 32 original correctness instances passed.
+- 18 replay/plan/lock instances passed. At 2/20/200/2000 history rows, both base
+  and R2 return one movement on replay. Actual EXPLAIN shows the history table
+  scan has Actual Loops=0 on every hit. AUTH-only row locks no longer block
+  same-key replay, changed-amount rejection or cross-root key rejection.
+- The matching movement remains locked until transaction end (NOWAIT witness).
+  A waiter after root-lock acquisition sees the just-committed same-key result.
+- Two additional serial five-call money-slice instances passed their correctness
+  and SQL-count checks. Total PostgreSQL instances across the two invocations:
+  52. Six existing SQLite regressions also passed. Probe pass is NOT performance
+  adoption or capacity acceptance.
+
+| Root history | Base replay median ms | R2 replay median ms | Base/R2 returned movements |
+| ---: | ---: | ---: | ---: |
+| 2 | 0.613 | 1.125 | 1 / 1 |
+| 20 | 0.675 | 1.161 | 1 / 1 |
+| 200 | 0.670 | 1.148 | 1 / 1 |
+| 2000 | 0.684 | 1.171 | 1 / 1 |
+
+The five-call slice is AUTH + CAPTURE + two successful CAPTURE replays + one
+changed-amount conflict, sequentially, with root/fulfillment setup outside the
+timer. Three warmups and 20 measured samples per implementation:
+
+| Metric | Base | R2 |
+| --- | ---: | ---: |
+| SQL statements | 20 | 18 |
+| Median whole-slice wall ms | 7.507 | 9.785 |
+| Median calling-thread CPU ms | 5.503 | 6.488 |
+
+These are serial local probes, not randomized/interleaved ABBA, not the complete
+order transaction and not evidence of an end-to-end P95 regression or benefit.
+Nevertheless the measured cost does not support advancing this shape: the
+history-dependent regression is removed, but the merged statement has not
+justified its fixed cost. **NO-GO for formal ABBA/adoption/merge/deployment.**
+Preserve the one-row hit boundary; do not accept query-count reduction alone.
+No external pressure test, merge or deployment was performed.
+
+`R2_PG18_RESULT.json` binds the exact source hashes, environment, full samples,
+EXPLAIN JSON and both test logs. Prior `LOCAL_RESULT.json` and
+`PG18_REPLAY_RESULT.json` remain bound to their original R1 source, not R2.
+The current tests are R2 tests. To reproduce R1, check out its recorded commit.
+The test commands below still apply after changing the private socket path.
+
+## Historical R1 report (superseded; retained for audit)
+
 # RIDE money locked-read candidate
 
 Change classes: PRODUCT_FIX (performance candidate), TEST_ONLY, DOCUMENTATION.
