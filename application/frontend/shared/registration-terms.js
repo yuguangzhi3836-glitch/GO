@@ -23,7 +23,7 @@
   if(Object.keys(versions).length!==ids.size||Object.keys(hashes).length!==ids.size)throw new Error('注册条款清单不完整，请重新进入。');
   const notice=document.createElement('p');notice.setAttribute('role','status');
   notice.textContent=approved?(accountStage&&policy.formal_approval_pending?'账号创建阶段可继续；部分后续业务条款仍待正式审批，并将在对应业务阶段另行确认。':'请展开阅读以上完整条款，确认后勾选同意。'):'条款正文为待确认草稿，暂不能接受或提交注册。已有账号可返回登录。';container.appendChild(notice);
-  return {enabled:approved,versions:{...versions},hashes:{...hashes}};
+  return {enabled:approved,versions:{...versions},hashes:{...hashes},deferred:[...(policy.deferred||[])],account_stage:accountStage,formal_approval_pending:policy.formal_approval_pending===true};
  }
  root.GORegistrationTerms={mount};
 })(globalThis);
