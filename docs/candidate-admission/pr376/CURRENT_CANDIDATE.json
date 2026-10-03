@@ -1,0 +1,55 @@
+{
+  "schema": "go.depth48.current-candidate.v1",
+  "application_git_tree": "dd745a7d7ab58b05c3f14c7794ca7ab826488bf3",
+  "source_tree_sha256": "29fc8eca2b13b4052b21b13b0a357753b0b6123133e4dbdba168174a88b7675d",
+  "source_files": 1640,
+  "candidate_pr": 376,
+  "source_commit": "9f889acfcd36a82c7565b723261ee046c2615314",
+  "candidate_contract_sha256": "2184081d144c0ad103a6f9f71559bf7c8f38c8986b88132b4e00f5dc156cca84",
+  "release_candidate_v1": {
+    "schema": "go.release-candidate.v1",
+    "candidate_id": "pr376-9f889acf-unified-registration-zero-migration",
+    "source_repository": "yuguangzhi3836-glitch/GO",
+    "source_commit": "9f889acfcd36a82c7565b723261ee046c2615314",
+    "application_tree": "dd745a7d7ab58b05c3f14c7794ca7ab826488bf3",
+    "source_fingerprint": "29fc8eca2b13b4052b21b13b0a357753b0b6123133e4dbdba168174a88b7675d",
+    "migration_head": "0145_source_latest_index",
+    "migration_required": false,
+    "build_definition": {
+      "profile": "go-application-python-v1",
+      "dockerfile": "Dockerfile.go-application-python-v2",
+      "dockerfile_sha256": "542c8703433e878f36b8569aaa15c7f76d11302d53644833592e66a99312dfca",
+      "executor_version": "test-pr-v4-runtime-root",
+      "builder_image_tag": "go-hotel:depth48-runtime-6d0fd905",
+      "builder_image_id": "sha256:1c9598d699c21620f4a3b489662f7b11be07acb46440516b74452dd2b6065132"
+    },
+    "artifact_digest": "sha256:01632507d0d3b60054c1d9e56c5338b51085a69094b9beb4773e330c21191754",
+    "required_services": [
+      "api",
+      "recovery-worker",
+      "outbox-worker",
+      "mobile-push-receipt-worker",
+      "reconciliation-worker",
+      "mobile-push-worker",
+      "mobile-engagement-worker",
+      "judgment-worker"
+    ],
+    "test_result_identity": {
+      "action_id": "HK_STAGING_TEST_PR",
+      "task_id": "go-boss-test-pr-376-b582e49ffb31",
+      "evidence_id": "fe23d3c0651bd6ba881db752059c6dc2dbd16f8e",
+      "source_pr_number": "376",
+      "source_commit_sha": "9f889acfcd36a82c7565b723261ee046c2615314",
+      "artifact_digest": "sha256:01632507d0d3b60054c1d9e56c5338b51085a69094b9beb4773e330c21191754",
+      "executor_result": "TEST_PR_OK"
+    },
+    "rollback_relation": {
+      "relation": "REPLACES_CURRENT_KNOWN_GOOD",
+      "previous_known_good_image_id": "sha256:26c95472d494100dc5365b031335670b57570b86ac50fb1b4ebd161d7933530b"
+    },
+    "artifact_package": {
+      "durability": "PROVEN",
+      "package_sha256": "625484a24b53e820dac8c92ab06f56ec416c31917c538b8f91d7de45b43942ab"
+    }
+  }
+}
