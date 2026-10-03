@@ -15,6 +15,14 @@ _REQUIRED = {
     'supplier': ('supplier_service_terms', 'privacy_policy', 'data_processing_terms',
                  'electronic_signature_authorization', 'platform_operating_rules'),
 }
+_ACCOUNT_REQUIRED = {
+    'consumer': ('consumer_service_terms', 'privacy_policy'),
+    'supplier': ('supplier_service_terms', 'privacy_policy', 'platform_operating_rules'),
+}
+_ACCOUNT_DEFERRED = {
+    'consumer': ('personal_vault_terms',),
+    'supplier': ('data_processing_terms', 'electronic_signature_authorization'),
+}
 _REQUIRED_RELEASE_FIELDS = ('operator', 'contact_channels', 'retention_schedule',
                             'recipients', 'cross_border_assessment')
 
@@ -101,3 +109,38 @@ def require_registration_terms_ready(audience: str) -> dict:
     if not status['acceptance_enabled']:
         raise ValueError('REGISTRATION_TERMS_NOT_READY')
     return status
+
+
+def account_registration_terms_status(audience: str) -> dict:
+    """Account-creation policy: exact registered bytes, without downstream readiness gates."""
+    if audience not in _ACCOUNT_REQUIRED:
+        raise ValueError('REGISTRATION_TERMS_AUDIENCE_INVALID')
+    registry = _load_registry()
+    entries = {x['id']: x for x in registry['documents']}
+    if len(entries) != len(registry['documents']):
+        raise ValueError('REGISTRATION_TERMS_INTEGRITY_ERROR')
+    ids = _ACCOUNT_REQUIRED[audience] + _ACCOUNT_DEFERRED[audience]
+    documents = []
+    for ident in ids:
+        if ident not in entries:
+            raise ValueError('REGISTRATION_TERMS_INTEGRITY_ERROR')
+        item = entries[ident]
+        doc = _document(registry, ident, item['version'])
+        documents.append({k: v for k, v in doc.items() if k != 'content'})
+    formal_ready = registration_terms_status(audience)['acceptance_enabled']
+    return {
+        'audience': audience,
+        'status': 'APPROVED' if formal_ready else 'DRAFT',
+        'acceptance_enabled': True,
+        'enabled': True,
+        'versions': {x['id']: x['version'] for x in documents},
+        'term_hashes': {x['id']: x['sha256'] for x in documents},
+        'documents': documents,
+        'deferred': list(_ACCOUNT_DEFERRED[audience]),
+        'formal_approval_pending': not formal_ready,
+        'unresolved': list(registry.get('unresolved') or []),
+    }
+
+
+def require_account_registration_terms_ready(audience: str) -> dict:
+    return account_registration_terms_status(audience)
