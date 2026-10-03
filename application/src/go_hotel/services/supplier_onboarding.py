@@ -7,7 +7,7 @@ import re
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from go_hotel.db.models import IdentityUserRow, HotelPartnerPropertyRow, HotelPartnerAuditEventRow, SupplierOnboardingRow
+from go_hotel.db.models import IdentityUserRow, HotelPartnerPropertyRow, HotelPartnerAuditEventRow, CommercialCaseRow
 from go_hotel.db.session import SessionLocal
 from go_hotel.security.crypto import hash_password
 
@@ -43,13 +43,33 @@ class SupplierOnboardingService:
                 actor_type="SUPPLIER_USER", supplier_id=supplier_id, roles=["SUPPLIER_OWNER"],
                 status="ACTIVE", token_version=1, created_at=created, updated_at=created,
             )
-            onboarding = SupplierOnboardingRow(
-                onboarding_id=_id("onb"), supplier_id=supplier_id, owner_user_id=user_id,
+            onboarding = CommercialCaseRow(
+                commercial_case_id=f"onb_{supplier_id}",
+                case_type="SUPPLIER_ONBOARDING",
+                supplier_id=supplier_id,
+                property_id=None,
+                priority="MEDIUM",
+                owner_id=user_id,
                 state="PROFILE_DRAFT" if profile else "REGISTERED",
-                profile_json=profile, contract_json={}, hotel_id=None, hotel_registration_direct_id=None,
-                review_note=None, reviewed_by=None, contract_review_note=None, contract_reviewed_by=None,
-                submitted_at=None, reviewed_at=None, contract_submitted_at=None, contract_reviewed_at=None,
-                created_at=created, updated_at=created,
+                sla_due_at=None,
+                payload_json={
+                    "owner_user_id": user_id,
+                    "profile": profile,
+                    "contract": {},
+                    "hotel_id": None,
+                    "hotel_registration_direct_id": None,
+                    "review_note": None,
+                    "reviewed_by": None,
+                    "contract_review_note": None,
+                    "contract_reviewed_by": None,
+                    "submitted_at": None,
+                    "reviewed_at": None,
+                    "contract_submitted_at": None,
+                    "contract_reviewed_at": None,
+                },
+                evidence_json=[],
+                created_at=created,
+                updated_at=created,
             )
             session.add_all([user, onboarding])
             if audit_factory is not None:
