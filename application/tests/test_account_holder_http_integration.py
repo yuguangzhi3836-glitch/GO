@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 
-from go_hotel.db.models import HotelPartnerPropertyRow, IdentityUserRow
+from go_hotel.db.models import HotelPartnerPropertyRow, IdentityUserRow, SupplierOnboardingRow
 from go_hotel.db.session import SessionLocal
 from go_hotel.security.deps import current_principal
 from go_hotel.security.service import Principal
@@ -56,14 +56,14 @@ def test_external_order_http_roundtrip_preserves_owner_and_connector_authority(c
         app.dependency_overrides.pop(current_principal, None)
 
 
-def test_supplier_bff_registration_keeps_terms_and_creates_owned_draft(client, monkeypatch):
-    from go_hotel.api.routes.bff import SUPPLIER_REGISTRATION_TERMS
-    from registration_terms_test_support import approved_terms_fixture, hashes, with_verification
+def test_supplier_bff_registration_creates_account_before_hotel_and_keeps_business_locked(client, monkeypatch):
+    from registration_terms_test_support import approved_terms_fixture, account_versions, hashes, with_verification
     approved_terms_fixture(monkeypatch)
+    versions=account_versions('supplier')
     body = {'email': 'http-supplier@example.test', 'password': 'isolated-pass-123',
             'organization_name': 'HTTP Test Hotel', 'contact_name': 'Test Owner',
-            'accepted_terms': False, 'term_versions': SUPPLIER_REGISTRATION_TERMS,
-            'term_hashes': hashes(SUPPLIER_REGISTRATION_TERMS)}
+            'accepted_terms': False, 'term_versions': versions,
+            'term_hashes': hashes(versions)}
     rejected = client.post('/bff/auth/supplier/register', json=body)
     assert rejected.status_code == 422, rejected.text
     with SessionLocal() as session:
@@ -71,8 +71,14 @@ def test_supplier_bff_registration_keeps_terms_and_creates_owned_draft(client, m
     response = client.post('/bff/auth/supplier/register', json=with_verification(body | {'accepted_terms': True}, 'supplier'))
     assert response.status_code == 201, response.text
     data = response.json()['data']
+    assert data['next_step'] == 'COMPLETE_PROFILE'
     with SessionLocal() as session:
-        prop = session.get(HotelPartnerPropertyRow, data['property_id'])
-        assert prop.supplier_id == data['supplier_id']
-        assert prop.publication_state == 'DRAFT'
-        assert prop.operations_json['ownership']['verification_required_before_publication'] is True
+        onboarding=session.scalar(select(SupplierOnboardingRow).where(
+            SupplierOnboardingRow.supplier_id==data['supplier_id']))
+        assert onboarding is not None
+        assert onboarding.state == 'PROFILE_DRAFT'
+        assert session.scalar(select(HotelPartnerPropertyRow).where(
+            HotelPartnerPropertyRow.supplier_id==data['supplier_id'])) is None
+    blocked=client.get('/v1/supplier/dashboard')
+    assert blocked.status_code == 403
+    assert blocked.json()['detail'] == 'SUPPLIER_ONBOARDING_INCOMPLETE'
