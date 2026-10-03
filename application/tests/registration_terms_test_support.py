@@ -64,7 +64,8 @@ def with_verification(payload, audience):
     sent=[]
     with pytest.MonkeyPatch.context() as patch:
         patch.setattr(registration_email, 'send_code', lambda email,code: sent.append(code))
-        result=verification.issue(audience,payload['email'],'fixture-only',{'versions':payload['term_versions'],'term_hashes':payload['term_hashes']})
+        deferred=['personal_vault_terms'] if audience=='consumer' else ['data_processing_terms','electronic_signature_authorization']
+        result=verification.issue(audience,payload['email'],'fixture-only',{'versions':payload['term_versions'],'term_hashes':payload['term_hashes'],'deferred':deferred,'account_stage':True})
     from go_hotel.services.registration_privacy import required_decisions
     deferred=['personal_vault_terms'] if audience=='consumer' else ['data_processing_terms','electronic_signature_authorization']
     return {**payload,'registration_decisions':required_decisions({'versions':payload['term_versions'],'deferred':deferred}),'challenge_id':result['challenge_id'],'verification_code':sent[-1]}
