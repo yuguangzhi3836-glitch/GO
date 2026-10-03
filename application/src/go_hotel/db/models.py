@@ -1124,27 +1124,6 @@ class IdentityUserRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
-class SupplierOnboardingRow(Base):
-    __tablename__ = "supplier_onboarding"
-    onboarding_id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    supplier_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
-    owner_user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    state: Mapped[str] = mapped_column(String(32), nullable=False, default="REGISTERED", index=True)
-    profile_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
-    contract_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
-    hotel_id: Mapped[str | None] = mapped_column(String(64), index=True)
-    hotel_registration_direct_id: Mapped[str | None] = mapped_column(String(64), index=True)
-    review_note: Mapped[str | None] = mapped_column(Text)
-    reviewed_by: Mapped[str | None] = mapped_column(String(64))
-    contract_review_note: Mapped[str | None] = mapped_column(Text)
-    contract_reviewed_by: Mapped[str | None] = mapped_column(String(64))
-    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    contract_submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    contract_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-
 class AuthSessionRow(Base):
     __tablename__ = "auth_session"
     session_id: Mapped[str] = mapped_column(String(64), primary_key=True)
