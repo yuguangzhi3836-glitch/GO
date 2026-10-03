@@ -81,7 +81,7 @@ def test_proof_boundaries(client,delivery,monkeypatch,mutation):
         t=verify.now_ms();monkeypatch.setattr(verify,'now_ms',lambda:t+600_001)
     elif mutation=='policy':
         policy=terms.registration_terms_status('consumer');policy['term_hashes']={k:'a'*64 for k in policy['term_hashes']}
-        monkeypatch.setattr(terms,'require_registration_terms_ready',lambda audience:policy)
+        monkeypatch.setattr(terms,'require_account_registration_terms_ready',lambda audience:policy)
         b['term_hashes']=policy['term_hashes']
     elif mutation=='attempts':
         wrong='000000' if b['verification_code']!='000000' else '111111'
@@ -143,7 +143,7 @@ def test_no_email_until_terms_and_consent_ready(client,delivery,monkeypatch):
     monkeypatch.setattr(terms,'_unused',None,raising=False)
     import go_hotel.api.routes.registration_verification as routes
     def blocked(audience):raise ValueError('REGISTRATION_TERMS_NOT_READY')
-    monkeypatch.setattr(routes,'require_registration_terms_ready',blocked)
+    monkeypatch.setattr(routes,'require_account_registration_terms_ready',blocked)
     assert client.post('/v1/registration/challenges',json=args).status_code==503
     assert not delivery
 
