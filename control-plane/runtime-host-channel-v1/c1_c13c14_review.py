@@ -422,7 +422,7 @@ def c13_payload_from_c14(c14_payload: dict, c14_envelope: dict) -> dict:
     )
 
 
-def enqueue_c13_when_c14_admits(document, binding, outbox, runtime) -> dict | None:
+def enqueue_c13_when_c14_admits(document, binding, outbox, runtime, *, client=None) -> dict | None:
     """The `on_result_sealed` hook: turn an admissible sealed C14 into a C13 task.
 
     Runs BETWEEN the seal and `Runtime.complete(C14)`, which is the whole point - see
@@ -430,6 +430,11 @@ def enqueue_c13_when_c14_admits(document, binding, outbox, runtime) -> dict | No
     derived from the C13 cell and its Lite task id, both carried from the C14 payload, so
     re-running this after a crash returns the same C13 Runtime task instead of creating a
     second one - and a second one would be a second paid review.
+
+    `client` is the shared hook signature's transport, supplied to every sealed-result hook
+    because another class's hook needs it. A C13 half is derived entirely from the sealed
+    C14 the Runtime already holds, so there is nothing for this hook to look up and it
+    deliberately ignores it.
     """
     if document.get("kind") != REVIEW_RESULT_KIND:
         return None

@@ -212,7 +212,12 @@ def complete_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attemp
         # A hook is free to have nothing to say - a C13 execution, for instance, has no
         # second half to create - so its return value is recorded when there is one and
         # the absence of one is not an error.
-        sealed_effect = on_result_sealed(document, binding, outbox, runtime)
+        #
+        # The transport goes with the call, because a hook that has to LOOK something up -
+        # the Builder's own completion resolves the pull request its run created, and must
+        # not build a second HTTP client to do it - has no other way to reach it. Hooks that
+        # do not need it accept and ignore it.
+        sealed_effect = on_result_sealed(document, binding, outbox, runtime, client=client)
     # The owner cell comes from the stored binding, never from a constant and never from
     # this function's caller. One Builder executor serves twelve cells, so "which cell
     # must be told" is a property of the execution; `completion_binding()` reads it back

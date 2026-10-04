@@ -339,7 +339,7 @@ def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clo
     # _complete() like everything else - which is what makes "the Runtime refused this
     # identity" behave the same on all three paths.
     if action == "REUSE_TERMINAL":
-        return _finish(outbox, runtime, task_id, attempt, request=request,
+        return _finish(outbox, runtime, task_id, attempt, request=request, client=client,
                        worker_id=worker_id, lease_s=lease_s, reused=False,
                        result_validator=result_validator,
                        artifact_loader=artifact_loader,
@@ -354,6 +354,7 @@ def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clo
         if earlier is not None:
             outbox.adopt_terminal_result(request_id, earlier)
             return _finish(outbox, runtime, task_id, attempt, request=request,
+                           client=client,
                            worker_id=worker_id, lease_s=lease_s, reused=True,
                            source_request_id=earlier["execution_request_id"],
                            source_attempt=earlier["attempt"],
@@ -489,12 +490,12 @@ def _abandon(outbox, task_id, attempt, *, request, reason) -> dict:
             "reused": False, "renewed": False}
 
 
-def _finish(outbox, runtime, task_id, attempt, *, request, worker_id, lease_s, reused,
-            source_request_id=None, source_attempt=None, result_validator=None,
+def _finish(outbox, runtime, task_id, attempt, *, request, client, worker_id, lease_s,
+            reused, source_request_id=None, source_attempt=None, result_validator=None,
             artifact_loader=None, on_result_sealed=None) -> dict:
     """Complete an execution whose result is already sealed (own or adopted)."""
-    result = _complete(outbox, runtime, task_id, attempt, request=request, client=_NoPull(),
-                       worker_id=worker_id, lease_s=lease_s,
+    result = _complete(outbox, runtime, task_id, attempt, request=request,
+                       client=_NoPull(client), worker_id=worker_id, lease_s=lease_s,
                        result_validator=result_validator,
                        artifact_loader=artifact_loader,
                        on_result_sealed=on_result_sealed)
@@ -506,17 +507,29 @@ def _finish(outbox, runtime, task_id, attempt, *, request, worker_id, lease_s, r
 
 
 class _NoPull:
-    """A client that refuses to reach the network.
+    """A client that refuses to reach the network FOR A PULL.
 
     `_finish` is only reached when a sealed result already exists, so no pull can be
     needed; if one ever is, that is a bug and it must fail loudly rather than silently
     dispatch or fetch.
+
+    What it does NOT refuse is everything else, and that distinction is not cosmetic: the
+    sealed-result HOOK may legitimately need the transport. A Builder's completion resolves
+    the pull request its own run created - that is what admits the review round - and on the
+    adoption path it runs from right here. Delegating the rest keeps the pull guarantee
+    (which is about re-dispatching) without starving the hook of the only client there is.
     """
+
+    def __init__(self, client):
+        self._client = client
 
     def _refuse(self, *_args, **_kwargs):
         raise AssertionError("no pull may be needed once a result is sealed")
 
     send = find_run = find_run_by_name = get_run = download_artifact = _refuse
+
+    def __getattr__(self, name):
+        return getattr(self._client, name)
 
 
 def _pending(outbox, runtime, task_id, attempt, *, request, worker_id, lease_s, leg,

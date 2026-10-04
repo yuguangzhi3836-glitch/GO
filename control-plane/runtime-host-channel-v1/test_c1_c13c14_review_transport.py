@@ -490,7 +490,7 @@ class D_C14AdmitsC13AndOnlyThen(unittest.TestCase):
         class Boom(Exception):
             pass
 
-        def crashing_hook(document, binding, outbox, runtime):
+        def crashing_hook(document, binding, outbox, runtime, *, client=None):
             # enqueue, then die before Runtime.complete(C14) - the exact window the ordering
             # in `complete_after_pull` exists for.
             review.enqueue_c13_when_c14_admits(document, binding, outbox, runtime)
