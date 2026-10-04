@@ -35,10 +35,13 @@ import urllib.request
 import zipfile
 
 from c1_execution_contract import (
-    DISPATCH_ENDPOINT,
+    REF,
+    REPO,
     RUNS_ENDPOINT,
+    WORKFLOW_FILE,
     Refused,
     canonical,
+    dispatch_endpoint,
     dispatch_inputs,
 )
 
@@ -97,9 +100,29 @@ def _extract_result_bytes(archive: bytes) -> bytes:
 
 
 class GitHubActionsClient:
+    """The GitHub transport for ONE executor, bound to ONE workflow file.
+
+    The workflow file is configuration of the executor, not of the request. A request
+    carries `repo` / `workflow_file` / `ref` as a record of where its class is aimed, and
+    those three are added *after* the execution identity is hashed - so they cannot be
+    part of the identity, and a wrong one cannot be detected by re-hashing. It has to be
+    checked against the executor's own binding, here, at the only place that sends.
+
+    Why it has to be per-executor at all: two executors share this class. The Responses
+    executor dispatches `c1-ai-execution-backend-v1.yml`; the gh-aw Builder executor
+    dispatches `c1-gh-aw-builder-v1.lock.yml`. If the client kept one module-level
+    endpoint, the second executor would record one target and send to the other - a
+    Builder task delivered to the Responses backend, which is the failure this binding
+    exists to prevent.
+
+    `workflow_file` and `ref` default to the channel's original values, so every existing
+    construction of this class keeps the behaviour it was proven with.
+    """
+
     def __init__(self, *, token_loader=None, opener=urllib.request.urlopen,
                  redirect_opener=None, no_redirect_opener=None, api_base=API_BASE,
-                 api_version=API_VERSION, timeout_s=HTTP_TIMEOUT_S):
+                 api_version=API_VERSION, timeout_s=HTTP_TIMEOUT_S,
+                 workflow_file=None, ref=None):
         self._token_loader = token_loader or configured_token_loader()
         self._opener = opener
         # The signed artifact URL rejects an Authorization header, so the follow-up
@@ -111,6 +134,10 @@ class GitHubActionsClient:
         self._api = api_base
         self._version = api_version
         self._timeout = timeout_s
+        # The executor binding. Fixed at construction and never taken from a request.
+        self._workflow_file = workflow_file or WORKFLOW_FILE
+        self._ref = ref or REF
+        self._dispatch_endpoint = dispatch_endpoint(self._workflow_file)
 
     # ------------------------------------------------------------------ transport
     def _headers(self, *, with_auth=True):
@@ -157,19 +184,52 @@ class GitHubActionsClient:
             raise Refused("GITHUB_RESPONSE_NOT_JSON") from None
 
     # ------------------------------------------------ the five real operations
+    def workflow_target(self) -> dict:
+        """What this client is bound to send to. Read-only, for status and for tests.
+
+        The binding is configuration, so it is worth being able to read it without
+        reaching into the object: "which workflow does this executor dispatch" is the
+        question the whole transport binding exists to answer, and an operator's status
+        line is a legitimate place to answer it.
+        """
+        return {"repo": REPO, "workflow_file": self._workflow_file, "ref": self._ref,
+                "dispatch_endpoint": self._dispatch_endpoint}
+
+    def assert_bound_target(self, request: dict) -> None:
+        """Refuse a request whose recorded transport target is not this executor's.
+
+        The three fields are a record of where the request's CLASS is aimed. They are
+        written by the contract, not by a caller, so a disagreement can only mean one
+        thing: this client belongs to a different executor than the task does. Sending
+        anyway would deliver the task to the wrong workflow - a real dispatch, a real
+        run, and for a paid class a real bill, for work another executor owns.
+
+        Fail closed, before the POST, and never "prefer" either value: a request that
+        disagrees is not repaired here.
+        """
+        recorded = request.get("workflow_file")
+        if recorded != self._workflow_file:
+            raise Refused("DISPATCH_TARGET_IS_NOT_THIS_EXECUTORS_WORKFLOW:%s" % recorded)
+        if request.get("ref") != self._ref:
+            raise Refused("DISPATCH_REF_IS_NOT_THIS_EXECUTORS_REF:%s" % request.get("ref"))
+        if request.get("repo") != REPO:
+            raise Refused("DISPATCH_REPO_MISMATCH:%s" % request.get("repo"))
+
     def dispatch_workflow(self, request: dict):
         """Send exactly one dispatch. Returns ("sent", run_id|None) for the outbox.
 
         The input set comes from the contract rather than from here: a smoke dispatch
         carries the identity triple and nothing else, while a real dispatch additionally
         carries its kind and payload so the executor can re-derive the same identity and
-        prompt from what it receives. Repository, workflow file, ref and model stay fixed
-        and stay off the wire in both cases.
+        prompt from what it receives. Repository, workflow file and ref stay fixed and
+        stay off the wire in both cases - and the two that decide *which* executor runs
+        the task are checked against this client's own binding before anything is sent.
         """
-        payload = {"ref": request["ref"],
+        self.assert_bound_target(request)
+        payload = {"ref": self._ref,
                    "inputs": {name: value if isinstance(value, str) else str(value)
                               for name, value in dispatch_inputs(request).items()}}
-        status, raw = self._call("POST", DISPATCH_ENDPOINT, payload)
+        status, raw = self._call("POST", self._dispatch_endpoint, payload)
         if status == 204 or not raw:
             return ("sent", None)
         document = self._document(raw)
@@ -235,7 +295,13 @@ class GitHubActionsClient:
                 "github_run_id": run_id}
 
     def _repo_slug(self) -> str:
-        return DISPATCH_ENDPOINT.split("/repos/", 1)[1].split("/actions/", 1)[0]
+        """The repository every operation here addresses.
+
+        Deliberately the repository and not the endpoint: runs and artifacts are
+        repo-level, and both executors address the same one. Only the dispatch target is
+        per-executor, and only `dispatch_workflow` uses that.
+        """
+        return REPO
 
     # ----------------------------------------------------- outbox adapters
     def send(self, request: dict):

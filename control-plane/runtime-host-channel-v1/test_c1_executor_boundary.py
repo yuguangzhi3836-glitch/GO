@@ -630,16 +630,25 @@ class TheBoundaryIsStructural(unittest.TestCase):
         self.assertNotEqual(contract.workflow_file_for_kind(contract.REAL_TASK_KIND),
                             contract.workflow_file_for_kind(GH))
 
-    def test_the_gh_aw_workflow_target_is_declared_but_not_registered(self):
+    def test_the_gh_aw_workflow_target_is_declared_and_registered(self):
+        """The declaration and the file must be the same thing.
+
+        #381 left this as a negative assertion on purpose: the target was declared so a
+        task's own record would not be a false statement about where it goes, while the
+        file did not exist yet. U1 registers it, so the assertion flips rather than
+        disappears - and it is now the check that makes a renamed, moved or deleted
+        workflow fail loudly here instead of at the first dispatch.
+        """
         self.assertEqual(contract.GHAW_BUILDER_WORKFLOW_FILE,
                          "c1-gh-aw-builder-v1.lock.yml")
         workflows = Path(__file__).resolve().parents[2] / ".github" / "workflows"
         present = {path.name for path in workflows.iterdir()} if workflows.is_dir() else set()
-        # U1 is not this round: the file this class will be dispatched to does not exist
-        # yet, and if it ever does the assertion below is what will make whoever added it
-        # look at the class that points at it.
-        self.assertNotIn(contract.GHAW_BUILDER_WORKFLOW_FILE, present)
+        self.assertIn(contract.GHAW_BUILDER_WORKFLOW_FILE, present)
         self.assertIn(contract.WORKFLOW_FILE, present)
+        self.assertNotEqual(contract.GHAW_BUILDER_WORKFLOW_FILE, contract.WORKFLOW_FILE)
+        # The compiled workflow is generated from a source that must be committed beside
+        # it: a lock file with no source cannot be reviewed or recompiled.
+        self.assertIn("c1-gh-aw-builder-v1.md", present)
 
 
 if __name__ == "__main__":

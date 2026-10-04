@@ -94,6 +94,24 @@ REF = "main"
 DISPATCH_ENDPOINT = "/repos/%s/actions/workflows/%s/dispatches" % (REPO, WORKFLOW_FILE)
 RUNS_ENDPOINT = "/repos/%s/actions/runs" % REPO
 
+
+def dispatch_endpoint(workflow_file: str) -> str:
+    """The dispatch URL for one workflow file.
+
+    A workflow file is part of the *transport target*, not part of the execution
+    identity: it is added to a request after `execution_request_id` has been hashed, and
+    a dispatch that lands on the wrong workflow does not create a different execution -
+    it creates the same execution run by the wrong executor. That is why the target has
+    to be bound to the executor and checked, rather than being read off the request.
+    """
+    return "/repos/%s/actions/workflows/%s/dispatches" % (REPO, workflow_file)
+
+
+def dispatch_endpoint_for_kind(task_kind: str) -> str:
+    """The dispatch URL the class's own executor owns. Never chosen by a caller."""
+    return dispatch_endpoint(workflow_file_for_kind(task_kind))
+
+
 # ------------------------------------------------- canonical responsibility identity
 # The kernel's own canonical spelling: `C1`, never `C01`.
 OWNER_C = "C1"

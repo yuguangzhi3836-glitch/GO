@@ -1,0 +1,58 @@
+[Unit]
+Description=GO Runtime Host C1 gh-aw Builder worker (claims GHAW_BUILDER_V1 only; Runtime -> gh-aw Builder -> Runtime)
+# Candidate only: adding this file is not installing it. Nothing in this repository
+# enables or starts it, and no host has been mutated.
+#
+# Deliberately NOT inside /opt/go/runtime-host-agent, for the reason the Responses worker
+# states: the Management Agent's executor_sha256 covers every *.py in that directory and is
+# bound by the registration, so a file added there changes the Agent's identity and makes
+# it refuse to start until a new registration is issued.
+ConditionPathExists=/opt/go/runtime-host-ghaw-builder-worker/c1_ghaw_builder_worker.py
+# The same credential path the Responses worker uses: one GitHub credential for the host,
+# not one per executor. Without it this worker could only claim a task it cannot dispatch.
+ConditionPathExists=/etc/go-runtime-c1/github-token
+After=go-c1-c14-runtime.service
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+# The same unprivileged account that already owns the Runtime database. Two executors of
+# one Runtime must not become two Unix identities: the fence compares lease_owner, and the
+# Runtime database is owned by go-runtime.
+User=go-runtime
+Group=go-runtime
+WorkingDirectory=/opt/go/runtime-host-ghaw-builder-worker
+# The constants the worker itself declares: kind set, worker id and outbox path are in the
+# module; this unit only decides where it is installed and as whom it runs.
+ExecStart=/usr/bin/python3 -B /opt/go/runtime-host-ghaw-builder-worker/c1_ghaw_builder_worker.py
+Restart=on-failure
+RestartSec=5
+UMask=0077
+
+# The GitHub dispatch credential, read from a path only this account can reach. It is a
+# GitHub credential and NOT a model credential: the gh-aw run's CODEX_API_KEY /
+# OPENAI_API_KEY stay repository secrets and must never exist on this host.
+Environment=C1_GITHUB_TOKEN_PATH=/etc/go-runtime-c1/github-token
+
+# This component has outbound network access, and it exists only to reach api.github.com.
+# Nothing here listens.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+PrivateDevices=true
+
+# Reads the installed Runtime source. Writes only the Runtime state directory (the task
+# lease and its Evidence) and the dispatch outbox directory it shares with the Responses
+# worker - sharing the DIRECTORY, never the file: the two executors own two outbox files
+# inside it, and a worker that resumed the other's file would be executing the other's
+# work. Nothing else is writable.
+ReadOnlyPaths=/opt/go/c1-c14-runtime
+ReadWritePaths=/var/lib/go-c-runtime /var/lib/go-runtime-c1
+
+[Install]
+WantedBy=multi-user.target
