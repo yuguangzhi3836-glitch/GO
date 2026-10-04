@@ -698,6 +698,45 @@ class G_ProductionWorkflowsAreStructurallySound(unittest.TestCase):
             self.assertLessEqual(len(inputs), 10, name)
             self.assertEqual(len(inputs), len(set(inputs)), name)
 
+    def test_every_wire_input_is_declared_by_the_workflow_it_is_sent_to(self):
+        """A dispatch may only carry inputs the receiving workflow DECLARES.
+
+        GitHub does not ignore an undeclared `workflow_dispatch` input; it refuses the
+        dispatch. So a wire set that is not a subset of the receiving workflow's declared
+        inputs is not untidiness - it is a dispatch that never happens, and the failure
+        surfaces as an opaque refusal in the worker's tick rather than as a workflow error.
+
+        This is the defect the FIRST live C14 round hit: `machine_inventory` (the C13
+        machine-test inventory) was being put on the C14 dispatch, and the C14 workflow
+        declares nine inputs and that is not one of them. The contract's own table is held
+        against the workflow files here, so the two cannot drift again.
+        """
+        declared = {name: set(inputs) for name, _raw, _document, inputs in self.documents()}
+        inventory = "application/tests/workbench/test_go_parallel_workbench_build01.py"
+        c14_request = contract.build_dispatch_request(
+            "rt_1", 1, contract.task_spec(C14, c14_payload(machine_inventory=inventory,
+                                                           ai_model="m")))
+        c13_request = contract.build_dispatch_request(
+            "rt_2", 1, contract.task_spec(C13, c13_payload(machine_inventory=inventory,
+                                                           ai_model="m")))
+        wires = {
+            "c14-rule-compliance.yml": contract.dispatch_inputs(c14_request),
+            "c13-quality-acceptance.yml": contract.dispatch_inputs(c13_request),
+        }
+        for name, wire in wires.items():
+            self.assertEqual(sorted(set(wire) - declared[name]), [],
+                             "%s would be sent undeclared inputs" % name)
+        # The two Cells do NOT share one optional set: the C13 workflow declares the
+        # machine inventory and the C14 workflow does not, and the wire follows the
+        # workflow rather than the payload.
+        self.assertNotIn("machine_inventory", declared["c14-rule-compliance.yml"])
+        self.assertIn("machine_inventory", declared["c13-quality-acceptance.yml"])
+        self.assertNotIn("machine_inventory", wires["c14-rule-compliance.yml"])
+        self.assertEqual(wires["c13-quality-acceptance.yml"]["machine_inventory"], inventory)
+        # ...while an optional input BOTH workflows declare still travels to both.
+        self.assertEqual(wires["c14-rule-compliance.yml"]["ai_model"], "m")
+        self.assertEqual(wires["c13-quality-acceptance.yml"]["ai_model"], "m")
+
 
 # ============================================ H: the C13 verdict, through the REAL chain
 class H_ANegativeC13VerdictIsADeliveredReview(unittest.TestCase):

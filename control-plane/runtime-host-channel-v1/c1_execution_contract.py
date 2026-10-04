@@ -337,6 +337,20 @@ REVIEW_ARTIFACT_PREFIX = {C14_REVIEW_KIND: "c13c14-lite-c14-",
 REVIEW_SEALED_BUNDLE_MEMBER = {C14_REVIEW_KIND: "c14_bundle.json",
                                C13_REVIEW_KIND: "c13_bundle.json"}
 REVIEW_ROUND_DECISION_MEMBER = "round_decision.json"
+# The OPTIONAL wire inputs each Cell's EXISTING workflow declares - the ones this contract
+# may put on the request but must not put on every kind's dispatch.
+#
+# GitHub does not ignore an undeclared `workflow_dispatch` input: it refuses the dispatch
+# outright (422), so a live C14 round would never leave the Runtime. The wire set must
+# therefore be a SUBSET of what the receiving workflow declares, and that is a fact about
+# each Cell's own workflow rather than about the payload - `machine_inventory` is the C13
+# machine-test inventory and only the C13 workflow declares it, while `ai_model` is declared
+# by both. The payload still carries `machine_inventory` for a C14 round, because that is
+# how the C13 half is derived from the C14 half; it simply must not travel to C14.
+REVIEW_WIRE_OPTIONAL = {
+    C14_REVIEW_KIND: ("ai_model",),
+    C13_REVIEW_KIND: ("machine_inventory", "ai_model"),
+}
 
 
 def is_review_kind(task_kind) -> bool:
@@ -1131,10 +1145,13 @@ def dispatch_inputs(request: dict) -> dict:
             "c14_task_id": payload["c14_task_id"],
             "c13_task_id": payload["c13_task_id"],
         }
-        if "machine_inventory" in payload:
-            inputs["machine_inventory"] = payload["machine_inventory"]
-        if "ai_model" in payload:
-            inputs["ai_model"] = payload["ai_model"]
+        # Only the optional inputs THIS cell's workflow actually declares. See
+        # REVIEW_WIRE_OPTIONAL: a name the receiving workflow does not define makes GitHub
+        # refuse the whole dispatch, so the payload's optional fields are filtered by the
+        # workflow they are about to be sent to rather than forwarded wholesale.
+        for name in REVIEW_WIRE_OPTIONAL[task_kind]:
+            if name in payload:
+                inputs[name] = payload[name]
     return inputs
 
 
