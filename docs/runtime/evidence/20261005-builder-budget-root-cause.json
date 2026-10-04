@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "status": "ROOT_CAUSE_CONFIRMED_FIX_CANDIDATE_NOT_LIVE_VALIDATED",
+  "base_sha": "5ff80dfb2c34f3aadb27e217e8fa754ae05c48ef",
+  "root_cause": "Per-agent AWF maxAiCredits=60 exhausted; proxy returns HTTP 403, Codex turn.failed and ultimately exit 1. Missing patch is downstream.",
+  "samples": [
+    {
+      "cell": "C1",
+      "run_id": 37201379313,
+      "job_id": 111433660618,
+      "artifact_id": 11302838309,
+      "first_fatal_utc": "2026-10-04T12:16:53.923937Z",
+      "aic": 62.53215,
+      "exit_utc": "2026-10-04T12:18:10.2979785Z"
+    },
+    {
+      "cell": "C10",
+      "run_id": 37204239582,
+      "job_id": 111442048205,
+      "artifact_id": 11303773152,
+      "first_fatal_utc": "2026-10-04T13:06:48.493909Z",
+      "aic": 60.89795,
+      "exit_utc": "2026-10-04T13:08:05.8741548Z"
+    },
+    {
+      "cell": "C12",
+      "run_id": 37201035138,
+      "job_id": 111432637805,
+      "first_fatal_utc": "2026-10-04T12:11:13.629339Z",
+      "aic": 60.29935,
+      "exit_utc": "2026-10-04T12:12:28.3332386Z"
+    }
+  ],
+  "artifact_checks": "C1/C10 agent-stdio.log and awf-config.json independently corroborate job logs; agent_usage.json matches observed AIC.",
+  "excluded_as_primary_cause": [
+    "NO_UNAMBIGUOUS_PATCH_ARTIFACT",
+    "server/discover method not found",
+    "ab.chatgpt.com denial"
+  ],
+  "fix": {
+    "max_ai_credits_before": 60,
+    "max_ai_credits_candidate": 180,
+    "ceiling_status": "Provisional bounded canary ceiling; sufficiency not proven",
+    "compiler": "v0.89.21",
+    "actions_sha": "924af5fdc64061cfbf66fb584c8b07e2ac230c60",
+    "retained": [
+      "network allowlist",
+      "patch guard",
+      "permissions",
+      "15 minute timeout",
+      "16 max-turns",
+      "daily credit guard",
+      "model",
+      "source identity and lease binding",
+      "C14/C13 gates"
+    ]
+  },
+  "validation": {
+    "strict_compile": "PASS with pre-existing missing concurrency.job-discriminator warning",
+    "yaml_semantic_diff": "Exactly three budget occurrences: activation guard env, agent AWF proxy config, conclusion env; all other parsed YAML identical.",
+    "live_builder": "NOT_RUN",
+    "draft_pr_canary": "NOT_CREATED",
+    "c14": "NOT_RUN",
+    "c13": "NOT_RUN"
+  },
+  "remaining": [
+    "No proven pytest/dependency environment in failed Builder runners. C10 attempted pip and failed; not the direct agent exit but a subsequent test gate risk.",
+    "Compiler warns about shared conclusion concurrency group; not changed in this single-task budget fix.",
+    "No batch resumption until one new Formal Task with current main source binding completes Builder, exact Draft PR identity, C14, C13 and sealed ACCEPT.",
+    "Do not rerun old failed jobs: old workflow budget/source and Runtime attempt may no longer be valid. Use a fresh task ID and fresh issue after approved merge.",
+    "180 AIC is not USD and is not a measured completion-cost guarantee."
+  ]
+}
