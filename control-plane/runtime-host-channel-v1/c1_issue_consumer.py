@@ -1,27 +1,45 @@
-"""Builder GitHub Issue consumer: open C01-C12 issues -> Runtime.enqueue(GHAW_BUILDER_V1).
+"""Formal Runtime Issue consumer: open issues -> Runtime.enqueue, in two families.
 
 What this is
 ------------
-The last leg of the new path, and only that:
+The last leg of the new path, and only that. It serves TWO families of formal issue, with
+one loop and one switch:
 
-    GitHub open C01-C12 issue -> [ this module ] -> c1_issue_ingress -> Runtime.enqueue()
+    C01-C12 Builder issue   -> c1_issue_ingress         -> Runtime.enqueue(GHAW_BUILDER_V1)
+    C14 · REVIEW issue      -> c1_review_issue_ingress  -> Runtime.enqueue(C14_REVIEW_V1)
 
-One consumer for twelve cells, never twelve consumers. The cell is read from the issue
-title and carried into the task, but nothing about fetching, planning or de-duplicating is
-per-cell - so a consumer per cell would be twelve copies of one loop with a different
-constant in it, which is the shape this channel keeps refusing.
+One consumer for twelve cells and one review cell, never one consumer per family. The
+Builders' cell is read from the issue title and carried into the task, but nothing about
+fetching, planning or de-duplicating is per-cell - so a consumer per cell would be twelve
+copies of one loop with a different constant in it, which is the shape this channel keeps
+refusing. The review family is a different SHAPE of issue, not a different loop: it is
+planned by its own parser and reported under its own keys, and it is admitted against a
+different gate (below).
 
-`c1_issue_ingress` already owns the parser, the payload schema and the idempotency key.
-This module deliberately owns none of those: it fetches open issues, decides which ones
-are worth handing to the ingress at all, and reports what happened. There is no second
-parser and no second de-duplication system here.
+`c1_issue_ingress` and `c1_review_issue_ingress` already own the parsers, the payload
+schemas and the idempotency keys. This module deliberately owns none of those: it fetches
+open issues, decides which ones are worth handing to which ingress at all, and reports what
+happened. There is no second parser and no second de-duplication system here.
+
+Two families, two gates, deliberately not the same gate
+-------------------------------------------------------
+  * a Builder issue is admitted against `source_anchor == current main`, because a Builder
+    task is dispatched with `ref = main` and will be executed on whatever main is then;
+  * a Review issue is admitted against `candidate_sha == this PR's head`, because a review
+    candidate is BY DEFINITION often not main - that is what makes it a candidate.
+
+Reusing the Builder's current-main gate for reviews would refuse exactly the reviews the
+mechanism exists to run; reusing the review gate for Builder work would admit a task whose
+execution source nobody verified. Both are strict equality against a freshly read value,
+and both refuse rather than repair.
 
 Read-only on GitHub
 -------------------
-Only two GETs are ever issued - `GET /repos/<repo>/issues` and `GET /repos/<repo>/commits/main`
-- with no other verb, no other path, and never a comment, a label, a state change or a write
-of any kind. `GitHubIssuesReader` hard-codes GET, and the test suite asserts that no other
-method and no comment path exists in this file.
+Only GETs are ever issued: the issue listing, the default branch's head, and - for a
+Formal Review issue only - the candidate pull request, its file list, the frozen commit and
+that commit's root tree. No other verb, no other path, and never a comment, a label, a
+state change or a write of any kind. `GitHubIssuesReader` hard-codes GET, and the test
+suite asserts that no other method and no comment path exists in this file.
 
 One poll, one source snapshot
 -----------------------------
@@ -89,6 +107,11 @@ from c1_issue_ingress import (
     plan_ingress,
     require_current_source_anchor,
 )
+from c1_review_issue_ingress import (
+    ingest_review,
+    looks_like_review_issue,
+    plan_review_ingress,
+)
 
 # --------------------------------------------------------------------- topology
 CONSUMER_NAME = "go-runtime-host-c01-issue-consumer"
@@ -96,6 +119,16 @@ ISSUES_PATH = "/repos/%s/issues" % REPO
 # The default branch's head, read once per poll. This is the value every candidate in that
 # poll is admitted against, and the one the Builder workflow will re-check for itself.
 SOURCE_HEAD_PATH = "/repos/%s/commits/main" % REPO
+# A Formal Review issue (`C14 · REVIEW · ...`) names a pull request and the commit it is
+# about, and admission resolves both of them here. Four more read-only paths, all GET, and
+# all of them about the CANDIDATE rather than about main: the PR itself (is it aimed at
+# main, and is its head still the frozen commit), its file list (what did this candidate
+# change), the frozen commit (its root tree) and that tree (which entry is `application`).
+PULL_PATH = "/repos/%s/pulls/%%d" % REPO
+PULL_FILES_PATH = "/repos/%s/pulls/%%d/files" % REPO
+COMMIT_PATH = "/repos/%s/commits/%%s" % REPO
+TREE_PATH = "/repos/%s/git/trees/%%s" % REPO
+PR_FILES_PER_PAGE = 100
 # The Runtime kernel and its database, as installed on the Runtime Host.
 RUNTIME_DIR = "/opt/go/c1-c14-runtime"
 RUNTIME_DB = "/var/lib/go-c-runtime/runtime.db"
@@ -231,6 +264,65 @@ class GitHubIssuesReader:
                 break
         return {"issues": issues, "pages_fetched": fetched, "listed": len(issues)}
 
+    # --------------------------------------------------- read-only candidate reads
+    # Everything below is GET, exactly like everything above it. A Formal Review issue names
+    # a pull request and one commit; these are how the poll finds out whether that is still
+    # true and what the frozen commit's `application/` tree is. They exist so the review
+    # ingress can stay a pure parser - it is handed this reader and never builds a request.
+    def read_pull(self, number: int) -> dict:
+        """The named pull request: its base branch and its CURRENT head."""
+        document = self._get_json(PULL_PATH % number)
+        if not isinstance(document, dict):
+            raise Refused("PULL_NOT_AN_OBJECT")
+        base = document.get("base") or {}
+        head = document.get("head") or {}
+        return {"number": document.get("number"), "state": document.get("state"),
+                "base_ref": base.get("ref"), "head_sha": head.get("sha")}
+
+    def read_pull_files(self, number: int) -> list:
+        """One page of the pull request's changed files: each name and change status.
+
+        One page, and the caller treats the result as the review scope rather than as the
+        complete diff - the bound is stated where it is used.
+        """
+        document = self._get(PULL_FILES_PATH % number, "per_page=%d" % PR_FILES_PER_PAGE)
+        files = []
+        for entry in document:
+            if not isinstance(entry, dict):
+                raise Refused("PULL_FILES_NOT_OBJECTS")
+            files.append({"filename": entry.get("filename"), "status": entry.get("status")})
+        return files
+
+    def read_commit_tree(self, commit_sha: str) -> str:
+        """The root tree SHA of one commit, read at that commit."""
+        document = self._get_json(COMMIT_PATH % commit_sha)
+        if not isinstance(document, dict):
+            raise Refused("COMMIT_NOT_AN_OBJECT")
+        tree = (document.get("commit") or {}).get("tree") or {}
+        sha = tree.get("sha")
+        if not isinstance(sha, str) or not sha.strip():
+            raise Refused("COMMIT_TREE_NOT_FOUND")
+        return sha.strip()
+
+    def read_tree(self, tree_sha: str) -> list:
+        """One tree's direct entries. A truncated listing is a refusal, not a short answer.
+
+        "The entry was not in the part we saw" and "the entry does not exist" are different
+        facts, and only the second one justifies refusing an application tree.
+        """
+        document = self._get_json(TREE_PATH % tree_sha)
+        if not isinstance(document, dict):
+            raise Refused("TREE_NOT_AN_OBJECT")
+        if document.get("truncated") is True:
+            raise Refused("TREE_TRUNCATED")
+        entries = document.get("tree")
+        if not isinstance(entries, list):
+            raise Refused("TREE_ENTRIES_NOT_A_LIST")
+        for entry in entries:
+            if not isinstance(entry, dict):
+                raise Refused("TREE_ENTRY_NOT_AN_OBJECT")
+        return entries
+
 
 # ------------------------------------------------------------------------- polling
 def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
@@ -274,7 +366,13 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
 
     issues = listing["issues"]
     candidates = [issue for issue in issues if looks_like_builder_issue(issue)]
+    # The other family this consumer serves. The two pre-filters are disjoint by
+    # construction - a Builder title's middle segment is a task id and a Review title's is
+    # the literal `REVIEW` - so no issue is ever planned twice, and no Review issue can be
+    # handed to the Builder parser as malformed Builder work.
+    review_candidates = [issue for issue in issues if looks_like_review_issue(issue)]
     planned, refused, enqueued = [], [], []
+    review_planned, review_refused, review_enqueued = [], [], []
     runtime_error = None
 
     for issue in candidates[:MAX_CANDIDATES_PER_POLL]:
@@ -309,6 +407,38 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
                         runtime=runtime, environ=env)
         enqueued.append(dict(entry, runtime_task_id=result["runtime_task_id"]))
 
+    # A Formal Review issue is a different family with a different admission gate, so its
+    # outcome is reported under its own keys rather than folded into the Builder's: one log
+    # line has to make it possible to tell which kind of work a poll admitted. Each review
+    # candidate costs up to four read-only GETs - the PR, its files, the frozen commit and
+    # that commit's root tree - which is why the same bound applies.
+    for issue in review_candidates[:MAX_CANDIDATES_PER_POLL]:
+        try:
+            plan = plan_review_ingress(issue, reader=reader, environ=env)
+        except Refused as refusal:
+            review_refused.append(_refusal_entry(issue, refusal))
+            continue
+
+        call = plan["would_enqueue"]
+        entry = {"issue_number": plan["issue_number"],
+                 "candidate_pr_number": plan["candidate_pr_number"],
+                 "candidate_sha": plan["candidate_sha"],
+                 "ledger_round_id": plan["ledger_round_id"],
+                 "external_task_id": call["payload"]["external_task_id"],
+                 "idempotency_key": call["idempotency_key"],
+                 "payload_sha256": plan["payload_sha256"]}
+        review_planned.append(entry)
+        if not enabled:
+            continue
+
+        if runtime is None and runtime_factory is not None:
+            runtime = runtime_factory()
+        if runtime is None:
+            runtime_error = "RUNTIME_UNAVAILABLE"
+            continue
+        result = ingest_review(issue, reader=reader, runtime=runtime, environ=env)
+        review_enqueued.append(dict(entry, runtime_task_id=result["runtime_task_id"]))
+
     # The status says what the poll actually did, most informative first: a missing
     # Runtime outranks the switch, the switch outranks an empty listing, and an empty
     # listing is a normal outcome rather than a failure.
@@ -316,7 +446,7 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
         status = "RUNTIME_UNAVAILABLE"
     elif not enabled:
         status = "DISABLED"
-    elif not candidates:
+    elif not candidates and not review_candidates:
         status = "NO_CANDIDATE"
     else:
         status = "PASS"
@@ -325,6 +455,10 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
             "listed": listing["listed"], "pages_fetched": listing["pages_fetched"],
             "candidates": len(candidates), "considered": len(planned),
             "planned": planned, "refused": refused, "enqueued": enqueued,
+            "review_candidates": len(review_candidates),
+            "review_considered": len(review_planned),
+            "review_planned": review_planned, "review_refused": review_refused,
+            "review_enqueued": review_enqueued,
             "runtime_error": runtime_error}
 
 
@@ -332,12 +466,14 @@ def _refusal_entry(issue, refusal) -> dict:
     """One refused candidate, with whatever the refusal was made of.
 
     The base entry is what every refusal has always reported. A source-freshness refusal
-    additionally reports the issue's own anchor and the snapshot it was compared with, so
-    the operator reading a shadow poll can see a stale historical issue for what it is
-    without having to go and look the issue up.
+    additionally reports the issue's own anchor and the snapshot it was compared with, and
+    a review refusal reports the candidate and head commits it was made of - so the operator
+    reading a shadow poll can see a stale historical issue, or a moved candidate, for what
+    it is without having to go and look the issue up.
     """
     entry = {"issue_number": issue.get("number"), "reason": refusal.reason}
-    for name in ("parsed_source_anchor", "current_source_anchor"):
+    for name in ("parsed_source_anchor", "current_source_anchor",
+                 "candidate_sha", "head_sha"):
         value = getattr(refusal, name, None)
         if value is not None:
             entry[name] = value
@@ -380,6 +516,11 @@ def check(environ=None, *, token_loader=None) -> dict:
             "repo": REPO, "issues_endpoint": ISSUES_PATH,
             "source_head_endpoint": SOURCE_HEAD_PATH,
             "source_freshness": "issue source_anchor must equal the current main",
+            "review_admission": ("C14 · REVIEW issue: the candidate PR must be aimed at "
+                                 "main and its head must equal the frozen Candidate SHA"),
+            "review_candidate_paths": [PULL_PATH, PULL_FILES_PATH, COMMIT_PATH, TREE_PATH],
+            "review_machine_scope": ("the candidate's own changed test paths, else the "
+                                     "C13 workflow's declared default"),
             "github_access": "GET only", "interval_s": poll_interval_s(env),
             "pages": DEFAULT_PAGES, "max_candidates_per_poll": MAX_CANDIDATES_PER_POLL,
             "runtime_dir": RUNTIME_DIR, "runtime_db": RUNTIME_DB,

@@ -364,6 +364,22 @@ def review_artifact_name(task_kind: str, candidate_sha: str) -> str:
     return REVIEW_ARTIFACT_PREFIX[task_kind] + candidate_sha
 
 
+def review_request_id(candidate_sha: str, ledger_round_id: str) -> str:
+    """The review round's request id, DERIVED so it is stable and cannot be chosen.
+
+    A review round has two admission paths - the manual `deliver_review_round.py` and the
+    formal Review Issue ingress - and they must name the same round the same way. So the
+    derivation lives here, once, beside the other identities of this channel, rather than
+    being restated by whichever caller happens to need it: two copies would be two answers
+    to "which round is this", which is the one thing a round identity may not have.
+
+    It only has to be stable, not chosen - which is why nothing takes it as an argument.
+    """
+    _require_sha1(candidate_sha, "REVIEW_REQUEST_ID_CANDIDATE_SHA_INVALID")
+    return "REV-" + hashlib.sha256(
+        ("%s|%s" % (candidate_sha, ledger_round_id)).encode("utf-8")).hexdigest()[:24]
+
+
 # Every task kind this contract knows. A kind outside this set has no payload shape, no
 # prompt and no acceptance rule, and is refused rather than guessed at.
 KNOWN_TASK_KINDS = (KIND, REAL_TASK_KIND, GHAW_BUILDER_KIND) + REVIEW_KINDS
