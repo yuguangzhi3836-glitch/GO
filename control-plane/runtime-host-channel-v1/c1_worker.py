@@ -210,7 +210,8 @@ def claim_across_owners(runtime, *, worker_id, lease_s, claim_kinds, claim_owner
 def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_S,
          clock=time.time, claim_kinds=CLAIM_KINDS, claim_owner_cs=CLAIM_OWNER_CS,
          owner_cursor=0, resume_limit=DEFAULT_RESUME_LIMIT, result_validator=None,
-         artifact_loader=None, on_result_sealed=None) -> dict:
+         artifact_loader=None, on_result_sealed=None,
+         confirm_lease=False) -> dict:
     """One bounded tick: resume what is in flight, and only then claim new work.
 
     Phase 1 is not an optimisation, it is the fix for the defect that stopped the first
@@ -246,7 +247,8 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
                              clock=clock, claimable_kinds=claim_kinds,
                              result_validator=result_validator,
                              artifact_loader=artifact_loader,
-                             on_result_sealed=on_result_sealed)
+                             on_result_sealed=on_result_sealed,
+                             confirm_lease=confirm_lease)
         except Exception as exc:  # noqa: BLE001 -- one bad task must not stop the worker
             return {"status": "BLOCKED", "claimed": False, "resumed": True,
                     "unfinished": len(unfinished),
@@ -274,7 +276,8 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
                           lease_s=lease_s, clock=clock, claimable_kinds=claim_kinds,
                           result_validator=result_validator,
                           artifact_loader=artifact_loader,
-                          on_result_sealed=on_result_sealed)
+                          on_result_sealed=on_result_sealed,
+                          confirm_lease=confirm_lease)
     except Exception as exc:  # noqa: BLE001 -- one bad task must not stop the worker
         # Nothing is completed here. The outbox keeps its durable state, so the next
         # tick resumes from it - and because the dispatch counter survives, a failure
@@ -299,7 +302,7 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
          runtime_db=RUNTIME_DB, outbox_db=OUTBOX_DB,
          workflow_file=WORKFLOW_FILE, workflow_files=None, result_validator=None,
          artifact_loader=None, on_result_sealed=None, hooks_factory=None,
-         readiness=None) -> int:
+         confirm_lease=False, readiness=None) -> int:
     """The resident loop, parameterised by the executor's OWN boundary.
 
     `worker_id`, `claim_kinds`, `claim_owner_cs`, `runtime_db`, `outbox_db` and
@@ -386,7 +389,8 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
     # validator would be an executor accepting results it cannot check.
     transport_hooks = {"result_validator": result_validator,
                        "artifact_loader": artifact_loader,
-                       "on_result_sealed": on_result_sealed}
+                       "on_result_sealed": on_result_sealed,
+                       "confirm_lease": confirm_lease}
     if hooks_factory is not None:
         transport_hooks.update(hooks_factory(outbox))
 

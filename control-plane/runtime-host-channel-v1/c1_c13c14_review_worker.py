@@ -125,19 +125,28 @@ def _sealed_hook(document, binding, outbox, runtime):
 
 def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_S,
          clock=time.time, claim_kinds=CLAIM_KINDS, claim_owner_cs=CLAIM_OWNER_CS,
-         owner_cursor=0, resume_limit=DEFAULT_RESUME_LIMIT, **kwargs) -> dict:
+         owner_cursor=0, resume_limit=DEFAULT_RESUME_LIMIT,
+         confirm_lease=True, **kwargs) -> dict:
     """One bounded tick, with this executor's boundary and its review hooks filled in.
 
     `owner_cursor` is pinned to 0 on purpose: this worker always asks C14 first. The
     shared loop rotates the cursor to be fair between cells, which is right for a Builder
     serving twelve equivalent cells and wrong here, where the two cells are ordered.
+
+    `confirm_lease` is ON here, and only here, and the reason is a real round: a review
+    execution dispatched for a task the Runtime had already recovered and escalated is
+    money spent on a verdict nothing can record. A review round is admitted by hand with
+    `max_attempts=1`, so there is no later attempt that could adopt that execution - the
+    result would be stranded. The Builder keeps the default, where the run really does
+    happen, `runtime_told=False` records that honestly, and the settlement path bounds a
+    repeat. Turning this on for a class whose delivery IS its result is the whole point.
     """
     hooks = review_hooks(outbox)
     hooks.update(kwargs)
     return _shared_tick(runtime, outbox, client, worker_id=worker_id, lease_s=lease_s,
                         clock=clock, claim_kinds=claim_kinds,
                         claim_owner_cs=claim_owner_cs, owner_cursor=0,
-                        resume_limit=resume_limit, **hooks)
+                        resume_limit=resume_limit, confirm_lease=confirm_lease, **hooks)
 
 
 def main(argv=None, **kwargs) -> int:
@@ -154,6 +163,7 @@ def main(argv=None, **kwargs) -> int:
     kwargs.setdefault("runtime_db", RUNTIME_DB)
     kwargs.setdefault("workflow_files", WORKFLOW_FILES)
     kwargs.setdefault("hooks_factory", review_hooks)
+    kwargs.setdefault("confirm_lease", True)
     kwargs.setdefault("readiness", review_readiness)
     return _shared_main(sys.argv if argv is None else argv, **kwargs)
 
