@@ -19,6 +19,7 @@ What is REAL here and what is a double, because the value of this file is that d
 """
 import hashlib
 import json
+import os
 import re
 import sys
 import tempfile
@@ -48,6 +49,12 @@ C13_TASK = lite_fixtures.C13_TASK
 ISSUE = lite_fixtures.ISSUE_NUMBER
 REQUEST_ID = lite_fixtures.REQUEST_ID
 ROUND = "U7B-PR394-01"
+LITE_DIR = ROOT / "control-plane" / "c13-c14-lite"
+# The review adapter resolves the Lite package from a CONFIGURED directory and refuses a
+# module that came from anywhere else - so the suite has to point at one explicitly.
+# (Without the provenance rule these tests passed only because this module had already
+# imported , which is precisely the hole readiness exists to close.)
+os.environ.setdefault("C13C14_LITE_SOURCE_DIR", str(LITE_DIR))
 
 C14 = contract.C14_REVIEW_KIND
 C13 = contract.C13_REVIEW_KIND
@@ -746,8 +753,11 @@ class H_ANegativeC13VerdictIsADeliveredReview(unittest.TestCase):
         self.assertTrue(result["accepted"])
         self.assertEqual(result["review_verdict"], "PASS_SCOPED")
         self.assertFalse(result["deployment_eligible"])
-        self.assertTrue(self.rt.tasks["rt_c13"].status == "RUNNING" or True)
         self.assertEqual(result["round_decision"]["decision"], "ACCEPT")
+        # The RUNTIME's own record, not the envelope's shape: the point of the whole round
+        # is that a delivered review reaches `Runtime.complete`, and only the task's status
+        # proves it did.
+        self.assertEqual(self.rt.tasks["rt_c13"].status, "SUCCEEDED")
 
     def test_case_b_c13_fail_is_a_delivered_review_not_a_transport_failure(self):
         round_ = lite_fixtures.make_round(c14_verdict="PASS_SCOPED", c13_verdict="FAIL")
@@ -762,6 +772,8 @@ class H_ANegativeC13VerdictIsADeliveredReview(unittest.TestCase):
         self.assertEqual(result["review_verdict"], "FAIL")
         self.assertFalse(result["deployment_eligible"])
         self.assertEqual(result["round_decision"]["decision"], "BLOCK")
+        # A BLOCK round is a DELIVERED review: the Runtime task itself succeeded.
+        self.assertEqual(self.rt.tasks["rt_c13"].status, "SUCCEEDED")
 
     def test_case_c_c13_blocked_is_also_a_delivered_review(self):
         round_ = lite_fixtures.make_round(c14_verdict="PASS_SCOPED", c13_verdict="BLOCKED")
@@ -772,6 +784,7 @@ class H_ANegativeC13VerdictIsADeliveredReview(unittest.TestCase):
         self.assertEqual(outcome, "COMPLETED")
         self.assertTrue(result["accepted"])
         self.assertEqual(result["review_verdict"], "BLOCKED")
+        self.assertEqual(self.rt.tasks["rt_c13"].status, "SUCCEEDED")
 
     def test_case_d_a_rejected_chain_is_a_refusal(self):
         # A REJECT is what the Lite chain produces for evidence it cannot trust. It is the
@@ -786,8 +799,8 @@ class H_ANegativeC13VerdictIsADeliveredReview(unittest.TestCase):
             self.run_c13(round_, forged)
         self.assertTrue(caught.exception.reason.startswith("REVIEW_ROUND_DECISION_REJECTED"),
                         caught.exception.reason)
-        self.assertEqual(self.rt.tasks.get("rt_c13").status if "rt_c13" in self.rt.tasks
-                         else None, "RUNNING")
+        # A REJECT is never adopted: the Runtime task is NOT completed by it.
+        self.assertNotEqual(self.rt.tasks["rt_c13"].status, "SUCCEEDED")
 
     def test_a_round_decision_that_authorises_anything_is_refused(self):
         round_ = lite_fixtures.make_round(c14_verdict="PASS_SCOPED", c13_verdict="FAIL")
@@ -817,3 +830,182 @@ def drive_to_result(rt, outbox, transport, payload, task_id):
     request_id = request["execution_request_id"]
     document = outbox.terminal_result(request_id)
     return outcome.get("action"), document
+
+
+# ============================================== I: the unit and the code cannot drift
+class I_TheUnitMatchesTheCodeItRuns(unittest.TestCase):
+    """The shipped systemd unit is the only install definition, so it is asserted against
+    the module's own constants rather than described in prose in two places."""
+
+    UNIT = "go-runtime-host-c13c14-review-worker.service"
+
+    def setUp(self):
+        import c1_c13c14_review as review_module
+        import c1_c13c14_review_worker as worker_module
+        self.worker = worker_module
+        self.review = review_module
+        self.text = (Path(__file__).resolve().parents[2] / "control-plane" /
+                     "runtime-host-channel-v1" / "systemd" / self.UNIT).read_text(encoding="utf-8")
+        self.settings = {}
+        self.environ = []
+        for line in self.text.splitlines():
+            if line.startswith("Environment="):
+                self.environ.append(line.partition("=")[2])
+            elif line.startswith(("ExecStart=", "ExecStartPre=", "WorkingDirectory=",
+                                  "User=", "Group=")):
+                key, _, value = line.partition("=")
+                self.settings[key] = value
+
+    def test_exec_start_is_this_worker(self):
+        self.assertEqual(
+            self.settings["ExecStart"],
+            "/usr/bin/python3 -B /opt/go/runtime-host-c13c14-review-worker/"
+            "c1_c13c14_review_worker.py")
+        self.assertTrue(self.settings["ExecStart"].endswith(
+            "c1_c13c14_review_worker.py"))
+
+    def test_exec_start_pre_is_the_readiness_check(self):
+        self.assertEqual(self.settings["ExecStartPre"],
+                         self.settings["ExecStart"] + " --check")
+
+    def test_working_directory_is_the_install_root(self):
+        self.assertEqual(self.settings["WorkingDirectory"],
+                         "/opt/go/runtime-host-c13c14-review-worker")
+
+    def test_condition_paths_name_the_worker_the_lite_package_and_the_credential(self):
+        for expected in (
+                "ConditionPathExists=/opt/go/runtime-host-c13c14-review-worker/"
+                "c1_c13c14_review_worker.py",
+                "ConditionPathExists=/opt/go/c13c14-lite/lite_bundle.py",
+                "ConditionPathExists=/etc/go-runtime-c1/github-token"):
+            self.assertIn(expected, self.text)
+        self.assertIn("After=go-c1-c14-runtime.service", self.text)
+
+    def test_sandbox_and_identity_reuse_the_builder_worker(self):
+        self.assertEqual(self.settings["User"], "go-runtime")
+        self.assertEqual(self.settings["Group"], "go-runtime")
+        for line in ("NoNewPrivileges=true", "PrivateTmp=true", "ProtectSystem=strict",
+                     "ProtectHome=true", "ProtectKernelTunables=true",
+                     "ProtectKernelModules=true", "ProtectControlGroups=true",
+                     "PrivateDevices=true", "UMask=0077",
+                     "WantedBy=multi-user.target"):
+            self.assertIn(line, self.text)
+
+    def test_read_only_and_read_write_paths(self):
+        read_only = [l for l in self.text.splitlines() if l.startswith("ReadOnlyPaths=")]
+        read_write = [l for l in self.text.splitlines() if l.startswith("ReadWritePaths=")]
+        self.assertEqual(len(read_only), 1)
+        self.assertEqual(len(read_write), 1)
+        for path in ("/opt/go/c1-c14-runtime", "/opt/go/c13c14-lite"):
+            self.assertIn(path, read_only[0])
+        for path in ("/var/lib/go-c-runtime", "/var/lib/go-runtime-c1"):
+            self.assertIn(path, read_write[0])
+
+    def test_the_unit_and_the_module_agree_on_identity_and_outbox(self):
+        # The worker id and the unit name are the same identity, so the two are tied
+        # together by construction rather than by a second copy of the string.
+        self.assertEqual(self.worker.WORKER_ID + ".service", self.UNIT)
+        self.assertEqual(self.worker.OUTBOX_DB,
+                         "/var/lib/go-runtime-c1/outbox-c13c14-review.db")
+        self.assertIn(self.worker.OUTBOX_DB, self.text)
+        self.assertEqual(self.worker.CLAIM_KINDS, (C14, C13))
+        self.assertEqual(self.worker.CLAIM_OWNER_CS, ("C14", "C13"))
+
+    def test_the_credential_path_matches_the_existing_host_credential(self):
+        self.assertIn("C1_GITHUB_TOKEN_PATH=/etc/go-runtime-c1/github-token", self.environ)
+        # The path the HOST actually configures - i.e. the one the other two units already
+        # use - not the module's built-in default, which is the old /etc/go-runtime-host
+        # location the channel deliberately moved away from.
+        builder = (Path(__file__).resolve().parents[1] / "runtime-host-channel-v1" /
+                   "systemd" /
+                   "go-runtime-host-ghaw-builder-worker.service").read_text(encoding="utf-8")
+        self.assertIn("Environment=C1_GITHUB_TOKEN_PATH=/etc/go-runtime-c1/github-token",
+                      builder)
+        self.assertIn("ConditionPathExists=/etc/go-runtime-c1/github-token", builder)
+
+    def test_the_lite_directory_matches_the_code_default(self):
+        self.assertIn("Environment=C13C14_LITE_SOURCE_DIR=/opt/go/c13c14-lite", self.text)
+        self.assertEqual(self.review.DEFAULT_LITE_SOURCE_DIR, "/opt/go/c13c14-lite")
+
+    def test_there_is_still_exactly_one_review_executor_and_one_outbox(self):
+        systemd = (Path(__file__).resolve().parents[2] / "control-plane" /
+                   "runtime-host-channel-v1" / "systemd")
+        units = sorted(item.name for item in systemd.iterdir() if item.suffix == ".service")
+        self.assertEqual([u for u in units if "c13c14" in u or "review" in u], [self.UNIT])
+        self.assertEqual(sorted(u for u in units if "worker" in u),
+                         sorted(["go-runtime-host-c13c14-review-worker.service",
+                                 "go-runtime-host-c1-worker.service",
+                                 "go-runtime-host-ghaw-builder-worker.service"]))
+        # The unit NAMES the file; the worker DECLARES it - exactly once, because that
+        # string is the single definition of which outbox this executor owns.
+        self.assertIn("outbox-c13c14-review.db", self.text)
+        worker_source = (Path(__file__).resolve().parents[1] / "runtime-host-channel-v1" /
+                         "c1_c13c14_review_worker.py").read_text(encoding="utf-8")
+        self.assertEqual(worker_source.count("OUTBOX_DB = "), 1,
+                         "the outbox path must be DECLARED once")
+        self.assertIn("/var/lib/go-runtime-c1/outbox-c13c14-review.db", worker_source)
+
+
+# ========================================= J: readiness refuses paid work it cannot finish
+class J_ReadinessRefusesWorkItCouldNotFinish(unittest.TestCase):
+    """`--check` must be a gate, and must have no side effects at all."""
+
+    def test_lite_is_required_before_anything_is_claimed(self):
+        from lite_errors import Block  # noqa: F401  (the package must be importable here)
+        good = review.review_readiness(source_dir=str(LITE_DIR), runtime_dir=str(LITE_DIR))
+        self.assertNotEqual(good.get("reason"), "C13C14_LITE_PACKAGE_INCOMPLETE")
+        bad = review.review_readiness(source_dir="/nonexistent", runtime_dir="/nonexistent")
+        self.assertEqual(bad["status"], "REFUSED")
+        self.assertEqual(bad["reason"], "C13C14_LITE_PACKAGE_INCOMPLETE")
+
+    def test_an_already_imported_lite_module_cannot_satisfy_a_missing_directory(self):
+        review.review_readiness(source_dir=str(LITE_DIR), runtime_dir=str(LITE_DIR))
+        # `lite_bundle` is in sys.modules by now. A provenance-blind check would accept it
+        # for ANY directory, and would therefore pass on a host where the package is absent.
+        again = review.review_readiness(source_dir="/somewhere/else", runtime_dir=str(LITE_DIR))
+        self.assertEqual(again["reason"], "C13C14_LITE_PACKAGE_INCOMPLETE")
+
+    def test_check_opens_nothing_and_touches_nothing(self):
+        import contextlib
+        import io
+
+        touched = []
+
+        class Never:
+            def __getattr__(self, name):
+                def _record(*args, **kwargs):
+                    touched.append(name)
+                    raise AssertionError("--check must not use %s" % name)
+                return _record
+
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            code = self.worker.main(["--check"], runtime=Never(), outbox=Never(),
+                                    client=Never(), token_loader=lambda: "token",
+                                    readiness=lambda: {"runtime_source": "importable:/x",
+                                                       "lite_package": "importable:/y",
+                                                       "lite_modules": list(
+                                                           review.READINESS_LITE_MODULES)})
+        self.assertEqual(touched, [], "--check claimed or dispatched something")
+        self.assertEqual(code, 0)
+        self.assertIn("C14_REVIEW_V1", stdout.getvalue())
+        self.assertIn("C13_REVIEW_V1", stdout.getvalue())
+
+    def test_check_exits_non_zero_when_readiness_refuses(self):
+        import contextlib
+        import io
+
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            code = self.worker.main(["--check"], runtime=None, outbox=None, client=None,
+                                    token_loader=lambda: "token",
+                                    readiness=lambda: {"status": "REFUSED",
+                                                       "reason": "C13C14_LITE_PACKAGE_INCOMPLETE",
+                                                       "lite_package": "missing:lite_bundle"})
+        self.assertEqual(code, 1)
+        self.assertIn("C13C14_LITE_PACKAGE_INCOMPLETE", stdout.getvalue())
+
+    @property
+    def worker(self):
+        import c1_c13c14_review_worker
+        return c1_c13c14_review_worker

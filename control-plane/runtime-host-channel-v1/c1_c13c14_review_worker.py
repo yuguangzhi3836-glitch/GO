@@ -62,7 +62,11 @@ from __future__ import annotations
 import sys
 import time
 
-from c1_c13c14_review import make_result_validator, review_artifact_loader
+from c1_c13c14_review import (
+    make_result_validator,
+    review_artifact_loader,
+    review_readiness,
+)
 from c1_execution_contract import (
     C13_REVIEW_KIND,
     C14_REVIEW_KIND,
@@ -150,6 +154,7 @@ def main(argv=None, **kwargs) -> int:
     kwargs.setdefault("runtime_db", RUNTIME_DB)
     kwargs.setdefault("workflow_files", WORKFLOW_FILES)
     kwargs.setdefault("hooks_factory", review_hooks)
+    kwargs.setdefault("readiness", review_readiness)
     return _shared_main(sys.argv if argv is None else argv, **kwargs)
 
 

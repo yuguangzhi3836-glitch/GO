@@ -114,6 +114,7 @@ STATUS_FIELDS = (
     "conclusion", "runtime_told", "failure_reason",
     "claimed_kinds", "claimed_owners", "owner_c", "next_owner_cursor",
     "runtime_db", "outbox_db", "dispatch_target", "credential",
+    "runtime_source", "lite_package", "lite_modules",
 )
 
 
@@ -297,7 +298,8 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
          claim_owner_cs=CLAIM_OWNER_CS,
          runtime_db=RUNTIME_DB, outbox_db=OUTBOX_DB,
          workflow_file=WORKFLOW_FILE, workflow_files=None, result_validator=None,
-         artifact_loader=None, on_result_sealed=None, hooks_factory=None) -> int:
+         artifact_loader=None, on_result_sealed=None, hooks_factory=None,
+         readiness=None) -> int:
     """The resident loop, parameterised by the executor's OWN boundary.
 
     `worker_id`, `claim_kinds`, `claim_owner_cs`, `runtime_db`, `outbox_db` and
@@ -354,11 +356,21 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
         return 1
 
     if check:
-        emit({"status": "READY", "verb": "check", "credential": "present",
-              "claimed_kinds": list(claim_kinds), "claimed_owners": list(claim_owner_cs),
-              "runtime_db": runtime_db, "outbox_db": outbox_db,
-              "dispatch_target": workflow_file})
-        return 0
+        # Readiness only: no claim, no outbox, no POST, no model. An executor that can
+        # be claimed for work it cannot finish would burn a paid execution before
+        # anyone noticed, so whatever this executor needs in order to COMPLETE a task
+        # is checked here, before the first claim - and a missing piece is a refusal
+        # with a non-zero exit, not a warning.
+        report = {"status": "READY", "verb": "check", "credential": "present",
+                  "claimed_kinds": list(claim_kinds),
+                  "claimed_owners": list(claim_owner_cs), "runtime_db": runtime_db,
+                  "outbox_db": outbox_db, "dispatch_target": workflow_file}
+        if readiness is not None:
+            extra = readiness()
+            if isinstance(extra, dict):
+                report.update(extra)
+        emit(report)
+        return 0 if report["status"] == "READY" else 1
 
     if runtime is None:
         runtime = open_runtime(db_path=runtime_db)

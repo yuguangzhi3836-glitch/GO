@@ -1,0 +1,77 @@
+[Unit]
+Description=GO Runtime Host C13/C14 review worker (claims C14_REVIEW_V1 and C13_REVIEW_V1 only; Runtime -> Lite review workflows -> Runtime)
+# Candidate only: adding this file is not installing it. Nothing in this repository
+# enables or starts it, and no host has been mutated.
+#
+# Deliberately NOT inside /opt/go/runtime-host-agent, for the reason both other executors
+# state: the Management Agent's executor_sha256 covers every *.py in that directory and is
+# bound by the registration, so a file added there changes the Agent's identity and makes
+# it refuse to start until a new registration is issued.
+ConditionPathExists=/opt/go/runtime-host-c13c14-review-worker/c1_c13c14_review_worker.py
+# The Lite package the review result is verified WITH. Without it this worker could claim a
+# review - which is a paid AI execution - dispatch it, and only then discover, at result
+# adoption, that it cannot check the sealed bundle it was handed. Failing closed here is
+# what keeps a paid run from being spent on a review nothing can verify.
+ConditionPathExists=/opt/go/c13c14-lite/lite_bundle.py
+# The same credential path both other executors use: one GitHub credential for the host,
+# not one per executor. Without it this worker could only claim a task it cannot dispatch.
+ConditionPathExists=/etc/go-runtime-c1/github-token
+After=go-c1-c14-runtime.service
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+# The same unprivileged account that already owns the Runtime database. Three executors of
+# one Runtime must not become three Unix identities: the fence compares lease_owner, and
+# the Runtime database is owned by go-runtime.
+User=go-runtime
+Group=go-runtime
+WorkingDirectory=/opt/go/runtime-host-c13c14-review-worker
+# The constants the worker itself declares: kind set, owner set, worker id, outbox path and
+# dispatch targets are in the module; this unit only decides where it is installed and as
+# whom it runs. `test_c1_c13c14_review_transport` asserts that this file agrees with them,
+# so the two cannot drift.
+ExecStart=/usr/bin/python3 -B /opt/go/runtime-host-c13c14-review-worker/c1_c13c14_review_worker.py
+# Readiness, and nothing else. It claims no task, mutates no outbox, sends no POST and
+# calls no model: it reports the credential, the kinds and owners this executor owns, that
+# the Runtime source is importable, and that the Lite modules the result is verified with
+# are importable here. It exits non-zero when any of that is missing, which is what makes
+# this line a gate rather than a log line.
+ExecStartPre=/usr/bin/python3 -B /opt/go/runtime-host-c13c14-review-worker/c1_c13c14_review_worker.py --check
+Restart=on-failure
+RestartSec=5
+UMask=0077
+
+# The GitHub dispatch credential, read from a path only this account can reach. It is a
+# GitHub credential and NOT a model credential: the review run's CODEX_API_KEY /
+# OPENAI_API_KEY stay repository secrets and must never exist on this host.
+Environment=C1_GITHUB_TOKEN_PATH=/etc/go-runtime-c1/github-token
+# Where the Lite package is installed. Configuration, not a caller input - and the same
+# value `c1_c13c14_review` defaults to, so the worker and this unit name one directory.
+Environment=C13C14_LITE_SOURCE_DIR=/opt/go/c13c14-lite
+
+# This component has outbound network access, and it exists only to reach api.github.com.
+# Nothing here listens.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+PrivateDevices=true
+
+# Reads the installed Runtime source and the Lite package it verifies sealed bundles with.
+# The outbox file is named here because it is part of what this unit IS: exactly one review
+# executor owns exactly one review outbox,
+# /var/lib/go-runtime-c1/outbox-c13c14-review.db, and the worker declares the same string.
+# Writes only the Runtime state directory (the task lease and its Evidence) and the outbox
+# directory it shares with the other two executors - sharing the DIRECTORY, never the file:
+# each executor owns its own outbox file inside it, and a worker that resumed another's
+# file would be executing another's work. Nothing else is writable.
+ReadOnlyPaths=/opt/go/c1-c14-runtime /opt/go/c13c14-lite
+ReadWritePaths=/var/lib/go-c-runtime /var/lib/go-runtime-c1
+
+[Install]
+WantedBy=multi-user.target

@@ -62,6 +62,9 @@ from c1_execution_contract import (
 # input, and overridable so the same code can be exercised against a checkout.
 LITE_SOURCE_DIR_ENV = "C13C14_LITE_SOURCE_DIR"
 DEFAULT_LITE_SOURCE_DIR = "/opt/go/c13c14-lite"
+# The installed Runtime source, the same path the other executors import it from.
+DEFAULT_RUNTIME_SOURCE_DIR = os.environ.get("C13C14_RUNTIME_SOURCE_DIR",
+                                            "/opt/go/c1-c14-runtime")
 
 # The C13 machine-test inventory used when a round does not name one. Deliberately NOT the
 # whole application test tree: a focused inventory is what makes the C13 half cheap enough
@@ -69,6 +72,22 @@ DEFAULT_LITE_SOURCE_DIR = "/opt/go/c13c14-lite"
 DEFAULT_MACHINE_INVENTORY = "application/tests"
 
 _LITE_CACHE: dict = {}
+
+# The Lite modules a review result cannot be verified without. Checked by readiness,
+# because the failure they prevent is expensive: without them the worker would claim a
+# review - a paid AI execution - dispatch it, and only discover at result adoption that
+# it cannot validate the sealed bundle it was handed.
+READINESS_LITE_MODULES = ("lite_bundle", "lite_errors", "lite_chain")
+
+
+def _under(path: str, directory: str) -> bool:
+    """True when `path` really lives inside `directory`, after normalising both."""
+    try:
+        origin = os.path.normcase(os.path.abspath(path))
+        root = os.path.normcase(os.path.abspath(directory))
+    except (TypeError, ValueError):
+        return False
+    return origin == root or origin.startswith(root + os.sep)
 
 
 def lite(name: str, *, source_dir=None):
@@ -88,8 +107,46 @@ def lite(name: str, *, source_dir=None):
         module = importlib.import_module(name)
     except ImportError:
         raise Refused("C13C14_LITE_PACKAGE_NOT_INSTALLED:%s" % directory) from None
+    # WHERE it came from matters, not only that something by that name imported. A module
+    # already in `sys.modules` satisfies `import_module` for any directory, so without this
+    # a readiness check would pass on a host where the package is missing - the one failure
+    # it exists to catch. The configured directory is the only acceptable provenance.
+    origin = getattr(module, "__file__", None)
+    if not origin or not _under(origin, directory):
+        raise Refused("C13C14_LITE_MODULE_NOT_FROM_THE_CONFIGURED_DIRECTORY:%s" % name)
     _LITE_CACHE[key] = module
     return module
+
+
+def review_readiness(*, source_dir=None, runtime_dir=None) -> dict:
+    """What this executor needs in order to COMPLETE a task, checked without side effects.
+
+    No claim, no outbox, no POST, no model: importing a module opens no database and
+    reaches no network, so everything here is inert. What it is for is the failure that
+    is expensive rather than merely annoying - a missing Lite package means a claimed
+    review can be dispatched and paid for before the gap is discovered at adoption.
+    """
+    directory = source_dir or os.environ.get(LITE_SOURCE_DIR_ENV) or DEFAULT_LITE_SOURCE_DIR
+    missing = []
+    for module in READINESS_LITE_MODULES:
+        try:
+            lite(module, source_dir=directory)
+        except Refused:
+            missing.append(module)
+    if missing:
+        return {"status": "REFUSED", "reason": "C13C14_LITE_PACKAGE_INCOMPLETE",
+                "lite_package": "missing:%s" % ",".join(missing)}
+    runtime_directory = runtime_dir or DEFAULT_RUNTIME_SOURCE_DIR
+    if runtime_directory not in sys.path:
+        sys.path.insert(0, runtime_directory)
+    try:
+        importlib.import_module("runtime")
+    except ImportError:
+        return {"status": "REFUSED", "reason": "RUNTIME_SOURCE_NOT_IMPORTABLE",
+                "runtime_source": "missing:%s" % runtime_directory}
+    return {"runtime_source": "importable:%s" % runtime_directory,
+            "lite_package": "importable:%s" % directory,
+            "lite_modules": list(READINESS_LITE_MODULES)}
 
 
 def _parse_json_bytes(raw: bytes, what: str):
