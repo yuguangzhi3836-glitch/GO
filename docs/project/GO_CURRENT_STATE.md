@@ -2,127 +2,128 @@
 
 > Purpose: current human-readable project state for fresh ChatGPT / Codex / WorkBuddy sessions.
 >
-> Refreshed against canonical `main` **1faf0faedf70fab010c3d49001e8787a2f58c024** on 2026-10-04.
-> This file is descriptive context, not Execution Authority. For any mutation, live GitHub / real environment / current Evidence outrank this snapshot.
+> Refreshed against canonical `main` **bdaba56bbb6b7a5e47b75f1fe74a93ae3f9e45bc** on 2026-10-04 after the first full automatic Builder -> C14 -> C13 live E2E.
+> This file is descriptive context, not Execution Authority. Live GitHub / real environment / current Evidence outrank this snapshot.
 
-## 0. Read this first
+## 0. Three separate axes
 
 GO currently has three separate axes that must not be inferred from one another:
 
-1. **Repository source** — what is in GitHub `main`.
+1. **Repository source** — GitHub `main`.
 2. **Business runtime** — what the eight GO business services are actually running on HK-STAGING.
-3. **Persistent Runtime / AI execution transport** — the third ECS that durably accepts work, dispatches AI execution and adopts results.
+3. **Persistent Runtime / AI execution transport** — rt01, which durably accepts work, dispatches AI execution and adopts results.
 
-A merge does not imply a business deployment. A business deployment does not imply the same source is on `main`. A C13/C14 review verdict does not authorize merge or deployment.
+`merged != deployed` · `deployed != accepted` · `accepted != authorized` · `Runtime healthy != product correct`
 
-## 1. Repository source truth — CURRENT_MAIN_FACT
+## 1. Repository source truth
 
 | Item | Current value |
 | --- | --- |
-| Canonical main | `1faf0faedf70fab010c3d49001e8787a2f58c024` |
-| Main root tree | `61d85985c3dcccc3a8bf986a7fd66747b2f180da` |
+| Canonical main | `bdaba56bbb6b7a5e47b75f1fe74a93ae3f9e45bc` |
+| Main root tree | `be1c40c09c1f81964867c995e92a811d14a73d94` |
 | `main:application` tree | `83e73327d5f8f00841a3febdbe2a94e2078dbeae` |
-| `application/` files | 1369 blobs |
 | Repository migration head | `0135_supplier_onboarding` |
 | Migration down revision | `0134_flight_status_width` |
-| Migration revisions | 135 files under `application/alembic/versions/` |
 
-The source fingerprint from the older 2026-09-14 checkpoint was **not** carried forward: it was bound to another tree and was not recomputed in this refresh.
+The `application` tree did not change in the Runtime auto-review closeout; the changes are Runtime/control-plane/docs.
 
 ## 2. HK-STAGING business runtime — separate axis
 
-The canonical repository pointer is `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`. That pointer was re-read during this refresh.
+`docs/canonical-baseline/CURRENT_HK_RUNTIME.json` was re-read at this checkpoint.
 
 | Item | Current pointer value |
 | --- | --- |
 | Environment | HK-STAGING |
 | Runtime generation label | `DEPTH48` |
-| Last pointer/deploy date | 2026-10-02 |
+| Pointer/deploy date | 2026-10-02 |
 | Deployed candidate | PR `#320`, head `eeafca1b15a4754ba36a0f138a27347cbbd12c73` |
-| PR #320 state | open / Draft / **not merged** |
+| PR #320 state | open / Draft / unmerged |
 | Deployed application tree | `6f97ac5d572dae1de0b3e38b6201da2a6de14216` |
-| Image tag | `go-hk-test-pr:eeafca1b15a4754ba36a0f138a27347cbbd12c73` |
-| Image id | `sha256:26c95472d494100dc5365b031335670b57570b86ac50fb1b4ebd161d7933530b` |
+| Image | `go-hk-test-pr:eeafca1b15a4754ba36a0f138a27347cbbd12c73` |
 | Live DB revision | `0145_source_latest_index` |
-| Live tables | 564 |
-| OpenAPI paths | 1059 |
+| Live tables / OpenAPI paths | 564 / 1059 |
 
-Therefore the current GitHub source and the current HK business runtime are **not the same tree**. This is expected and must remain explicit. The business-runtime pointer says the 2026-10-02 PR #320 candidate was deployed by GO Forge and formally verified; that does not make PR #320 merged source.
+Current GitHub source and current HK business runtime are **not the same tree**. Do not infer one from the other.
 
-Do not infer current HK state from `main:application`, and do not infer current main from the deployed image.
+## 3. Persistent Runtime — END-TO-END AUTO PROGRESSION LIVE / PROVEN / DELIVERED
 
-## 3. Persistent Runtime — LIVE / PROVEN / DELIVERED
-
-The Persistent Runtime runs on the separate Runtime Host (rt01 / third ECS). Its job is intentionally narrow:
+The Runtime Host role remains intentionally narrow:
 
 `queue/state/lease/attempt fencing -> dispatch -> evidence/result adoption -> recovery`
 
-It is **not** a local 14-model host, not Command Center, not a release authority and not a product-quality judge.
+It is not a local 14-model host, not Command Center, not a merge/release authority and not a product-quality judge.
 
-### 3.1 C01-C12 Builder path
+### 3.1 Normal C01-C12 owner path
 
-Current live path:
+The normal owner workflow is now:
 
-`Formal GitHub Issue -> one resident issue consumer -> Persistent Runtime -> one generic C01-C12 Builder worker -> GitHub Agentic Workflow -> Draft PR -> Runtime result adoption`
+`Formal C01-C12 Issue -> Runtime -> Generic Builder -> Draft PR -> automatic C14 -> automatic C13 -> sealed round decision -> STOP`
 
-Properties proven live:
+Important:
 
-- C01-C12 share one generic Builder worker and one Builder outbox.
-- Formal Builder Issues bind their `source_anchor` to the current `main`; stale historical issues are refused before paid execution.
-- The workflow re-checks its execution SHA before the paid agent runs.
-- Deterministic run names plus durable outbox state prevent ambiguous `workflow_dispatch` from becoming a second paid POST.
-- Historical issues `#79`-`#88` remain open as historical evidence but are stale-refused and do not execute.
-- The superseded legacy C1 Responses worker is disabled.
+- The Owner normally creates **one C01-C12 Formal Task Issue only**.
+- If the Builder produces exactly one valid Draft PR, the Builder completion hook freezes that candidate and idempotently enqueues `C14_REVIEW_V1` **before** completing the Builder task.
+- A sealed admissible C14 then idempotently enqueues `C13_REVIEW_V1` **before** completing C14.
+- The Runtime's own deterministic idempotency keys are the transaction coordinator for both crash windows.
+- C13/C14 never merge or deploy. Even `PASS_SCOPED + ACCEPT` stops at review completion.
+- If a Builder legitimately produces no PR, the Builder may complete with zero review tasks.
 
-### 3.2 C13/C14 review path
+### 3.2 Candidate identity after Builder
 
-Current live path:
+The Builder's ordinary `c1_result.json` is sealed before gh-aw `safe_outputs` creates the Draft PR, so PR identity is not taken from the model answer or guessed by title/time.
 
-`Formal Review Issue -> same resident issue consumer -> Runtime C14_REVIEW_V1 -> one special review worker -> existing C14 workflow -> sealed admissible C14 -> idempotent Runtime C13_REVIEW_V1 -> same worker -> existing C13 workflow -> sealed round -> Runtime result adoption`
+The Runtime reads the same GitHub run's `safe-outputs-items` record, extracts the exact `create_pull_request` result, then read-only verifies:
 
-Important semantics:
+- exactly one candidate PR;
+- `base == main`;
+- `draft == true`;
+- exact PR head SHA;
+- exact candidate `application/` tree;
+- changed candidate test inventory, bounded to safe test paths;
+- binding to the same Builder Runtime task / attempt / execution / GitHub run;
+- `authorizes_any_action == false`.
 
-- C14 and C13 are **special read-only review executions**, not ordinary Builders.
-- There is one review worker and one review outbox, not one daemon per cell.
-- C13 can only be created by a sealed, admissible C14 result. A GitHub Issue cannot directly create C13.
-- Review delivery success is separate from review verdict. A valid `FAIL` / `BLOCKED` review can still be a Runtime `SUCCEEDED` execution.
-- `authorizes_any_action=false`; neither C13 nor C14 can merge or deploy.
-- Before any paid review dispatch, the review worker confirms it still owns a valid Runtime lease. This was added after the first real live round exposed the paid-dispatch-after-lease-loss failure.
+Missing or ambiguous candidate identity fails closed and creates no review task.
 
-### 3.3 Formal Review Issue ingress
+### 3.3 Manual Review Issue is now optional
 
-PR `#398` is merged on current main and removed the last manual transport step (`deliver_review_round.py`) from the normal review path.
+`C14 · REVIEW · ...` Issue ingress remains supported, but it is **not part of the normal Builder path**.
 
-Owner-facing shape:
+Use it only to review an independently selected existing PR, historical PR, or other candidate that was not just produced by the Runtime Builder.
 
-```text
-C14 · REVIEW · <description>
-Candidate PR: #<number>
-Candidate SHA: <40-hex frozen PR head>
-```
+An Issue can create C14 only. C13 still exists only because a sealed admissible C14 created it.
 
-The ingress derives the application tree, round/task/request identities and machine-test inventory. It refuses a moved PR head instead of silently following it.
+### 3.4 Full automatic live E2E
 
-### 3.4 Live canary
+Validation Issue `#403` (`C12 · V72-R1-C12-01 · workbench cell-role table regression`) was created against current main `bdaba56bbb6b7a5e47b75f1fe74a93ae3f9e45bc`.
 
-Validation Issue `#399` (`C14 · REVIEW · formal ingress canary for PR #394`) proved the complete formal review path:
+It proved the complete no-hand-off path:
 
-| Item | C14 | C13 |
-| --- | --- | --- |
-| Runtime task | `rt_2054610cd3064d53adf5adf55b48d77a` | `rt_c5ec212556e7477483266dbaede35145` |
-| Kind / owner | `C14_REVIEW_V1` / C14 | `C13_REVIEW_V1` / C13 |
-| GitHub run | `37189939040` | `37189996082` |
-| Dispatch count | 1 | 1 |
-| Runtime status | SUCCEEDED / attempts 1 | SUCCEEDED / attempts 1 |
-| Review verdict | PASS_SCOPED | PASS_SCOPED |
-| `authorizes_any_action` | false | false |
-| `deployment_eligible` | false | false |
+| Leg | Runtime task | GitHub run | dispatches | Runtime | verdict |
+| --- | --- | ---: | ---: | --- | --- |
+| Builder C12 | `rt_c82ea8e5a6a64da5a51df521452312a6` | `37194602268` | 1 | SUCCEEDED | — |
+| automatic C14 | `rt_7f92f4c6fe07455d991dcff452416ba2` | `37194968153` | 1 | SUCCEEDED | PASS_SCOPED |
+| automatic C13 | `rt_36633ba4140f4b448f04f8bcbb023c25` | `37195017030` | 1 | SUCCEEDED | PASS_SCOPED |
 
-`round_decision=ACCEPT`, the C13 prerequisite root matched the C14 root actually adopted by the Runtime, independence was true, and repeated enabled polls returned the same Runtime task rather than creating a second task or paid execution.
+Builder produced Draft PR `#404`, head `fe788be4b30f3ba87c47c2447cda9a28c649092d`, one file `+15/-0`. The automatic C14 reviewed exactly that head. PR #404 remains Draft and unmerged.
 
-Issue `#399` was closed after the canary. Validation product PR `#394` remains open Draft and unmerged.
+Round facts:
 
-## 4. Runtime Host service snapshot — last verified 2026-10-04
+- `round_decision=ACCEPT`;
+- C13's prerequisite root equals the C14 root actually adopted by the Runtime;
+- independence is true;
+- both review envelopes have `authorizes_any_action=false` and `deployment_eligible=false`;
+- the focused C13 machine inventory really ran successfully;
+- C14 was enqueued before Builder completion;
+- C13 was enqueued before C14 completion;
+- repeated enabled polls returned the same Runtime task identities;
+- **manual C14 Review Issue count for this chain = 0**;
+- **`deliver_review_round.py` calls for this chain = 0**;
+- paid executions = exactly 3: Builder 1 + C14 1 + C13 1.
+
+### 3.5 Resident service snapshot after auto-review installation
+
+Last verified 2026-10-04:
 
 | Service | State |
 | --- | --- |
@@ -132,85 +133,83 @@ Issue `#399` was closed after the canary. Validation product PR `#394` remains o
 | `go-c1-c14-runtime` | active / enabled |
 | `go-runtime-host-agent` | active / enabled |
 | `go-runtime-host-runtime-bridge` | active / enabled |
-| `go-runtime-host-c1-worker` | inactive / disabled (retired legacy Responses path) |
+| `go-runtime-host-c1-worker` | inactive / disabled |
 
-`systemctl --failed` was empty during the #399 closeout. Execution decisions must still re-read the host rather than treating this table as permanent authority.
+`systemctl --failed` was empty. No new unit, daemon, scheduler, queue, DB, registry, workflow or review rule was added by the Builder-auto-review bridge.
 
-## 5. Persistent Runtime delivery status
+### 3.6 One known non-blocking observability quirk
+
+The review worker's `--check` status line still reports the shared worker's singular `dispatch_target` default (`c1-ai-execution-backend-v1.yml`) even though the review client is correctly bound to `c14-rule-compliance.yml` and `c13-quality-acceptance.yml` through `workflow_files`.
+
+This is **display-only** and not an execution/dispatch defect. Do not reopen Runtime architecture for it. Fix only if the status UX becomes operationally confusing.
+
+## 4. Persistent Runtime delivery status
 
 | Workstream | Status |
 | --- | --- |
-| U7A — C01-C12 generic Builder transport | **DONE / LIVE PROVEN** |
 | C01-C12 Formal Issue ingress | **DONE / LIVE** |
-| Source binding / stale issue protection | **DONE / LIVE PROVEN** |
-| U7B — C14->C13 Runtime review transport | **DONE / LIVE PROVEN** |
-| Formal Review Issue ingress | **DONE / LIVE PROVEN** |
-| C14->C13 automatic chaining | **DONE / LIVE PROVEN** |
+| Generic C01-C12 Builder | **DONE / LIVE PROVEN** |
+| Builder -> Draft PR -> automatic C14 bridge | **DONE / LIVE PROVEN** |
+| C14 -> automatic C13 chaining | **DONE / LIVE PROVEN** |
+| Formal manual Review Issue ingress | **DONE / LIVE PROVEN / OPTIONAL PATH** |
 | Duplicate paid-dispatch protection | **DONE / LIVE PROVEN** |
-| Legacy C1 Responses execution path | **RETIRED / DISABLED** |
-| U6 Solution-Leak Gate | **BYPASS / DEFERRED**; not a Runtime blocker |
+| Source/candidate freshness binding | **DONE / LIVE PROVEN** |
+| Legacy C1 Responses path | **RETIRED / DISABLED** |
+| U6 Solution-Leak Gate | **BYPASS / DEFERRED; not a Runtime blocker** |
 
-**Persistent Runtime is delivered.** Do not continue adding architecture merely to make the Runtime look more formal.
+**Persistent Runtime end-to-end automatic progression is delivered.**
 
-The only normal human action left is **admission intent**:
+The only normal human action before the review stops is product intent: decide what C01-C12 task to request and create its Formal Issue. Technical task hand-off between Builder, C14 and C13 is automatic.
 
-- create a valid C01-C12 Formal Issue when the Owner wants Builder work, or
-- create a valid `C14 · REVIEW` Issue when the Owner wants a candidate reviewed.
+Merge and deployment remain separate authorized actions after review.
 
-Once admitted, technical task transport no longer requires Eason to manually move work between GitHub and the Runtime. Choosing *what work should happen* remains a product/engineering decision, not a missing Runtime feature.
-
-## 6. Key 2026-10-04 Runtime lineage
+## 5. Key 2026-10-04 Runtime lineage
 
 | PR | Result |
 | --- | --- |
-| `#392` | Formal Builder ingress source binding; old-source tasks fail closed |
-| `#395` | C14->C13 Lite dual review attached to Persistent Runtime |
-| `#396` | First real C14 dispatch fix: do not send undeclared workflow inputs |
-| `#397` | Confirm Runtime lease immediately before paid review dispatch |
-| `#398` | Formal Review Issue ingress; removes normal manual review-delivery step |
+| `#392` | Formal Builder ingress source binding |
+| `#395` | C14->C13 review transport attached to Persistent Runtime |
+| `#396` | First real C14 dispatch wire-input fix |
+| `#397` | Confirm Runtime lease before paid review dispatch |
+| `#398` | Formal manual Review Issue ingress |
+| `#402` | Builder Draft PR automatically advances to C14, then existing C14 automatically advances to C13 |
 
-These entries describe transport evolution only. They do not authorize product deployment.
+These PRs describe delivery transport, not product merge/release authority.
 
-## 7. Current candidate facts that must not be promoted
+## 6. Current candidate facts
 
 - PR `#320` — open Draft, unmerged; nevertheless its candidate is the current HK business runtime according to `CURRENT_HK_RUNTIME.json`.
-- PR `#383` — Boss-owned Draft proposing an older per-cell automatic-entry design. It is not canonical and must not be taken over or rewritten.
-- PR `#394` — Builder-created Draft used for the real C14/C13 canary. It remains unmerged and is not automatically entitled to merge because the review path worked.
+- PR `#383` — Boss-owned Draft with an older per-cell entry design; read/review only, do not take over.
+- PR `#394` — historical review-ingress canary Draft; unmerged.
+- PR `#404` — automatic Builder->C14->C13 live E2E candidate; open Draft, unmerged.
 
-For all other PRs, re-read GitHub live state. Do not maintain a permanently enumerated list of every open candidate here.
+For other PRs, re-read GitHub live state.
 
-## 8. What not to infer
+## 7. What not to infer
 
 Do not infer:
 
 - `main` == HK runtime;
-- merged source == deployed source;
-- CI PASS == product acceptance;
-- review delivery `SUCCEEDED` == review verdict PASS;
+- merged == deployed;
+- Builder succeeded == review passed;
+- Runtime review `SUCCEEDED` == verdict PASS;
 - C13/C14 PASS == merge/deploy authority;
-- Runtime healthy == business runtime healthy;
-- PR number or age == lineage superiority;
-- old Evidence or old `CURRENT_*` filename == current authority.
+- a Draft PR being auto-reviewed == it may auto-merge;
+- old Evidence / old checkpoint / a file named `CURRENT` == live authority.
 
-## 9. Startup / truth priority
+## 8. Startup / truth priority
 
-For substantive GO work, use:
+For substantive GO work:
 
 1. live GitHub `main`;
 2. current task PR / branch / commit / diff;
 3. `docs/project/OPERATING_CONTEXT.md`;
 4. this file;
 5. `docs/project/CONTEXT_CHECKPOINT.json`;
-6. current runtime / deploy / Evidence / Runbook when the real environment matters.
+6. current runtime / deploy / Evidence / Runbook if the real environment matters.
 
-Truth priority remains:
+Truth priority:
 
-`live GitHub / real environment / current Evidence > current-state documents > historical PR/docs > AI memory`
+`live GitHub / real environment / current Evidence > repository current-state documents > historical PR/docs > AI memory`
 
 Changing implementation facts must be re-derived. Unknown facts stay `UNKNOWN`.
-
-## 10. Historical note
-
-The previous in-file snapshot bound to `8ffcde66d36c1bbf849218529ef015f6e81725af` (2026-09-14) is superseded as current context and remains available in Git history. It must not be used as today's repository/runtime state.
-
-`ACTIVE_DECISIONS.md` is an append-preserving historical decision register and still contains time-bound examples from older checkpoints. Stable decision principles remain useful; changing implementation values in that file must be verified against live state and this snapshot.
