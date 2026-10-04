@@ -141,7 +141,7 @@ def open_outbox(path=OUTBOX_DB):
     return DispatchOutbox(path)
 
 
-def build_client(*, workflow_file=None):
+def build_client(*, workflow_file=None, workflow_files=None):
     """The GitHub transport, bound to the workflow file THIS executor dispatches.
 
     With no argument this is the channel's original target, so the deployed Responses
@@ -152,7 +152,8 @@ def build_client(*, workflow_file=None):
     """
     from c1_github_actions_client import GitHubActionsClient, configured_token_loader
     return GitHubActionsClient(token_loader=configured_token_loader(),
-                               workflow_file=workflow_file)
+                               workflow_file=workflow_file,
+                               workflow_files=workflow_files)
 
 
 def credential_refusal(loader=None):
@@ -207,7 +208,8 @@ def claim_across_owners(runtime, *, worker_id, lease_s, claim_kinds, claim_owner
 
 def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_S,
          clock=time.time, claim_kinds=CLAIM_KINDS, claim_owner_cs=CLAIM_OWNER_CS,
-         owner_cursor=0, resume_limit=DEFAULT_RESUME_LIMIT) -> dict:
+         owner_cursor=0, resume_limit=DEFAULT_RESUME_LIMIT, result_validator=None,
+         artifact_loader=None, on_result_sealed=None) -> dict:
     """One bounded tick: resume what is in flight, and only then claim new work.
 
     Phase 1 is not an optimisation, it is the fix for the defect that stopped the first
@@ -240,7 +242,10 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
         try:
             outcome = resume(outbox, runtime, row["runtime_task_id"], row["attempt"],
                              worker_id=worker_id, client=client, lease_s=lease_s,
-                             clock=clock, claimable_kinds=claim_kinds)
+                             clock=clock, claimable_kinds=claim_kinds,
+                             result_validator=result_validator,
+                             artifact_loader=artifact_loader,
+                             on_result_sealed=on_result_sealed)
         except Exception as exc:  # noqa: BLE001 -- one bad task must not stop the worker
             return {"status": "BLOCKED", "claimed": False, "resumed": True,
                     "unfinished": len(unfinished),
@@ -265,7 +270,10 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
                 "next_owner_cursor": next_cursor}
     try:
         outcome = advance(outbox, runtime, claimed, worker_id=worker_id, client=client,
-                          lease_s=lease_s, clock=clock, claimable_kinds=claim_kinds)
+                          lease_s=lease_s, clock=clock, claimable_kinds=claim_kinds,
+                          result_validator=result_validator,
+                          artifact_loader=artifact_loader,
+                          on_result_sealed=on_result_sealed)
     except Exception as exc:  # noqa: BLE001 -- one bad task must not stop the worker
         # Nothing is completed here. The outbox keeps its durable state, so the next
         # tick resumes from it - and because the dispatch counter survives, a failure
@@ -288,7 +296,8 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
          token_loader=None, worker_id=WORKER_ID, claim_kinds=CLAIM_KINDS,
          claim_owner_cs=CLAIM_OWNER_CS,
          runtime_db=RUNTIME_DB, outbox_db=OUTBOX_DB,
-         workflow_file=WORKFLOW_FILE) -> int:
+         workflow_file=WORKFLOW_FILE, workflow_files=None, result_validator=None,
+         artifact_loader=None, on_result_sealed=None, hooks_factory=None) -> int:
     """The resident loop, parameterised by the executor's OWN boundary.
 
     `worker_id`, `claim_kinds`, `claim_owner_cs`, `runtime_db`, `outbox_db` and
@@ -356,7 +365,18 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
     if outbox is None:
         outbox = open_outbox(outbox_db)
     if client is None:
-        client = build_client(workflow_file=workflow_file)
+        client = build_client(workflow_file=workflow_file,
+                              workflow_files=workflow_files)
+
+    # The transport hooks, gathered once and applied to every tick. `hooks_factory`
+    # exists because an executor whose validator needs the outbox cannot supply it until
+    # the outbox has been opened - and a loop that silently ran without its own result
+    # validator would be an executor accepting results it cannot check.
+    transport_hooks = {"result_validator": result_validator,
+                       "artifact_loader": artifact_loader,
+                       "on_result_sealed": on_result_sealed}
+    if hooks_factory is not None:
+        transport_hooks.update(hooks_factory(outbox))
 
     # Where the next scan begins. Deliberately a local: it is scheduling convenience, not
     # state. A restart begins at the first cell, which is allowed, and no task's identity
@@ -366,7 +386,8 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
         try:
             outcome = tick(runtime, outbox, client, worker_id=worker_id,
                            claim_kinds=claim_kinds, claim_owner_cs=claim_owner_cs,
-                           owner_cursor=owner_cursor, clock=clock)
+                           owner_cursor=owner_cursor, clock=clock,
+                           **transport_hooks)
             owner_cursor = outcome.get("next_owner_cursor", owner_cursor)
             emit(dict(outcome, verb="c1-worker-tick", runtime_db=runtime_db,
                       outbox_db=outbox_db))

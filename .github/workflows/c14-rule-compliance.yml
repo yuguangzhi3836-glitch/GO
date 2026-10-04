@@ -45,6 +45,20 @@ on:
         description: "Model used for the fresh AI review execution"
         required: false
         default: "gpt-5.6-sol"
+      # --- Runtime transport identity (U7B). ONE input, because GitHub allows at most ten
+      # - and the quartet is delivery metadata anyway: the deterministic run name below is
+      # built from it, and the preflight step checks the cell against this workflow's own
+      # role. None of it reaches any review brief, so none of it can change a verdict.
+      runtime_transport:
+        description: "Canonical JSON of the Runtime transport identity (owner_c, runtime_task_id, attempt, execution_request_id)"
+        required: true
+        type: string
+
+# The deterministic run name a Runtime lookup resolves an ambiguous dispatch by. Its bytes
+# are the Runtime's `run_identity_name(owner_c, runtime_task_id, attempt,
+# execution_request_id)`, and a lookup that does not match it exactly does not match at
+# all - which is what keeps an unknown dispatch to a LOOKUP instead of a second POST.
+run-name: ${{ fromJSON(inputs.runtime_transport).owner_c }} ${{ fromJSON(inputs.runtime_transport).runtime_task_id }} ${{ fromJSON(inputs.runtime_transport).attempt }} ${{ fromJSON(inputs.runtime_transport).execution_request_id }}
 
 permissions:
   contents: read
@@ -67,6 +81,63 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
+      # Before anything else, and before any AI: this run must be the cell it claims to
+      # be. A dispatch that names the other cell is a misdelivery, and a misdelivery that
+      # reached the reviewer would be a verdict produced by the wrong authority - which is
+      # the one thing C13 and C14 must never be.
+      - name: Assert the Runtime transport identity belongs to this cell
+        env:
+          RUNTIME_TRANSPORT: ${{ inputs.runtime_transport }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, re, sys
+          EXPECTED = "C14"
+          REQUIRED = ("owner_c", "runtime_task_id", "attempt", "execution_request_id")
+          extra = ()
+          try:
+              transport = json.loads(os.environ.get("RUNTIME_TRANSPORT") or "")
+          except ValueError:
+              sys.exit("RUNTIME_TRANSPORT_NOT_JSON")
+          if not isinstance(transport, dict):
+              sys.exit("RUNTIME_TRANSPORT_NOT_AN_OBJECT")
+          missing = [k for k in REQUIRED + tuple(extra) if not str(transport.get(k) or "").strip()]
+          if missing:
+              sys.exit("TRANSPORT_IDENTITY_INCOMPLETE:" + ",".join(missing))
+          owner = str(transport["owner_c"]).strip().upper()
+          if owner != EXPECTED:
+              sys.exit("OWNER_C_IS_NOT_THIS_CELLS:%r" % owner)
+          if not re.match(r"^[0-9a-f]{64}$", str(transport["execution_request_id"]).strip()):
+              sys.exit("EXECUTION_REQUEST_ID_NOT_A_SHA256")
+          print("TRANSPORT_IDENTITY_ACCEPTED", EXPECTED)
+          PY
+
+      - name: Check out the execution backend (this run's own commit)
+      # be. A dispatch that names the other cell is a misdelivery, and a misdelivery that
+      # reaches the reviewer would be a verdict produced by the wrong authority -
+      # which is the one thing C13 and C14 must never be.
+      - name: Assert the Runtime transport identity belongs to this cell
+        env:
+          OWNER_C: ${{ inputs.owner_c }}
+          RUNTIME_TASK_ID: ${{ inputs.runtime_task_id }}
+          ATTEMPT: ${{ inputs.attempt }}
+          EXECUTION_REQUEST_ID: ${{ inputs.execution_request_id }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, re, sys
+          EXPECTED = "C14"
+          owner = (os.environ.get("OWNER_C") or "").strip().upper()
+          if owner != EXPECTED:
+              sys.exit("OWNER_C_IS_NOT_THIS_CELLS:%r" % owner)
+          for name in ("RUNTIME_TASK_ID", "ATTEMPT", "EXECUTION_REQUEST_ID"):
+              if not (os.environ.get(name) or "").strip():
+                  sys.exit("TRANSPORT_IDENTITY_INCOMPLETE:%s" % name)
+          if not re.match(r"^[0-9a-f]{64}$", os.environ["EXECUTION_REQUEST_ID"].strip()):
+              sys.exit("EXECUTION_REQUEST_ID_NOT_A_SHA256")
+          print("TRANSPORT_IDENTITY_ACCEPTED", EXPECTED)
+          PY
+
       - name: Check out the execution backend (this run's own commit)
         uses: actions/checkout@v4
         with:

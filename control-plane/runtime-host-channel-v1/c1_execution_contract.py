@@ -251,6 +251,7 @@ REAL_PAYLOAD_SCHEMA_VERSION = 1
 
 TASK_CLASS_SMOKE = "SMOKE"
 TASK_CLASS_REAL = "REAL"
+TASK_CLASS_REVIEW = "REVIEW"
 
 # The role of each real-task payload field, as data rather than as prose.
 TASK_PAYLOAD_BINDING_INPUT = ("schema_version", "cell_id", "external_task_id")
@@ -302,9 +303,56 @@ PROVIDER_GHAW_BUILDER = "GITHUB_AGENTIC_WORKFLOWS"
 # backend would be a false record of where that task goes.
 GHAW_BUILDER_WORKFLOW_FILE = "c1-gh-aw-builder-v1.lock.yml"
 
+# ------------------------------------------------- C13/C14 review transport (U7B)
+# C13 and C14 are the two control-only cells. Their work is not engineering work: a
+# review reads a frozen candidate and returns a sealed verdict, with no Draft PR, no
+# edit and no test authoring - so it is NOT a GHAW_BUILDER_V1 task and is never routed
+# to the Builder executor. It is also not a new kind of *Runtime* work: the kernel is
+# unchanged, and these are two more kinds of the SAME Runtime, claimed by ONE special
+# review executor (`c1_c13c14_review_worker.py`).
+#
+# Each kind belongs to exactly one cell, and that cell is a fixed function of the
+# kind - not a payload field, not a caller choice. C14 runs FIRST and alone; C13 is
+# only ever created after a C14 sealed verdict admits it, which is why the two are
+# separate kinds rather than one "REVIEW" kind with a role flag.
+#
+# The execution backend is the EXISTING Lite workflow for that cell. Adding transport
+# identity to them is not adding a workflow: no review logic is reimplemented here and
+# no second dispatcher exists.
+C14_REVIEW_KIND = "C14_REVIEW_V1"
+C13_REVIEW_KIND = "C13_REVIEW_V1"
+REVIEW_KINDS = (C14_REVIEW_KIND, C13_REVIEW_KIND)
+# kind -> the one cell that kind may belong to. The single definition of the review
+# ownership boundary; every gate in this channel reads it.
+REVIEW_OWNER_C = {C14_REVIEW_KIND: "C14", C13_REVIEW_KIND: "C13"}
+# kind -> the existing Lite workflow that executes it. Fixed config, never a request.
+REVIEW_WORKFLOW_FILE = {
+    C14_REVIEW_KIND: "c14-rule-compliance.yml",
+    C13_REVIEW_KIND: "c13-quality-acceptance.yml",
+}
+# The single artifact each Cell's workflow publishes alongside its bundle. It is ONE
+# name per role, so "which artifact is this class's output" has one answer.
+REVIEW_ARTIFACT_PREFIX = {C14_REVIEW_KIND: "c13c14-lite-c14-",
+                          C13_REVIEW_KIND: "c13c14-lite-c13-"}
+REVIEW_SEALED_BUNDLE_MEMBER = {C14_REVIEW_KIND: "c14_bundle.json",
+                               C13_REVIEW_KIND: "c13_bundle.json"}
+REVIEW_ROUND_DECISION_MEMBER = "round_decision.json"
+
+
+def is_review_kind(task_kind) -> bool:
+    return task_kind in REVIEW_KINDS
+
+
+def review_artifact_name(task_kind: str, candidate_sha: str) -> str:
+    """Which artifact of this class's run carries the sealed bundle."""
+    if task_kind not in REVIEW_WORKFLOW_FILE:
+        raise Refused("TASK_KIND_UNKNOWN")
+    return REVIEW_ARTIFACT_PREFIX[task_kind] + candidate_sha
+
+
 # Every task kind this contract knows. A kind outside this set has no payload shape, no
 # prompt and no acceptance rule, and is refused rather than guessed at.
-KNOWN_TASK_KINDS = (KIND, REAL_TASK_KIND, GHAW_BUILDER_KIND)
+KNOWN_TASK_KINDS = (KIND, REAL_TASK_KIND, GHAW_BUILDER_KIND) + REVIEW_KINDS
 
 
 def provider_for_kind(task_kind: str) -> str:
@@ -314,7 +362,7 @@ def provider_for_kind(task_kind: str) -> str:
     by a single Responses call and a task executed by a gh-aw workflow can never resolve
     to the same `execution_request_id`.
     """
-    if task_kind == GHAW_BUILDER_KIND:
+    if task_kind == GHAW_BUILDER_KIND or task_kind in REVIEW_KINDS:
         return PROVIDER_GHAW_BUILDER
     if task_kind in (KIND, REAL_TASK_KIND):
         return PROVIDER
@@ -329,6 +377,8 @@ def workflow_file_for_kind(task_kind: str) -> str:
     """
     if task_kind == GHAW_BUILDER_KIND:
         return GHAW_BUILDER_WORKFLOW_FILE
+    if task_kind in REVIEW_KINDS:
+        return REVIEW_WORKFLOW_FILE[task_kind]
     if task_kind in (KIND, REAL_TASK_KIND):
         return WORKFLOW_FILE
     raise Refused("TASK_KIND_UNKNOWN")
@@ -349,6 +399,8 @@ def allowed_owner_cs_for_kind(task_kind: str) -> tuple:
     """
     if task_kind == GHAW_BUILDER_KIND:
         return BUILDER_OWNER_CS
+    if task_kind in REVIEW_KINDS:
+        return (REVIEW_OWNER_C[task_kind],)
     if task_kind in (KIND, REAL_TASK_KIND):
         return LEGACY_OWNER_CS
     raise Refused("TASK_KIND_UNKNOWN")
@@ -501,6 +553,12 @@ def task_idempotency_key(task_kind, cell_id, external_task_id) -> str:
         prefix = "c1-ai-task-v1"
     elif task_kind == GHAW_BUILDER_KIND:
         prefix = "c1-ghaw-builder-v1"
+    elif task_kind in REVIEW_KINDS:
+        # One key namespace for both review kinds: a C14 round and its C13 round are
+        # one review of one candidate, and the per-cell task ids already distinguish
+        # them. The cell is still part of the key (below), so a C14 and a C13 round can
+        # never collapse into one Runtime task.
+        prefix = "c1-c13c14-review-v1"
     else:
         raise Refused("TASK_KIND_UNKNOWN")
     return "%s:%s:%s" % (
@@ -545,6 +603,25 @@ def prompt_for_task(task_kind: str, payload) -> str:
             % (normalised["cell_id"], normalised["cell_id"],
                normalised["external_task_id"],
                normalised["objective"], normalised["scope"]))
+    if task_kind in REVIEW_KINDS:
+        # A review derives its own brief from its workflow; this literal exists only so
+        # the execution identity commits to what the round is about. It is deliberately
+        # different from both other literals: two classes producing the same bytes would
+        # defeat the `prompt_sha256` commitment. The transport identity is absent on
+        # purpose - a review's prompt must not depend on how it was delivered.
+        normalised = validate_review_task_payload(
+            payload, allowed_owner_cs=allowed_owner_cs_for_kind(task_kind))
+        return (
+            "GO %s sealed review round (%s).\n"
+            "round: %s cell: %s external_task_id: %s\n"
+            "candidate: %s application_tree: %s issue: %s\n"
+            "\nReview the frozen candidate within this cell's own remit. You have no "
+            "authority to change money, state, deployment, release or configuration, "
+            "and you must not claim any."
+            % (normalised["cell_id"], task_kind, normalised["ledger_round_id"],
+               normalised["cell_id"], normalised["external_task_id"],
+               normalised["candidate_sha"], normalised["application_tree"],
+               normalised["issue_number"]))
     if task_kind == GHAW_BUILDER_KIND:
         # The gh-aw Builder derives its own prompt from its workflow; this one exists so
         # the execution identity has a commitment to what this task asked for. It is a
@@ -582,6 +659,13 @@ def task_spec(task_kind: str, payload) -> dict:
         if payload != PAYLOAD:
             raise Refused("SMOKE_PAYLOAD_MISMATCH")
         return {"task_class": TASK_CLASS_SMOKE, "task_kind": KIND, "payload": PAYLOAD}
+    if task_kind in REVIEW_KINDS:
+        # The review class: its own payload shape, its own result envelope, its own
+        # executor - and its own row of the task table, one row per kind, so C14 and C13
+        # can never be confused for one another.
+        return {"task_class": TASK_CLASS_REVIEW, "task_kind": task_kind,
+                "payload": validate_review_task_payload(
+                    payload, allowed_owner_cs=allowed_owner_cs_for_kind(task_kind))}
     if task_kind in (REAL_TASK_KIND, GHAW_BUILDER_KIND):
         # One real-task payload shape, two executors. The spec keeps the kind, so the
         # class travels with the identity and a resume does not have to guess which
@@ -593,6 +677,292 @@ def task_spec(task_kind: str, payload) -> dict:
 
 
 SMOKE_SPEC = {"task_class": TASK_CLASS_SMOKE, "task_kind": KIND, "payload": PAYLOAD}
+
+# ------------------------------------------------------ C13/C14 review round (V1)
+# A review round is described by the EXISTING Lite identity - candidate, application
+# tree, issue, request id, ledger round and the two ledger task ids - plus the two
+# things the execution backend needs that the Lite identity does not carry (the frozen
+# machine-test inventory for C13, and the model name).
+#
+# The Runtime transport identity (runtime_task_id / attempt / execution_request_id /
+# owner_c) is deliberately NOT part of this payload. It is the envelope the transport
+# adds on the wire, and it is a fact about *delivery*; letting it into the payload would
+# let a delivery detail change what the review is about - and, because the payload is
+# inside the hashed binding, a re-delivery would look like a different review.
+REVIEW_PAYLOAD_SCHEMA_VERSION = 1
+REVIEW_PAYLOAD_FIELDS = frozenset({
+    "schema_version", "cell_id", "external_task_id",
+    "candidate_sha", "application_tree", "issue_number",
+    "review_request_id", "ledger_round_id", "c14_task_id", "c13_task_id",
+    "machine_inventory", "ai_model", "c14_run_id", "c14_runtime_task_id",
+})
+REVIEW_PAYLOAD_REQUIRED = (
+    "schema_version", "cell_id", "external_task_id", "candidate_sha",
+    "application_tree", "issue_number", "review_request_id", "ledger_round_id",
+    "c14_task_id", "c13_task_id")
+# The C13 round is the *second* half and is bound to the C14 execution it follows; a C13
+# payload that cannot name its C14 run cannot be verified against it.
+REVIEW_PAYLOAD_REQUIRED_C13 = REVIEW_PAYLOAD_REQUIRED + ("c14_run_id",
+                                                        "c14_runtime_task_id")
+# Produced by the review, or by the Runtime. Accepting any of these at enqueue time
+# would let a caller assert a verdict before one exists.
+REVIEW_PAYLOAD_REFUSED = frozenset({
+    "verdict", "review_verdict", "deployment_eligible", "authorizes_any_action",
+    "runtime_task_id", "attempt", "execution_request_id", "owner_c",
+    "github_run_id", "github_run_attempt", "result", "accepted", "status",
+    "c14_runtime_task_id",
+    "sealed_bundle", "sealed_bundle_root", "sealed_bundle_sha256",
+})
+
+MAX_REVIEW_ID = 200
+MAX_MACHINE_INVENTORY = 400
+MAX_AI_MODEL = 200
+_SHA1_HEX = re.compile(r"^[0-9a-f]{40}$")
+_SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _require_sha1(value, reason: str) -> str:
+    if not isinstance(value, str) or not _SHA1_HEX.match(value.strip().lower()):
+        raise Refused(reason)
+    return value.strip().lower()
+
+
+def validate_review_task_payload(payload, *, allowed_owner_cs=LEGACY_OWNER_CS) -> dict:
+    """Normalise and validate a review-round payload, or refuse it.
+
+    Same three questions as `validate_task_payload` - shape, canonical cell, executor
+    boundary - because a review task is a task of this channel like any other. What
+    differs is the shape, and only the shape.
+    """
+    if type(payload) is not dict:
+        raise Refused("REVIEW_PAYLOAD_NOT_AN_OBJECT")
+    unknown = set(payload) - REVIEW_PAYLOAD_FIELDS
+    refused = sorted(unknown & REVIEW_PAYLOAD_REFUSED)
+    if refused:
+        raise Refused("REVIEW_PAYLOAD_REFUSED_FIELD:" + ",".join(refused))
+    if unknown:
+        raise Refused("REVIEW_PAYLOAD_UNKNOWN_FIELD:" + ",".join(sorted(unknown)))
+    missing = [name for name in REVIEW_PAYLOAD_REQUIRED if name not in payload]
+    if missing:
+        raise Refused("REVIEW_PAYLOAD_MISSING_FIELD:" + ",".join(missing))
+    if payload["schema_version"] != REVIEW_PAYLOAD_SCHEMA_VERSION:
+        raise Refused("REVIEW_PAYLOAD_SCHEMA_VERSION_UNSUPPORTED")
+
+    cell_id = canonical_cell_id(payload["cell_id"])
+    if cell_id not in allowed_owner_cs:
+        # C13 and C14 are two different reviews of two different things; a C14 payload on a
+        # C13 executor (or the reverse) is a boundary error, not a spelling one.
+        raise Refused("REVIEW_PAYLOAD_CELL_NOT_OWNED_BY_THIS_EXECUTOR")
+
+    normalised = {
+        "schema_version": REVIEW_PAYLOAD_SCHEMA_VERSION,
+        "cell_id": cell_id,
+        "external_task_id": _bounded_text(
+            payload["external_task_id"], limit=MAX_REVIEW_ID,
+            reason="REVIEW_PAYLOAD_EXTERNAL_TASK_ID_INVALID"),
+        "candidate_sha": _require_sha1(payload["candidate_sha"],
+                                      "REVIEW_PAYLOAD_CANDIDATE_SHA_INVALID"),
+        "application_tree": _require_sha1(payload["application_tree"],
+                                          "REVIEW_PAYLOAD_APPLICATION_TREE_INVALID"),
+        "review_request_id": _bounded_text(
+            payload["review_request_id"], limit=MAX_REVIEW_ID,
+            reason="REVIEW_PAYLOAD_REQUEST_ID_INVALID"),
+        "ledger_round_id": _bounded_text(
+            payload["ledger_round_id"], limit=MAX_REVIEW_ID,
+            reason="REVIEW_PAYLOAD_LEDGER_ROUND_ID_INVALID"),
+        "c14_task_id": _bounded_text(
+            payload["c14_task_id"], limit=MAX_REVIEW_ID,
+            reason="REVIEW_PAYLOAD_C14_TASK_ID_INVALID"),
+        "c13_task_id": _bounded_text(
+            payload["c13_task_id"], limit=MAX_REVIEW_ID,
+            reason="REVIEW_PAYLOAD_C13_TASK_ID_INVALID"),
+    }
+    issue_number = payload["issue_number"]
+    if type(issue_number) is not int or issue_number <= 0:
+        raise Refused("REVIEW_PAYLOAD_ISSUE_NUMBER_INVALID")
+    normalised["issue_number"] = issue_number
+    # The transport's own task id IS this cell's Lite task id: the two identities name the
+    # same task from two sides, and letting them disagree is what would let one round be
+    # executed twice under two names.
+    expected_task_id = normalised["c14_task_id"] if cell_id == "C14" else normalised["c13_task_id"]
+    if normalised["external_task_id"] != expected_task_id:
+        raise Refused("REVIEW_PAYLOAD_EXTERNAL_TASK_ID_IS_NOT_THE_CELLS_LITE_TASK_ID")
+    if "machine_inventory" in payload:
+        normalised["machine_inventory"] = _bounded_text(
+            payload["machine_inventory"], limit=MAX_MACHINE_INVENTORY,
+            reason="REVIEW_PAYLOAD_MACHINE_INVENTORY_INVALID")
+    if "ai_model" in payload:
+        normalised["ai_model"] = _bounded_text(
+            payload["ai_model"], limit=MAX_AI_MODEL,
+            reason="REVIEW_PAYLOAD_AI_MODEL_INVALID")
+    if "c14_run_id" in payload:
+        value = payload["c14_run_id"]
+        if type(value) is not int or value <= 0:
+            raise Refused("REVIEW_PAYLOAD_C14_RUN_ID_INVALID")
+        normalised["c14_run_id"] = value
+    if "c14_runtime_task_id" in payload:
+        normalised["c14_runtime_task_id"] = _bounded_text(
+            payload["c14_runtime_task_id"], limit=MAX_REVIEW_ID,
+            reason="REVIEW_PAYLOAD_C14_RUNTIME_TASK_ID_INVALID")
+    # A kind-level requirement, checked here rather than at the caller: the C13 half of a
+    # round cannot be formed without naming the C14 execution it follows - the GitHub run
+    # (which the workflow requires) AND the Runtime task (which is what lets this side
+    # cross-check the sealed C14 root against the record this Runtime actually received,
+    # with no second lookup).
+    if cell_id == "C13":
+        for name in REVIEW_PAYLOAD_REQUIRED_C13:
+            if name not in normalised:
+                raise Refused("REVIEW_PAYLOAD_MISSING_FIELD:" + name)
+    return normalised
+
+
+def build_review_task_payload(*, cell_id, external_task_id, candidate_sha, application_tree,
+                             issue_number, review_request_id, ledger_round_id,
+                             c14_task_id, c13_task_id, machine_inventory=None,
+                             ai_model=None, c14_run_id=None, c14_runtime_task_id=None,
+                             allowed_owner_cs=LEGACY_OWNER_CS) -> dict:
+    payload = {
+        "schema_version": REVIEW_PAYLOAD_SCHEMA_VERSION,
+        "cell_id": cell_id,
+        "external_task_id": external_task_id,
+        "candidate_sha": candidate_sha,
+        "application_tree": application_tree,
+        "issue_number": issue_number,
+        "review_request_id": review_request_id,
+        "ledger_round_id": ledger_round_id,
+        "c14_task_id": c14_task_id,
+        "c13_task_id": c13_task_id,
+    }
+    if machine_inventory is not None:
+        payload["machine_inventory"] = machine_inventory
+    if ai_model is not None:
+        payload["ai_model"] = ai_model
+    if c14_run_id is not None:
+        payload["c14_run_id"] = c14_run_id
+    if c14_runtime_task_id is not None:
+        payload["c14_runtime_task_id"] = c14_runtime_task_id
+    return validate_review_task_payload(payload, allowed_owner_cs=allowed_owner_cs)
+
+
+# ------------------------------------------------ sealed review result (transport envelope)
+# The Runtime is told TWO different things and they must never be confused:
+#
+#   accepted          the review EXECUTION was delivered correctly - the run succeeded and
+#                     a sealed bundle was received and verified. This is what
+#                     `Runtime.complete(success=...)` records, because it is a statement
+#                     about delivery, which is what the Runtime is for.
+#   review_verdict    what the Cell decided about the CANDIDATE. FAIL and BLOCKED are
+#                     perfectly good deliveries: the review ran and produced a sealed,
+#                     valid verdict that happens to be negative.
+#
+# A negative verdict is therefore NOT a transport failure, and a transport failure is
+# never reported as a verdict.
+REVIEW_RESULT_KIND = "c1-c13c14-review-result"
+REVIEW_RESULT_FIELDS = frozenset({
+    "version", "kind", "owner_c", "runtime_task_id", "attempt", "execution_request_id",
+    "github_run_id", "github_run_attempt", "provider",
+    "review_verdict", "deployment_eligible", "accepted", "authorizes_any_action",
+    "candidate_sha", "application_tree", "issue_number",
+    "review_request_id", "ledger_round_id",
+    "sealed_bundle_root", "sealed_bundle_sha256", "artifacts", "status",
+})
+REVIEW_VERDICTS = {
+    C14_REVIEW_KIND: ("PASS_SCOPED", "NOT_APPLICABLE", "FAIL", "BLOCKED"),
+    C13_REVIEW_KIND: ("PASS_SCOPED", "FAIL", "BLOCKED"),
+}
+# A C14 verdict that unlocks the C13 half. The tuple itself is declared in the Lite chain
+# (`lite_errors.C14_PREREQUISITE_OK`); this is the same two names, restated here because
+# this module may not import the Lite package. `test_c1_c13c14_review_transport` binds the
+# two together so they cannot drift.
+C14_ADMITS_C13 = ("PASS_SCOPED", "NOT_APPLICABLE")
+
+
+def validate_review_result(document, *, runtime_task_id, attempt, execution_request_id_,
+                           task_kind: str) -> dict:
+    """Validate the sealed review envelope against the exact task it claims to belong to.
+
+    Structure and binding only, plus the two platform facts this channel insists on: the
+    execution ran on the GitHub Agentic Workflows provider, and it authorises nothing.
+    Whether the *bundle* inside is a valid sealed C14/C13 record is decided by the Lite
+    validators, which the caller composes on top of this - this function never re-implements
+    a review rule.
+    """
+    if task_kind not in REVIEW_VERDICTS:
+        raise Refused("REVIEW_RESULT_TASK_KIND_UNKNOWN")
+    if type(document) is not dict:
+        raise Refused("REVIEW_RESULT_NOT_AN_OBJECT")
+    extra = set(document) - REVIEW_RESULT_FIELDS
+    if extra:
+        if extra != {"failure_reason"} or document.get("accepted") is not False:
+            raise Refused("REVIEW_RESULT_UNEXPECTED_FIELDS")
+    missing = REVIEW_RESULT_FIELDS - set(document)
+    if missing:
+        raise Refused("REVIEW_RESULT_MISSING_FIELDS")
+    if document["version"] != SCHEMA_VERSION or document["kind"] != REVIEW_RESULT_KIND:
+        raise Refused("REVIEW_RESULT_KIND_OR_VERSION_MISMATCH")
+    if document["owner_c"] != REVIEW_OWNER_C[task_kind]:
+        raise Refused("REVIEW_RESULT_OWNER_CELL_MISMATCH")
+    if document["runtime_task_id"] != runtime_task_id:
+        raise Refused("REVIEW_RESULT_TASK_MISMATCH")
+    if document["attempt"] != attempt:
+        raise Refused("REVIEW_RESULT_ATTEMPT_MISMATCH")
+    if document["execution_request_id"] != execution_request_id_:
+        raise Refused("REVIEW_RESULT_EXECUTION_REQUEST_ID_MISMATCH")
+    if document["provider"] != PROVIDER_GHAW_BUILDER:
+        raise Refused("REVIEW_RESULT_PROVIDER_MISMATCH")
+    if document["review_verdict"] not in REVIEW_VERDICTS[task_kind]:
+        raise Refused("REVIEW_RESULT_VERDICT_UNKNOWN_FOR_THIS_CELL")
+    if document["authorizes_any_action"] is not False:
+        raise Refused("REVIEW_RESULT_MUST_NOT_AUTHORIZE_ANY_ACTION")
+    if type(document["deployment_eligible"]) is not bool:
+        raise Refused("REVIEW_RESULT_DEPLOYMENT_ELIGIBLE_NOT_BOOLEAN")
+    if document["deployment_eligible"] is True:
+        # Being eligible is a statement about evidence, and this channel never makes it
+        # from a single half of a round: only the full C14+C13 chain does, and even then it
+        # authorises nothing. A sealed bundle reported here is not that.
+        raise Refused("REVIEW_RESULT_MUST_NOT_CLAIM_DEPLOYMENT_ELIGIBILITY")
+    if type(document["accepted"]) is not bool:
+        raise Refused("REVIEW_RESULT_ACCEPTED_NOT_BOOLEAN")
+    expected_status = "SUCCEEDED" if document["accepted"] else "FAILED"
+    if document["status"] != expected_status:
+        raise Refused("REVIEW_RESULT_STATUS_INCONSISTENT_WITH_ACCEPTED")
+    if type(document["github_run_id"]) is not int or document["github_run_id"] <= 0:
+        raise Refused("REVIEW_RESULT_GITHUB_RUN_ID_INVALID")
+    if type(document["github_run_attempt"]) is not int or document["github_run_attempt"] < 1:
+        raise Refused("REVIEW_RESULT_GITHUB_RUN_ATTEMPT_INVALID")
+    _require_sha1(document["candidate_sha"], "REVIEW_RESULT_CANDIDATE_SHA_INVALID")
+    _require_sha1(document["application_tree"], "REVIEW_RESULT_APPLICATION_TREE_INVALID")
+    if type(document["issue_number"]) is not int or document["issue_number"] <= 0:
+        raise Refused("REVIEW_RESULT_ISSUE_NUMBER_INVALID")
+    for name in ("review_request_id", "ledger_round_id"):
+        _bounded_text(document[name], limit=MAX_REVIEW_ID,
+                      reason="REVIEW_RESULT_" + name.upper() + "_INVALID")
+    if not isinstance(document["sealed_bundle_root"], str) or             not _SHA256_HEX.match(document["sealed_bundle_root"]):
+        raise Refused("REVIEW_RESULT_SEALED_BUNDLE_ROOT_INVALID")
+    if not isinstance(document["sealed_bundle_sha256"], str) or             not _SHA256_HEX.match(document["sealed_bundle_sha256"]):
+        raise Refused("REVIEW_RESULT_SEALED_BUNDLE_SHA256_INVALID")
+    artifacts = document["artifacts"]
+    if not isinstance(artifacts, dict) or not artifacts:
+        raise Refused("REVIEW_RESULT_ARTIFACTS_INVALID")
+    for name, value in artifacts.items():
+        if not isinstance(name, str) or not name:
+            raise Refused("REVIEW_RESULT_ARTIFACT_NAME_INVALID")
+        if not isinstance(value, str) or not _SHA256_HEX.match(value):
+            raise Refused("REVIEW_RESULT_ARTIFACT_DIGEST_INVALID:" + name)
+    if not document["accepted"] and "failure_reason" not in document:
+        raise Refused("REVIEW_RESULT_FAILED_WITHOUT_A_REASON")
+    return document
+
+
+def c14_admits_c13(verdict: str) -> bool:
+    """Whether a sealed C14 verdict unlocks the C13 half of the round.
+
+    C14 runs FIRST and only its acceptable outcomes admit C13. FAIL and BLOCKED do not:
+    the C14 runtime task completes normally and records its verdict, and no C13 task is
+    created - a negative review is a result, not a delivery failure.
+    """
+    return verdict in C14_ADMITS_C13
+
 # The two kinds this channel owns. Anything else is not ours to execute.
 CLAIMABLE_KINDS = (KIND, REAL_TASK_KIND)
 
@@ -705,6 +1075,38 @@ def dispatch_inputs(request: dict) -> dict:
             request["payload"], allowed_owner_cs=allowed_owner_cs_for_kind(task_kind)))
     if task_kind == GHAW_BUILDER_KIND:
         inputs["owner_c"] = request["owner_c"]
+    if task_kind in REVIEW_KINDS:
+        # The existing Lite workflow inputs, plus ONE transport envelope. It is one input
+        # because `workflow_dispatch` allows at most ten and the C13 workflow already needs
+        # all ten for its own identity - and because the quartet is delivery metadata: the
+        # workflow builds its deterministic run name from it and checks its own owner cell
+        # against it, and for nothing else. In particular it never reaches the review brief,
+        # so it cannot change a verdict. `c14_run_id` rides in the same envelope: it is
+        # another execution's identity, which is what the envelope is for.
+        payload = validate_review_task_payload(
+            request["payload"], allowed_owner_cs=allowed_owner_cs_for_kind(task_kind))
+        transport = {
+            "owner_c": request["owner_c"],
+            "runtime_task_id": request["runtime_task_id"],
+            "attempt": request["attempt"],
+            "execution_request_id": request["execution_request_id"],
+        }
+        if "c14_run_id" in payload:
+            transport["c14_run_id"] = payload["c14_run_id"]
+        inputs = {
+            "runtime_transport": canonical(transport),
+            "candidate_sha": payload["candidate_sha"],
+            "application_tree": payload["application_tree"],
+            "issue_number": str(payload["issue_number"]),
+            "request_id": payload["review_request_id"],
+            "ledger_round_id": payload["ledger_round_id"],
+            "c14_task_id": payload["c14_task_id"],
+            "c13_task_id": payload["c13_task_id"],
+        }
+        if "machine_inventory" in payload:
+            inputs["machine_inventory"] = payload["machine_inventory"]
+        if "ai_model" in payload:
+            inputs["ai_model"] = payload["ai_model"]
     return inputs
 
 
