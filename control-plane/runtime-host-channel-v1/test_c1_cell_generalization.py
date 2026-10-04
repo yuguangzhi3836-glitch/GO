@@ -733,5 +733,115 @@ class P_TheIssuePathCarriesTheCell(Case):
         self.assertEqual(self.runtime.tasks, {})
 
 
+# =============================================================== Q
+class Q_TheLookupAsksForTheExecutionsOwnRunName(Case):
+    """The dispatch leg must search for the run name the run actually has.
+
+    WHY THIS CLASS EXISTS AT ALL
+        Every other test in this file drives a transport whose `send()` returns the run id,
+        which puts the row straight into RUN_BOUND and means the LOOKUP_RUN branch is never
+        executed. On the live host that branch is the normal path: GitHub answers
+        `workflow_dispatch` with 204 and no body, so the POST is recorded as ambiguous and
+        the run is resolved by name on the next tick.
+
+        The defect this pins: `run_identity_name()` leads with the execution's cell and
+        DEFAULTS that cell to C1, and the dispatch leg did not state it. A C12 execution
+        therefore searched for `C1 <task> <attempt> <request id>` while its run was named
+        `C12 <task> <attempt> <request id>`. The lookup could never match, the row stayed
+        ambiguous for ever, the lease was renewed every tick and the result leg was never
+        reached - so the task never completed, and no new work could be claimed either.
+
+    WHAT IT ASSERTS
+        The name handed to the transport, not merely that a lookup happened. A test that
+        only checked "some lookup was attempted" would pass on the defective code.
+    """
+
+    def _ambiguous(self, cell):
+        """Register one execution and leave it exactly where an ambiguous POST leaves it."""
+        payload = builder_payload(cell, external_task_id="%s-LOOKUP" % cell)
+        spec = contract.task_spec(contract.GHAW_BUILDER_KIND, payload)
+        request = contract.build_dispatch_request(GOLDEN_TASK, 1, spec)
+        self.outbox.register(GOLDEN_TASK, 1, request=request)
+        self.outbox.record_dispatch_sent(request["execution_request_id"], github_run_id=None)
+        self.assertEqual(
+            self.outbox.next_action(request["execution_request_id"]), "LOOKUP_RUN")
+        return request
+
+    def _lookup(self, request):
+        seen = []
+
+        def refuse_send(_request):
+            # The single most important property of this state: an ambiguous POST is
+            # resolved by looking, never by sending again.
+            raise AssertionError("an ambiguous dispatch must never be sent a second time")
+
+        def find_run(name):
+            seen.append(name)
+            return 987654321
+
+        step = outbox_mod.drive_once(self.outbox, GOLDEN_TASK, 1, send=refuse_send,
+                                     find_run=find_run, request=request)
+        return seen, step
+
+    def test_the_lookup_names_the_executions_own_cell(self):
+        request = self._ambiguous("C12")
+        seen, step = self._lookup(request)
+        expected = contract.run_identity_name(GOLDEN_TASK, 1,
+                                              request["execution_request_id"], owner_c="C12")
+        self.assertEqual(seen, [expected])
+        self.assertTrue(seen[0].startswith("C12 "), seen[0])
+        self.assertEqual(step["action"], "RUN_BOUND")
+        self.assertEqual(step["github_run_id"], 987654321)
+        self.assertEqual(self.outbox.snapshot(request["execution_request_id"])["state"],
+                         "RUN_BOUND")
+
+    def test_two_cells_look_up_two_different_names(self):
+        names = []
+        for cell in ("C1", "C2", "C12"):
+            with self.subTest(cell=cell):
+                outbox = outbox_mod.DispatchOutbox(
+                    str(Path(self._tmp.name) / ("outbox-%s.db" % cell)))
+                self.addCleanup(outbox.close)
+                keep, self.outbox = self.outbox, outbox
+                try:
+                    request = self._ambiguous(cell)
+                    seen, _ = self._lookup(request)
+                finally:
+                    self.outbox = keep
+                names.append(seen[0])
+        self.assertEqual(len(set(names)), 3, names)
+        self.assertTrue(names[0].startswith("C1 "), names[0])
+
+    def test_a_c1_execution_keeps_the_exact_name_it_has_always_had(self):
+        # The cell leads only because it has to; the default is unchanged, so every run name
+        # the live Runtime Host already recorded still resolves to the same string.
+        request = self._ambiguous("C1")
+        seen, _ = self._lookup(request)
+        self.assertEqual(
+            seen[0],
+            "%s %s %s %s" % ("C1", GOLDEN_TASK, 1, request["execution_request_id"]))
+
+    def test_the_offline_transport_names_its_runs_the_way_the_lookup_searches(self):
+        """Ties the double to the defect, so the two cannot drift apart again.
+
+        The sealing transport already names each run with the request's own cell. Until this
+        test existed nothing checked that the name the lookup SEARCHES for is the name the
+        run IS given - which is the whole question, and the reason the gap was invisible.
+        """
+        transport = boundary.GhawSealingTransport()
+        for cell in ("C1", "C12"):
+            payload = builder_payload(cell, external_task_id="%s-NAME" % cell)
+            spec = contract.task_spec(contract.GHAW_BUILDER_KIND, payload)
+            request = contract.build_dispatch_request(GOLDEN_TASK, 1, spec)
+            transport.send(request)
+            run = transport.runs[max(transport.runs)]
+            expected = contract.run_identity_name(
+                GOLDEN_TASK, 1, request["execution_request_id"],
+                owner_c=request.get("owner_c", contract.OWNER_C))
+            with self.subTest(cell=cell):
+                self.assertEqual(run["name"], expected)
+                self.assertTrue(run["name"].startswith(cell + " "), run["name"])
+
+
 if __name__ == "__main__":
     unittest.main()

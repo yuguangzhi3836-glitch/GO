@@ -584,7 +584,15 @@ def drive_once(outbox: DispatchOutbox, runtime_task_id, attempt, *, send, find_r
         raise Refused("UNKNOWN_SEND_OUTCOME")
 
     if action == "LOOKUP_RUN":
-        run_id = find_run(run_identity_name(runtime_task_id, attempt, request_id))
+        # The name carries the execution's own cell. `run_identity_name` defaults to C1, and
+        # that default is right only for a C1 row: left unstated here, a C12 execution looks
+        # for "C1 <task> <attempt> <request id>" while its run is named "C12 <task> ...", so
+        # the lookup never matches and the dispatch stays ambiguous for ever - renewing its
+        # lease each tick, never binding its run, never reaching the result leg. The cell
+        # comes from the request this identity was registered with, the same source
+        # `c1_result_pull` reads, so both halves of the leg agree about the name.
+        run_id = find_run(run_identity_name(runtime_task_id, attempt, request_id,
+                                            request.get("owner_c", OWNER_C)))
         if run_id is None:
             return {"action": "LOOKUP_RUN_NOT_FOUND", "execution_request_id": request_id}
         outbox.record_run_lookup(request_id, run_id)
