@@ -1,24 +1,37 @@
-"""The Runtime-side GitHub Actions client for the C1 dispatch loop.
+"""The Runtime-side GitHub client for the C1 dispatch loop.
 
-This is the ONLY place the Runtime Host talks to the GitHub REST API for C1. It
-implements exactly five operations and nothing else:
+This is the ONLY place the Runtime Host talks to the GitHub REST API. It implements the
+dispatch loop and the read-only candidate reads that feed a review round, and nothing else:
 
     dispatch_workflow()   POST .../actions/workflows/{id}/dispatches
     find_run_by_name()    GET  .../actions/runs            (resolve an unknown dispatch)
     get_run()             GET  .../actions/runs/{id}
     download_artifact()   GET  .../actions/runs/{id}/artifacts -> .../artifacts/{id}/zip
+    download_artifact_members()  the same, several named files out of one archive
     send()/find_run()     adapters for the outbox
+    read_pull()           GET  .../pulls/{n}
+    read_pull_files()     GET  .../pulls/{n}/files
+    read_commit_tree()    GET  .../commits/{sha}
+    read_tree()           GET  .../git/trees/{sha}
 
-Credential contract (see the doc for the verified minimum):
+Credential contract. The four `read_*` methods were added when a Builder completion began
+naming its own review candidate: the Runtime has to read the pull request the Builder's run
+created, and the `application/` tree of the exact commit it is at, to build a review round
+at all. That needs two more fine-grained permissions than the dispatch loop did:
 
-    a SINGLE fine-grained permission - Actions: Read and write - on
-    yuguangzhi3836-glitch/GO. No Contents, no Pull requests, no Issues, no Admin.
+    Actions: Read and write     dispatch, run lookup, artifact download
+    Pull requests: Read         the candidate and its changed files
+    Contents: Read              the candidate commit's trees
+
+This was MEASURED on the Runtime host rather than assumed: the deployed token already
+carries all three (and more), no permission was granted for this change, and no write scope
+is used by any of the four reads. Nothing else was added - no Contents write, no Issues, no
+Admin - and the reads supersede nothing: every previously-proven operation is unchanged.
 
 The token is never a literal and never a parameter of a task. It is read through an
 injected loader; the shipped loader reads a root-only file whose path is configured
-outside the repository:
-
-    /etc/go-runtime-host/c1-github-token      (root:root, 0600)
+outside the repository. The host overrides the built-in default with
+`C1_GITHUB_TOKEN_PATH`; `DEFAULT_TOKEN_FILE` below is only the class's own fallback.
 
 `token_from_file()` refuses a file that is readable by group or other, so a mis-set
 permission fails closed instead of silently working. This module never logs the
@@ -55,6 +68,11 @@ DEFAULT_TOKEN_FILE = "/etc/go-runtime-host/c1-github-token"
 RESULT_ARTIFACT_FILE = "c1_result.json"
 HTTP_TIMEOUT_S = 30
 MAX_ARTIFACT_BYTES = 2 * 1024 * 1024
+# One page of a pull request's changed files. The bound is stated rather than implied: the
+# file list is a review's declared test scope, and a candidate with more changed files than
+# this is read as its first page rather than refused. Every Builder pull request this
+# channel produces is a handful of files.
+PULL_FILES_PER_PAGE = 100
 
 
 def token_from_file(path: str) -> str:
@@ -277,6 +295,76 @@ class GitHubActionsClient:
         return {"id": run.get("id"), "run_attempt": run.get("run_attempt", 1),
                 "status": run.get("status"), "conclusion": run.get("conclusion"),
                 "head_sha": ((run.get("head_commit") or {}).get("id"))}
+
+    # ------------------------------------------------- read-only candidate reads
+    # Four GETs that are not about Actions at all, and they live here for one reason: this
+    # class already owns the Runtime host's only outbound transport - its token, its API
+    # base, its timeout and its refusal vocabulary - and a second HTTP client would be a
+    # second place for all four to drift. They are the same four endpoints the issue
+    # consumer's reader calls, with the same normalised shapes, so `c1_candidate_reads` can
+    # be handed EITHER object and behave identically.
+    #
+    # Only GET. There is no write here, and `_call` is the same one every other method uses.
+    def read_pull(self, number: int) -> dict:
+        """The named pull request: its base branch, its CURRENT head, and its draft flag."""
+        status, raw = self._call("GET", "/repos/%s/pulls/%d" % (self._repo_slug(), number))
+        document = self._document(raw)
+        if not isinstance(document, dict):
+            raise Refused("PULL_NOT_AN_OBJECT")
+        base = document.get("base") or {}
+        head = document.get("head") or {}
+        return {"number": document.get("number"), "state": document.get("state"),
+                "draft": document.get("draft"), "base_ref": base.get("ref"),
+                "head_sha": head.get("sha")}
+
+    def read_pull_files(self, number: int) -> list:
+        """One page of the pull request's changed files: each name and change status."""
+        status, raw = self._call(
+            "GET", "/repos/%s/pulls/%d/files?per_page=%d" % (self._repo_slug(), number,
+                                                             PULL_FILES_PER_PAGE))
+        document = self._document(raw)
+        if not isinstance(document, list):
+            raise Refused("PULL_FILES_NOT_A_LIST")
+        files = []
+        for entry in document:
+            if not isinstance(entry, dict):
+                raise Refused("PULL_FILES_NOT_OBJECTS")
+            files.append({"filename": entry.get("filename"), "status": entry.get("status")})
+        return files
+
+    def read_commit_tree(self, commit_sha: str) -> str:
+        """The root tree SHA of one commit, read at that commit."""
+        status, raw = self._call("GET", "/repos/%s/commits/%s" % (self._repo_slug(),
+                                                                 commit_sha))
+        document = self._document(raw)
+        if not isinstance(document, dict):
+            raise Refused("COMMIT_NOT_AN_OBJECT")
+        tree = (document.get("commit") or {}).get("tree") or {}
+        sha = tree.get("sha")
+        if not isinstance(sha, str) or not sha.strip():
+            raise Refused("COMMIT_TREE_NOT_FOUND")
+        return sha.strip()
+
+    def read_tree(self, tree_sha: str) -> list:
+        """One tree's direct entries. A truncated listing is a refusal, not a short answer.
+
+        "The entry was not in the part we saw" and "the entry does not exist" are different
+        facts, and only the second one justifies refusing an application tree.
+        """
+        status, raw = self._call("GET", "/repos/%s/git/trees/%s" % (self._repo_slug(),
+                                                                    tree_sha))
+        document = self._document(raw)
+        if not isinstance(document, dict):
+            raise Refused("TREE_NOT_AN_OBJECT")
+        if document.get("truncated") is True:
+            raise Refused("TREE_TRUNCATED")
+        entries = document.get("tree")
+        if not isinstance(entries, list):
+            raise Refused("TREE_ENTRIES_NOT_A_LIST")
+        for entry in entries:
+            if not isinstance(entry, dict):
+                raise Refused("TREE_ENTRY_NOT_AN_OBJECT")
+        return entries
 
     def download_artifact(self, run_id: int, name: str):
         """Return the sealed result file bytes plus the digest of those bytes.

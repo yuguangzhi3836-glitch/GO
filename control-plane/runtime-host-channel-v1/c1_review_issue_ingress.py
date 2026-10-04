@@ -69,8 +69,24 @@ from c1_execution_contract import (
     canonical,
     canonical_cell_id,
     review_request_id,
+    review_round_identity,
     sha256_hex,
     task_idempotency_key,
+)
+# Reading the candidate is not this module's business: both paths that need it - an Owner's
+# Review issue and a Builder run that just opened a PR - use the ONE definition in
+# `c1_candidate_reads`, so re-exported here for the callers that already import it from this
+# module's namespace.
+from c1_candidate_reads import (  # noqa: F401  (re-exported)
+    CandidateHeadMoved,
+    CandidatePrBaseIsNotMain,
+    REASON_PR_BASE_NOT_MAIN,
+    REASON_PR_NOT_FOUND,
+    REASON_HEAD_MOVED,
+    REASON_TREE_UNRESOLVED,
+    resolve_application_tree,
+    resolve_candidate,
+    candidate_test_inventory,
 )
 from c1_issue_ingress import (
     CANONICAL_SHA1,
@@ -101,59 +117,8 @@ REVIEW_INGRESS_OWNER_CS = allowed_owner_cs_for_kind(REVIEW_INGRESS_KIND)
 # same review is a second paid model call, and that decision is not an issue scanner's.
 REVIEW_INGRESS_MAX_ATTEMPTS = 1
 
-# The PR's base branch must be the default branch. A review round's verdict is a statement
-# about a candidate destined for main, and a PR aimed anywhere else is a different question.
-REVIEW_BASE_BRANCH = "main"
-
 # `#394` and `394` are both accepted; nothing else is. The number is an identity, not prose.
 PR_NUMBER = re.compile(r"^#?([0-9]+)$")
-# The directory whose tree the C13 machine test runs inside. Exactly the entry the task
-# named, and its only legitimate type.
-APPLICATION_DIR = "application"
-TREE_TYPE = "tree"
-
-# The machine-test inventory is scoped to the candidate's OWN test files. Paths are
-# restricted to that shape and nothing else may appear on the wire: the inventory is
-# interpolated into a shell command by the C13 workflow, so a path is only ever accepted
-# when it is provably a plain path under this one directory.
-REVIEW_TEST_PATH = re.compile(r"^application/tests/[A-Za-z0-9_./-]+\.py$")
-MAX_REVIEW_TEST_FILES = 20
-# Mirrors the contract's own bound on the field, so a scope that could not be carried is
-# never built in the first place.
-MAX_INVENTORY_CHARS = 400
-
-# ------------------------------------------------------------------- refusals
-REASON_PR_NOT_FOUND = "REVIEW_CANDIDATE_PR_NOT_FOUND"
-REASON_PR_BASE_NOT_MAIN = "REVIEW_CANDIDATE_BASE_IS_NOT_MAIN"
-REASON_HEAD_MOVED = "REVIEW_CANDIDATE_HEAD_MOVED"
-REASON_TREE_UNRESOLVED = "REVIEW_APPLICATION_TREE_UNRESOLVED"
-
-
-class CandidateHeadMoved(Refused):
-    """The PR's head is no longer the commit this issue froze.
-
-    Carries the two commit ids the refusal is made of, so the Evidence line shows which
-    commit the Owner asked for and which one the PR is at now. They are public commit ids,
-    not credentials. Nothing is repaired and nothing is inferred: the answer to a moved
-    candidate is a NEW review issue, so that the round a review belongs to is never
-    silently redefined.
-    """
-
-    def __init__(self, issue_number, candidate_sha, head_sha):
-        super().__init__(REASON_HEAD_MOVED)
-        self.issue_number = issue_number
-        self.candidate_sha = candidate_sha
-        self.head_sha = head_sha
-
-
-class CandidatePrBaseIsNotMain(Refused):
-    """The PR is not aimed at the default branch, so it is not this round's candidate."""
-
-    def __init__(self, issue_number, base_ref):
-        super().__init__(REASON_PR_BASE_NOT_MAIN)
-        self.issue_number = issue_number
-        self.base_ref = base_ref
-
 # ------------------------------------------------------------- the cheap pre-filter
 def looks_like_review_issue(issue) -> bool:
     """Cheap pre-filter: is this worth handing to the review parser at all?
@@ -264,117 +229,19 @@ def parse_review_issue(issue) -> dict:
 
 # ------------------------------------------------------------------ round identity
 def round_identity(issue_number: int, candidate_sha: str) -> dict:
-    """The round's Ledger/Lite identity, derived from the issue and the FROZEN candidate.
+    """The round's Ledger/Lite identity, derived from provenance and the FROZEN candidate.
 
     Deterministic by construction, which is what makes re-polling free: the same issue and
     the same candidate produce the same round, the same two Lite task ids and therefore the
     same Runtime idempotency key, so the kernel answers a repeat with the task it already
     has rather than creating a second one.
 
-    The candidate's first twelve hex characters, not the issue title or a timestamp: a
-    second issue raised for a DIFFERENT candidate is a different round even if it describes
-    the same PR, and re-raising the same one is the same round.
+    The derivation itself lives in the contract, because this is not the only path that names
+    a round: a Builder run that just opened a pull request names one the same way, from its
+    OWN originating issue and the candidate it produced. Two derivations would be two answers
+    to "which round is this".
     """
-    if type(issue_number) is not int or issue_number <= 0:
-        raise Refused("ISSUE_NUMBER_INVALID")
-    if not isinstance(candidate_sha, str) or not CANONICAL_SHA1.match(candidate_sha.lower()):
-        raise Refused("REVIEW_CANDIDATE_SHA_INVALID")
-    short = candidate_sha.lower()[:12]
-    ledger_round_id = "FORMAL-REVIEW-I%d-%s" % (issue_number, short)
-    return {
-        "ledger_round_id": ledger_round_id,
-        "c14_task_id": ledger_round_id + "-C14",
-        "c13_task_id": ledger_round_id + "-C13",
-    }
-
-
-# -------------------------------------------------------- resolution (read-only GETs)
-def resolve_candidate(reader, parsed) -> dict:
-    """Resolve the frozen candidate against the live PR, or refuse.
-
-    The PR is read once and only to answer two questions: is it aimed at the default
-    branch, and is its head still the commit the issue froze. Nothing here follows the PR
-    forward - a head that has moved is a refusal, so a review can never be silently
-    re-pointed at work the Owner did not ask to review.
-    """
-    try:
-        pull = reader.read_pull(parsed["candidate_pr_number"])
-    except Refused as refusal:
-        # A missing PR is the common case and gets its own name rather than the transport's:
-        # `#500` was reviewed by nobody because it does not exist.
-        if refusal.reason in ("GITHUB_HTTP_404", "PULL_NOT_AN_OBJECT"):
-            raise Refused(REASON_PR_NOT_FOUND) from None
-        raise
-    base_ref = pull.get("base_ref")
-    if base_ref != REVIEW_BASE_BRANCH:
-        raise CandidatePrBaseIsNotMain(parsed["issue_number"], base_ref)
-    head_sha = pull.get("head_sha")
-    if not isinstance(head_sha, str) or head_sha.lower() != parsed["candidate_sha"]:
-        raise CandidateHeadMoved(parsed["issue_number"], parsed["candidate_sha"],
-                                 head_sha if isinstance(head_sha, str) else None)
-    return pull
-
-
-def resolve_application_tree(reader, candidate_sha: str) -> str:
-    """The `application/` git tree of the FROZEN candidate commit, or a refusal.
-
-    Two reads, both at the frozen commit: its root tree, then the entry named
-    `application` inside it. There is no fallback to main's tree, a local checkout or a
-    cached value, because all three would make the C13 machine test run against something
-    other than the commit the Owner asked to review - and a review of the wrong tree that
-    reports a verdict is worse than a review that refuses to start.
-    """
-    try:
-        root_tree = reader.read_commit_tree(candidate_sha)
-        entries = reader.read_tree(root_tree)
-    except Refused:
-        raise Refused(REASON_TREE_UNRESOLVED) from None
-    for entry in entries:
-        if entry.get("path") == APPLICATION_DIR and entry.get("type") == TREE_TYPE:
-            sha = entry.get("sha")
-            if isinstance(sha, str) and CANONICAL_SHA1.match(sha.lower()):
-                return sha.lower()
-    raise Refused(REASON_TREE_UNRESOLVED)
-
-
-def candidate_test_inventory(reader, pr_number: int):
-    """The candidate's own test files, as the C13 machine-test inventory.
-
-    `machine_inventory` is not a field the Owner fills in, so the system decides it, and the
-    decision that needs no policy of its own is "the tests this candidate changed". The
-    alternative - the C13 workflow's declared default - is the entire `application/tests`
-    tree: 274 files, including integration, journey and payments suites, none of which is
-    run by any other workflow, inside a job with a 40 minute ceiling. Admitting a formal
-    review onto that scope would spend a paid execution on a run that cannot finish, and
-    would record the resulting failure as a verdict about the candidate.
-
-    So the scope is the candidate's added and modified test paths. Paths that do not match
-    that exact shape are dropped rather than passed through - the value reaches a shell
-    command in the C13 workflow, and a review ingress that could put an arbitrary string
-    there would be handing a candidate's diff a shell. Removed paths are dropped too: a
-    file that no longer exists cannot be collected by pytest. The list is bounded by count
-    and by the contract's own field limit; when the candidate changes no test at all this
-    returns None and the Cell's declared default stands, which is a scope decision the
-    workflow already owns.
-    """
-    try:
-        files = reader.read_pull_files(pr_number)
-    except Refused:
-        return None
-    selected = []
-    for entry in files:
-        if not isinstance(entry, dict):
-            continue
-        name = entry.get("filename")
-        if not isinstance(name, str) or not REVIEW_TEST_PATH.match(name):
-            continue
-        if entry.get("status") == "removed":
-            continue
-        selected.append(name)
-    selected = sorted(set(selected))[:MAX_REVIEW_TEST_FILES]
-    while selected and len(" ".join(selected)) > MAX_INVENTORY_CHARS:
-        selected.pop()
-    return " ".join(selected) or None
+    return review_round_identity(issue_number, candidate_sha)
 
 
 # --------------------------------------------------------------------- planning

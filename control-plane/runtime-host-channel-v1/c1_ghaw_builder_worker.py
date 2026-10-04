@@ -49,6 +49,16 @@ Isolation is thus a contract rather than a convention about paths: a row of a ki
 executor does not own is refused rather than executed (the wrong executor running a task)
 or settled (destroying another executor's in-flight state).
 
+A completed Builder hands its own candidate to the review
+--------------------------------------------------------
+A Builder run that created a Draft pull request is what a C13/C14 round is FOR, and the
+hand-over is no longer a person's job: this executor's sealed-result hook resolves the
+candidate its own run produced and enqueues the C14 half, before the Builder task is
+completed. `c1_builder_candidate` owns that, and the ordering - enqueue, then complete - is
+the same one C14 -> C13 already uses, for the same reason. A run that created no pull
+request completes with no review task, and a run whose candidate cannot be established does
+not complete at all.
+
 What this file deliberately does NOT do
 ---------------------------------------
 * It does not add a worker per cell, an outbox per cell, a workflow per cell or a
@@ -57,6 +67,9 @@ What this file deliberately does NOT do
   vocabulary and the transport are `c1_worker`'s - importing them is the point. A second
   copy of the exactly-once model is how the exactly-once model forks, and the outbox, the
   dispatch counter and the result seal must exist once and only once.
+* It does not review anything itself, and it never dispatches a review. It enqueues ONE
+  Runtime task of the C14 kind and stops; what runs it is the review executor, exactly as
+  if an Owner had admitted the round by hand.
 * It does not install itself. A unit candidate is added beside it
   (`systemd/go-runtime-host-ghaw-builder-worker.service`), pinned to these same values,
   but adding a unit file is not installing one.
@@ -115,20 +128,71 @@ def build_client():
     return _shared_build_client(workflow_file=WORKFLOW_FILE)
 
 
+def builder_hooks(outbox):
+    """The Builder-specific sealed-result hook the shared loop is parameterised with.
+
+    Returned as a factory rather than as a plain hook because the hook needs the outbox the
+    loop opens, and a Builder executor that ran without its completion hook would look
+    perfectly healthy while every PR it produced quietly got no review at all.
+    """
+    return {"on_result_sealed": _sealed_hook}
+
+
+def _sealed_hook(document, binding, outbox, runtime, *, client=None):
+    from c1_builder_candidate import enqueue_review_when_the_builder_has_a_candidate
+    return enqueue_review_when_the_builder_has_a_candidate(
+        document, binding, outbox, runtime, client=client)
+
+
+def builder_readiness(*, client=None) -> dict:
+    """What this executor needs in order to COMPLETE a task, checked without side effects.
+
+    The Builder's completion is no longer the end of the story: a sealed result that carries
+    a candidate has to be turned into a review round, and that needs the read-only candidate
+    vocabulary on the transport plus the module that composes it. Checking them here is what
+    keeps that failure cheap - a worker that could not resolve a candidate would run the
+    Builder (a paid execution), create a real Draft pull request, and only THEN discover
+    that its task cannot be completed.
+
+    No claim, no outbox, no POST, no model: building a client reads no token and opens no
+    socket, so everything here is inert.
+    """
+    missing = []
+    try:
+        import c1_builder_candidate  # noqa: F401
+        import c1_candidate_reads  # noqa: F401
+    except ImportError as exc:
+        missing.append(type(exc).__name__)
+    transport = client if client is not None else build_client()
+    for name in ("read_pull", "read_pull_files", "read_commit_tree", "read_tree"):
+        if not callable(getattr(transport, name, None)):
+            missing.append(name)
+    if missing:
+        return {"status": "REFUSED", "reason": "BUILDER_COMPLETION_CAPABILITY_MISSING",
+                "detail": "missing=" + ",".join(missing)}
+    return {"detail": "candidate_reads=4 builder_hook=present"}
+
+
 def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_S,
          clock=time.time, claim_kinds=CLAIM_KINDS, claim_owner_cs=CLAIM_OWNER_CS,
-         owner_cursor=0, resume_limit=DEFAULT_RESUME_LIMIT) -> dict:
+         owner_cursor=0, resume_limit=DEFAULT_RESUME_LIMIT, **kwargs) -> dict:
     """One bounded tick: resume what is in flight here, and only then claim new work.
 
     Identical to `c1_worker.tick` except for its defaults, which is the whole design: the
     loop is shared, the boundary is not. Both the resume leg and the claim leg are handed
     this executor's kind set, and the claim leg walks this executor's owner cells, so
     neither can reach the other executor's work.
+
+    The completion hook is bound here so that every path into the loop - resident, `--once`
+    and a test - gets it. `kwargs` is for the hooks a caller wants to override, which is how
+    the crash and refusal cases are exercised offline.
     """
+    hooks = builder_hooks(outbox)
+    hooks.update(kwargs)
     return _shared_tick(runtime, outbox, client, worker_id=worker_id, lease_s=lease_s,
                         clock=clock, claim_kinds=claim_kinds,
                         claim_owner_cs=claim_owner_cs, owner_cursor=owner_cursor,
-                        resume_limit=resume_limit)
+                        resume_limit=resume_limit, **hooks)
 
 
 def main(argv=None, **kwargs) -> int:
@@ -139,6 +203,8 @@ def main(argv=None, **kwargs) -> int:
     kwargs.setdefault("outbox_db", OUTBOX_DB)
     kwargs.setdefault("runtime_db", RUNTIME_DB)
     kwargs.setdefault("workflow_file", WORKFLOW_FILE)
+    kwargs.setdefault("hooks_factory", builder_hooks)
+    kwargs.setdefault("readiness", builder_readiness)
     return _shared_main(sys.argv if argv is None else argv, **kwargs)
 
 

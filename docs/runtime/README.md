@@ -3,7 +3,7 @@
 > 面向 Product Owner / Boss。只讲“怎么派活、怎么发审核”。  
 > Runtime 的内部实现、安装、lease、outbox、systemd 和故障恢复不需要任务发起人操作。
 
-## 你实际只需要做两件事
+## 你实际上只需要做一件事
 
 ### 1. 给 C01-C12 派一个开发任务
 
@@ -48,16 +48,24 @@ Formal Issue
 → GitHub Agentic Workflow
 → inspect / edit / test
 → exactly one Draft PR
-→ Runtime adopts result
+→ automatically: C14 review round
+→ automatically: C13 review round
+→ sealed round decision, adopted by Runtime
 ```
+
+也就是说：**Builder 一旦产出 Draft PR，审核会自动接上**，不需要再为它做任何事。
+
+如果 Builder 这次没有产出 PR（属于合法结果），Runtime 会如实记下，并且不会创建任何审核任务。
 
 任务发起人不需要登录 rt01，不需要 dispatch workflow，也不需要操作 Runtime。
 
 ---
 
-### 2. 让 C14/C13 审核一个候选 PR
+### 2.（可选）单独审核一个不是 Builder 刚产出的 PR
 
-需要审核某个候选 PR 时，新建一个 **GitHub Issue**。
+只有在下面这种情况下才需要手工发起审核：**要审的 PR 不是 Runtime Builder 刚刚产出的**（例如别人手写的 PR、历史 PR、或需要重新审一次）。
+
+这时新建一个 **GitHub Issue**。
 
 标题固定为：
 
@@ -103,6 +111,8 @@ C14 · REVIEW Issue
 → Runtime adopts result
 ```
 
+**这条路径不是正常 Builder 流程的一部分**，它只用来审核一个独立选定的既有候选 PR。
+
 ---
 
 ## C01-C12 是干什么的
@@ -139,7 +149,7 @@ C13 / C14 是 control-only review Cells，不接受普通 Builder task。
 不要直接改代码，只创建任务 Issue。
 ```
 
-或者审核：
+如果只是想单独审一个**既有的**候选 PR（不是 Runtime Builder 刚产出的那种），也可以：
 
 ```text
 请审核 PR #394。
@@ -161,13 +171,15 @@ C13 / C14 是 control-only review Cells，不接受普通 Builder task。
 
 重复扫描同一张 Issue 会命中同一个 Runtime idempotency identity，不会因为一直 open 就重复创建同一个任务或重复付费。
 
-Builder 正常成功后会生成 Draft PR。
+Builder 正常成功后会生成 Draft PR，然后 **Runtime 自动**为这个 PR 开一轮 C14，C14 准入后再自动开一轮 C13。全程不需要人再发任何 Issue。
 
 ### Review Issue
 
-重复扫描同一张 Review Issue同样不会创建第二个相同 review round。
+重复扫描同一张 Review Issue 同样不会创建第二个相同 review round。
 
 Review 完成以后建议关闭 Issue，方便仓库保持干净；关闭只是整理，不是 Runtime 正确性的前提。
+
+同一轮审核也只会产生一个 Runtime 任务：即使这条 Issue 一直被重复扫描，也不会重复创建 round 或重复付费。
 
 ---
 
@@ -191,6 +203,8 @@ Formal Issue 是**任务入口**，不是聊天式状态面板。
 | --- | --- |
 | Builder Issue 的 `Canonical source` 不是 current main | 拒绝，不运行付费 Builder |
 | main 在入队后、执行前发生变化 | workflow 再次检查 SHA，不一致则在付费 agent 前停止 |
+| Builder 没有产出 PR | 正常完成，但不会创建任何审核任务 |
+| Builder 产出的 PR 不是 Draft、或不是指向 main、或候选身份读不出来 | 不把 Builder 记成“一切正常”，也不创建审核 |
 | Review Issue 的 Candidate SHA 已不是 PR 当前 head | 拒绝，不自动跟随新 commit |
 | 直接创建 `C13 · REVIEW` | 拒绝 |
 | task id 的 Cell 和标题 Cell 不一致 | 拒绝 |
@@ -218,7 +232,7 @@ Formal Issue 是**任务入口**，不是聊天式状态面板。
 ## 一句话
 
 ```text
-C01-C12：发 Formal Task Issue。
-C13/C14：发 C14 Formal Review Issue。
-剩下的交给 Runtime。
+C01-C12：发 Formal Task Issue，剩下的（Builder → Draft PR → C14 → C13）Runtime 自己走完。
+需要单独审一个现成 PR 时：发 C14 Formal Review Issue。
+只有最后的 merge / deploy 仍然需要独立授权。
 ```

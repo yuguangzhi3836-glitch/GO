@@ -380,6 +380,73 @@ def review_request_id(candidate_sha: str, ledger_round_id: str) -> str:
         ("%s|%s" % (candidate_sha, ledger_round_id)).encode("utf-8")).hexdigest()[:24]
 
 
+# The round's Ledger/Lite identity, derived from the FROZEN candidate and the issue it came
+# from - never from a timestamp, a counter or a random id, because the same candidate
+# presented twice must be the same round.
+#
+# Two paths produce rounds and both derive their identity HERE:
+#
+#   an Owner's `C14 · REVIEW · ...` issue  -> the issue number is the provenance
+#   a Builder run that just opened a PR    -> the Builder's OWN originating issue number
+#
+# The second is why this is a function of the issue number rather than of "the review
+# issue": naming a round is one question, and a second derivation would be a second answer
+# to it - which is the one thing a round identity may not have.
+def review_round_identity(issue_number: int, candidate_sha: str) -> dict:
+    """The round id and its two Lite task ids, derived from provenance and candidate.
+
+    The candidate's first twelve hex characters, not the issue title: a second issue raised
+    for a DIFFERENT candidate is a different round even if it describes the same PR, and
+    re-raising the same one is the same round.
+    """
+    if type(issue_number) is not int or issue_number <= 0:
+        raise Refused("ISSUE_NUMBER_INVALID")
+    _require_sha1(candidate_sha, "REVIEW_CANDIDATE_SHA_INVALID")
+    short = candidate_sha.strip().lower()[:12]
+    ledger_round_id = "FORMAL-REVIEW-I%d-%s" % (issue_number, short)
+    return {
+        "ledger_round_id": ledger_round_id,
+        "c14_task_id": ledger_round_id + "-C14",
+        "c13_task_id": ledger_round_id + "-C13",
+    }
+
+
+# The C13 machine-test inventory, derived from what a candidate CHANGED. `machine_inventory`
+# is never a field a caller fills in from taste, and the alternative default - the whole
+# `application/tests` tree - is 274 files including suites no other workflow runs, inside a
+# job with a forty minute ceiling.
+#
+# Paths are restricted to exactly this shape and nothing else may appear on the wire: the
+# value is interpolated into a shell command by the C13 workflow, so a path is only ever
+# accepted when it is provably a plain path under this one directory. Removed paths are
+# dropped too - a file that no longer exists cannot be collected by pytest.
+REVIEW_TEST_PATH = re.compile(r"^application/tests/[A-Za-z0-9_./-]+\.py$")
+MAX_REVIEW_TEST_FILES = 20
+MAX_REVIEW_INVENTORY_CHARS = 400
+
+
+def review_test_inventory(changed_files):
+    """The candidate's own added/modified test paths, or None when it changed none.
+
+    None is a real answer: it leaves the C13 workflow's own declared default standing,
+    which is a scope decision that workflow already owns.
+    """
+    selected = []
+    for entry in changed_files or ():
+        if not isinstance(entry, dict):
+            continue
+        name = entry.get("filename")
+        if not isinstance(name, str) or not REVIEW_TEST_PATH.match(name):
+            continue
+        if entry.get("status") == "removed":
+            continue
+        selected.append(name)
+    selected = sorted(set(selected))[:MAX_REVIEW_TEST_FILES]
+    while selected and len(" ".join(selected)) > MAX_REVIEW_INVENTORY_CHARS:
+        selected.pop()
+    return " ".join(selected) or None
+
+
 # Every task kind this contract knows. A kind outside this set has no payload shape, no
 # prompt and no acceptance rule, and is refused rather than guessed at.
 KNOWN_TASK_KINDS = (KIND, REAL_TASK_KIND, GHAW_BUILDER_KIND) + REVIEW_KINDS

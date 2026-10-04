@@ -519,7 +519,14 @@ class ARestartKeepsTheExactlyOnceProperties(BoundaryCase):
         self.assertEqual(stored["provider"], contract.PROVIDER_GHAW_BUILDER)
 
         resumed = ghaw.tick(self.runtime, self.outbox, transport, worker_id=WORKER,
-                            clock=self.clock)
+                            clock=self.clock,
+                            # The Builder's completion hook is installed by default now -
+                            # a sealed result is what enqueues the review round - and this
+                            # case is about the RESTART, not about the review hand-over. It
+                            # is stubbed out so the row reaches its terminal state exactly
+                            # as it did before the hook existed; the hand-over has its own
+                            # suite.
+                            on_result_sealed=lambda *args, **kwargs: None)
         self.assertEqual(resumed["status"], "RESUMED")
         self.assertEqual(resumed["runtime_task_id"], task_id)
         self.assertEqual(resumed["action"], "COMPLETED")

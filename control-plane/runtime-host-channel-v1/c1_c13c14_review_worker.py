@@ -47,9 +47,11 @@ What this file deliberately does NOT do
   `c1_c13c14_review`, never restated.
 * No second ambiguous-dispatch state machine: the dispatch leg is `DispatchOutbox`'s, so
   `dispatches_sent <= 1` holds here for the same reason it holds for the Builder.
-* No automatic review of every Builder PR. Whether a candidate enters a review round is an
-  explicit admission made by an operator (`deliver_review_round.py`), not a side effect of
-  a PR existing.
+* No admission logic of its own, and no automatic review of every Builder PR. A round is
+  admitted by an Owner's `C14 · REVIEW · ...` issue, or - for the normal path - by the
+  Builder's OWN completion: `c1_builder_candidate` enqueues the C14 half of a candidate the
+  Builder run itself produced, and only a run that created a Draft pull request has one.
+  This worker reviews what the Runtime hands it and never decides what enters a round.
 
 Usage is `c1_worker`'s, unchanged:
 
@@ -118,9 +120,9 @@ def review_hooks(outbox):
     }
 
 
-def _sealed_hook(document, binding, outbox, runtime):
+def _sealed_hook(document, binding, outbox, runtime, *, client=None):
     from c1_c13c14_review import enqueue_c13_when_c14_admits
-    return enqueue_c13_when_c14_admits(document, binding, outbox, runtime)
+    return enqueue_c13_when_c14_admits(document, binding, outbox, runtime, client=client)
 
 
 def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_S,
