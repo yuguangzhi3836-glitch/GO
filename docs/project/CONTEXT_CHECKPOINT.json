@@ -1,73 +1,169 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "status": "REFRESHED",
-  "checkpoint_main_sha": "8ffcde66d36c1bbf849218529ef015f6e81725af",
-  "checkpoint_main_date": "2026-09-14T18:34:48+08:00",
-  "checkpoint_main_subject": "Merge PR #76: bind 0134 compatibility repair and final gate evidence",
-  "refreshed_at": "2026-09-14T19:57:19+08:00",
-  "refreshed_by_pr": "#65",
-  "created_for": "project-context/current-state-v1",
-  "previous_checkpoint_main_sha": "286e294d92df4b7d1c0073116a8e628734abec6c",
-  "checkpoint_points_at": "canonical main — never at this context PR's own branch head",
+  "checkpoint_main_sha": "1faf0faedf70fab010c3d49001e8787a2f58c024",
+  "checkpoint_main_date": "2026-10-04T08:42:51Z",
+  "checkpoint_main_subject": "Merge PR #398: Formal Review Ingress - C14 to C13 via formal GitHub Issue",
+  "refreshed_at": "2026-10-04T17:09:00+08:00",
+  "refreshed_for": "Persistent Runtime delivery closeout",
+  "checkpoint_points_at": "canonical main verified before this context-refresh PR; never at the context PR's own branch head",
+  "truth_priority": [
+    "live GitHub / real environment / current Evidence",
+    "repository current-state documents",
+    "historical PR / README / old handoff",
+    "AI memory / historical conversation"
+  ],
   "context_entrypoints": [
-    "README.md",
     "docs/project/OPERATING_CONTEXT.md",
     "docs/project/GO_CURRENT_STATE.md",
-    "docs/project/ACTIVE_DECISIONS.md",
-    "docs/project/CONTEXT_HANDOFF_PROTOCOL.md"
+    "docs/project/CONTEXT_CHECKPOINT.json"
   ],
-  "module_state_root": "docs/state",
-  "meaning": "All accepted project truth up to checkpoint_main_sha has been compressed into the current-state layer. A fresh session should load this layer and inspect only the delta after checkpoint_main_sha, rather than replaying historical pull requests.",
   "canonical_main_snapshot": {
-    "application_git_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
-    "application_files": 1365,
-    "application_source_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
-    "migration_head": "0134_flight_status_width",
-    "migration_down_revision": "0133_flight_change_plan",
-    "migration_revisions": 134,
-    "gate_manifests": [
-      "ci/retention/BASELINE.json",
-      "ci/next-depth/CANDIDATE.json",
-      "ci/cell-closure/CANDIDATE.json"
-    ],
-    "merged_since_previous_checkpoint": ["#66", "#67", "#69", "#70", "#74", "#76"]
+    "root_tree": "61d85985c3dcccc3a8bf986a7fd66747b2f180da",
+    "application_git_tree": "83e73327d5f8f00841a3febdbe2a94e2078dbeae",
+    "application_files": 1369,
+    "application_source_sha256": "NOT_RECOMPUTED_IN_THIS_REFRESH",
+    "migration_head": "0135_supplier_onboarding",
+    "migration_down_revision": "0134_flight_status_width",
+    "migration_revisions": 135
   },
-  "live_runtime_snapshot": {
+  "business_runtime_snapshot": {
+    "source": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json re-read at checkpoint_main_sha",
     "environment": "HK-STAGING",
     "runtime_generation": "DEPTH48",
-    "deployed_date": "2026-09-13",
-    "image_tag": "go-hotel:depth48-runtime-6d0fd905",
-    "deployed_application_tree": "3025b2b6b36ea9211da561a4631f304216de9d90",
-    "deployed_application_files": 1325,
-    "live_database_revision": "0133_flight_change_plan",
-    "runtime_pointer": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
-    "repository_source_ahead_of_runtime": {
-      "files_changed": 62,
-      "insertions": 5329,
-      "deletions": 195,
-      "migration_delta": "0133_flight_change_plan -> 0134_flight_status_width",
-      "migration_applied": false
+    "pointer_date": "2026-10-02",
+    "deployed_candidate_pr": 320,
+    "deployed_candidate_head": "eeafca1b15a4754ba36a0f138a27347cbbd12c73",
+    "deployed_candidate_state": "OPEN_DRAFT_UNMERGED",
+    "deployed_application_tree": "6f97ac5d572dae1de0b3e38b6201da2a6de14216",
+    "image_tag": "go-hk-test-pr:eeafca1b15a4754ba36a0f138a27347cbbd12c73",
+    "image_id": "sha256:26c95472d494100dc5365b031335670b57570b86ac50fb1b4ebd161d7933530b",
+    "live_database_revision": "0145_source_latest_index",
+    "live_tables": 564,
+    "openapi_paths": 1059,
+    "note": "Repository source and business runtime are separate axes; this refresh performed no HK business deployment or migration."
+  },
+  "persistent_runtime_snapshot": {
+    "status": "DELIVERED_LIVE_PROVEN",
+    "host_role": "rt01 / third ECS persistent coordinator",
+    "host_observed_id": "iZj6cg7euc4ggol8gkijogZ",
+    "responsibilities": [
+      "queue/state",
+      "lease/attempt fencing",
+      "dispatch",
+      "result/evidence adoption",
+      "recovery"
+    ],
+    "c01_c12": {
+      "status": "DONE_LIVE_PROVEN",
+      "entry": "Formal GitHub Issue",
+      "consumer": "go-runtime-host-c01-issue-consumer",
+      "executor": "go-runtime-host-ghaw-builder-worker",
+      "task_kind": "GHAW_BUILDER_V1",
+      "source_binding": "issue source_anchor == current main; workflow execution SHA rechecked before paid agent",
+      "legacy_responses_worker": "DISABLED"
     },
-    "mutated_by_this_refresh": false
+    "c13_c14": {
+      "status": "DONE_LIVE_PROVEN",
+      "entry": "C14 formal REVIEW GitHub Issue",
+      "consumer": "same go-runtime-host-c01-issue-consumer",
+      "executor": "go-runtime-host-c13c14-review-worker",
+      "worker_count": 1,
+      "outbox_count": 1,
+      "flow": "C14_REVIEW_V1 -> sealed admissible C14 -> idempotent C13_REVIEW_V1 -> sealed C13 round",
+      "authorizes_any_action": false,
+      "paid_dispatch_lease_confirmation": true
+    },
+    "formal_review_canary": {
+      "issue": 399,
+      "candidate_pr": 394,
+      "candidate_sha": "0cb92ac7900cd177be383a4429a2759007119a10",
+      "application_tree": "34c5ab3cc0eaf97a0556fedc6f7dbc661e1578f0",
+      "c14_runtime_task": "rt_2054610cd3064d53adf5adf55b48d77a",
+      "c13_runtime_task": "rt_c5ec212556e7477483266dbaede35145",
+      "c14_github_run": 37189939040,
+      "c13_github_run": 37189996082,
+      "c14_dispatches_sent": 1,
+      "c13_dispatches_sent": 1,
+      "c14_runtime_status": "SUCCEEDED",
+      "c13_runtime_status": "SUCCEEDED",
+      "c14_verdict": "PASS_SCOPED",
+      "c13_verdict": "PASS_SCOPED",
+      "round_decision": "ACCEPT",
+      "independence_ok": true,
+      "repeated_poll_duplicate_task_or_paid_execution": false
+    },
+    "services_last_verified_2026_10_04": {
+      "go-runtime-host-c01-issue-consumer": "active/enabled",
+      "go-runtime-host-ghaw-builder-worker": "active/enabled",
+      "go-runtime-host-c13c14-review-worker": "active/enabled",
+      "go-c1-c14-runtime": "active/enabled",
+      "go-runtime-host-agent": "active/enabled",
+      "go-runtime-host-runtime-bridge": "active/enabled",
+      "go-runtime-host-c1-worker": "inactive/disabled"
+    },
+    "solution_leak_gate_u6": {
+      "status": "BYPASS_DEFERRED",
+      "enabled": false,
+      "blocker_for_runtime_delivery": false
+    }
   },
-  "gate_snapshot": {
-    "retention_rebind": "PASS_RUN_34825183779",
-    "c11_original_postgresql_cases": "10/10 PASS (run 34807203728)",
-    "migration_0134_preservation_and_downgrade_guard": "PASS",
-    "c14_for_final_tree": "NOT_RECORDED_ON_MAIN",
-    "c13_for_final_tree": "NOT_RECORDED_ON_MAIN",
-    "gate_order": ["RETENTION", "C07_POSTGRES", "C09_POSTGRES", "C11_POSTGRES", "REGRESSION", "C14", "C13"],
-    "hk_deploy": "HOLD",
-    "final_release": "HOLD",
-    "production": "HOLD",
-    "historical_pass_transferred": false
+  "runtime_delivery": {
+    "status": "DELIVERED",
+    "u7a": "DONE",
+    "u7b": "DONE",
+    "normal_manual_transport_remaining": false,
+    "human_admission_intent_still_required": true,
+    "explanation": "Humans still decide which work/candidate should be admitted by creating the formal Issue. Once admitted, no manual task搬运 is required."
   },
-  "active_candidate_prs_not_current_truth": [61, 65, 71, 72, 73, 75, 78, 89, 90, 91],
+  "key_runtime_lineage": [
+    {
+      "pr": 392,
+      "purpose": "Formal Builder ingress source binding"
+    },
+    {
+      "pr": 395,
+      "purpose": "C14->C13 Persistent Runtime review transport"
+    },
+    {
+      "pr": 396,
+      "purpose": "Fix undeclared C14 workflow inputs exposed by first live dispatch"
+    },
+    {
+      "pr": 397,
+      "purpose": "Confirm lease before paid review dispatch"
+    },
+    {
+      "pr": 398,
+      "purpose": "Formal Review Issue ingress"
+    }
+  ],
+  "candidates_not_current_truth": [
+    {
+      "pr": 320,
+      "owner": "chenzhenxi1-sudo",
+      "state": "open draft",
+      "note": "deployed HK candidate according to runtime pointer, but unmerged"
+    },
+    {
+      "pr": 383,
+      "owner": "yuguangzhi3836-glitch",
+      "state": "open draft",
+      "note": "Boss-owned older per-cell automatic-entry proposal; read/review only"
+    },
+    {
+      "pr": 394,
+      "owner": "github-actions[bot]",
+      "state": "open draft",
+      "note": "Builder canary candidate; not merged by C13/C14 review"
+    }
+  ],
   "limitations": [
-    "Open pull requests are not imported as current main facts.",
-    "Historical business decisions not materialized from authoritative sources are not reconstructed from AI memory.",
-    "Runtime execution authority is not granted by this checkpoint.",
-    "A scoped C13/C14 acceptance bound to one candidate tree does not transfer to a different tree.",
-    "The repository migration head is not the live database revision."
+    "This checkpoint is descriptive context and is not execution authority.",
+    "The Runtime Host service table is the last verified snapshot from the 2026-10-04 formal-review canary; re-read the host before mutation.",
+    "The HK runtime pointer is repository state; real HK state outranks it when deployment decisions are made.",
+    "Repository main, deployed HK business source, Persistent Runtime state and release acceptance are separate axes.",
+    "A review verdict never grants merge or deployment authority.",
+    "Changing implementation facts must be re-derived; UNKNOWN must not be filled from memory."
   ]
 }
