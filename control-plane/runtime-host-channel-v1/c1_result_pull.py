@@ -207,12 +207,12 @@ def complete_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attemp
     # enqueue and before the completion is repaired by the next tick, which re-runs this
     # hook, gets the SAME C13 task back from the same deterministic key, and then
     # completes C14 normally. No coordinator, no second durable journal.
+    sealed_effect = None
     if on_result_sealed is not None:
-        outcome = on_result_sealed(document, binding, outbox, runtime)
-        if outcome is not None:
-            sealed_effect = outcome
-    else:
-        sealed_effect = None
+        # A hook is free to have nothing to say - a C13 execution, for instance, has no
+        # second half to create - so its return value is recorded when there is one and
+        # the absence of one is not an error.
+        sealed_effect = on_result_sealed(document, binding, outbox, runtime)
     # The owner cell comes from the stored binding, never from a constant and never from
     # this function's caller. One Builder executor serves twelve cells, so "which cell
     # must be told" is a property of the execution; `completion_binding()` reads it back

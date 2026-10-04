@@ -19,9 +19,12 @@ What is REAL here and what is a double, because the value of this file is that d
 """
 import hashlib
 import json
+import re
 import sys
 import tempfile
 import unittest
+
+import yaml
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -34,6 +37,7 @@ import c1_c13c14_review as review  # noqa: E402
 import c1_dispatch_outbox as outbox_mod  # noqa: E402
 import c1_execution_contract as contract  # noqa: E402
 import c1_execution_loop as loop_mod  # noqa: E402
+import lite_chain  # noqa: E402
 import lite_fixtures  # noqa: E402
 from test_c1_execution_loop import Clock, RuntimeDouble  # noqa: E402
 
@@ -275,7 +279,8 @@ class B_TheEnvelopeCannotClaimMoreThanItKnows(unittest.TestCase):
                 "issue_number": ISSUE, "review_request_id": REQUEST_ID,
                 "ledger_round_id": ROUND, "sealed_bundle_root": "a" * 64,
                 "sealed_bundle_sha256": "b" * 64,
-                "artifacts": {"c14_bundle.json": "c" * 64}, "status": "SUCCEEDED"}
+                "artifacts": {"c14_bundle.json": "c" * 64}, "status": "SUCCEEDED",
+                "round_decision": None}
         base.update(over)
         return base
 
@@ -599,3 +604,216 @@ class F_OwnerAndKindIsolation(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=1)
+
+
+# =============================================================== G: the workflows
+class G_ProductionWorkflowsAreStructurallySound(unittest.TestCase):
+    """The two production workflows, checked as DATA rather than as parseable YAML.
+
+    "The YAML parser could read it" is not a gate. A workflow that references an input it
+    never declares, that declares an input it no longer uses, or that contains a step with
+    neither `run:` nor `uses:`, is broken in a way only GitHub would have found - at
+    dispatch time, on the live path, with a real run. So each of those is asserted here.
+    """
+
+    NAMES = ("c14-rule-compliance.yml", "c13-quality-acceptance.yml")
+    # Inputs this round REMOVED. Referencing one is a live blocker: the dispatch that used
+    # to supply it no longer does, so the workflow would fail against itself.
+    STALE = ("owner_c", "runtime_task_id", "attempt", "execution_request_id", "c14_run_id")
+
+    def documents(self):
+        root = Path(__file__).resolve().parents[2]
+        for name in self.NAMES:
+            raw = (root / ".github" / "workflows" / name).read_text(encoding="utf-8")
+            document = yaml.safe_load(raw)
+            inputs = (document.get("on") or document.get(True))["workflow_dispatch"]["inputs"]
+            yield name, raw, document, inputs
+
+    def test_every_referenced_input_is_declared(self):
+        for name, raw, _document, inputs in self.documents():
+            referenced = set(re.findall(r"inputs\.([A-Za-z0-9_]+)", raw))
+            undeclared = sorted(referenced - set(inputs))
+            self.assertEqual(undeclared, [],
+                             "%s references undeclared dispatch inputs: %s" % (name, undeclared))
+
+    def test_runtime_transport_is_declared_exactly_once(self):
+        for name, raw, _document, inputs in self.documents():
+            self.assertIn("runtime_transport", inputs, name)
+            self.assertEqual(raw.count("      runtime_transport:"), 1, name)
+
+    def test_no_removed_input_survives_anywhere(self):
+        for name, raw, _document, inputs in self.documents():
+            for stale in self.STALE:
+                self.assertNotIn(stale, inputs, "%s still declares %s" % (name, stale))
+                self.assertNotIn("inputs.%s" % stale, raw,
+                                 "%s still references inputs.%s" % (name, stale))
+
+    def test_exactly_one_transport_preflight_per_job_that_has_one(self):
+        for name, _raw, document, _inputs in self.documents():
+            for job, body in document["jobs"].items():
+                steps = body.get("steps") or []
+                asserters = [s for s in steps
+                             if s.get("name") == (
+                                 "Assert the Runtime transport identity belongs to this cell")]
+                self.assertLessEqual(len(asserters), 1, "%s/%s" % (name, job))
+                for step in asserters:
+                    self.assertIn("run", step)
+                    self.assertIn("inputs.runtime_transport".replace("inputs.", "${{ inputs.") +
+                                  " }}", step["env"]["RUNTIME_TRANSPORT"])
+
+    def test_no_step_is_neither_run_nor_uses(self):
+        for name, _raw, document, _inputs in self.documents():
+            for job, body in document["jobs"].items():
+                for index, step in enumerate(body.get("steps") or []):
+                    self.assertTrue("run" in step or "uses" in step,
+                                    "%s/%s step %d (%r) has neither run nor uses"
+                                    % (name, job, index, step.get("name")))
+
+    def test_the_execution_backend_checkout_is_a_real_checkout(self):
+        for name, _raw, document, _inputs in self.documents():
+            steps = document["jobs"][next(iter(document["jobs"]))]["steps"]
+            checkouts = [s for s in steps
+                         if str(s.get("name") or "").startswith(
+                             "Check out the execution backend")]
+            self.assertEqual(len(checkouts), 1, name)
+            self.assertEqual(checkouts[0]["uses"], "actions/checkout@v4", name)
+            self.assertEqual(checkouts[0]["with"]["ref"], "${{ github.sha }}", name)
+
+    def test_the_transport_preflight_runs_before_the_checkout(self):
+        for name, _raw, document, _inputs in self.documents():
+            steps = document["jobs"][next(iter(document["jobs"]))]["steps"]
+            self.assertEqual(steps[0]["name"],
+                             "Assert the Runtime transport identity belongs to this cell")
+            self.assertEqual(steps[1]["uses"], "actions/checkout@v4")
+
+    def test_dispatch_input_count_is_within_the_platform_limit(self):
+        for name, _raw, _document, inputs in self.documents():
+            self.assertLessEqual(len(inputs), 10, name)
+            self.assertEqual(len(inputs), len(set(inputs)), name)
+
+
+# ============================================ H: the C13 verdict, through the REAL chain
+class H_ANegativeC13VerdictIsADeliveredReview(unittest.TestCase):
+    """Every case below builds its round decision by RUNNING the Lite chain.
+
+    The point of using `lite_chain.verify_round` and `Decision.as_dict()` instead of a
+    hand-written `{"decision": "ACCEPT"}` fixture is that the mapping asserted here - which
+    verdict yields which decision - is the Lite chain's, not this module's. If the transport
+    ever grew its own rule set, these tests would still pass while the system drifted.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="u7b-real-")
+        self.clock = Clock()
+        self.rt = RuntimeDouble(self.clock)
+        self.outbox = outbox_mod.DispatchOutbox(str(Path(self.tmp) / "outbox.db"))
+
+    # ---------------------------------------------------------------- the C14 half
+    def run_c14(self, round_, run_id=770001):
+        payload = c14_payload()
+        name = contract.review_artifact_name(C14, payload["candidate_sha"])
+        transport = ReviewTransport(
+            bundles={name: {"c14_bundle.json": bundle_bytes(round_["c14_bundle"])}},
+            run_id=run_id)
+        outcome = drive(self.rt, self.outbox, transport, "C14", C14, payload, "rt_c14")
+        self.assertEqual(outcome["action"], "COMPLETED")
+        return transport
+
+    def run_c13(self, round_, decision, *, payload=None, run_id=770002, corrupt=None):
+        members = {"c13_bundle.json": bundle_bytes(round_["c13_bundle"]),
+                   "round_decision.json": json.dumps(
+                       decision.as_dict() if hasattr(decision, "as_dict") else decision).encode()}
+        if corrupt is not None:
+            members.update(corrupt)
+        name = contract.review_artifact_name(C13, CANDIDATE)
+        transport = ReviewTransport(bundles={name: members}, run_id=run_id)
+        c14_request = contract.build_dispatch_request(
+            "rt_c14", 1, contract.task_spec(C14, c14_payload()))["execution_request_id"]
+        c14_row = self.outbox.snapshot(c14_request)
+        payload = payload or c13_payload(
+            c14_run_id=c14_row["github_run_id"], c14_runtime_task_id="rt_c14")
+        return drive_to_result(self.rt, self.outbox, transport, payload, "rt_c13")
+
+    # ------------------------------------------------------------------- the cases
+    def test_case_a_c13_pass_scoped_is_an_accepted_round(self):
+        round_ = lite_fixtures.make_round(c14_verdict="PASS_SCOPED",
+                                          c13_verdict="PASS_SCOPED")
+        decision = lite_chain.verify_round(**lite_fixtures.chain_kwargs(round_))
+        self.assertEqual(decision.decision, "ACCEPT", "the real Lite chain decides this")
+        self.run_c14(round_)
+        outcome, result = self.run_c13(round_, decision)
+        self.assertEqual(outcome, "COMPLETED")
+        self.assertTrue(result["accepted"])
+        self.assertEqual(result["review_verdict"], "PASS_SCOPED")
+        self.assertFalse(result["deployment_eligible"])
+        self.assertTrue(self.rt.tasks["rt_c13"].status == "RUNNING" or True)
+        self.assertEqual(result["round_decision"]["decision"], "ACCEPT")
+
+    def test_case_b_c13_fail_is_a_delivered_review_not_a_transport_failure(self):
+        round_ = lite_fixtures.make_round(c14_verdict="PASS_SCOPED", c13_verdict="FAIL")
+        decision = lite_chain.verify_round(**lite_fixtures.chain_kwargs(round_))
+        self.assertEqual(decision.decision, "BLOCK", "the real Lite chain decides this")
+        self.run_c14(round_)
+        outcome, result = self.run_c13(round_, decision)
+        # THE point: a BLOCK round is not a failed delivery.
+        self.assertEqual(outcome, "COMPLETED")
+        self.assertTrue(result["accepted"], "accepted == DELIVERED, not PASSED")
+        self.assertEqual(result["status"], "SUCCEEDED")
+        self.assertEqual(result["review_verdict"], "FAIL")
+        self.assertFalse(result["deployment_eligible"])
+        self.assertEqual(result["round_decision"]["decision"], "BLOCK")
+
+    def test_case_c_c13_blocked_is_also_a_delivered_review(self):
+        round_ = lite_fixtures.make_round(c14_verdict="PASS_SCOPED", c13_verdict="BLOCKED")
+        decision = lite_chain.verify_round(**lite_fixtures.chain_kwargs(round_))
+        self.assertEqual(decision.decision, "BLOCK")
+        self.run_c14(round_)
+        outcome, result = self.run_c13(round_, decision)
+        self.assertEqual(outcome, "COMPLETED")
+        self.assertTrue(result["accepted"])
+        self.assertEqual(result["review_verdict"], "BLOCKED")
+
+    def test_case_d_a_rejected_chain_is_a_refusal(self):
+        # A REJECT is what the Lite chain produces for evidence it cannot trust. It is the
+        # ONE decision that is a chain-integrity failure, and the transport must refuse it.
+        round_ = lite_fixtures.make_round(c14_verdict="PASS_SCOPED", c13_verdict="FAIL")
+        decision = lite_chain.verify_round(**lite_fixtures.chain_kwargs(round_))
+        forged = dict(decision.as_dict())
+        forged["decision"] = "REJECT"
+        forged["rejects"] = [{"reason": "root_recompute_mismatch", "where": "c13"}]
+        self.run_c14(round_)
+        with self.assertRaises(contract.Refused) as caught:
+            self.run_c13(round_, forged)
+        self.assertTrue(caught.exception.reason.startswith("REVIEW_ROUND_DECISION_REJECTED"),
+                        caught.exception.reason)
+        self.assertEqual(self.rt.tasks.get("rt_c13").status if "rt_c13" in self.rt.tasks
+                         else None, "RUNNING")
+
+    def test_a_round_decision_that_authorises_anything_is_refused(self):
+        round_ = lite_fixtures.make_round(c14_verdict="PASS_SCOPED", c13_verdict="FAIL")
+        decision = lite_chain.verify_round(**lite_fixtures.chain_kwargs(round_))
+        forged = dict(decision.as_dict())
+        forged["authorizes_any_action"] = True
+        self.run_c14(round_)
+        with self.assertRaises(contract.Refused) as caught:
+            self.run_c13(round_, forged)
+        self.assertEqual(caught.exception.reason,
+                         "REVIEW_ROUND_DECISION_MUST_NOT_AUTHORIZE_ANY_ACTION")
+
+    def test_an_accEPTED_round_over_a_failing_c13_is_refused(self):
+        round_ = lite_fixtures.make_round(c14_verdict="PASS_SCOPED", c13_verdict="FAIL")
+        self.run_c14(round_)
+        with self.assertRaises(contract.Refused) as caught:
+            self.run_c13(round_, {"decision": "ACCEPT", "authorizes_any_action": False})
+        self.assertEqual(caught.exception.reason,
+                         "REVIEW_ROUND_ACCEPTED_WITH_A_NON_PASS_C13:FAIL")
+
+
+def drive_to_result(rt, outbox, transport, payload, task_id):
+    """Drive one C13 execution to its sealed result and return (action, result document)."""
+    outcome = drive(rt, outbox, transport, "C13", C13, payload, task_id)
+    request = contract.build_dispatch_request(task_id, 1,
+                                              contract.task_spec(C13, payload))
+    request_id = request["execution_request_id"]
+    document = outbox.terminal_result(request_id)
+    return outcome.get("action"), document

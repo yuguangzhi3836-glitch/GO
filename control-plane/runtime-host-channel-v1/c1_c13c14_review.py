@@ -41,6 +41,8 @@ from c1_execution_contract import (
     C13_REVIEW_KIND,
     C14_REVIEW_KIND,
     PROVIDER_GHAW_BUILDER,
+    REVIEW_ROUND_DECISION_REJECT,
+    REVIEW_ROUND_DECISIONS,
     REVIEW_KINDS,
     REVIEW_OWNER_C,
     REVIEW_RESULT_KIND,
@@ -158,13 +160,29 @@ def review_artifact_members(task_kind: str) -> tuple:
     return tuple(members)
 
 
-def _require_round_decision_accepted(raw: bytes) -> dict:
-    """The C13 artifact's own round decision, re-read from the received bytes.
+def _require_round_decision(raw: bytes, *, verdict: str) -> dict:
+    """The C13 artifact's own round decision, validated as the consequence of the verdict.
 
-    It is *recorded*, not taken on trust: the two things it asserts are checked (the round
-    was accepted, and it authorises nothing) and then it is carried, so a later reader can
-    see what the round itself concluded. It is not the authority - the sealed bundles are -
-    which is why an absent or contradictory decision is a refusal rather than a note.
+    The round decision is DERIVED evidence, and a negative one is not a defect. The Lite
+    chain decides `BLOCK` for a C13 that is not `PASS_SCOPED` - that is exactly what
+    `--allow-incomplete` records instead of turning a FAIL into a workflow failure - so
+    "the round was not accepted" and "the review was not delivered" are two different
+    facts, and this function must not merge them.
+
+    What it checks is what the transport is entitled to check:
+
+      * it is an object the Lite chain could have produced, and it authorises nothing;
+      * `REJECT` IS a refusal: the Lite chain raises it only for tampered, unbound or
+        identity-conflicting evidence, so there is no trustworthy round to adopt;
+      * `ACCEPT` may only accompany `PASS_SCOPED` - an accepted round over a failing C13
+        is a contradiction, not a delivery;
+      * `BLOCK` is recorded and is a delivered review. When the C13 verdict is not
+        `PASS_SCOPED` it is the correct consequence, so the Runtime task succeeds with
+        the verdict recorded and nothing is authorised.
+
+    This is not a second rule set: it is the three-line consequence of the gates
+    `lite_chain.verify_round` already applies, and the test suite proves the mapping by
+    running the REAL chain for PASS_SCOPED / FAIL / BLOCKED.
     """
     document = _parse_json_bytes(raw, REVIEW_ROUND_DECISION_MEMBER)
     if not isinstance(document, dict):
@@ -172,10 +190,14 @@ def _require_round_decision_accepted(raw: bytes) -> dict:
     if document.get("authorizes_any_action") is not False:
         raise Refused("REVIEW_ROUND_DECISION_MUST_NOT_AUTHORIZE_ANY_ACTION")
     decision = document.get("decision")
-    if decision not in ("ACCEPT", "BLOCK", "REJECT"):
+    if decision not in REVIEW_ROUND_DECISIONS:
         raise Refused("REVIEW_ROUND_DECISION_UNKNOWN")
-    if decision != "ACCEPT":
-        raise Refused("REVIEW_ROUND_DECISION_NOT_ACCEPT:%s" % decision)
+    if decision == REVIEW_ROUND_DECISION_REJECT:
+        raise Refused("REVIEW_ROUND_DECISION_REJECTED:%s"
+                      % ",".join(str(item.get("reason"))
+                                 for item in (document.get("rejects") or [])))
+    if decision == "ACCEPT" and verdict != "PASS_SCOPED":
+        raise Refused("REVIEW_ROUND_ACCEPTED_WITH_A_NON_PASS_C13:%s" % verdict)
     return document
 
 
@@ -239,8 +261,11 @@ def review_artifact_loader(outbox, *, source_dir=None):
         bundle_raw = members[REVIEW_SEALED_BUNDLE_MEMBER[task_kind]]
         bundle = verify_sealed_bundle(bundle_raw, task_kind, source_dir=source_dir)
         _require_bundle_matches_payload(bundle, payload)
+        # Only the C13 half publishes a round decision; the C14 half has no round yet.
+        round_decision = None
         if task_kind == C13_REVIEW_KIND:
-            _require_round_decision_accepted(members[REVIEW_ROUND_DECISION_MEMBER])
+            round_decision = _require_round_decision(
+                members[REVIEW_ROUND_DECISION_MEMBER], verdict=bundle["verdict"])
             _require_c13_follows_the_c14_this_runtime_delivered(
                 bundle, payload, outbox, request["execution_request_id"],
                 source_dir=source_dir)
@@ -271,6 +296,10 @@ def review_artifact_loader(outbox, *, source_dir=None):
             "artifacts": {member: digest.split("sha256:")[-1]
                           for member, digest in digests.items()},
             "status": "SUCCEEDED",
+            # Derived evidence, carried verbatim so the round's own conclusion is
+            # auditable. It is deliberately NOT reduced to "eligible": one half of a
+            # round never establishes eligibility, and it never authorises anything.
+            "round_decision": round_decision,
         }
         body = canonical(envelope)
         return {"bytes": body.encode("utf-8"),

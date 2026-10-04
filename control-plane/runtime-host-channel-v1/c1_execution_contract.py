@@ -865,11 +865,21 @@ REVIEW_RESULT_FIELDS = frozenset({
     "candidate_sha", "application_tree", "issue_number",
     "review_request_id", "ledger_round_id",
     "sealed_bundle_root", "sealed_bundle_sha256", "artifacts", "status",
+    "round_decision",
 })
 REVIEW_VERDICTS = {
     C14_REVIEW_KIND: ("PASS_SCOPED", "NOT_APPLICABLE", "FAIL", "BLOCKED"),
     C13_REVIEW_KIND: ("PASS_SCOPED", "FAIL", "BLOCKED"),
 }
+# The round decision a C13 run publishes. It is DERIVED evidence: the Lite chain's own
+# `Decision.as_dict()` over the two sealed bundles. The transport checks its shape and
+# its consistency with the sealed verdict; it does not require it to be ACCEPT, because
+# a negative verdict is a delivered review, not a delivery failure. Only REJECT - which
+# the Lite chain raises for tampered, unbound or identity-conflicting evidence - is a
+# chain-integrity failure.
+REVIEW_ROUND_DECISIONS = ("ACCEPT", "BLOCK", "REJECT")
+REVIEW_ROUND_DECISION_REJECT = "REJECT"
+
 # A C14 verdict that unlocks the C13 half. The tuple itself is declared in the Lite chain
 # (`lite_errors.C14_PREREQUISITE_OK`); this is the same two names, restated here because
 # this module may not import the Lite package. `test_c1_c13c14_review_transport` binds the
@@ -949,6 +959,24 @@ def validate_review_result(document, *, runtime_task_id, attempt, execution_requ
             raise Refused("REVIEW_RESULT_ARTIFACT_NAME_INVALID")
         if not isinstance(value, str) or not _SHA256_HEX.match(value):
             raise Refused("REVIEW_RESULT_ARTIFACT_DIGEST_INVALID:" + name)
+    round_decision = document["round_decision"]
+    if task_kind == C14_REVIEW_KIND:
+        # The C14 half publishes no round decision: there is no round yet.
+        if round_decision is not None:
+            raise Refused("REVIEW_RESULT_C14_MUST_NOT_CARRY_A_ROUND_DECISION")
+    else:
+        if not isinstance(round_decision, dict):
+            raise Refused("REVIEW_RESULT_ROUND_DECISION_MISSING")
+        if round_decision.get("authorizes_any_action") is not False:
+            raise Refused("REVIEW_ROUND_DECISION_MUST_NOT_AUTHORIZE_ANY_ACTION")
+        if round_decision.get("decision") not in REVIEW_ROUND_DECISIONS:
+            raise Refused("REVIEW_ROUND_DECISION_UNKNOWN")
+        # Shape only. Whether this decision is the *consequence* of the sealed verdict is
+        # decided beside the Lite chain, in `c1_c13c14_review` - and a BLOCK is a
+        # perfectly ordinary outcome there.
+        if round_decision["decision"] == "ACCEPT" and \
+                document["review_verdict"] != "PASS_SCOPED":
+            raise Refused("REVIEW_RESULT_ACCEPTED_ROUND_WITH_A_NON_PASS_VERDICT")
     if not document["accepted"] and "failure_reason" not in document:
         raise Refused("REVIEW_RESULT_FAILED_WITHOUT_A_REASON")
     return document
