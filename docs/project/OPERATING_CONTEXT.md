@@ -224,33 +224,31 @@ Codex 主执行              WorkBuddy 主执行
 9. **涉及 HK-STAGING / Command Center 时，必须读当前 Runbook，不能靠历史聊天和模型记忆。**
 10. **任何 AI 都不应擅自复制私钥、凭据、AccessKey、runtime `.env` 或其他秘密到 GitHub。**
 
-## 6. 当前业务运行状态速查（新会话 5 分钟上手）
+## 6. 当前状态速查：只保留入口，不在 Bootstrap 文档硬编码易变事实
 
-> 2026-09-13 起生效。唯一机器可读指针：
-> [`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](../canonical-baseline/CURRENT_HK_RUNTIME.json)。
-> 本节是导航，不是 Execution Authority。
->
-> 2026-09-14 刷新：本节继续只描述**运行中**的运行时的导航；repository 侧事实已拆到 [`GO_CURRENT_STATE.md`](GO_CURRENT_STATE.md)。运行中的 DB revision（`0133`）与 repository migration head（`0134`）是两件事。
+> 2026-10-04 调整：本节不再保存 main SHA、application tree、migration head、image tag、DB revision、PR number 等易变化实现事实。
+> 这些值曾长期滞后于真实环境，导致新会话先读到旧答案。稳定角色/边界保留在本文件；变化状态从 current-state / canonical pointer / live environment 派生。
 
-| 问题 | 答案 |
-| --- | --- |
-| 当前业务源码在哪里 | `application/` |
-| 当前 HK 运行的是什么 | **DEPTH48** 业务运行时（2026-09-13 上线） |
-| Dockerfile 在哪里 | `application/Dockerfile`，构建上下文就是 `application/` |
-| Compose 在哪里 | `deploy/hk-staging/docker-compose.business-runtime.yml` |
-| 当前 **live HK** DB revision | `0133_flight_change_plan`（PostgreSQL 18.4，551 表）—— 这是**运行中**数据库的版本 |
-| 当前 **repository** migration head | `0134_flight_status_width`（canonical main 源码 head，**尚未**在 live HK 执行） |
-| 当前 repository 源码身份 | canonical main `8ffcde66…`，`main:application` = `dd815baf…`（1365 文件）—— 详见 [`GO_CURRENT_STATE.md`](GO_CURRENT_STATE.md) |
-| 当前 8 个业务服务 | `api` + `outbox-worker` / `recovery-worker` / `reconciliation-worker` / `judgment-worker` / `mobile-engagement-worker` / `mobile-push-worker` / `mobile-push-receipt-worker` |
-| 哪些是 protected non-target | `caddy`、`redis`、PostgreSQL/RDS 业务数据、媒体持久卷、HK Agent、Executor、签名密钥、Task/Evidence/ledger、Control Plane authority、SSH、Production |
-| 怎么从 GitHub build | `docker build -t <tag> application/` |
-| 基本 smoke | `curl -fsS http://127.0.0.1:8000/health`；worker 模块可导入；运行镜像内 `alembic heads` = `0133_flight_change_plan` |
-| 怎么运行 / 切换 | `deploy/hk-staging/README.md`（`--no-deps` + 显式 8 服务列表） |
-| 哪些已 superseded | DEPTH46 历史父包、旧 R3.x 香港运行时、`hk-staging/`（2026-09-11 快照） |
-| 什么不是 current authority | `deliverables/`、`evidence/` 中的历史证据；`CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913` 的内层镜像（只是源码载体，不是可运行镜像） |
-| 两条轴线 | **Control Plane** = `command-center/`、`control-plane/`、`hk-staging/source/{agent,executor}`；**Business Runtime** = `application/` + `deploy/hk-staging/`。不要互相推断。 |
-| 三条 HOLD | `HK_DEPLOY` / `FINAL_RELEASE` / `PRODUCTION` 在 canonical main 上均为 `HOLD`，不会因为 merge 或 context 刷新而解除 |
+新会话需要当前值时按以下顺序读取：
 
-> 本表只描述**运行中**的运行时的导航。repository 侧（main SHA、application tree、源码指纹、repository migration head、gate/release 状态、open candidate PR）一律以 [`GO_CURRENT_STATE.md`](GO_CURRENT_STATE.md) 与 [`CONTEXT_CHECKPOINT.json`](CONTEXT_CHECKPOINT.json) 为准。**运行中的 DB revision 不等于 repository migration head。**
+1. GitHub live `main` 与当前任务对应 PR / branch / commit；
+2. [`GO_CURRENT_STATE.md`](GO_CURRENT_STATE.md)；
+3. [`CONTEXT_CHECKPOINT.json`](CONTEXT_CHECKPOINT.json)；
+4. HK 业务运行时：[`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](../canonical-baseline/CURRENT_HK_RUNTIME.json)，真实部署决策再读 live HK；
+5. Persistent Runtime：以 live rt01 / 当前 Runtime Evidence 为准；
+6. 涉及 HK-STAGING / Production / migration 时，重新读取当前 deploy Runbook / Evidence，不能沿用聊天里的旧路径或旧 revision。
 
-不要从 PR 编号猜当前状态，也不要把历史 parent / sealed package / 归档快照当成 active runtime。
+长期稳定的轴线只有这些：
+
+- **Repository source**：GitHub `main`；
+- **Business Runtime**：`application/` + `deploy/hk-staging/`，实际运行身份由 live HK / `CURRENT_HK_RUNTIME.json` 解释；
+- **Persistent Runtime / AI execution transport**：`control-plane/runtime-host-channel-v1/` + rt01；
+- **Control Plane / deploy transport**：`command-center/`、相关 `control-plane/`、HK Agent/Executor；
+- **Release acceptance**：candidate / tests / C13-C14 review / Evidence；
+- **Production release**：单独的人类授权与真实执行事件。
+
+这些轴互不自动推出：
+
+`merged != deployed` · `deployed != accepted` · `accepted != authorized` · `runtime healthy != product correct`
+
+不要从 PR 编号、DEPTH 名称、历史 Evidence、旧 checkpoint 或文件名里的 `CURRENT` 猜今天的事实。
