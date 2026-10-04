@@ -27,7 +27,6 @@ the candidate and the round id, because it only has to be stable, not chosen.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import sys
@@ -37,6 +36,7 @@ from c1_execution_contract import (
     REVIEW_OWNER_C,
     build_review_task_payload,
     canonical,
+    review_request_id,
     task_idempotency_key,
 )
 
@@ -48,9 +48,14 @@ MAX_ATTEMPTS = 1
 
 
 def deterministic_request_id(candidate_sha: str, round_id: str) -> str:
-    """The review request id, derived so it is stable and cannot be chosen arbitrarily."""
-    return "REV-" + hashlib.sha256(("%s|%s" % (candidate_sha, round_id)).encode("utf-8")
-                                   ).hexdigest()[:24]
+    """The review request id.
+
+    Kept as a name here because this tool has always spelled it this way, but the
+    derivation itself now lives in `c1_execution_contract` - the formal Review Issue
+    ingress names the same round and must reach the same id, and one definition is the
+    only way that is guaranteed rather than merely tested.
+    """
+    return review_request_id(candidate_sha, round_id)
 
 
 def build(argv=None) -> dict:

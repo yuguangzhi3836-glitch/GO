@@ -544,7 +544,7 @@ class CheckIsOffline(Case):
 
 # ------------------------------------------------------------------ H
 class StructuralBounds(Case):
-    """It reuses the ingress, adds no store, and cannot enqueue the smoke class."""
+    """It reuses both ingresses, adds no store, and cannot enqueue the smoke class."""
 
     def test_it_imports_the_ingress_and_nothing_unexpected(self):
         tree = ast.parse(CONSUMER_SOURCE.read_text(encoding="utf-8"))
@@ -558,6 +558,11 @@ class StructuralBounds(Case):
             "__future__", "json", "os", "sys", "time", "urllib.error",
             "urllib.request", "importlib",
             "c1_execution_contract", "c1_github_actions_client", "c1_issue_ingress",
+            # The second issue family: a Formal Review issue is a different SHAPE, planned
+            # by its own parser. It is a module, not a runtime component - the loop, the
+            # switch, the Runtime and the de-duplication are still this file's and the
+            # kernel's, and no second consumer was created for it.
+            "c1_review_issue_ingress",
         })
         # The Runtime kernel is reached only through importlib, inside the factory, so
         # nothing here imports it - or its database - at module load.
@@ -568,15 +573,20 @@ class StructuralBounds(Case):
         source = CONSUMER_SOURCE.read_text(encoding="utf-8")
         for reused in ("from c1_issue_ingress import", "plan_ingress(", "ingest(",
                        "ingress_enabled(", "is_builder_cell(", "TITLE_SEPARATOR",
-                       "TITLE_CELL"):
+                       "TITLE_CELL",
+                       "from c1_review_issue_ingress import", "plan_review_ingress(",
+                       "ingest_review(", "looks_like_review_issue("):
             with self.subTest(symbol=reused):
                 self.assertIn(reused, source)
         # No second parser, no second schema, no second idempotency derivation, and no
         # second opinion about which cells are Builder cells: the ingress owns all four,
-        # and the consumer only calls them.
+        # and the consumer only calls them. The review family is held to the same rule -
+        # the consumer plans a review BY CALLING its ingress, never by parsing one.
         for forbidden in ("def parse_c01_issue", "build_task_payload",
                           "real_idempotency_key", "schema_version",
-                          "canonical_cell_id", "BUILDER_OWNER_CS"):
+                          "canonical_cell_id", "BUILDER_OWNER_CS",
+                          "def parse_review_issue", "build_review_task_payload",
+                          "review_request_id", "round_identity", "task_idempotency_key"):
             with self.subTest(token=forbidden):
                 self.assertNotIn(forbidden, source)
 
