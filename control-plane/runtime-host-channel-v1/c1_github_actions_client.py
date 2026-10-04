@@ -122,7 +122,7 @@ class GitHubActionsClient:
     def __init__(self, *, token_loader=None, opener=urllib.request.urlopen,
                  redirect_opener=None, no_redirect_opener=None, api_base=API_BASE,
                  api_version=API_VERSION, timeout_s=HTTP_TIMEOUT_S,
-                 workflow_file=None, ref=None):
+                 workflow_file=None, workflow_files=None, ref=None, result_member=None):
         self._token_loader = token_loader or configured_token_loader()
         self._opener = opener
         # The signed artifact URL rejects an Authorization header, so the follow-up
@@ -135,8 +135,23 @@ class GitHubActionsClient:
         self._version = api_version
         self._timeout = timeout_s
         # The executor binding. Fixed at construction and never taken from a request.
-        self._workflow_file = workflow_file or WORKFLOW_FILE
+        # The executor's dispatch target(s). ONE executor normally owns one workflow;
+        # the C13/C14 review executor owns two, because each cell's review is its own
+        # existing workflow and the two are different executions of different cells.
+        # A tuple widens which targets are admissible, never whether one is checked:
+        # `assert_bound_target` still refuses anything that is not on this list, so a
+        # review request can never be delivered to the Builder's workflow, nor a Builder
+        # request here. The first entry stays the executor's declared identity for
+        # status, and with neither argument this is the single original target.
+        if workflow_files is not None:
+            self._workflow_files = tuple(workflow_files)
+            if not self._workflow_files:
+                raise Refused("EXECUTOR_HAS_NO_DISPATCH_TARGET")
+        else:
+            self._workflow_files = (workflow_file or WORKFLOW_FILE,)
+        self._workflow_file = self._workflow_files[0]
         self._ref = ref or REF
+        self._result_member = result_member or RESULT_ARTIFACT_FILE
         self._dispatch_endpoint = dispatch_endpoint(self._workflow_file)
 
     # ------------------------------------------------------------------ transport
@@ -208,7 +223,7 @@ class GitHubActionsClient:
         disagrees is not repaired here.
         """
         recorded = request.get("workflow_file")
-        if recorded != self._workflow_file:
+        if recorded not in self._workflow_files:
             raise Refused("DISPATCH_TARGET_IS_NOT_THIS_EXECUTORS_WORKFLOW:%s" % recorded)
         if request.get("ref") != self._ref:
             raise Refused("DISPATCH_REF_IS_NOT_THIS_EXECUTORS_REF:%s" % request.get("ref"))
@@ -229,7 +244,11 @@ class GitHubActionsClient:
         payload = {"ref": self._ref,
                    "inputs": {name: value if isinstance(value, str) else str(value)
                               for name, value in dispatch_inputs(request).items()}}
-        status, raw = self._call("POST", self._dispatch_endpoint, payload)
+        # Resolved from the (already checked) request, so a two-target executor sends to
+        # the workflow the task's own class names - never to whichever one it happens to
+        # hold first.
+        endpoint = dispatch_endpoint(request["workflow_file"])
+        status, raw = self._call("POST", endpoint, payload)
         if status == 204 or not raw:
             return ("sent", None)
         document = self._document(raw)
@@ -292,6 +311,53 @@ class GitHubActionsClient:
         import hashlib
         return {"bytes": result_bytes,
                 "digest": "sha256:" + hashlib.sha256(result_bytes).hexdigest(),
+                "github_run_id": run_id}
+
+    def download_artifact_members(self, run_id: int, name: str, members) -> dict | None:
+        """Return several named files from ONE artifact, digests recomputed here.
+
+        The C1/C12 classes publish a single-file result, which `download_artifact`
+        already handles. The review classes publish the Lite workflow's own bundle
+        artifact, which holds several files - so the *same* transport gains the ability
+        to take named members out of it instead of gaining a second HTTP client.
+        Nothing is inferred: a member that is not present is a refusal, because
+        accepting "whatever was in the zip" is how an artifact stops being a contract.
+        """
+        wanted = tuple(members)
+        status, raw = self._call(
+            "GET", "%s/%s/artifacts?name=%s" % (RUNS_ENDPOINT, run_id, name))
+        listing = self._document(raw)
+        artifacts = listing.get("artifacts") or []
+        if not artifacts:
+            return None
+        if len(artifacts) > 1:
+            raise Refused("MORE_THAN_ONE_ARTIFACT_WITH_THE_EXECUTION_IDENTITY")
+        artifact = artifacts[0]
+        if artifact.get("expired"):
+            raise Refused("ARTIFACT_EXPIRED")
+        status, archive = self._call(
+            "GET", "/repos/%s/actions/artifacts/%s/zip" % (self._repo_slug(),
+                                                           artifact["id"]),
+            follow_redirect=False)
+        if len(archive) > MAX_ARTIFACT_BYTES:
+            raise Refused("ARTIFACT_TOO_LARGE")
+        import hashlib
+        declared = artifact.get("digest")
+        if declared and declared != "sha256:" + hashlib.sha256(archive).hexdigest():
+            raise Refused("ARTIFACT_ARCHIVE_DIGEST_MISMATCH")
+        found = {}
+        try:
+            with zipfile.ZipFile(io.BytesIO(archive)) as bundle:
+                present = set(bundle.namelist())
+                for member in wanted:
+                    if member not in present:
+                        raise Refused("ARTIFACT_MEMBER_MISSING:" + member)
+                    found[member] = bundle.read(member)
+        except zipfile.BadZipFile:
+            raise Refused("ARTIFACT_NOT_A_ZIP") from None
+        return {"members": found,
+                "digests": {k: "sha256:" + hashlib.sha256(v).hexdigest()
+                            for k, v in found.items()},
                 "github_run_id": run_id}
 
     def _repo_slug(self) -> str:

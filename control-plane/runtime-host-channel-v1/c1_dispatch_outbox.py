@@ -389,8 +389,19 @@ class DispatchOutbox:
         self._update(request_id, github_run_id=github_run_id, state=RUN_BOUND)
 
     # --------------------------------------------------------------------- result
-    def record_result(self, request_id, document, *, runtime_task_id, attempt) -> dict:
-        """Store a sealed result. Identical bytes are idempotent; different bytes refuse."""
+    def record_result(self, request_id, document, *, runtime_task_id, attempt,
+                      validator=None) -> dict:
+        """Store a sealed result. Identical bytes are idempotent; different bytes refuse.
+
+        Validation is always performed here and never skipped - what an injected
+        `validator` changes is only WHICH acceptance rule applies, never WHETHER one
+        does. The default is this channel's own result contract, so every existing
+        caller keeps the rule it was proven with; a class whose result is not that
+        document (the C13/C14 review envelope) supplies its own validator instead of
+        having its result dressed up as one this contract would accept. It is called
+        with the same arguments and has the same duty: refuse anything that is not a
+        valid, correctly-bound, non-authorising result for this exact identity.
+        """
         row = self._row(request_id)
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
@@ -398,9 +409,13 @@ class DispatchOutbox:
         # Validated against this identity's own task class, never a default: a real task's
         # result must not be judged by the smoke's fixed-literal rule, and the smoke's must
         # not be relaxed by the real rule.
-        validate_result(document, runtime_task_id=runtime_task_id, attempt=attempt,
-                        execution_request_id_=request_id,
-                        task_kind=self.task_kind_for(request_id))
+        task_kind = self.task_kind_for(request_id)
+        if validator is None:
+            validate_result(document, runtime_task_id=runtime_task_id, attempt=attempt,
+                            execution_request_id_=request_id, task_kind=task_kind)
+        else:
+            validator(document, runtime_task_id=runtime_task_id, attempt=attempt,
+                      execution_request_id_=request_id, task_kind=task_kind)
         payload = canonical(document)
         digest = sha256_hex(payload)
         if row["result_json"] is not None:

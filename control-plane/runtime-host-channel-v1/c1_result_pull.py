@@ -67,7 +67,8 @@ def artifact_name(runtime_task_id: int | str, attempt: int, request=None) -> str
 
 
 def pull_result(outbox: DispatchOutbox, runtime_task_id, attempt, *, client,
-                expected_run_id=None, request=None) -> dict:
+                expected_run_id=None, request=None, validator=None,
+                artifact=None) -> dict:
     """One bounded attempt to obtain and seal the terminal result for this execution.
 
     `client` must provide:
@@ -124,8 +125,19 @@ def pull_result(outbox: DispatchOutbox, runtime_task_id, attempt, *, client,
         return {"action": "RUN_DID_NOT_SUCCEED", "execution_request_id": request_id,
                 "conclusion": run.get("conclusion")}
 
-    artifact = client.download_artifact(run_id, artifact_name(runtime_task_id, attempt,
-                                                             request=request))
+    # WHICH artifact carries this class's answer is a property of the class, not of the
+    # task: the C1/C12 classes publish `c1-ai-execution-result-<identity>`, while the
+    # review classes publish the Lite workflow's own bundle artifact. `artifact` is an
+    # injected loader for exactly that difference; with none the default name is used,
+    # so every existing caller is unchanged.
+    if artifact is None:
+        artifact = client.download_artifact(
+            run_id, artifact_name(runtime_task_id, attempt, request=request))
+    else:
+        # The loader is told WHICH request this is, because which artifact carries a
+        # class's answer is a property of the class's payload - a review's artifact is
+        # named after the frozen candidate, which only the request knows.
+        artifact = artifact(client, run_id, request)
     if artifact is None:
         return {"action": "ARTIFACT_MISSING", "execution_request_id": request_id}
 
@@ -139,20 +151,23 @@ def pull_result(outbox: DispatchOutbox, runtime_task_id, attempt, *, client,
     except (UnicodeDecodeError, ValueError):
         raise Refused("ARTIFACT_NOT_VALID_JSON") from None
 
-    validate_result(document, runtime_task_id=runtime_task_id, attempt=attempt,
-                    execution_request_id_=request_id, task_kind=task_kind)
-    if document["github_run_id"] != run_id:
+    actual_run_id = run_id
+    if document.get("github_run_id") != actual_run_id:
         raise Refused("RESULT_BELONGS_TO_ANOTHER_RUN")
+    if validator is None:
+        validate_result(document, runtime_task_id=runtime_task_id, attempt=attempt,
+                        execution_request_id_=request_id, task_kind=task_kind)
 
     outbox.record_result(request_id, document, runtime_task_id=runtime_task_id,
-                         attempt=attempt)
+                         attempt=attempt, validator=validator)
     return {"action": "RESULT_SEALED", "execution_request_id": request_id,
             "result": document,
             "completion": outbox.completion_binding(request_id)}
 
 
 def complete_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attempt, *,
-                        client, worker_id, request=None) -> dict:
+                        client, worker_id, request=None, validator=None,
+                        artifact=None, on_result_sealed=None) -> dict:
     """Pull, validate, and complete through the Runtime's own contract.
 
     `Runtime.complete()` is called with the exact attempt the outbox holds, so the
@@ -163,7 +178,8 @@ def complete_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attemp
     `fail_after_pull` - which reports the failure to the Runtime and settles the identity,
     rather than leaving it in flight to be retried forever.
     """
-    pulled = pull_result(outbox, runtime_task_id, attempt, client=client, request=request)
+    pulled = pull_result(outbox, runtime_task_id, attempt, client=client, request=request,
+                         validator=validator, artifact=artifact)
     if pulled["action"] == "RUN_DID_NOT_SUCCEED":
         return fail_after_pull(outbox, runtime, runtime_task_id, attempt,
                                worker_id=worker_id,
@@ -182,6 +198,21 @@ def complete_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attemp
 
     binding = outbox.completion_binding(request_id)
     document = outbox.terminal_result(request_id)
+    # Between the seal and the completion, and ONLY here. A result that is allowed to
+    # have a consequence must have it before the Runtime is told the task is over:
+    # completing first would mean a crash in between leaves a finished task whose
+    # consequence never happened, and nothing would ever come back for it - the C14 run
+    # would be COMPLETED and the C13 half would simply never exist. Enqueueing first uses
+    # the Runtime's own idempotency as the transaction coordinator: a crash after the
+    # enqueue and before the completion is repaired by the next tick, which re-runs this
+    # hook, gets the SAME C13 task back from the same deterministic key, and then
+    # completes C14 normally. No coordinator, no second durable journal.
+    sealed_effect = None
+    if on_result_sealed is not None:
+        # A hook is free to have nothing to say - a C13 execution, for instance, has no
+        # second half to create - so its return value is recorded when there is one and
+        # the absence of one is not an error.
+        sealed_effect = on_result_sealed(document, binding, outbox, runtime)
     # The owner cell comes from the stored binding, never from a constant and never from
     # this function's caller. One Builder executor serves twelve cells, so "which cell
     # must be told" is a property of the execution; `completion_binding()` reads it back
@@ -199,7 +230,8 @@ def complete_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attemp
     return {"action": "COMPLETED", "execution_request_id": request_id,
             "runtime_task_id": binding["runtime_task_id"],
             "expected_attempt": binding["expected_attempt"],
-            "accepted": document["accepted"]}
+            "accepted": document["accepted"],
+            "sealed_effect": sealed_effect}
 
 
 def failure_record(*, runtime_task_id, attempt, execution_request_id_, github_run_id,
