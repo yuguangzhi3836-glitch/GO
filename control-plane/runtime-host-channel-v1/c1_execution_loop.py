@@ -210,7 +210,8 @@ def _renew(runtime, task_id, attempt, *, worker_id, lease_s) -> bool:
 def advance(outbox, runtime, claimed, *, worker_id: str, client,
             lease_s: int = DEFAULT_LEASE_S, clock=time.time,
             claimable_kinds=CLAIMABLE_KINDS, result_validator=None,
-            artifact_loader=None, on_result_sealed=None) -> dict:
+            artifact_loader=None, on_result_sealed=None,
+            confirm_lease=False) -> dict:
     """One bounded tick for a task that was just claimed. Never dispatches twice.
 
     `claimed` is what `Runtime.claim()` returned (task_id, owner_c, kind, payload,
@@ -235,13 +236,14 @@ def advance(outbox, runtime, claimed, *, worker_id: str, client,
                       task_spec(identity["kind"], identity["payload"])),
                   worker_id=worker_id, client=client, lease_s=lease_s, clock=clock,
                   result_validator=result_validator, artifact_loader=artifact_loader,
-                  on_result_sealed=on_result_sealed)
+                  on_result_sealed=on_result_sealed, confirm_lease=confirm_lease)
 
 
 def resume(outbox, runtime, runtime_task_id, attempt, *, worker_id: str, client,
            lease_s: int = DEFAULT_LEASE_S, clock=time.time,
            claimable_kinds=CLAIMABLE_KINDS, result_validator=None,
-           artifact_loader=None, on_result_sealed=None) -> dict:
+           artifact_loader=None, on_result_sealed=None,
+           confirm_lease=False) -> dict:
     """One bounded tick for an execution identity this outbox already owns.
 
     This is the half the first deployment was missing. A task the worker has claimed is
@@ -285,12 +287,12 @@ def resume(outbox, runtime, runtime_task_id, attempt, *, worker_id: str, client,
     return _drive(outbox, runtime, runtime_task_id, attempt, worker_id=worker_id,
                   client=client, lease_s=lease_s, clock=clock, request=request,
                   result_validator=result_validator, artifact_loader=artifact_loader,
-                  on_result_sealed=on_result_sealed)
+                  on_result_sealed=on_result_sealed, confirm_lease=confirm_lease)
 
 
 def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clock,
            request=None, result_validator=None, artifact_loader=None,
-           on_result_sealed=None) -> dict:
+           on_result_sealed=None, confirm_lease=False) -> dict:
     """The three legs, once, for one execution identity. Shared by claim and resume.
 
     It starts by registering the identity, which commits the intent durably before
@@ -367,6 +369,26 @@ def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clo
             return _fail(outbox, runtime, task_id, attempt, request=request,
                          worker_id=worker_id,
                          conclusion="PRIOR_ATTEMPT_RUN_FAILED")
+
+    # ---- the lease, before the one leg that can spend anything ----------------
+    # Optional, and OFF by default, so every existing caller keeps the behaviour it has
+    # always had - including the settlement tests that deliberately drive a dispatch with
+    # a lease that has already gone (the run really did happen, `runtime_told` is False,
+    # and the identity is settled locally). An executor that opts in gets the stricter
+    # rule, and the review executor does, for a reason of its own: see its `main`.
+    #
+    # `renew_task()` refuses once the lease has expired, or once the task is no longer
+    # RUNNING under this worker - recovered, escalated, or taken by someone else. Every one
+    # of those is permanent for THIS identity, and the Runtime would refuse the completion
+    # for the same reason, so a dispatch sent now would be a real, PAID execution whose
+    # result could never be recorded.
+    #
+    # Checked only in the DISPATCH branch, which is the only branch that calls `send`: a
+    # lookup that finds an already-paid run costs nothing and must still happen, so that a
+    # sealed result stays available to be adopted.
+    if confirm_lease and action == "DISPATCH" and \
+            not _renew(runtime, task_id, attempt, worker_id=worker_id, lease_s=lease_s):
+        return _abandon(outbox, task_id, attempt, request=request, reason="LEASE_LOST")
 
     # ---- dispatch leg: at most one POST per execution identity ----------------
     if action in ("DISPATCH", "LOOKUP_RUN"):
@@ -450,10 +472,12 @@ def _settled(request_id, task_id, attempt, outbox, outcome) -> dict:
 
 
 def _abandon(outbox, task_id, attempt, *, request, reason) -> dict:
-    """Settle an identity the Runtime has refused, so it stops being retried.
+    """Settle an identity the Runtime will not accept a completion for, so it stops being retried.
 
-    Only reachable from a refusal by the Runtime's own fence, which is permanent for
-    this (task, attempt) - see the module docstring. Retrying would be pointless, and
+    Reachable two ways, and both are permanent for this (task, attempt): the Runtime
+    refused a completion (its fence), or the lease could not be renewed before the
+    dispatch leg - so the completion would be refused for exactly the same reason, and
+    the identity is settled WITHOUT spending anything. Retrying would be pointless, and
     leaving the row unfinished would keep the worker from ever claiming anything again.
     Nothing is dispatched here, and nothing can be dispatched for this identity later.
     """

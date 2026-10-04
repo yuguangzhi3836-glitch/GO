@@ -1048,3 +1048,138 @@ class J_ReadinessRefusesWorkItCouldNotFinish(unittest.TestCase):
     def worker(self):
         import c1_c13c14_review_worker
         return c1_c13c14_review_worker
+
+
+# ================ K: the lease, confirmed before the only leg that can spend anything
+class K_NoPaidDispatchWithoutTheLease(unittest.TestCase):
+    """The second live C14 round: a dispatch the Runtime would not accept.
+
+    The first live C14 round sat in a refused dispatch for longer than its lease while the
+    defect behind that refusal was diagnosed and fixed. The Runtime recovered the task as
+    `MAX_ATTEMPTS_EXHAUSTED` and escalated it - correctly - and the worker then came back,
+    found the identity still pending in its OWN outbox, and dispatched it anyway. The run
+    was real and succeeded, and the completion was refused because the task was no longer
+    RUNNING under this worker: a paid execution whose result could not be recorded.
+
+    What these tests pin is the rule that prevents it. The lease is confirmed at the one
+    place that can spend, and an identity that cannot be renewed is not dispatched - the
+    transport is not even asked. A fresh claim is unaffected, because `claim()` has just
+    granted exactly the lease this checks.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="u7b-lease-")
+        self.clock = Clock()
+        self.rt = RuntimeDouble(self.clock)
+        self.outbox = outbox_mod.DispatchOutbox(str(Path(self.tmp) / "outbox.db"))
+
+    @property
+    def worker(self):
+        import c1_c13c14_review_worker
+        return c1_c13c14_review_worker
+
+    def transport(self, kind, **kw):
+        payload = c14_payload() if kind == C14 else c13_payload()
+        role = "c14" if kind == C14 else "c13"
+        name = contract.review_artifact_name(kind, payload["candidate_sha"])
+        return ReviewTransport(
+            bundles={name: {"%s_bundle.json" % role: bundle_bytes(sealed(role))}}, **kw)
+
+    def register(self, kind, payload, task_id, *, status, lease_until):
+        """A pending identity in the outbox, and a Runtime task in a given fenced state."""
+        request = contract.build_dispatch_request(task_id, 1,
+                                                  contract.task_spec(kind, payload))
+        self.outbox.register(task_id, 1, request=request)
+        task = runtime_task(self.rt, contract.REVIEW_OWNER_C[kind], kind, payload, task_id)
+        task.status, task.attempts = status, 1
+        task.lease_owner, task.lease_until = "w", lease_until
+        return request
+
+    def resume(self, kind, task_id, transport):
+        return loop_mod.resume(self.outbox, self.rt, task_id, 1, worker_id="w",
+                               client=transport, claimable_kinds=(kind,),
+                               confirm_lease=True, **review_hooks(self.outbox))
+
+    def test_an_escalated_task_is_never_dispatched(self):
+        # The live shape: the Runtime had already recovered and escalated the task.
+        transport = self.transport(C14)
+        request = self.register(C14, c14_payload(), "rt_c14",
+                                status="ESCALATED", lease_until=1_700_000_120.0)
+        outcome = self.resume(C14, "rt_c14", transport)
+        self.assertEqual(transport.dispatched_targets, [],
+                         "a task the Runtime has escalated must never be dispatched")
+        self.assertEqual(outcome["action"], outbox_mod.ABANDONED)
+        self.assertEqual(outcome["reason"], "LEASE_LOST")
+        snapshot = self.outbox.snapshot(request["execution_request_id"])
+        self.assertEqual(snapshot["dispatches_sent"], 0)
+        self.assertEqual(snapshot["state"], outbox_mod.ABANDONED)
+
+    def test_an_expired_lease_is_never_dispatched_on_either_leg(self):
+        # The other unrecoverable shape: still RUNNING, but the lease has run out.
+        for kind, payload, task_id in ((C14, c14_payload(), "rt_c14"),
+                                       (C13, c13_payload(), "rt_c13")):
+            with self.subTest(kind=kind):
+                transport = self.transport(kind)
+                request = self.register(kind, payload, task_id, status="RUNNING",
+                                        lease_until=1_700_000_000.0)
+                outcome = self.resume(kind, task_id, transport)
+                self.assertEqual(transport.dispatched_targets, [], kind)
+                self.assertEqual(outcome["reason"], "LEASE_LOST")
+                self.assertEqual(
+                    self.outbox.snapshot(request["execution_request_id"])["dispatches_sent"], 0)
+
+    def test_a_resume_that_still_holds_its_lease_dispatches_and_completes(self):
+        # The confirmation must not break crash recovery, which is why `resume` exists.
+        transport = self.transport(C14)
+        request = self.register(C14, c14_payload(), "rt_c14", status="RUNNING",
+                                lease_until=1_700_000_120.0)
+        outcome = self.resume(C14, "rt_c14", transport)
+        self.assertEqual(transport.dispatched_targets, ["c14-rule-compliance.yml"])
+        self.assertEqual(outcome["action"], "COMPLETED")
+        self.assertEqual(self.rt.tasks["rt_c14"].status, "SUCCEEDED")
+        self.assertEqual(
+            self.outbox.snapshot(request["execution_request_id"])["dispatches_sent"], 1)
+
+    def test_a_lookup_that_finds_an_already_paid_run_is_never_blocked_by_the_lease(self):
+        # A lookup spends nothing, and the run it finds may already hold an answer worth
+        # adopting - so it must still happen, even with the lease gone.
+        transport = self.transport(C14, declare_run_id=False)
+        transport.run_status = "completed"
+        request = self.register(C14, c14_payload(), "rt_c14", status="RUNNING",
+                                lease_until=1_700_000_120.0)
+        self.resume(C14, "rt_c14", transport)                      # ambiguous POST
+        self.clock.advance(1000)                                   # the lease dies
+        self.resume(C14, "rt_c14", transport)
+        self.assertEqual(len(transport.lookups), 1)
+        self.assertIsNotNone(self.outbox.terminal_result(request["execution_request_id"]))
+
+    def test_a_fresh_claim_is_unaffected_by_the_confirmation(self):
+        # `advance()` was just handed the lease, so the confirmation passes by construction.
+        transport = self.transport(C14)
+        outcome = drive(self.rt, self.outbox, transport, "C14", C14, c14_payload(), "rt_c14",
+                        confirm_lease=True)
+        self.assertEqual(transport.dispatched_targets, ["c14-rule-compliance.yml"])
+        self.assertEqual(outcome["action"], "COMPLETED")
+        self.assertEqual(self.rt.tasks["rt_c14"].status, "SUCCEEDED")
+
+    def test_the_confirmation_is_off_by_default(self):
+        # The Builder's settlement tests drive exactly this shape - a tick whose lease has
+        # already gone still dispatches - and pin what happens next, so the generic loop's
+        # default must stay as it was. Only the review executor opts in.
+        transport = self.transport(C14, declare_run_id=False)
+        self.register(C14, c14_payload(), "rt_c14", status="RUNNING",
+                      lease_until=1_700_000_000.0)
+        outcome = loop_mod.resume(self.outbox, self.rt, "rt_c14", 1, worker_id="w",
+                                  client=transport, claimable_kinds=(C14,))
+        self.assertEqual(transport.dispatched_targets, ["c14-rule-compliance.yml"])
+        self.assertNotEqual(outcome.get("reason"), "LEASE_LOST")
+
+    def test_the_review_executor_opts_in_without_being_asked(self):
+        # Running the review worker the ordinary way - no extra arguments - must be the
+        # strict configuration. An opt-in that a unit could forget is not an opt-in.
+        self.register(C14, c14_payload(), "rt_c14", status="ESCALATED",
+                      lease_until=1_700_000_120.0)
+        transport = self.transport(C14)
+        outcome = self.worker.tick(self.rt, self.outbox, transport)
+        self.assertEqual(transport.dispatched_targets, [], outcome)
+        self.assertEqual(outcome["reason"], "LEASE_LOST")
