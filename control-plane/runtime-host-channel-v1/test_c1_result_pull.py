@@ -108,7 +108,8 @@ class PullTests(PullCase):
         result = pull_mod.pull_result(self.outbox, TASK, 1, client=client)
         self.assertEqual(result["action"], "RESULT_SEALED")
         self.assertEqual(result["completion"],
-                         {"runtime_task_id": TASK, "expected_attempt": 1})
+                         {"owner_c": "C1", "runtime_task_id": TASK,
+                          "expected_attempt": 1})
         self.assertEqual(client.downloads, [(RUN_ID, pull_mod.artifact_name(TASK, 1))])
         self.assertEqual(self.outbox.snapshot(
             contract.execution_request_id(TASK, 1))["state"], outbox_mod.RESULT_SEALED)

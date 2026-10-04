@@ -218,41 +218,57 @@ class TheGitHubAccessIsReadOnly(Case):
 
 
 # ------------------------------------------------------------------ B
-class OnlyC01IssuesAreConsidered(Case):
-    """Other cells and pull requests never reach the parser."""
+class OnlyBuilderCellsAreConsidered(Case):
+    """Control-only cells, unknown cells and pull requests never reach the parser."""
 
-    def test_the_prefilter_accepts_c01_titles_only(self):
-        self.assertTrue(consumer.looks_like_c01(self.issue(79)))
-        for title in ("C02 · V70-R3-C02-01 · trusted coupon plan",
+    def test_the_prefilter_accepts_builder_cells_only(self):
+        # Cell spellings are upper case, as the ingress' own title regex requires - a
+        # lower-case cell never has been a candidate, and this round does not change that.
+        for cell in ("C01", "C1", "C02", "C09", "C10", "C12"):
+            issue = self.issue(79)
+            issue["title"] = "%s · V70-R3-C12-01 · platform hardening" % cell
+            with self.subTest(cell=cell):
+                self.assertTrue(consumer.looks_like_builder_issue(issue))
+        for title in ("C13 · V70-R3-C13-01 · independent acceptance",
+                      "C14 · V70-R3-C14-01 · constitutional review",
+                      "C15 · V70-R3-C15-01 · does not exist",
+                      "C0 · V70-R3-C01-01 · no such cell",
+                      "C00 · V70-R3-C01-01 · no such cell",
                       "V70-R4-C05-01 — bind FAILED reconciliation",
                       "C01 · no task id here",
                       "C13 independent acceptance for PR #76"):
             issue = self.issue(79)
             issue["title"] = title
             with self.subTest(title=title):
-                self.assertFalse(consumer.looks_like_c01(issue))
+                self.assertFalse(consumer.looks_like_builder_issue(issue))
         pull = self.issue(79)
         pull["pull_request"] = {"url": "x"}
-        self.assertFalse(consumer.looks_like_c01(pull))
+        self.assertFalse(consumer.looks_like_builder_issue(pull))
 
-    def test_only_the_c01_issue_becomes_a_candidate(self):
+    def test_every_builder_cell_becomes_a_candidate_and_nothing_else_does(self):
         listing = [self.issue(79)]
-        for index, title in enumerate(
-                ("C02 · V70-R3-C02-01 · trusted coupon plan and exact consent",
-                 "V70-R4-C05-01 — bind FAILED reconciliation")):
+        accepted = ("C02 · V70-R3-C02-01 · trusted coupon plan and exact consent",
+                    "C12 · V70-R3-C12-01 · platform hardening")
+        rejected = ("C13 · V70-R3-C13-01 · independent acceptance",
+                    "V70-R4-C05-01 — bind FAILED reconciliation")
+        for index, title in enumerate(accepted + rejected):
             clone = self.issue(79)
             clone["title"] = title
             clone["number"] = 999 - index
             listing.append(clone)
         pull = self.issue(79)
-        pull["number"] = 998
+        pull["number"] = 900
         pull["pull_request"] = {"url": "x"}
         listing.append(pull)
 
         result = consumer.poll_once(reader=self.reader([listing]), environ={})
-        self.assertEqual(result["listed"], 4)
-        self.assertEqual(result["candidates"], 1)
-        self.assertEqual([e["issue_number"] for e in result["planned"]], [79])
+        self.assertEqual(result["listed"], 6)
+        # Three candidates - C01, C02 and C12. The control-only cell and the
+        # non-three-segment title are filtered before the parser ever sees them, and so
+        # is the pull request.
+        self.assertEqual(result["candidates"], 3)
+        self.assertEqual(sorted(e["issue_number"] for e in result["planned"]),
+                         [79, 998, 999])
         self.assertEqual(result["refused"], [])
         self.assertEqual(result["enqueued"], [])
 
@@ -517,14 +533,16 @@ class StructuralBounds(Case):
     def test_it_reuses_the_ingress_instead_of_reimplementing_it(self):
         source = CONSUMER_SOURCE.read_text(encoding="utf-8")
         for reused in ("from c1_issue_ingress import", "plan_ingress(", "ingest(",
-                       "ingress_enabled(", "TITLE_SEPARATOR", "TITLE_CELL"):
+                       "ingress_enabled(", "is_builder_cell(", "TITLE_SEPARATOR",
+                       "TITLE_CELL"):
             with self.subTest(symbol=reused):
                 self.assertIn(reused, source)
-        # No second parser, no second schema, no second idempotency derivation: the
-        # ingress owns all three, and the consumer only calls them.
+        # No second parser, no second schema, no second idempotency derivation, and no
+        # second opinion about which cells are Builder cells: the ingress owns all four,
+        # and the consumer only calls them.
         for forbidden in ("def parse_c01_issue", "build_task_payload",
                           "real_idempotency_key", "schema_version",
-                          "canonical_cell_id"):
+                          "canonical_cell_id", "BUILDER_OWNER_CS"):
             with self.subTest(token=forbidden):
                 self.assertNotIn(forbidden, source)
 

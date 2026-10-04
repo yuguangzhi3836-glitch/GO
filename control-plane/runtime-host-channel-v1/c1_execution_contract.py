@@ -7,9 +7,11 @@ GitHub-hosted executor can never drift apart about what a given execution *is*:
   GitHub workflow  ->  c1_ai_execution_backend.py  ->  sealed result  ->  Runtime
 
 Fixed by configuration, NEVER by task input:
-  repository, workflow file, git ref, owner cell, model endpoint.
+  repository, workflow file, git ref, model endpoint.
 
-Carried by the task: the task's own payload, plus `runtime_task_id` and `attempt`.
+Carried by the task: the task's own payload, plus `runtime_task_id` and `attempt`. For a
+task that names its own cell, `owner_c` is carried the same way - as a field of the
+payload, canonicalised on the way in - and never chosen by a caller as a free value.
 
 Derived, never sent by a caller as an independent value:
   execution_request_id = sha256(canonical(task binding))
@@ -33,7 +35,9 @@ to exactly ONE executor:
          The first real capability. It carries one real task's execution input, derives
          the prompt from the claimed task's payload, and accepts any well-formed
          non-empty model output instead of one fixed literal. Executed by
-         `c1_worker.py` - one OpenAI Responses call per execution.
+         `c1_worker.py` - one OpenAI Responses call per execution. **C1 only**, and it
+         stays C1 only: the Responses backend was proven for one cell and this round
+         does not widen it.
 
   REAL   kind `GHAW_BUILDER_V1`  payload = the SAME validated real-task payload
          The same task shape, a different execution: a gh-aw workflow that runs its own
@@ -41,6 +45,9 @@ to exactly ONE executor:
          carries `provider = GITHUB_AGENTIC_WORKFLOWS` instead of the Responses
          endpoint, so the two real classes can never share an execution identity even
          for the same Runtime task and attempt.
+         **C1..C12**: one Builder executor serves every normal engineering cell. The
+         cell range is not a free parameter - it is `BUILDER_OWNER_CS`, and every gate
+         in this channel derives from it.
 
 The classes can never collide: their bindings have different key sets (smoke vs real) or
 different kinds and providers (the two real classes), so no payload can derive a binding
@@ -56,6 +63,15 @@ so `owner_c` is `C1`..`C14`. The Owner's own cell names are zero-padded (`C01`..
 There is exactly ONE canonical internal representation - the kernel's - and exactly one
 place where the external spelling is folded into it: `canonical_cell_id()`. Nothing
 downstream ever sees both spellings, so no task can acquire two keys.
+
+Knowing a canonical name and being allowed to run it are two different questions. The
+kernel has 14 cells; a Builder serves 12 of them. `canonical_cell_id()` therefore still
+recognises `C13` and `C14` - refusing them there would break the global parser every
+other consumer relies on - and it is the executor's own owner set (`allowed_owner_cs`)
+that excludes them. C13 and C14 are the two control-only cells: the workbench's own
+`application/src/go_hotel/workbench/definitions.py` marks them `control_only=True`, and
+`test_c1_cell_generalization` binds this module's owner set to that definition rather
+than letting the two drift apart.
 
 ------------------------------------------------------------- real task payload shape
 A real payload carries only what executing the AI needs, split by role so that adding a
@@ -115,6 +131,21 @@ def dispatch_endpoint_for_kind(task_kind: str) -> str:
 # ------------------------------------------------- canonical responsibility identity
 # The kernel's own canonical spelling: `C1`, never `C01`.
 OWNER_C = "C1"
+
+# The two executor boundaries, stated once. A kind belongs to exactly one executor, and
+# the cells that executor may run are part of that boundary rather than a separate rule.
+#
+#   Responses-API executor : AI_WORK_V1, AI_TASK_V1 -> C1 only      (unchanged)
+#   gh-aw Builder executor : GHAW_BUILDER_V1        -> C1..C12
+#
+# C13 and C14 are the two control-only cells and belong to NEITHER set. They are the
+# Independent QA/Release cell and the constitutional/legal/regulatory control cell; the
+# workbench definition marks both `control_only=True`, and a Builder is not what either
+# of them is. Excluding them here is the first of three independent gates - the worker's
+# claim list, this validator, and the workflow's pre-agent gate - so no prompt, typo or
+# mis-issued enqueue can turn a Builder into a control-cell executor.
+LEGACY_OWNER_CS = (OWNER_C,)
+BUILDER_OWNER_CS = tuple("C%d" % index for index in range(1, 13))
 
 # The Owner writes `C01`, `C02`, ... The kernel only knows `C1`, `C2`, ...
 _EXTERNAL_PADDED_CELL = re.compile(r"^C0([1-9])$")
@@ -194,6 +225,15 @@ DISPATCH_INPUT_NAMES = ("runtime_task_id", "attempt", "execution_request_id")
 # different process and a different checkout, so its prompt cannot be re-derived without
 # them. It still never carries a model, an endpoint, a ref or a repository.
 REAL_DISPATCH_INPUT_NAMES = DISPATCH_INPUT_NAMES + ("task_kind", "task_payload")
+# The gh-aw Builder carries its owner cell as well. It is not a free input: it is copied
+# from the binding's `owner_c`, which the validator derived from the payload's `cell_id`
+# and checked against BUILDER_OWNER_CS. Sending it explicitly is what lets the workflow
+# independently check `owner_c == canonical(task_payload.cell_id)` and refuse before the
+# agent starts - a second gate that is worth one more wire field, because the two values
+# travel by different routes and can therefore disagree if anything upstream is wrong.
+# The Responses real class keeps the two-name real set: its backend has no such gate and
+# this round does not change it.
+GHAW_BUILDER_INPUT_NAMES = REAL_DISPATCH_INPUT_NAMES + ("owner_c",)
 
 # The exact field set of a sealed result. `failure_reason` is allowed only when the
 # execution did not succeed; anything else is a refusal, not a warning.
@@ -294,6 +334,26 @@ def workflow_file_for_kind(task_kind: str) -> str:
     raise Refused("TASK_KIND_UNKNOWN")
 
 
+def allowed_owner_cs_for_kind(task_kind: str) -> tuple:
+    """The cells a task of this kind may belong to. ONE definition of each boundary.
+
+    Deliberately a function of the kind rather than a parameter a caller supplies: the
+    kinds an executor claims already determine the cells it may run for, so letting a
+    caller pass its own owner set would let an executor widen its own boundary. Every
+    caller - the payload validator, the claim gate, the worker's owner list - reads this
+    one answer, which is why there is no second copy of "C1..C12" anywhere.
+
+        GHAW_BUILDER_V1  -> C1..C12      (the Builder executor's cells)
+        AI_WORK_V1,      -> C1           (the Responses executor; unchanged)
+        AI_TASK_V1
+    """
+    if task_kind == GHAW_BUILDER_KIND:
+        return BUILDER_OWNER_CS
+    if task_kind in (KIND, REAL_TASK_KIND):
+        return LEGACY_OWNER_CS
+    raise Refused("TASK_KIND_UNKNOWN")
+
+
 def canonical(document) -> str:
     return json.dumps(document, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
@@ -333,11 +393,25 @@ def _bounded_text(value, *, limit: int, reason: str) -> str:
     return text
 
 
-def validate_task_payload(payload) -> dict:
+def validate_task_payload(payload, *, allowed_owner_cs=LEGACY_OWNER_CS) -> dict:
     """Normalise and validate a real-task payload, or refuse it.
 
     Returns the payload with `cell_id` folded onto the canonical spelling, so what is
     bound, what is stored and what reaches the prompt all agree on one value.
+
+    Three questions, kept separate because they have three different answers:
+
+      1. shape     - is this a real-task payload at all? (field set, required fields,
+                     schema version, bounded text)
+      2. canonical - which cell is `cell_id` really? (`canonical_cell_id()`, which knows
+                     all fourteen and is shared with everything else that reads a cell)
+      3. boundary  - may THIS executor run for that cell? (`allowed_owner_cs`)
+
+    Only the third is executor-specific, so only the third is a parameter. The default is
+    the Responses executor's own set, which is what every existing caller meant and what
+    keeps `AI_TASK_V1` at C1-only without a second validator existing anywhere. A caller
+    that runs for a wider range passes its own set - it can only narrow the question, not
+    widen the parser, because step 2 has already happened by the time step 3 runs.
     """
     if type(payload) is not dict:
         raise Refused("TASK_PAYLOAD_NOT_AN_OBJECT")
@@ -365,9 +439,12 @@ def validate_task_payload(payload) -> dict:
         "scope": _bounded_text(payload["scope"], limit=MAX_SCOPE,
                                reason="TASK_PAYLOAD_SCOPE_INVALID"),
     }
-    if normalised["cell_id"] != OWNER_C:
-        # This contract belongs to C1. Another cell's task is another cell's business.
-        raise Refused("TASK_PAYLOAD_CELL_IS_NOT_C1")
+    if normalised["cell_id"] not in allowed_owner_cs:
+        # A real cell this executor does not serve. The reason names the boundary rather
+        # than one cell, because "not C1" stopped being the whole truth the moment a
+        # second executor existed with twelve cells - and it is the boundary, not the
+        # spelling, that a caller got wrong.
+        raise Refused("TASK_PAYLOAD_CELL_NOT_OWNED_BY_THIS_EXECUTOR")
     for name in TASK_PAYLOAD_TRACE_ONLY:
         if name not in payload:
             continue
@@ -383,11 +460,14 @@ def validate_task_payload(payload) -> dict:
 
 
 def build_task_payload(*, cell_id, external_task_id, objective, scope,
-                       source_anchor=None, issue_number=None) -> dict:
+                       source_anchor=None, issue_number=None,
+                       allowed_owner_cs=LEGACY_OWNER_CS) -> dict:
     """Compose a real-task payload from the fields a caller actually has.
 
     `cell_id` may be given in either spelling; it is canonicalised here, so the caller
-    never has to know which one the kernel uses.
+    never has to know which one the kernel uses. `allowed_owner_cs` is the composing
+    caller's own boundary and is passed straight through to validation - the caller that
+    knows which executor this task is for is the only one that can state it.
     """
     payload = {
         "schema_version": REAL_PAYLOAD_SCHEMA_VERSION,
@@ -400,7 +480,7 @@ def build_task_payload(*, cell_id, external_task_id, objective, scope,
         payload["source_anchor"] = source_anchor
     if issue_number is not None:
         payload["issue_number"] = issue_number
-    return validate_task_payload(payload)
+    return validate_task_payload(payload, allowed_owner_cs=allowed_owner_cs)
 
 
 def task_idempotency_key(task_kind, cell_id, external_task_id) -> str:
@@ -443,36 +523,45 @@ def prompt_for_task(task_kind: str, payload) -> str:
     the payload's execution-input fields, so two different payloads cannot produce the
     same prompt and the same payload always produces the same bytes - which is what makes
     `prompt_sha256` a meaningful commitment inside the binding.
+
+    The opening line names the cell from the payload rather than hard-coding it. For C1
+    that renders exactly the bytes this function has always produced - `GO C1 ...` - so
+    the live C01 execution identity is unchanged, while a C12 task no longer opens with a
+    claim about C1 that is simply false.
     """
     if task_kind == KIND:
         return PROMPT
     if task_kind == REAL_TASK_KIND:
-        normalised = validate_task_payload(payload)
+        normalised = validate_task_payload(
+            payload, allowed_owner_cs=allowed_owner_cs_for_kind(task_kind))
         return (
-            "GO C1 real task (AI_TASK_V1).\n"
+            "GO %s real task (AI_TASK_V1).\n"
             "cell: %s\nexternal_task_id: %s\n"
             "\nOBJECTIVE\n%s\n"
             "\nSCOPE\n%s\n"
             "\nAnswer the objective within the scope. Reply with the task result as plain "
             "text and nothing else. You have no authority to change money, state, "
             "deployment, release or configuration, and you must not claim any."
-            % (normalised["cell_id"], normalised["external_task_id"],
+            % (normalised["cell_id"], normalised["cell_id"],
+               normalised["external_task_id"],
                normalised["objective"], normalised["scope"]))
     if task_kind == GHAW_BUILDER_KIND:
         # The gh-aw Builder derives its own prompt from its workflow; this one exists so
         # the execution identity has a commitment to what this task asked for. It is a
         # different literal from the real-task prompt on purpose: two classes that
         # happened to produce the same bytes would defeat the `prompt_sha256` commitment.
-        normalised = validate_task_payload(payload)
+        normalised = validate_task_payload(
+            payload, allowed_owner_cs=allowed_owner_cs_for_kind(task_kind))
         return (
-            "GO C1 gh-aw Builder task (GHAW_BUILDER_V1).\n"
+            "GO %s gh-aw Builder task (GHAW_BUILDER_V1).\n"
             "cell: %s\nexternal_task_id: %s\n"
             "\nOBJECTIVE\n%s\n"
             "\nSCOPE\n%s\n"
             "\nDeliver the objective within the scope. You have no authority to change "
             "money, state, deployment, release or configuration, and you must not claim "
             "any."
-            % (normalised["cell_id"], normalised["external_task_id"],
+            % (normalised["cell_id"], normalised["cell_id"],
+               normalised["external_task_id"],
                normalised["objective"], normalised["scope"]))
     raise Refused("TASK_KIND_UNKNOWN")
 
@@ -484,6 +573,10 @@ def task_spec(task_kind: str, payload) -> dict:
     Explicit rather than re-derived from a kind string at each use: this is what lets the
     resume leg rebuild an execution identity without the Runtime, because the spec is
     stored beside the outbox row.
+
+    The payload is validated against the OWNER BOUNDARY of its own kind, which is what
+    makes "a C13 Builder task" unrepresentable rather than merely discouraged: no spec
+    carrying one can be built, so none can be bound, stored or dispatched.
     """
     if task_kind == KIND:
         if payload != PAYLOAD:
@@ -494,7 +587,8 @@ def task_spec(task_kind: str, payload) -> dict:
         # class travels with the identity and a resume does not have to guess which
         # executor a row belonged to.
         return {"task_class": TASK_CLASS_REAL, "task_kind": task_kind,
-                "payload": validate_task_payload(payload)}
+                "payload": validate_task_payload(
+                    payload, allowed_owner_cs=allowed_owner_cs_for_kind(task_kind))}
     raise Refused("TASK_KIND_UNKNOWN")
 
 
@@ -543,10 +637,16 @@ def task_binding(runtime_task_id, attempt, spec=None) -> dict:
     # is what decides them, and both are inside the hash. For `AI_TASK_V1` this produces
     # the same document, byte for byte, that it always has - the class is exactly the one
     # this branch used to assume.
+    #
+    # `owner_c` is the payload's own canonical cell, not a constant. It has already been
+    # validated against the kind's owner boundary by `task_spec`, so this is not a second
+    # gate - it is the one place the cell enters the identity, which is what makes two
+    # cells' otherwise identical tasks resolve to two different executions. For C1 the
+    # payload's cell IS "C1", so the live C01 binding is unchanged byte for byte.
     return {
         "schema_version": SCHEMA_VERSION,
         "kind": REQUEST_KIND,
-        "owner_c": OWNER_C,
+        "owner_c": payload["cell_id"],
         "task_kind": task_kind,
         "payload": payload,
         "payload_sha256": sha256_hex(canonical(payload)),
@@ -569,7 +669,7 @@ def build_dispatch_request(runtime_task_id, attempt, spec=None) -> dict:
     `repo`, `workflow_file` and `ref` are transport configuration, added *after* the
     identity is hashed, so they are not part of `execution_request_id` - which is exactly
     why the class that will execute the task has to be visible in the binding instead
-    (`task_kind`, `provider`), not in the target it is sent to.
+    (`task_kind`, `provider`, `owner_c`), not in the target it is sent to.
     """
     request = dict(task_binding(runtime_task_id, attempt, spec))
     request["execution_request_id"] = sha256_hex(canonical(request))
@@ -586,6 +686,12 @@ def dispatch_inputs(request: dict) -> dict:
     dispatch additionally carries its kind and payload, because the executor runs
     elsewhere and must be able to re-derive the same identity and the same prompt from
     what it receives.
+
+    The gh-aw Builder additionally carries `owner_c`, copied from the binding - not
+    recomputed here and not taken from the caller. The validator upstream has already
+    proved it is the payload's canonical cell, so this module and the workflow agree on
+    the cell by construction; the workflow re-checks it anyway, because two values that
+    travel by different routes are worth comparing at the far end.
     """
     inputs = {
         "runtime_task_id": request["runtime_task_id"],
@@ -595,17 +701,26 @@ def dispatch_inputs(request: dict) -> dict:
     task_kind = request.get("task_kind", KIND)
     if task_kind in (REAL_TASK_KIND, GHAW_BUILDER_KIND):
         inputs["task_kind"] = task_kind
-        inputs["task_payload"] = canonical(validate_task_payload(request["payload"]))
+        inputs["task_payload"] = canonical(validate_task_payload(
+            request["payload"], allowed_owner_cs=allowed_owner_cs_for_kind(task_kind)))
+    if task_kind == GHAW_BUILDER_KIND:
+        inputs["owner_c"] = request["owner_c"]
     return inputs
 
 
-def run_identity_name(runtime_task_id, attempt, request_id) -> str:
+def run_identity_name(runtime_task_id, attempt, request_id, owner_c=OWNER_C) -> str:
     """The deterministic run name the workflow sets, used to resolve a run by lookup.
 
     A dispatch whose HTTP outcome is unknown must be resolved by looking for this
     name, never by sending a second POST.
+
+    The cell leads, and defaults to C1 so that every existing caller - and every run name
+    the live Runtime Host has already recorded - keeps the exact bytes it had. A C12
+    execution resolves under `C12 <task> <attempt> <request_id>`; the request id already
+    differs between cells, and the leading cell makes that visible in the one place a
+    human looks when a lookup fails.
     """
-    return "C1 %s %s %s" % (runtime_task_id, attempt, request_id)
+    return "%s %s %s %s" % (owner_c, runtime_task_id, attempt, request_id)
 
 
 # ------------------------------------------------------------------- result side

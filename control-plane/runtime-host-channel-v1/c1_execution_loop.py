@@ -61,10 +61,10 @@ from c1_execution_contract import (
     CLAIMABLE_KINDS,
     GHAW_BUILDER_KIND,
     KIND,
-    OWNER_C,
     PAYLOAD,
     REAL_TASK_KIND,
     Refused,
+    allowed_owner_cs_for_kind,
     build_dispatch_request,
     require_runtime_facts,
     task_spec,
@@ -136,9 +136,17 @@ def _not_our_task(claimed, claimable_kinds) -> dict | None:
     literal) and a real task (`AI_TASK_V1`, `GHAW_BUILDER_V1`, whose payload must
     validate). Everything else - including both probe kinds - is refused.
 
-    The claim itself should already be filtered by kind; this is the second, cheap
-    gate, and it is the one that makes "the C1 loop never executes RUNTIME_PROBE"
-    a property of this file rather than a property of the caller's query.
+    The owner cell is checked against the OWNER BOUNDARY OF THE KIND, not against a
+    constant. `allowed_owner_cs_for_kind()` is the single definition of that boundary, so
+    the kind a task carries also decides which cells it may belong to: `AI_TASK_V1`
+    admits only C1, `GHAW_BUILDER_V1` admits C1..C12, and the two control-only cells are
+    in neither. The kind gate runs first because the owner set is a function of the kind -
+    refusing an unknown kind before asking which cells it allows is what keeps this total.
+
+    The claim itself should already be filtered by kind; this is the second, cheap gate,
+    and it is the one that makes "this loop never executes RUNTIME_PROBE, and never
+    executes a C13 Builder task" a property of this file rather than a property of the
+    caller's query.
 
     It is also, structurally, the reason an outbox can never contain a probe identity:
     it runs *before* `outbox.register()`, so a task that fails it is never recorded.
@@ -149,15 +157,22 @@ def _not_our_task(claimed, claimable_kinds) -> dict | None:
     owner_c = getattr(claimed, "owner_c", None)
     kind = getattr(claimed, "kind", None)
     payload = getattr(claimed, "payload", None)
-    if owner_c != OWNER_C:
-        return {"action": "NOT_A_C1_TASK", "reason": "OWNER_C_MISMATCH", "owner_c": owner_c}
     if kind not in claimable_kinds:
         return {"action": "NOT_A_C1_TASK", "reason": "KIND_MISMATCH", "kind": kind}
+    try:
+        allowed_owner_cs = allowed_owner_cs_for_kind(kind)
+    except Refused:
+        # A kind this contract cannot describe has no owner boundary, so no boundary this
+        # executor could be inside. Refused for the same reason the kind check refuses.
+        return {"action": "NOT_A_C1_TASK", "reason": "KIND_MISMATCH", "kind": kind}
+    if owner_c not in allowed_owner_cs:
+        return {"action": "NOT_A_C1_TASK", "reason": "OWNER_C_MISMATCH",
+                "owner_c": owner_c, "kind": kind}
     if kind == KIND and payload != PAYLOAD:
         return {"action": "NOT_A_C1_TASK", "reason": "PAYLOAD_MISMATCH", "payload": payload}
     if kind in PAYLOAD_VALIDATED_KINDS:
         try:
-            validate_task_payload(payload)
+            validate_task_payload(payload, allowed_owner_cs=allowed_owner_cs)
         except Refused as refusal:
             # A real task whose payload is not a valid task is not ours to execute, and
             # must never be registered - the same guarantee the smoke payload check gives.

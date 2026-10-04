@@ -30,6 +30,7 @@ from c1_dispatch_outbox import (
 )
 from c1_execution_contract import (
     KIND,
+    OWNER_C,
     Refused,
     build_dispatch_request,
     run_identity_name,
@@ -98,7 +99,11 @@ def pull_result(outbox: DispatchOutbox, runtime_task_id, attempt, *, client,
     snapshot = outbox.snapshot(request_id)
     run_id = snapshot["github_run_id"]
     if run_id is None:
-        found = client.find_run_by_name(run_identity_name(runtime_task_id, attempt, request_id))
+        # The run name carries the execution's own cell, read from the request rather than
+        # assumed. C1 is the default because a pre-contract row is a C1 row; for every
+        # real execution the cell is right there in the stored request.
+        found = client.find_run_by_name(run_identity_name(
+            runtime_task_id, attempt, request_id, request.get("owner_c", OWNER_C)))
         if found is None:
             return {"action": "RUN_NOT_FOUND", "execution_request_id": request_id}
         outbox.record_run_lookup(request_id, found["id"])
@@ -177,8 +182,13 @@ def complete_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attemp
 
     binding = outbox.completion_binding(request_id)
     document = outbox.terminal_result(request_id)
+    # The owner cell comes from the stored binding, never from a constant and never from
+    # this function's caller. One Builder executor serves twelve cells, so "which cell
+    # must be told" is a property of the execution; `completion_binding()` reads it back
+    # from the request the identity was registered with, which is what makes it survive a
+    # restart, a lost lease and a fresh attempt.
     runtime.complete(
-        "C1",
+        binding["owner_c"],
         binding["runtime_task_id"],
         worker_id=worker_id,
         expected_attempt=binding["expected_attempt"],
@@ -238,9 +248,14 @@ def fail_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attempt, *
     record = failure_record(runtime_task_id=runtime_task_id, attempt=attempt,
                             execution_request_id_=request_id, github_run_id=run_id,
                             conclusion=conclusion)
+    # The owner comes from the same durable place the success path reads it from - the
+    # identity's own stored request - and is resolved BEFORE the try, because a missing
+    # owner is a defect of ours rather than a refusal by the Runtime's fence, and must
+    # not be mistaken for one. A failing C7 run has to tell C7.
+    owner_c = outbox.owner_c_for(request_id)
     runtime_told = True
     try:
-        runtime.complete("C1", runtime_task_id, worker_id=worker_id,
+        runtime.complete(owner_c, runtime_task_id, worker_id=worker_id,
                          expected_attempt=attempt, success=False, error=reason,
                          result=record)
     except Exception as exc:                        # noqa: BLE001 - re-raised below

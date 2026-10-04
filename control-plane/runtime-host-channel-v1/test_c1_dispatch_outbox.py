@@ -245,7 +245,11 @@ class ResultTests(OutboxCase):
         self.outbox.record_result(self.request_id(3), sealed_result(TASK, 3),
                                   runtime_task_id=TASK, attempt=3)
         binding = self.outbox.completion_binding(self.request_id(3))
-        self.assertEqual(binding, {"runtime_task_id": TASK, "expected_attempt": 3})
+        # The owner cell is part of the binding: one Builder executor serves twelve cells,
+        # so "which cell must be told" is read back from the identity rather than assumed
+        # by the caller. A row registered with no explicit request is a C1 row.
+        self.assertEqual(binding, {"owner_c": "C1", "runtime_task_id": TASK,
+                                   "expected_attempt": 3})
 
     def test_a_stale_attempt_cannot_be_completed(self):
         self._sealed_run(attempt=1)

@@ -60,10 +60,12 @@ import os
 import re
 import sys
 
+import c1_solution_leak_gate as solution_leak_gate
+
 from c1_execution_contract import (
     GHAW_BUILDER_KIND,
-    OWNER_C,
     Refused,
+    allowed_owner_cs_for_kind,
     build_task_payload,
     canonical,
     canonical_cell_id,
@@ -82,7 +84,12 @@ _ENABLED_LITERAL = "true"
 # what decides which executor picks it up. Routing it to the Responses-API executor
 # instead would be a silent, permanent misdelivery, not a fallback.
 INGRESS_KIND = GHAW_BUILDER_KIND
-INGRESS_OWNER_C = OWNER_C
+# The cells this ingress will enqueue for: the Builder's own, asked of the contract rather
+# than restated here. C13/C14 are not in the answer, and there is no special case for them
+# - the ingress simply asks who the Builder serves, and the answer excludes them. That is
+# the point of deriving it: an ingress that carried its own copy of "C1..C12" would be one
+# more place for the two to disagree.
+INGRESS_OWNER_CS = allowed_owner_cs_for_kind(INGRESS_KIND)
 
 # One attempt. A retry would be a second paid dispatch of the same task, and the
 # authority to spend that belongs to a later stage, not to an issue scanner.
@@ -135,6 +142,22 @@ def ingress_enabled(environ=None) -> bool:
     if value is None:
         return False
     return value.strip().lower() == _ENABLED_LITERAL
+
+
+def is_builder_cell(spelling) -> bool:
+    """True when this external cell spelling names a cell the Builder serves.
+
+    The consumer's cheap pre-filter and this module's hard gate have to agree about which
+    cells are Builder work, and the only way to guarantee that is for one of them to ask
+    the other. This is that question, and it is answered from `INGRESS_OWNER_CS` - so one
+    place knows the range, and a future change to it moves both callers at once. It says
+    nothing about whether an ISSUE is ingestible; it is a filter, not a gate.
+    """
+    try:
+        return canonical_cell_id(spelling) in INGRESS_OWNER_CS
+    except Refused:
+        # A shape the cell regex accepts but the canonical parser does not: C0, C00, C15.
+        return False
 
 
 def _parse_title(title: str) -> tuple:
@@ -256,9 +279,12 @@ def parse_c01_issue(issue) -> dict:
         raise Refused("INGRESS_TASK_ID_TITLE_BODY_MISMATCH")
 
     cell_id = canonical_cell_id(title_cell)
-    if cell_id != INGRESS_OWNER_C:
-        # This ingress owns C01 only. Another cell's issue is another cell's business.
-        raise Refused("INGRESS_ISSUE_IS_NOT_C01")
+    if cell_id not in INGRESS_OWNER_CS:
+        # A real cell the Builder does not serve. C13 and C14 land here, which is the
+        # intended outcome rather than a special case: those are the control-only cells,
+        # their issues are their own business, and an issue scanner must not be able to
+        # turn one into Builder work - however the issue is titled.
+        raise Refused("INGRESS_CELL_NOT_OWNED_BY_BUILDER_EXECUTOR")
 
     parsed = {
         "issue_number": number,
@@ -282,6 +308,12 @@ def plan_ingress(issue, *, environ=None) -> dict:
     by passing one in.
     """
     parsed = parse_c01_issue(issue)
+    # The U6 solution-leak seam, asked before anything is composed. Today it is a bypass
+    # and its record says exactly that - `reviewed=False` beside `decision="PASS"` - so
+    # the ingress neither blocks on it nor claims a review happened. When a checker
+    # exists, this is the call site that starts consulting it, and it does not change.
+    leak_gate = solution_leak_gate.evaluate(
+        objective=parsed["objective"], scope=parsed["scope"])
     payload = build_task_payload(
         cell_id=parsed["cell_id"],
         external_task_id=parsed["external_task_id"],
@@ -289,10 +321,11 @@ def plan_ingress(issue, *, environ=None) -> dict:
         scope=parsed["scope"],
         source_anchor=parsed["source_anchor"],
         issue_number=parsed["issue_number"],
+        allowed_owner_cs=INGRESS_OWNER_CS,
     )
     # Re-validate what will actually be handed to the Runtime, so the plan cannot
     # describe something the contract would refuse.
-    payload = validate_task_payload(payload)
+    payload = validate_task_payload(payload, allowed_owner_cs=INGRESS_OWNER_CS)
     # Derived from the kind as well as the task, so this ingress cannot share a Runtime
     # task with an executor that would claim it under a different kind.
     idempotency_key = task_idempotency_key(
@@ -305,8 +338,12 @@ def plan_ingress(issue, *, environ=None) -> dict:
         "issue_number": parsed["issue_number"],
         "external_task_id": parsed["external_task_id"],
         "payload_sha256": sha256_hex(canonical(payload)),
+        "solution_leak_gate": leak_gate,
         "would_enqueue": {
-            "owner_c": INGRESS_OWNER_C,
+            # The owner is the task's own canonical cell. It is not a constant here and
+            # not a caller's choice: the parser already refused any cell this executor
+            # does not serve, so by this line the cell is both canonical and allowed.
+            "owner_c": payload["cell_id"],
             "kind": INGRESS_KIND,
             "payload": payload,
             "idempotency_key": idempotency_key,
