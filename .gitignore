@@ -1,0 +1,10 @@
+# Runner-transient files the C01 gh-aw Builder workflow writes into the checkout.
+#
+# They belong to one execution, not to the repository: the work order the pre-agent step
+# materialises, the agent's summary for the Runtime, and the sealed result the post-step
+# writes. The Builder's Draft PR must contain engineering changes only, so these are
+# ignored here - which is what makes `git add -A` unable to pick them up - and the
+# workflow's safe-outputs patch guard independently refuses a patch that contains them.
+/c1_builder_task.json
+/ghaw_builder_answer.txt
+/c1_result.json
