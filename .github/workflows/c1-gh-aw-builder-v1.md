@@ -1,7 +1,7 @@
 ---
 emoji: "🏗️"
 description: "Builder executor for the normal engineering cells C01-C12: the Runtime's GHAW_BUILDER_V1 work order executed by a GitHub Agentic Workflow, which investigates, edits and tests the repository and requests exactly one Draft PR, then seals the standard c1_result.json artifact so the existing pull/adopt/complete leg works unchanged."
-intent: "One Builder executor serves C01 through C12 - one workflow, one executor, one outbox, with the cell carried by the task. C13 and C14 are the control-only cells and are refused here as well as in the worker and the payload validator. Dispatch-only; the agent has no repository write authority of its own."
+intent: "One Builder executor serves C01 through C12 - one workflow, one executor, one outbox, with the cell carried by the task. C13 and C14 are the control-only cells and are refused here as well as in the worker and the payload validator. The work order's source anchor must equal this run's own execution SHA, so a task written against an older main cannot be executed on today's tree. Dispatch-only; the agent has no repository write authority of its own."
 labels: ["runtime", "gh-aw", "executor", "c01", "builder"]
 
 on:
@@ -140,16 +140,21 @@ safe-outputs:
         done
         echo "BUILDER_PATCH_GUARD=PASS"
 
-# Pre-agent step. It is also the first fail-closed gate: a dispatch that carries a kind
-# this executor does not own stops here, before the agent starts, so a misrouted task can
-# never be executed - let alone paid for - by the wrong executor.
+# Pre-agent step. It is also the fail-closed gate: a dispatch that carries a kind this
+# executor does not own, a cell it does not serve, an owner that disagrees with the payload,
+# or a source anchor that is not the tree this run is executing stops here, before the agent
+# starts - so a misrouted or mis-bound task can never be executed, let alone paid for.
 steps:
-  - name: Accept the work order (fail closed on any other kind or cell)
+  - name: Accept the work order (fail closed on any other kind, cell or source)
     if: github.event_name == 'workflow_dispatch'
     env:
       TASK_KIND: ${{ inputs.task_kind }}
       TASK_PAYLOAD: ${{ inputs.task_payload }}
       OWNER_C: ${{ inputs.owner_c }}
+      # The workflow's OWN execution SHA, supplied by GitHub - not an input, so a dispatch
+      # cannot claim to have run somewhere it did not. `ref` is `main` for every Builder
+      # dispatch, so this is main's head at the moment this run was created.
+      WORKFLOW_SHA: ${{ github.sha }}
     run: |
       set -euo pipefail
       python3 - <<'PY'
@@ -212,6 +217,25 @@ steps:
       # refusal either way.
       if owner_c != payload_cell:
           sys.exit("OWNER_C_DOES_NOT_MATCH_TASK_PAYLOAD:%s:%s" % (owner_c, payload_cell))
+
+      # Source binding, checked against GitHub's own record of what this run is executing
+      # rather than against anything the dispatch said. The ingress already refuses an
+      # issue written against an older main, but main can move between admission and
+      # dispatch: a task admitted against A, queued, and dispatched after main became B
+      # would otherwise be executed on B while claiming to be about A. So the same
+      # equality is checked again here, and again strictly - no ancestry, no tree
+      # equivalence, no "close enough". A mismatch stops the run before the agent starts,
+      # which is what keeps a mis-bound task from ever reaching a paid model call.
+      source_anchor = str(payload.get("source_anchor") or "").strip().lower()
+      if not re.match(r"^[0-9a-f]{40}$", source_anchor):
+          sys.exit("TASK_PAYLOAD_SOURCE_ANCHOR_MISSING_OR_INVALID:%r"
+                   % payload.get("source_anchor"))
+      workflow_sha = (os.environ.get("WORKFLOW_SHA") or "").strip().lower()
+      if not re.match(r"^[0-9a-f]{40}$", workflow_sha):
+          sys.exit("WORKFLOW_SHA_UNAVAILABLE:%r" % workflow_sha)
+      if source_anchor != workflow_sha:
+          sys.exit("SOURCE_ANCHOR_DOES_NOT_MATCH_WORKFLOW_SHA:%s:%s"
+                   % (source_anchor, workflow_sha))
 
       # The agent reads this file; the prompt body is imported verbatim at run time and
       # therefore cannot carry a per-task payload itself. The path is git-ignored, so it

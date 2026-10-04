@@ -18,10 +18,23 @@ parser and no second de-duplication system here.
 
 Read-only on GitHub
 -------------------
-Only `GET /repos/<repo>/issues` is ever issued, with no other verb and no other path:
-never a comment, never a label, never a state change, never a write of any kind.
-`GitHubIssuesReader` hard-codes GET, and the test suite asserts that no other method
-and no comment path exists in this file.
+Only two GETs are ever issued - `GET /repos/<repo>/issues` and `GET /repos/<repo>/commits/main`
+- with no other verb, no other path, and never a comment, a label, a state change or a write
+of any kind. `GitHubIssuesReader` hard-codes GET, and the test suite asserts that no other
+method and no comment path exists in this file.
+
+One poll, one source snapshot
+-----------------------------
+A poll reads the default branch's head ONCE, before it reads the tracker, and admits every
+candidate in that poll against that one value. Two reasons, and the second is the one that
+matters: a poll must not cost one extra request per issue, and every candidate in a single
+tick must be judged against the same snapshot - otherwise the reported plan would describe
+no one state of the repository.
+
+If that read does not succeed, the poll reports `SOURCE_HEAD_LOOKUP_FAILED` and does nothing
+else: nothing is planned, no Runtime is constructed and nothing is enqueued. There is no
+fallback to a remembered main, a local checkout or the issue's own claim, because each of
+those would silently admit a task against a source nobody verified.
 
 Stateless by design, on purpose
 -------------------------------
@@ -74,11 +87,15 @@ from c1_issue_ingress import (
     ingest,
     is_builder_cell,
     plan_ingress,
+    require_current_source_anchor,
 )
 
 # --------------------------------------------------------------------- topology
 CONSUMER_NAME = "go-runtime-host-c01-issue-consumer"
 ISSUES_PATH = "/repos/%s/issues" % REPO
+# The default branch's head, read once per poll. This is the value every candidate in that
+# poll is admitted against, and the one the Builder workflow will re-check for itself.
+SOURCE_HEAD_PATH = "/repos/%s/commits/main" % REPO
 # The Runtime kernel and its database, as installed on the Runtime Host.
 RUNTIME_DIR = "/opt/go/c1-c14-runtime"
 RUNTIME_DB = "/var/lib/go-c-runtime/runtime.db"
@@ -158,10 +175,10 @@ class GitHubIssuesReader:
         self._per_page = per_page
         self._timeout_s = timeout_s
 
-    def _get(self, path: str, query: str) -> list:
+    def _get_json(self, path: str, query: str = ""):
         """One authenticated GET. The token goes in a header, never in the URL."""
         token = self._token_loader()
-        url = "%s%s?%s" % (self._api_base, path, query)
+        url = "%s%s%s" % (self._api_base, path, ("?" + query) if query else "")
         request = urllib.request.Request(
             url, method="GET",
             headers={"Authorization": "Bearer " + token,
@@ -170,10 +187,33 @@ class GitHubIssuesReader:
                      "X-GitHub-Api-Version": API_VERSION})
         with self._opener(request, timeout=self._timeout_s) as response:
             payload = response.read()
-        document = json.loads(payload.decode("utf-8"))
+        try:
+            return json.loads(payload.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError):
+            raise Refused("GITHUB_RESPONSE_NOT_JSON") from None
+
+    def _get(self, path: str, query: str) -> list:
+        document = self._get_json(path, query)
         if not isinstance(document, list):
             raise Refused("ISSUES_LISTING_NOT_A_LIST")
         return document
+
+    def read_current_source(self) -> str:
+        """The default branch's head SHA, or a refusal. GET, and only GET.
+
+        This is the second read-only path this consumer has, and it exists so that
+        admission can be about the CURRENT tree rather than about whatever an issue
+        happens to claim. It is deliberately read ONCE per poll by the caller, not once
+        per issue: one poll judges every candidate against one snapshot.
+
+        Everything the platform can hand back that is not a canonical 40-hex commit id -
+        another object shape, a missing `sha`, a differently-cased or truncated value -
+        is a refusal. Nothing here falls back to a remembered value.
+        """
+        document = self._get_json(SOURCE_HEAD_PATH)
+        if not isinstance(document, dict):
+            raise Refused("SOURCE_HEAD_NOT_AN_OBJECT")
+        return require_current_source_anchor(document.get("sha"))
 
     def list_open_issues(self, *, pages: int = DEFAULT_PAGES) -> dict:
         """Read open issues, newest first, bounded to `pages` pages."""
@@ -199,6 +239,25 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
     env = os.environ if environ is None else environ
     enabled = ingress_enabled(env)
 
+    # ONE source snapshot, taken before the tracker is read at all and then reused for
+    # every candidate in this poll. Two independent reasons, both load-bearing:
+    #   * traffic - one extra GET per issue would turn a poll into N+1 requests;
+    #   * determinism - every candidate in one tick must be judged against the same
+    #     value, or two issues in the same poll could be admitted against two different
+    #     mains and the reported plan would describe no single snapshot.
+    # Nothing is planned, and no Runtime is reached, unless this read succeeds.
+    try:
+        current_source_anchor = reader.read_current_source()
+    except Refused as refusal:
+        return {"verb": "c01-issue-consumer-poll", "status": "SOURCE_HEAD_LOOKUP_FAILED",
+                "reason": refusal.reason, "enabled": enabled}
+    except urllib.error.HTTPError as error:
+        return {"verb": "c01-issue-consumer-poll", "status": "SOURCE_HEAD_LOOKUP_FAILED",
+                "reason": "HTTP_%d" % error.code, "enabled": enabled}
+    except Exception as error:                          # noqa: BLE001 - reported, not raised
+        return {"verb": "c01-issue-consumer-poll", "status": "SOURCE_HEAD_LOOKUP_FAILED",
+                "reason": type(error).__name__, "enabled": enabled}
+
     try:
         listing = reader.list_open_issues(pages=pages)
     except Refused as refusal:
@@ -220,11 +279,13 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
 
     for issue in candidates[:MAX_CANDIDATES_PER_POLL]:
         try:
-            plan = plan_ingress(issue, environ=env)
+            plan = plan_ingress(issue, current_source_anchor=current_source_anchor,
+                                environ=env)
         except Refused as refusal:
-            # malformed / closed / not-C01-after-all: fail closed, and say which.
-            refused.append({"issue_number": issue.get("number"),
-                            "reason": refusal.reason})
+            # malformed / closed / not-C01-after-all / written against another source:
+            # fail closed, and say which. The freshness refusal carries the two commit ids
+            # it was made of, so the line shows why rather than only that.
+            refused.append(_refusal_entry(issue, refusal))
             continue
 
         call = plan["would_enqueue"]
@@ -244,7 +305,8 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
             # pretending to have done something.
             runtime_error = "RUNTIME_UNAVAILABLE"
             continue
-        result = ingest(issue, runtime=runtime, environ=env)
+        result = ingest(issue, current_source_anchor=current_source_anchor,
+                        runtime=runtime, environ=env)
         enqueued.append(dict(entry, runtime_task_id=result["runtime_task_id"]))
 
     # The status says what the poll actually did, most informative first: a missing
@@ -259,10 +321,27 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
     else:
         status = "PASS"
     return {"verb": "c01-issue-consumer-poll", "status": status, "enabled": enabled,
+            "current_source_anchor": current_source_anchor,
             "listed": listing["listed"], "pages_fetched": listing["pages_fetched"],
             "candidates": len(candidates), "considered": len(planned),
             "planned": planned, "refused": refused, "enqueued": enqueued,
             "runtime_error": runtime_error}
+
+
+def _refusal_entry(issue, refusal) -> dict:
+    """One refused candidate, with whatever the refusal was made of.
+
+    The base entry is what every refusal has always reported. A source-freshness refusal
+    additionally reports the issue's own anchor and the snapshot it was compared with, so
+    the operator reading a shadow poll can see a stale historical issue for what it is
+    without having to go and look the issue up.
+    """
+    entry = {"issue_number": issue.get("number"), "reason": refusal.reason}
+    for name in ("parsed_source_anchor", "current_source_anchor"):
+        value = getattr(refusal, name, None)
+        if value is not None:
+            entry[name] = value
+    return entry
 
 
 def default_runtime_factory():
@@ -299,6 +378,8 @@ def check(environ=None, *, token_loader=None) -> dict:
             "credential": credential, "credential_reason": reason,
             "token_path_env": TOKEN_FILE_ENV,
             "repo": REPO, "issues_endpoint": ISSUES_PATH,
+            "source_head_endpoint": SOURCE_HEAD_PATH,
+            "source_freshness": "issue source_anchor must equal the current main",
             "github_access": "GET only", "interval_s": poll_interval_s(env),
             "pages": DEFAULT_PAGES, "max_candidates_per_poll": MAX_CANDIDATES_PER_POLL,
             "runtime_dir": RUNTIME_DIR, "runtime_db": RUNTIME_DB,

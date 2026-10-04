@@ -9,6 +9,7 @@ Coverage map (the letters are the acceptance cases of the task):
   E  DisabledByDefaultEnqueuesNothing   the default state cannot spend anything
   F  EnabledOfflineEnqueuesOnce         enabled + fake Runtime + temporary DB
   G  TheIngressIsStructurallyBounded    imports, signature, and no old executor
+  H  SourceFreshnessIsRequired          stale / missing / malformed source is refused
 
 Everything here is offline: no network, no Runtime host, no model call, no GitHub
 write. The fixture bodies are the bytes the issues API returns today, and their
@@ -37,6 +38,17 @@ import c1_issue_ingress as ingress  # noqa: E402
 INGRESS_SOURCE = HERE / "c1_issue_ingress.py"
 FIXTURE = HERE / "issue_fixtures" / "real_c01_issues.json"
 ENABLED = {ingress.INGRESS_ENABLED_ENV: "true"}
+
+# The source anchor every captured fixture body carries. It is passed as the CURRENT source
+# by the tests that are about parsing, identity or the enable switch - which is precisely
+# the situation those issues were in when they were written: back then it was current. The
+# tests that are about freshness pass a different value on purpose, and class H is where
+# that lives.
+FIXTURE_SOURCE_ANCHOR = "8ffcde66d36c1bbf849218529ef015f6e81725af"
+# A stand-in for "main has moved on since those issues were written". It is a real commit
+# from this repository's history, not an invented digest, so a failure message shows two
+# plausible values rather than one that is obviously fake.
+CURRENT_SOURCE_ANCHOR = "e4076276d70058d16f68fda5db047161ca6ef4cc"
 
 # Captured at the same time as the fixture; a transcription or edit changes them.
 REAL_BODY_SHA256 = {
@@ -122,10 +134,19 @@ class Case(unittest.TestCase):
     def issue(self, number):
         return json.loads(json.dumps(ISSUES[number]))
 
-    def refused_reason(self, issue, environ=None):
+    def plan(self, issue, *, environ=None, current=FIXTURE_SOURCE_ANCHOR):
+        """Plan one issue, supplying the current source unless a test overrides it."""
+        return ingress.plan_ingress(issue, current_source_anchor=current,
+                                    environ={} if environ is None else environ)
+
+    def refused_reason(self, issue, environ=None, current=FIXTURE_SOURCE_ANCHOR):
         with self.assertRaises(contract.Refused) as caught:
-            ingress.plan_ingress(issue, environ={} if environ is None else environ)
+            self.plan(issue, environ=environ, current=current)
         return caught.exception.reason
+
+    def enqueue(self, issue, *, environ=ENABLED, current=FIXTURE_SOURCE_ANCHOR):
+        return ingress.ingest(issue, current_source_anchor=current,
+                              runtime=self.runtime, environ=environ)
 
 
 # ------------------------------------------------------------------ A
@@ -151,7 +172,7 @@ class Issue79FixtureIsParsed(Case):
         self.assertEqual(set(parsed), set(ingress.REQUIRED_FIELDS))
 
     def test_issue_79_plans_exactly_the_expected_runtime_call(self):
-        plan = ingress.plan_ingress(self.issue(79), environ={})
+        plan = self.plan(self.issue(79), environ={})
         self.assertFalse(plan["enabled"])
         self.assertFalse(plan["enqueued"])
         self.assertEqual(plan["issue_number"], 79)
@@ -198,7 +219,7 @@ class DuplicateScansAreOneRuntimeTask(Case):
     """Rescanning the same issue cannot become a second Runtime task."""
 
     def test_ten_scans_produce_one_identical_runtime_call(self):
-        plans = [ingress.plan_ingress(self.issue(79), environ={}) for _ in range(10)]
+        plans = [self.plan(self.issue(79), environ={}) for _ in range(10)]
         self.assertEqual(len({p["payload_sha256"] for p in plans}), 1)
         self.assertEqual(
             len({p["would_enqueue"]["idempotency_key"] for p in plans}), 1)
@@ -206,8 +227,7 @@ class DuplicateScansAreOneRuntimeTask(Case):
             len({p["would_enqueue"]["payload"]["external_task_id"] for p in plans}), 1)
 
     def test_ten_scans_create_one_row_and_one_task_id(self):
-        results = [ingress.ingest(self.issue(79), runtime=self.runtime, environ=ENABLED)
-                   for _ in range(10)]
+        results = [self.enqueue(self.issue(79)) for _ in range(10)]
         self.assertTrue(all(r["action"] == "ENQUEUED" for r in results))
         self.assertEqual(len({r["runtime_task_id"] for r in results}), 1)
         self.assertEqual(self.runtime.task_count(), 1)
@@ -289,7 +309,7 @@ class MalformedIssuesAreRefused(Case):
         for issue in broken:
             with self.subTest(issue=issue["number"]):
                 with self.assertRaises(contract.Refused):
-                    ingress.ingest(issue, runtime=self.runtime, environ=ENABLED)
+                    self.enqueue(issue)
         self.assertEqual(self.runtime.enqueue_calls, 0)
         self.assertEqual(self.runtime.task_count(), 0)
 
@@ -356,7 +376,7 @@ class TheControlOnlyCellsAreRefused(Case):
             issue = self.issue(79)
             issue["title"] = title
             with self.assertRaises(contract.Refused):
-                ingress.ingest(issue, runtime=self.runtime, environ=ENABLED)
+                self.enqueue(issue)
         self.assertEqual(self.runtime.task_count(), 0)
 
 
@@ -376,20 +396,20 @@ class DisabledByDefaultEnqueuesNothing(Case):
         with mock.patch.dict(os.environ, {}, clear=False):
             os.environ.pop(ingress.INGRESS_ENABLED_ENV, None)
             self.assertFalse(ingress.ingress_enabled())
-            plan = ingress.plan_ingress(self.issue(79))
+            plan = self.plan(self.issue(79))
             self.assertEqual(plan["action"], "DISABLED")
             self.assertFalse(plan["enabled"])
             # A disabled ingress still computes the task it would create.
             self.assertEqual(plan["would_enqueue"]["kind"], "GHAW_BUILDER_V1")
-            result = ingress.ingest(self.issue(79), runtime=self.runtime)
+            result = self.enqueue(self.issue(79), environ={})
             self.assertEqual(result["action"], "DISABLED")
             self.assertFalse(result["enqueued"])
 
     def test_disabled_ingest_writes_nothing_even_handed_a_runtime(self):
         for value in ("", "false", "1", "yes"):
             with self.subTest(value=value):
-                result = ingress.ingest(self.issue(79), runtime=self.runtime,
-                                        environ={ingress.INGRESS_ENABLED_ENV: value})
+                result = self.enqueue(self.issue(79),
+                                      environ={ingress.INGRESS_ENABLED_ENV: value})
                 self.assertEqual(result["action"], "DISABLED")
                 self.assertNotIn("runtime_task_id", result)
         self.assertEqual(self.runtime.enqueue_calls, 0)
@@ -406,7 +426,7 @@ class EnabledOfflineEnqueuesOnce(Case):
     """Enabled, with a fake Runtime and a temporary DB: exactly one task."""
 
     def test_enabled_ingest_enqueues_the_planned_call(self):
-        result = ingress.ingest(self.issue(79), runtime=self.runtime, environ=ENABLED)
+        result = self.enqueue(self.issue(79))
         self.assertEqual(result["action"], "ENQUEUED")
         self.assertTrue(result["enqueued"])
         self.assertEqual(result["runtime_task_id"],
@@ -426,7 +446,8 @@ class EnabledOfflineEnqueuesOnce(Case):
 
     def test_enabled_without_a_runtime_is_a_loud_refusal(self):
         with self.assertRaises(contract.Refused) as caught:
-            ingress.ingest(self.issue(79), environ=ENABLED)
+            ingress.ingest(self.issue(79),
+                           current_source_anchor=FIXTURE_SOURCE_ANCHOR, environ=ENABLED)
         self.assertEqual(caught.exception.reason,
                          "RUNTIME_REQUIRED_WHEN_INGRESS_ENABLED")
 
@@ -438,7 +459,7 @@ class EnabledOfflineEnqueuesOnce(Case):
             with self.subTest(issue=number):
                 done = subprocess.run(
                     [sys.executable, str(INGRESS_SOURCE), "--plan", str(FIXTURE),
-                     str(number)],
+                     str(number), FIXTURE_SOURCE_ANCHOR],
                     cwd=str(HERE), env=env, capture_output=True, text=True)
                 self.assertEqual(done.returncode, expected, done.stderr)
                 if expected == 0:
@@ -492,6 +513,143 @@ class TheIngressIsStructurallyBounded(Case):
         for name in ("idempotency_key", "max_attempts"):
             self.assertEqual(parameters[name].kind,
                              inspect.Parameter.KEYWORD_ONLY)
+
+
+# ------------------------------------------------------------------ H
+class SourceFreshnessIsRequired(Case):
+    """An issue is admitted only against the source the repository is on right now.
+
+    The failure this closes, with the live numbers behind it: on 2026-10-04 the ten open
+    owner issues #79-#88 all carried `canonical source: ... 8ffcde66...` while main was
+    `e4076276...`. Every one of them parsed, validated against the Builder's own cell range
+    and would have enqueued - ten paid engineering executions against a tree none of them
+    was written for. Nothing here closes or edits those issues; the ingress simply stops
+    agreeing that they are work. The bodies are historical Evidence and stay as they are.
+    """
+
+    def retitled(self, *, cell=1, anchor=FIXTURE_SOURCE_ANCHOR, number=79):
+        """The real captured body, re-titled for one cell and bound to one anchor.
+
+        Only the title and, when asked for, the commit on the anchor line are rewritten.
+        The rest - the anchor label, the objective marker, the provenance lines - is the
+        captured text, so this exercises the real shape rather than an invented one.
+        """
+        issue = self.issue(number)
+        issue["title"] = "C%02d · V70-R3-C%02d-01 · a bounded engineering task" % (cell, cell)
+        if anchor != FIXTURE_SOURCE_ANCHOR:
+            self.assertEqual(issue["body"].count(FIXTURE_SOURCE_ANCHOR), 1)
+            issue["body"] = issue["body"].replace(FIXTURE_SOURCE_ANCHOR, anchor)
+        return issue
+
+    def test_the_parser_still_understands_the_historical_issue(self):
+        # Freshness is an ADMISSION rule, not a parsing rule. Teaching the parser to
+        # disown old issues would lose the ability to read them at all - and with it the
+        # ability to say WHY one is old.
+        parsed = ingress.parse_c01_issue(self.issue(79))
+        self.assertEqual(parsed["source_anchor"], FIXTURE_SOURCE_ANCHOR)
+
+    def test_a_historical_issue_is_refused_once_main_has_moved(self):
+        with self.assertRaises(ingress.SourceAnchorNotCurrent) as caught:
+            self.plan(self.issue(79), current=CURRENT_SOURCE_ANCHOR)
+        self.assertEqual(caught.exception.reason, "INGRESS_SOURCE_ANCHOR_NOT_CURRENT")
+
+    def test_the_refusal_carries_the_two_values_it_was_made_of(self):
+        with self.assertRaises(ingress.SourceAnchorNotCurrent) as caught:
+            self.plan(self.issue(79), current=CURRENT_SOURCE_ANCHOR)
+        refusal = caught.exception
+        self.assertEqual(refusal.issue_number, 79)
+        self.assertEqual(refusal.parsed_source_anchor, FIXTURE_SOURCE_ANCHOR)
+        self.assertEqual(refusal.current_source_anchor, CURRENT_SOURCE_ANCHOR)
+        # And it is an ordinary refusal, so every existing caller still sees a Refused.
+        self.assertIsInstance(refusal, contract.Refused)
+
+    def test_every_cell_is_refused_for_the_same_stale_source(self):
+        # The ten historical issues are one per cell and all carry one anchor. Re-titling
+        # the real body for each cell exercises exactly that, without inventing ten bodies:
+        # whatever the cell, an anchor that is not the current main is refused.
+        for cell in range(1, 13):
+            with self.subTest(cell=cell):
+                self.assertEqual(
+                    self.refused_reason(self.retitled(cell=cell),
+                                        current=CURRENT_SOURCE_ANCHOR),
+                    "INGRESS_SOURCE_ANCHOR_NOT_CURRENT")
+
+    def test_the_disabled_shadow_path_reports_the_same_verdict(self):
+        # The shadow poll is what tells an operator a backlog is stale, so it has to reach
+        # the same verdict as the live path - the switch changes what happens on a PASS,
+        # never what the admission rules are.
+        self.assertEqual(
+            self.refused_reason(self.issue(79), environ={}, current=CURRENT_SOURCE_ANCHOR),
+            "INGRESS_SOURCE_ANCHOR_NOT_CURRENT")
+
+    def test_a_stale_issue_cannot_enqueue_even_when_enabled(self):
+        with self.assertRaises(contract.Refused):
+            self.enqueue(self.issue(79), current=CURRENT_SOURCE_ANCHOR)
+        self.assertEqual(self.runtime.enqueue_calls, 0)
+        self.assertEqual(self.runtime.task_count(), 0)
+
+    def test_an_issue_bound_to_the_current_source_is_accepted(self):
+        issue = self.retitled(anchor=CURRENT_SOURCE_ANCHOR)
+        plan = self.plan(issue, current=CURRENT_SOURCE_ANCHOR)
+        self.assertEqual(plan["would_enqueue"]["owner_c"], "C1")
+        self.assertEqual(plan["would_enqueue"]["payload"]["source_anchor"],
+                         CURRENT_SOURCE_ANCHOR)
+        result = self.enqueue(issue, current=CURRENT_SOURCE_ANCHOR)
+        self.assertEqual(result["action"], "ENQUEUED")
+        self.assertEqual(self.runtime.task_count(), 1)
+
+    def test_the_gate_does_not_enter_the_task_identity(self):
+        # Freshness is admission, not a redesign of identity. The same issue, admitted
+        # against the same source, derives exactly the key and payload it always did.
+        plan = self.plan(self.issue(79))
+        self.assertEqual(plan["would_enqueue"]["idempotency_key"],
+                         "c1-ghaw-builder-v1:C1:V70-R3-C01-01")
+        self.assertEqual(plan["would_enqueue"]["payload"]["source_anchor"],
+                         FIXTURE_SOURCE_ANCHOR)
+        self.assertEqual(plan["would_enqueue"]["max_attempts"], 1)
+
+    def test_a_missing_current_source_is_refused_not_assumed(self):
+        for missing in (None, "", "   "):
+            with self.subTest(value=repr(missing)):
+                with self.assertRaises(contract.Refused) as caught:
+                    ingress.plan_ingress(self.issue(79), current_source_anchor=missing)
+                self.assertEqual(caught.exception.reason,
+                                 "INGRESS_CURRENT_SOURCE_ANCHOR_INVALID")
+
+    def test_a_malformed_current_source_is_refused(self):
+        bad_values = ("not-a-sha", "8ffcde66", FIXTURE_SOURCE_ANCHOR[:-1],
+                      FIXTURE_SOURCE_ANCHOR + "0", "0" * 64,
+                      "8ffcde66d36c1bbf849218529ef015f6e81725ag", 12345, ["a"] * 40)
+        for bad in bad_values:
+            with self.subTest(value=repr(bad)):
+                with self.assertRaises(contract.Refused) as caught:
+                    ingress.plan_ingress(self.issue(79), current_source_anchor=bad)
+                self.assertEqual(caught.exception.reason,
+                                 "INGRESS_CURRENT_SOURCE_ANCHOR_INVALID")
+
+    def test_a_differently_cased_current_source_is_the_same_commit(self):
+        # GitHub always answers in lowercase; accepting another case is normalising one
+        # spelling of the same value, not relaxing the comparison, which is still exact.
+        plan = self.plan(self.issue(79),
+                         current=FIXTURE_SOURCE_ANCHOR.upper())
+        self.assertEqual(plan["would_enqueue"]["payload"]["source_anchor"],
+                         FIXTURE_SOURCE_ANCHOR)
+
+    def test_the_current_source_is_required_and_has_no_default(self):
+        # Structural, and the point of the whole design: an optional parameter with a
+        # default would be a gate a live caller could step over by forgetting an argument.
+        for function in (ingress.plan_ingress, ingress.ingest):
+            with self.subTest(function=function.__name__):
+                parameter = inspect.signature(function).parameters["current_source_anchor"]
+                self.assertEqual(parameter.kind, inspect.Parameter.KEYWORD_ONLY)
+                self.assertIs(parameter.default, inspect.Parameter.empty)
+
+    def test_omitting_the_current_source_is_an_error_not_a_pass(self):
+        with self.assertRaises(TypeError):
+            ingress.plan_ingress(self.issue(79))
+        with self.assertRaises(TypeError):
+            ingress.ingest(self.issue(79), runtime=self.runtime, environ=ENABLED)
+        self.assertEqual(self.runtime.enqueue_calls, 0)
 
 
 if __name__ == "__main__":
