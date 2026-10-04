@@ -508,22 +508,45 @@ class NothingHereCanSpendMoney(unittest.TestCase):
                         "workflow_run", "issues", "issue_comment"):
             self.assertNotIn(trigger, trigger_block(self.front))
 
-    def test_the_workflow_has_no_write_capability(self):
-        for forbidden in ("create-pull-request", "push-to-pull-request-branch",
-                          "contents: write", "pull-requests: write",
-                          "create_or_update_secret", "deployments: write"):
-            with self.subTest(token=forbidden):
-                self.assertNotIn(forbidden, self.lock_text)
-
-    def test_the_agent_has_no_shell(self):
-        self.assertEqual(self.front["tools"]["bash"], False)
-        self.assertEqual(self.front["tools"]["cli-proxy"], False)
-        self.assertIn("features.shell_tool=false", self.lock_text)
-
     def test_a_credit_ceiling_is_declared(self):
         self.assertIsInstance(self.front["max-ai-credits"], int)
         self.assertGreater(self.front["max-ai-credits"], 0)
         self.assertIn("GH_AW_MAX_AI_CREDITS", self.lock_text)
+
+    def test_the_agents_tool_surface_is_exactly_what_the_source_declares(self):
+        """U1 declared `edit` alone; the engineering round added `bash` and nothing else.
+
+        Written as an agreement between the source and the compiled file rather than as a
+        fixed list, because that is what makes the change visible in both directions: a
+        stale lock cannot keep a capability the source no longer declares, and it cannot
+        hide one the source does declare.
+        """
+        tools = self.front["tools"]
+        self.assertEqual(set(tools), {"edit", "bash", "cli-proxy"})
+        self.assertIn("edit", tools)
+        self.assertIs(tools["cli-proxy"], False)
+        if tools["bash"] is False:
+            self.assertIn("features.shell_tool=false", self.lock_text)
+        else:
+            self.assertIs(tools["bash"], True)
+            self.assertNotIn("features.shell_tool=false", self.lock_text)
+
+    def test_the_write_surface_is_exactly_one_draft_pull_request(self):
+        """The repository write path is the PR writer, and nothing else was added.
+
+        Where that permission lands is a separate question and is asserted on the compiled
+        jobs: only the safe-outputs and conclusion jobs carry it, never the agent's.
+        Section C of test_c1_builder_engineering_surface holds that line.
+        """
+        outputs = {name for name in self.front["safe-outputs"] if name != "steps"}
+        self.assertEqual(outputs, {"report-failure-as-issue", "create-pull-request"})
+        for extra in ("create-issue", "update-issue", "add-comment",
+                      "push-to-pull-request-branch", "merge-pull-request",
+                      "update-pull-request", "create-or-update-secret",
+                      "deploy-pages", "update-release"):
+            with self.subTest(extra=extra):
+                self.assertNotIn(extra, self.front["safe-outputs"])
+                self.assertNotIn(extra, self.lock_text)
 
     def test_the_worker_unit_is_a_candidate_and_is_not_installed_here(self):
         self.assertTrue(UNIT_CANDIDATE.is_file())
