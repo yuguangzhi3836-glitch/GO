@@ -56,6 +56,7 @@ import sys
 import time
 
 from c1_dispatch_outbox import DispatchOutbox
+from c1_execution_contract import WORKFLOW_FILE
 from c1_execution_loop import DEFAULT_LEASE_S, advance, resume
 
 # Fixed installed locations. Constants, never caller inputs - the same pattern the
@@ -106,7 +107,7 @@ STATUS_FIELDS = (
     "status", "verb", "claimed", "resumed", "unfinished", "kind", "runtime_task_id",
     "attempt", "action", "dispatch_status", "reused", "renewed", "reason", "detail",
     "conclusion", "runtime_told", "failure_reason",
-    "claimed_kinds", "runtime_db", "outbox_db", "credential",
+    "claimed_kinds", "runtime_db", "outbox_db", "dispatch_target", "credential",
 )
 
 
@@ -134,9 +135,18 @@ def open_outbox(path=OUTBOX_DB):
     return DispatchOutbox(path)
 
 
-def build_client():
+def build_client(*, workflow_file=None):
+    """The GitHub transport, bound to the workflow file THIS executor dispatches.
+
+    With no argument this is the channel's original target, so the deployed Responses
+    worker behaves exactly as it did. A second executor passes its own workflow file,
+    and from then on the client refuses any request whose recorded target is not that
+    file - which is what stops two executors that share this class from sharing a
+    transport target.
+    """
     from c1_github_actions_client import GitHubActionsClient, configured_token_loader
-    return GitHubActionsClient(token_loader=configured_token_loader())
+    return GitHubActionsClient(token_loader=configured_token_loader(),
+                               workflow_file=workflow_file)
 
 
 def credential_refusal(loader=None):
@@ -232,16 +242,17 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
 
 def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
          token_loader=None, worker_id=WORKER_ID, claim_kinds=CLAIM_KINDS,
-         runtime_db=RUNTIME_DB, outbox_db=OUTBOX_DB) -> int:
+         runtime_db=RUNTIME_DB, outbox_db=OUTBOX_DB,
+         workflow_file=WORKFLOW_FILE) -> int:
     """The resident loop, parameterised by the executor's OWN boundary.
 
-    `worker_id`, `claim_kinds`, `runtime_db` and `outbox_db` default to this file's
-    constants, so running `c1_worker.py` directly is unchanged. They are parameters so
-    that a second executor can reuse this loop - and only this loop - while stating its
-    own kind set and its own outbox. What makes an executor an executor is exactly those
-    four values, and nothing else about the loop changes: copying the loop for the second
-    executor would be a second implementation of the exactly-once model, which is
-    precisely the thing that must never fork.
+    `worker_id`, `claim_kinds`, `runtime_db`, `outbox_db` and `workflow_file` default to
+    this file's own values, so running `c1_worker.py` directly is unchanged. They are
+    parameters so that a second executor can reuse this loop - and only this loop - while
+    stating its own kinds, its own outbox and its own dispatch target. Those five values
+    are what makes an executor an executor, and nothing else about the loop changes:
+    copying the loop for the second executor would be a second implementation of the
+    exactly-once model, which is precisely the thing that must never fork.
     """
     once = False
     check = False
@@ -285,7 +296,8 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
     if check:
         emit({"status": "READY", "verb": "check", "credential": "present",
               "claimed_kinds": list(claim_kinds), "runtime_db": runtime_db,
-              "outbox_db": outbox_db})
+              "outbox_db": outbox_db,
+              "dispatch_target": workflow_file})
         return 0
 
     if runtime is None:
@@ -293,7 +305,7 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
     if outbox is None:
         outbox = open_outbox(outbox_db)
     if client is None:
-        client = build_client()
+        client = build_client(workflow_file=workflow_file)
 
     while True:
         try:
