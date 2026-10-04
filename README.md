@@ -1,40 +1,42 @@
 # GO
 
-> Status refreshed 2026-09-13. This README is the repository entry point for current product lineage, project operating context, and operational-source boundaries. It is descriptive project context, not Execution Authority.
+> Repository entry point. This file is descriptive context, not Execution Authority.
+>
+> **Current changing facts are intentionally not hard-coded here.** Read
+> [GO_CURRENT_STATE.md](docs/project/GO_CURRENT_STATE.md) and
+> [CONTEXT_CHECKPOINT.json](docs/project/CONTEXT_CHECKPOINT.json), then re-read live GitHub /
+> the real environment when a mutation is involved.
 
-## CURRENT ACTIVE HK BUSINESS RUNTIME — DEPTH48
+## Persistent Runtime — Boss / Owner usage
 
-HK-STAGING is running the DEPTH48 business runtime since **2026-09-13**. The
-machine-readable pointer is
-[`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](docs/canonical-baseline/CURRENT_HK_RUNTIME.json).
+The GO Persistent Runtime is delivered and live for C01-C12 Builder work and C14→C13 review transport.
+
+**老板日常怎么派活：**
+
+- [Persistent Runtime 老板使用说明](docs/runtime/README.md)
+
+Quick summary:
 
 ```text
-business source    application/
-build definition   application/Dockerfile
-runtime compose    deploy/hk-staging/docker-compose.business-runtime.yml
-env contract       deploy/hk-staging/RUNTIME_ENV_CONTRACT.md
-runtime state      docs/canonical-baseline/CURRENT_HK_RUNTIME.json
-image              go-hotel:depth48-runtime-6d0fd905
-database head      0133_flight_change_plan  (PostgreSQL 18.4, 551 tables)
-business services  api + outbox / recovery / reconciliation / judgment /
-                   mobile-engagement / mobile-push / mobile-push-receipt workers
-protected          caddy, redis, PostgreSQL/RDS data, media volumes, HK Agent,
-                   Executor, signing keys, Task/Evidence/ledger, Control Plane, SSH
+C01-C12 work:
+Formal GitHub Issue -> Runtime -> Builder -> Draft PR
+
+Candidate review:
+C14 · REVIEW Issue -> Runtime -> C14 -> if admitted -> C13
 ```
 
-> The block above describes the **running** DEPTH48 runtime. Repository-side facts are tracked separately: canonical `main`, `main:application` tree, source fingerprint, the **repository** migration head, the gate/release state and the open candidate PRs. See [`docs/project/GO_CURRENT_STATE.md`](docs/project/GO_CURRENT_STATE.md) and [`docs/project/CONTEXT_CHECKPOINT.json`](docs/project/CONTEXT_CHECKPOINT.json).
->
-> As of the 2026-09-14 context refresh the running database revision is `0133_flight_change_plan`, while the repository migration head is `0134_flight_status_width` and **has not been applied** to HK. A running-database revision is not a repository migration head.
+老板不需要登录 Runtime Host、手工 dispatch workflow 或运行 `deliver_review_round.py`.
 
-Build from a fresh clone, with no host-side file, previous parent, or sealed
-package:
+## HK business runtime
 
-```sh
-docker build -t go-hotel:depth48-runtime application/
-```
+HK-STAGING is a **separate axis** from repository `main` and from the Persistent Runtime.
 
-Read [`deploy/hk-staging/README.md`](deploy/hk-staging/README.md) before building,
-running, or cutting over the business runtime.
+For the current business-runtime identity use:
+
+- [CURRENT_HK_RUNTIME.json](docs/canonical-baseline/CURRENT_HK_RUNTIME.json)
+- [GO_CURRENT_STATE.md](docs/project/GO_CURRENT_STATE.md)
+
+Do not infer today's image, database revision, application tree or deployment status from historical values later in this README.
 
 ### Status of the other lineage artifacts
 
