@@ -8,7 +8,7 @@ The Owner's existing entry point is unchanged and is not touched by this module:
 
 This module is the missing last leg of the *new* path only:
 
-    C01 issue -> parse -> validate -> AI_TASK_V1 payload -> Runtime.enqueue()
+    C01 issue -> parse -> validate -> GHAW_BUILDER_V1 payload -> Runtime.enqueue()
 
 It is deliberately NOT the old path. It never calls the old C01 session executors,
 their runner, or any old C01 workflow: the exact identities this module must not
@@ -37,7 +37,7 @@ Runtime task it *would* create - and writes nothing anywhere.
 Idempotency
 -----------
 One Owner C01 task is identified by `(cell, external_task_id)`, so the Runtime key is
-*derived* through `c1_execution_contract.real_idempotency_key`, never chosen. Scanning
+*derived* through `c1_execution_contract.task_idempotency_key`, never chosen. Scanning
 the same issue any number of times yields the same key, and the Runtime's own
 `idempotency_key` UNIQUE constraint is what makes it one task. Note there is no way to
 read a Runtime task back by key - the kernel exposes no such call - so this module does
@@ -61,14 +61,14 @@ import re
 import sys
 
 from c1_execution_contract import (
+    GHAW_BUILDER_KIND,
     OWNER_C,
-    REAL_TASK_KIND,
     Refused,
     build_task_payload,
     canonical,
     canonical_cell_id,
-    real_idempotency_key,
     sha256_hex,
+    task_idempotency_key,
     validate_task_payload,
 )
 
@@ -76,8 +76,12 @@ from c1_execution_contract import (
 INGRESS_ENABLED_ENV = "C01_RUNTIME_INGRESS_ENABLED"
 _ENABLED_LITERAL = "true"
 
-# The task class this ingress produces. The smoke class is not reachable from here.
-INGRESS_KIND = REAL_TASK_KIND
+# The task class this ingress produces: the formal C01 Builder's, which is the gh-aw
+# Builder executor's and nobody else's. The smoke class is not reachable from here, and
+# neither is `AI_TASK_V1` - a C01 issue is a work order for the Builder, and the kind is
+# what decides which executor picks it up. Routing it to the Responses-API executor
+# instead would be a silent, permanent misdelivery, not a fallback.
+INGRESS_KIND = GHAW_BUILDER_KIND
 INGRESS_OWNER_C = OWNER_C
 
 # One attempt. A retry would be a second paid dispatch of the same task, and the
@@ -289,7 +293,10 @@ def plan_ingress(issue, *, environ=None) -> dict:
     # Re-validate what will actually be handed to the Runtime, so the plan cannot
     # describe something the contract would refuse.
     payload = validate_task_payload(payload)
-    idempotency_key = real_idempotency_key(payload["cell_id"], payload["external_task_id"])
+    # Derived from the kind as well as the task, so this ingress cannot share a Runtime
+    # task with an executor that would claim it under a different kind.
+    idempotency_key = task_idempotency_key(
+        INGRESS_KIND, payload["cell_id"], payload["external_task_id"])
     enabled = ingress_enabled(environ)
     return {
         "action": "SHADOW_PLAN" if enabled else "DISABLED",

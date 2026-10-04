@@ -274,8 +274,8 @@ class RepeatPollingIsOneRuntimeTask(Case):
 
         task_id, owner_c, kind, payload_json, key, max_attempts = self.runtime.rows()[0]
         self.assertEqual(owner_c, "C1")
-        self.assertEqual(kind, "AI_TASK_V1")
-        self.assertEqual(key, "c1-ai-task-v1:C1:V70-R3-C01-01")
+        self.assertEqual(kind, "GHAW_BUILDER_V1")
+        self.assertEqual(key, "c1-ghaw-builder-v1:C1:V70-R3-C01-01")
         self.assertEqual(max_attempts, 1)
         self.assertTrue(task_id.startswith("rt_"))
         # What landed in the Runtime is exactly what the ingress planned - byte for byte.
@@ -376,7 +376,7 @@ class DisabledByDefaultWritesNothing(Case):
             self.assertEqual(result["enqueued"], [])
             self.assertEqual(result["considered"], 1, "it still reports the plan")
             self.assertEqual(result["planned"][0]["idempotency_key"],
-                             "c1-ai-task-v1:C1:V70-R3-C01-01")
+                             "c1-ghaw-builder-v1:C1:V70-R3-C01-01")
 
     def test_disabled_never_uses_a_runtime_even_when_one_is_injected(self):
         for value in ("", "false", "1", "yes"):

@@ -1,4 +1,4 @@
-"""Ingress tests: C01 issue -> AI_TASK_V1 Runtime call, shadow-only.
+"""Ingress tests: C01 issue -> GHAW_BUILDER_V1 Runtime call, shadow-only.
 
 Coverage map (the letters are the acceptance cases of the task):
 
@@ -157,9 +157,9 @@ class Issue79FixtureIsParsed(Case):
         self.assertEqual(plan["issue_number"], 79)
         call = plan["would_enqueue"]
         self.assertEqual(call["owner_c"], "C1")
-        self.assertEqual(call["kind"], "AI_TASK_V1")
+        self.assertEqual(call["kind"], "GHAW_BUILDER_V1")
         self.assertEqual(call["max_attempts"], 1)
-        self.assertEqual(call["idempotency_key"], "c1-ai-task-v1:C1:V70-R3-C01-01")
+        self.assertEqual(call["idempotency_key"], "c1-ghaw-builder-v1:C1:V70-R3-C01-01")
         payload = call["payload"]
         self.assertEqual(payload["cell_id"], "C1")
         self.assertEqual(payload["external_task_id"], "V70-R3-C01-01")
@@ -215,8 +215,8 @@ class DuplicateScansAreOneRuntimeTask(Case):
         self.assertEqual(self.runtime.enqueue_calls, 10)
         task_id, owner_c, kind, _, key, max_attempts = self.runtime.rows()[0]
         self.assertEqual(owner_c, "C1")
-        self.assertEqual(kind, "AI_TASK_V1")
-        self.assertEqual(key, "c1-ai-task-v1:C1:V70-R3-C01-01")
+        self.assertEqual(kind, "GHAW_BUILDER_V1")
+        self.assertEqual(key, "c1-ghaw-builder-v1:C1:V70-R3-C01-01")
         self.assertEqual(max_attempts, 1)
         self.assertTrue(task_id.startswith("rt_"))
 
@@ -340,7 +340,7 @@ class DisabledByDefaultEnqueuesNothing(Case):
             self.assertEqual(plan["action"], "DISABLED")
             self.assertFalse(plan["enabled"])
             # A disabled ingress still computes the task it would create.
-            self.assertEqual(plan["would_enqueue"]["kind"], "AI_TASK_V1")
+            self.assertEqual(plan["would_enqueue"]["kind"], "GHAW_BUILDER_V1")
             result = ingress.ingest(self.issue(79), runtime=self.runtime)
             self.assertEqual(result["action"], "DISABLED")
             self.assertFalse(result["enqueued"])
@@ -375,8 +375,8 @@ class EnabledOfflineEnqueuesOnce(Case):
         self.assertEqual(self.runtime.task_count(), 1)
         task_id, owner_c, kind, payload_json, key, max_attempts = self.runtime.rows()[0]
         self.assertEqual(owner_c, "C1")
-        self.assertEqual(kind, "AI_TASK_V1")
-        self.assertEqual(key, "c1-ai-task-v1:C1:V70-R3-C01-01")
+        self.assertEqual(kind, "GHAW_BUILDER_V1")
+        self.assertEqual(key, "c1-ghaw-builder-v1:C1:V70-R3-C01-01")
         self.assertEqual(max_attempts, 1)
         # The row holds the validated payload, byte for byte.
         self.assertEqual(payload_json,

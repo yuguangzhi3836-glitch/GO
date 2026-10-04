@@ -1,4 +1,4 @@
-"""C01 GitHub Issue consumer: open C01 issues -> Runtime.enqueue(AI_TASK_V1).
+"""C01 GitHub Issue consumer: open C01 issues -> Runtime.enqueue(GHAW_BUILDER_V1).
 
 What this is
 ------------
@@ -21,7 +21,7 @@ and no comment path exists in this file.
 Stateless by design, on purpose
 -------------------------------
 The consumer keeps **no local record of what it has already seen**. Idempotency is the
-Runtime's own: the ingress derives `idempotency_key` from `(cell, external_task_id)` and
+Runtime's own: the ingress derives `idempotency_key` from `(kind, cell, external_task_id)` and
 the kernel's UNIQUE constraint turns a repeat into "here is the task id you already
 have". A local "seen" store would be a second source of truth that can drift, go stale
 or be lost on restart, and it is exactly the kind of duplicate the project's own

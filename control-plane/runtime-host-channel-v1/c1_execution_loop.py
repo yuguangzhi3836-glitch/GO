@@ -59,12 +59,14 @@ from c1_dispatch_outbox import (
 )
 from c1_execution_contract import (
     CLAIMABLE_KINDS,
+    GHAW_BUILDER_KIND,
     KIND,
     OWNER_C,
     PAYLOAD,
     REAL_TASK_KIND,
     Refused,
     build_dispatch_request,
+    require_runtime_facts,
     task_spec,
     validate_task_payload,
 )
@@ -73,13 +75,66 @@ from c1_result_pull import complete_after_pull, fail_after_pull, is_a_fenced_ref
 # The lease the worker asks for, and re-asks for on every unfinished tick.
 DEFAULT_LEASE_S = 120
 
+# The non-smoke kinds: a payload of one of these must validate through the shared
+# contract before this module will touch it. Kept as data so a new real class cannot be
+# added to the contract and silently skip the payload gate.
+PAYLOAD_VALIDATED_KINDS = (REAL_TASK_KIND, GHAW_BUILDER_KIND)
 
-def _not_our_task(claimed) -> dict | None:
-    """Refuse anything that is not a C1 task this channel owns.
+# Exactly the four facts an execution identity is built from, and the only attributes
+# `claimed_identity()` will read off a claim.
+CLAIMED_IDENTITY_FIELDS = ("task_id", "attempts", "kind", "payload")
 
-    Two kinds are ours: the fixed smoke (`AI_WORK_V1`, whose payload must be the literal)
-    and a real task (`AI_TASK_V1`, whose payload must validate). Everything else -
-    including both probe kinds - is refused.
+
+def claimed_identity(claimed) -> dict:
+    """The identity of what `Runtime.claim()` actually handed out. U10, formalised.
+
+    The deployed Runtime is a scheduler, and `claim(kinds=...)` returns the oldest QUEUED
+    task matching the filter - not necessarily the one some caller enqueued most
+    recently, and not something a caller can steer. There is no `claim(task_id=...)` and
+    this channel must not grow one: the only way to run a particular task is to run what
+    `claim` returned.
+
+    So the identity is read here and nowhere else, in one place, as a unit. That is the
+    whole point: an `enqueue()` return value is a task id with no attempt, no kind and no
+    payload, so a caller that wanted "the task I just enqueued" had to borrow an attempt
+    from somewhere - and Round 3 measured what happens when those come from different
+    tasks (`A.task_id` + `B.attempt`). The Runtime's own fence rejected the completion,
+    which was correct but late and only after a paid dispatch. Returning all four facts
+    from one function makes the mixed pair unrepresentable rather than merely forbidden:
+    `attempts` cannot be taken from a claim other than the one `task_id` came from,
+    because there is no other claim in scope.
+
+    Fail-closed: a claim missing any of the four, or carrying a task id / attempt the
+    contract would refuse, raises rather than being repaired. The caller dispatches
+    nothing.
+    """
+    missing = [name for name in CLAIMED_IDENTITY_FIELDS if not hasattr(claimed, name)]
+    if missing:
+        raise Refused("CLAIMED_OBJECT_INCOMPLETE:" + ",".join(missing))
+    try:
+        task_id, attempt = require_runtime_facts(claimed.task_id, claimed.attempts)
+    except Refused as refusal:
+        raise Refused("CLAIMED_IDENTITY_INVALID:" + refusal.reason) from None
+    kind = claimed.kind
+    if not isinstance(kind, str) or not kind:
+        raise Refused("CLAIMED_IDENTITY_KIND_INVALID")
+    if type(claimed.payload) is not dict:
+        raise Refused("CLAIMED_IDENTITY_PAYLOAD_NOT_AN_OBJECT")
+    return {"task_id": task_id, "attempt": attempt, "kind": kind, "payload": claimed.payload}
+
+
+def _not_our_task(claimed, claimable_kinds) -> dict | None:
+    """Refuse anything that is not a task this executor owns.
+
+    `claimable_kinds` is the executor's own set - the smoke and real kinds for
+    `c1_worker`, the gh-aw Builder kind for `c1_ghaw_builder_worker`. It is a parameter
+    rather than a module constant because a kind belongs to exactly one executor: the
+    executor states which kinds it owns and this function holds it to that, so a worker
+    cannot silently execute work another executor is responsible for.
+
+    Two sorts of kind are ours: the fixed smoke (`AI_WORK_V1`, whose payload must be the
+    literal) and a real task (`AI_TASK_V1`, `GHAW_BUILDER_V1`, whose payload must
+    validate). Everything else - including both probe kinds - is refused.
 
     The claim itself should already be filtered by kind; this is the second, cheap
     gate, and it is the one that makes "the C1 loop never executes RUNTIME_PROBE"
@@ -96,11 +151,11 @@ def _not_our_task(claimed) -> dict | None:
     payload = getattr(claimed, "payload", None)
     if owner_c != OWNER_C:
         return {"action": "NOT_A_C1_TASK", "reason": "OWNER_C_MISMATCH", "owner_c": owner_c}
-    if kind not in CLAIMABLE_KINDS:
+    if kind not in claimable_kinds:
         return {"action": "NOT_A_C1_TASK", "reason": "KIND_MISMATCH", "kind": kind}
     if kind == KIND and payload != PAYLOAD:
         return {"action": "NOT_A_C1_TASK", "reason": "PAYLOAD_MISMATCH", "payload": payload}
-    if kind == REAL_TASK_KIND:
+    if kind in PAYLOAD_VALIDATED_KINDS:
         try:
             validate_task_payload(payload)
         except Refused as refusal:
@@ -109,11 +164,6 @@ def _not_our_task(claimed) -> dict | None:
             return {"action": "NOT_A_C1_TASK", "reason": "TASK_PAYLOAD_REFUSED",
                     "detail": refusal.reason}
     return None
-
-
-def _spec_of(claimed) -> dict:
-    """The task spec of what `Runtime.claim()` handed out, for building its request."""
-    return task_spec(claimed.kind, claimed.payload)
 
 
 def _renew(runtime, task_id, attempt, *, worker_id, lease_s) -> bool:
@@ -132,25 +182,36 @@ def _renew(runtime, task_id, attempt, *, worker_id, lease_s) -> bool:
 
 
 def advance(outbox, runtime, claimed, *, worker_id: str, client,
-            lease_s: int = DEFAULT_LEASE_S, clock=time.time) -> dict:
+            lease_s: int = DEFAULT_LEASE_S, clock=time.time,
+            claimable_kinds=CLAIMABLE_KINDS) -> dict:
     """One bounded tick for a task that was just claimed. Never dispatches twice.
 
     `claimed` is what `Runtime.claim()` returned (task_id, owner_c, kind, payload,
-    attempts, lease_until).
+    attempts, lease_until), and it is the ONLY source of the execution identity here: the
+    four facts `claimed_identity()` returns are what every downstream derivation uses.
+    No `enqueue()` return value is read, and `priority` is never consulted - it orders
+    the Runtime's queue and has no meaning as an identity.
+
+    `claimable_kinds` is the executor's own kind set. It defaults to the Responses-API
+    executor's, so every existing caller keeps the behaviour it was proven with; the
+    gh-aw Builder executor passes its own set instead.
     """
-    refusal = _not_our_task(claimed)
+    refusal = _not_our_task(claimed, claimable_kinds)
     if refusal is not None:
         return refusal
+    identity = claimed_identity(claimed)
     # The request is built from what was actually claimed - for a real task that is the
     # payload the Runtime handed out - and then travels with the identity everywhere.
-    return _drive(outbox, runtime, claimed.task_id, claimed.attempts,
-                  request=build_dispatch_request(claimed.task_id, claimed.attempts,
-                                                 _spec_of(claimed)),
+    return _drive(outbox, runtime, identity["task_id"], identity["attempt"],
+                  request=build_dispatch_request(
+                      identity["task_id"], identity["attempt"],
+                      task_spec(identity["kind"], identity["payload"])),
                   worker_id=worker_id, client=client, lease_s=lease_s, clock=clock)
 
 
 def resume(outbox, runtime, runtime_task_id, attempt, *, worker_id: str, client,
-           lease_s: int = DEFAULT_LEASE_S, clock=time.time) -> dict:
+           lease_s: int = DEFAULT_LEASE_S, clock=time.time,
+           claimable_kinds=CLAIMABLE_KINDS) -> dict:
     """One bounded tick for an execution identity this outbox already owns.
 
     This is the half the first deployment was missing. A task the worker has claimed is
@@ -164,12 +225,35 @@ def resume(outbox, runtime, runtime_task_id, attempt, *, worker_id: str, client,
     that an ambiguous POST is resolved by lookup and never by a second POST - across
     ticks, across a restart, and across a crash between the POST and the pull.
 
+    `claimable_kinds` is the executor's own kind set, and it is checked here as well as
+    at claim time. The outbox is per-executor, so this normally cannot bite - but
+    "normally" is the whole problem this formalises: the isolation used to be a
+    convention about paths, and a convention is not a contract. An identity belonging to
+    a kind this executor does not own is refused outright rather than executed (the
+    wrong executor running a task) or settled (destroying another executor's in-flight
+    state). A row predating the real-task contract has no stored request, is a smoke row
+    by construction, and is unaffected.
+
     `client` is the GitHub transport: a `GitHubActionsClient` in production, a stub
     offline - it must expose `send`, `find_run`, `find_run_by_name`, `get_run` and
     `download_artifact`.
     """
+    request = outbox.stored_request(runtime_task_id, attempt)
+    if request is None:
+        if KIND not in claimable_kinds:
+            # A missing stored request means "a row that predates the real-task contract",
+            # and the fallback below reproduces a pre-contract SMOKE identity - which is
+            # only ever the right answer for an executor that owns the smoke kind. For any
+            # other executor it means this identity is not in this outbox at all, and
+            # reproducing a smoke binding would register and dispatch an execution nobody
+            # asked for. Refuse instead.
+            raise Refused("RESUME_IDENTITY_NOT_IN_THIS_OUTBOX")
+    else:
+        kind = request.get("task_kind", KIND)
+        if kind not in claimable_kinds:
+            raise Refused("RESUME_KIND_NOT_OWNED_BY_THIS_EXECUTOR:" + str(kind))
     return _drive(outbox, runtime, runtime_task_id, attempt, worker_id=worker_id,
-                  client=client, lease_s=lease_s, clock=clock)
+                  client=client, lease_s=lease_s, clock=clock, request=request)
 
 
 def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clock,

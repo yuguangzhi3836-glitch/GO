@@ -60,16 +60,35 @@ from c1_execution_loop import DEFAULT_LEASE_S, advance, resume
 
 # Fixed installed locations. Constants, never caller inputs - the same pattern the
 # bridge service uses, so the two components cannot disagree about where the Runtime is.
+#
+# These four constants ARE the executor boundary. One executor / one execution loop owns
+# one durable outbox, one worker identity and one set of task kinds, and this file is the
+# Responses-API executor's statement of its own:
+#
+#     kinds       AI_WORK_V1 (fixed smoke), AI_TASK_V1 (real, prompt derived)
+#     outbox      /var/lib/go-runtime-c1/outbox.db
+#     worker id   go-runtime-host-c1-worker
+#     executes    one OpenAI Responses call per execution
+#
+# The gh-aw Builder executor is `c1_ghaw_builder_worker.py`, with its own kind, its own
+# outbox path and its own worker id. The two sets are disjoint on purpose: `claim(kinds=)`
+# is how the Runtime decides which executor a task goes to, so a kind claimed by two
+# executors is not a shared duty but a race, and the loser is whichever executor was
+# restarted last. `test_c1_executor_boundary` asserts the disjointness rather than leaving
+# it to whoever edits this file next. The Runtime database is deliberately the SAME one:
+# the two executors are two workers of one Runtime, not two Runtimes.
 RUNTIME_SOURCE_DIR = "/opt/go/c1-c14-runtime"
 RUNTIME_DB = "/var/lib/go-c-runtime/runtime.db"
 OUTBOX_DB = "/var/lib/go-runtime-c1/outbox.db"
 
 WORKER_ID = "go-runtime-host-c1-worker"
 OWNER_C = "C1"
-# The two kinds this worker owns. RUNTIME_PROBE / RUNTIME_C1_PROBE_V1 are not in this set
-# and never will be: those belong to the probe path and its own worker. `AI_TASK_V1` is a
-# real task - its payload carries the task's own objective and scope, and its prompt is
-# derived from that payload by the shared contract rather than from a fixed literal.
+# The two kinds this worker owns, and nothing else. RUNTIME_PROBE / RUNTIME_C1_PROBE_V1
+# are not in this set and never will be: those belong to the probe path and its own
+# worker. `AI_TASK_V1` is a real task - its payload carries the task's own objective and
+# scope, and its prompt is derived from that payload by the shared contract rather than
+# from a fixed literal. `GHAW_BUILDER_V1` is deliberately absent: it is a real task too,
+# but it is a different execution, and it belongs to the gh-aw Builder executor.
 CLAIM_KINDS = ("AI_WORK_V1", "AI_TASK_V1")
 
 DEFAULT_INTERVAL_S = 5.0
@@ -173,7 +192,7 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
         try:
             outcome = resume(outbox, runtime, row["runtime_task_id"], row["attempt"],
                              worker_id=worker_id, client=client, lease_s=lease_s,
-                             clock=clock)
+                             clock=clock, claimable_kinds=claim_kinds)
         except Exception as exc:  # noqa: BLE001 -- one bad task must not stop the worker
             return {"status": "BLOCKED", "claimed": False, "resumed": True,
                     "unfinished": len(unfinished),
@@ -194,7 +213,7 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
         return {"status": "IDLE", "claimed": False, "resumed": False, "unfinished": 0}
     try:
         outcome = advance(outbox, runtime, claimed, worker_id=worker_id, client=client,
-                          lease_s=lease_s, clock=clock)
+                          lease_s=lease_s, clock=clock, claimable_kinds=claim_kinds)
     except Exception as exc:  # noqa: BLE001 -- one bad task must not stop the worker
         # Nothing is completed here. The outbox keeps its durable state, so the next
         # tick resumes from it - and because the dispatch counter survives, a failure
@@ -212,7 +231,18 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
 
 
 def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
-         token_loader=None) -> int:
+         token_loader=None, worker_id=WORKER_ID, claim_kinds=CLAIM_KINDS,
+         runtime_db=RUNTIME_DB, outbox_db=OUTBOX_DB) -> int:
+    """The resident loop, parameterised by the executor's OWN boundary.
+
+    `worker_id`, `claim_kinds`, `runtime_db` and `outbox_db` default to this file's
+    constants, so running `c1_worker.py` directly is unchanged. They are parameters so
+    that a second executor can reuse this loop - and only this loop - while stating its
+    own kind set and its own outbox. What makes an executor an executor is exactly those
+    four values, and nothing else about the loop changes: copying the loop for the second
+    executor would be a second implementation of the exactly-once model, which is
+    precisely the thing that must never fork.
+    """
     once = False
     check = False
     interval = DEFAULT_INTERVAL_S
@@ -254,21 +284,22 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
 
     if check:
         emit({"status": "READY", "verb": "check", "credential": "present",
-              "claimed_kinds": list(CLAIM_KINDS), "runtime_db": RUNTIME_DB,
-              "outbox_db": OUTBOX_DB})
+              "claimed_kinds": list(claim_kinds), "runtime_db": runtime_db,
+              "outbox_db": outbox_db})
         return 0
 
     if runtime is None:
-        runtime = open_runtime()
+        runtime = open_runtime(db_path=runtime_db)
     if outbox is None:
-        outbox = open_outbox()
+        outbox = open_outbox(outbox_db)
     if client is None:
         client = build_client()
 
     while True:
         try:
-            emit(dict(tick(runtime, outbox, client, clock=clock),
-                      verb="c1-worker-tick", runtime_db=RUNTIME_DB, outbox_db=OUTBOX_DB))
+            emit(dict(tick(runtime, outbox, client, worker_id=worker_id,
+                           claim_kinds=claim_kinds, clock=clock),
+                      verb="c1-worker-tick", runtime_db=runtime_db, outbox_db=outbox_db))
         except Exception as exc:  # noqa: BLE001 -- fail closed but stay observable
             emit({"status": "REFUSED", "reason": "tick", "detail": type(exc).__name__,
                   "verb": "c1-worker-tick"})
