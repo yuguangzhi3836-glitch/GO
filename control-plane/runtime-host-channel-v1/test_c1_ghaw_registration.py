@@ -300,15 +300,16 @@ class TheWorkflowIsRegisteredAndMatchesTheContract(unittest.TestCase):
         inputs = set(trigger_block(self.front)["workflow_dispatch"]["inputs"])
         # `aw_context` is gh-aw's own internal caller-context input, added by the compiler.
         inputs.discard("aw_context")
-        self.assertEqual(inputs, set(contract.REAL_DISPATCH_INPUT_NAMES))
+        self.assertEqual(inputs, set(contract.GHAW_BUILDER_INPUT_NAMES))
         self.assertEqual(inputs, {"runtime_task_id", "attempt", "execution_request_id",
-                                  "task_kind", "task_payload"})
+                                  "owner_c", "task_kind", "task_payload"})
+        self.assertNotIn("owner_c", contract.REAL_DISPATCH_INPUT_NAMES)
 
-    def test_a_gh_aw_dispatch_carries_the_identity_the_kind_and_the_payload(self):
+    def test_a_gh_aw_dispatch_carries_identity_kind_cell_and_payload(self):
         request = contract.build_dispatch_request(
             TASK, 1, contract.task_spec(contract.GHAW_BUILDER_KIND, payload()))
         inputs = contract.dispatch_inputs(request)
-        self.assertEqual(set(inputs), set(contract.REAL_DISPATCH_INPUT_NAMES))
+        self.assertEqual(set(inputs), set(contract.GHAW_BUILDER_INPUT_NAMES))
         self.assertEqual(inputs["runtime_task_id"], TASK)
         # GitHub dispatch inputs are strings, but the contract keeps the attempt honest:
         # it is the integer the Runtime claimed, stringified only at the wire.
@@ -317,14 +318,28 @@ class TheWorkflowIsRegisteredAndMatchesTheContract(unittest.TestCase):
         self.assertEqual(inputs["execution_request_id"], request["execution_request_id"])
         self.assertEqual(inputs["task_kind"], "GHAW_BUILDER_V1")
         self.assertEqual(json.loads(inputs["task_payload"]), payload())
+        # The cell travels twice by two different routes so that the workflow can compare
+        # them: once as its own input, once inside the payload it was derived from.
+        self.assertEqual(inputs["owner_c"], request["owner_c"])
+        self.assertEqual(inputs["owner_c"], "C1")
+        self.assertEqual(json.loads(inputs["task_payload"])["cell_id"], "C1")
         self.assertEqual(request["provider"], contract.PROVIDER_GHAW_BUILDER)
+
+    def test_the_responses_real_class_did_not_gain_an_owner_input(self):
+        """Widening the Builder must not widen the Responses dispatch."""
+        request = contract.build_dispatch_request(
+            TASK, 1, contract.task_spec(contract.REAL_TASK_KIND, payload()))
+        inputs = contract.dispatch_inputs(request)
+        self.assertEqual(set(inputs), set(contract.REAL_DISPATCH_INPUT_NAMES))
+        self.assertNotIn("owner_c", inputs)
 
     def test_the_run_name_and_the_artifact_name_are_the_contracts_own(self):
         self.assertEqual(
             self.front["run-name"],
             contract.run_identity_name("${{ inputs.runtime_task_id }}",
                                        "${{ inputs.attempt }}",
-                                       "${{ inputs.execution_request_id }}"))
+                                       "${{ inputs.execution_request_id }}",
+                                       owner_c="${{ inputs.owner_c }}"))
         # The artifact the pull leg looks for is derived from the execution identity; if
         # the workflow uploaded anything else, the result would never be found - and the
         # task would sit in the outbox forever while the run looked perfectly green.
@@ -372,11 +387,96 @@ class TheWorkflowScriptsBehaveOffline(unittest.TestCase):
         completed = run_script(self.gate, workdir=self.tmp, environ={
             "TASK_KIND": "GHAW_BUILDER_V1",
             "TASK_PAYLOAD": contract.canonical(payload()),
+            "OWNER_C": "C1",
         })
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertIn("WORK_ORDER_ACCEPTED", completed.stdout)
         written = json.loads((Path(self.tmp) / "c1_builder_task.json").read_text())
         self.assertEqual(written, payload())
+
+    # ---------------------------------------- the cell gate, exercised for real
+    def _run_gate(self, *, cell, owner_c, kind="GHAW_BUILDER_V1"):
+        """Run the real gate script on a hand-built payload.
+
+        The payload is composed here rather than through the contract on purpose: these
+        tests ask what the workflow does when something upstream did NOT stop it, so
+        routing the input through the validator would test the validator instead of the
+        gate. The raw cell spelling is what a mis-issued dispatch would actually carry.
+        """
+        path = Path(self.tmp) / "c1_builder_task.json"
+        if path.exists():
+            path.unlink()
+        body = {"schema_version": 1, "cell_id": cell,
+                "external_task_id": "C12-BUILDER-1",
+                "objective": "State the objective you were given, in one line.",
+                "scope": "No real execution. Answer with one short line."}
+        completed = run_script(self.gate, workdir=self.tmp, environ={
+            "TASK_KIND": kind, "TASK_PAYLOAD": contract.canonical(body),
+            "OWNER_C": owner_c})
+        return completed, path
+
+    def test_the_gate_accepts_every_builder_cell(self):
+        for cell in ("C1", "C01", "C2", "C12"):
+            with self.subTest(cell=cell):
+                # The owner input is canonical on the wire, whatever spelling the payload
+                # uses; that is what the contract sends and what the gate requires.
+                completed, path = self._run_gate(cell=cell, owner_c="C1"
+                                                 if cell == "C01" else cell)
+                self.assertEqual(completed.returncode, 0, completed.stderr)
+                written = json.loads(path.read_text(encoding="utf-8"))
+                self.assertEqual(written["cell_id"], cell)
+
+    def test_the_gate_refuses_the_control_only_cells(self):
+        # C13/C14 are control-only. The payload validator refuses them upstream and the
+        # worker never claims them - and this gate refuses them again, on its own. A
+        # defence that depends on another component having already run is not a defence.
+        # The owner is a legal cell here, so it is the PAYLOAD half that is refused.
+        for cell in ("C13", "C14"):
+            with self.subTest(cell=cell):
+                completed, path = self._run_gate(cell=cell, owner_c="C1")
+                self.assertNotEqual(completed.returncode, 0)
+                self.assertIn("TASK_PAYLOAD_CELL_NOT_OWNED_BY_BUILDER_EXECUTOR",
+                              completed.stderr)
+                self.assertFalse(path.exists())
+
+    def test_the_gate_refuses_a_cell_outside_the_kernel_range(self):
+        for cell in ("C0", "C00", "C15", "C99"):
+            with self.subTest(cell=cell):
+                completed, path = self._run_gate(cell=cell, owner_c="C1")
+                self.assertNotEqual(completed.returncode, 0)
+                self.assertIn("CELL_NOT_A_KNOWN_RESPONSIBILITY_DOMAIN", completed.stderr)
+                self.assertFalse(path.exists())
+
+    def test_the_gate_refuses_an_owner_that_disagrees_with_the_payload(self):
+        completed, path = self._run_gate(cell="C2", owner_c="C3")
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("OWNER_C_DOES_NOT_MATCH_TASK_PAYLOAD", completed.stderr)
+        self.assertFalse(path.exists())
+
+    def test_the_gate_refuses_a_missing_owner(self):
+        completed, path = self._run_gate(cell="C2", owner_c="")
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("OWNER_C_MISSING", completed.stderr)
+        self.assertFalse(path.exists())
+
+    def test_the_gate_refuses_the_control_only_owner_before_comparing_it(self):
+        # Both halves say C13. They agree with each other and are both wrong, which is
+        # precisely the case a bare equality check would wave straight through. The owner
+        # is refused as a control-only cell rather than as a mismatch, which is the
+        # honest description of what is wrong with it.
+        completed, path = self._run_gate(cell="C13", owner_c="C13")
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("OWNER_C_NOT_OWNED_BY_BUILDER_EXECUTOR", completed.stderr)
+        self.assertFalse(path.exists())
+
+    def test_the_gate_refuses_a_padded_owner_spelling(self):
+        # The contract sends the canonical spelling. A padded owner means this dispatch did
+        # not come from the contract, and the range check - which is expressed in canonical
+        # names - refuses it rather than reconciling the two spellings on the fly.
+        completed, path = self._run_gate(cell="C01", owner_c="C01")
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("OWNER_C_NOT_OWNED_BY_BUILDER_EXECUTOR", completed.stderr)
+        self.assertFalse(path.exists())
 
     def test_the_gate_refuses_every_other_kind_before_the_agent_starts(self):
         for kind in ("AI_WORK_V1", "AI_TASK_V1", "RUNTIME_PROBE", "", "GHAW_BUILDER_V2"):

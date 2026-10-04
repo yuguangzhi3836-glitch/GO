@@ -295,13 +295,51 @@ class MalformedIssuesAreRefused(Case):
 
 
 # ------------------------------------------------------------------ D
-class NonC01IssuesAreRefused(Case):
-    """The ingress owns C01 and nothing else."""
+class TheControlOnlyCellsAreRefused(Case):
+    """The ingress serves the Builder's cells - C01..C12 - and refuses C13 and C14.
 
-    def test_another_cell_is_refused(self):
+    Those two are the control-only cells: Independent QA/Release and the
+    constitutional/legal/regulatory control cell. They are not Builder work, and an issue
+    scanner must not be able to turn one into Builder work by titling an issue a certain
+    way. The range is not restated here - it is whatever the contract says the Builder
+    executor owns - so this class cannot drift from the executor.
+    """
+
+    def test_every_builder_cell_is_accepted_and_canonicalised(self):
+        for cell in ("C01", "C02", "C09", "C10", "C11", "C12"):
+            issue = self.issue(79)
+            issue["title"] = "%s · V70-R3-%s-01 · a bounded engineering task" % (cell, cell)
+            with self.subTest(cell=cell):
+                parsed = ingress.parse_c01_issue(issue)
+                self.assertEqual(parsed["cell_id"], contract.canonical_cell_id(cell))
+
+    def test_a_control_only_cell_is_refused(self):
+        for cell in ("C13", "C14"):
+            issue = self.issue(79)
+            issue["title"] = "%s · V70-R3-%s-01 · not a builder task" % (cell, cell)
+            with self.subTest(cell=cell):
+                self.assertEqual(self.refused_reason(issue),
+                                 "INGRESS_CELL_NOT_OWNED_BY_BUILDER_EXECUTOR")
+
+    def test_a_cell_outside_the_kernel_range_is_refused(self):
+        # C00/C15/C99 are well-formed two-digit cells the kernel does not have, so they
+        # reach the SHARED canonicaliser and are refused there - by the same parser every
+        # other consumer uses, not by a private list kept in this file.
+        for cell in ("C00", "C15", "C99"):
+            issue = self.issue(79)
+            issue["title"] = "%s · V70-R3-%s-01 · does not exist" % (cell, cell)
+            with self.subTest(cell=cell):
+                self.assertEqual(self.refused_reason(issue),
+                                 "CELL_ID_NOT_A_KNOWN_RESPONSIBILITY_DOMAIN")
+
+    def test_a_one_digit_zero_cell_cannot_even_form_a_title(self):
+        # "C0" passes the title's shape regex, but no legal task id can carry it, so the
+        # title gate refuses it before the canonicaliser is asked. Two independent
+        # refusals for the same non-cell is the point of having both.
         issue = self.issue(79)
-        issue["title"] = "C02 · V70-R3-C02-01 · trusted coupon plan and exact consent"
-        self.assertEqual(self.refused_reason(issue), "INGRESS_ISSUE_IS_NOT_C01")
+        issue["title"] = "C0 · V70-R3-C00-01 · malformed"
+        self.assertEqual(self.refused_reason(issue),
+                         "ISSUE_TITLE_TASK_ID_CELL_MISMATCH")
 
     def test_the_other_title_shape_used_by_this_tracker_is_refused(self):
         # e.g. "V70-R4-C05-01 — bind FAILED reconciliation to current UNKNOWN episode"
@@ -310,8 +348,10 @@ class NonC01IssuesAreRefused(Case):
                           "UNKNOWN episode")
         self.assertEqual(self.refused_reason(issue), "ISSUE_TITLE_NOT_THREE_SEGMENTS")
 
-    def test_neither_of_them_enqueues(self):
-        for title in ("C02 · V70-R3-C02-01 · trusted coupon plan and exact consent",
+    def test_none_of_them_enqueues(self):
+        for title in ("C13 · V70-R3-C13-01 · not a builder task",
+                      "C14 · V70-R3-C14-01 · not a builder task",
+                      "C15 · V70-R3-C15-01 · does not exist",
                       "V70-R4-C05-01 — bind FAILED reconciliation"):
             issue = self.issue(79)
             issue["title"] = title
@@ -422,8 +462,10 @@ class TheIngressIsStructurallyBounded(Case):
             elif isinstance(node, ast.ImportFrom):
                 modules.add((node.module or "").split(".")[0])
         self.assertEqual(
-            modules, {"__future__", "json", "os", "re", "sys", "c1_execution_contract"},
-            "the ingress must import the shared contract and the standard library only")
+            modules, {"__future__", "json", "os", "re", "sys", "c1_execution_contract",
+                      "c1_solution_leak_gate"},
+            "the ingress must import the shared contract, the U6 gate seam and the "
+            "standard library only")
 
     def test_it_holds_no_reference_to_the_old_c01_executor(self):
         source = INGRESS_SOURCE.read_text(encoding="utf-8")

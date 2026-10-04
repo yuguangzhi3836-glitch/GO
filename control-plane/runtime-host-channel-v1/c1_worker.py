@@ -84,6 +84,11 @@ OUTBOX_DB = "/var/lib/go-runtime-c1/outbox.db"
 
 WORKER_ID = "go-runtime-host-c1-worker"
 OWNER_C = "C1"
+# The cells this worker claims for. The Responses-API executor serves C1 and only C1, and
+# that does not change in this round: the gh-aw Builder is what generalised, not this one.
+# It is a tuple rather than a scalar so that both executors run the SAME claim loop - a
+# claim loop per executor is how the exactly-once model would fork.
+CLAIM_OWNER_CS = (OWNER_C,)
 # The two kinds this worker owns, and nothing else. RUNTIME_PROBE / RUNTIME_C1_PROBE_V1
 # are not in this set and never will be: those belong to the probe path and its own
 # worker. `AI_TASK_V1` is a real task - its payload carries the task's own objective and
@@ -107,7 +112,8 @@ STATUS_FIELDS = (
     "status", "verb", "claimed", "resumed", "unfinished", "kind", "runtime_task_id",
     "attempt", "action", "dispatch_status", "reused", "renewed", "reason", "detail",
     "conclusion", "runtime_told", "failure_reason",
-    "claimed_kinds", "runtime_db", "outbox_db", "dispatch_target", "credential",
+    "claimed_kinds", "claimed_owners", "owner_c", "next_owner_cursor",
+    "runtime_db", "outbox_db", "dispatch_target", "credential",
 )
 
 
@@ -171,9 +177,37 @@ def credential_refusal(loader=None):
     return None
 
 
+def claim_across_owners(runtime, *, worker_id, lease_s, claim_kinds, claim_owner_cs,
+                        cursor) -> tuple:
+    """Ask each owned cell in turn for ONE queued task. Returns (claimed, next_cursor).
+
+    This is the whole of "one worker serves several cells". It asks the Runtime one cell
+    at a time with the same kind filter and stops at the first task it is handed, so a
+    tick still claims AT MOST ONE task - exactly as it did with a single cell - and the
+    concurrency this channel has always had (one execution in flight, globally) does not
+    change. Where a scan begins cannot change what a task is: identity, idempotency and
+    the execution request are all derived from the task itself, never from the order it
+    was found in. That is why this needs no table, no database and no durable service,
+    and it is why a restart is allowed to begin again at the first cell.
+
+    The cursor is scheduling convenience and nothing else: a plain integer living in the
+    caller's loop. It exists so that a permanently busy C1 cannot starve C12.
+    """
+    count = len(claim_owner_cs)
+    if count == 0:
+        return None, cursor
+    for step in range(count):
+        index = (cursor + step) % count
+        claimed = runtime.claim(claim_owner_cs[index], worker_id=worker_id,
+                                lease_s=lease_s, kinds=claim_kinds)
+        if claimed is not None:
+            return claimed, (index + 1) % count
+    return None, (cursor + 1) % count
+
+
 def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_S,
-         clock=time.time, claim_kinds=CLAIM_KINDS,
-         resume_limit=DEFAULT_RESUME_LIMIT) -> dict:
+         clock=time.time, claim_kinds=CLAIM_KINDS, claim_owner_cs=CLAIM_OWNER_CS,
+         owner_cursor=0, resume_limit=DEFAULT_RESUME_LIMIT) -> dict:
     """One bounded tick: resume what is in flight, and only then claim new work.
 
     Phase 1 is not an optimisation, it is the fix for the defect that stopped the first
@@ -186,10 +220,14 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
 
     So the outbox is asked first. Its unfinished identities are the tasks this worker is
     in the middle of, and each one is driven by `resume()` using the identity it already
-    has - no new claim, no new dispatch, the stored counter still in charge.
+    has - no new claim, no new dispatch, the stored counter still in charge. The outbox is
+    the whole set of cells: an unfinished identity names its own owner, so resuming is
+    never a per-cell decision and the `claim_owner_cs` list plays no part in this phase.
 
     Phase 2 runs only when nothing is unfinished, which is also why a task is never
-    claimed while an execution of ours is still in flight.
+    claimed while an execution of ours is still in flight. It walks `claim_owner_cs` - the
+    cells this executor serves - and takes at most one task in total, so adding cells
+    widens who can be served without widening how much runs at once.
 
     A resume that could not be driven and was not settled by the Runtime (a transport
     failure, say) reports `BLOCKED` and claims nothing this tick: continuing past it
@@ -207,6 +245,7 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
             return {"status": "BLOCKED", "claimed": False, "resumed": True,
                     "unfinished": len(unfinished),
                     "runtime_task_id": row["runtime_task_id"], "attempt": row["attempt"],
+                    "next_owner_cursor": owner_cursor,
                     "reason": type(exc).__name__}
         return {"status": "RESUMED", "claimed": False, "resumed": True,
                 "unfinished": len(unfinished),
@@ -215,12 +254,15 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
                 "dispatch_status": outcome.get("state"),
                 "reason": outcome.get("reason"),
                 "reused": bool(outcome.get("reused")),
+                "next_owner_cursor": owner_cursor,
                 "renewed": bool(outcome.get("renewed"))}
 
-    claimed = runtime.claim(OWNER_C, worker_id=worker_id, lease_s=lease_s,
-                            kinds=claim_kinds)
+    claimed, next_cursor = claim_across_owners(
+        runtime, worker_id=worker_id, lease_s=lease_s, claim_kinds=claim_kinds,
+        claim_owner_cs=claim_owner_cs, cursor=owner_cursor)
     if claimed is None:
-        return {"status": "IDLE", "claimed": False, "resumed": False, "unfinished": 0}
+        return {"status": "IDLE", "claimed": False, "resumed": False, "unfinished": 0,
+                "next_owner_cursor": next_cursor}
     try:
         outcome = advance(outbox, runtime, claimed, worker_id=worker_id, client=client,
                           lease_s=lease_s, clock=clock, claimable_kinds=claim_kinds)
@@ -230,10 +272,12 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
         # after a POST can only lead to a lookup, never to a second POST.
         return {"status": "FAILED", "claimed": True, "resumed": False, "unfinished": 0,
                 "kind": claimed.kind, "runtime_task_id": claimed.task_id,
-                "attempt": claimed.attempts, "reason": type(exc).__name__}
+                "attempt": claimed.attempts, "owner_c": claimed.owner_c,
+                "next_owner_cursor": next_cursor, "reason": type(exc).__name__}
     return {"status": "ADVANCED", "claimed": True, "resumed": False, "unfinished": 0,
             "kind": claimed.kind, "runtime_task_id": claimed.task_id,
-            "attempt": claimed.attempts,
+            "attempt": claimed.attempts, "owner_c": claimed.owner_c,
+            "next_owner_cursor": next_cursor,
             "action": outcome.get("action"),
             "dispatch_status": outcome.get("state"),
             "reused": bool(outcome.get("reused")),
@@ -242,17 +286,24 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
 
 def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
          token_loader=None, worker_id=WORKER_ID, claim_kinds=CLAIM_KINDS,
+         claim_owner_cs=CLAIM_OWNER_CS,
          runtime_db=RUNTIME_DB, outbox_db=OUTBOX_DB,
          workflow_file=WORKFLOW_FILE) -> int:
     """The resident loop, parameterised by the executor's OWN boundary.
 
-    `worker_id`, `claim_kinds`, `runtime_db`, `outbox_db` and `workflow_file` default to
-    this file's own values, so running `c1_worker.py` directly is unchanged. They are
-    parameters so that a second executor can reuse this loop - and only this loop - while
-    stating its own kinds, its own outbox and its own dispatch target. Those five values
-    are what makes an executor an executor, and nothing else about the loop changes:
-    copying the loop for the second executor would be a second implementation of the
-    exactly-once model, which is precisely the thing that must never fork.
+    `worker_id`, `claim_kinds`, `claim_owner_cs`, `runtime_db`, `outbox_db` and
+    `workflow_file` default to this file's own values, so running `c1_worker.py` directly
+    is unchanged. They are parameters so that a second executor can reuse this loop - and
+    only this loop - while stating its own kinds, its own cells, its own outbox and its
+    own dispatch target. Those values are what makes an executor an executor, and nothing
+    else about the loop changes: copying the loop for the second executor would be a
+    second implementation of the exactly-once model, which is precisely the thing that
+    must never fork.
+
+    `claim_owner_cs` is a tuple, and for this executor it has one element. A cell is not a
+    second execution mechanism - it is who a task belongs to - so serving more cells must
+    cost one more entry here and nothing else, which is the property the gh-aw Builder
+    relies on.
     """
     once = False
     check = False
@@ -295,8 +346,8 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
 
     if check:
         emit({"status": "READY", "verb": "check", "credential": "present",
-              "claimed_kinds": list(claim_kinds), "runtime_db": runtime_db,
-              "outbox_db": outbox_db,
+              "claimed_kinds": list(claim_kinds), "claimed_owners": list(claim_owner_cs),
+              "runtime_db": runtime_db, "outbox_db": outbox_db,
               "dispatch_target": workflow_file})
         return 0
 
@@ -307,11 +358,18 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
     if client is None:
         client = build_client(workflow_file=workflow_file)
 
+    # Where the next scan begins. Deliberately a local: it is scheduling convenience, not
+    # state. A restart begins at the first cell, which is allowed, and no task's identity
+    # depends on where it was found.
+    owner_cursor = 0
     while True:
         try:
-            emit(dict(tick(runtime, outbox, client, worker_id=worker_id,
-                           claim_kinds=claim_kinds, clock=clock),
-                      verb="c1-worker-tick", runtime_db=runtime_db, outbox_db=outbox_db))
+            outcome = tick(runtime, outbox, client, worker_id=worker_id,
+                           claim_kinds=claim_kinds, claim_owner_cs=claim_owner_cs,
+                           owner_cursor=owner_cursor, clock=clock)
+            owner_cursor = outcome.get("next_owner_cursor", owner_cursor)
+            emit(dict(outcome, verb="c1-worker-tick", runtime_db=runtime_db,
+                      outbox_db=outbox_db))
         except Exception as exc:  # noqa: BLE001 -- fail closed but stay observable
             emit({"status": "REFUSED", "reason": "tick", "detail": type(exc).__name__,
                   "verb": "c1-worker-tick"})

@@ -37,6 +37,7 @@ from datetime import datetime, timezone
 
 from c1_execution_contract import (
     KIND,
+    OWNER_C,
     Refused,
     build_dispatch_request,
     canonical,
@@ -472,13 +473,40 @@ class DispatchOutbox:
 
     # ------------------------------------------------------------- introspection
     def completion_binding(self, request_id) -> dict:
-        """What the caller must pass to Runtime.complete(): task id and exact attempt."""
+        """What the caller must pass to Runtime.complete(): cell, task id, exact attempt.
+
+        The owner cell is part of it and is read from the request this identity was
+        registered with - never from the caller. One Builder executor serves twelve
+        cells, so "which cell does this completion belong to" is a fact about the
+        execution, and a caller that guessed it would, at best, be told the task does not
+        exist and, at worst, complete the wrong cell's task if it ever guessed a real id.
+        The outbox already stores the request verbatim, so the answer is already here.
+        """
         row = self._row(request_id)
         if row is None:
             raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
         if row["state"] != RESULT_SEALED:
             raise Refused("COMPLETION_WITHOUT_A_SEALED_RESULT")
-        return {"runtime_task_id": row["runtime_task_id"], "expected_attempt": row["attempt"]}
+        return {"owner_c": self.owner_c_for(request_id),
+                "runtime_task_id": row["runtime_task_id"],
+                "expected_attempt": row["attempt"]}
+
+    def owner_c_for(self, request_id) -> str:
+        """The owner cell of this execution identity, from the stored request.
+
+        A row written before the real-task contract has no stored request and is a C1
+        smoke row by construction, which is exactly what the fallback reproduces - the
+        same rule `stored_request()` and `task_kind_for()` already follow.
+        """
+        import json
+
+        row = self._row(request_id)
+        if row is None:
+            raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
+        stored = row["request_json"]
+        if stored is None:
+            return OWNER_C
+        return json.loads(stored).get("owner_c", OWNER_C)
 
     def snapshot(self, request_id) -> dict:
         row = self._row(request_id)

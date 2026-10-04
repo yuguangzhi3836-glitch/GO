@@ -143,7 +143,8 @@ class GhawSealingTransport:
                              "conclusion": "success", "head_sha": "0" * 40,
                              "name": contract.run_identity_name(
                                  request["runtime_task_id"], request["attempt"],
-                                 request["execution_request_id"])}
+                                 request["execution_request_id"],
+                                 owner_c=request.get("owner_c", contract.OWNER_C))}
         self.artifacts[(run_id, "c1-ai-execution-result-"
                         + request["execution_request_id"])] = {
             "bytes": raw,

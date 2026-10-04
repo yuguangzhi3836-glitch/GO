@@ -1,10 +1,15 @@
-"""C01 GitHub Issue consumer: open C01 issues -> Runtime.enqueue(GHAW_BUILDER_V1).
+"""Builder GitHub Issue consumer: open C01-C12 issues -> Runtime.enqueue(GHAW_BUILDER_V1).
 
 What this is
 ------------
 The last leg of the new path, and only that:
 
-    GitHub open C01 issue -> [ this module ] -> c1_issue_ingress -> Runtime.enqueue()
+    GitHub open C01-C12 issue -> [ this module ] -> c1_issue_ingress -> Runtime.enqueue()
+
+One consumer for twelve cells, never twelve consumers. The cell is read from the issue
+title and carried into the task, but nothing about fetching, planning or de-duplicating is
+per-cell - so a consumer per cell would be twelve copies of one loop with a different
+constant in it, which is the shape this channel keeps refusing.
 
 `c1_issue_ingress` already owns the parser, the payload schema and the idempotency key.
 This module deliberately owns none of those: it fetches open issues, decides which ones
@@ -67,6 +72,7 @@ from c1_issue_ingress import (
     TITLE_SEPARATOR,
     ingress_enabled,
     ingest,
+    is_builder_cell,
     plan_ingress,
 )
 
@@ -107,13 +113,19 @@ def poll_interval_s(environ=None) -> int:
 
 
 # --------------------------------------------------------------------- filtering
-def looks_like_c01(issue) -> bool:
+def looks_like_builder_issue(issue) -> bool:
     """Cheap pre-filter: is this worth handing to the ingress parser at all?
 
     It decides nothing about identity - it only avoids asking the parser about the
     hundreds of pull requests and other cells that share this tracker. Anything that
     passes is still parsed and validated by `c1_issue_ingress`, which remains the only
-    authority on what a C01 task is.
+    authority on what a Builder task is.
+
+    The title's first segment is a cell, and "the cells the Builder serves" is asked of
+    the contract rather than restated here, so C13/C14 fall out at the cheapest possible
+    point by the same answer that excludes them everywhere else. This is a speed filter,
+    not a gate: the parser refuses them again, and the Runtime's claim filter refuses
+    them a third time.
     """
     if type(issue) is not dict:
         return False
@@ -125,7 +137,9 @@ def looks_like_c01(issue) -> bool:
     parts = [p.strip() for p in TITLE_SEPARATOR.split(title.strip())]
     if len(parts) != 3 or not all(parts):
         return False
-    return bool(TITLE_CELL.match(parts[0])) and parts[0].upper() == "C01"
+    # Asked of the ingress rather than reimplemented here: "is this a Builder cell" has
+    # one answer, and this module is not where it is decided.
+    return bool(TITLE_CELL.match(parts[0])) and is_builder_cell(parts[0])
 
 
 # ------------------------------------------------------------------ read-only client
@@ -200,7 +214,7 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
                 "reason": type(error).__name__, "enabled": enabled}
 
     issues = listing["issues"]
-    candidates = [issue for issue in issues if looks_like_c01(issue)]
+    candidates = [issue for issue in issues if looks_like_builder_issue(issue)]
     planned, refused, enqueued = [], [], []
     runtime_error = None
 

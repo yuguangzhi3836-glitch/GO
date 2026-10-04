@@ -1,7 +1,7 @@
 ---
 emoji: "🏗️"
-description: "C01 gh-aw Builder executor: the Runtime's GHAW_BUILDER_V1 work order executed by a GitHub Agentic Workflow, which investigates, edits and tests the repository and requests exactly one Draft PR, then seals the standard c1_result.json artifact so the existing pull/adopt/complete leg works unchanged."
-intent: "Turn the C01 answer executor into an engineering executor: one real work order, a bounded repository change, and one Draft PR a human reviews. Dispatch-only; the agent has no repository write authority of its own."
+description: "Builder executor for the normal engineering cells C01-C12: the Runtime's GHAW_BUILDER_V1 work order executed by a GitHub Agentic Workflow, which investigates, edits and tests the repository and requests exactly one Draft PR, then seals the standard c1_result.json artifact so the existing pull/adopt/complete leg works unchanged."
+intent: "One Builder executor serves C01 through C12 - one workflow, one executor, one outbox, with the cell carried by the task. C13 and C14 are the control-only cells and are refused here as well as in the worker and the payload validator. Dispatch-only; the agent has no repository write authority of its own."
 labels: ["runtime", "gh-aw", "executor", "c01", "builder"]
 
 on:
@@ -27,6 +27,10 @@ on:
         description: "Derived execution identity"
         required: true
         type: string
+      owner_c:
+        description: "Canonical owner cell; must equal canonical(task_payload.cell_id) and be C1..C12"
+        required: true
+        type: string
       task_kind:
         description: "Task kind; must be GHAW_BUILDER_V1"
         required: true
@@ -45,7 +49,10 @@ engine:
 
 strict: true
 
-run-name: "C1 ${{ inputs.runtime_task_id }} ${{ inputs.attempt }} ${{ inputs.execution_request_id }}"
+# The cell leads, because it is the one field a human looks at when a run has to be
+# resolved by name. For C1 this renders exactly the string the live Runtime Host has
+# already recorded.
+run-name: "${{ inputs.owner_c }} ${{ inputs.runtime_task_id }} ${{ inputs.attempt }} ${{ inputs.execution_request_id }}"
 # An engineering turn is longer than an answering turn: investigate, edit, test, commit,
 # request the Draft PR. These are bounds, not a cost model - the formal cost model is
 # still open (U8), and `max-ai-credits` below is unchanged from the answering executor.
@@ -75,17 +82,20 @@ safe-outputs:
   # The ONLY repository write path this workflow has. The agent job stays read-only; the
   # patch travels to the safe-outputs job as an artifact, and that job - not the agent -
   # pushes the branch and opens the pull request. Draft by construction, one at most,
-  # against main, and only onto a branch in the Builder's own namespace.
+  # against main, and only onto a branch in the Builder's own namespace. One namespace for
+  # all the cells, not one per cell: the branch is where the change lives, and a cell does
+  # not need its own directory of branches to stay distinguishable - the pull request
+  # title, the work order and the artifact all carry the cell.
   create-pull-request:
     draft: true
     base-branch: main
-    title-prefix: "[C01 Builder] "
+    title-prefix: "[Builder] "
     max: 1
     if-no-changes: "warn"
     fallback-as-issue: false
     auto-close-issue: false
     allowed-branches:
-      - "c01-builder/*"
+      - "builder/*"
   # Runs in the safe_outputs job after its checkout and BEFORE "Process Safe Outputs", so
   # a non-zero exit here aborts the job and the Draft PR is never created.
   #
@@ -134,15 +144,16 @@ safe-outputs:
 # this executor does not own stops here, before the agent starts, so a misrouted task can
 # never be executed - let alone paid for - by the wrong executor.
 steps:
-  - name: Accept the work order (fail closed on any other kind)
+  - name: Accept the work order (fail closed on any other kind or cell)
     if: github.event_name == 'workflow_dispatch'
     env:
       TASK_KIND: ${{ inputs.task_kind }}
       TASK_PAYLOAD: ${{ inputs.task_payload }}
+      OWNER_C: ${{ inputs.owner_c }}
     run: |
       set -euo pipefail
       python3 - <<'PY'
-      import json, os, sys
+      import json, os, re, sys
 
       expected = "GHAW_BUILDER_V1"
       kind = (os.environ.get("TASK_KIND") or "").strip()
@@ -159,15 +170,55 @@ steps:
       for name in ("schema_version", "cell_id", "external_task_id", "objective", "scope"):
           if name not in payload:
               sys.exit("TASK_PAYLOAD_MISSING_FIELD:%s" % name)
-      if str(payload["cell_id"]).strip().upper() not in ("C1", "C01"):
-          sys.exit("TASK_PAYLOAD_CELL_IS_NOT_C01:%r" % payload["cell_id"])
+
+      # The cells this workflow serves, as its own check. A workflow runs in a checkout it
+      # does not share with the Runtime and cannot import the contract, so it states the
+      # range itself rather than pretending to derive it - a gate that cannot run its own
+      # check is not a gate. This is the third of three independent refusals, and it does
+      # not rely on either of the other two.
+      builder_cells = tuple("C%d" % n for n in range(1, 13))
+
+      def canonical(value):
+          text = str(value).strip().upper()
+          padded = re.match(r"^C0([1-9])$", text)
+          if padded:
+              return "C" + padded.group(1)
+          if re.match(r"^C([1-9]|1[0-4])$", text):
+              return text
+          sys.exit("TASK_PAYLOAD_CELL_NOT_A_KNOWN_RESPONSIBILITY_DOMAIN:%r" % value)
+
+      # The owner cell travels here as its own input, copied from the validated binding.
+      # It must be the CANONICAL spelling - `C1`, never `C01` - because that is exactly
+      # what the contract puts on the wire; a padded owner means the sender did not use
+      # the contract, and guessing which of the two spellings was meant is not this
+      # step's job. It is checked against the range FIRST and against the payload second,
+      # so a control-only cell is refused as a control-only cell rather than as a
+      # mismatch, and each of the three refusals below is reachable on its own.
+      owner_c = (os.environ.get("OWNER_C") or "").strip().upper()
+      if not owner_c:
+          sys.exit("OWNER_C_MISSING")
+      if owner_c not in builder_cells:
+          sys.exit("OWNER_C_NOT_OWNED_BY_BUILDER_EXECUTOR:%r" % owner_c)
+
+      payload_cell = canonical(payload["cell_id"])
+      if payload_cell not in builder_cells:
+          # C13 and C14 land here, and that is the point: they are the control-only cells.
+          sys.exit("TASK_PAYLOAD_CELL_NOT_OWNED_BY_BUILDER_EXECUTOR:%r" % payload_cell)
+
+      # Both halves are inside the range; now they have to agree with each other. This
+      # comparison is the entire reason the cell is sent twice - a dispatch that names one
+      # cell in `owner_c` and another in the payload stops here, before the agent starts.
+      # Which of the two is "right" is not this step's problem: a disagreement is a
+      # refusal either way.
+      if owner_c != payload_cell:
+          sys.exit("OWNER_C_DOES_NOT_MATCH_TASK_PAYLOAD:%s:%s" % (owner_c, payload_cell))
 
       # The agent reads this file; the prompt body is imported verbatim at run time and
       # therefore cannot carry a per-task payload itself. The path is git-ignored, so it
       # cannot reach the Builder's pull request.
       with open("c1_builder_task.json", "w", encoding="utf-8") as handle:
           handle.write(json.dumps(payload, sort_keys=True, separators=(",", ":")))
-      print("WORK_ORDER_ACCEPTED", payload["external_task_id"])
+      print("WORK_ORDER_ACCEPTED", payload["external_task_id"], owner_c)
       PY
 
 post-steps:
@@ -243,19 +294,25 @@ Read `c1_builder_task.json` in the repository root. It is the task's own payload
 
 * `objective` — what the work order asks you to produce;
 * `scope` — the boundary you must stay inside;
-* `external_task_id`, `cell_id` — identification only.
+* `cell_id` — the cell this work order belongs to. It is not decoration: the cell is what
+  the work is *for*, so a change that belongs to a different cell's domain is out of
+  scope even when the objective does not say so.
+* `external_task_id` — identification only.
 
 ## What to do
 
 1. Read `c1_builder_task.json`.
 2. Investigate this repository only as far as the objective actually requires. Read the
-   code you are about to change, and the tests that cover it.
+   code you are about to change, and the tests that cover it. `cell_id` names one of the
+   workbench cells, whose domain, owned paths and forbidden paths are declared in
+   `application/src/go_hotel/workbench/definitions.py`; stay inside the paths that cell
+   owns, and out of the ones it forbids.
 3. Implement the objective inside the supplied scope. Keep the change minimal and
    coherent: solve the stated problem, do not refactor around it.
 4. Run the relevant tests and make them pass. If a test cannot run in this environment,
    say so plainly rather than assuming it passes.
-5. Create a local branch whose name starts with `c01-builder/`, and commit exactly the
-   files your change needs. Commit nothing else.
+5. Create a local branch whose name starts with `builder/`, and commit exactly the files
+   your change needs. Commit nothing else.
 6. Request exactly one Draft pull request through the `create_pull_request` safe output,
    against `main`. The branch name you pass must be the branch you are actually on.
 7. Write a concise execution summary — what you changed, which files, which tests you ran

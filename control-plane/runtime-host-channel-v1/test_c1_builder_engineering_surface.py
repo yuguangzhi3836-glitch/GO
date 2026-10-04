@@ -116,7 +116,8 @@ class TheAgentCanDoEngineeringWork(unittest.TestCase):
         body = SOURCE.read_text(encoding="utf-8")
         self.assertNotIn("only file you may create or modify", body)
         for required in ("Read `c1_builder_task.json`", "Run the relevant tests",
-                         "c01-builder/", "create_pull_request", "ghaw_builder_answer.txt"):
+                         "builder/", "create_pull_request", "ghaw_builder_answer.txt",
+                         "application/src/go_hotel/workbench/definitions.py"):
             with self.subTest(required=required):
                 self.assertIn(required, body)
 
@@ -161,7 +162,7 @@ class TheOnlyWritePathIsAProvenSafeOutput(unittest.TestCase):
         self.assertEqual(pr["base_branch"], "main")
         self.assertIs(pr["fallback_as_issue"], False)
         self.assertIs(pr["auto_close_issue"], False)
-        self.assertEqual(pr["allowed_branches"], ["c01-builder/*"])
+        self.assertEqual(pr["allowed_branches"], ["builder/*"])
 
     def test_the_builder_cannot_merge(self):
         for capability in ("merge_pull_request", "auto_merge", "enable_auto_merge",
@@ -514,7 +515,8 @@ class TheU1TransportDidNotMove(unittest.TestCase):
         self.assertEqual(front["run-name"],
                          contract.run_identity_name("${{ inputs.runtime_task_id }}",
                                                     "${{ inputs.attempt }}",
-                                                    "${{ inputs.execution_request_id }}"))
+                                                    "${{ inputs.execution_request_id }}",
+                                                    owner_c="${{ inputs.owner_c }}"))
         self.assertIn("name: c1-ai-execution-result-${{ inputs.execution_request_id }}",
                       lock_text())
         self.assertIn("path: c1_result.json", lock_text())
