@@ -75,6 +75,11 @@ GOLDEN_PAYLOAD_SHA = "f8597e545a96715267cb78efc45c1670540f34e96b70fd188dbbb735ee
 GOLDEN_IDEMPOTENCY = "c1-ghaw-builder-v1:C1:C01-GOLDEN-1"
 GOLDEN_SMOKE_IDEMPOTENCY = "c1-real-ai-worker-v1:smoke:1"
 GOLDEN_REAL_IDEMPOTENCY = "c1-ai-task-v1:C1:C01-GOLDEN-1"
+# The source anchor the captured fixture bodies carry. It is passed as the CURRENT
+# source by every test here that goes through the issue path, because admission now
+# requires one and these tests are about cells and identity, not about freshness -
+# which is exercised in `test_c1_issue_ingress.SourceFreshnessIsRequired`.
+FIXTURE_SOURCE_ANCHOR = "8ffcde66d36c1bbf849218529ef015f6e81725af"
 
 GOLDEN_PAYLOAD = {
     "schema_version": 1, "cell_id": "C01", "external_task_id": "C01-GOLDEN-1",
@@ -679,7 +684,9 @@ class O_TheSolutionLeakGateIsABypass(unittest.TestCase):
         self.assertEqual(gate.describe()["enforcement"], "DEFERRED")
 
     def test_the_ingress_composes_the_plan_around_the_gate_record(self):
-        plan = ingress.plan_ingress(load_issue(79), environ={})
+        plan = ingress.plan_ingress(load_issue(79),
+                                    current_source_anchor=FIXTURE_SOURCE_ANCHOR,
+                                    environ={})
         record = plan["solution_leak_gate"]
         self.assertEqual(record["reason"], "GATE_DISABLED")
         self.assertIs(record["reviewed"], False)
@@ -704,7 +711,8 @@ class P_TheIssuePathCarriesTheCell(Case):
             issue = load_issue(79)
             issue["title"] = "%s · V70-R3-%s-01 · a bounded engineering task" % (cell, cell)
             with self.subTest(cell=cell):
-                plan = ingress.plan_ingress(issue, environ={})
+                plan = ingress.plan_ingress(
+                    issue, current_source_anchor=FIXTURE_SOURCE_ANCHOR, environ={})
                 call = plan["would_enqueue"]
                 canonical = contract.canonical_cell_id(cell)
                 self.assertEqual(call["owner_c"], canonical)
@@ -717,6 +725,7 @@ class P_TheIssuePathCarriesTheCell(Case):
         issue = load_issue(79)
         issue["title"] = "C12 · V70-R3-C12-01 · a bounded engineering task"
         result = ingress.ingest(issue, runtime=self.runtime,
+                                current_source_anchor=FIXTURE_SOURCE_ANCHOR,
                                 environ={ingress.INGRESS_ENABLED_ENV: "true"})
         self.assertTrue(result["enqueued"])
         owner = self.runtime.tasks[result["runtime_task_id"]].owner_c
@@ -729,6 +738,7 @@ class P_TheIssuePathCarriesTheCell(Case):
             with self.subTest(cell=cell):
                 with self.assertRaises(contract.Refused):
                     ingress.ingest(issue, runtime=self.runtime,
+                                   current_source_anchor=FIXTURE_SOURCE_ANCHOR,
                                    environ={ingress.INGRESS_ENABLED_ENV: "true"})
         self.assertEqual(self.runtime.tasks, {})
 

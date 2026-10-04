@@ -44,6 +44,19 @@ read a Runtime task back by key - the kernel exposes no such call - so this modu
 not try to pre-check for an existing task; it relies on the key, which is why the key
 must be derived rather than composed ad hoc.
 
+Source freshness
+----------------
+An issue is written against a source and says so (`source_anchor`). Admission compares
+that statement with the CURRENT main and refuses anything else, so an issue that is still
+open from an earlier generation cannot be executed against today's tree by an unattended
+scanner. The comparison is strict equality and the current value is a REQUIRED argument of
+both `plan_ingress()` and `ingest()`: an admission decision that does not know what the
+task would run against is not one this module is willing to make.
+
+That is one of two gates. The Builder workflow re-checks the same equality against its own
+execution SHA before the agent starts, because main can move between admission and
+dispatch - see `.github/workflows/c1-gh-aw-builder-v1.md`.
+
 Out of scope on purpose
 -----------------------
 Result write-back, issue comments, PR creation, candidate generation, C14 and C13 are
@@ -110,6 +123,51 @@ TITLE_TASK_ID = re.compile(r"^V[0-9]+-R[0-9]+-C[0-9]{2}-[0-9]{2}$")
 # A 40-hex commit, not a substring of a longer digest (the 64-hex source-tree hashes
 # that appear in the same bodies must not match).
 SHA1 = re.compile(r"(?<![0-9a-fA-F])[0-9a-fA-F]{40}(?![0-9a-fA-F])")
+
+# ------------------------------------------------------------- source freshness
+# An issue states the source it was written against. That statement is parsed (it is the
+# `source_anchor` above) and it is carried into the Builder payload, but parsing it is not
+# the same as checking it: a two-year-old issue with a perfectly well-formed anchor is still
+# a well-formed issue. Admission is where the two are compared.
+#
+# Strict equality against the CURRENT main, and nothing weaker. The Builder workflow is
+# dispatched with `ref = main`, so a task admitted here will be executed on whatever main
+# is when the workflow runs - which means "current" is exactly the right test, and any
+# ancestor/descendant/tree-equivalence relaxation would admit a task whose execution source
+# is not the source it was written against.
+_REASON_SOURCE_NOT_CURRENT = "INGRESS_SOURCE_ANCHOR_NOT_CURRENT"
+_REASON_CURRENT_SOURCE_INVALID = "INGRESS_CURRENT_SOURCE_ANCHOR_INVALID"
+# Canonical lowercase 40-hex, anchored at both ends. Deliberately stricter than `SHA1`,
+# which is a search pattern for text: this one validates one whole value.
+CANONICAL_SHA1 = re.compile(r"^[0-9a-f]{40}$")
+
+
+class SourceAnchorNotCurrent(Refused):
+    """The issue is well formed and was admitted under no source this ingress can serve.
+
+    Carries the two values the refusal is made of, so the Evidence line for the refusal can
+    show why rather than only that. They are public commit ids, not credentials.
+    """
+
+    def __init__(self, issue_number, parsed_source_anchor, current_source_anchor):
+        super().__init__(_REASON_SOURCE_NOT_CURRENT)
+        self.issue_number = issue_number
+        self.parsed_source_anchor = parsed_source_anchor
+        self.current_source_anchor = current_source_anchor
+
+
+def require_current_source_anchor(value) -> str:
+    """Normalise and validate the current main SHA, or refuse.
+
+    Fail closed and never guess: an absent, malformed or differently-cased value is a
+    refusal, not something to repair from a cached value, a local checkout or an issue.
+    """
+    if not isinstance(value, str):
+        raise Refused(_REASON_CURRENT_SOURCE_INVALID)
+    text = value.strip().lower()
+    if not CANONICAL_SHA1.match(text):
+        raise Refused(_REASON_CURRENT_SOURCE_INVALID)
+    return text
 
 # Lines whose value is the canonical source this task is bound to. The markers are
 # explicit; a commit that merely appears in prose is not an anchor.
@@ -300,14 +358,28 @@ def parse_c01_issue(issue) -> dict:
     return parsed
 
 
-def plan_ingress(issue, *, environ=None) -> dict:
+def plan_ingress(issue, *, current_source_anchor, environ=None) -> dict:
     """Compute the Runtime call this issue would produce. Never enqueues.
 
     There is no Runtime parameter here on purpose: this function is not able to
     enqueue anything, in any configuration, so the disabled path cannot be bypassed
     by passing one in.
+
+    `current_source_anchor` is a REQUIRED keyword argument with no default, and that is
+    the whole design. The one thing this ingress must never do is admit a task without
+    knowing what it would be executed against, so "not knowing" cannot be expressed:
+    a caller that omits it gets a TypeError, and a caller that passes something
+    unusable gets a refusal. An optional parameter with a `None` default would have
+    been a bypass a live caller could reach by forgetting an argument, which is the
+    failure mode this gate exists to prevent.
     """
+    current = require_current_source_anchor(current_source_anchor)
     parsed = parse_c01_issue(issue)
+    # The issue's own anchor was parsed above and is carried into the payload below; this
+    # is where the claim is checked rather than merely recorded. Equality, not lineage:
+    # see the block above `CANONICAL_SHA1` for why anything weaker is wrong here.
+    if parsed["source_anchor"] != current:
+        raise SourceAnchorNotCurrent(parsed["issue_number"], parsed["source_anchor"], current)
     # The U6 solution-leak seam, asked before anything is composed. Today it is a bypass
     # and its record says exactly that - `reviewed=False` beside `decision="PASS"` - so
     # the ingress neither blocks on it nor claims a review happened. When a checker
@@ -352,13 +424,16 @@ def plan_ingress(issue, *, environ=None) -> dict:
     }
 
 
-def ingest(issue, *, runtime=None, environ=None) -> dict:
+def ingest(issue, *, current_source_anchor, runtime=None, environ=None) -> dict:
     """Plan, and enqueue only when explicitly enabled and given a Runtime.
 
     The refusal when enabled-without-a-Runtime is deliberate: "enabled but nothing to
     enqueue into" must be a loud error, not a silent no-op that looks like success.
+
+    `current_source_anchor` is forwarded rather than defaulted, so the enqueue path cannot
+    be reached with less admission information than the plan path requires.
     """
-    plan = plan_ingress(issue, environ=environ)
+    plan = plan_ingress(issue, current_source_anchor=current_source_anchor, environ=environ)
     if not plan["enabled"]:
         return plan
     if runtime is None:
@@ -395,11 +470,15 @@ def main(argv=None) -> int:
     Shadow use only: this command reads an issue, prints exactly which Runtime task
     it would create, and stops. The enable switch is environment-side, so nothing in
     argv can turn the ingress on.
+
+    The current source anchor is an argument, not a default. A shadow command that
+    invented one - from a cached value, a local checkout, or the issue itself - would
+    report a plan the live path could not reach, which is worse than reporting nothing.
     """
     argv = list(sys.argv[1:] if argv is None else argv)
-    if len(argv) != 3 or argv[0] != "--plan":
-        print("usage: c1_issue_ingress.py --plan <issues.json> <issue_number>",
-              file=sys.stderr)
+    if len(argv) != 4 or argv[0] != "--plan":
+        print("usage: c1_issue_ingress.py --plan <issues.json> <issue_number> "
+              "<current_source_anchor>", file=sys.stderr)
         return 2
     try:
         number = int(argv[2])
@@ -408,7 +487,7 @@ def main(argv=None) -> int:
         return 2
     try:
         issue = _load_issue(argv[1], number)
-        plan = plan_ingress(issue)
+        plan = plan_ingress(issue, current_source_anchor=argv[3])
     except Refused as refusal:
         print("REFUSED %s" % refusal.reason)
         return 3

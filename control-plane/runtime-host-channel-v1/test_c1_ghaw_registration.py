@@ -59,6 +59,14 @@ BUILDER_SOURCE = WORKFLOWS / "c1-gh-aw-builder-v1.md"
 BUILDER_LOCK = WORKFLOWS / "c1-gh-aw-builder-v1.lock.yml"
 UNIT_CANDIDATE = HERE / "systemd" / "go-runtime-host-ghaw-builder-worker.service"
 
+# The commit the offline gate runs pretend to be executing on. In a real run the workflow
+# takes this from GitHub (`github.sha`) - it is supplied here as the WORKFLOW_SHA env var so
+# the gate script can be executed exactly as the runner would execute it.
+WORKFLOW_SHA = "e4076276d70058d16f68fda5db047161ca6ef4cc"
+# A real earlier commit, standing for "the source an issue was written against before main
+# moved on" - what the ten historical open issues carry.
+STALE_SHA = "8ffcde66d36c1bbf849218529ef015f6e81725af"
+
 # Frozen at the base commit: these are the identities the deployed Runtime has already
 # recorded for the Responses path, and U1 must not move them.
 FROZEN_SMOKE_REQUEST_ID = ("12d810e9b7a3c51d04d37d7a88074ee59d18de9582a2068dc1"
@@ -72,11 +80,12 @@ FROZEN_PAYLOAD = {"schema_version": 1, "cell_id": "C1",
                   "scope": "No real execution. Answer with one short line."}
 
 
-def payload(external_task_id="C01-BUILDER-1"):
+def payload(external_task_id="C01-BUILDER-1", *, source_anchor=WORKFLOW_SHA):
     return contract.build_task_payload(
         cell_id="C01", external_task_id=external_task_id,
         objective="State the objective you were given, in one line.",
-        scope="No real execution. Answer with one short line.")
+        scope="No real execution. Answer with one short line.",
+        source_anchor=source_anchor)
 
 
 def front_matter(path):
@@ -388,6 +397,7 @@ class TheWorkflowScriptsBehaveOffline(unittest.TestCase):
             "TASK_KIND": "GHAW_BUILDER_V1",
             "TASK_PAYLOAD": contract.canonical(payload()),
             "OWNER_C": "C1",
+            "WORKFLOW_SHA": WORKFLOW_SHA,
         })
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertIn("WORK_ORDER_ACCEPTED", completed.stdout)
@@ -395,13 +405,18 @@ class TheWorkflowScriptsBehaveOffline(unittest.TestCase):
         self.assertEqual(written, payload())
 
     # ---------------------------------------- the cell gate, exercised for real
-    def _run_gate(self, *, cell, owner_c, kind="GHAW_BUILDER_V1"):
+    def _run_gate(self, *, cell, owner_c, kind="GHAW_BUILDER_V1",
+                  source_anchor=WORKFLOW_SHA, workflow_sha=WORKFLOW_SHA,
+                  drop_source=False):
         """Run the real gate script on a hand-built payload.
 
         The payload is composed here rather than through the contract on purpose: these
         tests ask what the workflow does when something upstream did NOT stop it, so
         routing the input through the validator would test the validator instead of the
         gate. The raw cell spelling is what a mis-issued dispatch would actually carry.
+
+        `workflow_sha=None` omits the variable entirely, which is what the runner does if
+        GitHub ever fails to supply it.
         """
         path = Path(self.tmp) / "c1_builder_task.json"
         if path.exists():
@@ -410,9 +425,13 @@ class TheWorkflowScriptsBehaveOffline(unittest.TestCase):
                 "external_task_id": "C12-BUILDER-1",
                 "objective": "State the objective you were given, in one line.",
                 "scope": "No real execution. Answer with one short line."}
-        completed = run_script(self.gate, workdir=self.tmp, environ={
-            "TASK_KIND": kind, "TASK_PAYLOAD": contract.canonical(body),
-            "OWNER_C": owner_c})
+        if not drop_source:
+            body["source_anchor"] = source_anchor
+        environ = {"TASK_KIND": kind, "TASK_PAYLOAD": contract.canonical(body),
+                   "OWNER_C": owner_c}
+        if workflow_sha is not None:
+            environ["WORKFLOW_SHA"] = workflow_sha
+        completed = run_script(self.gate, workdir=self.tmp, environ=environ)
         return completed, path
 
     def test_the_gate_accepts_every_builder_cell(self):
@@ -497,6 +516,61 @@ class TheWorkflowScriptsBehaveOffline(unittest.TestCase):
             "TASK_KIND": "GHAW_BUILDER_V1", "TASK_PAYLOAD": "{not json"})
         self.assertNotEqual(completed.returncode, 0)
         self.assertIn("TASK_PAYLOAD_NOT_JSON", completed.stderr)
+
+    # ---------------------------------------- the source gate, exercised for real
+    def test_the_gate_accepts_a_work_order_for_the_sha_it_is_running_on(self):
+        completed, path = self._run_gate(cell="C12", owner_c="C12")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["source_anchor"],
+                         WORKFLOW_SHA)
+
+    def test_the_gate_refuses_a_work_order_written_against_another_sha(self):
+        # The queue race, in one run: the task was admitted while main was A, and by the
+        # time it was dispatched main had become B. The payload still says A. Refused
+        # before the agent starts, so no model is ever called for the wrong tree.
+        completed, path = self._run_gate(cell="C12", owner_c="C12", source_anchor=STALE_SHA)
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("SOURCE_ANCHOR_DOES_NOT_MATCH_WORKFLOW_SHA", completed.stderr)
+        self.assertFalse(path.exists(), "a mis-bound work order must materialise nothing")
+
+    def test_the_gate_refuses_a_work_order_that_states_no_source(self):
+        completed, path = self._run_gate(cell="C12", owner_c="C12", drop_source=True)
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("TASK_PAYLOAD_SOURCE_ANCHOR_MISSING_OR_INVALID", completed.stderr)
+        self.assertFalse(path.exists())
+
+    def test_the_gate_refuses_a_malformed_source_anchor(self):
+        for bad in ("", "not-a-sha", "8ffcde66", WORKFLOW_SHA + "0", "0" * 64):
+            with self.subTest(anchor=bad):
+                completed, path = self._run_gate(cell="C12", owner_c="C12",
+                                                 source_anchor=bad)
+                self.assertNotEqual(completed.returncode, 0)
+                self.assertIn("TASK_PAYLOAD_SOURCE_ANCHOR_MISSING_OR_INVALID",
+                              completed.stderr)
+                self.assertFalse(path.exists())
+
+    def test_the_gate_refuses_when_the_execution_sha_is_unavailable(self):
+        completed, path = self._run_gate(cell="C12", owner_c="C12", workflow_sha=None)
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("WORKFLOW_SHA_UNAVAILABLE", completed.stderr)
+        self.assertFalse(path.exists())
+
+    def test_the_workflow_takes_its_source_from_github_not_from_the_caller(self):
+        # The authority is the run's own execution SHA. A caller-supplied "current main"
+        # would be a claim, and a gate that trusts a claim is not a gate.
+        front = front_matter(BUILDER_SOURCE)
+        inputs = set(trigger_block(front)["workflow_dispatch"]["inputs"])
+        self.assertEqual(inputs, {"runtime_task_id", "attempt", "execution_request_id",
+                                  "owner_c", "task_kind", "task_payload"})
+        for forbidden in ("execution_sha", "current_main", "checkout_sha", "workflow_sha",
+                          "source_sha", "main_sha"):
+            with self.subTest(input=forbidden):
+                self.assertNotIn(forbidden, inputs)
+
+    def test_the_compiled_workflow_binds_githubs_own_execution_sha(self):
+        lock = BUILDER_LOCK.read_text(encoding="utf-8")
+        self.assertIn("WORKFLOW_SHA: ${{ github.sha }}", lock)
+        self.assertIn("SOURCE_ANCHOR_DOES_NOT_MATCH_WORKFLOW_SHA", lock)
 
     def test_the_seal_produces_a_result_the_runtime_contract_accepts(self):
         request = contract.build_dispatch_request(

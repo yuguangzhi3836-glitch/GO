@@ -41,6 +41,15 @@ FAKE_API = "https://api.example.invalid"
 TEST_TOKEN = "not-a-real-token"
 PAGE_IN_URL = re.compile(r"[?&]page=(\d+)")
 
+# The source anchor the captured fixture bodies carry. The fake platform reports THIS as
+# the default-branch head by default, which is the world those issues were written in: the
+# tests that are about fetching, planning and de-duplication keep their meaning, and the
+# tests about freshness move the head on purpose (see class SourceHeadIsReadOncePerPoll).
+FIXTURE_SOURCE = "8ffcde66d36c1bbf849218529ef015f6e81725af"
+# A real commit from this repository's history, used to represent "main has moved since
+# those issues were written".
+MOVED_ON_SOURCE = "e4076276d70058d16f68fda5db047161ca6ef4cc"
+
 
 def load_fixture() -> dict:
     with open(FIXTURE, encoding="utf-8") as handle:
@@ -66,21 +75,37 @@ class FakeResponse:
 
 
 class RecordingOpener:
-    """A transport that records what was asked for and answers with canned pages.
+    """A transport that records what was asked for and answers with canned documents.
 
     It is the only thing standing in for the network, so the request the consumer would
-    really send - verb, URL, headers - is what gets asserted.
+    really send - verb, URL, headers - is what gets asserted. Two paths are served: the
+    issue listing (from `pages`) and the default-branch head, which is why the poll can be
+    checked for reading the source exactly once.
     """
 
-    def __init__(self, pages):
+    def __init__(self, pages, *, source_head=FIXTURE_SOURCE, source_body=None,
+                 source_raises=None):
         self.calls = []
         self._pages = pages
+        self._source_head = source_head
+        # A raw body (for the malformed / not-an-object cases) or an exception (for the
+        # HTTP and transport failures) replaces the well-formed answer when supplied.
+        self._source_body = source_body
+        self._source_raises = source_raises
+        self.source_calls = 0
 
     def __call__(self, request, timeout=None):
-        match = PAGE_IN_URL.search(request.full_url)
-        page = int(match.group(1)) if match else 1
         self.calls.append({"method": request.get_method(), "url": request.full_url,
                            "headers": dict(request.headers), "timeout": timeout})
+        if request.full_url.split("?")[0] == FAKE_API + consumer.SOURCE_HEAD_PATH:
+            self.source_calls += 1
+            if self._source_raises is not None:
+                raise self._source_raises
+            if self._source_body is not None:
+                return FakeResponse(self._source_body)
+            return FakeResponse(json.dumps({"sha": self._source_head}).encode("utf-8"))
+        match = PAGE_IN_URL.search(request.full_url)
+        page = int(match.group(1)) if match else 1
         body = self._pages[page - 1] if page - 1 < len(self._pages) else []
         return FakeResponse(json.dumps(body).encode("utf-8"))
 
@@ -143,16 +168,20 @@ class Case(unittest.TestCase):
     def issue(self, number):
         return json.loads(json.dumps(ISSUES[number]))
 
-    def reader(self, pages, *, per_page=consumer.PER_PAGE):
-        self.opener = RecordingOpener(pages)
+    def reader(self, pages, *, per_page=consumer.PER_PAGE, source_head=FIXTURE_SOURCE,
+               source_body=None, source_raises=None):
+        self.opener = RecordingOpener(pages, source_head=source_head,
+                                      source_body=source_body,
+                                      source_raises=source_raises)
         return consumer.GitHubIssuesReader(
             token_loader=lambda: TEST_TOKEN, opener=self.opener, api_base=FAKE_API,
             per_page=per_page)
 
-    def expected_plan(self, number):
+    def expected_plan(self, number, *, current=FIXTURE_SOURCE):
         # The one authority on the plan is the ingress; the consumer only reports it.
         import c1_issue_ingress
-        return c1_issue_ingress.plan_ingress(self.issue(number), environ={})
+        return c1_issue_ingress.plan_ingress(self.issue(number),
+                                             current_source_anchor=current, environ={})
 
 
 # ------------------------------------------------------------------ A
@@ -204,8 +233,13 @@ class TheGitHubAccessIsReadOnly(Case):
         self.assertIn('method="GET"', source)
 
     def test_a_listing_failure_is_reported_without_leaking_the_response(self):
+        # The denial is on the ISSUE LISTING path specifically. The poll's source read is a
+        # different request and is answered normally, because this test is about how a
+        # listing failure is reported - not about the source read, which has its own class.
         class Denied:
             def __call__(self, request, timeout=None):
+                if request.full_url.split("?")[0] == FAKE_API + consumer.SOURCE_HEAD_PATH:
+                    return FakeResponse(json.dumps({"sha": FIXTURE_SOURCE}).encode("utf-8"))
                 raise consumer.urllib.error.HTTPError(request.full_url, 403,
                                                       "forbidden", {}, None)
 
@@ -585,6 +619,119 @@ class StructuralBounds(Case):
         source = CONSUMER_SOURCE.read_text(encoding="utf-8")
         self.assertIn("INGRESS_ENABLED_ENV", source)
         self.assertNotIn("C01_ISSUE_CONSUMER_ENABLED", source)
+
+
+# ------------------------------------------------------------------ source freshness
+class SourceHeadIsReadOncePerPoll(Case):
+    """One poll, one source snapshot - and a poll that cannot read one does nothing.
+
+    The consumer's second read-only path exists so admission can be about the CURRENT tree
+    rather than about whatever an issue claims. It is read once per poll (not once per
+    issue) and a failure to read it stops the poll before anything is planned, so a poll
+    can never admit a candidate against a source nobody verified.
+    """
+
+    def test_the_source_head_is_read_exactly_once_per_poll(self):
+        listing = []
+        for cell in range(1, 11):
+            issue = self.issue(79)
+            issue["number"] = 900 + cell
+            issue["title"] = "C%02d · V70-R3-C%02d-01 · bounded task" % (cell, cell)
+            listing.append(issue)
+        result = consumer.poll_once(reader=self.reader([listing]), runtime=self.runtime,
+                                    environ={}, pages=1)
+        self.assertEqual(len(result["planned"]), 10)
+        self.assertEqual(self.opener.source_calls, 1,
+                         "one source snapshot per poll, not one per candidate")
+        # 1 source GET + 1 listing page, and nothing else.
+        self.assertEqual(len(self.opener.calls), 2)
+
+    def test_the_source_read_is_a_get_to_the_commits_endpoint(self):
+        self.reader([[]]).read_current_source()
+        self.assertEqual(self.opener.verbs, ["GET"])
+        self.assertEqual(self.opener.paths, [FAKE_API + consumer.SOURCE_HEAD_PATH])
+        self.assertTrue(consumer.SOURCE_HEAD_PATH.endswith("/commits/main"))
+
+    def test_the_poll_reports_the_snapshot_it_used(self):
+        result = consumer.poll_once(reader=self.reader([[]]), environ={}, pages=1)
+        self.assertEqual(result["current_source_anchor"], FIXTURE_SOURCE)
+
+    def test_a_historical_issue_is_refused_and_reported_with_both_anchors(self):
+        result = consumer.poll_once(reader=self.reader([[self.issue(79)],
+                                                        [self.issue(79)]],
+                                                       source_head=MOVED_ON_SOURCE),
+                                    runtime=self.runtime, environ=ENABLED, pages=1)
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["planned"], [])
+        self.assertEqual(result["enqueued"], [])
+        self.assertEqual(self.runtime.task_count(), 0)
+        self.assertEqual(len(result["refused"]), 1)
+        refusal = result["refused"][0]
+        self.assertEqual(refusal["issue_number"], 79)
+        self.assertEqual(refusal["reason"], "INGRESS_SOURCE_ANCHOR_NOT_CURRENT")
+        self.assertEqual(refusal["parsed_source_anchor"], FIXTURE_SOURCE)
+        self.assertEqual(refusal["current_source_anchor"], MOVED_ON_SOURCE)
+
+    def test_a_whole_stale_backlog_yields_no_plan_at_all(self):
+        # The live shape: several open issues, all written against an older main. Under the
+        # current head none of them is work, so the poll plans nothing and enqueues nothing
+        # even with the switch on.
+        listing = []
+        for cell in (1, 2, 3):
+            issue = self.issue(79)
+            issue["number"] = 950 + cell
+            issue["title"] = "C%02d · V70-R3-C%02d-01 · bounded task" % (cell, cell)
+            listing.append(issue)
+        result = consumer.poll_once(reader=self.reader([listing], source_head=MOVED_ON_SOURCE),
+                                    runtime=self.runtime, environ=ENABLED, pages=1)
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(len(result["refused"]), 3)
+        self.assertTrue(all(r["reason"] == "INGRESS_SOURCE_ANCHOR_NOT_CURRENT"
+                            for r in result["refused"]))
+        self.assertEqual(result["planned"], [])
+        self.assertEqual(result["enqueued"], [])
+        self.assertEqual(self.runtime.enqueue_calls, 0)
+
+    def test_a_failed_source_read_stops_the_poll_before_anything_else(self):
+        for label, kwargs in (
+                ("http_404", {"source_raises": consumer.urllib.error.HTTPError(
+                    consumer.SOURCE_HEAD_PATH, 404, "Not Found", None, None)}),
+                ("http_500", {"source_raises": consumer.urllib.error.HTTPError(
+                    consumer.SOURCE_HEAD_PATH, 500, "Server Error", None, None)}),
+                ("transport", {"source_raises": OSError("no route")}),
+                ("not_json", {"source_body": b"<html>nope</html>"}),
+                ("not_an_object", {"source_body": b'["not", "an", "object"]'}),
+                ("missing_sha", {"source_body": b'{"commit": {}}'}),
+                ("invalid_sha", {"source_body": b'{"sha": "not-a-sha"}'}),
+                ("short_sha", {"source_body": b'{"sha": "8ffcde66"}'}),
+        ):
+            with self.subTest(case=label):
+                factory_calls = []
+
+                def factory():
+                    factory_calls.append(1)
+                    return self.runtime
+
+                result = consumer.poll_once(
+                    reader=self.reader([[self.issue(79)]], **kwargs),
+                    runtime_factory=factory, environ=ENABLED, pages=1)
+                self.assertEqual(result["status"], "SOURCE_HEAD_LOOKUP_FAILED")
+                # Nothing was planned and nothing was enqueued: the poll stopped at the
+                # first read, so the result carries no plan to inspect at all.
+                self.assertNotIn("planned", result)
+                self.assertNotIn("enqueued", result)
+                self.assertNotIn("candidates", result)
+                self.assertEqual(factory_calls, [],
+                                 "a failed source read must not even build a Runtime")
+                self.assertEqual(self.runtime.enqueue_calls, 0)
+                self.assertEqual(self.opener.source_calls, 1)
+                # Nothing else was read: the poll stopped at the first read.
+                self.assertEqual(len(self.opener.calls), 1)
+
+    def test_the_source_head_endpoint_is_reported_by_check(self):
+        report = consumer.check({}, token_loader=lambda: TEST_TOKEN)
+        self.assertEqual(report["source_head_endpoint"], consumer.SOURCE_HEAD_PATH)
+        self.assertIn("source_anchor", report["source_freshness"])
 
 
 if __name__ == "__main__":
