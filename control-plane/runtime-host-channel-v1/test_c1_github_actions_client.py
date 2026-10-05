@@ -255,6 +255,31 @@ class RunLookupTests(ClientCase):
                 box.close()
 
 
+class FailureClosureClientTests(ClientCase):
+    def test_jobs_are_read_for_the_exact_attempt(self):
+        client = self.client({("GET", "/attempts/2/jobs?"): {
+            "jobs": [{"id": 71, "conclusion": "failure", "steps": []}]}})
+        jobs = client.list_run_jobs(RUN_ID, 2)
+        self.assertEqual(jobs[0]["id"], 71)
+        self.assertIn("/runs/%s/attempts/2/jobs" % RUN_ID, self.opener.seen[0][1])
+
+    def test_job_log_redirect_does_not_forward_the_token(self):
+        self.archive_bytes = b"log data only"
+        client = self.client({("GET", "/actions/jobs/71/logs"): urllib.error.HTTPError(
+            "u", 302, "found", {"Location": "https://signed.invalid/job"}, None)})
+        self.assertEqual(client.download_job_log(71), "log data only")
+        self.assertFalse(self.redirect_seen[0][0])
+
+    def test_comment_marker_scan_and_single_write(self):
+        client = self.client({
+            ("GET", "/issues/478/comments?"): [{"body": "GO_FAILURE_CLOSURE:abc"}],
+            ("POST", "/issues/478/comments"): {"id": 91},
+        })
+        self.assertTrue(client.issue_comment_contains(478, "GO_FAILURE_CLOSURE:abc"))
+        self.assertEqual(client.post_issue_comment(478, "bounded body"), 91)
+        self.assertEqual([item[0] for item in self.opener.seen], ["GET", "POST"])
+
+
 class ArtifactTests(ClientCase):
     def _listing(self, archive, digest=None, expired=False, count=1):
         entries = [{"id": 7, "digest": digest if digest is not None

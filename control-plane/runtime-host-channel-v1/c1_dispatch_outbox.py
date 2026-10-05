@@ -107,6 +107,9 @@ CREATE TABLE IF NOT EXISTS c1_dispatch (
     reused_from          TEXT,
     abandon_reason       TEXT,
     failure_reason       TEXT,
+    failure_receipt_json TEXT,
+    failure_receipt_attempts INTEGER NOT NULL DEFAULT 0,
+    failure_receipt_error TEXT,
     request_json         TEXT,
     updated_at           TEXT NOT NULL
 );
@@ -139,6 +142,14 @@ class DispatchOutbox:
             # are not broken: the column is only ever read for a RUN_FAILED row, and none
             # can predate it. Nothing is rewritten here.
             self._db.execute("ALTER TABLE c1_dispatch ADD COLUMN failure_reason TEXT")
+        if "failure_receipt_json" not in present:
+            self._db.execute("ALTER TABLE c1_dispatch ADD COLUMN failure_receipt_json TEXT")
+        if "failure_receipt_attempts" not in present:
+            self._db.execute(
+                "ALTER TABLE c1_dispatch ADD COLUMN failure_receipt_attempts INTEGER"
+                " NOT NULL DEFAULT 0")
+        if "failure_receipt_error" not in present:
+            self._db.execute("ALTER TABLE c1_dispatch ADD COLUMN failure_receipt_error TEXT")
         if "request_json" not in present:
             # Rows written before the real-task contract have no stored request. They are
             # not broken: `stored_request()` returns None for them and the caller falls
@@ -339,6 +350,38 @@ class DispatchOutbox:
         self._update(request_id, state=RUN_FAILED, failure_reason=str(reason)[:200],
                      github_run_id=row["github_run_id"] or github_run_id)
         return RUN_FAILED
+
+    # --------------------------------------------------------- failure receipt
+    def failure_receipt(self, request_id):
+        """The last durable receipt report for this identity, if one exists."""
+        row = self._row(request_id)
+        if row is None:
+            raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
+        raw = row["failure_receipt_json"]
+        if raw is None:
+            return None
+        import json
+        return json.loads(raw)
+
+    def record_failure_receipt_attempt(self, request_id, error, report=None) -> int:
+        """Count one write attempt; the counter survives restarts and bounds retries."""
+        row = self._row(request_id)
+        if row is None:
+            raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
+        attempts = int(row["failure_receipt_attempts"] or 0) + 1
+        columns = {"failure_receipt_attempts": attempts,
+                   "failure_receipt_error": str(error)[:200]}
+        if report is not None:
+            columns["failure_receipt_json"] = canonical(report)
+        self._update(request_id, **columns)
+        return attempts
+
+    def record_failure_receipt(self, request_id, report) -> None:
+        """Persist a published/reused/blocked report without changing dispatch state."""
+        row = self._row(request_id)
+        if row is None:
+            raise Refused("UNKNOWN_EXECUTION_REQUEST_ID")
+        self._update(request_id, failure_receipt_json=canonical(report))
 
     def failed_for_task(self, runtime_task_id, *, exclude_request_id=None):
         """A run already settled as failed for this Runtime task, whatever attempt it was.
