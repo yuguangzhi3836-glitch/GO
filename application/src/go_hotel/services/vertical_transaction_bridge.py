@@ -13,6 +13,26 @@ BTYPE={'FLIGHT':'FLIGHT_ORDER','RAIL':'RAIL_ORDER','RIDE':'RIDE_ORDER','RENTAL':
 def _prod(): return settings.app_env.strip().lower() in {'prod','production'}
 
 class VerticalTransactionBridge:
+    def _money_graph(self, iid, vertical, order_id, evidence_reference):
+        def pair(create):
+            auth=create(iid,{'movement_type':'AUTHORIZATION','evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'{vertical.lower()}-auth:{order_id}','vertical-transaction-bridge')
+            cap=create(iid,{'movement_type':'CAPTURE','parent_movement_id':auth['money_movement_id'],'evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'{vertical.lower()}-cap:{order_id}','vertical-transaction-bridge')
+            return auth,cap
+        with SessionLocal() as probe:
+            bind=probe.get_bind()
+        if bind.dialect.name!='postgresql':
+            return pair(unified_money_movement_service.create)
+        # Retain one physical checkout, not one transaction. AUTH remains durable
+        # if CAPTURE fails; an invalid connection is never retried here.
+        with bind.connect() as connection:
+            def create(intent_id, body, key, actor):
+                # Keep the original identity-map lifetime across the two commits.
+                with SessionLocal(bind=connection) as session:
+                    result=unified_money_movement_service.create_in_session(session,intent_id,body,key,actor)
+                    session.commit()
+                    return result
+            return pair(create)
+
     def checkout_contract(self, vertical:str, order_id:str, account_id:str, source_id:str, evidence_reference:str, payment_method_id:str|None=None):
         if _prod(): raise ValueError('EXTERNAL_PAYMENT_EXECUTOR_REQUIRED')
         if vertical in {'RIDE','RENTAL'}:
@@ -37,8 +57,7 @@ class VerticalTransactionBridge:
             a=omnichannel_payment_service.execute(i['payment_intent_id'],'CONTRACT_SIMULATOR')
             omnichannel_payment_service.simulate_result(a['payment_attempt_id'],'SUCCEEDED')
         iid=i['payment_intent_id']
-        auth=unified_money_movement_service.create(iid,{'movement_type':'AUTHORIZATION','evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'{vertical.lower()}-auth:{order_id}','vertical-transaction-bridge')
-        cap=unified_money_movement_service.create(iid,{'movement_type':'CAPTURE','parent_movement_id':auth['money_movement_id'],'evidence':[evidence_reference],'mode':'CONTRACT_SIMULATOR'},f'{vertical.lower()}-cap:{order_id}','vertical-transaction-bridge')
+        auth,cap=self._money_graph(iid,vertical,order_id,evidence_reference)
         with SessionLocal() as s:
             f=s.scalar(select(OrderSupplierFulfillmentRow).where(OrderSupplierFulfillmentRow.payment_intent_id==iid))
             return {'payment_intent_id':iid,'authorization_id':auth['money_movement_id'],'capture_id':cap['money_movement_id'],'supplier_fulfillment_id':f.order_supplier_fulfillment_id if f else None,'state':'PAYMENT_CONFIRMED_AWAITING_SUPPLIER'}

@@ -1,0 +1,91 @@
+name: C11 connection reuse machine experiment
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - application/src/go_hotel/services/vertical_transaction_bridge.py
+      - application/tests/payments/test_c11_money_create_pg_diagnostics.py
+      - ci/c11-reuse/**
+      - .github/workflows/c11-reuse-experiment.yml
+permissions:
+  contents: read
+concurrency:
+  group: c11-reuse-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+jobs:
+  safety-abba:
+    if: github.head_ref == 'experiment/c11-one-connection-438'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: c13_lite
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: isolated_reuse_test_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d c13_lite"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: isolated_reuse_test_only
+      PGDATABASE: c13_lite
+      APP_ENV: test
+      PYTHONDONTWRITEBYTECODE: '1'
+      BASELINE_SHA: 3f99d467cb6d5bdd158c51b727fe5feefb5b941a
+      CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 3f99d467cb6d5bdd158c51b727fe5feefb5b941a
+          path: baseline
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare shared dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install './candidate/application[dev]'
+          mkdir -p "$RUNNER_TEMP/c11-reuse"
+          python -m pip freeze > "$RUNNER_TEMP/c11-reuse/dependencies.txt"
+          test "$(git -C candidate rev-parse HEAD)" = "$CANDIDATE_SHA"
+          test "$(git -C baseline rev-parse HEAD)" = "$BASELINE_SHA"
+      - name: SQLite compatibility regression
+        working-directory: candidate
+        run: |
+          set -euo pipefail
+          env -u PGHOST -u PGPORT -u PGUSER -u PGPASSWORD -u PGDATABASE python -m pytest application/tests/payments/test_c11_flight_idempotency_recovery.py -p no:cacheprovider --junitxml="$RUNNER_TEMP/c11-reuse/sqlite.xml"
+      - name: Candidate fault safety then same-host 20 to 100 ABBA
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="$GITHUB_WORKSPACE/candidate/application/src"
+          python candidate/ci/c11-reuse/experiment.py \
+            --baseline "$GITHUB_WORKSPACE/baseline/application/src" \
+            --candidate "$GITHUB_WORKSPACE/candidate/application/src" \
+            --out "$RUNNER_TEMP/c11-reuse" 2>&1 | tee "$RUNNER_TEMP/c11-reuse/execution.log"
+      - name: Bind evidence, including explicit failure or NO_GO
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,pathlib
+          p=pathlib.Path(os.environ['RUNNER_TEMP'])/'c11-reuse';p.mkdir(exist_ok=True)
+          files={str(f.relative_to(p)):hashlib.sha256(f.read_bytes()).hexdigest() for f in p.rglob('*') if f.is_file()}
+          (p/'manifest.json').write_text(json.dumps({'baseline_sha':os.environ['BASELINE_SHA'],'candidate_sha':os.environ['CANDIDATE_SHA'],'files':files,'ai_review_dispatched':False,'merge_deploy_authorized':False},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: c11-reuse-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/c11-reuse
+          if-no-files-found: error

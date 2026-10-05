@@ -11,6 +11,22 @@ from go_hotel.payments.money_create_diagnostics import MoneyCreateDiagnostics
 pytestmark = pytest.mark.no_db
 
 
+def test_actual_reused_bridge_fault_boundaries(capsys):
+    if not os.getenv('PGHOST'):
+        pytest.skip('Actual bridge PG safety deferred: isolated PG required')
+    assert os.environ.get('PGDATABASE') == 'c13_lite'
+    repo = Path(__file__).resolve().parents[3]
+    env = dict(os.environ, PYTHONPATH=str(repo/'application/src'))
+    env.pop('DATABASE_URL', None)
+    with tempfile.TemporaryDirectory(prefix='c11-reuse-safety-') as directory:
+        result = subprocess.run([sys.executable,str(repo/'ci/c11-reuse/experiment.py'),
+            '--safety-only',directory],env=env,cwd=directory,text=True,capture_output=True,timeout=180)
+    with capsys.disabled():
+        print(result.stdout);print(result.stderr)
+    assert result.returncode == 0, 'Actual candidate checkout recovery failed'
+    assert 'C11_REUSE_SAFETY ' in result.stdout
+
+
 @pytest.mark.no_db
 def test_real_pg18_money_create(capsys):
     if not any(os.getenv(k) for k in ('PGHOST', 'PGDATABASE', 'PGUSER', 'PGPASSWORD')):
