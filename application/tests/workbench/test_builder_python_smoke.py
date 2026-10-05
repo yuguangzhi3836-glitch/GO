@@ -51,6 +51,7 @@ class BuilderPythonSmokeTests(unittest.TestCase):
             self.assertIn("4 passed", report["pytest_stdout"])
             self.assertEqual(report["sandbox_validation"], "HOST_ONLY")
             self.assertFalse(report["database_tested"])
+            self.assertIn("httpx", report["interpreter"]["packages"])
 
     def test_agent_label_alone_never_claims_verified_sandbox(self):
         with tempfile.TemporaryDirectory() as directory:

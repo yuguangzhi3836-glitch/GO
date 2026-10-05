@@ -30,7 +30,7 @@ from sqlalchemy.dialects import postgresql
 
 def test_dependency_imports_and_python():
     assert sys.version_info >= (3, 11)
-    for name in ("pytest", "fastapi", "sqlalchemy", "psycopg"):
+    for name in ("pytest", "fastapi", "httpx", "sqlalchemy", "psycopg"):
         assert importlib.metadata.version(name)
 
 
@@ -79,10 +79,10 @@ def run_smoke(python: Path, evidence: Path, context: str) -> dict:
     probe = (
         "import json,sys,importlib.metadata as m; "
         "assert sys.version_info >= (3,11), 'PYTHON_TOO_OLD'; "
-        "import pytest,fastapi,sqlalchemy,psycopg; "
+        "import pytest,fastapi,httpx,sqlalchemy,psycopg; "
         "print(json.dumps({'sys_executable':sys.executable,'version':sys.version,"
         "'prefix':sys.prefix,'base_prefix':sys.base_prefix,"
-        "'packages':{n:m.version(n) for n in ['pytest','fastapi','sqlalchemy','psycopg']}}))"
+        "'packages':{n:m.version(n) for n in ['pytest','fastapi','httpx','sqlalchemy','psycopg']}}))"
     )
     try:
         result = subprocess.run([str(python), "-I", "-c", probe], env=env,
