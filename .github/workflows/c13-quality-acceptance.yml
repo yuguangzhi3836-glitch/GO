@@ -188,6 +188,7 @@ jobs:
             -e PGPASSWORD=c13-lite-local-only \
             -e PGDATABASE=c13_lite \
             -e DATABASE_URL="postgresql+psycopg://postgres:c13-lite-local-only@host.docker.internal:5432/c13_lite" \
+            -e GO_MEDIA_CACHE_DIR=/tmp/go-media-cache \
             -w /srv/application \
             --add-host=host.docker.internal:host-gateway \
             python:3.12-slim \
