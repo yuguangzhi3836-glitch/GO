@@ -38,6 +38,8 @@ Canonical source: <CURRENT_MAIN_SHA>
 - `Canonical source:` 必须是**创建 Issue 当时 GO 仓库 current main 的完整 40 位 SHA**。
 - 不要从旧 Issue、聊天记录或 README 示例里复制一个旧 SHA。
 - 新一轮任务请新建 Issue / 新 task id；不要只在旧 Issue 评论里改 task id。
+- task id 必须核对仓库既有任务（包括已关闭任务），不能只换 Issue 号或源码 SHA 后重复使用。当前去重键由 kind、Cell、task id 决定；不同 Issue 重用编号可能命中旧任务。consumer 仅能拒绝本轮有界扫描中同时可见的身份冲突，不能据此保证全部历史唯一。
+- 当前解析器只把 `Task:` 后第一个连续段落传为 objective，空行后的说明不会自动进入载荷。所有必须执行的范围、限制和验收要求应放入该段（可连续换行，不加空行，最长 4000 字符），并用当前 `plan_ingress()` 离线核对实际 payload。较大工作拆成有独立交付物的新任务，不截断限制。
 
 Issue 创建以后，正常链路是：
 
@@ -236,3 +238,4 @@ C01-C12：发 Formal Task Issue，剩下的（Builder → Draft PR → C14 → C
 需要单独审一个现成 PR 时：发 C14 Formal Review Issue。
 只有最后的 merge / deploy 仍然需要独立授权。
 ```
+
