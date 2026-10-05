@@ -247,7 +247,40 @@ steps:
       print("WORK_ORDER_ACCEPTED", payload["external_task_id"], owner_c)
       PY
 
+pre-agent-steps:
+  - name: Set up pinned uv for portable Builder Python
+    uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+    with:
+      version: '0.12.19'
+      enable-cache: false
+  - name: Prepare portable Python dependencies (host evidence only)
+    env:
+      UV_PYTHON_INSTALL_DIR: /tmp/gh-aw/python/uv-python
+      UV_NO_CACHE: '1'
+    run: |
+      set -euo pipefail
+      # The interpreter and venv both live in the EXISTING AWF mount.
+      # Runner CPython may depend on a newer GLIBC than the sandbox.
+      uv venv --python 3.12.12 --python-preference only-managed /tmp/gh-aw/python/venv
+      uv pip install --python /tmp/gh-aw/python/venv/bin/python --only-binary :all: -r application/pyproject.toml --extra dev
+      /tmp/gh-aw/python/venv/bin/python application/script/builder_python_smoke.py --python /tmp/gh-aw/python/venv/bin/python --context host --evidence /tmp/gh-aw/python/host-smoke.json
+      uv pip freeze --python /tmp/gh-aw/python/venv/bin/python > /tmp/gh-aw/python/resolved-dependencies.txt
+      sha256sum application/pyproject.toml > /tmp/gh-aw/python/pyproject.sha256
+      echo '/tmp/gh-aw/python/venv/bin' >> "$GITHUB_PATH"
+
 post-steps:
+  - name: Upload Builder Python evidence (not a sandbox PASS by itself)
+    if: always()
+    uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+    with:
+      name: builder-python-environment-${{ inputs.execution_request_id }}
+      path: |
+        /tmp/gh-aw/python/host-smoke.json
+        /tmp/gh-aw/python/agent-smoke.json
+        /tmp/gh-aw/python/resolved-dependencies.txt
+        /tmp/gh-aw/python/pyproject.sha256
+      if-no-files-found: warn
+      retention-days: 3
   - name: Seal the C1 result
     id: seal
     env:
@@ -327,7 +360,14 @@ Read `c1_builder_task.json` in the repository root. It is the task's own payload
 
 ## What to do
 
-1. Read `c1_builder_task.json`.
+1. Read `c1_builder_task.json`. Before modifying files, run the prepared Python
+   smoke from INSIDE this agent sandbox using the exact interpreter:
+   `/tmp/gh-aw/python/venv/bin/python application/script/builder_python_smoke.py --python /tmp/gh-aw/python/venv/bin/python --context agent --evidence /tmp/gh-aw/python/agent-smoke.json`.
+   A missing interpreter, import or nonzero pytest result is BLOCKED: stop, retain
+   the actual error in the execution summary, and do not install dependencies or
+   substitute host-only results. The host smoke is not sandbox evidence.
+   Use `/tmp/gh-aw/python/venv/bin/python -m pytest` for project tests thereafter.
+   This environment provides Python dependencies only, NOT PostgreSQL readiness.
 2. Investigate this repository only as far as the objective actually requires. Read the
    code you are about to change, and the tests that cover it. `cell_id` names one of the
    workbench cells, whose domain, owned paths and forbidden paths are declared in
@@ -366,3 +406,4 @@ Read `c1_builder_task.json` in the repository root. It is the task's own payload
    git-ignored; do not commit them, do not delete them, do not add them with `-f`.
 8. If the objective cannot be done inside the scope, do not widen the scope. Implement
    what can be done, and say plainly in your summary what you could not do and why.
+
