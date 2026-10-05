@@ -27,7 +27,9 @@ def test_supplier_publishes_only_own_rule_with_explicit_version_confirmation(cli
     assert saved['version']==2 and saved['rules']['cooling_off_minutes']==123
     assert data(client.post(path,headers=h,json=body))['version_id']==saved['version_id']
     assert data(client.get('/v1/supplier/catalog-fare/offers',headers=h))['items'][0]['published_rule']['version_id']==saved['version_id']
-    identity_service.create_user('fare_other_supplier','Test-Only-Other123!','SUPPLIER_USER','sup_other',['SUPPLIER_OWNER'])
+    from tests.supplier_fixture import admit_trading_supplier
+    fixture_owner = identity_service.create_user('fare_other_supplier','Test-Only-Other123!','SUPPLIER_USER','sup_other',['SUPPLIER_OWNER'])
+    admit_trading_supplier('sup_other', fixture_owner)
     other={'Authorization':'Bearer '+identity_service.login('fare_other_supplier','Test-Only-Other123!')['access_token']}
     assert data(client.get('/v1/supplier/catalog-fare/offers',headers=other))['items']==[]
     assert client.post(path,headers=other,json=body).status_code==404
