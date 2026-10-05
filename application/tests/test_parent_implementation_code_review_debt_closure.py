@@ -148,7 +148,7 @@ def test_current_source_head_and_upgrade_downgrade_roundtrip(tmp_path):
 
     heads = subprocess.run([sys.executable, "-m", "alembic", "heads"], env=env, text=True, capture_output=True, check=True)
     head_lines = [line.strip() for line in heads.stdout.splitlines() if line.strip().endswith("(head)")]
-    assert head_lines == ["0134_flight_status_width (head)"]
+    assert head_lines == ["0135_supplier_onboarding (head)"]
 
     subprocess.run([sys.executable, "-m", "alembic", "upgrade", "0114_ext_truth_incident_hard"], env=env, text=True, capture_output=True, check=True)
     conn = sqlite3.connect(db)

@@ -45,6 +45,9 @@ def main():
     migration=(APP/'alembic/versions/0134_flight_status_width.py').read_text()
     assert 'revision = "0134_flight_status_width"' in migration
     assert 'down_revision = "0133_flight_change_plan"' in migration
+    onboarding=(APP/'alembic/versions/0135_supplier_onboarding.py').read_text()
+    assert '0135_supplier_onboarding' in onboarding and '0134_flight_status_width' in onboarding
+    assert current['migration_head'] == '0135_supplier_onboarding'
     model=(APP/'src/go_hotel/db/models.py').read_text()
     assert 'status: Mapped[str] = mapped_column(String(64), nullable=False, index=True)' in model
     tree = hashlib.sha256(''.join(f'{p}\0{h}\n' for p,h in sorted(fingerprint.items())).encode()).hexdigest()
@@ -55,7 +58,7 @@ def main():
     report={'product_candidate_commit':current['product_candidate_commit'],'gate_commit':git('rev-parse','HEAD'),
             'application_tree':current['application_git_tree'],'source_files':len(expected),'source_tree_sha256':tree,
             'inherited_baseline_blob':current['inherited_manifest']['git_blob'],'approved_overrides':sorted(overrides),
-            'migration_head':'0134_flight_status_width','byte_retention':'PASS','deployment':'NOT_RUN',
+            'migration_head':current['migration_head'],'byte_retention':'PASS','deployment':'NOT_RUN',
             'final_release':'HOLD','production':'HOLD'}
     (out/'RETENTION_RESULT.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report))

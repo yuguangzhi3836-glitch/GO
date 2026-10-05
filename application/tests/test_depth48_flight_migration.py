@@ -12,7 +12,8 @@ def test_flight_plan_upgrade_preserves_parent_and_refuses_data_loss(tmp_path, mo
     command.upgrade(cfg, '0132_rail_runtime_field_widths')
     with sqlite3.connect(db) as s:
         before = set(s.execute("SELECT name FROM sqlite_master WHERE type='table'"))
-    command.upgrade(cfg, 'head')
+    # This test binds the flight-plan transition; fresh-chain tests cover current head.
+    command.upgrade(cfg, '0134_flight_status_width')
     with sqlite3.connect(db) as s:
         after = set(s.execute("SELECT name FROM sqlite_master WHERE type='table'"))
         assert after - before == {('flight_change_plan',), ('flight_change_resolution',)}

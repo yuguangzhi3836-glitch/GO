@@ -50,13 +50,16 @@ jobs:
       GO_C11_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha }}
     steps:
       - uses: actions/checkout@v4
+        id: stage_01
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
+        id: stage_02
         with:
           python-version: '3.13.5'
       - name: Verify exact candidate and inherited source
+        id: stage_03
         shell: bash
         run: |
           set -euo pipefail
@@ -71,12 +74,14 @@ jobs:
           assert candidate['parent_candidate_commit']=='a274f77e4c1479fb143cdc7ef45d63b9c4f8cc1b'
           PY
       - name: Install inherited frozen dependencies
+        id: stage_04
         shell: bash
         run: |
           set -euo pipefail
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
       - name: Run actual isolated process recovery and concurrency checks
+        id: stage_05
         working-directory: application
         shell: bash
         env:
@@ -86,6 +91,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/next-depth-pg/${{ matrix.cell }}"
           python -B '${{ matrix.script }}' --evidence-dir "$RUNNER_TEMP/next-depth-pg/${{ matrix.cell }}" 2>&1 | tee "$RUNNER_TEMP/next-depth-pg/driver.log"
       - name: Bind original logs and process observations
+        id: stage_06
         if: always()
         shell: bash
         run: |
@@ -97,6 +103,7 @@ jobs:
           (out/'EVIDENCE_BINDING.json').write_text(json.dumps(report,indent=2)+'\n')
           PY
       - name: Emit bounded original result files for independent review
+        id: stage_07
         if: always()
         shell: bash
         run: |
@@ -107,7 +114,13 @@ jobs:
               if p.is_file() and p.suffix in ('.json','.xml','.log') and p.stat().st_size <= 100000:
                   print('EVIDENCE_FILE '+json.dumps({'path':str(p.relative_to(out)),'content':p.read_text(errors='strict')},ensure_ascii=False))
           PY
+      - name: Record acceptance stage outcomes
+        if: always()
+        env:
+          GO_CI_STEPS: ${{ toJSON(steps) }}
+        run: python ci/retention/write_stage_receipt.py "${{ runner.temp }}/next-depth-pg/STAGE_RECEIPT.json"
       - uses: actions/upload-artifact@v4
+        id: stage_08
         if: always()
         with:
           name: v70-next-depth-pg-${{ matrix.cell }}-${{ github.event.pull_request.head.sha }}

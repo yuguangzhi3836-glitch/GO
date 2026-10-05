@@ -1,0 +1,62 @@
+{
+  "base": "ee4a0a4ea4c9a95b7017b8db991de7554962f42a",
+  "compiler": "v0.89.21",
+  "compiler_sha256": "1c74ff5fc28b1891d32b67f4348a9b7f750946b6d4a721e909187a848868016b",
+  "strict_compile_exit_code": 0,
+  "unchanged_existing_job_semantics": true,
+  "only_added_steps": [
+    "Prepare portable Python dependencies (host evidence only)",
+    "Set up pinned uv for portable Builder Python",
+    "Upload Builder Python evidence (not a sandbox PASS by itself)"
+  ],
+  "source_gate_precedes_dependency_preparation": true,
+  "all_other_jobs_unchanged": true,
+  "network_permissions_budget_patch_guard_unchanged": true,
+  "live_sandbox_validation": "PENDING",
+  "postgres_validation": "NOT_IN_SCOPE",
+  "host_smoke": {
+    "schema_version": 1,
+    "status": "PASS",
+    "context": "host",
+    "sandbox_validation": "HOST_ONLY",
+    "python": "/tmp/gh-aw/python/venv/bin/python",
+    "database_tested": false,
+    "test_source_sha256": "d0fc72ee6069aa819a6e250c1979c0baaeba5f55a21d1d827df4213a4b313a09",
+    "probe_exit_code": 0,
+    "interpreter": {
+      "sys_executable": "/tmp/gh-aw/python/venv/bin/python",
+      "version": "3.12.12 (main, Feb 12 2026, 00:42:14) [Clang 21.1.4 ]",
+      "prefix": "/tmp/gh-aw/python/venv",
+      "base_prefix": "/tmp/gh-aw/python/uv-python/cpython-3.12.12-linux-x86_64-gnu",
+      "packages": {
+        "pytest": "9.1.1",
+        "fastapi": "0.142.2",
+        "sqlalchemy": "2.1.3",
+        "psycopg": "3.3.6"
+      }
+    },
+    "pytest_command": [
+      "/tmp/gh-aw/python/venv/bin/python",
+      "-I",
+      "-m",
+      "pytest",
+      "-c",
+      "/tmp/go-builder-no-db-jmdk7y_z/pytest.ini",
+      "--confcutdir",
+      "/tmp/go-builder-no-db-jmdk7y_z",
+      "-p",
+      "no:cacheprovider",
+      "-q",
+      "/tmp/go-builder-no-db-jmdk7y_z/test_builder_dependencies.py"
+    ],
+    "pytest_exit_code": 0,
+    "pytest_stdout": "....                                                                     [100%]\n=============================== warnings summary ===============================\n../gh-aw/python/venv/lib/python3.12/site-packages/fastapi/testclient.py:1\n  /tmp/gh-aw/python/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n4 passed, 1 warning in 0.77s\n",
+    "pytest_stderr": ""
+  },
+  "subprocess_regression": {
+    "command": "/tmp/gh-aw/python/venv/bin/python application/tests/workbench/test_builder_python_smoke.py -v",
+    "exit_code": 0,
+    "output": "test_agent_label_alone_never_claims_verified_sandbox (__main__.BuilderPythonSmokeTests.test_agent_label_alone_never_claims_verified_sandbox) ... ok\ntest_clean_venv_missing_dependencies_fails_without_fallback (__main__.BuilderPythonSmokeTests.test_clean_venv_missing_dependencies_fails_without_fallback) ... ok\ntest_missing_interpreter_fails_and_writes_evidence (__main__.BuilderPythonSmokeTests.test_missing_interpreter_fails_and_writes_evidence) ... ok\ntest_real_dependency_smoke_ignores_external_pytest_options (__main__.BuilderPythonSmokeTests.test_real_dependency_smoke_ignores_external_pytest_options) ... ok\n\n----------------------------------------------------------------------\nRan 4 tests in 3.366s\n\nOK\n"
+  },
+  "compiler_output": ".github/workflows/c1-gh-aw-builder-v1.md: warning: workflow_dispatch workflow has no concurrency.job-discriminator; the generated conclusion concurrency group is shared by all dispatches of this workflow. Set a discriminator (for example, `${{ github.run_id }}`) to give each dispatch its own slot.\n\n✓ .github/workflows/c1-gh-aw-builder-v1.md (137.6 KB)\n⚠ Compiled 1 workflow: 1 succeeded, 1 warning\n"
+}

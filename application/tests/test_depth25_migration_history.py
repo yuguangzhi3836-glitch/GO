@@ -20,7 +20,7 @@ def test_fresh_database_can_apply_entire_chain_without_stamp(tmp_path, monkeypat
     db, cfg = config(tmp_path, monkeypatch)
     command.upgrade(cfg, 'head')
     with sqlite3.connect(db) as s:
-        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0134_flight_status_width'
+        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0135_supplier_onboarding'
         columns = {r[1] for r in s.execute('PRAGMA table_info(connector_runtime_reconciliation)')}
         assert {'claimed_by', 'lease_expires_at', 'resolution_payload_json', 'superseded_reason'} <= columns
         assert s.execute("SELECT name FROM sqlite_master WHERE name='vertical_payment_deadline'").fetchone()
@@ -86,7 +86,9 @@ def test_rail_width_upgrade_preserves_history_and_refuses_lossy_downgrade(tmp_pa
         s.execute('CREATE INDEX rail_ref_index ON rail_order_runtime(booking_reference)')
         s.execute("INSERT INTO rail_order_runtime VALUES ('old','TICKETED','old-reference')")
     command.stamp(cfg, '0131_vertical_payment_deadline')
-    command.upgrade(cfg, 'head')
+    # This partial fixture covers the historical width chain, not supplier onboarding.
+    # The fresh-install test independently upgrades the entire current chain.
+    command.upgrade(cfg, '0134_flight_status_width')
     state = 'PAYMENT_CONFIRMED_AWAITING_SUPPLIER'
     reference = 'provider-' + 'r' * 110
     with sqlite3.connect(db) as s:

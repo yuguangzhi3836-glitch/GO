@@ -24,14 +24,15 @@ def test_consumer_one_click_personal_vault_is_consent_bound():
     assert "CONSENT_REQUIRED" in svc
 
 
-def test_supplier_partner_onboarding_copy_is_not_plain_registration():
+def test_supplier_registration_copy_distinguishes_account_profile_and_contract():
     root=Path(__file__).resolve().parents[1]
     cfg=(root/'frontend/supplier/config.js').read_text('utf-8')
     app=(root/'frontend/shared/app.js').read_text('utf-8')
     bff=(root/'src/go_hotel/api/routes/bff.py').read_text('utf-8')
     assert 'GO 合作伙伴平台' in cfg
     assert '申请成为 GO 合作伙伴' in app
-    assert 'GO 合作伙伴入驻' in app
-    assert '提交入驻申请' in app
-    assert '创建账号不代表已审核或已开通交易' in app
-    assert 'GO 合作伙伴服务协议' in bff
+    assert '创建账号并继续' in app
+    assert '主体与酒店资料已提交' in app
+    assert '审核完成前不会进入正式经营后台' in app
+    assert '合同通过后才开放正式经营后台' in app
+    assert 'GO 合作伙伴账号与平台服务条款' in bff

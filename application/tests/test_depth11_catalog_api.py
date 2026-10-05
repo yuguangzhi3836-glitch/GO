@@ -21,7 +21,9 @@ def test_api_independent_permission_stale_evidence_and_customer_progress(client)
     assert supplier_proof['state']=='INDEPENDENT_REVIEW_REQUIRED'
     listing=data(client.get('/internal/v1/supplier-fault/cases',headers=admin));assert listing['items'][0]['case_id']==c['case_id']
     assert client.get('/internal/v1/supplier-fault/cases',headers=h).status_code==403
-    identity_service.create_user('other_catalog_supplier','Test-Only-Other123!','SUPPLIER_USER','sup_other',['SUPPLIER_OWNER'])
+    from tests.supplier_fixture import admit_trading_supplier
+    fixture_owner = identity_service.create_user('other_catalog_supplier','Test-Only-Other123!','SUPPLIER_USER','sup_other',['SUPPLIER_OWNER'])
+    admit_trading_supplier('sup_other', fixture_owner)
     other_supplier={'Authorization':'Bearer '+identity_service.login('other_catalog_supplier','Test-Only-Other123!')['access_token']}
     assert client.get(f'/v1/supplier/orders/{oid}/supplier-cancellation',headers=other_supplier).status_code==404
     assert client.post(f'/v1/supplier/orders/{oid}/supplier-cancellation/evidence',headers=other_supplier,json=EVIDENCE).status_code==404

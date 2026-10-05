@@ -28,34 +28,48 @@ jobs:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - uses: actions/checkout@v4
+        id: stage_01
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
+        id: stage_02
         with:
           python-version: '3.13.5'
       - uses: actions/setup-node@v4
+        id: stage_03
         with:
           node-version: '22.22.0'
       - name: Bind exact source and preserved compatibility files
+        id: stage_04
         run: |
+          python -B -m unittest discover -s ci/retention -p test_stage_receipt.py
           python ci/retention/verify_source.py "$RUNNER_TEMP/evidence/source"
           python ci/retention/verify_alignment.py "$RUNNER_TEMP/evidence/source/ALIGNMENT_RESULT.json"
       - name: Install verified frozen dependencies only
+        id: stage_05
         run: |
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
       - name: Explicit original migration history cases and compatibility coverage
+        id: stage_06
         if: matrix.shard == 2
         working-directory: application
         run: |
           PYTHONPATH=src python -m pytest -p no:cacheprovider tests/test_depth25_migration_history.py --junitxml="$RUNNER_TEMP/evidence/migration-history.xml"
       - name: Run isolated Python test shard
-        if: ${{ !cancelled() }}
+        id: stage_07
+        if: ${{ success() }}
         run: |
           export GO_NATIVE_NODE="$(command -v node)"
           python ci/retention/run_suite.py --shard ${{ matrix.shard }} --evidence "$RUNNER_TEMP/evidence/tests"
+      - name: Record acceptance stage outcomes
+        if: always()
+        env:
+          GO_CI_STEPS: ${{ toJSON(steps) }}
+        run: python ci/retention/write_stage_receipt.py "${{ runner.temp }}/evidence/STAGE_RECEIPT.json"
       - uses: actions/upload-artifact@v4
+        id: stage_08
         if: always()
         with:
           name: canonical-retention-shard-${{ matrix.shard }}-${{ github.event.pull_request.head.sha }}
@@ -68,35 +82,50 @@ jobs:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - uses: actions/checkout@v4
+        id: stage_01
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
+        id: stage_02
         with:
           python-version: '3.13.5'
       - uses: actions/setup-node@v4
+        id: stage_03
         with:
           node-version: '22.22.0'
       - name: Bind exact source
+        id: stage_04
         run: |
+          python -B -m unittest discover -s ci/retention -p test_stage_receipt.py
           python ci/retention/verify_source.py "$RUNNER_TEMP/evidence/source"
           python ci/retention/verify_alignment.py "$RUNNER_TEMP/evidence/source/ALIGNMENT_RESULT.json"
       - name: Install verified frozen dependencies only
+        id: stage_05
         run: |
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
       - name: Frontend regression
+        id: stage_06
         working-directory: application
         run: node --test tests_frontend/*.test.mjs | tee "$RUNNER_TEMP/evidence/frontend.log"
       - name: Compatibility unit regression only
-        if: ${{ !cancelled() }}
+        id: stage_07
+        if: ${{ success() }}
         run: python -B -m unittest discover -s control-plane/depth40-compat-v2/tests -v 2>&1 | tee "$RUNNER_TEMP/evidence/compatibility.log"
       - name: Disposable loopback HTTP journeys
-        if: ${{ !cancelled() }}
+        id: stage_08
+        if: ${{ success() }}
         run: |
           tree=$(python -c 'import json,os; print(json.load(open(os.environ["RUNNER_TEMP"]+"/evidence/source/RETENTION_RESULT.json"))["source_tree_sha256"])')
           python -B application/scripts/acceptance_smoke.py --source application --fingerprint "$RUNNER_TEMP/evidence/source/SOURCE_FINGERPRINT.json" --expected-tree "$tree" --evidence "$RUNNER_TEMP/evidence/http"
+      - name: Record acceptance stage outcomes
+        if: always()
+        env:
+          GO_CI_STEPS: ${{ toJSON(steps) }}
+        run: python ci/retention/write_stage_receipt.py "${{ runner.temp }}/evidence/STAGE_RECEIPT.json"
       - uses: actions/upload-artifact@v4
+        id: stage_09
         if: always()
         with:
           name: canonical-frontend-http-compat-${{ github.event.pull_request.head.sha }}

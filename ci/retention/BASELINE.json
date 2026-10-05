@@ -1,7 +1,7 @@
 {
   "schema": "go.v70.retention.rebind.v2",
-  "product_candidate_commit": "cb1181bf40b0e24f55ef095d8f1ee8857bdd6517",
-  "application_git_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+  "product_candidate_commit": "312020df1eb51200dfc78dd716640f68e1e5c791",
+  "application_git_tree": "2955220c2ca7bfc67ba2dbf47d0f2755cb284c8d",
   "source_anchor_main": "fef9c748adb77d37ba5d4dc4fa4662eb668303a1",
   "preintegration_candidate": "6c7dd392b61368dcd11addea93dcb0de4ef2042f",
   "preintegration_application_tree": "85fb787d07e5aaf19cf98f72b5dc3193c8212bfb",
@@ -13,8 +13,8 @@
   "approved_application_overrides": {
     "src/go_hotel/db/models.py": {
       "mode": "100644",
-      "git_blob": "f0e014f47560ca3f8ecae9ffc2af0cb3746efb38",
-      "reason": "C11 verified FlightOrderRow.status width 32->64"
+      "git_blob": "fda6a9efcfcaab68e0550aa59e7d32785a2d167c",
+      "reason": "Exact-source rebind; CANONICAL_MAIN origin 9dbaed33ece0155a13349172d05381524f92e41e; no prior PASS transferred"
     },
     "alembic/versions/0134_flight_status_width.py": {
       "mode": "100644",
@@ -23,16 +23,126 @@
     },
     "tests/test_depth25_migration_history.py": {
       "mode": "100644",
-      "git_blob": "fa51562f48d4429f5ad22e406c0101a7e9de29f0",
-      "reason": "0134 SQLite partial history compatibility and current-head assertions; original data guards retained"
+      "git_blob": "4cbfd996cf6b300930f4c08f34b015c9145226d6",
+      "reason": "Exact-source rebind; CURRENT_REPAIR_CANDIDATE origin 97e871f48e3c89b7e0642104d141e7ce1c37d1d4; no prior PASS transferred"
     },
     "tests/test_parent_implementation_code_review_debt_closure.py": {
       "mode": "100644",
-      "git_blob": "27eb179446a34b6bab7bc32a9450dab6686aa6e5",
-      "reason": "TEST_ONLY: align stale Alembic current-head expectation from 0133 to 0134; no product or runtime behavior change"
+      "git_blob": "0584fc374a186c9124fa10e1ea955f4c41d227a1",
+      "reason": "Exact-source rebind; CURRENT_REPAIR_CANDIDATE origin 6fa93e4436c15306c3d2d8893777d0042a467a4b; no prior PASS transferred"
+    },
+    "alembic/versions/0135_supplier_onboarding.py": {
+      "mode": "100644",
+      "git_blob": "b9c5c165901aea8b0bb0ad000e050bca384e3c93",
+      "reason": "Exact-source rebind; CANONICAL_MAIN origin aecc2c95f4b05ec19197658ceea06a6fd7804a09; no prior PASS transferred"
+    },
+    "frontend/consumer/app.js": {
+      "mode": "100644",
+      "git_blob": "fa45cb28a51997ec9d9cdfc07ba6ed6a495cccfa",
+      "reason": "Exact-source rebind; CANONICAL_MAIN origin 72f7fd63cfac6a0c6ae1f98bebf753d67cc6dd9a; no prior PASS transferred"
+    },
+    "frontend/shared/api.js": {
+      "mode": "100644",
+      "git_blob": "b4f61de510c4a85a7390b90709ba31dc524c61d8",
+      "reason": "Exact-source rebind; CANONICAL_MAIN origin 92e2fb202020eabbbe19f7e0cbaab1e7dee1698f; no prior PASS transferred"
+    },
+    "frontend/shared/app.js": {
+      "mode": "100644",
+      "git_blob": "014e0defedd22e917506613931d1e9aecf652afe",
+      "reason": "Exact-source rebind; CANONICAL_MAIN origin ed0ff07b9294b594bc4944e2af6e91fa4f0d7167; no prior PASS transferred"
+    },
+    "script/builder_python_smoke.py": {
+      "mode": "100644",
+      "git_blob": "417f74d804a67d11308230099e66df01a837ae54",
+      "reason": "Exact-source rebind; PR425_CANDIDATE origin 21417bb6fc36b89320dcb6a922b66dd532bff5ff; no prior PASS transferred"
+    },
+    "scripts/acceptance_runtime.py": {
+      "mode": "100644",
+      "git_blob": "b8aba894369ff725eec68b36383279d413ca8e7d",
+      "reason": "Exact-source rebind; CURRENT_REPAIR_CANDIDATE origin 3b50df0922d479d55dbbab01f2bbcc288f75cd6a; no prior PASS transferred"
+    },
+    "src/go_hotel/api/routes/bff.py": {
+      "mode": "100644",
+      "git_blob": "f466d2f010c97ce77b216ec72b668639976c900f",
+      "reason": "Exact-source rebind; CANONICAL_MAIN origin 6ac10787252e8e89470c9d426f277a72dc4afbdf; no prior PASS transferred"
+    },
+    "src/go_hotel/api/routes/consumer_identity.py": {
+      "mode": "100644",
+      "git_blob": "74f8dc13da6c5dc93ca4e72ec31f3e1ebfc432b1",
+      "reason": "Exact-source rebind; CANONICAL_MAIN origin ce2b1227b33b5ccba027c51f7589b10a5677f9e7; no prior PASS transferred"
+    },
+    "src/go_hotel/api/routes/hotel_autopage_factory.py": {
+      "mode": "100644",
+      "git_blob": "1a2eb24828531ce73de892ac06bb40d93ab3d3ed",
+      "reason": "Exact-source rebind; CANONICAL_MAIN origin c032e6512b8146f77c5faea3f27bf6ba8a7bbdc4; no prior PASS transferred"
+    },
+    "src/go_hotel/security/deps.py": {
+      "mode": "100644",
+      "git_blob": "a0429f981771a9f7aebe9784514175f79ebbf4b2",
+      "reason": "Exact-source rebind; CANONICAL_MAIN origin ed87864dc9e7b5affe0e80e3637872c51b11c402; no prior PASS transferred"
+    },
+    "src/go_hotel/services/supplier_onboarding_state.py": {
+      "mode": "100644",
+      "git_blob": "d3d8e28011b58a06cd4cd581a69ec8b8f8bd99bf",
+      "reason": "Exact-source rebind; CANONICAL_MAIN origin a91a8b91ae0f4dccbc7824f21ffd48c605424a1d; no prior PASS transferred"
+    },
+    "tests/supplier_fixture.py": {
+      "mode": "100644",
+      "git_blob": "b6f51fcb49744ccbe22f15b75c2f00313cf0db62",
+      "reason": "Exact-source rebind; CURRENT_REPAIR_CANDIDATE origin 312020df1eb51200dfc78dd716640f68e1e5c791; no prior PASS transferred"
+    },
+    "tests/test_consumer_registration_boundary.py": {
+      "mode": "100644",
+      "git_blob": "b9c216a5690c3a9ac7854945d1f738ba3a68ce48",
+      "reason": "Exact-source rebind; CANONICAL_MAIN origin fc5b5c67757e85a3b52a2ed7962581af4306ea4e; no prior PASS transferred"
+    },
+    "tests/test_depth11_catalog_api.py": {
+      "mode": "100644",
+      "git_blob": "5f1567d455104e49489aa5e1e303dca1eaef7191",
+      "reason": "Exact-source rebind; CURRENT_REPAIR_CANDIDATE origin 312020df1eb51200dfc78dd716640f68e1e5c791; no prior PASS transferred"
+    },
+    "tests/test_depth13_catalog_fare_api.py": {
+      "mode": "100644",
+      "git_blob": "4966f26a41f5eaba5711e65ada09cfae8bc27e4f",
+      "reason": "Exact-source rebind; CURRENT_REPAIR_CANDIDATE origin 312020df1eb51200dfc78dd716640f68e1e5c791; no prior PASS transferred"
+    },
+    "tests/test_depth41_transaction_views.py": {
+      "mode": "100644",
+      "git_blob": "bdec04209170b39b44fc3b7830584318752c8bde",
+      "reason": "Exact-source rebind; CURRENT_REPAIR_CANDIDATE origin 312020df1eb51200dfc78dd716640f68e1e5c791; no prior PASS transferred"
+    },
+    "tests/test_depth42_cross_end_journeys.py": {
+      "mode": "100644",
+      "git_blob": "8f2b0af5b862124e74095c9b330e97d07576e8a5",
+      "reason": "Exact-source rebind; CURRENT_REPAIR_CANDIDATE origin 3b50df0922d479d55dbbab01f2bbcc288f75cd6a; no prior PASS transferred"
+    },
+    "tests/test_depth48_flight_migration.py": {
+      "mode": "100644",
+      "git_blob": "b97576729969020a4a5db05c041aeb2da55199ca",
+      "reason": "Exact-source rebind; CURRENT_REPAIR_CANDIDATE origin 312020df1eb51200dfc78dd716640f68e1e5c791; no prior PASS transferred"
+    },
+    "tests/test_rc191_registration_vault_tiered_build.py": {
+      "mode": "100644",
+      "git_blob": "8939a90ceae6ff23ade920683fc0ca354f119628",
+      "reason": "Exact-source rebind; CURRENT_REPAIR_CANDIDATE origin 312020df1eb51200dfc78dd716640f68e1e5c791; no prior PASS transferred"
+    },
+    "tests/test_sprint1q_operational_dashboard.py": {
+      "mode": "100644",
+      "git_blob": "7520f0c8bf9b698a47b1ce15bcb7a0fab65398fa",
+      "reason": "Exact-source rebind; CURRENT_REPAIR_CANDIDATE origin 312020df1eb51200dfc78dd716640f68e1e5c791; no prior PASS transferred"
+    },
+    "tests/test_supplier_onboarding_state.py": {
+      "mode": "100644",
+      "git_blob": "ff44508d8983a6f10572b4e69df2a9310ef3f8ef",
+      "reason": "Exact-source rebind; CANONICAL_MAIN origin 04f3ddcbf41febf64d2e3fea540abddf4b7cff9f; no prior PASS transferred"
+    },
+    "tests/workbench/test_builder_python_smoke.py": {
+      "mode": "100644",
+      "git_blob": "8238005731a1f85d3df03cea86b1615687f1c7bd",
+      "reason": "Exact-source rebind; PR425_CANDIDATE origin 21417bb6fc36b89320dcb6a922b66dd532bff5ff; no prior PASS transferred"
     }
   },
-  "migration_head": "0134_flight_status_width",
+  "migration_head": "0135_supplier_onboarding",
   "verified_inherited_evidence": {
     "pr74_workflow_run": 34807203728,
     "c11_original_postgresql_cases": "10/10 PASS",
@@ -52,6 +162,14 @@
   "final_release": "HOLD",
   "production": "HOLD",
   "repair_parent_commit": "aa1aff476f924f1f0e1f8610155482751e1c7afa",
-  "source_tree_sha256": "a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374",
-  "historical_pass_transferred": false
+  "source_tree_sha256": "4e6eadffbcc56ca2531364507260a177d20ed26df55fcd9a08eca10aee5005f9",
+  "historical_pass_transferred": false,
+  "previous_binding": {
+    "application_git_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
+    "product_candidate_commit": "cb1181bf40b0e24f55ef095d8f1ee8857bdd6517",
+    "migration_head": "0134_flight_status_width"
+  },
+  "source_files": 1372,
+  "validation_status": "PENDING_CURRENT_CANDIDATE_TESTS",
+  "rebind_provenance": "ci/retention/REBIND_20261005.json"
 }

@@ -92,7 +92,9 @@ def test_transaction_endpoints_require_authenticated_matching_role(client):
     from go_hotel.security.service import identity_service
     username='transaction-view-supplier@example.test'
     password='Isolated-fixture-password-41'
-    identity_service.ensure_user(username,password,'SUPPLIER_USER',supplier,['SUPPLIER_OWNER'])
+    from tests.supplier_fixture import admit_trading_supplier
+    fixture_owner = identity_service.ensure_user(username,password,'SUPPLIER_USER',supplier,['SUPPLIER_OWNER'])
+    admit_trading_supplier(supplier, fixture_owner)
     base=f'/v1/supplier/transaction-orders/FLIGHT/{oid}'
     assert client.get(base).status_code==401
     assert client.post('/bff/auth/login',json={'username':username,'password':password,'expected_actor_type':'SUPPLIER_USER'}).status_code==200

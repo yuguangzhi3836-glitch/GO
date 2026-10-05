@@ -37,7 +37,9 @@ def test_supplier_identity_propagates_to_order_and_supplier_dashboard(client):
 def test_supplier_order_list_is_tenant_scoped(client):
     o=booked_order(client,'scope')
     own=client.get('/v1/supplier/orders',headers=supplier_headers()).json()['data']
-    identity_service.create_user('supplier_other','OtherPass123!','SUPPLIER_USER','sup_other',['SUPPLIER_OWNER'])
+    from tests.supplier_fixture import admit_trading_supplier
+    fixture_owner = identity_service.create_user('supplier_other','OtherPass123!','SUPPLIER_USER','sup_other',['SUPPLIER_OWNER'])
+    admit_trading_supplier('sup_other', fixture_owner)
     other_token=identity_service.login('supplier_other','OtherPass123!')
     other=client.get('/v1/supplier/orders',headers={'Authorization':'Bearer '+other_token['access_token']}).json()['data']
     assert any(x['order_id']==o['order_id'] for x in own['items'])
