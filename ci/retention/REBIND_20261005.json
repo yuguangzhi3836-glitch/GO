@@ -1,8 +1,8 @@
 {
   "base_main": "ee4a0a4ea4c9a95b7017b8db991de7554962f42a",
-  "candidate_source": "97e871f48e3c89b7e0642104d141e7ce1c37d1d4",
+  "candidate_source": "312020df1eb51200dfc78dd716640f68e1e5c791",
   "previous_application_tree": "dd815baf0105cce603e9a28b002cfb9d8b95d186",
-  "candidate_application_tree": "d8a909101e7c5bf2a112448d6c55934228505069",
+  "candidate_application_tree": "2955220c2ca7bfc67ba2dbf47d0f2755cb284c8d",
   "changed_files": {
     "alembic/versions/0135_supplier_onboarding.py": {
       "git_blob": "b9c5c165901aea8b0bb0ad000e050bca384e3c93",
@@ -32,6 +32,12 @@
       "git_blob": "417f74d804a67d11308230099e66df01a837ae54",
       "origin_commit": "21417bb6fc36b89320dcb6a922b66dd532bff5ff",
       "source_class": "PR425_CANDIDATE",
+      "mode": "100644"
+    },
+    "scripts/acceptance_runtime.py": {
+      "git_blob": "b8aba894369ff725eec68b36383279d413ca8e7d",
+      "origin_commit": "3b50df0922d479d55dbbab01f2bbcc288f75cd6a",
+      "source_class": "CURRENT_REPAIR_CANDIDATE",
       "mode": "100644"
     },
     "src/go_hotel/api/routes/bff.py": {
@@ -70,10 +76,28 @@
       "source_class": "CANONICAL_MAIN",
       "mode": "100644"
     },
+    "tests/supplier_fixture.py": {
+      "git_blob": "b6f51fcb49744ccbe22f15b75c2f00313cf0db62",
+      "origin_commit": "312020df1eb51200dfc78dd716640f68e1e5c791",
+      "source_class": "CURRENT_REPAIR_CANDIDATE",
+      "mode": "100644"
+    },
     "tests/test_consumer_registration_boundary.py": {
       "git_blob": "b9c216a5690c3a9ac7854945d1f738ba3a68ce48",
       "origin_commit": "fc5b5c67757e85a3b52a2ed7962581af4306ea4e",
       "source_class": "CANONICAL_MAIN",
+      "mode": "100644"
+    },
+    "tests/test_depth11_catalog_api.py": {
+      "git_blob": "5f1567d455104e49489aa5e1e303dca1eaef7191",
+      "origin_commit": "312020df1eb51200dfc78dd716640f68e1e5c791",
+      "source_class": "CURRENT_REPAIR_CANDIDATE",
+      "mode": "100644"
+    },
+    "tests/test_depth13_catalog_fare_api.py": {
+      "git_blob": "4966f26a41f5eaba5711e65ada09cfae8bc27e4f",
+      "origin_commit": "312020df1eb51200dfc78dd716640f68e1e5c791",
+      "source_class": "CURRENT_REPAIR_CANDIDATE",
       "mode": "100644"
     },
     "tests/test_depth25_migration_history.py": {
@@ -82,9 +106,39 @@
       "source_class": "CURRENT_REPAIR_CANDIDATE",
       "mode": "100644"
     },
+    "tests/test_depth41_transaction_views.py": {
+      "git_blob": "bdec04209170b39b44fc3b7830584318752c8bde",
+      "origin_commit": "312020df1eb51200dfc78dd716640f68e1e5c791",
+      "source_class": "CURRENT_REPAIR_CANDIDATE",
+      "mode": "100644"
+    },
+    "tests/test_depth42_cross_end_journeys.py": {
+      "git_blob": "8f2b0af5b862124e74095c9b330e97d07576e8a5",
+      "origin_commit": "3b50df0922d479d55dbbab01f2bbcc288f75cd6a",
+      "source_class": "CURRENT_REPAIR_CANDIDATE",
+      "mode": "100644"
+    },
+    "tests/test_depth48_flight_migration.py": {
+      "git_blob": "b97576729969020a4a5db05c041aeb2da55199ca",
+      "origin_commit": "312020df1eb51200dfc78dd716640f68e1e5c791",
+      "source_class": "CURRENT_REPAIR_CANDIDATE",
+      "mode": "100644"
+    },
     "tests/test_parent_implementation_code_review_debt_closure.py": {
       "git_blob": "0584fc374a186c9124fa10e1ea955f4c41d227a1",
       "origin_commit": "6fa93e4436c15306c3d2d8893777d0042a467a4b",
+      "source_class": "CURRENT_REPAIR_CANDIDATE",
+      "mode": "100644"
+    },
+    "tests/test_rc191_registration_vault_tiered_build.py": {
+      "git_blob": "8939a90ceae6ff23ade920683fc0ca354f119628",
+      "origin_commit": "312020df1eb51200dfc78dd716640f68e1e5c791",
+      "source_class": "CURRENT_REPAIR_CANDIDATE",
+      "mode": "100644"
+    },
+    "tests/test_sprint1q_operational_dashboard.py": {
+      "git_blob": "7520f0c8bf9b698a47b1ce15bcb7a0fab65398fa",
+      "origin_commit": "312020df1eb51200dfc78dd716640f68e1e5c791",
       "source_class": "CURRENT_REPAIR_CANDIDATE",
       "mode": "100644"
     },

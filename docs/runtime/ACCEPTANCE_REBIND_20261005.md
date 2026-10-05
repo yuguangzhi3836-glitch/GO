@@ -64,3 +64,30 @@ replay407–418, and do not transfer old acceptance to the rebound tree. After a
 approved merge, read new main and issue one fresh bounded task only. The expected
 chain remains Builder -> Draft PR -> C14 -> C13 -> original-task receipt.
 No part of that new-main live chain has run in this repair.
+
+## R2: failures exposed after source binding was repaired
+
+At d923ed9, GitHub registration, mobile, Cell closure and PostgreSQL recovery
+workflows passed. Canonical shard0 had3 failed/566 passed, shard1 had1 failed/629
+passed/5 skipped, shard3 had3 failed/445 passed; shard2 passed. The ordered
+API journey stopped correctly with a FAIL stage receipt and later browser skipped.
+The seven regression failures were old supplier fixture admission, one flight
+historical migration target, and registration-copy assertions.
+
+R2 retains original 401/403/404 and tenant empty-list assertions. An explicit
+non-autouse helper prepares admitted trading suppliers only for named legacy
+tests, never promotes an existing onboarding row, and never changes registration
+tests or product guards. The isolated browser runtime seeds its6 synthetic
+trading suppliers within its new SQLite state only. The flight plan test targets
+0134 while fresh-install still tests actual head0135. Copy assertions now require
+account creation, profile review and contract review messaging already on main.
+
+Source candidate312020df1eb51200dfc78dd716640f68e1e5c791:1372 files,25 exact deltas.
+Six-vertical API journey passed locally:18 actor details,18 refresh checks,18
+relogins and independent ledger audit; isolated runtime startup confirmed6
+admitted fixture rows. Independent static review found no weakening of tenant,
+onboarding or migration safeguards. R2 GitHub acceptance remains pending; old
+run success is not transferred to this tree.
+
+R2 focused fixture/migration/copy regression:27 cases PASS on Python3.13.5 with
+repository-frozen dependencies. Evidence: r2/fixture-regression-final.xml.
