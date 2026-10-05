@@ -98,6 +98,7 @@ BRIEF_FIELDS = (
 #: for a head or a merge commit is one PR, and a repository with 100+ PRs on a single commit
 #: would need its own decision - not a silent truncation.
 PAGE_SIZE = 100
+MAX_CLOSED_PAGES = 20
 
 
 class BriefFetchFailed(Exception):
@@ -247,19 +248,18 @@ def resolve(candidate_sha: str, list_pulls) -> dict:
 def github_pull_reader(repository: str, token: str, *, timeout: int = 60):
     """``list_pulls`` over the GitHub commit -> pull requests API - read-only.
 
-    One GET and nothing else: no new service, no new credential, no new permission scope.
-    The endpoint is GitHub's own association of a commit with pull requests; nothing here
-    infers the association from a title, a branch name or a timestamp.
+    First use GitHub's commit association. For an unmerged closed candidate GitHub may
+    return no association (#440). Only when no exact match exists, scan closed PRs,
+    bounded and fully paginated, and retain exact SHA matches. An incomplete scan refuses
+    even if a match was seen. No writes, new permissions, or title/branch/time guessing.
     """
     if not repository:
         raise ValueError("repository is required")
     if not token:
         raise ValueError("token is required")
 
-    def list_pulls(candidate_sha: str):
-        path = "commits/%s/pulls" % candidate_sha
-        url = ("https://api.github.com/repos/%s/%s?per_page=%d"
-               % (repository, path, PAGE_SIZE))
+    def read(path: str):
+        url = "https://api.github.com/repos/%s/%s" % (repository, path)
         request = urllib.request.Request(url, headers={
             "Authorization": "Bearer " + token,
             "Accept": "application/vnd.github+json",
@@ -274,5 +274,37 @@ def github_pull_reader(repository: str, token: str, *, timeout: int = 60):
                                    detail="HTTP %d for %s" % (error.code, path)) from error
         except Exception as error:  # noqa: BLE001 - any transport failure is closed
             raise BriefFetchFailed(path, detail="%s for %s" % (type(error).__name__, path)) from error
+
+    def list_pulls(candidate_sha: str):
+        associated = read("commits/%s/pulls?per_page=%d" % (candidate_sha, PAGE_SIZE))
+        # Preserve the existing invalid/full-page/ambiguous refusal paths.
+        if (not isinstance(associated, list) or len(associated) >= PAGE_SIZE
+                or match(associated, candidate_sha) is not None):
+            return associated
+        matches = []
+        for page in range(1, MAX_CLOSED_PAGES + 1):
+            path = "pulls?state=closed&per_page=%d&page=%d" % (PAGE_SIZE, page)
+            pulls = read(path)
+            if not isinstance(pulls, list):
+                raise BriefFetchFailed(path, detail="closed PR response is not a list")
+            for pull in pulls:
+                # Even a non-matching malformed item can hide another candidate.
+                # Validate every identity before filtering, never silently discard it.
+                if (not isinstance(pull, dict)
+                        or type(pull.get("number")) is not int
+                        or pull["number"] <= 0
+                        or pull.get("state") != "closed"
+                        or not isinstance(pull.get("head"), dict)
+                        or not is_git_sha(pull["head"].get("sha"))
+                        or (pull.get("merge_commit_sha") is not None
+                            and not is_git_sha(pull["merge_commit_sha"]))):
+                    raise BriefFetchFailed(path, detail="malformed closed PR identity")
+                if (pull["head"]["sha"] == candidate_sha
+                        or pull.get("merge_commit_sha") == candidate_sha):
+                    matches.append(pull)
+            if len(pulls) < PAGE_SIZE:
+                return matches
+        raise BriefFetchFailed(path, detail=PR_AMBIGUOUS +
+                               ": closed PR scan limit reached; uniqueness unproven")
 
     return list_pulls
