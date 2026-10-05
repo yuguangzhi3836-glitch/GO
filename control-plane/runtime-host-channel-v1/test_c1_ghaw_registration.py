@@ -358,9 +358,21 @@ class TheWorkflowIsRegisteredAndMatchesTheContract(unittest.TestCase):
                          "c1-ai-execution-result-${{ inputs.execution_request_id }}")
         uploads = [step for step in self.front["post-steps"]
                    if str(step.get("uses", "")).startswith("actions/upload-artifact")]
-        self.assertEqual(len(uploads), 1, "exactly one artifact, and it is the result")
-        self.assertEqual(uploads[0]["with"]["name"], expected_artifact)
-        self.assertEqual(uploads[0]["with"]["path"], client_mod.RESULT_ARTIFACT_FILE)
+        # Portable Python adds an environment-evidence artifact. It is not a
+        # result. Keep exactly one result and allow only that named companion.
+        environment_artifact = "builder-python-environment-${{ inputs.execution_request_id }}"
+        self.assertCountEqual([step["with"]["name"] for step in uploads],
+                              [expected_artifact, environment_artifact])
+        result_upload = next(step for step in uploads
+                             if step["with"]["name"] == expected_artifact)
+        self.assertEqual(result_upload["with"]["path"], client_mod.RESULT_ARTIFACT_FILE)
+        environment_upload = next(step for step in uploads
+                                  if step["with"]["name"] == environment_artifact)
+        self.assertEqual(set(environment_upload["with"]["path"].splitlines()), {
+            "/tmp/gh-aw/python/host-smoke.json", "/tmp/gh-aw/python/agent-smoke.json",
+            "/tmp/gh-aw/python/resolved-dependencies.txt",
+            "/tmp/gh-aw/python/pyproject.sha256",
+        })
         # And the compiled file the runner actually reads carries both of them.
         self.assertIn("name: " + expected_artifact, self.lock_text)
         self.assertIn("path: c1_result.json", self.lock_text)

@@ -350,6 +350,8 @@ class RepeatPollingIsOneRuntimeTask(Case):
         for index in range(consumer.MAX_CANDIDATES_PER_POLL + 5):
             clone = self.issue(79)
             clone["number"] = 500 + index
+            clone["title"] = clone["title"].replace("V70-R3-C01-01",
+                                                      "V70-R3-C01-%02d" % (index + 1))
             listing.append(clone)
         result = consumer.poll_once(reader=self.reader([listing]), runtime=self.runtime,
                                     environ=ENABLED)

@@ -104,6 +104,7 @@ from c1_issue_ingress import (
     ingress_enabled,
     ingest,
     is_builder_cell,
+    issue_identity_collisions,
     plan_ingress,
     require_current_source_anchor,
 )
@@ -375,7 +376,13 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
     review_planned, review_refused, review_enqueued = [], [], []
     runtime_error = None
 
+    collisions = issue_identity_collisions(candidates)
     for issue in candidates[:MAX_CANDIDATES_PER_POLL]:
+        if issue.get("number") in collisions:
+            refused.append({"issue_number": issue["number"],
+                            "reason": "INGRESS_TASK_ID_COLLISION",
+                            "conflicting_issue_numbers": collisions[issue["number"]]})
+            continue
         try:
             plan = plan_ingress(issue, current_source_anchor=current_source_anchor,
                                 environ=env)
@@ -396,15 +403,27 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
             continue
 
         if runtime is None and runtime_factory is not None:
-            runtime = runtime_factory()
+            try:
+                runtime = runtime_factory()
+            except Exception:
+                runtime_error = "RUNTIME_UNAVAILABLE"
+                refused.append({"issue_number": issue.get("number"),
+                                "reason": "RUNTIME_OPEN_FAILED"})
+                continue
         if runtime is None:
             # Disabled-by-configuration cannot reach here; a missing Runtime while
             # enabled is reported once and stops the enqueue leg rather than
             # pretending to have done something.
             runtime_error = "RUNTIME_UNAVAILABLE"
             continue
-        result = ingest(issue, current_source_anchor=current_source_anchor,
-                        runtime=runtime, environ=env)
+        try:
+            result = ingest(issue, current_source_anchor=current_source_anchor,
+                            runtime=runtime, environ=env)
+        except Exception:
+            runtime_error = "RUNTIME_ENQUEUE_FAILED"
+            refused.append({"issue_number": issue.get("number"),
+                            "reason": "RUNTIME_ENQUEUE_FAILED"})
+            continue
         enqueued.append(dict(entry, runtime_task_id=result["runtime_task_id"]))
 
     # A Formal Review issue is a different family with a different admission gate, so its
@@ -432,18 +451,30 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
             continue
 
         if runtime is None and runtime_factory is not None:
-            runtime = runtime_factory()
+            try:
+                runtime = runtime_factory()
+            except Exception:
+                runtime_error = "RUNTIME_UNAVAILABLE"
+                review_refused.append({"issue_number": issue.get("number"),
+                                       "reason": "RUNTIME_OPEN_FAILED"})
+                continue
         if runtime is None:
             runtime_error = "RUNTIME_UNAVAILABLE"
             continue
-        result = ingest_review(issue, reader=reader, runtime=runtime, environ=env)
+        try:
+            result = ingest_review(issue, reader=reader, runtime=runtime, environ=env)
+        except Exception:
+            runtime_error = "RUNTIME_ENQUEUE_FAILED"
+            review_refused.append({"issue_number": issue.get("number"),
+                                   "reason": "REVIEW_ENQUEUE_FAILED"})
+            continue
         review_enqueued.append(dict(entry, runtime_task_id=result["runtime_task_id"]))
 
     # The status says what the poll actually did, most informative first: a missing
     # Runtime outranks the switch, the switch outranks an empty listing, and an empty
     # listing is a normal outcome rather than a failure.
     if runtime_error:
-        status = "RUNTIME_UNAVAILABLE"
+        status = runtime_error
     elif not enabled:
         status = "DISABLED"
     elif not candidates and not review_candidates:

@@ -358,6 +358,27 @@ def parse_c01_issue(issue) -> dict:
     return parsed
 
 
+def issue_identity_collisions(issues) -> dict:
+    """Find different issue numbers sharing an identity in this bounded snapshot.
+
+    Parse before source freshness: an older-source open issue may already own the
+    durable key. This is only a snapshot conflict check, not a second durable store
+    and not a claim to detect closed or unlisted historical issues.
+    """
+    owners = {}
+    for issue in issues:
+        try:
+            parsed = parse_c01_issue(issue)
+        except Refused:
+            continue
+        key = task_idempotency_key(
+            INGRESS_KIND, parsed["cell_id"], parsed["external_task_id"])
+        owners.setdefault(key, set()).add(parsed["issue_number"])
+    return {number: sorted(numbers)
+            for numbers in owners.values() if len(numbers) > 1
+            for number in numbers}
+
+
 def plan_ingress(issue, *, current_source_anchor, environ=None) -> dict:
     """Compute the Runtime call this issue would produce. Never enqueues.
 
