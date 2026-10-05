@@ -139,8 +139,21 @@ def main():
         for vertical, supplier_id in suppliers.items():
             account = {'username': 'acceptance-' + vertical.lower() + '-supplier@example.test',
                        'password': secrets.token_urlsafe(32), 'supplier_id': supplier_id}
-            identity_service.ensure_user(account['username'], account['password'],
+            owner_id = identity_service.ensure_user(account['username'], account['password'],
                 'SUPPLIER_USER', supplier_id, ['SUPPLIER_OWNER'])
+            # Isolated legacy trading fixtures are admitted suppliers, not new
+            # registration applicants. Production onboarding gates stay intact.
+            from datetime import datetime, timezone
+            from sqlalchemy import select
+            from go_hotel.db.models import SupplierOnboardingRow
+            from go_hotel.db.session import SessionLocal
+            with SessionLocal.begin() as session:
+                if not session.scalar(select(SupplierOnboardingRow).where(
+                        SupplierOnboardingRow.supplier_id == supplier_id)):
+                    now = datetime.now(timezone.utc)
+                    session.add(SupplierOnboardingRow(onboarding_id='acceptance-' + supplier_id,
+                        supplier_id=supplier_id, owner_user_id=owner_id, state='CONTRACT_ACTIVE',
+                        profile_json={}, contract_json={}, created_at=now, updated_at=now))
             fixtures[vertical] = account
         private_json(state / 'suppliers.private.json', fixtures)
     if a.hotel_price_scenarios:

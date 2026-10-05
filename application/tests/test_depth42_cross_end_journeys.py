@@ -1,5 +1,5 @@
 """Six real API journeys and independent money checks; not browser/device E2E."""
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (
-    OrderRow, OmnichannelPaymentIntentRow as Intent,
+    OrderRow, SupplierOnboardingRow, OmnichannelPaymentIntentRow as Intent,
     OmnichannelMoneyMovementRow as Movement, OmnichannelLedgerEntryRow as Ledger,
     OrderSupplierFulfillmentRow as Fulfillment,
 )
@@ -29,8 +29,18 @@ def console_auth(client, supplier_id=None, login_again=False):
     username = 'journey-' + secrets.token_hex(8) + '@example.test'
     password = secrets.token_urlsafe(32)
     actor = 'SUPPLIER_USER' if supplier_id else 'GO_ADMIN'
-    identity_service.create_user(username, password, actor, supplier_id,
+    user_id = identity_service.create_user(username, password, actor, supplier_id,
         ['SUPPLIER_OWNER'] if supplier_id else ['GO_GOVERNANCE'])
+    if supplier_id:
+        # This ownership journey requires an already admitted supplier, including
+        # the unrelated tenant; otherwise onboarding 403 masks the ownership 404.
+        with SessionLocal.begin() as session:
+            if not session.scalar(select(SupplierOnboardingRow).where(
+                    SupplierOnboardingRow.supplier_id == supplier_id)):
+                now = datetime.now(timezone.utc)
+                session.add(SupplierOnboardingRow(onboarding_id='journey-' + supplier_id,
+                    supplier_id=supplier_id, owner_user_id=user_id, state='CONTRACT_ACTIVE',
+                    profile_json={}, contract_json={}, created_at=now, updated_at=now))
     tokens = identity_service.login(username, password, None, 'isolated-api-journey',
         expected_actor_type=actor)
     def fresh():
