@@ -111,6 +111,7 @@ class MachineInventoryTests(unittest.TestCase):
         self.assertIn('python -m pytest "$@"', run)
         self.assertIn('c13-tests "${test_paths[@]}"', run)
         self.assertIn("-w /srv/application", run)
+        self.assertIn("-e GO_MEDIA_CACHE_DIR=/tmp/go-media-cache", run)
         self.assertIn('pipeline_status=("${PIPESTATUS[@]}")', run)
         self.assertNotIn("continue-on-error", machine)
         self.assertIn("    needs: c13-machine-test", ai)
