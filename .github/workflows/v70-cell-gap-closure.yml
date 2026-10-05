@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - application/**
+      - ci/retention/**
       - ci/cell-closure/**
       - ci/round2/**
       - ci/next-depth/**
@@ -22,13 +23,16 @@ jobs:
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - uses: actions/checkout@v4
+        id: stage_01
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
+        id: stage_02
         with:
           python-version: '3.13.5'
       - name: Verify exact candidate and retained baseline
+        id: stage_03
         run: |
           python ci/retention/verify_source.py "$RUNNER_TEMP/cell-evidence/source"
           python ci/retention/verify_alignment.py "$RUNNER_TEMP/cell-evidence/alignment.json"
@@ -43,10 +47,12 @@ jobs:
           assert c['production']=='HOLD' and c['full_release']=='HOLD'
           PY
       - name: Install inherited frozen Python dependencies
+        id: stage_04
         run: |
           python ci/retention/dependencies.py --repository . --output "$RUNNER_TEMP/frozen"
           python -m pip install --no-index --find-links "$RUNNER_TEMP/frozen/wheelhouse" -r ci/retention/requirements.lock
       - name: Scoped tests in fresh processes with normal worker settings
+        id: stage_05
         run: |
           set -euo pipefail
           files=(
@@ -83,9 +89,11 @@ jobs:
           done
           PYTHONPATH=application/src python -m pytest -p no:cacheprovider ci/admin-pagination/test_pagination.py --junitxml="$RUNNER_TEMP/cell-evidence/admin-pagination.xml"
       - name: Round 2 scheduler consistency regression
+        id: stage_06
         shell: bash
         run: python -m unittest discover -s ci/round2 -p test_validate_ledger.py -v 2>&1 | tee "$RUNNER_TEMP/cell-evidence/scheduler.log"
       - name: Next depth receipt admission and actual execution records
+        id: stage_07
         shell: bash
         run: |
           set -euo pipefail
@@ -95,6 +103,7 @@ jobs:
             python ci/round2/verify_execution_receipt.py "evidence/v70-next-depth-20260914/$lower/ACK_RECEIPT.json" --evidence-root . --expected-cell "$cell" --expected-task "V70-R2-$cell-02" --expected-agent /root/c12_scheduler | tee "$RUNNER_TEMP/cell-evidence/$lower-receipt-admission.json"
           done
       - name: Bind original result files to this checkout
+        id: stage_08
         if: always()
         run: |
           python - <<'PY'
@@ -104,7 +113,13 @@ jobs:
           result={'commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'application_git_tree':subprocess.check_output(['git','rev-parse','HEAD:application'],text=True).strip(),'files':files,'scope':'isolated scoped tests only','hong_kong':'NOT_ACCESSED','production':'HOLD','full_release':'HOLD'}
           (out/'EVIDENCE_BINDING.json').write_text(json.dumps(result,indent=2)+'\n')
           PY
+      - name: Record acceptance stage outcomes
+        if: always()
+        env:
+          GO_CI_STEPS: ${{ toJSON(steps) }}
+        run: python ci/retention/write_stage_receipt.py "${{ runner.temp }}/cell-evidence/STAGE_RECEIPT.json"
       - uses: actions/upload-artifact@v4
+        id: stage_09
         if: always()
         with:
           name: v70-cell-closure-${{ github.event.pull_request.head.sha }}
