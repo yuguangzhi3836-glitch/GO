@@ -3,7 +3,7 @@
 Two real failures are being closed here, and they are the same failure seen from two sides.
 
 1. C13 and C14 were both handed the *answer* - the frozen change surface, the candidate's own
-   first-parent diff, the rule text, the machine evidence - and neither was handed the
+   complete pull-request diff, the rule text, the machine evidence - and neither was handed the
    *question*. A reviewer that only sees the answer grades against its own idea of best
    practice, which is how a candidate that met its task gets sent back for things the task never
    asked for.
@@ -61,7 +61,7 @@ def pull_request(number, *, head_sha=None, merge_sha=None, title="Synthetic task
         "merged_at": "2026-09-26T00:00:00Z",
         "merge_commit_sha": merge_sha,
         "html_url": f"https://github.com/{fx.REPOSITORY}/pull/{number}",
-        "base": {"ref": "main"},
+        "base": {"ref": "main", "sha": "c" * 40},
         "head": {"ref": f"synthetic/head-{number}", "sha": head_sha},
     }
 
@@ -139,6 +139,13 @@ class ReviewBriefResolutionTests(unittest.TestCase):
         self.assertEqual(record["status"], "BLOCKED")
         self.assertEqual(record["reason"], lite_review_brief.PR_INVALID)
 
+    def test_a_missing_base_sha_is_refused(self):
+        pull = pull_request(80, head_sha=CANDIDATE)
+        del pull["base"]["sha"]
+        record = lite_review_brief.resolve(CANDIDATE, lambda sha: [pull])
+        self.assertEqual(record["status"], "BLOCKED")
+        self.assertEqual(record["reason"], lite_review_brief.PR_INVALID)
+
     def test_the_brief_carries_only_githubs_own_frozen_facts(self):
         only = pull_request(81, head_sha=CANDIDATE, title="Real title", body="Real body")
         record = lite_review_brief.resolve(CANDIDATE, lambda sha: [only])
@@ -149,6 +156,7 @@ class ReviewBriefResolutionTests(unittest.TestCase):
         self.assertEqual(brief["body"], "Real body")
         self.assertEqual(brief["head_sha"], CANDIDATE)
         self.assertEqual(brief["base_ref"], "main")
+        self.assertEqual(brief["base_sha"], "c" * 40)
         self.assertEqual(brief["state"], "closed")
         # The URL is navigation, and it is recorded as navigation only - nothing is verified
         # through it and it is not an authority.

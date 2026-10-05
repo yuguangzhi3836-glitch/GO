@@ -246,9 +246,8 @@ jobs:
         with:
           ref: ${{ inputs.candidate_sha }}
           path: candidate
-          # Needed to freeze the changed-path boundary below: the first-parent diff cannot be
-          # computed without the first parent, and a depth-1 checkout yields an EMPTY boundary
-          # with exit code 0 - the same silent degradation as the diff-tree bug (CCV1-145B D-1).
+          # The exact PR base is fetched and verified below before the complete diff is frozen.
+          # Keeping the first parent also preserves compatibility for a merge-commit candidate.
           fetch-depth: 2
           persist-credentials: false
 
@@ -277,41 +276,6 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ github.run_id }}
 
-      - name: Bind the frozen candidate and its machine evidence
-        run: |
-          set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
-          test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
-          mkdir -p "$RUNNER_TEMP/artifacts"
-          # A merge commit is NOT diffed by `git diff-tree` unless a merge diff mode is selected,
-          # so the plain form printed NOTHING for a merge commit and the frozen changed-path
-          # boundary was silently empty (CCV1-145B D-1).
-          #   * `-m` is NOT the fix, and neither is `-m --first-parent`: `--first-parent` does not
-          #     narrow `-m`'s output, so the boundary silently becomes the union of BOTH parents'
-          #     diffs (measured).
-          #   * `--diff-merges=first-parent` is the boundary we want: what this candidate brings
-          #     into its own line. It is a no-op for an ordinary single-parent commit.
-          # The first parent must also be present locally - that is why the candidate checkout in
-          # the c13-ai-review job uses fetch-depth 2. At depth 1 the boundary is empty again,
-          # with exit code 0.
-          git -C candidate diff-tree --no-commit-id --name-only -r --diff-merges=first-parent HEAD | sort -u > "$RUNNER_TEMP/changed_paths.txt"
-          # Fail closed, and never swallow a failure with `|| true`.
-          test -s "$RUNNER_TEMP/changed_paths.txt"
-          # WHAT changed, not only which paths: the reviewer is asked to judge content, and the
-          # first real Review E2E handed the model an empty change surface while the frozen scope
-          # carried eight paths - it faithfully answered NOT_APPLICABLE for "no changed paths"
-          # (CCV1-147B; proved by recomputing both digests, and nothing failed because every
-          # digest still recomputed). These are git's own bytes for the frozen candidate's
-          # first-parent diff. No diff authority, no signature and no second registry: GitHub
-          # already owns commit identity.
-          git -C candidate diff --no-ext-diff --no-color HEAD^1 HEAD > "$RUNNER_TEMP/candidate.diff"
-          test -s "$RUNNER_TEMP/candidate.diff"
-          wc -c < "$RUNNER_TEMP/candidate.diff"
-          cp c14-input/c14_bundle.json "$RUNNER_TEMP/c14_bundle.json"
-          cp machine-input/junit.xml machine-input/stdout.txt machine-input/manifest.json machine-input/test_inventory.txt "$RUNNER_TEMP/"
-          cp c14-input/c14_contract.json "$RUNNER_TEMP/c14.contract.json"
-          wc -l "$RUNNER_TEMP/test_inventory.txt"
-
       - name: Resolve the review brief from the candidate's own pull request (read-only)
         env:
           GH_TOKEN: ${{ github.token }}
@@ -331,6 +295,27 @@ jobs:
             --candidate-sha "${{ inputs.candidate_sha }}" \
             --repository "$GITHUB_REPOSITORY" \
             --out "$RUNNER_TEMP/review_brief.json"
+
+      - name: Bind the frozen candidate, its complete pull-request diff and machine evidence
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
+          test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
+          mkdir -p "$RUNNER_TEMP/artifacts"
+          BASE_SHA="$(jq -er '.pull_request.base_sha' "$RUNNER_TEMP/review_brief.json")"
+          [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git -C candidate fetch --no-tags --depth=1 origin "$BASE_SHA"
+          test "$(git -C candidate rev-parse FETCH_HEAD)" = "$BASE_SHA"
+          # Freeze every commit in the PR, not only the candidate head's last commit.
+          git -C candidate diff --name-only "$BASE_SHA"...HEAD | sort -u > "$RUNNER_TEMP/changed_paths.txt"
+          test -s "$RUNNER_TEMP/changed_paths.txt"
+          git -C candidate diff --no-ext-diff --no-color "$BASE_SHA"...HEAD > "$RUNNER_TEMP/candidate.diff"
+          test -s "$RUNNER_TEMP/candidate.diff"
+          wc -c < "$RUNNER_TEMP/candidate.diff"
+          cp c14-input/c14_bundle.json "$RUNNER_TEMP/c14_bundle.json"
+          cp machine-input/junit.xml machine-input/stdout.txt machine-input/manifest.json machine-input/test_inventory.txt "$RUNNER_TEMP/"
+          cp c14-input/c14_contract.json "$RUNNER_TEMP/c14.contract.json"
+          wc -l "$RUNNER_TEMP/test_inventory.txt"
 
       - name: Bind the workflow definition that is actually executing
         env:

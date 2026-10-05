@@ -128,7 +128,10 @@ BOUNDARY_AFTER = """jobs:
       - name: bind
         run: |
           set -euo pipefail
-          git -C candidate diff-tree --no-commit-id --name-only -r --diff-merges=first-parent HEAD | sort -u > "$RUNNER_TEMP/changed_paths.txt"
+          BASE_SHA="$(jq -er '.pull_request.base_sha' "$RUNNER_TEMP/review_brief.json")"
+          git -C candidate fetch --no-tags --depth=1 origin "$BASE_SHA"
+          test "$(git -C candidate rev-parse FETCH_HEAD)" = "$BASE_SHA"
+          git -C candidate diff --name-only "$BASE_SHA"...HEAD | sort -u > "$RUNNER_TEMP/changed_paths.txt"
           test -s "$RUNNER_TEMP/changed_paths.txt"
           wc -l < "$RUNNER_TEMP/changed_paths.txt"
       - name: workflow identity
@@ -141,7 +144,7 @@ BOUNDARY_AFTER = """jobs:
 """
 
 
-#: Synthetic bytes standing in for a frozen candidate's first-parent diff. It is a shape
+#: Synthetic bytes standing in for a frozen candidate's complete pull-request diff. It is a shape
 #: fixture - the real bytes are git's, and the real-candidate verification is reported
 #: separately, never sealed as Evidence from here.
 SYNTHETIC_CANDIDATE_DIFF = (
@@ -203,25 +206,22 @@ def _identity_failures(raw: str) -> list:
 
 
 class ChangedPathBoundaryTests(unittest.TestCase):
-    """D-1: the boundary must be right for a merge commit, and must never be silently empty."""
+    """D-1: the boundary must cover the whole PR and never be silently empty."""
 
     def test_the_old_shape_is_rejected(self):
         failures = _boundary_failures(BOUNDARY_BEFORE)
         self.assertTrue(failures, "the pre-fix workflow shape must not pass the guard")
         joined = " | ".join(failures)
-        self.assertIn("EMPTY for a merge commit", joined)
-        self.assertIn("|| true", joined)
-        self.assertIn("fetch-depth", joined)
+        self.assertIn("no changed-path extraction command", joined)
 
     def test_the_fixed_shape_passes(self):
         self.assertEqual(_boundary_failures(BOUNDARY_AFTER), [])
 
-    def test_a_merge_boundary_must_never_be_empty(self):
-        """The exact regression: the workflow command must see the files the merge brought in."""
+    def test_a_merge_boundary_uses_the_exact_pr_base(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo = lite_workflow_check._boundary_fixture(pathlib.Path(tmp))
-            argv = ["git", "-C", str(repo), "diff-tree", "--no-commit-id", "--name-only",
-                    "-r", "--diff-merges=first-parent", "HEAD"]
+            base_sha = lite_workflow_check._git(repo, "rev-parse", "HEAD^1").strip()
+            argv = ["git", "-C", str(repo), "diff", "--name-only", f"{base_sha}...HEAD"]
             got = sorted(set(subprocess.run(argv, capture_output=True, text=True).stdout.split()))
             self.assertEqual(got, ["f_side.txt"])
 
@@ -231,6 +231,23 @@ class ChangedPathBoundaryTests(unittest.TestCase):
             before = subprocess.run(old, capture_output=True, text=True)
             self.assertEqual(before.returncode, 0)
             self.assertEqual(before.stdout.strip(), "", "the old form silently printed nothing")
+
+    def test_head_parent_diff_omits_earlier_commits_but_pr_base_diff_does_not(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = lite_workflow_check._boundary_fixture(pathlib.Path(tmp))
+            base_sha = lite_workflow_check._git(repo, "rev-parse", "HEAD^1").strip()
+            lite_workflow_check._git(repo, "checkout", "-q", "side")
+            (repo / "f_side_second.txt").write_text("second\n", encoding="utf-8")
+            lite_workflow_check._git(repo, "add", "-A")
+            lite_workflow_check._git(
+                repo, "-c", "user.email=fixture@example.invalid", "-c", "user.name=fixture",
+                "commit", "-q", "-m", "second side commit")
+            complete = sorted(set(lite_workflow_check._git(
+                repo, "diff", "--name-only", f"{base_sha}...HEAD").split()))
+            latest_only = sorted(set(lite_workflow_check._git(
+                repo, "diff", "--name-only", "HEAD^1", "HEAD").split()))
+            self.assertEqual(complete, ["f_side.txt", "f_side_second.txt"])
+            self.assertEqual(latest_only, ["f_side_second.txt"])
 
     def test_dash_m_first_parent_is_not_a_fix(self):
         """`-m --first-parent` does not narrow `-m`: the boundary becomes BOTH parents' diffs."""
