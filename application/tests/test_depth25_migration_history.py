@@ -86,7 +86,9 @@ def test_rail_width_upgrade_preserves_history_and_refuses_lossy_downgrade(tmp_pa
         s.execute('CREATE INDEX rail_ref_index ON rail_order_runtime(booking_reference)')
         s.execute("INSERT INTO rail_order_runtime VALUES ('old','TICKETED','old-reference')")
     command.stamp(cfg, '0131_vertical_payment_deadline')
-    command.upgrade(cfg, 'head')
+    # This partial fixture covers the historical width chain, not supplier onboarding.
+    # The fresh-install test independently upgrades the entire current chain.
+    command.upgrade(cfg, '0134_flight_status_width')
     state = 'PAYMENT_CONFIRMED_AWAITING_SUPPLIER'
     reference = 'provider-' + 'r' * 110
     with sqlite3.connect(db) as s:
