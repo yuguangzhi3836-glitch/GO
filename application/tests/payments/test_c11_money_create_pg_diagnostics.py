@@ -130,9 +130,12 @@ def run_pg_driver():
     import json
     import math
     import os
+    import re
+    import selectors
+    import signal
     from pathlib import Path
     from threading import Barrier
-    from time import perf_counter_ns, process_time_ns
+    from time import perf_counter_ns, process_time_ns, monotonic, sleep
     import uuid
 
     from sqlalchemy import create_engine, event, func, select, text
@@ -165,9 +168,9 @@ def run_pg_driver():
         'acquire_scope': 'engine.connect incl checkout/setup; not pure pool queue time',
         'sql_scope': 'DBAPI cursor execute roundtrip, including lock waits; fetch/ORM in hold_other',
         'limitations': ['not ABBA', 'not production data distribution',
-            'no server CPU sample', 'no socket disconnect or process-exit fault injection',
-            'lost acknowledgement simulated after successful real commit'],
-        'runs': []}
+            'no server CPU sample', 'faults at known pre/post-commit boundaries, not ambiguous in-flight COMMIT',
+            'backend termination closes real socket; not a network-partition simulation'],
+        'runs': [], 'fault_cases': [], 'statement_shapes': {}}
 
 
     def seed(count):
@@ -192,7 +195,12 @@ def run_pg_driver():
         with cm('measure_connection_hold'):
             # Connection-scoped observers are never attached globally/shared by threads.
             def before(c, cursor, statement, parameters, context, many):
-                label = statement.split(None, 1)[0] + ':' + hashlib.sha256(statement.encode()).hexdigest()[:16]
+                shape = hashlib.sha256(statement.encode()).hexdigest()[:16]
+                verb = statement.split(None, 1)[0]
+                # Only known schema table names, never SQL text or bound values.
+                matched = sorted(t.name for t in tables if re.search(r'\b' + t.name + r'\b', statement))
+                evidence['statement_shapes'][shape] = {'verb': verb, 'tables': matched}
+                label = verb + ':' + shape
                 interval = d.measure_sql_stage(label)
                 interval.__enter__(); active.append(interval)
 
@@ -275,6 +283,95 @@ def run_pg_driver():
                 assert all(r.amount_minor == 1000 and r.transaction_id == cap.money_movement_id for r in ledger)
 
 
+    def verify_fault(mode, typ, boundary):
+        iid = seed(1)[0]
+        parent = None
+        if typ == 'CAPTURE':
+            auth, _ = execute(iid, 'AUTHORIZATION', iid + ':auth')
+            parent = auth['money_movement_id']
+        key = iid + (':auth' if typ == 'AUTHORIZATION' else ':cap')
+        tag = schema + '_' + uuid.uuid4().hex[:8]
+        payload = dict(schema=schema, iid=iid, key=key, typ=typ, parent=parent,
+            boundary=boundary, tag=tag)
+        env = dict(os.environ, C11_FAULT_SPEC=json.dumps(payload))
+        worker = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--fault-worker'],
+            env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            with selectors.DefaultSelector() as selector:
+                selector.register(worker.stdout, selectors.EVENT_READ)
+                assert selector.select(timeout=30), 'Fault worker did not reach boundary'
+                line = worker.stdout.readline()
+            assert line.startswith('C11_FAULT_READY '), 'Worker failed before fault boundary'
+            ready = json.loads(line.removeprefix('C11_FAULT_READY '))
+            assert ready['boundary'] == boundary
+            backend = ready['backend_pid']
+            with admin.connect() as c:
+                # Ownership proof before either kind of destructive fault injection.
+                assert c.scalar(text('select count(*) from pg_stat_activity where pid=:p '
+                    'and datname=:d and application_name=:a'),
+                    dict(p=backend, d='c13_lite', a=tag)) == 1
+            if mode == 'socket_disconnect':
+                with admin.connect() as c:
+                    terminated = c.scalar(text('select pg_terminate_backend(pid) from pg_stat_activity '
+                        'where pid=:p and datname=:d and application_name=:a'),
+                        dict(p=backend, d='c13_lite', a=tag))
+                    assert terminated is True
+                deadline = monotonic() + 10
+                while True:
+                    with admin.connect() as c:
+                        still_alive = c.scalar(text('select count(*) from pg_stat_activity '
+                            'where pid=:p and application_name=:a'), dict(p=backend, a=tag))
+                    if not still_alive: break
+                    assert monotonic() < deadline, 'Backend termination did not complete'
+                    sleep(.05)
+                stdout, stderr = worker.communicate('resume\n', timeout=20)
+                assert worker.returncode == 0, 'Disconnect worker failed: ' + stderr[-1000:]
+                outcome = json.loads(stdout.strip().removeprefix('C11_FAULT_OBSERVED '))
+                assert outcome['connection_invalidated'] is True
+                assert outcome['checkedout'] == 0 and outcome['fresh_connection_ok'] is True
+            else:
+                worker.kill()  # Real SIGKILL: no Python finally, rollback or atexit.
+                worker.communicate(timeout=20)
+                assert worker.returncode == -signal.SIGKILL
+                outcome = {'signal': 'SIGKILL'}
+            # Wait only for this owned backend, then prove durable state before retry.
+            deadline = monotonic() + 10
+            while True:
+                with admin.connect() as c:
+                    alive = c.scalar(text('select count(*) from pg_stat_activity where pid=:p '
+                        'and application_name=:a'), dict(p=backend, a=tag))
+                if not alive: break
+                assert monotonic() < deadline, 'Fault backend still holds resources'
+                sleep(.05)
+            with Session(engine) as s:
+                before = s.scalar(select(Movement).where(Movement.idempotency_key == key))
+                assert (before is not None) == (boundary == 'after_commit')
+                if before: assert before.money_movement_id == ready['movement_id']
+                ledger_count = s.scalar(select(func.count()).select_from(Ledger).where(Ledger.payment_intent_id == iid))
+                assert ledger_count == (2 if typ == 'CAPTURE' and boundary == 'after_commit' else 0)
+            # Recovery uses a new session/connection and identical business request.
+            recovered, _ = execute(iid, typ, key, parent)
+            replay, _ = execute(iid, typ, key, parent)
+            assert replay == recovered
+            if boundary == 'after_commit': assert recovered['money_movement_id'] == ready['movement_id']
+            try:
+                execute(iid, typ, key, parent, amount=999)
+                raise AssertionError('Changed amount accepted after recovery')
+            except ValueError as exc:
+                assert str(exc) == 'MONEY_MOVEMENT_IDEMPOTENCY_CONFLICT'
+            if typ == 'AUTHORIZATION':
+                execute(iid, 'CAPTURE', iid + ':cap', recovered['money_movement_id'])
+            verify_graph([iid])
+            assert engine.pool.checkedout() == 0
+            evidence['fault_cases'].append(dict(mode=mode, operation=typ, boundary=boundary,
+                durable_before_retry=boundary == 'after_commit', ledger_before_retry=ledger_count,
+                replay_same_id=True, amount_conflict_refused=True, balanced_graph=True,
+                backend_gone=True, pool_released=True, observed=outcome))
+        finally:
+            if worker.poll() is None:
+                worker.kill(); worker.communicate(timeout=10)
+
+
     try:
         with admin.begin() as c:
             assert c.scalar(text('select current_database()')) == 'c13_lite'
@@ -317,6 +414,11 @@ def run_pg_driver():
         verify_graph([ack_iid])
         evidence['safety'] = ['rollback then retry', 'concurrent same-key capture once',
             'amount conflict refused', 'lost acknowledgement replay', 'balanced ledger', 'pool released']
+        for mode in ('socket_disconnect', 'process_exit'):
+            for typ in ('AUTHORIZATION', 'CAPTURE'):
+                for boundary in ('before_commit', 'after_commit'):
+                    verify_fault(mode, typ, boundary)
+        assert len(evidence['fault_cases']) == 8
         for n in (20, 100):
             # Disabled/enabled are diagnostic overhead observations, not an optimization A/B gate.
             for enabled in (False, True):
@@ -347,5 +449,59 @@ def run_pg_driver():
         admin.dispose()
 
 
+def run_fault_worker():
+    """Owned disposable backend only; parent coordinates fault at a proven barrier."""
+    import json
+    import re
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.engine import URL
+    from sqlalchemy.exc import DBAPIError
+    from sqlalchemy.orm import Session
+
+    spec = json.loads(os.environ['C11_FAULT_SPEC'])
+    assert os.environ.get('PGDATABASE') == 'c13_lite'
+    assert re.fullmatch(r'c11_diag_[0-9a-f]{32}', spec['schema'])
+    assert re.fullmatch(re.escape(spec['schema']) + r'_[0-9a-f]{8}', spec['tag'])
+    assert spec['boundary'] in ('before_commit', 'after_commit')
+    url = URL.create('postgresql+psycopg', username=os.environ['PGUSER'],
+        password=os.environ.get('PGPASSWORD'), host=os.environ['PGHOST'],
+        port=int(os.environ.get('PGPORT', '5432')), database='c13_lite')
+    os.environ['DATABASE_URL'] = url.render_as_string(hide_password=False)
+    from go_hotel.services.unified_money_movement import UnifiedMoneyMovementService
+
+    engine = create_engine(url, hide_parameters=True, pool_size=1, max_overflow=0,
+        pool_timeout=5, connect_args={'connect_timeout': 10, 'application_name': spec['tag'],
+        'options': '-csearch_path=' + spec['schema'] + ' -cstatement_timeout=15000 -clock_timeout=10000'})
+    try:
+        with engine.connect() as conn:
+            backend = conn.scalar(text('select pg_backend_pid()'))
+            assert conn.scalar(text('show server_version_num')) == '180004'
+            conn.rollback()  # Session below must own its transaction/commit.
+            with Session(bind=conn, autoflush=False, expire_on_commit=False) as s:
+                result = UnifiedMoneyMovementService().create_in_session(s, spec['iid'], {
+                    'movement_type': spec['typ'], 'amount_minor': 1000,
+                    'parent_movement_id': spec['parent'], 'mode': 'CONTRACT_SIMULATOR',
+                    'evidence': ['diagnostic://isolated-fault']}, spec['key'], 'c11-fault')
+                if spec['boundary'] == 'after_commit': s.commit()
+                print('C11_FAULT_READY ' + json.dumps(dict(backend_pid=backend,
+                    boundary=spec['boundary'], movement_id=result['money_movement_id'])), flush=True)
+                assert sys.stdin.readline().strip() == 'resume'
+                try:
+                    if spec['boundary'] == 'before_commit': s.commit()
+                    else: s.execute(text('select 1'))
+                    raise AssertionError('Real disconnect was not observed')
+                except DBAPIError as exc:
+                    assert exc.connection_invalidated
+                    s.rollback()
+        assert engine.pool.checkedout() == 0
+        with engine.connect() as fresh:
+            assert fresh.scalar(text('select 1')) == 1
+        print('C11_FAULT_OBSERVED ' + json.dumps(dict(connection_invalidated=True,
+            checkedout=engine.pool.checkedout(), fresh_connection_ok=True)), flush=True)
+    finally:
+        engine.dispose()
+
+
 if __name__ == "__main__":
-    run_pg_driver()
+    if sys.argv[1:] == ['--fault-worker']: run_fault_worker()
+    else: run_pg_driver()
