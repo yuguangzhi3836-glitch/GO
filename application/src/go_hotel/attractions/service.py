@@ -157,13 +157,17 @@ class AttractionService:
  def refund(self,account,order_id,accepted_hash=None):
   production_truth_required('ATTRACTION','REFUND')
   return vertical_refund_recovery.refund('ATTRACTION',account,order_id,self._refund_quote_in,accepted_hash)
+ def _guard_redeemable(self,o):
+  if o.status=="FULFILLED": raise ValueError("ATTRACTION_REDEEM_ILLEGAL_STATE_ALREADY_REDEEMED")
+  if o.status=="CLOSED_BY_SUPPLIER": raise ValueError("ATTRACTION_REDEEM_ILLEGAL_STATE_REVOKED")
+  if o.status!="CONFIRMED": raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
  def redeem(self,account,order_id,evidence_reference):
   if not str(evidence_reference or '').strip(): raise ValueError('FULFILLMENT_EVIDENCE_REQUIRED')
   production_truth_required("ATTRACTION", "REDEEM")
   with transaction(SessionLocal) as s:
    o=s.get(AttractionOrderRow,order_id,with_for_update=True)
    if not o or o.account_id!=account: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
-   if o.status!="CONFIRMED": raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
+   self._guard_redeemable(o)
    window=validity.for_order(self._order_terms(s,order_id),o.visit_date,o.session_time);validity.guard(window,db_now_ms(s))
    voucher_code=o.voucher_code; supplier_reference=o.supplier_reference
    o.status="FULFILLED";o.updated_at=now();append_vertical_evidence(s,"ATTRACTION",order_id,"VOUCHER_REDEEMED",o.status,{"evidence_reference":evidence_reference,"voucher_code":voucher_code,"supplier_reference":supplier_reference,"redemption_window":window,"external_live":False});project_vertical_lifecycle(s,"ATTRACTION",o,evidence_reference,facts={"voucher_code":voucher_code,"supplier_reference":supplier_reference});return self.out(o)
