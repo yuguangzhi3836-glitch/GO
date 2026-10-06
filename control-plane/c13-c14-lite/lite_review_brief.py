@@ -31,7 +31,7 @@ convention, not something this module enforces.
 Why this module exists
 ----------------------
 By the time of the first real Review E2E both cells could see WHAT changed - the frozen
-change surface, the candidate's own first-parent diff, the authoritative rule text and the
+change surface, the candidate's complete pull-request diff, the authoritative rule text and the
 machine evidence - but neither could see WHAT WAS ASKED FOR. A reviewer that only knows the
 answer can only grade against its own idea of best practice, which is how an acceptable
 candidate gets sent back for findings the declared brief never asked about.
@@ -85,6 +85,7 @@ BRIEF_FIELDS = (
     "title",
     "body",
     "base_ref",
+    "base_sha",
     "head_ref",
     "head_sha",
     "merge_commit_sha",
@@ -127,6 +128,7 @@ def brief_from_pull(pull: dict, matched_by: str) -> dict:
         "title": _text(pull.get("title")),
         "body": _text(pull.get("body")),
         "base_ref": _text((pull.get("base") or {}).get("ref")),
+        "base_sha": _text((pull.get("base") or {}).get("sha")),
         "head_ref": _text((pull.get("head") or {}).get("ref")),
         "head_sha": _text((pull.get("head") or {}).get("sha")),
         "merge_commit_sha": _text(pull.get("merge_commit_sha")),
@@ -234,8 +236,10 @@ def resolve(candidate_sha: str, list_pulls) -> dict:
 
     matched_by, pull = found
     brief = brief_from_pull(pull, matched_by)
-    if not isinstance(brief["number"], int) or not brief["head_sha"]:
-        return blocked(PR_INVALID, "the matched pull request has no number or head sha")
+    if (not isinstance(brief["number"], int)
+            or not is_git_sha(brief["head_sha"])
+            or not is_git_sha(brief["base_sha"])):
+        return blocked(PR_INVALID, "the matched pull request has no number, head sha or base sha")
     record["status"] = "OK"
     record["reason"] = None
     record["detail"] = ""

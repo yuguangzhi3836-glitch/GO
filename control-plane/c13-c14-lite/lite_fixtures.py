@@ -87,7 +87,7 @@ def pull_request(candidate_sha=CANDIDATE_SHA, *, number=REVIEW_BRIEF_PR_NUMBER, 
         "merged_at": "2026-09-25T08:00:00Z",
         "merge_commit_sha": candidate_sha if as_merge else seed_sha(f"synthetic-merge-{number}"),
         "html_url": f"https://github.com/{REPOSITORY}/pull/{number}",
-        "base": {"ref": "main"},
+        "base": {"ref": "main", "sha": seed_sha("review-brief-base", 40)},
         "head": {
             "ref": f"synthetic/head-{number}",
             "sha": seed_sha(f"synthetic-head-{number}") if as_merge else candidate_sha,
