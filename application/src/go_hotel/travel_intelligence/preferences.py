@@ -20,6 +20,9 @@ PREFERENCE_KEYS = frozenset({"HOTEL_ROOM", "FLIGHT_SEAT", "RAIL_SEAT", "DIETARY"
 FIELD = "C07_TRAVEL_PREFERENCE"
 PROVIDER = "C07_EXPLICIT_PREFERENCE"
 CONSENT_TYPE = "EXPLICIT_TRAVEL_PREFERENCE"
+TRAVELER_CONTEXT_TYPE = "TRAVELER_CONTEXT"
+TRAVEL_INTENTS_SCOPE = "TRAVEL_INTENTS"
+INTENT_CONSENT_PREFIX = "CONSENT_ID:"
 
 
 def _now():
@@ -79,6 +82,50 @@ def _projection(row, payload):
         "source":"EXPLICIT_USER_CONFIRMATION"}
 
 
+def _intent_purposes(consent_scope):
+    purposes = []
+    seen = set()
+    for value in consent_scope or []:
+        if not isinstance(value, str) or value.startswith(INTENT_CONSENT_PREFIX):
+            continue
+        try:
+            purpose = _purpose(value)
+        except ValueError:
+            continue
+        if purpose not in seen:
+            seen.add(purpose)
+            purposes.append(purpose)
+    return purposes
+
+
+def _bound_intent_scope(session, traveler, consent_scope):
+    bound = []
+    seen = set()
+    for purpose in _intent_purposes(consent_scope):
+        bound.append(purpose)
+        seen.add(purpose)
+        grants = _active_consents(session, traveler, purpose, TRAVELER_CONTEXT_TYPE)
+        for consent_id, grant in sorted(grants.items()):
+            if TRAVEL_INTENTS_SCOPE not in (grant.scope_json or []):
+                continue
+            token = INTENT_CONSENT_PREFIX + consent_id
+            if token not in seen:
+                seen.add(token)
+                bound.append(token)
+    return bound
+
+
+def _intent_visible(consent_scope, purpose, active_consent_ids):
+    if purpose not in _intent_purposes(consent_scope):
+        return False
+    bound = {
+        value[len(INTENT_CONSENT_PREFIX):]
+        for value in (consent_scope or [])
+        if isinstance(value, str) and value.startswith(INTENT_CONSENT_PREFIX)
+    }
+    return bool(bound & active_consent_ids)
+
+
 def _facts(session, traveler):
     return session.scalars(select(ProfileFactRow).where(
         ProfileFactRow.user_id == traveler.user_id, ProfileFactRow.traveler_id == traveler.traveler_id,
@@ -106,6 +153,9 @@ def _read_preferences(session, traveler, purpose):
 
 
 class TravelPreferenceMixin:
+    def _bind_intent_scope(self, session, traveler, consent_scope):
+        return _bound_intent_scope(session, traveler, consent_scope)
+
     def save_preference(self, user_id, traveler_id, *, preference_key, value, purpose,
                         consent_id, confirmed, expected_preference_id=None):
         if confirmed is not True:
@@ -209,9 +259,10 @@ class TravelPreferenceMixin:
             identity = {"relationship_type":tr.relationship_type, "nationality":tr.nationality} if "TRAVELER_IDENTITY" in scope else {}
             intents = []
             if "TRAVEL_INTENTS" in scope:
+                active_consent_ids = frozenset(grants)
                 rows = s.scalars(select(TravelIntentRow).where(TravelIntentRow.traveler_id == traveler_id,
                     TravelIntentRow.status == "ACTIVE").order_by(TravelIntentRow.updated_at.desc()).limit(20)).all()
-                intents = [r.normalized_intent for r in rows if purpose in (r.consent_scope or [])]
+                intents = [r.normalized_intent for r in rows if _intent_visible(r.consent_scope, purpose, active_consent_ids)]
             count = 0
             if "TRAVEL_BEHAVIOR" in scope:
                 rows = s.scalars(select(TravelBehaviorEventRow).where(TravelBehaviorEventRow.traveler_id == traveler_id)
