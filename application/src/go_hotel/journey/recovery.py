@@ -15,6 +15,10 @@ def parse_dt(v):
 
 def iso(v): return v.isoformat() if v else None
 
+def as_utc(v):
+    if not v: return None
+    return v if v.tzinfo else v.replace(tzinfo=timezone.utc)
+
 class JourneyRecoveryService:
     """Builds comparison-ready recovery options without bypassing vertical rules.
 
@@ -80,13 +84,14 @@ class JourneyRecoveryService:
             self._journey(s,account_id,journey_id)
             p=s.get(JourneyRecoveryPlanRow,plan_id)
             if not p or p.account_id!=account_id or p.journey_id!=journey_id: raise ValueError('RECOVERY_PLAN_NOT_FOUND')
-            if p.expires_at and p.expires_at.replace(tzinfo=p.expires_at.tzinfo or timezone.utc) < now(): raise ValueError('RECOVERY_PLAN_EXPIRED')
+            current_time=now()
+            if as_utc(p.expires_at) and as_utc(p.expires_at) <= current_time: raise ValueError('RECOVERY_PLAN_EXPIRED')
             opts=s.execute(select(JourneyRecoveryOptionRow).where(JourneyRecoveryOptionRow.plan_id==plan_id)).scalars().all()
             by_id={o.option_id:o for o in opts}
             chosen=[];seen_impacts=set()
             for oid in option_ids:
                 o=by_id.get(oid)
-                if not o or o.status!='AVAILABLE': raise ValueError('RECOVERY_OPTION_NOT_AVAILABLE')
+                if not o or o.status!='AVAILABLE' or (as_utc(o.expires_at) and as_utc(o.expires_at) <= current_time): raise ValueError('RECOVERY_OPTION_NOT_AVAILABLE')
                 if o.impact_id in seen_impacts: raise ValueError('ONE_OPTION_PER_IMPACT')
                 seen_impacts.add(o.impact_id);chosen.append(o)
             p.selected_option_ids_json=[o.option_id for o in chosen];p.status='SELECTED';p.updated_at=now();s.commit()
