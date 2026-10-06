@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-07",
+  "repository": "yuguangzhi3836-glitch/GO",
+  "issue": 533,
+  "candidate_sha": "0b7d0403f9f171844fdcf9bf3330ff9386e82943",
+  "run_id": 37484199333,
+  "run_attempt": 1,
+  "machine_job": 112339914820,
+  "review_job": 112342053115,
+  "artifacts": [
+    {
+      "id": 11423210723,
+      "sha256": "c47ba137c7cc99e03a73762d5a5802c594aa5e495db9c9b99585576715114efa"
+    },
+    {
+      "id": 11421869309,
+      "sha256": "4d7ee4051cbc4c5500c8142c02d2d0e42cd20da27a5f9f240798676c2645be3e"
+    }
+  ],
+  "junit_counts": {
+    "tests.test_depth25_migration_history": 9,
+    "tests.test_unknown_episode_retention": 7,
+    "tests.test_v70_r4_c01_unknown_episode": 4
+  },
+  "manifest_postgres_version": "18.4",
+  "manifest_version_source": "literal in workflow, not actual application database observation",
+  "database_sidecar_present": false,
+  "preflight": {
+    "status": "BLOCKED",
+    "reason": "supplement_prior_database_unproven",
+    "sealed_root_verified": true,
+    "machine_byte_digests_verified": true
+  },
+  "source_findings": {
+    "conftest": "application/tests/conftest.py overwrites DATABASE_URL to SQLite",
+    "formal_c13_command": "python -m pytest without ci.unknown_pg_plugin",
+    "migration_file": "9 no_db tests explicitly use SQLite; retain as SQLite/static evidence",
+    "dedicated_candidate_pg_workflow": "loads ci.unknown_pg_plugin; not substituted for the formal C13 boundary"
+  },
+  "needed_scope_decision": "Formal C13: run the two previously-run business files plus the two missing paths (15 expected business cases) on actually verified PostgreSQL 18.4; preserve nine SQLite migration regressions as such.",
+  "original_scope": "Only two missing paths; not expanded by this change",
+  "execution": {
+    "new_paid_runs": 0,
+    "enqueue": false,
+    "merge": false,
+    "deploy": false,
+    "candidate_changed": false,
+    "c14_rerun": false
+  },
+  "implementation_note": "Preflight is read-only and not yet wired into admission; a positive byte validation is not per-test database attribution or execution authority."
+}
