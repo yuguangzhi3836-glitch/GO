@@ -139,43 +139,11 @@ jobs:
           ref: ${{ inputs.candidate_sha }}
           path: candidate
           persist-credentials: false
-          fetch-depth: 2
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-
-      - name: Bind the exact frozen candidate identity
-        run: |
-          set -euo pipefail
-          test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
-          test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
-          # A merge commit is NOT diffed by `git diff-tree` unless a merge diff mode is selected,
-          # so the plain form printed NOTHING for a merge commit and the frozen changed-path
-          # boundary was silently empty - the rule review became a review of nothing (CCV1-145B
-          # D-1, proved by recomputing the frozen scope digest).
-          #   * `-m` is NOT the fix, and neither is `-m --first-parent`: `--first-parent` does not
-          #     narrow `-m`'s output, so the boundary silently becomes the union of BOTH parents'
-          #     diffs (measured).
-          #   * `--diff-merges=first-parent` is the boundary we want: what this candidate brings
-          #     into its own line. It is a no-op for an ordinary single-parent commit.
-          # The first parent must also be present locally - that is why this checkout uses
-          # fetch-depth 2. At depth 1 the boundary is empty again, with exit code 0.
-          git -C candidate diff-tree --no-commit-id --name-only -r --diff-merges=first-parent HEAD | sort -u > "$RUNNER_TEMP/changed_paths.txt"
-          # Fail closed, and never swallow a failure with `|| true`: an empty boundary must stop
-          # the round rather than quietly degrade the review to "nothing changed".
-          test -s "$RUNNER_TEMP/changed_paths.txt"
-          # WHAT changed, not only which paths: the reviewer is asked to judge content, and the
-          # first real Review E2E handed the model an empty change surface while the frozen scope
-          # carried eight paths - it faithfully answered NOT_APPLICABLE for "no changed paths"
-          # (CCV1-147B; proved by recomputing both digests, and nothing failed because every
-          # digest still recomputed). These are git's own bytes for the frozen candidate's
-          # first-parent diff. No diff authority, no signature and no second registry: GitHub
-          # already owns commit identity.
-          git -C candidate diff --no-ext-diff --no-color HEAD^1 HEAD > "$RUNNER_TEMP/candidate.diff"
-          test -s "$RUNNER_TEMP/candidate.diff"
-          wc -c < "$RUNNER_TEMP/candidate.diff"
-          wc -l < "$RUNNER_TEMP/changed_paths.txt"
 
       - name: Resolve the review brief from the candidate's own pull request (read-only)
         env:
@@ -194,6 +162,27 @@ jobs:
             --candidate-sha "${{ inputs.candidate_sha }}" \
             --repository "$GITHUB_REPOSITORY" \
             --out "$RUNNER_TEMP/review_brief.json"
+
+      - name: Bind the exact frozen candidate and its complete pull-request diff
+        run: |
+          set -euo pipefail
+          test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
+          test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
+          BASE_SHA="$(jq -er '.pull_request.base_sha' "$RUNNER_TEMP/review_brief.json")"
+          [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          # Full-history checkout fetched the base while its read-only credential was scoped.
+          # A base that moved beyond that checkout fails closed; no anonymous remote fetch.
+          test "$(git -C candidate rev-parse "$BASE_SHA^{commit}")" = "$BASE_SHA"
+          test "$(git -C candidate rev-parse --is-shallow-repository)" = false
+          # A pull-request head can contain several commits. HEAD^1..HEAD only reviews the
+          # newest one and can silently omit the actual remediation. Freeze the complete PR
+          # surface from the exact GitHub-reported base to this frozen candidate instead.
+          git -C candidate diff --name-only "$BASE_SHA"...HEAD | sort -u > "$RUNNER_TEMP/changed_paths.txt"
+          test -s "$RUNNER_TEMP/changed_paths.txt"
+          git -C candidate diff --no-ext-diff --no-color "$BASE_SHA"...HEAD > "$RUNNER_TEMP/candidate.diff"
+          test -s "$RUNNER_TEMP/candidate.diff"
+          wc -c < "$RUNNER_TEMP/candidate.diff"
+          wc -l < "$RUNNER_TEMP/changed_paths.txt"
 
       - name: Resolve the authoritative rule sources (read-only, this run's commit)
         env:

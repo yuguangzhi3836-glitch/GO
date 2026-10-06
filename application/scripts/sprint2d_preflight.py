@@ -1,5 +1,5 @@
 from __future__ import annotations
-import json, os, pathlib, socket, ssl, sys, urllib.request
+import argparse, json, os, pathlib, socket, ssl, sys, urllib.request
 from datetime import datetime, timezone
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -38,6 +38,10 @@ def url_probe(url:str):
         return {'reachable':False,'error':type(e).__name__+': '+str(e)[:240]}
 
 def main():
+    parser = argparse.ArgumentParser(description='Check bringup prerequisites without executing deployment.')
+    parser.add_argument('--output', type=pathlib.Path, default=OUT,
+                        help='Report destination (use a writable temporary path for isolated tests).')
+    out = parser.parse_args().output
     result={'generated_at':datetime.now(timezone.utc).isoformat(),'gates':{},'network_probes':{}}
     for gate,names in REQUIRED_ENV.items():
         missing=[n for n in names if not present(n)]
@@ -46,9 +50,9 @@ def main():
         url=os.getenv(key,'').strip()
         if url:
             result['network_probes'][key]=url_probe(url)
-    OUT.parent.mkdir(parents=True,exist_ok=True)
-    OUT.write_text(json.dumps(result,indent=2,ensure_ascii=False)+'\n')
+    out.parent.mkdir(parents=True,exist_ok=True)
+    out.write_text(json.dumps(result,indent=2,ensure_ascii=False)+'\n')
     blocked=[g for g,v in result['gates'].items() if v['credential_preflight']!='PASS']
-    print(json.dumps({'state':'READY_FOR_LIVE_EXECUTION' if not blocked else 'BLOCKED_CREDENTIALS','blocked':blocked,'report':str(OUT)},indent=2))
+    print(json.dumps({'state':'READY_FOR_LIVE_EXECUTION' if not blocked else 'BLOCKED_CREDENTIALS','blocked':blocked,'report':str(out)},indent=2))
     return 0 if not blocked else 2
 if __name__=='__main__': sys.exit(main())
