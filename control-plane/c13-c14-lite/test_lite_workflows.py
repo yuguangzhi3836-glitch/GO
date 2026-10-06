@@ -342,7 +342,7 @@ class ReviewContentInputGuardTests(unittest.TestCase):
     """
 
     DIFF_BLOCK = (
-        "          git -C candidate diff --no-ext-diff --no-color HEAD^1 HEAD"
+        "          git -C candidate diff --no-ext-diff --no-color \"$BASE_SHA\"...HEAD"
         " > \"$RUNNER_TEMP/candidate.diff\"\n"
         "          test -s \"$RUNNER_TEMP/candidate.diff\"\n"
     )

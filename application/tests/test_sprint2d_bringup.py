@@ -17,9 +17,17 @@ def test_preflight_fails_closed_without_credentials(tmp_path):
     for name in list(env):
         if name.startswith(('STAGING_','PSP_','REAL_CONNECTOR_','EXPO_','APPLE_','ASC_','APNS_','GOOGLE_','FIREBASE_','GO_APP_','IOS_','ANDROID_')):
             env.pop(name,None)
-    p=subprocess.run([sys.executable,str(ROOT/'scripts/sprint2d_preflight.py')],cwd=ROOT,env=env,capture_output=True,text=True)
+    report = tmp_path / 'reports' / 'preflight.json'
+    source_report = ROOT / 'staging/bringup/preflight.local.json'
+    before = source_report.read_bytes() if source_report.exists() else None
+    p=subprocess.run([sys.executable,str(ROOT/'scripts/sprint2d_preflight.py'), '--output', str(report)],cwd=ROOT,env=env,capture_output=True,text=True)
     assert p.returncode==2
     assert 'BLOCKED_CREDENTIALS' in p.stdout
+    assert json.loads(p.stdout)['report'] == str(report)
+    result = json.loads(report.read_text())
+    assert all(gate['credential_preflight'] == 'BLOCKED' for gate in result['gates'].values())
+    assert result['network_probes'] == {}
+    assert (source_report.read_bytes() if source_report.exists() else None) == before
 
 def test_release_workflow_waits_for_store_build_and_submit():
     s=(ROOT/'.github/workflows/real-environment-bringup.yml').read_text()
