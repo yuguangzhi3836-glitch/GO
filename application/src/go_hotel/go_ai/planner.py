@@ -54,6 +54,8 @@ class GOAITaskPlanner:
                 "Identify transaction, payment, refund, supplier-fact or authorization risks. Advisory only; deterministic GO systems retain authority.\nUser request:\n" + message,
             ))
 
-        # Stable bounded plan; orchestration may execute in parallel.
+        # Preserve the full deterministic plan. The service already enforces the
+        # parallel worker budget, so truncating here silently drops required
+        # high-assurance stages.
         dedup: dict[str, PlannedTask] = {t.task_id: t for t in tasks}
-        return list(dedup.values())[: max(1, assessment.max_parallel_tasks)]
+        return list(dedup.values())
