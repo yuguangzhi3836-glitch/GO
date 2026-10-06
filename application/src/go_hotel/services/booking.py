@@ -229,14 +229,30 @@ class BookingService:
         order = repo.get_order(op["aggregate_id"])
         prebook = repo.get_prebook(order.prebook_id) if order else None
         offer = repo.get_offer(prebook.offer_id) if prebook else None
+        payment = repo.get_authorized_payment_for_order(order.order_id) if order else None
+        connector = self._connector(offer.connector_id if offer else None)
         confirmation = (op.get("result_payload") or {}).get("confirmation_no") or op.get("external_reference")
         if confirmation:
-            status = await self._connector(offer.connector_id if offer else None).status(confirmation)
+            status = await connector.status(confirmation)
             if status == "CONFIRMED":
                 if order.status != OrderStatus.CAPTURE_PENDING:
                     order = repo.commit_supplier_booking_before_capture(op["operation_id"], confirmation)
-                payment = repo.get_authorized_payment_for_order(order.order_id)
                 return await self.capture_after_booking(order.order_id, payment)
+        else:
+            lookup_booking = getattr(connector, "lookup_booking", None)
+            if lookup_booking is None:
+                lookup_booking = getattr(getattr(connector, "inner", None), "lookup_booking", None)
+            if lookup_booking is None:
+                raise RuntimeError("Supplier booking status remains unresolved")
+            observed = await lookup_booking(op["operation_id"])
+            status = str((observed or {}).get("status") or "").upper()
+            confirmation = (observed or {}).get("confirmation")
+            if status == "CONFIRMED" and confirmation:
+                order = repo.commit_supplier_booking_before_capture(op["operation_id"], confirmation)
+                return await self.capture_after_booking(order.order_id, payment)
+            if status == "REJECTED" and payment:
+                repo.mark_external_completed(op["operation_id"], {"status": "REJECTED"})
+                return await self._void_after_definitive_booking_failure(order.order_id, payment, "SUPPLIER_BOOKING_REJECTED")
         raise RuntimeError("Supplier booking status remains unresolved")
 
     async def recover_capture(self, op: dict):
