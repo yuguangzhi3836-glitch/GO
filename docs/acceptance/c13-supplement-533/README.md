@@ -9,7 +9,12 @@ Change classes: CONTROL_PLANE, PRODUCT_FIX, TEST_ONLY, DOCUMENTATION.
 Candidate #531 remains frozen at `0b7d0403f9f171844fdcf9bf3330ff9386e82943`.
 C13 run `37484199333`, attempt 1, machine job `112339914820`, reviewer job
 `112342053115`, artifact `11423210723` sealed `BLOCKED / C13-EVIDENCE-001`.
-The PostgreSQL 18.4 evidence covers 20 passing cases in three changed files.
+CORRECTION: the evidence covers 20 passing cases in three changed files, but
+does NOT prove that those cases used PostgreSQL 18.4. The manifest writes that
+version as a literal. The frozen application conftest overwrites DATABASE_URL
+with SQLite; the formal C13 invocation does not load `ci.unknown_pg_plugin`.
+The separate candidate-authored PostgreSQL workflow does load that plugin, but
+its evidence cannot silently replace the formal C13 machine boundary.
 The required unchanged funding file and checkout node were omitted by the
 changed-file inventory derivation. The existing C14 is `PASS_SCOPED` and must
 not be repeated for this payment candidate.
@@ -59,6 +64,28 @@ dependency installation or source workaround was used.
 
 ## Remaining work before #533 can close
 
+The previous two-path-only plan now has a blocking prerequisite:
+`supplement_prior_database_unproven`. A local read-only preflight has verified
+the original C13 seal and the manifest/JUnit/stdout/inventory digests and then
+refused PostgreSQL reuse, because no bound actual-database observation exists.
+Adding a database sidecar after sealing is also refused; old evidence is retained.
+
+`lite_supplement_preflight.py` is a pure verification component, not yet connected
+to admission or a workflow. It requires an externally verified expected transport
+binding and checks the previous root, candidate/tree, run/attempt, C14 root,
+inventory-only finding, raw machine digests, zero exit, database evidence bound
+inside the sealed manifest, and real passing JUnit case records. Nine synthetic
+boundary tests pass. A positive synthetic check grants no execution authority.
+
+Owner's current instruction permits only the two missing paths. Re-running the
+two prior business test files together with the two missing paths under a
+corrected actual-PostgreSQL formal boundary changes that scope and needs an
+explicit decision. The fifth file, `test_depth25_migration_history.py`, explicitly
+uses SQLite and is marked `no_db`; preserve that evidence as SQLite/static
+migration regression, never rename it as PostgreSQL validation. Do not spend a supplemental review
+while the original 20-case PostgreSQL prerequisite is unproven. Preserve #531
+and the original C14 either way. No new paid run was triggered.
+
 1. Define a bounded supplement admission bound to the original C13 run/attempt,
    frozen candidate/application tree, original C14 run/root, and the exact missing
    inventory. A comment identifier alone must not create another paid execution.
@@ -86,6 +113,8 @@ installed consumer version remain UNPROVEN while no device is connected.
 | --- | --- |
 | Explicit inventory source repair | Implemented in this draft |
 | Local ingress regression | 63 PASS |
+| Prior evidence preflight | Implemented as read-only component; 9 tests PASS |
+| Real #533 prior evidence preflight | BLOCKED: supplement_prior_database_unproven |
 | C13 supplement admission/aggregation | NOT IMPLEMENTED |
 | Independent review of this draft | NOT RUN |
 | #533 missing tests | NOT EXECUTED by this change |
