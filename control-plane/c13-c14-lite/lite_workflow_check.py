@@ -491,8 +491,9 @@ def _workflow_fetches_the_exact_pr_base(raw: str) -> bool:
     code = "\n".join(_code_lines(raw))
     return all(fragment in code for fragment in (
         ".pull_request.base_sha",
-        'git -C candidate fetch --no-tags --depth=1 origin "$BASE_SHA"',
-        'test "$(git -C candidate rev-parse FETCH_HEAD)" = "$BASE_SHA"',
+        'fetch-depth: 0',
+        'test "$(git -C candidate rev-parse "$BASE_SHA^{commit}")" = "$BASE_SHA"',
+        'test "$(git -C candidate rev-parse --is-shallow-repository)" = false',
     ))
 
 

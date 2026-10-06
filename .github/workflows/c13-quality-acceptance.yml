@@ -246,9 +246,8 @@ jobs:
         with:
           ref: ${{ inputs.candidate_sha }}
           path: candidate
-          # The exact PR base is fetched and verified below before the complete diff is frozen.
-          # Keeping the first parent also preserves compatibility for a merge-commit candidate.
-          fetch-depth: 2
+          # Complete ancestry is required for the PR merge base, even with many commits.
+          fetch-depth: 0
           persist-credentials: false
 
       - uses: actions/setup-python@v5
@@ -304,8 +303,10 @@ jobs:
           mkdir -p "$RUNNER_TEMP/artifacts"
           BASE_SHA="$(jq -er '.pull_request.base_sha' "$RUNNER_TEMP/review_brief.json")"
           [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
-          git -C candidate fetch --no-tags --depth=1 origin "$BASE_SHA"
-          test "$(git -C candidate rev-parse FETCH_HEAD)" = "$BASE_SHA"
+          # Full-history checkout fetched the base while its read-only credential was scoped.
+          # A base that moved beyond that checkout fails closed; no anonymous remote fetch.
+          test "$(git -C candidate rev-parse "$BASE_SHA^{commit}")" = "$BASE_SHA"
+          test "$(git -C candidate rev-parse --is-shallow-repository)" = false
           # Freeze every commit in the PR, not only the candidate head's last commit.
           git -C candidate diff --name-only "$BASE_SHA"...HEAD | sort -u > "$RUNNER_TEMP/changed_paths.txt"
           test -s "$RUNNER_TEMP/changed_paths.txt"

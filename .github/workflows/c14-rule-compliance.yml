@@ -139,7 +139,7 @@ jobs:
           ref: ${{ inputs.candidate_sha }}
           path: candidate
           persist-credentials: false
-          fetch-depth: 2
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -170,8 +170,10 @@ jobs:
           test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
           BASE_SHA="$(jq -er '.pull_request.base_sha' "$RUNNER_TEMP/review_brief.json")"
           [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
-          git -C candidate fetch --no-tags --depth=1 origin "$BASE_SHA"
-          test "$(git -C candidate rev-parse FETCH_HEAD)" = "$BASE_SHA"
+          # Full-history checkout fetched the base while its read-only credential was scoped.
+          # A base that moved beyond that checkout fails closed; no anonymous remote fetch.
+          test "$(git -C candidate rev-parse "$BASE_SHA^{commit}")" = "$BASE_SHA"
+          test "$(git -C candidate rev-parse --is-shallow-repository)" = false
           # A pull-request head can contain several commits. HEAD^1..HEAD only reviews the
           # newest one and can silently omit the actual remediation. Freeze the complete PR
           # surface from the exact GitHub-reported base to this frozen candidate instead.
