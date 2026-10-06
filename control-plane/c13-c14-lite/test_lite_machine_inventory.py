@@ -109,7 +109,10 @@ class MachineInventoryTests(unittest.TestCase):
         run = run.split("      - name: Record the machine-test manifest", 1)[0]
         self.assertNotIn("${{ inputs.machine_inventory }}", run)
         self.assertIn('python -m pytest "$@"', run)
-        self.assertIn('c13-tests "${test_paths[@]}"', run)
+        self.assertIn('c13-tests "${pytest_options[@]}" "${test_paths[@]}"', run)
+        self.assertIn('pytest_options=()', run)
+        self.assertIn('if [ "$PG533_SUPPLEMENT" = true ]; then', run)
+        self.assertIn('pytest_options=(-p lite_pg533_plugin)', run)
         self.assertIn("-w /srv/application", run)
         self.assertIn("-e GO_MEDIA_CACHE_DIR=/tmp/go-media-cache", run)
         self.assertIn('pipeline_status=("${PIPESTATUS[@]}")', run)

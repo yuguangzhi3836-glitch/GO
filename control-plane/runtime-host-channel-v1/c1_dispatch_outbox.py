@@ -118,9 +118,15 @@ def _now() -> str:
 
 
 class DispatchOutbox:
-    def __init__(self, db_path: str, clock=_now):
+    def __init__(self, db_path: str, clock=_now, *, read_only=False):
         self.db_path = str(db_path)
         self.clock = clock
+        if read_only:
+            from pathlib import Path
+            self._db = sqlite3.connect(Path(self.db_path).resolve().as_uri() + "?mode=ro",
+                                       uri=True, isolation_level=None)
+            self._db.row_factory = sqlite3.Row
+            return
         self._db = sqlite3.connect(self.db_path, isolation_level=None)
         self._db.row_factory = sqlite3.Row
         self._db.execute("PRAGMA journal_mode=WAL")

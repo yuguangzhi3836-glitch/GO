@@ -791,7 +791,7 @@ REVIEW_PAYLOAD_FIELDS = frozenset({
     "schema_version", "cell_id", "external_task_id",
     "candidate_sha", "application_tree", "issue_number",
     "review_request_id", "ledger_round_id", "c14_task_id", "c13_task_id",
-    "machine_inventory", "ai_model", "c14_run_id", "c14_runtime_task_id",
+    "machine_inventory", "ai_model", "c14_run_id", "c14_runtime_task_id", "supplement",
 })
 REVIEW_PAYLOAD_REQUIRED = (
     "schema_version", "cell_id", "external_task_id", "candidate_sha",
@@ -901,6 +901,13 @@ def validate_review_task_payload(payload, *, allowed_owner_cs=LEGACY_OWNER_CS) -
         normalised["c14_runtime_task_id"] = _bounded_text(
             payload["c14_runtime_task_id"], limit=MAX_REVIEW_ID,
             reason="REVIEW_PAYLOAD_C14_RUNTIME_TASK_ID_INVALID")
+    if "supplement" in payload:
+        from c1_c13_supplement_contract import validate_payload
+        try:
+            validate_payload(payload)
+        except ValueError as error:
+            raise Refused(str(error)) from None
+        normalised["supplement"] = dict(payload["supplement"])
     # A kind-level requirement, checked here rather than at the caller: the C13 half of a
     # round cannot be formed without naming the C14 execution it follows - the GitHub run
     # (which the workflow requires) AND the Runtime task (which is what lets this side
@@ -917,6 +924,7 @@ def build_review_task_payload(*, cell_id, external_task_id, candidate_sha, appli
                              issue_number, review_request_id, ledger_round_id,
                              c14_task_id, c13_task_id, machine_inventory=None,
                              ai_model=None, c14_run_id=None, c14_runtime_task_id=None,
+                             supplement=None,
                              allowed_owner_cs=LEGACY_OWNER_CS) -> dict:
     payload = {
         "schema_version": REVIEW_PAYLOAD_SCHEMA_VERSION,
@@ -938,6 +946,8 @@ def build_review_task_payload(*, cell_id, external_task_id, candidate_sha, appli
         payload["c14_run_id"] = c14_run_id
     if c14_runtime_task_id is not None:
         payload["c14_runtime_task_id"] = c14_runtime_task_id
+    if supplement is not None:
+        payload["supplement"] = supplement
     return validate_review_task_payload(payload, allowed_owner_cs=allowed_owner_cs)
 
 
@@ -1218,6 +1228,8 @@ def dispatch_inputs(request: dict) -> dict:
         }
         if "c14_run_id" in payload:
             transport["c14_run_id"] = payload["c14_run_id"]
+        if "supplement" in payload:
+            transport["supplement"] = payload["supplement"]
         inputs = {
             "runtime_transport": canonical(transport),
             "candidate_sha": payload["candidate_sha"],
