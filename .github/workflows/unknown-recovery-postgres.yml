@@ -1,0 +1,91 @@
+name: UNKNOWN recovery PostgreSQL verification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/unknown-recovery-postgres.yml'
+      - 'application/ci/unknown_pg_plugin.py'
+      - 'application/src/go_hotel/services/hosted_money.py'
+      - 'application/src/go_hotel/services/hosted_unknown_authority.py'
+      - 'application/src/go_hotel/db/models.py'
+      - 'application/alembic/versions/0136_hosted_unknown_episode.py'
+      - 'application/tests/test_v70_r4_c01_unknown_episode.py'
+      - 'application/tests/test_unknown_episode_retention.py'
+permissions:
+  contents: read
+jobs:
+  unknown-postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: go_unknown_isolated
+          POSTGRES_USER: go_ci
+          POSTGRES_PASSWORD: isolated_ci_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U go_ci -d go_unknown_isolated"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      APP_ENV: test
+      PYTHONPATH: src
+      GO_MEDIA_CACHE_DIR: /tmp/unknown-media
+      DATABASE_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_unknown_isolated
+      GO_UNKNOWN_PG_TEST_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_unknown_isolated
+      GO_UNKNOWN_DISPOSABLE_DB: 'YES'
+      GO_UNKNOWN_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
+      GO_UNKNOWN_DB_EVIDENCE: ${{ runner.temp }}/unknown-pg/database.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies
+        run: python -m pip install './application[dev]' psycopg[binary]
+      - name: Verify candidate and migrate the disposable database
+        working-directory: application
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/unknown-pg"
+          test "$(git rev-parse HEAD)" = "$GO_UNKNOWN_CANDIDATE_SHA"
+          git rev-parse HEAD > "$RUNNER_TEMP/unknown-pg/candidate_sha.txt"
+          git rev-parse HEAD:application > "$RUNNER_TEMP/unknown-pg/application_tree.txt"
+          set +e
+          python -m alembic upgrade head > "$RUNNER_TEMP/unknown-pg/migration.log" 2>&1
+          code=$?
+          set -e
+          echo "$code" > "$RUNNER_TEMP/unknown-pg/migration_exit_code.txt"
+          cat "$RUNNER_TEMP/unknown-pg/migration.log"
+          exit "$code"
+      - name: Execute the bounded UNKNOWN inventory on actual PostgreSQL
+        working-directory: application
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          python -m pytest -p ci.unknown_pg_plugin \
+            tests/test_v70_r4_c01_unknown_episode.py \
+            tests/test_unknown_episode_retention.py \
+            tests/test_v70_next_c01_unknown_funding.py \
+            tests/test_depth06_direct_checkout.py::test_unknown_funds_keep_inventory_and_block_cancel_and_timeout \
+            -q -o cache_dir=/tmp/unknown-pg-cache \
+            --junitxml="$RUNNER_TEMP/unknown-pg/junit.xml" \
+            > "$RUNNER_TEMP/unknown-pg/stdout.txt" 2>&1
+          code=$?
+          set -e
+          echo "$code" > "$RUNNER_TEMP/unknown-pg/exit_code.txt"
+          cat "$RUNNER_TEMP/unknown-pg/stdout.txt"
+          exit "$code"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unknown-pg-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/unknown-pg/
+          if-no-files-found: error
+          retention-days: 90
