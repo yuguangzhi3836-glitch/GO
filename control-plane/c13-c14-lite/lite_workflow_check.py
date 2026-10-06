@@ -50,8 +50,8 @@ INVENTED_RULE_NAMES = ("GO_" + "CONSTITUTION", "PERMISSION_" + "BOUNDARY", "AI_B
 #: verify step already copies its opinion into the uploaded artefact directory.
 C14_RAW_ARTIFACT = "c13c14-lite-c14-raw-${{ inputs.candidate_sha }}"
 
-#: The frozen candidate's own first-parent diff. The reviewer has to be given the CONTENT, not
-#: just the names of the files that changed.
+#: The frozen candidate's complete pull-request diff. The reviewer has to be given the CONTENT,
+#: not just the names of the files that changed.
 CANDIDATE_DIFF_REDIRECT = "candidate.diff"
 
 #: The resolved review brief - the delivery brief declared by the candidate's own pull request
@@ -269,7 +269,7 @@ def check_spec_carries_the_frozen_review_content(name: str, raw: str, failures: 
                and f'> "$RUNNER_TEMP/{CANDIDATE_DIFF_REDIRECT}"' in line
                for line in code.splitlines()):
         failures.append(
-            f"{name}: must freeze the candidate's own first-parent diff into "
+            f"{name}: must freeze the candidate's complete pull-request diff into "
             f"$RUNNER_TEMP/{CANDIDATE_DIFF_REDIRECT} (file names alone are not the content the "
             "reviewer has to judge)")
     if f'test -s "$RUNNER_TEMP/{CANDIDATE_DIFF_REDIRECT}"' not in code:
@@ -427,7 +427,7 @@ def check_workflow_identity_source(name: str, raw: str, failures: list) -> None:
 def _changed_paths_command(raw: str):
     """The exact pipeline the workflow uses to freeze the changed-path boundary."""
     for line in _code_lines(raw):
-        if "diff-tree" in line and CHANGED_PATHS_REDIRECT in line:
+        if "git -C candidate diff --name-only" in line and CHANGED_PATHS_REDIRECT in line:
             return line.strip()
     return None
 
@@ -486,40 +486,23 @@ def _document_from(raw: str):
     return document if isinstance(document, dict) else None
 
 
-def _candidate_checkout_can_see_its_parent(name: str, raw: str) -> bool:
-    """Whether some candidate checkout fetches deep enough to hold the first parent.
-
-    A first-parent diff cannot be computed without the parent. At ``fetch-depth: 1`` the
-    shallow graft makes the boundary come out EMPTY **with exit code 0** (measured), which
-    is the same silent degradation as the diff-tree bug - the empty-boundary gate is the
-    backstop, this is the early warning.
-    """
-    document = _document_from(raw)
-    if document is not None:
-        for job in (document.get("jobs") or {}).values():
-            for step in (job or {}).get("steps", []) or []:
-                if "checkout" not in str(step.get("uses", "")):
-                    continue
-                with_block = step.get("with") or {}
-                if str(with_block.get("path") or "") != "candidate":
-                    continue
-                try:
-                    if int(str(with_block.get("fetch-depth", 1))) >= 2:
-                        return True
-                except (TypeError, ValueError):
-                    continue
-        return False
-    return bool(re.search(r"fetch-depth:\s*([2-9]|\d{2,})\b", raw))
+def _workflow_fetches_the_exact_pr_base(raw: str) -> bool:
+    """Whether the workflow resolves and fetches the exact GitHub-reported PR base SHA."""
+    code = "\n".join(_code_lines(raw))
+    return all(fragment in code for fragment in (
+        ".pull_request.base_sha",
+        'fetch-depth: 0',
+        'test "$(git -C candidate rev-parse "$BASE_SHA^{commit}")" = "$BASE_SHA"',
+        'test "$(git -C candidate rev-parse --is-shallow-repository)" = false',
+    ))
 
 
 def check_changed_path_boundary(name: str, raw: str, failures: list) -> None:
-    """The frozen changed-path boundary must be correct on a MERGE commit.
+    """The frozen boundary must cover the complete PR for a head or merge candidate.
 
-    ``git diff-tree <merge>`` prints nothing unless a parent is selected, so the plain form
-    silently froze an EMPTY boundary and the rule review became a review of nothing
-    (CCV1-145B D-1 - proved by recomputing the frozen scope digest). This runs the
-    workflow's *own* command against a throwaway repository holding both an ordinary commit
-    and a merge commit, and compares it with git's own first-parent diff.
+    A candidate head can contain several commits. ``HEAD^1..HEAD`` silently reviews only the
+    newest commit, so the workflow must diff the exact PR base frozen from GitHub against the
+    candidate. This runs the workflow's own command against a repository holding both forms.
 
     The POC_ONLY probe is exempt: it freezes no changed-path boundary at all.
     """
@@ -535,10 +518,9 @@ def check_changed_path_boundary(name: str, raw: str, failures: list) -> None:
         failures.append(
             f"{name}: must refuse an empty changed-path boundary "
             f"(no 'test -s \"$RUNNER_TEMP/{CHANGED_PATHS_REDIRECT}\"')")
-    if not _candidate_checkout_can_see_its_parent(name, raw):
+    if not _workflow_fetches_the_exact_pr_base(raw):
         failures.append(
-            f"{name}: the candidate checkout must fetch its first parent (fetch-depth >= 2); "
-            "at depth 1 the boundary is empty again, with exit code 0")
+            f"{name}: must resolve, fetch and verify the exact PR base SHA before diffing")
 
     pipeline = command.split(">", 1)[0].strip()
     head, _, tail = pipeline.partition("|")
@@ -556,7 +538,15 @@ def check_changed_path_boundary(name: str, raw: str, failures: list) -> None:
     try:
         with tempfile.TemporaryDirectory() as tmp:
             repo = _boundary_fixture(pathlib.Path(tmp))
-            resolved = [str(repo) if token is None else token for token in argv]
+            base_sha = _git(repo, "rev-parse", "HEAD^1").strip()
+            resolved = []
+            for token in argv:
+                if token is None:
+                    resolved.append(str(repo))
+                elif "BASE_SHA" in token:
+                    resolved.append(base_sha + ("...HEAD" if "...HEAD" in token else ""))
+                else:
+                    resolved.append(token.strip('"'))
 
             def produced():
                 completed = subprocess.run(resolved, capture_output=True, text=True)
@@ -565,11 +555,8 @@ def check_changed_path_boundary(name: str, raw: str, failures: list) -> None:
                 return sorted(set(line for line in completed.stdout.splitlines() if line))
 
             merge_seen = produced()
-            _git(repo, "checkout", "-q", "HEAD^1")
+            _git(repo, "checkout", "-q", "side")
             ordinary_seen = produced()
-            ordinary_expected = sorted(
-                set(_git(repo, "diff-tree", "--no-commit-id", "--name-only", "-r",
-                         "HEAD^1", "HEAD").split()))
     except Exception as error:  # noqa: BLE001 - a boundary check that cannot run is a failure
         failures.append(f"{name}: could not evaluate the changed-path command ({error})")
         return
@@ -580,10 +567,10 @@ def check_changed_path_boundary(name: str, raw: str, failures: list) -> None:
             "(the candidate's change surface would be reviewed as 'nothing changed')")
     elif merge_seen != ["f_side.txt"]:
         failures.append(f"{name}: merge boundary is {merge_seen}, expected ['f_side.txt']")
-    if ordinary_seen != ordinary_expected:
+    if ordinary_seen != ["f_side.txt"]:
         failures.append(
             f"{name}: boundary for an ordinary commit is {ordinary_seen}, "
-            f"expected {ordinary_expected}")
+            "expected ['f_side.txt']")
 
 
 def check_raw_evidence_survives_a_refused_seal(name: str, raw: str, failures: list) -> None:

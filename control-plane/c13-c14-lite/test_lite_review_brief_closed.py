@@ -12,7 +12,7 @@ SHA = "a" * 40
 
 def pr(number, sha=SHA):
     return {"number": number, "head": {"sha": sha}, "state": "closed",
-            "base": {"ref": "main"}, "body": "NO-GO; review only"}
+            "base": {"ref": "main", "sha": "c" * 40}, "body": "NO-GO; review only"}
 
 
 class ClosedBriefTests(unittest.TestCase):

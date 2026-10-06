@@ -39,7 +39,7 @@ of the original production-task authority.
 In plain terms:
 
 - C13 and C14 now finally have the **question**, not only the **answer** (change surface,
-  candidate first-parent diff, rule text, machine evidence).
+  candidate complete pull-request diff, rule text, machine evidence).
 - The question comes from the **candidate's own pull request declaration**, resolved
   read-only from GitHub's own commit → pull requests answer and matched **uniquely** —
   the candidate is that PR's `head.sha` or its `merge_commit_sha`; zero or several matches

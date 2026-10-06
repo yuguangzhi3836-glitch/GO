@@ -7,7 +7,7 @@ reviewable Python instead of inside YAML.
 Subcommands
 -----------
 ``spec``          build one frozen candidate spec + contract from the dispatch env, the
-                  frozen scope and the candidate's own first-parent diff
+                  frozen scope and the candidate's complete pull-request diff
 ``review``        run one fresh AI review execution (or the labelled local stub)
 ``seal``          seal a bundle from the contract, the review outcome and machine evidence
 ``verify``        verify a whole C13+C14 round and write the decision
@@ -175,7 +175,7 @@ def _read_frozen_scope(path) -> dict:
 
 
 def _read_candidate_diff(path) -> str:
-    """The frozen candidate's own first-parent diff; empty is a hard stop.
+    """The frozen candidate's complete pull-request diff; empty is a hard stop.
 
     An empty diff is not "a small change" - it is the reviewer being asked to review
     nothing, which is how a wrong input used to become a clean NOT_APPLICABLE.
@@ -305,7 +305,7 @@ def _facts(role: str, spec: dict, *, task_id: str, scope: dict, candidate_diff: 
         # changed paths". Every digest recomputed, so nothing failed (CCV1-147B).
         "changed_paths": list(scope["changed_paths"]),
         # And not only the names: the actual content this candidate brings in. These are git's
-        # own bytes (the candidate's first-parent diff) - there is no diff authority, no
+        # own bytes (the candidate's complete pull-request diff) - there is no diff authority, no
         # signature and no second registry behind them.
         "candidate_diff": candidate_diff,
         # And, from here on, WHICH TASK this is: the candidate's own pull request, frozen as
@@ -978,7 +978,7 @@ def main(argv=None) -> int:
     spec.add_argument("--scope", required=True,
                       help="the scope.json this round froze; the change surface is read from it")
     spec.add_argument("--candidate-diff", required=True,
-                      help="the frozen candidate's own first-parent diff")
+                      help="the frozen candidate's complete pull-request diff")
     # Required for the same reason one level up: the diff is the answer, the brief is the
     # question. Without it a reviewer can only grade against its own idea of best practice.
     # It is the association's *declared* brief (REVIEW_BRIEF_V1), not an immutable original
