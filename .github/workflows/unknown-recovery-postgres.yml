@@ -36,7 +36,6 @@ jobs:
       GO_UNKNOWN_PG_TEST_URL: postgresql+psycopg://go_ci:isolated_ci_only@127.0.0.1:5432/go_unknown_isolated
       GO_UNKNOWN_DISPOSABLE_DB: 'YES'
       GO_UNKNOWN_CANDIDATE_SHA: ${{ github.event.pull_request.head.sha }}
-      GO_UNKNOWN_DB_EVIDENCE: ${{ runner.temp }}/unknown-pg/database.json
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,6 +68,7 @@ jobs:
         run: |
           set -euo pipefail
           set +e
+          export GO_UNKNOWN_DB_EVIDENCE="$RUNNER_TEMP/unknown-pg/database.json"
           python -m pytest -p ci.unknown_pg_plugin \
             tests/test_v70_r4_c01_unknown_episode.py \
             tests/test_unknown_episode_retention.py \
