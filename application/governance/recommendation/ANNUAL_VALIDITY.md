@@ -70,7 +70,11 @@ without renewal, old-judgment reads and completed-hook replay. Tests use isolate
 SQLite unless explicitly stated otherwise; PostgreSQL concurrency/performance
 and live operations are not claimed.
 
-Change classes: PRODUCT_FEATURE, PRODUCT_FIX, TEST_ONLY, DOCUMENTATION.
-No shared model/migration, workflow, Runtime, role, topology or permission change.
+Change classes: PRODUCT_FEATURE, PRODUCT_FIX, CONTROL_PLANE, TEST_ONLY, DOCUMENTATION.
+CONTROL_PLANE applies to recommendation-authority metadata, historical assessment
+replay, durable review-request identities and completed-hook authority bindings.
+No shared model/migration, workflow, Runtime infrastructure, role, topology or IAM
+permission change. Recommendation authority and replay semantics DO change as
+described above; this scope statement does not exclude CONTROL_PLANE review.
 This candidate remains Draft, unmerged and undeployed. Formal C14→C13 must bind
 its exact new SHA. The original Builder's 39 passes are not transferred.
