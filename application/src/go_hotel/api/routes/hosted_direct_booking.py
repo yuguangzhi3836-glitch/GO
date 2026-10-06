@@ -12,6 +12,40 @@ from go_hotel.services.guest_stay_fulfillment import guest_stay_fulfillment_serv
 from go_hotel.services.post_stay_dispute import post_stay_dispute_service as dispute_svc
 from go_hotel.services.booking_data_release import release_booking_data
 router=APIRouter(tags=['go-hosted-direct-booking-pilot'])
+
+
+class UnknownFundingEpisodeBody(BaseModel):
+ model_config = {'extra': 'forbid'}
+ evidence_reference: str
+ evidence: dict
+
+
+class ResolveUnknownFundingEpisodeBody(UnknownFundingEpisodeBody):
+ decision: str = 'CONFIRMED'
+ expected_open_evidence_digest: str
+
+
+@router.post('/internal/v1/alipay/authorizations/{authorization_id}/funding-movements/{movement_id}/unknown-episodes')
+def open_funding_unknown_episode(authorization_id: str, movement_id: str, b: UnknownFundingEpisodeBody, p: Principal = Depends(admin_principal)):
+ from go_hotel.services.hosted_money import open_unknown_episode
+ try:
+  return {'data': open_unknown_episode(authorization_id, movement_id, b.evidence_reference, b.evidence, p.user_id, principal=p)}
+ except PermissionError:
+  raise HTTPException(403, detail='HOSTED_OPERATION_NOT_AUTHORIZED') from None
+ except ValueError as e:
+  raise HTTPException(409, detail=str(e)) from None
+
+
+@router.post('/internal/v1/alipay/unknown-funding-episodes/{episode_id}/resolve')
+def resolve_funding_unknown_episode(episode_id: str, b: ResolveUnknownFundingEpisodeBody, p: Principal = Depends(admin_principal)):
+ from go_hotel.services.hosted_money import resolve_unknown_episode
+ try:
+  return {'data': resolve_unknown_episode(episode_id, b.decision, b.expected_open_evidence_digest, b.evidence_reference, b.evidence, p.user_id, principal=p)}
+ except PermissionError:
+  raise HTTPException(403, detail='HOSTED_OPERATION_NOT_AUTHORIZED') from None
+ except ValueError as e:
+  raise HTTPException(409, detail=str(e)) from None
+
 class Payload(BaseModel):model_config={'extra':'allow'}
 def call(fn,*a):
  try:return {'data':fn(*a)}
