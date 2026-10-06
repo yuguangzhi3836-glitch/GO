@@ -8,6 +8,8 @@ on:
       - '.github/workflows/c13-c14-lite-tests.yml'
       - '.github/workflows/c14-rule-compliance.yml'
       - '.github/workflows/c13-quality-acceptance.yml'
+      - 'application/scripts/sprint2d_preflight.py'
+      - 'application/tests/test_sprint2d_bringup.py'
 
 permissions:
   contents: read
@@ -30,3 +32,38 @@ jobs:
         run: python -m pip install PyYAML==6.0.3 'pytest>=8'
       - name: Run offline contract and failure-path regression
         run: python -m unittest discover -s control-plane/c13-c14-lite -p 'test_*.py'
+
+  machine-environment-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build the same isolated machine image used by C13
+        run: docker build -f control-plane/c13-c14-lite/machine.Dockerfile -t go-c13-machine:local control-plane/c13-c14-lite
+      - name: Reproduce the four failing cases with read-only source and no credentials
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/machine"
+          set +e
+          docker run --rm \
+            -v "$PWD:/srv:ro" \
+            -v "$RUNNER_TEMP/machine:/out" \
+            -e GO_MEDIA_CACHE_DIR=/tmp/go-media-cache \
+            -w /srv/application \
+            go-c13-machine:local \
+            bash -lc 'pip install -q pytest && cp -r /srv/application /tmp/candidate-application && pip install -q "/tmp/candidate-application[dev]" && python -m pytest -q -o cache_dir=/tmp/pytest-cache --junitxml=/out/junit.xml tests/test_depth30_native_api_contract.py::test_native_six_vertical_creation_payment_and_refund_contracts tests/test_depth47_credit_original_deadline.py::test_actual_native_credit_helper_matches_owner_checked_mobile_api tests/test_sprint2b_mobile_release.py::test_mobile_release_artifacts_and_offline_contract_exist tests/test_sprint2d_bringup.py::test_preflight_fails_closed_without_credentials' \
+            2>&1 | tee "$RUNNER_TEMP/machine/stdout.txt"
+          pipeline_status=("${PIPESTATUS[@]}")
+          set -e
+          printf '%s\n' "${pipeline_status[0]}" > "$RUNNER_TEMP/machine/exit_code.txt"
+          test "${pipeline_status[0]}" -eq 0
+          test "${pipeline_status[1]}" -eq 0
+      - name: Preserve targeted machine evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c13-machine-environment-regression
+          path: ${{ runner.temp }}/machine
+          if-no-files-found: error

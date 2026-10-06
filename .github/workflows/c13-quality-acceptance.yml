@@ -178,6 +178,9 @@ jobs:
           # fails with "could not create 'src/go_hotel_platform.egg-info': Read-only file
           # system" on the read-only mount (measured). The copy is the only writable thing;
           # the candidate itself stays read-only and the tests still run against /srv.
+          # Build from the trusted backend, never from candidate-controlled Docker code.
+          docker build -f control-plane/c13-c14-lite/machine.Dockerfile \
+            -t go-c13-machine:local control-plane/c13-c14-lite
           set +e
           docker run --rm \
             -v "$PWD/candidate:/srv:ro" \
@@ -191,7 +194,7 @@ jobs:
             -e GO_MEDIA_CACHE_DIR=/tmp/go-media-cache \
             -w /srv/application \
             --add-host=host.docker.internal:host-gateway \
-            python:3.12-slim \
+            go-c13-machine:local \
             bash -lc 'pip install -q pytest && cp -r /srv/application /tmp/candidate-application && pip install -q "/tmp/candidate-application[dev]" && python -m pytest "$@" -q --junitxml=/out/junit.xml' c13-tests "${test_paths[@]}" \
             2>&1 | tee "$RUNNER_TEMP/machine/stdout.txt"
           pipeline_status=("${PIPESTATUS[@]}")
@@ -515,4 +518,3 @@ jobs:
           path: ${{ runner.temp }}/artifacts/readback.json
           if-no-files-found: warn
           retention-days: 90
-
