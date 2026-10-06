@@ -25,8 +25,10 @@ head on every poll would silently start reviewing a different commit the moment 
 branch moved, while still calling it the same round. So the candidate is FROZEN by the
 issue, and a PR whose head has moved past it is REFUSED rather than followed.
 
-Everything else - the `application/` tree, the round id, the Lite task ids, the request id
-and the machine-test inventory - is derived here. A human-facing form that asked for six
+Everything else - the `application/` tree, the round id, the Lite task ids and request id
+is derived here. An optional `Machine inventory:` field freezes required test paths,
+including unchanged regressions; without it the candidate's changed tests are used.
+A human-facing form that asked for six
 identifiers would be a form nobody fills in correctly, and the identifiers would then be
 whatever the human guessed.
 
@@ -44,22 +46,28 @@ they disagree.
 
 Read-only, and only ever read-only
 ----------------------------------
-Four GETs at most per review issue: the pull request, its file list, the frozen commit and
-that commit's root tree. No verb but GET, no comment, no label, no state change. The
+Without an explicit inventory, four GETs at most per review issue: the pull request,
+its file list, the frozen commit and that commit's root tree. Explicit inventories
+instead resolve regular files through cached, depth-bounded frozen tree reads.
+No verb but GET, no comment, no label, no state change. The
 client lives in the consumer (`GitHubIssuesReader`), which is the only transport this
 process has, so this module is a pure parser/planner that a test can drive with a stub.
 
 Out of scope on purpose
 -----------------------
 Review execution, result adoption, verdicts, round decisions and issue comments are all
-later stages and all already exist. This module creates ONE C14 task, and the C13 half
-remains something only a sealed, admissible C14 can produce - `enqueue_c13_when_c14_admits`
-in `c1_c13c14_review`. An issue cannot create a C13 task however it is written.
+later stages and all already exist. New rounds create ONE C14 task; their C13 half
+requires an admissible sealed C14. The sole continuation exception is the fixed
+PG533-15-V1 supplement: it reads the original durable C14/C13 results, preserves
+the existing round and admits one deduplicated C13 correction. Comments are not
+an admission API and arbitrary issues cannot request direct C13 execution.
 """
 from __future__ import annotations
 
 import os
 import re
+
+from c1_review_inventory import explicit_inventory, require_frozen_inventory
 
 from c1_execution_contract import (
     C14_REVIEW_KIND,
@@ -245,7 +253,8 @@ def round_identity(issue_number: int, candidate_sha: str) -> dict:
 
 
 # --------------------------------------------------------------------- planning
-def _plan(parsed, *, application_tree, machine_inventory, environ) -> dict:
+def _plan(parsed, *, application_tree, machine_inventory, environ,
+          inventory_source=None) -> dict:
     identity = round_identity(parsed["issue_number"], parsed["candidate_sha"])
     request_id = review_request_id(parsed["candidate_sha"], identity["ledger_round_id"])
     payload = build_review_task_payload(
@@ -276,8 +285,9 @@ def _plan(parsed, *, application_tree, machine_inventory, environ) -> dict:
         "application_tree": application_tree,
         "ledger_round_id": identity["ledger_round_id"],
         "machine_inventory": machine_inventory,
-        "machine_inventory_source": ("candidate_changed_tests" if machine_inventory
-                                     else "workflow_default"),
+        "machine_inventory_source": (inventory_source or
+                                     ("candidate_changed_tests" if machine_inventory
+                                      else "workflow_default")),
         "payload_sha256": sha256_hex(canonical(payload)),
         "would_enqueue": {
             "owner_c": payload["cell_id"],
@@ -296,11 +306,29 @@ def plan_review_ingress(issue, *, reader, environ=None) -> dict:
     has none: this function is not able to enqueue anything, in any configuration.
     """
     parsed = parse_review_issue(issue)
+    from c1_c13_supplement_contract import requested_profile, APPLICATION_TREE
+    try:
+        supplement = requested_profile(issue["body"])
+    except ValueError as error:
+        raise Refused(str(error)) from None
+    if supplement:
+        from c1_c13_supplement_ingress import installed_plan
+        resolve_candidate(reader, parsed)
+        if resolve_application_tree(reader, parsed["candidate_sha"]) != APPLICATION_TREE:
+            raise Refused("C13_SUPPLEMENT_APPLICATION_TREE_MISMATCH")
+        return installed_plan(parsed, enabled=ingress_enabled(environ))
+    inventory = explicit_inventory(issue["body"])
     resolve_candidate(reader, parsed)
     application_tree = resolve_application_tree(reader, parsed["candidate_sha"])
-    inventory = candidate_test_inventory(reader, parsed["candidate_pr_number"])
+    inventory_source = None
+    if inventory is not None:
+        require_frozen_inventory(reader, application_tree, inventory)
+        inventory_source = "explicit_frozen_issue_inventory"
+    else:
+        inventory = candidate_test_inventory(reader, parsed["candidate_pr_number"])
     return _plan(parsed, application_tree=application_tree,
-                 machine_inventory=inventory, environ=environ)
+                 machine_inventory=inventory, environ=environ,
+                 inventory_source=inventory_source)
 
 
 def ingest_review(issue, *, reader, runtime=None, environ=None) -> dict:
