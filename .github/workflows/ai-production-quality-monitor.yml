@@ -2,8 +2,9 @@ name: AI production quality monitor
 
 on:
   schedule:
-    # 07:30 China/Singapore time (UTC+8), before an 08:00 human/ChatGPT read.
-    - cron: "30 23 * * *"
+    # Boss 14-Cell digest: 12:00 and 17:00 China/Singapore time (UTC+8).
+    - cron: "0 4 * * *"
+    - cron: "0 9 * * *"
   workflow_dispatch:
   pull_request:
     paths:
@@ -29,7 +30,7 @@ jobs:
       - run: python ci/ai_production_monitor/test_monitor.py
 
   dry-run:
-    name: Read current C13/C14 evidence (no Issue write)
+    name: Render Boss 14-Cell digest + C13/C14 evidence (no Issue write)
     if: github.event_name == 'pull_request'
     needs: test
     runs-on: ubuntu-24.04
@@ -37,6 +38,8 @@ jobs:
     permissions:
       contents: read
       actions: read
+      issues: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,6 +68,7 @@ jobs:
       contents: read
       actions: read
       issues: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,7 +77,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - name: Refresh observation-only metrics
+      - name: Refresh Boss 14-Cell digest + observation-only metrics
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
