@@ -98,5 +98,7 @@ def test_superseded_version_cannot_be_reactivated(monkeypatch):
     assert Counter(event.event_type for event in events()) == before_events
     current = versions()
     assert [row.state for row in current] == ["SUPERSEDED", "ACTIVE"]
-    assert current[0].effective_at == parsed(first_active["effective_at"]).replace(tzinfo=None)
-    assert current[1].effective_at == parsed(second_active["effective_at"]).replace(tzinfo=None)
+    # SQLite reads naive UTC; PostgreSQL TIMESTAMPTZ reads aware datetimes.
+    # Compare instants without discarding the PostgreSQL timezone information.
+    assert parsed(current[0].effective_at.isoformat()) == parsed(first_active["effective_at"])
+    assert parsed(current[1].effective_at.isoformat()) == parsed(second_active["effective_at"])
