@@ -41,16 +41,49 @@ FAILED_CORRECTION_RUN = 37564091557
 # inventory edits, the newest run nor a verdict can open a third slot.
 IDEMPOTENCY_KEY = "c13-pg-correction-v2:" + ROUND
 MARKER = "c13 supplement:"
+# `PROFILE` above names the frozen EVIDENCE scope and stays V1 forever: the failed V1
+# stored request, the execution-side envelope checks and the prior-outbox validation all
+# read it, so renaming it would invalidate history instead of guarding it.  ACTIVATION is
+# therefore a separate identity, and it is an ADMISSION-ONLY one: `ACTIVATION_PROFILE`
+# never travels in the payload or in `runtime_transport`, and `ENVELOPE["profile"]` stays
+# `PROFILE` because that is what the workflow and the pytest plugin check.  The V1 marker
+# is a CONSUMED generation - it already reached GitHub once and terminated before pytest -
+# so it must never open a slot again.
+ACTIVATION_PROFILE = "PG533-15-V2"
 
 
 def requested_profile(body):
+    """Which generation this issue body asks to ACTIVATE, or a refusal.
+
+    Three outcomes, and the difference between them is the whole point:
+
+    * no `C13 supplement:` line at all -> `None`; an ordinary review issue, untouched.
+    * exactly `PG533-15-V2`            -> that profile; the one explicit activation.
+    * anything else                    -> raise, i.e. refuse.
+
+    The consumed V1 marker must RAISE rather than return `None`.  Returning `None` would
+    let the issue fall through to the ordinary review path and commission a SECOND C14 for
+    a scope that already has one; raising stops it at the ingress with a named reason and
+    no Runtime call.  Among the markers this function does read, a body that still carries
+    the consumed generation is refused as consumed whatever else it also carries, so a
+    half-finished V1 -> V2 body edit cannot half-activate the recovery slot.
+
+    Marker detection is unchanged: only an unprefixed `C13 supplement:` line is a marker,
+    so surrounding whitespace is trimmed but a leading list or emphasis marker is not.  A
+    body whose only such line carries a `-`/`*`/`+` prefix is therefore not a supplement
+    request and takes the ordinary path.  That is bounded and fail-closed where it counts -
+    `None` selects the ordinary review plan, and only `ACTIVATION_PROFILE` selects the
+    supplement, so no prefixed line can reach the paid slot.
+    """
     values = [line.strip()[len(MARKER):].strip() for line in body.splitlines()
               if line.strip().lower().startswith(MARKER)]
     if not values:
         return None
-    if values != [PROFILE]:
-        raise ValueError("C13_SUPPLEMENT_PROFILE_NOT_AUTHORIZED")
-    return PROFILE
+    if values == [ACTIVATION_PROFILE]:
+        return ACTIVATION_PROFILE
+    if PROFILE in values:
+        raise ValueError("C13_SUPPLEMENT_V1_CONSUMED")
+    raise ValueError("C13_SUPPLEMENT_PROFILE_NOT_AUTHORIZED")
 
 
 def validate_payload(payload):

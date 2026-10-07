@@ -32,8 +32,12 @@ and provides one durable idempotency slot with `max_attempts=1`. Repeated issue
 polls or comments do not create new slots. The ordinary C14-first route is unchanged.
 
 After source review, main integration and authorized installation, the existing
-#533 body can select this profile with `C13 supplement: PG533-15-V1`. This document
-is not a live activation instruction; no marker has been applied by this change.
+#533 body can select this one final continuation with `C13 supplement: PG533-15-V2`.
+`PG533-15-V1` remains the frozen evidence-scope identity, but it is a consumed
+generation: on an installed build the V1 marker is refused by name
+(`C13_SUPPLEMENT_V1_CONSUMED`) rather than silently ignored, so the body must be moved
+to `PG533-15-V2` by an explicit human edit before any new slot can be planned. This
+document is not a live activation instruction; no marker has been applied by this change.
 A marker on old installed code is insufficient. Do not create a duplicate issue.
 
 The existing C13 workflow carries the profile in runtime_transport. A trusted
