@@ -47,6 +47,19 @@ class SupplementTests(unittest.TestCase):
                 (request_id,runtime_id,1,"COMPLETED",contract.canonical(doc),
                  contract.sha256_hex(contract.canonical(doc)),contract.canonical(request),"synthetic"))
             self.documents[cell] = doc
+        failed_payload = copy.deepcopy(self.payload)
+        failed_payload.update(machine_inventory=fixed.INVENTORY,
+                              supplement=copy.deepcopy(fixed.ENVELOPE))
+        failed_request = dict(runtime_task_id=fixed.FAILED_CORRECTION_RUNTIME, attempt=1,
+            execution_request_id=fixed.FAILED_CORRECTION_REQUEST, owner_c="C13",
+            task_kind=contract.C13_REVIEW_KIND, payload=failed_payload)
+        self.outbox._db.execute(
+            "INSERT INTO c1_dispatch (execution_request_id,runtime_task_id,attempt,state,"
+            "dispatches_sent,github_run_id,failure_reason,request_json,updated_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (fixed.FAILED_CORRECTION_REQUEST, fixed.FAILED_CORRECTION_RUNTIME, 1,
+             "RUN_FAILED", 1, fixed.FAILED_CORRECTION_RUN, "EXECUTION_RUN_FAILED",
+             contract.canonical(failed_request), "synthetic"))
 
     def tearDown(self):
         self.outbox.close()
@@ -86,11 +99,39 @@ class SupplementTests(unittest.TestCase):
                 ingress.plan_from_outbox(dict(self.parsed,**{field:"wrong"}),self.outbox,enabled=True)
 
     def test_missing_predecessor_and_tampered_result_refuse(self):
-        self.outbox._db.execute("UPDATE c1_dispatch SET result_sha256='wrong'")
+        self.outbox._db.execute(
+            "UPDATE c1_dispatch SET result_sha256='wrong' WHERE result_json IS NOT NULL")
         with self.assertRaisesRegex(contract.Refused,"DIGEST_MISMATCH"):
             self.plan()
         self.outbox._db.execute("DELETE FROM c1_dispatch")
         with self.assertRaisesRegex(contract.Refused,"RESULT_MISSING"):
+            self.plan()
+
+    def test_final_slot_requires_the_exact_failed_correction(self):
+        mutations = (
+            ("state", "RUN_BOUND"), ("dispatches_sent", 0),
+            ("github_run_id", fixed.FAILED_CORRECTION_RUN + 1),
+            ("failure_reason", None),
+        )
+        for field, value in mutations:
+            with self.subTest(field=field):
+                self.outbox._db.execute(
+                    f"UPDATE c1_dispatch SET {field}=? WHERE execution_request_id=?",
+                    (value, fixed.FAILED_CORRECTION_REQUEST))
+                with self.assertRaisesRegex(contract.Refused, "PRIOR_CORRECTION_MISMATCH"):
+                    self.plan()
+                self.outbox.close()
+                self.outbox = DispatchOutbox(str(self.db))
+                reset = {"state": "RUN_FAILED", "dispatches_sent": 1,
+                         "github_run_id": fixed.FAILED_CORRECTION_RUN,
+                         "failure_reason": "EXECUTION_RUN_FAILED"}
+                self.outbox._db.execute(
+                    f"UPDATE c1_dispatch SET {field}=? WHERE execution_request_id=?",
+                    (reset[field], fixed.FAILED_CORRECTION_REQUEST))
+        self.outbox._db.execute(
+            "DELETE FROM c1_dispatch WHERE execution_request_id=?",
+            (fixed.FAILED_CORRECTION_REQUEST,))
+        with self.assertRaisesRegex(contract.Refused, "PRIOR_CORRECTION_MISSING"):
             self.plan()
 
     def test_wire_envelope_survives_contract_and_cannot_expand_scope(self):
