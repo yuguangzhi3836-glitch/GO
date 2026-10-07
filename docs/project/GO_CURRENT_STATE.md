@@ -137,6 +137,18 @@ Last verified 2026-10-04:
 
 `systemctl --failed` was empty. No new unit, daemon, scheduler, queue, DB, registry, workflow or review rule was added by the Builder-auto-review bridge.
 
+> **Superseded on 2026-10-07 — read this before trusting the row above.**
+>
+> The `go-runtime-host-c1-worker` row is a dated 2026-10-04 observation and is kept as
+> history. The **Legacy C1 Responses executor has since been REMOVED from source**: its
+> systemd unit `control-plane/runtime-host-channel-v1/systemd/go-runtime-host-c1-worker.service`
+> no longer exists in the repository, so **no unit of that name can be installed from
+> `main`**. The live resident set is exactly the six `active / enabled` services above.
+>
+> `c1_worker.py` is **not** part of that removal and must not be deleted: it is the single
+> shared execution loop that the gh-aw Builder executor and the C13/C14 review executor
+> both import. See section 4.
+
 ### 3.6 One known non-blocking observability quirk
 
 The review worker's `--check` status line still reports the shared worker's singular `dispatch_target` default (`c1-ai-execution-backend-v1.yml`) even though the review client is correctly bound to `c14-rule-compliance.yml` and `c13-quality-acceptance.yml` through `workflow_files`.
@@ -154,8 +166,31 @@ This is **display-only** and not an execution/dispatch defect. Do not reopen Run
 | Formal manual Review Issue ingress | **DONE / LIVE PROVEN / OPTIONAL PATH** |
 | Duplicate paid-dispatch protection | **DONE / LIVE PROVEN** |
 | Source/candidate freshness binding | **DONE / LIVE PROVEN** |
-| Legacy C1 Responses path | **RETIRED / DISABLED** |
+| Legacy C1 Responses path | **RETIRED / DISABLED / REMOVED FROM SOURCE (2026-10-07)** |
 | U6 Solution-Leak Gate | **BYPASS / DEFERRED; not a Runtime blocker** |
+
+**Legacy C1 Responses path — what "REMOVED" does and does not mean (2026-10-07).**
+
+- REMOVED: the separate systemd unit that ran `c1_worker.py` as its own executor for
+  `AI_WORK_V1` / `AI_TASK_V1`. It was `disabled` + `inactive (dead)` on rt01 since
+  2026-10-04 13:31, nothing depends on it, and its unit file is deleted from this
+  repository. Reinstall it from `main` and you get nothing, because the file is gone.
+- NOT REMOVED, on purpose: `control-plane/runtime-host-channel-v1/c1_worker.py`. It is
+  the **shared execution loop** — `c1_ghaw_builder_worker.py` and
+  `c1_c13c14_review_worker.py` both do `from c1_worker import (...)` and
+  `test_c1_executor_boundary` asserts that import. It is a library that the two live
+  executors run on, not a retired worker. Deleting it would break the normal chain.
+- NOT REMOVED, on purpose: the `AI_WORK_V1` / `AI_TASK_V1` protocol vocabulary in
+  `c1_execution_contract.py`, the `c1-ai-execution-backend-v1.yml` workflow, and the
+  `go-runtime-host-c1-worker.tmpfiles.conf` file. The tmpfiles file is live infrastructure:
+  it declares `/etc/go-runtime-c1` (the shared credential directory) and
+  `/var/lib/go-runtime-c1` (the shared outbox directory) that the consumer, Builder and
+  review units all still use.
+- Still shared with the live chain: the install directory `/opt/go/runtime-host-c1-worker/`.
+  The **live** `go-runtime-host-c01-issue-consumer` unit runs from it
+  (`ExecStart=/opt/go/runtime-host-c1-worker/c1_issue_consumer.py`), so that directory must
+  not be deleted either.
+
 
 **Persistent Runtime end-to-end automatic progression is delivered.**
 

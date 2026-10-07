@@ -227,6 +227,20 @@ Formal Issue 是**任务入口**，不是聊天式状态面板。
 
 - [Runtime Host channel](../../control-plane/runtime-host-channel-v1/)
 
+### 已退役：Legacy C1 Responses executor（2026-10-07）
+
+早期那条 "C1 Responses" 执行路径已经退役，它的 systemd unit 已从仓库中**删除**。
+
+- 现在在跑的 executor 只有两个：`go-runtime-host-ghaw-builder-worker`（正常 Builder 链）
+  和 `go-runtime-host-c13c14-review-worker`（C14/C13 审核）。
+- `control-plane/runtime-host-channel-v1/c1_worker.py` **没有退役、也不要删**——它是这两个
+  executor **共用**的执行循环（两个 worker 都 `from c1_worker import ...`）。
+  被退役的是"把 `c1_worker.py` 自己当独立 executor 跑"的那个 unit，不是这个文件。
+- 同理，安装目录 `/opt/go/runtime-host-c1-worker/` **不是**旧 worker 的残留：现役的
+  `go-runtime-host-c01-issue-consumer` 就运行在这个目录里。
+- 因此：看到 `c1-` 前缀的文件名，请先读
+  [GO current state](../project/GO_CURRENT_STATE.md) 第 4 节，不要按名字判断它是现役还是退役。
+
 历史设计/验证文档在本目录中保留用于工程审计；老板日常派活以本 README 为准。
 
 ---

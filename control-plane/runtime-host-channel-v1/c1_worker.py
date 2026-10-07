@@ -1,7 +1,25 @@
-"""Bounded C1 AI worker: the component that actually runs the Runtime -> GitHub -> Runtime loop.
+"""Bounded C1 worker: the SHARED Runtime -> GitHub -> Runtime execution loop.
 
-Installed at `/opt/go/runtime-host-c1-worker/c1_worker.py` and run by
-`go-runtime-host-c1-worker.service` as User=go-runtime / Group=go-runtime.
+Read this first, because the file name is misleading.
+
+This module is a **library**, not a running worker. It is installed beside each executor
+that needs it and is imported by them:
+
+  * `c1_ghaw_builder_worker.py` - the normal C01-C12 Builder executor;
+  * `c1_c13c14_review_worker.py` - the C14/C13 review executor.
+
+Both do `from c1_worker import (...)` and state their OWN worker id, kinds, owner cells,
+outbox path and dispatch target. `test_c1_executor_boundary` asserts that import rather
+than trusting this paragraph, so the loop below exists once and the exactly-once model
+cannot fork into a second copy. **Deleting this file would break both live executors.**
+
+The separate Responses-API *executor entry point is RETIRED*. The unit that used to run
+this file directly - `go-runtime-host-c1-worker.service`, claiming `AI_WORK_V1` /
+`AI_TASK_V1` as C1-only - is deleted from this repository and was already
+`disabled` + `inactive (dead)` on the Runtime host. The module-level constants further
+down (`WORKER_ID`, `CLAIM_KINDS`, `CLAIM_OWNER_CS`, `OUTBOX_DB`) are that executor's own
+boundary and remain this file's defaults; a real executor overrides them, which is
+exactly what the Builder and the review executors do.
 
 It is deliberately NOT installed inside `/opt/go/runtime-host-agent`: the Management
 Agent's `executor_sha256` is computed over every `*.py` in that directory and is bound by
