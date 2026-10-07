@@ -44,8 +44,11 @@ MARKER = "c13 supplement:"
 # `PROFILE` above names the frozen EVIDENCE scope and stays V1 forever: the failed V1
 # stored request, the execution-side envelope checks and the prior-outbox validation all
 # read it, so renaming it would invalidate history instead of guarding it.  ACTIVATION is
-# therefore a separate identity.  The V1 marker is a CONSUMED generation - it already
-# reached GitHub once and terminated before pytest - so it must never open a slot again.
+# therefore a separate identity, and it is an ADMISSION-ONLY one: `ACTIVATION_PROFILE`
+# never travels in the payload or in `runtime_transport`, and `ENVELOPE["profile"]` stays
+# `PROFILE` because that is what the workflow and the pytest plugin check.  The V1 marker
+# is a CONSUMED generation - it already reached GitHub once and terminated before pytest -
+# so it must never open a slot again.
 ACTIVATION_PROFILE = "PG533-15-V2"
 
 
@@ -61,9 +64,16 @@ def requested_profile(body):
     The consumed V1 marker must RAISE rather than return `None`.  Returning `None` would
     let the issue fall through to the ordinary review path and commission a SECOND C14 for
     a scope that already has one; raising stops it at the ingress with a named reason and
-    no Runtime call.  A body that still carries the consumed generation is refused as
-    consumed whatever else it also carries, so a half-finished V1 -> V2 body edit cannot
-    half-activate the recovery slot.
+    no Runtime call.  Among the markers this function does read, a body that still carries
+    the consumed generation is refused as consumed whatever else it also carries, so a
+    half-finished V1 -> V2 body edit cannot half-activate the recovery slot.
+
+    Marker detection is unchanged: only an unprefixed `C13 supplement:` line is a marker,
+    so surrounding whitespace is trimmed but a leading list or emphasis marker is not.  A
+    body whose only such line carries a `-`/`*`/`+` prefix is therefore not a supplement
+    request and takes the ordinary path.  That is bounded and fail-closed where it counts -
+    `None` selects the ordinary review plan, and only `ACTIVATION_PROFILE` selects the
+    supplement, so no prefixed line can reach the paid slot.
     """
     values = [line.strip()[len(MARKER):].strip() for line in body.splitlines()
               if line.strip().lower().startswith(MARKER)]

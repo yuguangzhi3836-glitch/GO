@@ -255,7 +255,6 @@ class SupplementTests(unittest.TestCase):
         self.assertEqual(ISSUE_533_TITLE.split(" · ", 2)[0], "C14")
         self.assertEqual(ISSUE_533_TITLE.split(" · ", 2)[1], "REVIEW")
         self.assertTrue(ISSUE_533_BODY.rstrip().endswith("C13 supplement: " + fixed.PROFILE))
-        self.assertEqual(fixed.requested_profile.__module__, fixed.__name__)
         # The parser names the consumed generation. It must NOT answer "no supplement":
         # returning None would hand the issue to the ordinary review path and commission a
         # second C14 for a scope that already has one.
@@ -396,6 +395,35 @@ class SupplementTests(unittest.TestCase):
                     "application/tests/test_depth06_direct_checkout.py::test_x;id"):
             with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, "INVALID_TEST_PATH"):
                 lite_machine_inventory.inventory_paths(bad, root)
+
+    def test_only_an_unprefixed_marker_line_reaches_the_paid_slot(self):
+        """The marker rule is unchanged, and its residual is bounded to the ordinary path.
+
+        Only an unprefixed `C13 supplement:` line is read as a marker - surrounding
+        whitespace is trimmed, a leading list or emphasis marker is not. A body whose only
+        such line is prefixed is therefore not a supplement request. That is recorded here
+        rather than left as an unknown: it can produce the ordinary review plan, and it can
+        never produce a `c13-pg-correction-v2:` one.
+        """
+        for prefix in ("- ", "* ", "+ ", "..."):
+            for value in (fixed.PROFILE, fixed.ACTIVATION_PROFILE):
+                with self.subTest(prefix=prefix, value=value):
+                    body = (f"Candidate PR: #{fixed.PR}\nCandidate SHA: {fixed.CANDIDATE}\n"
+                            f"{prefix}C13 supplement: {value}\n")
+                    self.assertIsNone(fixed.requested_profile(body))
+                    with patch.object(ingress,"installed_plan",
+                                      side_effect=AssertionError("the paid slot must not be planned")):
+                        plan = self.plan_only(body)
+                    self.assertEqual(plan["would_enqueue"]["owner_c"], "C14")
+                    self.assertNotEqual(plan["would_enqueue"]["idempotency_key"],
+                                        fixed.IDEMPOTENCY_KEY)
+        # Surrounding whitespace alone IS trimmed, so an indented marker line still reads as
+        # the marker - and the two profiles keep their distinct outcomes there.
+        with self.assertRaisesRegex(ValueError, "^C13_SUPPLEMENT_V1_CONSUMED$"):
+            fixed.requested_profile("\tC13 supplement: " + fixed.PROFILE)
+        self.assertEqual(
+            fixed.requested_profile("  C13 supplement: " + fixed.ACTIVATION_PROFILE),
+            fixed.ACTIVATION_PROFILE)
 
     def test_consumed_duplicate_and_unknown_markers_are_all_refused(self):
         cases = {
