@@ -60,6 +60,29 @@ jobs:
           printf '%s\n' "${pipeline_status[0]}" > "$RUNNER_TEMP/machine/exit_code.txt"
           test "${pipeline_status[0]}" -eq 0
           test "${pipeline_status[1]}" -eq 0
+      - name: Execute the allowed control-plane inventory with read-only candidate bytes
+        env:
+          MACHINE_INVENTORY: control-plane/boss-test-pr-live-integration-v1/tests/test_live_integration.py control-plane/boss-test-pr-live-integration-v1/tests/test_test_pr_durability.py
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/machine/control-plane"
+          python control-plane/c13-c14-lite/lite_machine_inventory.py --candidate . > "$RUNNER_TEMP/machine/control-plane/paths.argv"
+          mapfile -d '' -t test_paths < "$RUNNER_TEMP/machine/control-plane/paths.argv"
+          set +e
+          docker run --rm \
+            -v "$PWD:/srv:ro" \
+            -v "$RUNNER_TEMP/machine/control-plane:/out" \
+            -e GO_MEDIA_CACHE_DIR=/tmp/go-media-cache \
+            -w /srv/application \
+            go-c13-machine:local \
+            bash -lc 'pip install -q pytest && cp -r /srv/application /tmp/candidate-application && pip install -q "/tmp/candidate-application[dev]" && python -m pytest "$@" -q -o cache_dir=/tmp/pytest-cache --junitxml=/out/junit.xml' c13-tests "${test_paths[@]}" \
+            2>&1 | tee "$RUNNER_TEMP/machine/control-plane/stdout.txt"
+          pipeline_status=("${PIPESTATUS[@]}")
+          set -e
+          printf '%s\n' "${pipeline_status[0]}" > "$RUNNER_TEMP/machine/control-plane/exit_code.txt"
+          test "${pipeline_status[0]}" -eq 0
+          test "${pipeline_status[1]}" -eq 0
+          test -s "$RUNNER_TEMP/machine/control-plane/junit.xml"
       - name: Preserve targeted machine evidence
         if: always()
         uses: actions/upload-artifact@v4

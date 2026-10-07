@@ -309,7 +309,8 @@ def plan_review_ingress(issue, *, reader, environ=None) -> dict:
     application_tree = resolve_application_tree(reader, parsed["candidate_sha"])
     inventory_source = None
     if inventory is not None:
-        require_frozen_inventory(reader, application_tree, inventory)
+        require_frozen_inventory(reader, application_tree, inventory,
+                                 candidate_sha=parsed["candidate_sha"])
         inventory_source = "explicit_frozen_issue_inventory"
     else:
         inventory = candidate_test_inventory(reader, parsed["candidate_pr_number"])
