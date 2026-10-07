@@ -79,3 +79,33 @@ def test_replay_cannot_be_impersonated_by_other_evidence_or_other_account(monkey
     evidence = redeemed_evidence(owner, order_id)
     assert len(evidence) == 1
     assert evidence[0]["payload"]["evidence_reference"] == "isolated://gate-scan"
+
+
+def test_legacy_untrimmed_receipt_replay_preserves_original_evidence(monkeypatch):
+    owner = "legacy-replay-owner"
+    order_id = booked_confirmed_attraction(monkeypatch, owner)
+    original_append = service.append_vertical_evidence
+    legacy_reference = "  isolated://legacy-gate-scan  "
+
+    def legacy_append(session, vertical, oid, kind, status, payload):
+        # The pre-523 writer accepted whitespace but persisted the original text.
+        # Use the genuine appender so the old receipt's evidence hash is valid.
+        if kind == "VOUCHER_REDEEMED":
+            payload = {**payload, "evidence_reference": legacy_reference}
+        return original_append(session, vertical, oid, kind, status, payload)
+
+    with monkeypatch.context() as old_writer:
+        old_writer.setattr(service, "append_vertical_evidence", legacy_append)
+        first = svc.redeem(owner, order_id, legacy_reference)
+    before = svc.get(owner, order_id)["evidence"]
+    assert svc.redeem(owner, order_id, legacy_reference) == first
+    assert svc.redeem(owner, order_id, legacy_reference.strip()) == first
+    assert svc.get(owner, order_id)["evidence"] == before
+    assert redeemed_evidence(owner, order_id)[0]["payload"]["evidence_reference"] == legacy_reference
+    with pytest.raises(ValueError, match="ATTRACTION_ILLEGAL_STATE_TRANSITION"):
+        svc.redeem(owner, order_id, "isolated://different-scan")
+    with pytest.raises(ValueError, match="FULFILLMENT_EVIDENCE_REQUIRED"):
+        svc.redeem(owner, order_id, "   ")
+    with pytest.raises(ValueError, match="ATTRACTION_ORDER_NOT_FOUND"):
+        svc.redeem("other-owner", order_id, legacy_reference)
+    assert svc.get(owner, order_id)["evidence"] == before

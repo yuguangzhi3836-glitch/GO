@@ -167,7 +167,7 @@ class AttractionService:
    if o.status=="FULFILLED":
     for row in reversed(list_vertical_evidence(s,"ATTRACTION",order_id)):
      payload=row.get("payload") or {}
-     if row.get("kind")=="VOUCHER_REDEEMED" and payload.get("evidence_reference")==evidence_reference:
+     if row.get("kind")=="VOUCHER_REDEEMED" and str(payload.get("evidence_reference") or '').strip()==evidence_reference:
       return self.out(o)
     raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
    if o.status!="CONFIRMED": raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
