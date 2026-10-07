@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Read-only C13/C14 review metrics collector for GO Issue #260.
+"""Observation-only Boss 14-Cell activity + C13/C14 quality monitor for Issue #260.
 
-The collector reads existing GitHub Actions artifacts and updates only the marked
-Live Metrics section of the long-lived monitor issue. It never changes a review
-verdict, candidate, branch, deployment state, or runtime.
+The collector reads existing Formal Task Issues, Builder PRs and sealed C13/C14
+GitHub Actions artifacts. It updates only the marked Live Metrics section of the
+long-lived monitor issue. It never changes a review verdict, candidate, branch,
+deployment state, runtime, or remediation plan.
 """
 from __future__ import annotations
 
@@ -31,6 +32,12 @@ PASSLIKE_C14 = {"PASS_SCOPED", "NOT_APPLICABLE"}
 PASSLIKE_C13 = {"PASS_SCOPED"}
 PRODUCTION_REVIEW_BRANCH = "main"
 PRODUCTION_REVIEW_EVENT = "workflow_dispatch"
+DEFAULT_BOSS_LOGIN = "yuguangzhi3836-glitch"
+FORMAL_TASK_RE = re.compile(
+    r"^C(?P<cell>0[1-9]|1[0-2])\s*·\s*(?P<task_id>V\d+-R\d+-C\d{2}-\d+)\s*·\s*(?P<scope>.+?)\s*$"
+)
+FORMAL_REVIEW_RE = re.compile(r"^C14\s*·\s*REVIEW\s*·\s*(?P<scope>.+?)\s*$", re.I)
+CANDIDATE_PR_RE = re.compile(r"Candidate\s+PR\s*:\s*#(?P<number>\d+)", re.I)
 
 
 class NonProductionArtifact(ValueError):
@@ -165,6 +172,41 @@ class GitHubAPI:
     def update_issue_body(self, issue_number: int, body: str) -> dict:
         encoded_repo = "/".join(urllib.parse.quote(part, safe="") for part in self.repository.split("/"))
         return self.patch_json(f"/repos/{encoded_repo}/issues/{issue_number}", {"body": body})
+
+    def list_issues_since(self, since: datetime, max_pages: int = 10) -> list[dict]:
+        encoded_repo = "/".join(urllib.parse.quote(part, safe="") for part in self.repository.split("/"))
+        query = urllib.parse.urlencode({
+            "state": "all",
+            "since": since.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "per_page": 100,
+        })
+        out: list[dict] = []
+        for page in range(1, max_pages + 1):
+            batch = self.get_json(f"/repos/{encoded_repo}/issues?{query}&page={page}")
+            if not batch:
+                break
+            out.extend(item for item in batch if "pull_request" not in item)
+            if len(batch) < 100:
+                break
+        return out
+
+    def list_recent_pulls(self, cutoff: datetime, max_pages: int = 10) -> list[dict]:
+        encoded_repo = "/".join(urllib.parse.quote(part, safe="") for part in self.repository.split("/"))
+        out: list[dict] = []
+        for page in range(1, max_pages + 1):
+            batch = self.get_json(
+                f"/repos/{encoded_repo}/pulls?state=all&sort=updated&direction=desc&per_page=100&page={page}"
+            )
+            if not batch:
+                break
+            recent = [
+                item for item in batch
+                if _parse_time(item.get("updated_at")) >= cutoff.astimezone(timezone.utc)
+            ]
+            out.extend(recent)
+            if len(batch) < 100 or len(recent) < len(batch):
+                break
+        return out
 
 
 def _parse_time(value: str | None) -> datetime:
