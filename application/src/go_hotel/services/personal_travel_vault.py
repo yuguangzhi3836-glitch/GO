@@ -26,6 +26,15 @@ MULTI_VALUE_FIELDS={
 ALLOWED_SOURCE_TYPES={'MANUAL','OFFICIAL_API','USER_DATA_PACKAGE','SHARE_TO_GO','SCREENSHOT_AI','IMAGE_AI','PDF_AI','TEXT_IMPORT','FILE_IMPORT','DOCUMENT_SCAN'}
 ALLOWED_RELATIONSHIPS={'SELF','SPOUSE','CHILD','PARENT','FAMILY','ASSISTANT','COLLEAGUE','BUSINESS_TRAVELER','FREQUENT_TRAVELER','OTHER'}
 ALLOWED_PERMISSIONS={'VIEW','USE_FOR_BOOKING','EDIT','SHARE','SENSITIVE_DATA'}
+# These fields describe server-owned lifecycle/authorization facts, never client hints.
+RESERVED_IMPORT_METADATA={
+    'source_disconnected','values_deleted','connection_intent','provider_connection_id',
+    'account_holder_authorized','account_holder_verified','account_holder_confirmed',
+    'state_hash','provider_account_subject_hash','authorization_evidence_hash',
+    'authorization_evidence_reference','authorized_at','disconnected_at','import_job_id',
+    'credentials_received_by_go','expires_at','method','requested_method','provider',
+}
+
 
 def now(): return datetime.now(timezone.utc)
 def norm(v):
@@ -117,6 +126,15 @@ class PersonalTravelVaultService(VaultManagementMixin):
         s.add(ProfileAccessAuditRow(access_id=new_id('pva'),user_id=user_id,traveler_id=traveler_id,actor_id=actor_id,actor_type=actor_type,action=action,purpose=purpose,fields_json=fields or [],metadata_json=metadata or {},created_at=now()))
 
     def create_import(self,user_id,b,trusted_source=False):
+        return self._create_import(user_id,b,trusted_source=trusted_source)
+
+    def _create_import(self,user_id,b,trusted_source=False,*,provider_connection_id=None):
+        metadata=b.get('metadata')
+        if metadata is None:metadata={}
+        if not isinstance(metadata,dict):raise ValueError('PROFILE_IMPORT_METADATA_INVALID')
+        if RESERVED_IMPORT_METADATA.intersection(metadata):
+            raise ValueError('PROFILE_IMPORT_METADATA_RESERVED')
+        metadata=dict(metadata)
         source_type=b.get('source_type','MANUAL').upper()
         if source_type not in ALLOWED_SOURCE_TYPES:raise ValueError('UNSUPPORTED_PROFILE_IMPORT_SOURCE')
         if source_type in {'OFFICIAL_API','DOCUMENT_SCAN'} and not trusted_source:raise ValueError('TRUSTED_PROFILE_SOURCE_ADAPTER_REQUIRED')
@@ -126,11 +144,28 @@ class PersonalTravelVaultService(VaultManagementMixin):
         fingerprint=b.get('source_fingerprint') or h({'type':source_type,'provider':provider,'ref':source_ref,'content':b.get('content_hash') or b.get('items',[])})
         content_hash=b.get('content_hash') or h(b.get('items',[]))
         with mutation_session() as s:
+            if provider_connection_id is not None:
+                connection=s.get(ProfileImportJobRow,provider_connection_id,with_for_update=True)
+                expected_status='AUTHORIZATION_CONSUMED' if trusted_source else 'UPLOAD_CONSUMED'
+                expected_source='OFFICIAL_API' if trusted_source else 'USER_DATA_PACKAGE'
+                expected_fingerprint=h([provider_connection_id,'official-import' if trusted_source else 'user-export'])
+                if (not connection or connection.user_id!=user_id
+                        or not (connection.metadata_json or {}).get('connection_intent')
+                        or connection.status!=expected_status or connection.source_provider!=provider
+                        or source_type!=expected_source or source_ref!=provider_connection_id
+                        or fingerprint!=expected_fingerprint):
+                    raise ValueError('PROFILE_PROVIDER_IMPORT_BINDING_INVALID')
+                metadata['provider_connection_id']=provider_connection_id
+                metadata['account_holder_authorized' if trusted_source else 'account_holder_confirmed']=True
             prior=s.scalars(select(ProfileImportJobRow).where(ProfileImportJobRow.user_id==user_id,ProfileImportJobRow.source_fingerprint==fingerprint)).all()
+            if any((j.metadata_json or {}).get('connection_intent')
+                    or (j.metadata_json or {}).get('provider_connection_id')!=provider_connection_id
+                    or (j.source_type,j.source_provider,j.source_reference)!=(source_type,provider,source_ref)
+                    for j in prior):raise ValueError('PROFILE_PROVIDER_IMPORT_BINDING_INVALID')
             if any((j.metadata_json or {}).get('source_disconnected') for j in prior):raise ValueError('PROFILE_SOURCE_DISCONNECTED')
             existing=s.scalar(select(ProfileImportJobRow).where(ProfileImportJobRow.user_id==user_id,ProfileImportJobRow.source_fingerprint==fingerprint,ProfileImportJobRow.content_hash==content_hash).order_by(ProfileImportJobRow.created_at.desc()))
             if existing and not (existing.metadata_json or {}).get('values_deleted'):return self.get_import(user_id,existing.import_job_id)|{'idempotent_replay':True}
-            t=now();job=ProfileImportJobRow(import_job_id=new_id('pij'),user_id=user_id,source_type=source_type,source_provider=provider,source_reference=source_ref,source_fingerprint=fingerprint,content_hash=content_hash,status='RECEIVED',consent_id=b.get('consent_id'),item_count=0,accepted_count=0,rejected_count=0,conflict_count=0,metadata_json=b.get('metadata') or {},created_at=t,updated_at=t,completed_at=None);s.add(job)
+            t=now();job=ProfileImportJobRow(import_job_id=new_id('pij'),user_id=user_id,source_type=source_type,source_provider=provider,source_reference=source_ref,source_fingerprint=fingerprint,content_hash=content_hash,status='RECEIVED',consent_id=b.get('consent_id'),item_count=0,accepted_count=0,rejected_count=0,conflict_count=0,metadata_json=metadata,created_at=t,updated_at=t,completed_at=None);s.add(job)
             declaration_refs=set()
             for raw in b.get('items') or []:
                 if not isinstance(raw,dict):raise ValueError('PROFILE_IMPORT_ENTITY_INVALID')
@@ -580,12 +615,13 @@ class PersonalTravelVaultService(VaultManagementMixin):
                     'authorization_evidence_hash':h(evidence),'account_holder_verified':True,'authorized_at':now().isoformat()}
                 self._audit(s,user_id,'provider-adapter','SYSTEM','PROFILE_PROVIDER_AUTHORIZATION_CONSUMED',purpose='BUILD_PERSONAL_TRAVEL_VAULT',metadata={'provider':provider,'connection_id':connection_id,'evidence_hash':h(evidence)})
         if expired:raise ValueError('PROFILE_PROVIDER_STATE_EXPIRED')
-        imported=self.create_import(user_id,{'source_type':'OFFICIAL_API','source_provider':provider,
+        imported=self._create_import(user_id,{'source_type':'OFFICIAL_API','source_provider':provider,
             'source_reference':connection_id,'source_fingerprint':h([connection_id,'official-import']),
-            'items':b.get('items') or [],'metadata':{'provider_connection_id':connection_id,
-            'account_holder_authorized':True}},trusted_source=True)
+            'items':b.get('items') or []},trusted_source=True,provider_connection_id=connection_id)
         with mutation_session() as s:
-            job=s.get(ProfileImportJobRow,connection_id);job.status='PREVIEW_READY';job.updated_at=now()
+            job=s.get(ProfileImportJobRow,connection_id,with_for_update=True)
+            if job.status!='AUTHORIZATION_CONSUMED':raise ValueError('PROFILE_PROVIDER_STATE_ALREADY_USED')
+            job.status='PREVIEW_READY';job.updated_at=now()
             job.metadata_json={**(job.metadata_json or {}),'import_job_id':imported['import_job_id']}
         return self._connection_view(job)|{'preview':imported}
 
@@ -600,10 +636,10 @@ class PersonalTravelVaultService(VaultManagementMixin):
             claimed=s.execute(update(ProfileImportJobRow).where(ProfileImportJobRow.import_job_id==connection_id,
                 ProfileImportJobRow.user_id==user_id,ProfileImportJobRow.status=='AWAITING_USER_UPLOAD').values(status='UPLOAD_CONSUMED',updated_at=now())).rowcount
             if claimed!=1:raise ValueError('PROFILE_PROVIDER_UPLOAD_ALREADY_RECEIVED')
-        imported=self.create_import(user_id,{'source_type':'USER_DATA_PACKAGE','source_provider':provider,
+        imported=self._create_import(user_id,{'source_type':'USER_DATA_PACKAGE','source_provider':provider,
             'source_reference':connection_id,'source_fingerprint':h([connection_id,'user-export']),
-            'items':b.get('items') or [],'metadata':{'provider_connection_id':connection_id,
-            'account_holder_confirmed':True,'upload_kind':str(b.get('upload_kind') or 'DATA_EXPORT').upper()}})
+            'items':b.get('items') or [],'metadata':{'upload_kind':str(b.get('upload_kind') or 'DATA_EXPORT').upper()}},
+            provider_connection_id=connection_id)
         with mutation_session() as s:
             connection=s.get(ProfileImportJobRow,connection_id)
             if connection.status!='UPLOAD_CONSUMED':raise ValueError('PROFILE_PROVIDER_UPLOAD_ALREADY_RECEIVED')

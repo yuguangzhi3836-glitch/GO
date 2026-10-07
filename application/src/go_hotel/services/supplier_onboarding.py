@@ -7,7 +7,7 @@ import re
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from go_hotel.db.models import IdentityUserRow, HotelPartnerPropertyRow, HotelPartnerAuditEventRow
+from go_hotel.db.models import IdentityUserRow, HotelPartnerPropertyRow, HotelPartnerAuditEventRow, CommercialCaseRow
 from go_hotel.db.session import SessionLocal
 from go_hotel.security.crypto import hash_password
 
@@ -22,6 +22,69 @@ def _now() -> datetime:
 
 class SupplierOnboardingService:
     """Public supplier sign-up without weakening authenticated hotel ownership checks."""
+
+    def register_account(self, body: dict, *, audit_factory=None, verification_proof=None, initial_profile=None) -> dict:
+        username = str(body.get("username") or "").strip().lower()
+        password = str(body.get("password") or "")
+        if len(username) > 128 or not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", username):
+            raise ValueError("VALID_EMAIL_REQUIRED")
+        if len(password) < 10 or len(password) > 128:
+            raise ValueError("PASSWORD_LENGTH_INVALID")
+        supplier_id, user_id, created = _id("sup"), _id("usr"), _now()
+        profile = {str(k): v for k, v in (initial_profile or {}).items() if v not in (None, "")}
+        with SessionLocal() as session:
+            if verification_proof is not None:
+                from go_hotel.services.registration_verification import consume
+                consume(session, verification_proof, user_id)
+            if session.scalar(select(IdentityUserRow).where(IdentityUserRow.username == username)):
+                raise ValueError("USERNAME_ALREADY_REGISTERED")
+            user = IdentityUserRow(
+                user_id=user_id, username=username, password_hash=hash_password(password),
+                actor_type="SUPPLIER_USER", supplier_id=supplier_id, roles=["SUPPLIER_OWNER"],
+                status="ACTIVE", token_version=1, created_at=created, updated_at=created,
+            )
+            onboarding = CommercialCaseRow(
+                commercial_case_id=f"onb_{supplier_id}",
+                case_type="SUPPLIER_ONBOARDING",
+                supplier_id=supplier_id,
+                property_id=None,
+                priority="MEDIUM",
+                owner_id=user_id,
+                state="PROFILE_DRAFT" if profile else "REGISTERED",
+                sla_due_at=None,
+                payload_json={
+                    "owner_user_id": user_id,
+                    "profile": profile,
+                    "contract": {},
+                    "hotel_id": None,
+                    "hotel_registration_direct_id": None,
+                    "review_note": None,
+                    "reviewed_by": None,
+                    "contract_review_note": None,
+                    "contract_reviewed_by": None,
+                    "submitted_at": None,
+                    "reviewed_at": None,
+                    "contract_submitted_at": None,
+                    "contract_reviewed_at": None,
+                },
+                evidence_json=[],
+                created_at=created,
+                updated_at=created,
+            )
+            session.add_all([user, onboarding])
+            if audit_factory is not None:
+                session.add(audit_factory(user_id, supplier_id))
+            try:
+                session.commit()
+            except IntegrityError:
+                session.rollback()
+                if session.scalar(select(IdentityUserRow).where(IdentityUserRow.username == username)):
+                    raise ValueError("USERNAME_ALREADY_REGISTERED") from None
+                raise
+        return {
+            "status": "REGISTERED", "user_id": user_id, "supplier_id": supplier_id,
+            "onboarding_state": onboarding.state, "next_step": "COMPLETE_PROFILE",
+        }
 
     def register(self, body: dict, *, audit_factory=None, verification_proof=None) -> dict:
         username = str(body.get("username") or "").strip().lower()

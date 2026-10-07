@@ -65,7 +65,7 @@ def _clear(response):
 @router.get("/v1/consumer/auth/registration")
 def registration_options():
     try:
-        policy = registration_terms_service.registration_terms_status("consumer")
+        policy = registration_terms_service.account_registration_terms_status("consumer")
     except (ValueError, OSError, KeyError) as exc:
         raise HTTPException(503, detail="REGISTRATION_TERMS_UNAVAILABLE") from exc
     verification_ready = registration_verification_service.ready()
@@ -77,7 +77,7 @@ def register(body:RegisterBody,request:Request,response:Response):
         if body.accepted_terms is not True:
             raise HTTPException(422, detail="CONSUMER_TERMS_ACCEPTANCE_REQUIRED")
         try:
-            policy = registration_terms_service.require_registration_terms_ready("consumer")
+            policy = registration_terms_service.require_account_registration_terms_ready("consumer")
         except (ValueError, OSError, KeyError) as exc:
             raise HTTPException(503, detail="REGISTRATION_TERMS_NOT_READY") from exc
         if not registration_verification_service.ready():
@@ -91,7 +91,7 @@ def register(body:RegisterBody,request:Request,response:Response):
         proof.update(audience="consumer",policy=policy,registration_decisions=body.registration_decisions)
         profile=consumer_service.register(body.email,body.password,body.display_name,body.phone,verification_proof=proof,registration_audit={"request_id":getattr(request.state,"request_id",None),"client_ip":request.client.host if request.client else None,"term_versions":policy["versions"],"term_hashes":policy["term_hashes"]})
         t=consumer_service.login(body.email,body.password,request.client.host if request.client else None,request.headers.get("user-agent")); _set(response,t)
-        return {"data":{"authenticated":True,"profile":profile,"terms":policy["versions"],"term_hashes":policy["term_hashes"]}}
+        return {"data":{"authenticated":True,"profile":profile,"terms":policy["versions"],"term_hashes":policy["term_hashes"],"deferred_terms":policy.get("deferred",[]),"personal_vault_opt_in":False}}
     except ValueError as e: raise HTTPException(409,detail=str(e))
 
 @router.post("/v1/consumer/auth/login")
