@@ -971,10 +971,13 @@ class I_TheUnitMatchesTheCodeItRuns(unittest.TestCase):
                    "runtime-host-channel-v1" / "systemd")
         units = sorted(item.name for item in systemd.iterdir() if item.suffix == ".service")
         self.assertEqual([u for u in units if "c13c14" in u or "review" in u], [self.UNIT])
+        # Exactly two executors exist now: the gh-aw Builder and this review worker. The
+        # retired C1 Responses worker's unit was removed from this directory, and a third
+        # "worker" unit reappearing here would mean that retirement had been undone.
         self.assertEqual(sorted(u for u in units if "worker" in u),
                          sorted(["go-runtime-host-c13c14-review-worker.service",
-                                 "go-runtime-host-c1-worker.service",
                                  "go-runtime-host-ghaw-builder-worker.service"]))
+        self.assertNotIn("go-runtime-host-c1-worker.service", units)
         # The unit NAMES the file; the worker DECLARES it - exactly once, because that
         # string is the single definition of which outbox this executor owns.
         self.assertIn("outbox-c13c14-review.db", self.text)

@@ -30,8 +30,9 @@ import c1_execution_contract as contract  # noqa: E402
 import c1_worker as worker  # noqa: E402
 import test_c1_execution_loop as harness  # noqa: E402
 
-UNIT = HERE / "systemd/go-runtime-host-c1-worker.service"
 TMPFILES = HERE / "systemd/go-runtime-host-c1-worker.tmpfiles.conf"
+SYSTEMD = HERE / "systemd"
+RETIRED_UNIT = "go-runtime-host-c1-worker.service"
 PROBE_KEY = "probe-fixture"
 
 
@@ -434,73 +435,57 @@ class TheWorkerStaysOutOfTheProbePath(unittest.TestCase):
                 self.assertNotEqual(getattr(node.value, "id", None), "logging")
 
 
-class TheUnitKeepsTheWorkerUnprivilegedAndScoped(unittest.TestCase):
+class TheSharedLoopSurvivesAndTheRetiredUnitStaysRetired(unittest.TestCase):
+    """`c1_worker.py` is NOT retired - its *entry point* is.
+
+    The module is the single shared execution loop: the gh-aw Builder executor and the
+    C13/C14 review executor both `from c1_worker import (...)` it, and
+    `test_c1_executor_boundary` asserts that import rather than trusting this prose.
+    Deleting it would delete the exactly-once model both live executors run on.
+
+    What was retired is the separate Responses-API *executor entry point*: a unit that
+    ran `c1_worker.py` itself and claimed `AI_WORK_V1` / `AI_TASK_V1`. That unit is gone
+    from this directory, and these tests keep it gone.
+
+    The tmpfiles file deliberately stays: it declares `/etc/go-runtime-c1` (the shared
+    credential directory) and `/var/lib/go-runtime-c1` (the shared outbox directory),
+    which the LIVE consumer, Builder and review units all still use.
+    """
+
     def setUp(self):
-        self.unit = UNIT.read_text(encoding="utf-8")
+        self.conf = TMPFILES.read_text(encoding="utf-8")
 
-    def test_it_runs_as_the_account_that_owns_the_runtime_database(self):
-        self.assertIn("User=go-runtime", self.unit)
-        self.assertIn("Group=go-runtime", self.unit)
-        self.assertNotIn("User=root", self.unit)
-
-    def test_it_fails_closed_without_the_credential(self):
-        self.assertIn("ConditionPathExists=/etc/go-runtime-c1/github-token", self.unit)
-        self.assertIn("Environment=C1_GITHUB_TOKEN_PATH=/etc/go-runtime-c1/github-token",
-                      self.unit)
-
-    def directives(self):
-        """Real directives only. Comments legitimately mention other units' settings."""
-        lines = []
-        for raw in self.unit.splitlines():
-            line = raw.strip()
-            if line and not line.startswith("#") and not line.startswith("["):
-                lines.append(line)
-        return lines
-
-    def test_it_is_hardened_but_keeps_its_one_legitimate_egress(self):
-        for line in ("NoNewPrivileges=true", "ProtectSystem=strict", "PrivateTmp=true",
-                     "ProtectHome=true", "PrivateDevices=true"):
-            self.assertIn(line, self.directives())
-        # The one runtime-host component that needs network, and only for api.github.com.
-        # Asserted on directives, so the comment explaining the rule cannot satisfy it.
-        self.assertNotIn("PrivateNetwork=true", self.directives())
-        self.assertNotIn("PrivateNetwork=false", self.directives())
-        self.assertIn("ONE runtime-host component with outbound network access", self.unit)
-
-    def test_it_can_write_only_the_runtime_state_and_its_own_outbox(self):
-        writable = [line for line in self.unit.splitlines() if line.startswith("ReadWritePaths=")]
-        self.assertEqual(len(writable), 1)
-        self.assertIn("/var/lib/go-c-runtime", writable[0])
-        self.assertIn("/var/lib/go-runtime-c1", writable[0])
-        readonly = [line for line in self.unit.splitlines() if line.startswith("ReadOnlyPaths=")]
-        self.assertEqual(len(readonly), 1)
-        self.assertIn("/opt/go/c1-c14-runtime", readonly[0])
-
-    def test_it_is_not_installed_inside_the_agent_bundle(self):
-        # The Agent's executor_sha256 covers every *.py in its bundle directory and is
-        # bound by the registration. Installing the C1 line there would change the Agent's
-        # identity and make it refuse with local_executor_mismatch until a re-registration.
-        self.assertIn("ExecStart=/usr/bin/python3 -B "
-                      "/opt/go/runtime-host-c1-worker/c1_worker.py", self.unit)
-        self.assertIn("ConditionPathExists=/opt/go/runtime-host-c1-worker/c1_worker.py",
-                      self.unit)
-        for line in self.directives():
-            if line.startswith(("ExecStart=", "WorkingDirectory=", "ConditionPathExists=")):
-                self.assertNotIn("/opt/go/runtime-host-agent", line, line)
-
-    def test_it_does_not_run_as_the_agent_or_touch_the_agent_config(self):
-        self.assertNotIn("agent_service.py", self.unit)
-        self.assertNotIn("/etc/go-runtime-host", self.unit)
-        self.assertIn("WorkingDirectory=/opt/go/runtime-host-c1-worker", self.unit)
-
-    def test_the_two_directories_are_single_owner_and_closed(self):
-        conf = TMPFILES.read_text(encoding="utf-8")
-        self.assertIn("d /etc/go-runtime-c1 0700 go-runtime go-runtime -", conf)
-        self.assertIn("d /var/lib/go-runtime-c1 0700 go-runtime go-runtime -", conf)
-        for line in conf.splitlines():
+    def test_the_two_shared_directories_are_still_declared_single_owner_and_closed(self):
+        self.assertIn("d /etc/go-runtime-c1 0700 go-runtime go-runtime -", self.conf)
+        self.assertIn("d /var/lib/go-runtime-c1 0700 go-runtime go-runtime -", self.conf)
+        for line in self.conf.splitlines():
             if line.startswith("d "):
                 self.assertIn("0700", line)
                 self.assertNotIn("0640", line)
+
+    def test_the_retired_responses_unit_is_gone(self):
+        self.assertFalse((SYSTEMD / RETIRED_UNIT).exists(),
+                         "the retired C1 Responses worker unit was reinstated")
+
+    def test_no_unit_still_names_the_retired_responses_entry_point(self):
+        # The retired entry point IS the filename `c1_worker.py`. Comments are stripped
+        # first, so a unit may still explain the history; what it may not do is RUN it.
+        for unit in sorted(SYSTEMD.glob("*.service")):
+            directives = [line.strip() for line in unit.read_text(encoding="utf-8").splitlines()
+                          if line.strip() and not line.lstrip().startswith("#")]
+            with self.subTest(unit=unit.name):
+                for line in directives:
+                    self.assertNotIn("c1_worker.py", line, unit.name)
+
+    def test_the_surviving_units_still_run_as_the_unprivileged_account(self):
+        for unit in sorted(SYSTEMD.glob("*.service")):
+            text = unit.read_text(encoding="utf-8")
+            with self.subTest(unit=unit.name):
+                self.assertIn("User=go-runtime", text)
+                self.assertNotIn("User=root", text)
+                self.assertNotIn("/opt/go/runtime-host-agent", [
+                    line for line in text.splitlines()
+                    if line.startswith(("ExecStart=", "WorkingDirectory="))][0])
 
 
 if __name__ == "__main__":
