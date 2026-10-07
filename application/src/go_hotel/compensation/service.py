@@ -61,26 +61,16 @@ class CompensationService:
         return request(order_id,supplier_id,reason_code,evidence_ids,actor_id)
 
     def apply_future_settlement(self, supplier_id: str, amount_minor: int, reference: str|None=None, key: str|None=None, actor: str|None=None) -> dict:
-        from go_hotel.db.models import (
-            CatalogFaultRecoveryRow, HostedFaultRecoveryRow, HostedSupplierDisruptionRow,
-        )
+        from go_hotel.db.models import HostedSupplierDisruptionRow
         with SessionLocal() as s:
             if s.scalar(select(SupplierLiabilityRow.liability_id).join(HostedSupplierDisruptionRow,HostedSupplierDisruptionRow.case_id==SupplierLiabilityRow.case_id).where(SupplierLiabilityRow.supplier_id==supplier_id)):
                 conflict('SCOPED_FAULT_RECOVERY_REQUIRED','Use the idempotent hosted fault settlement recovery workflow')
-            if reference:
-                for model in (CatalogFaultRecoveryRow, HostedFaultRecoveryRow):
-                    old=s.scalar(select(model).where(model.request_json['settlement_reference'].as_string()==reference))
-                    if not old:
-                        continue
-                    before=old.request_json
-                    receipt_supplier=before.get('supplier_id',before.get('hotel_id'))
-                    same=(receipt_supplier,before['amount_minor'],before['currency'])==(supplier_id,amount_minor,'CNY')
-                    if not same:
-                        conflict('RECOVERY_RECEIPT_IDEMPOTENCY_CONFLICT','Settlement receipt already bound to a different supplier or amount')
         if not reference or not key or not actor:conflict('SCOPED_FAULT_RECOVERY_REQUIRED','A unique confirmed settlement receipt and actor are required')
         from go_hotel.services.catalog_fault_funding import recover
         result=recover(supplier_id,amount_minor,reference,key,actor)
-        return result|{'remaining_available_minor':result['new_available_minor']}
+        if 'remaining_available_minor' not in result:
+            conflict('RECOVERY_BALANCE_SNAPSHOT_REQUIRED','Historical receipt has no durable post-settlement balance; reconciliation is required')
+        return result
 
     def get_case(self, case_id: str) -> dict:
         from go_hotel.db.models import CatalogSupplierRemedyRow

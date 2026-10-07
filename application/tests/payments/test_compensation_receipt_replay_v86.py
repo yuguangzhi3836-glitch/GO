@@ -63,8 +63,16 @@ def create_negative_balance(client, idem):
 
 
 def finance_snapshot(*supplier_ids):
+    from go_hotel.db.models import HostedFaultRecoveryRow, ProtectionFundLedgerRow, OmnichannelMoneyMovementRow, CompensationPaymentRow
     with SessionLocal() as s:
         return {
+            'durable_records': {
+                model.__tablename__: [
+                    {column.name: getattr(row, column.name) for column in model.__table__.columns}
+                    for row in s.scalars(select(model).order_by(*model.__table__.primary_key.columns)).all()
+                ]
+                for model in (Recovery, HostedFaultRecoveryRow, ProtectionFundLedgerRow, OmnichannelMoneyMovementRow, CompensationPaymentRow)
+            },
             'accounts': {
                 supplier_id: {
                     'settlement': s.get(Account, supplier_id).settlement_available_minor,
@@ -146,3 +154,75 @@ def test_future_settlement_rejects_conflicting_amount_receipt_and_supplier_witho
         assert error_code(rejected.value) == 'RECOVERY_RECEIPT_IDEMPOTENCY_CONFLICT'
 
     assert finance_snapshot('sup_mock', 'sup_alt', funding.PROTECTION_ACCOUNT) == before
+
+
+def test_nonzero_opening_balance_and_two_receipts_keep_original_balance_snapshot():
+    finance.configure_supplier_finance('receipt-owner', 100, 0, 0, False)
+    first = finance.apply_future_settlement('receipt-owner', 50, 'receipt-a', 'key-a', 'finance')
+    assert first['new_available_minor'] == 50
+    assert first['remaining_available_minor'] == 150
+    second = finance.apply_future_settlement('receipt-owner', 30, 'receipt-b', 'key-b', 'finance')
+    assert second['remaining_available_minor'] == 180
+    before = finance_snapshot('receipt-owner')
+    assert finance.apply_future_settlement('receipt-owner', 50, 'receipt-a', 'key-a', 'finance') == first
+    assert finance_snapshot('receipt-owner') == before
+
+
+@pytest.mark.parametrize('first_route', ['catalog', 'hosted'])
+def test_shared_recovery_rejects_cross_supplier_receipt_in_either_table(first_route):
+    from go_hotel.services import hosted_fault_funding
+    finance.configure_supplier_finance('receipt-owner', 100, 0, 0, False)
+    finance.configure_supplier_finance('receipt-other', 200, 0, 0, False)
+    original = funding if first_route == 'catalog' else hosted_fault_funding
+    other = hosted_fault_funding if first_route == 'catalog' else funding
+    first = original.recover('receipt-owner', 50, 'shared-receipt', 'first-key', 'finance')
+    before = finance_snapshot('receipt-owner', 'receipt-other')
+    with pytest.raises(ValueError, match='^RECOVERY_RECEIPT_IDEMPOTENCY_CONFLICT$'):
+        other.recover('receipt-other', 50, 'shared-receipt', 'other-key', 'finance')
+    assert finance_snapshot('receipt-owner', 'receipt-other') == before
+    assert other.recover('receipt-owner', 50, 'shared-receipt', 'another-key', 'finance') == first
+
+
+def test_receipt_committed_between_public_entry_and_recovery_is_rechecked(monkeypatch):
+    finance.configure_supplier_finance('receipt-owner', 100, 0, 0, False)
+    finance.configure_supplier_finance('receipt-other', 200, 0, 0, False)
+    real_recover = funding.recover
+    def interleaved(supplier_id, amount, reference, key, actor):
+        real_recover('receipt-other', amount, reference, 'winning-key', actor)
+        return real_recover(supplier_id, amount, reference, key, actor)
+    monkeypatch.setattr(funding, 'recover', interleaved)
+    with pytest.raises(ValueError, match='^RECOVERY_RECEIPT_IDEMPOTENCY_CONFLICT$'):
+        finance.apply_future_settlement('receipt-owner', 50, 'interleaved', 'losing-key', 'finance')
+    snapshot = finance_snapshot('receipt-owner', 'receipt-other')
+    assert snapshot['accounts']['receipt-owner']['settlement'] == 100
+    assert snapshot['accounts']['receipt-other']['settlement'] == 250
+    assert len(snapshot['recoveries']) == 1
+
+
+def test_legacy_receipt_without_balance_snapshot_refuses_to_invent_one():
+    finance.configure_supplier_finance('receipt-owner', 100, 0, 0, False)
+    first = finance.apply_future_settlement('receipt-owner', 50, 'legacy-receipt', 'legacy-key', 'finance')
+    with SessionLocal.begin() as session:
+        receipt = session.get(Recovery, first['recovery_id'])
+        receipt.result_json = {k: v for k, v in receipt.result_json.items() if k != 'remaining_available_minor'}
+        session.get(Account, 'receipt-owner').settlement_available_minor += 999
+    before = finance_snapshot('receipt-owner')
+    with pytest.raises(HTTPException) as rejected:
+        finance.apply_future_settlement('receipt-owner', 50, 'legacy-receipt', 'legacy-key', 'finance')
+    assert error_code(rejected.value) == 'RECOVERY_BALANCE_SNAPSHOT_REQUIRED'
+    assert finance_snapshot('receipt-owner') == before
+
+
+def test_recovery_rollback_does_not_consume_receipt_or_credit_balance():
+    from go_hotel.services.supplier_fault_funding import recover_in_session
+    from go_hotel.services.alipay_safeguarded_settlement import transaction
+    finance.configure_supplier_finance('receipt-owner', 100, 0, 0, False)
+    before = finance_snapshot('receipt-owner')
+    with pytest.raises(RuntimeError, match='rollback-before-commit'):
+        with transaction() as session:
+            recover_in_session(session, 'receipt-owner', 50, 'rollback-receipt', 'rollback-key', 'finance', Recovery, 'supplier_id')
+            session.flush()
+            raise RuntimeError('rollback-before-commit')
+    assert finance_snapshot('receipt-owner') == before
+    result = finance.apply_future_settlement('receipt-owner', 50, 'rollback-receipt', 'rollback-key', 'finance')
+    assert result['remaining_available_minor'] == 150
