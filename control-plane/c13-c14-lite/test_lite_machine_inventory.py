@@ -146,7 +146,7 @@ class MachineInventoryTests(unittest.TestCase):
         self.assertIsNone(manifest["database_sha256"])
         self.assertFalse((self.root / "machine/database.json").exists())
 
-    def test_supplement_workflow_manifest_hashes_actual_database_bytes(self):
+    def test_workflow_manifest_hashes_present_database_bytes(self):
         data = b'{"observations": []}\n'
         manifest = self.manifest_run(data)
         self.assertEqual(manifest["database_sha256"], hashlib.sha256(data).hexdigest())
@@ -159,10 +159,11 @@ class MachineInventoryTests(unittest.TestCase):
         run = run.split("      - name: Record the machine-test manifest", 1)[0]
         self.assertNotIn("${{ inputs.machine_inventory }}", run)
         self.assertIn('python -m pytest "$@"', run)
-        self.assertIn('c13-tests "${pytest_options[@]}" "${test_paths[@]}"', run)
-        self.assertIn('pytest_options=()', run)
-        self.assertIn('if [ "$PG533_SUPPLEMENT" = true ]; then', run)
-        self.assertIn('pytest_options=(-p lite_pg533_plugin)', run)
+        self.assertIn('c13-tests "${test_paths[@]}"', run)
+        # The Owner-authorized PostgreSQL supplement was removed: no step may reintroduce
+        # the plugin or the profile it was selected by.
+        self.assertNotIn("PG533_SUPPLEMENT", run)
+        self.assertNotIn("lite_pg533", run)
         self.assertIn("-w /srv/application", run)
         self.assertIn("-e GO_MEDIA_CACHE_DIR=/tmp/go-media-cache", run)
         self.assertIn('pipeline_status=("${PIPESTATUS[@]}")', run)
