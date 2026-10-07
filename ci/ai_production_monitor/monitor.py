@@ -402,7 +402,7 @@ def render_boss_activity(activity: list[dict], boss_login: str, warnings: list[s
         "### Boss 14-Cell 今日工作",
         "",
         f"> Boss identity: `{boss_login}`.  ",
-        "> Scope: today\'s Formal C01-C12 Task Issues plus manual C14 Review Issues; C13 activity is shown from sealed review evidence.",
+        "> Scope: today's Formal C01-C12 Task Issues plus manual C14 Review Issues; C13 activity is shown from sealed review evidence.",
         "",
     ]
     if not activity:
@@ -476,7 +476,14 @@ def summarize(records: list[ReviewRecord], now: datetime, tz_name: str = DEFAULT
     return out
 
 
-def render_live_metrics(summary: dict, generated_at: datetime, tz_name: str, warnings: list[str]) -> str:
+def render_live_metrics(
+    summary: dict,
+    generated_at: datetime,
+    tz_name: str,
+    warnings: list[str],
+    boss_activity: list[dict] | None = None,
+    boss_login: str = DEFAULT_BOSS_LOGIN,
+) -> str:
     tz = ZoneInfo(tz_name)
     local = generated_at.astimezone(tz)
     lines = [
@@ -484,12 +491,17 @@ def render_live_metrics(summary: dict, generated_at: datetime, tz_name: str, war
         "## Live Metrics",
         "",
         f"> Last refreshed: **{local:%Y-%m-%d %H:%M:%S %Z}**  ",
-        "> Source: existing sealed C13/C14 GitHub Actions artifacts.  ",
-        "> Mode: **OBSERVATION_ONLY** — no thresholds, no automatic judgement.",
+        "> Source: Formal Task/Review Issues, linked Builder PRs, and sealed C13/C14 GitHub Actions artifacts.  ",
+        "> Mode: **OBSERVATION_ONLY** — no automatic remediation, no candidate judgement.",
+        "",
+    ]
+    lines.extend(render_boss_activity(boss_activity or [], boss_login, warnings))
+    lines.extend([
+        "### C13/C14 质量统计",
         "",
         "| Window | Candidates* | Full C14→C13 pass** | C14 PASS | C14 N/A | C14 FAIL | C14 BLOCK | C13 PASS | C13 FAIL | C13 BLOCK |",
         "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
-    ]
+    ])
     for label in ("Today", "7 days", "30 days"):
         item = summary[label]
         lines.append(
@@ -536,6 +548,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY"))
     parser.add_argument("--issue-number", type=int, default=DEFAULT_ISSUE)
     parser.add_argument("--timezone", default=DEFAULT_TZ)
+    parser.add_argument("--boss-login", default=DEFAULT_BOSS_LOGIN)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
 
@@ -547,10 +560,18 @@ def main(argv: list[str] | None = None) -> int:
 
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(days=30)
+    day_start = _local_day_start(now, args.timezone)
     api = GitHubAPI(args.repository, token, os.environ.get("GITHUB_API_URL", "https://api.github.com"))
     records, warnings = collect_records(api, cutoff)
+    issues = api.list_issues_since(day_start)
+    pulls = api.list_recent_pulls(cutoff)
+    boss_activity = build_boss_activity(
+        issues, pulls, records, now, args.timezone, args.boss_login
+    )
     summary = summarize(records, now, args.timezone)
-    live = render_live_metrics(summary, now, args.timezone, warnings)
+    live = render_live_metrics(
+        summary, now, args.timezone, warnings, boss_activity, args.boss_login
+    )
 
     if warnings:
         for warning in warnings:
@@ -566,6 +587,7 @@ def main(argv: list[str] | None = None) -> int:
     print(json.dumps({
         "issue": args.issue_number,
         "records": len(records),
+        "boss_work_items": len(boss_activity),
         "warnings": len(warnings),
         "mode": "OBSERVATION_ONLY",
     }, sort_keys=True))
