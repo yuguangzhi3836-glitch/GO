@@ -113,17 +113,20 @@ class OnboardingService:
             if onb.status not in {"CERTIFICATION_PENDING","CERTIFIED"}: raise ValueError("ONBOARDING_NOT_READY_FOR_CERTIFICATION")
             previous_certification_id=s.scalar(select(func.max(ConnectorCertificationRow.certification_id)).where(ConnectorCertificationRow.connector_id==connector_id))
         report=await connector_service.certify(connector_id)
+        binding_error_to_raise=None
         with SessionLocal.begin() as s:
             onb=s.execute(select(SupplierConnectorOnboardingRow).where(SupplierConnectorOnboardingRow.onboarding_id==onboarding_id).with_for_update()).scalar_one()
             cert,binding_error=self._bind_certification_record(s,connector_id,report,previous_certification_id)
             onb.last_certification_id=cert.certification_id if cert and cert.passed else None
             if binding_error:
                 self._transition(s,onb,"CERTIFICATION_PENDING",binding_error,actor_id,{"report":report})
-                raise ValueError(binding_error)
-            if cert and cert.passed:
+                binding_error_to_raise=binding_error
+            elif cert and cert.passed:
                 self._transition(s,onb,"CERTIFIED","SANDBOX_CERTIFICATION_PASSED",actor_id,{"certification_id":cert.certification_id})
             else:
                 self._transition(s,onb,"CERTIFICATION_PENDING","SANDBOX_CERTIFICATION_FAILED",actor_id,{"certification_id":cert.certification_id if cert else None,"report":report})
+        if binding_error_to_raise:
+            raise ValueError(binding_error_to_raise)
         return report
     def request_activation(self,onboarding_id:str,actor_id:str):
         with SessionLocal.begin() as s:

@@ -97,3 +97,29 @@ def test_certify_rejects_ambiguous_duplicate_matches_and_leaves_onboarding_non_a
     assert onboarding["last_certification_id"] is None
     with pytest.raises(ValueError, match="PASSED_CERTIFICATION_REQUIRED"):
         onboarding_service.request_activation(onboarding_id, "ops")
+
+
+def test_failed_recertification_revokes_previous_certification_before_raising(monkeypatch):
+    onboarding_id = _prepare_onboarding("sup_recert_missing")
+
+    async def initial_certify(connector_id: str):
+        _insert_certification(930, connector_id, True, at=datetime(2026, 1, 1, tzinfo=timezone.utc))
+        return _report(connector_id, True)
+
+    monkeypatch.setattr(connector_service, "certify", initial_certify)
+    asyncio.run(onboarding_service.certify(onboarding_id, "certifier"))
+    assert onboarding_service._row(onboarding_id)["last_certification_id"] == 930
+
+    async def recertify_without_record(connector_id: str):
+        return _report(connector_id, True)
+
+    monkeypatch.setattr(connector_service, "certify", recertify_without_record)
+
+    with pytest.raises(ValueError, match="CERTIFICATION_RECORD_BINDING_MISSING"):
+        asyncio.run(onboarding_service.certify(onboarding_id, "recertifier"))
+
+    onboarding = onboarding_service._row(onboarding_id)
+    assert onboarding["status"] == "CERTIFICATION_PENDING"
+    assert onboarding["last_certification_id"] is None
+    with pytest.raises(ValueError, match="PASSED_CERTIFICATION_REQUIRED"):
+        onboarding_service.request_activation(onboarding_id, "ops")
