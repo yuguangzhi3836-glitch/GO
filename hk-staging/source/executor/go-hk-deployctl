@@ -54,7 +54,16 @@ _CANARY_SHA256 = "50284e007947730feeec57e1bcbebabb80b7ac4766524214d8da6424c60618
 # recreates them through that same builder, pins the images it restores and waits for the
 # api it restored to answer.  The deploy pin is untouched by the convergence -- those bytes
 # are unchanged -- and the rollback pin is recomputed from the merged file.
-_DEPLOY_SHA256 = "7d185ce7dd73e62bbafdba55386b4f98c679aa522364ef61ab0463b1b26dbdb4"
+#
+# 2026-10-07: the deploy pin is recomputed.  deploy_runtime.py's `_task_binding` no longer
+# compares the binding's `authority` against one inline string: it consults a declared
+# `TASK_AUTHORITIES` list, so a second issuing authority can be named instead of every
+# operator having to write `GO-COMMAND-CENTER` into its own record.  Nothing else in the
+# deploy path changes -- the candidate digest, the artifact identity, the migration rule
+# and the container binding are the same code they were, and the remaining four pins are
+# unchanged.  This pin moves because the deploy module's bytes moved, which is exactly
+# what it is for.
+_DEPLOY_SHA256 = "06a3eebc8257a4dfa2cc519aedd60888a2b6b0975f1dccce6bbcfa9854a82b2b"
 _ROLLBACK_SHA256 = "8467c240f7e3f7a096515f6e47a6760033d3c5ab20fbb452cfb504133bf8db1f"
 _ARTIFACT_SHA256 = "736b557167fd641aaf59ef66c4380d0d7902aa91b562aee2a5c3688918687e7b"
 

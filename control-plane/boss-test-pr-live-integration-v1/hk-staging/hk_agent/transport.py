@@ -321,8 +321,16 @@ def evidence(task,result):
     stamp=utcnow()
     record = {"schema_version":"1","task_id":task["task_id"],"nonce":task["nonce"],"action_id":task["action_id"],"environment":task["environment"],"status":"SUCCESS","started_at":stamp,"completed_at":stamp,"agent_version":VERSION,"gate_results":{"schema":"PASS","environment":"PASS","authority":"PASS","signature":"PASS","expiry":"PASS","replay":"PASS","allowlist":"PASS"},"executor_result":result}
     if task["action_id"] == test_pr.ACTION:
-        required={"schema_version","executor_version","action_id","status","result","source_pr_number","source_commit_sha","task_canonical_sha256","built_image_id","artifact_durability","artifact_package","gate_results","application_health_proven","deployment_performed"}
-        if not isinstance(result,dict) or set(result) != required or result["status"] != "SUCCESS" or result["result"] != "TEST_PR_OK" or result["action_id"] != test_pr.ACTION or result["application_health_proven"] is not False or result["deployment_performed"] is not False:
+        required={"schema_version","executor_version","action_id","status","result","source_pr_number","source_commit_sha","task_canonical_sha256","built_image_id","artifact_durability","artifact_package","gate_results","application_health_proven","deployment_performed","migration_head","source_fingerprint","source_fingerprint_algorithm"}
+        if (not isinstance(result,dict) or set(result) != required or result["status"] != "SUCCESS"
+                or result["result"] != "TEST_PR_OK" or result["action_id"] != test_pr.ACTION
+                or result["application_health_proven"] is not False or result["deployment_performed"] is not False
+                # The two identity facts are validated at the Evidence boundary as well as
+                # in the executor: a record that carries them is a record a reader will
+                # trust, so a malformed one must not be able to reach it.
+                or not isinstance(result["migration_head"],str) or test_pr.HEAD_TOKEN.fullmatch(result["migration_head"]) is None
+                or not isinstance(result["source_fingerprint"],str) or test_pr.HEX64.fullmatch(result["source_fingerprint"]) is None
+                or result["source_fingerprint_algorithm"] != test_pr.SOURCE_FINGERPRINT_ALGORITHM):
             raise Reject("EXECUTOR_RESULT_REJECT", stage=STAGE_EVIDENCE_BUILD)
         # A build identity is not a deliverable.  The Evidence only carries a
         # deployable artifact claim when the executor also reports a sealed package
@@ -343,7 +351,7 @@ def evidence(task,result):
                 or not isinstance(package.get("package_sha256"),str)
                 or re.fullmatch(r"[0-9a-f]{64}",package["package_sha256"]) is None):
             raise Reject("ARTIFACT_DURABILITY_REJECT", stage=STAGE_ARTIFACT_DURABILITY)
-        record.update({"executor_version":result["executor_version"],"executor_result":result["result"],"source_pr_number":result["source_pr_number"],"source_commit_sha":result["source_commit_sha"],"task_canonical_sha256":result["task_canonical_sha256"],"built_image_id":result["built_image_id"],"artifact_durability":result["artifact_durability"],"artifact_package":package,"gate_results":result["gate_results"],"application_health_proven":False,"deployment_performed":False})
+        record.update({"executor_version":result["executor_version"],"executor_result":result["result"],"source_pr_number":result["source_pr_number"],"source_commit_sha":result["source_commit_sha"],"task_canonical_sha256":result["task_canonical_sha256"],"built_image_id":result["built_image_id"],"artifact_durability":result["artifact_durability"],"artifact_package":package,"gate_results":result["gate_results"],"application_health_proven":False,"deployment_performed":False,"migration_head":result["migration_head"],"source_fingerprint":result["source_fingerprint"],"source_fingerprint_algorithm":result["source_fingerprint_algorithm"]})
         return record
     if task["action_id"] != "CONTROL_PLANE_HEALTH":
         required={"schema_version","executor_version","action_id","status","release_id","candidate_image_id","expected_current_image_id","result","gate_results","installed_identity"}

@@ -10,6 +10,16 @@ RECORD_DIR='/var/lib/go-hk-deployctl/deploy-records'
 SERVICES=('api','recovery-worker','outbox-worker','mobile-push-receipt-worker','reconciliation-worker','mobile-push-worker','mobile-engagement-worker','judgment-worker')
 IMAGE=re.compile(r'^sha256:[0-9a-f]{64}$'); DIGEST=re.compile(r'^[a-z0-9][a-z0-9._/-]*@sha256:[0-9a-f]{64}$')
 TASK_ID=re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'); NONCE=re.compile(r'^[A-Za-z0-9_-]{1,128}$'); SHA256=re.compile(r'^[0-9a-f]{64}$')
+# The authorities whose deployment instruction this host accepts, as a declared list
+# rather than an inline string compare.  `authority` is the caller's own attribution of
+# who issued the Task: it is not a cryptographic proof, and it never carried one, because
+# the caller that can write a binding can also write any name into it.  What actually
+# binds a deployment is the converged candidate digest recomputed on this host, the
+# artifact identity, the migration rule and the eight-container binding -- none of which
+# consult this list.  Kept as a list so that adding or retiring an operator is a
+# reviewable edit to a named set, and so that no operator has to write another
+# authority's name into its own record to be accepted.
+TASK_AUTHORITIES=('GO-COMMAND-CENTER','GO-FORGE')
 API_READINESS_ATTEMPTS=12
 API_READINESS_INTERVAL_SECONDS=5
 
@@ -56,7 +66,7 @@ def _precheck(runner,candidate,package,expected,artifact):
 def _task_binding(binding):
     if not isinstance(binding,dict) or set(binding)!={'task_id','nonce','authority','canonical_sha256'}: raise Reject('E_DEPLOY_TASK_BINDING')
     if not TASK_ID.fullmatch(binding['task_id']) or not NONCE.fullmatch(binding['nonce']): raise Reject('E_DEPLOY_TASK_BINDING')
-    if binding['authority']!='GO-COMMAND-CENTER' or not SHA256.fullmatch(binding['canonical_sha256']): raise Reject('E_DEPLOY_TASK_BINDING')
+    if binding['authority'] not in TASK_AUTHORITIES or not SHA256.fullmatch(binding['canonical_sha256']): raise Reject('E_DEPLOY_TASK_BINDING')
     return dict(binding)
 def _repo_digest(runner,image):
     values=[v for v in _run(runner,[DOCKER,'image','inspect',image,'--format','{{join .RepoDigests "\\n"}}'],20).splitlines() if DIGEST.fullmatch(v) and v.endswith(image[7:])]

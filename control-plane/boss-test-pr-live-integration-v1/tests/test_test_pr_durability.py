@@ -47,11 +47,29 @@ from archive_fixtures import multiplatform_save, oci_save, synthetic_save  # noq
 
 POSIX = os.name == "posix"
 COMMIT = "c" * 40
+
+
+def git_blob(data):
+    """The identity git gives bytes: sha1 of ``blob <len>\\0<data>``."""
+    return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+
+
+# The one file the checkout below writes, stated the way `git ls-tree -r` states it.  The
+# source fingerprint refuses a file whose bytes do not hash back to its blob, so a fixture
+# that listed a path without its identity would be refused before the step under test.
+PYPROJECT = b"[project]\n"
+PYPROJECT_LISTING = "100644 blob %s\tapplication/pyproject.toml" % git_blob(PYPROJECT)
 CONFIG = b'{"architecture":"amd64"}'
 # The build's image id is the SHA256 of its config blob, which is exactly what the
 # sealed package has to reproduce.
 IMAGE_ID = "sha256:" + hashlib.sha256(CONFIG).hexdigest()
 PROFILE_SHA = test_pr.DEPENDENCY_PROFILE_SHA256
+# What the isolated runtime gate prints, as the built image prints it: the one migration
+# head it is on.  `alembic heads` already ran with the runtime checks and its answer was
+# being dropped, so the gate is where that fact now comes from; a fixture that answers with
+# silence is refused before the step under test -- which is the refusal working, not the
+# fixture failing.
+RUNTIME_IDENTITY_OUTPUT = "0145_source_latest_index (head)"
 
 
 class Completed:
@@ -89,10 +107,15 @@ class BuilderRunner:
             if "checkout" in argv:
                 context = self.workspace / "application"
                 context.mkdir(parents=True, exist_ok=True)
-                (context / "pyproject.toml").write_text("[project]\n", encoding="utf-8")
+                (context / "pyproject.toml").write_bytes(PYPROJECT)
                 return Completed("")
             if "rev-parse" in argv:
                 return Completed(COMMIT)
+            if "ls-tree" in argv:
+                # The commit's tracked set, with each entry's blob identity.  The checkout
+                # branch above wrote exactly these bytes, so the fingerprint the executor
+                # takes is over a tree that answers to the listing it was given.
+                return Completed(PYPROJECT_LISTING)
             return Completed("")
         if argv[0] != "/usr/bin/docker":
             raise AssertionError(argv)
@@ -109,6 +132,8 @@ class BuilderRunner:
                 raise test_pr.Reject("TEST_PR_SUBPROCESS_REJECT")
             if "--mount" in argv:
                 return Completed(PROFILE_SHA)
+            if any("find_spec('go_hotel')" in argument for argument in argv):
+                return Completed(RUNTIME_IDENTITY_OUTPUT)
             return Completed("")
         if verb == "build":
             return Completed("")
