@@ -175,7 +175,6 @@ def validate_review_payload_for_request(request) -> dict:
         ai_model=source.get("ai_model"),
         c14_run_id=source.get("c14_run_id"),
         c14_runtime_task_id=source.get("c14_runtime_task_id"),
-        supplement=source.get("supplement"),
         allowed_owner_cs=(REVIEW_OWNER_C[task_kind],),
     )
 

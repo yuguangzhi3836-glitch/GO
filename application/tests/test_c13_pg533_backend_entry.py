@@ -1,6 +1,8 @@
-"""Run the supplement backend boundaries through the existing C13 inventory.
+"""Expose the frozen Runtime/C13 backend suites as two no_db C13 cases.
 
-These offline tests review #534, not the fifteen payment cases on #531.
+Each case runs one backend directory's own modules through `unittest` and enforces a
+NON-VACUITY FLOOR: a run that collects nothing, or that lost tests, is refused even
+when `unittest` would have exited 0 with an empty suite.
 """
 import os
 import re
@@ -28,11 +30,10 @@ def _assert_unittest_success(result, count):
 @pytest.mark.no_db
 @pytest.mark.parametrize("directory,modules,count", [
     ("runtime-host-channel-v1", ["test_c1_review_inventory",
-      "test_c1_c13_supplement", "test_c1_c13c14_review_transport"], 85),
-    ("c13-c14-lite", ["test_lite_pg533", "test_lite_supplement_preflight",
-      "test_lite_machine_inventory"], 32),
+      "test_c1_c13c14_review_transport"], 77),
+    ("c13-c14-lite", ["test_lite_machine_inventory"], 13),
 ])
-def test_pg533_backend_entry(directory, modules, count):
+def test_frozen_backend_entry(directory, modules, count):
     backend = Path(__file__).resolve().parents[2] / "control-plane" / directory
     result = subprocess.run(
         [sys.executable, "-m", "unittest", "-v", *modules], cwd=backend,
@@ -48,7 +49,7 @@ def test_pg533_backend_entry(directory, modules, count):
     ("@unittest.skip('controlled skip')\ndef test_case(self): pass", False),
     ("def test_case(self): self.fail('controlled failure')", False),
 ])
-def test_pg533_unittest_summary_gate(body, accepted):
+def test_unittest_summary_gate(body, accepted):
     import textwrap
     source = "import unittest\nclass Probe(unittest.TestCase):\n" + textwrap.indent(body, "    ") + "\nunittest.main(verbosity=2)\n"
     result = subprocess.run([sys.executable, "-c", source],

@@ -57,10 +57,8 @@ Out of scope on purpose
 -----------------------
 Review execution, result adoption, verdicts, round decisions and issue comments are all
 later stages and all already exist. New rounds create ONE C14 task; their C13 half
-requires an admissible sealed C14. The sole continuation exception is the fixed
-PG533-15-V1 supplement: it reads the original durable C14/C13 results, preserves
-the existing round and admits one deduplicated C13 correction. Comments are not
-an admission API and arbitrary issues cannot request direct C13 execution.
+requires an admissible sealed C14. Comments are not an admission API and arbitrary
+issues cannot request direct C13 execution.
 """
 from __future__ import annotations
 
@@ -306,17 +304,6 @@ def plan_review_ingress(issue, *, reader, environ=None) -> dict:
     has none: this function is not able to enqueue anything, in any configuration.
     """
     parsed = parse_review_issue(issue)
-    from c1_c13_supplement_contract import requested_profile, APPLICATION_TREE
-    try:
-        supplement = requested_profile(issue["body"])
-    except ValueError as error:
-        raise Refused(str(error)) from None
-    if supplement:
-        from c1_c13_supplement_ingress import installed_plan
-        resolve_candidate(reader, parsed)
-        if resolve_application_tree(reader, parsed["candidate_sha"]) != APPLICATION_TREE:
-            raise Refused("C13_SUPPLEMENT_APPLICATION_TREE_MISMATCH")
-        return installed_plan(parsed, enabled=ingress_enabled(environ))
     inventory = explicit_inventory(issue["body"])
     resolve_candidate(reader, parsed)
     application_tree = resolve_application_tree(reader, parsed["candidate_sha"])

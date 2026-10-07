@@ -155,26 +155,10 @@ jobs:
           test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
           test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
 
-      - name: Validate an optional Owner-authorized PostgreSQL correction
-        id: supplement_plan
-        env:
-          RUNTIME_TRANSPORT: ${{ inputs.runtime_transport }}
-          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
-          APPLICATION_TREE: ${{ inputs.application_tree }}
-          ISSUE_NUMBER: ${{ inputs.issue_number }}
-          ROUND_ID: ${{ inputs.ledger_round_id }}
-          C13_TASK_ID: ${{ inputs.c13_task_id }}
-          C14_TASK_ID: ${{ inputs.c14_task_id }}
-          MACHINE_INVENTORY: ${{ inputs.machine_inventory }}
-        run: |
-          python control-plane/c13-c14-lite/lite_pg533.py prepare >> "$GITHUB_OUTPUT"
-
       - name: Run the frozen machine inventory in a disposable container
         id: machine_run
         env:
           MACHINE_INVENTORY: ${{ inputs.machine_inventory }}
-          PG533_SUPPLEMENT: ${{ steps.supplement_plan.outputs.supplement }}
-          C13_CANDIDATE_SHA: ${{ inputs.candidate_sha }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/machine"
@@ -197,18 +181,8 @@ jobs:
           # Build from the trusted backend, never from candidate-controlled Docker code.
           docker build -f control-plane/c13-c14-lite/machine.Dockerfile \
             -t go-c13-machine:local control-plane/c13-c14-lite
-          backend_options=()
-          pytest_options=()
-          if [ "$PG533_SUPPLEMENT" = true ]; then
-            backend_options=(-v "$PWD/control-plane:/c13-backend:ro"
-              -e PYTHONPATH=/c13-backend/c13-c14-lite
-              -e C13_PG533_PROFILE=PG533-15-V1
-              -e "C13_CANDIDATE_SHA=$C13_CANDIDATE_SHA")
-            pytest_options=(-p lite_pg533_plugin)
-          fi
           set +e
           docker run --rm \
-            "${backend_options[@]}" \
             -v "$PWD/candidate:/srv:ro" \
             -v "$RUNNER_TEMP/machine:/out" \
             -e PGHOST=host.docker.internal \
@@ -221,7 +195,7 @@ jobs:
             -w /srv/application \
             --add-host=host.docker.internal:host-gateway \
             go-c13-machine:local \
-            bash -lc 'pip install -q pytest && cp -r /srv/application /tmp/candidate-application && pip install -q "/tmp/candidate-application[dev]" && python -m pytest "$@" -q --junitxml=/out/junit.xml' c13-tests "${pytest_options[@]}" "${test_paths[@]}" \
+            bash -lc 'pip install -q pytest && cp -r /srv/application /tmp/candidate-application && pip install -q "/tmp/candidate-application[dev]" && python -m pytest "$@" -q --junitxml=/out/junit.xml' c13-tests "${test_paths[@]}" \
             2>&1 | tee "$RUNNER_TEMP/machine/stdout.txt"
           pipeline_status=("${PIPESTATUS[@]}")
           set -e
@@ -261,43 +235,6 @@ jobs:
           (root / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
           (root / "test_inventory.txt").write_text(os.environ["MACHINE_INVENTORY"] + "\n")
           PY
-
-      - name: Fetch the original C13 seal for the authorized correction
-        if: steps.supplement_plan.outputs.supplement == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: c13c14-lite-c13-${{ inputs.candidate_sha }}
-          path: prior-review
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: 37484199333
-
-      - name: Fetch the original machine bytes without upgrading their database label
-        if: steps.supplement_plan.outputs.supplement == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: c13c14-lite-c13-machine-${{ inputs.candidate_sha }}
-          path: prior-machine
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: 37484199333
-
-      - name: Fetch the unchanged C14 seal
-        if: steps.supplement_plan.outputs.supplement == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: c13c14-lite-c14-${{ inputs.candidate_sha }}
-          path: prior-c14
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: 37482306650
-
-      - name: Bind 15 actual PostgreSQL cases plus 9 retained SQLite migration cases
-        if: steps.supplement_plan.outputs.supplement == 'true'
-        run: |
-          python control-plane/c13-c14-lite/lite_pg533.py assemble \
-            --prior prior-machine --prior-review prior-review --c14 prior-c14 \
-            --fresh "$RUNNER_TEMP/machine"
 
       - name: Publish the machine-test evidence
         if: ${{ always() && steps.machine_run.outcome != 'skipped' }}
