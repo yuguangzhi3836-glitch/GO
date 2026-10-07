@@ -1,0 +1,282 @@
+# GO Forge — Boss / Boss GPT usage
+
+**Date:** 2026-10-08
+**Status:** CURRENT — reflects the GO Forge V1 closeout of 2026-10-08
+**Owner:** chenzhenxi1-sudo
+**Scope of this document:** how the Boss (or a Boss GPT with zero context) asks GO Forge to work on
+HK-STAGING-01, and what Forge will and will not do. It records usage only; it does not deploy, and
+it changes nothing about the runtime.
+
+---
+
+## 1. The one question Forge answers
+
+> **Does the actual runtime on HK-STAGING-01 match the authorised candidate?**
+
+Everything Forge does exists to answer that one question with evidence rather than assertion.
+
+The normal chain is:
+
+```text
+Boss / Boss GPT
+  -> GitHub Task  (one JSON document, in chenzhenxi1-sudo/go-control-tasks)
+  -> GO Forge     (resident operator on the Command Center host, user go-forge)
+  -> existing HK capability   (sealed executor go-hk-deployctl: verify | canary | deploy | rollback)
+  -> HK-STAGING-01
+  -> Evidence (signed) + WeCom notification
+```
+
+The legacy Command Center is **not** in this path. It stays installed as a **break-glass fallback**
+only.
+
+---
+
+## 2. The normal deployment request
+
+Say exactly this, and nothing more:
+
+```text
+Deploy PR <number> to HK-STAGING.
+```
+
+Concretely it becomes **one JSON document** committed to `tasks/` in
+`chenzhenxi1-sudo/go-control-tasks` on `main`:
+
+```json
+{
+  "authority": "GO-FORGE",
+  "action_id": "FORGE_DEPLOY",
+  "environment": "HK-STAGING-01",
+  "target_pr": 320,
+  "schema_version": "1",
+  "task_id": "forge-deploy-pr320-20261008T000000Z",
+  "issued_at": "2026-10-08T00:00:00.000000Z",
+  "nonce": "<random, at least 16 characters>",
+  "parameters": {}
+}
+```
+
+That is the entire contract.
+
+| Field | Who supplies it | Notes |
+|---|---|---|
+| `authority` | **you** | must be exactly `GO-FORGE`, or Forge ignores the task |
+| `action_id` | **you** | `FORGE_DEPLOY` to deploy, `FORGE_INSPECT` to inspect only, `FORGE_STOP` to stop a run |
+| `environment` | **you** | `HK-STAGING-01` |
+| `target_pr` | **you** | the pull-request number. **This is the whole intent.** |
+| `schema_version` | envelope | `"1"` |
+| `task_id` | envelope | unique; also the filename stem: `tasks/<task_id>.json` |
+| `issued_at` | envelope | UTC ISO-8601 |
+| `nonce` | envelope | unique per task |
+| `parameters` | envelope | leave `{}`. Do **not** put candidate facts here. |
+
+The envelope fields exist because the bus consumer expects them. They carry no intent.
+
+Do **not** supply any of these — Forge derives every one of them from live state:
+
+```text
+source commit        candidate id          artifact digest      package SHA256
+candidate contract   migration head        image id             compose path
+TEST_PR parameters   canary/verify steps   recovery plan        the deployctl argv
+```
+
+`FORGE_INSPECT` is the same document with `"action_id": "FORGE_INSPECT"`. It authorises **no
+mutation** and is the safe way to check the environment.
+
+`FORGE_STOP` is handled by the worker without any AI involvement at all:
+
+```json
+{
+  "authority": "GO-FORGE",
+  "action_id": "FORGE_STOP",
+  "environment": "HK-STAGING-01",
+  "target_run_id": "<the run to stop, or omit to stop whatever is running>",
+  "reason": "why",
+  "schema_version": "1", "task_id": "...", "issued_at": "...", "nonce": "...",
+  "parameters": {}
+}
+```
+
+A valid document of every shape above can be produced by the operator's own publisher, which also
+stamps the envelope fields:
+
+```text
+python3 /opt/go-forge/forge_publish.py --action-id FORGE_DEPLOY  --target-pr 320
+python3 /opt/go-forge/forge_publish.py --action-id FORGE_INSPECT --target-pr 320
+python3 /opt/go-forge/forge_publish.py --stop --target-run-id <run_id> --reason "..."
+```
+
+---
+
+## 3. What Forge then does, on its own
+
+```text
+read the pull request's live state           (the head commit is authoritative)
+establish the immutable source identity
+find the admitted candidate for that head    (or prepare one: see §5)
+inspect the real HK-STAGING runtime
+verify a real recovery path before mutating
+run the sealed CANARY, then the sealed DEPLOY, verifying each step
+roll back automatically if a step verifies badly
+publish signed Evidence, then notify WeCom
+```
+
+The order is Forge's to choose. It is not a fixed workflow, and it may revise its plan mid-run when
+reality changes — revisions are recorded, never hidden.
+
+---
+
+## 4. Where the result is
+
+* **GitHub:** `chenzhenxi1-sudo/go-control-evidence` -> `evidence/`. Each terminal task publishes
+  exactly one document.
+* **WeCom:** one message per accepted task, to the owner's single chat.
+
+The terminal message states the facts plainly, not a verdict to be interpreted:
+
+```text
+干的什么 / 目标环境 / 目标 PR / 结果
+是否执行了部署
+是否改过环境
+回滚状态
+GitHub 记录
+需要你处理
+```
+
+Terminal results:
+
+| Result | Meaning |
+|---|---|
+| `DEPLOY_SUCCESS` | deployed and verified against the real running system |
+| `FAILED_ROLLBACK_SUCCESS` | the deployment failed, the environment was put back, a human is needed |
+| `FAILED_NEEDS_HUMAN` | Forge found a fact that stops it. The Evidence names the fact. |
+| `PASS` | a non-deploying action (e.g. `FORGE_INSPECT`) completed |
+| `STOPPED_BY_HUMAN` | a `FORGE_STOP` was honoured |
+
+Forge reports facts. It does not interpret them for you.
+
+---
+
+## 5. Preparing a candidate that is not admitted yet
+
+Forge will prepare a release that has not been admitted yet: it can run the host's existing
+`TEST_PR` build/test/seal executor, and the verdict comes from **that machine**, never from Forge's
+own judgement.
+
+Two things are deliberately **not** Forge's to do, and it reports them as blockers rather than
+filling them in:
+
+1. **Minting the signed admitted-candidate contract.** That record is an authority's, not an
+   operator's. Forge will not hand-write one and will not sign one.
+2. **Advancing the declared baseline.** See §6.
+
+A field with no producer is refused **by name**, together with the component that owns it.
+
+---
+
+## 6. The declared baseline, and what DRIFT means
+
+"Forge compares the **declared** baseline for HK-STAGING against the **actual** runtime."
+
+* If a difference is **accounted for** by a verified record — a previous deployment record, signed
+  Evidence, or the previous known-good image — Forge records `comparison=DRIFT`,
+  `drift_explained=true`, names the record(s) in `drift_explained_by`, and **continues**. A declared
+  pointer that merely lags a deployment someone already verified is not a reason to stop, and it no
+  longer vetoes a correct deployment.
+* If a difference is **unexplained** — an actual runtime that no verified record accounts for —
+  Forge investigates read-only (GitHub, Evidence, past deployment records, logs) and, if it still
+  cannot account for it, **stops and asks a human**. It will not mutate an environment it cannot
+  account for.
+
+**Known live example (2026-10-03 -> 2026-10-07).** The canonical pointer
+`docs/canonical-baseline/CURRENT_HK_RUNTIME.json` still named the PR #320 image
+(`sha256:26c95472d494…`) while all eight business services actually ran the PR #376 image
+(`sha256:01632507d0d3…`). The PR #376 deploy on 2026-10-03 was completed and self-verified
+(sealed VERIFY = `VERIFY_OK`, 8/8 services, protected non-targets unchanged) but was never
+reconciled into the pointer. The pointer was stale by one generation; the runtime was correct.
+Before 2026-10-08 this was a blanket block. It is now an explained DRIFT that is recorded and
+passed.
+
+**Advancing the pointer remains an owner-side item.** Forge never advances it, even on
+`DEPLOY_SUCCESS`. The loop is unchanged: **deploy -> Forge publishes Evidence -> the owner advances
+the baseline.**
+
+---
+
+## 7. What Forge never does
+
+```text
+merge a pull request                 comment on a pull request
+close a pull request                 change a pull request's state
+advance the baseline or the head     touch Production
+touch any human-owned pull request   mint a candidate contract
+```
+
+Refusals happen in the tool layer, not only in a prompt. They are not negotiable, and nothing you
+write in a task changes them.
+
+---
+
+## 8. Do not do these during normal Forge mode
+
+**Do not** manually issue any of:
+
+```text
+HK_STAGING_TEST_PR      HK_STAGING_CANARY      HK_STAGING_VERIFY      HK_STAGING_DEPLOY
+```
+
+**Do not** supply: image digest, artifact digest, package digest, migration commands, Docker
+commands, compose paths.
+
+**Do not** run the Forge path and the Command Center path for the same deployment at the same time.
+
+---
+
+## 9. Fallback
+
+The legacy Command Center remains installed and independently recoverable. It is a **fallback only**:
+used when the owner explicitly switches to fallback mode, not when a deployment is inconvenient.
+
+A Boss GPT must never decide on its own to use both paths at the same time.
+
+---
+
+## 10. The READY handoff — and the merge boundary
+
+When a deployment is verified, Forge publishes a READY document through its normal result channel.
+The boundary travels inside that artifact, so it does not depend on anyone reading this file:
+
+```text
+GO_FORGE_READY = YES
+TARGET_PR = #<n>
+FORGE_MERGE_ACTION = NONE
+OWNER_ACTION = Review product/business functionality; if acceptable, merge PR #<n> yourself.
+```
+
+Read that literally. **READY is not a handover of the merge.** Forge never merges a candidate PR,
+never comments on one, never closes one, and never advances the baseline or the head. Those actions
+are refused in Forge's tool layer — they are not merely discouraged in a prompt. If you are the
+owner: review the product and business behaviour yourself, and merge it yourself if you are
+satisfied.
+
+---
+
+## 11. Current state recorded by the 2026-10-08 closeout
+
+Recorded so a fresh reader does not have to reconstruct it:
+
+| Fact | Value |
+|---|---|
+| Primary operator | GO Forge, `forge-worker.service`, resident on the Command Center host as user `go-forge` |
+| Operator prompt version | `GO_FORGE_OPERATOR_PROMPT_V6` |
+| Operator source | `chenzhenxi1-sudo/go-control-tasks`, branch `forge-operator-candidate-identity-closure-20261007`, commit `36bc636` (GF-033) |
+| HK sealed executor | `/usr/local/libexec/go-hk-deployctl` — `verify | canary | deploy | rollback`; accepts `--task-authority GO-FORGE` |
+| Old Command Center | retained as break-glass ingress only; its periodic liveness / state / registration timers were retired on 2026-10-08 |
+| HK Agent polling timer | retired on 2026-10-08 — Forge reaches HK directly over SSH, it never waited for a bus poll |
+| Live check performed | one non-mutating `FORGE_INSPECT` on 2026-10-08 -> `result = PASS`, no runtime change, Evidence published, WeCom delivered |
+| Answer returned | **the actual runtime matched the authorised candidate** — all eight business services on the candidate's artifact image |
+
+The authoritative, always-current copy of the Boss-facing usage lives **with the operator**, in
+`chenzhenxi1-sudo/go-control-tasks` -> `GO_FORGE_BOSS_USAGE.md`. That file is the source of truth for
+the request contract; this document places the same contract in the repository the Boss reads, and
+adds the 2026-10-08 closeout state.
