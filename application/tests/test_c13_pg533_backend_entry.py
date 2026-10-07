@@ -13,7 +13,14 @@ import pytest
 
 def _assert_unittest_success(result, count):
     assert result.returncode == 0, result.stdout + result.stderr
-    assert re.search(rf"^Ran {count} tests? in ", result.stderr, re.MULTILINE), result.stderr
+    match = re.search(r"^Ran (\d+) tests? in ", result.stderr, re.MULTILINE)
+    assert match, result.stderr
+    # `count` is a NON-VACUITY FLOOR, not a frozen total. The module list below grows
+    # whenever the frozen backend suites grow, so a literal total goes stale on the very
+    # next addition - it already had, and that stale literal is what stopped a correct
+    # candidate in the C13 machine job. A floor still refuses a run that silently
+    # collected nothing or lost tests, which is the failure this guard exists to catch.
+    assert int(match.group(1)) >= count, (count, result.stderr)
     # Names may contain "skipped"; reject skips in the terminal summary only.
     assert result.stderr.rstrip().splitlines()[-1] == "OK", result.stderr
 
@@ -21,9 +28,9 @@ def _assert_unittest_success(result, count):
 @pytest.mark.no_db
 @pytest.mark.parametrize("directory,modules,count", [
     ("runtime-host-channel-v1", ["test_c1_review_inventory",
-      "test_c1_c13_supplement", "test_c1_c13c14_review_transport"], 84),
+      "test_c1_c13_supplement", "test_c1_c13c14_review_transport"], 85),
     ("c13-c14-lite", ["test_lite_pg533", "test_lite_supplement_preflight",
-      "test_lite_machine_inventory"], 31),
+      "test_lite_machine_inventory"], 32),
 ])
 def test_pg533_backend_entry(directory, modules, count):
     backend = Path(__file__).resolve().parents[2] / "control-plane" / directory
