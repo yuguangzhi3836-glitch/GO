@@ -292,6 +292,155 @@ def _within(record: ReviewRecord, label: str, now: datetime, tz: ZoneInfo) -> bo
     return record.issued_at >= now.astimezone(timezone.utc) - timedelta(days=days)
 
 
+def _local_day_start(now: datetime, tz_name: str) -> datetime:
+    tz = ZoneInfo(tz_name)
+    local = now.astimezone(tz)
+    return local.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
+
+
+def _pull_matches_task(pull: dict, issue_number: int, task_id: str) -> bool:
+    body = str(pull.get("body") or "")
+    issue_ref = re.search(rf"\bIssue\s*:?[ \t]*#{issue_number}\b", body, re.I)
+    return bool(issue_ref or (task_id and task_id in body))
+
+
+def _latest_verdict(records: list[ReviewRecord], role: str, candidate_sha: str | None) -> str | None:
+    if not candidate_sha:
+        return None
+    matched = [
+        record for record in records
+        if record.role == role and record.candidate_sha == candidate_sha
+    ]
+    if not matched:
+        return None
+    return max(matched, key=lambda record: record.issued_at).verdict
+
+
+def build_boss_activity(
+    issues: list[dict],
+    pulls: list[dict],
+    records: list[ReviewRecord],
+    now: datetime,
+    tz_name: str,
+    boss_login: str,
+) -> list[dict]:
+    tz = ZoneInfo(tz_name)
+    today = now.astimezone(tz).date()
+    pulls_by_number = {int(item["number"]): item for item in pulls if item.get("number") is not None}
+    activity: list[dict] = []
+
+    for issue in issues:
+        creator = str((issue.get("user") or {}).get("login") or "")
+        if creator != boss_login:
+            continue
+        created_at = _parse_time(issue.get("created_at"))
+        if created_at.astimezone(tz).date() != today:
+            continue
+
+        title = str(issue.get("title") or "")
+        task_match = FORMAL_TASK_RE.fullmatch(title)
+        review_match = FORMAL_REVIEW_RE.fullmatch(title)
+        if not task_match and not review_match:
+            continue
+
+        issue_number = int(issue["number"])
+        body = str(issue.get("body") or "")
+        candidate = None
+        if task_match:
+            cell = f"C{task_match.group('cell')}"
+            task_id = task_match.group("task_id")
+            scope = task_match.group("scope")
+            candidates = [
+                pull for pull in pulls
+                if _pull_matches_task(pull, issue_number, task_id)
+            ]
+            if candidates:
+                candidate = max(candidates, key=lambda item: _parse_time(item.get("updated_at")))
+        else:
+            cell = "C14"
+            task_id = "REVIEW"
+            scope = review_match.group("scope")
+            candidate_match = CANDIDATE_PR_RE.search(body)
+            if candidate_match:
+                candidate = pulls_by_number.get(int(candidate_match.group("number")))
+
+        candidate_number = int(candidate["number"]) if candidate and candidate.get("number") is not None else None
+        candidate_sha = str((candidate or {}).get("head", {}).get("sha") or "") or None
+        c14 = _latest_verdict(records, "c14", candidate_sha)
+        c13 = _latest_verdict(records, "c13", candidate_sha)
+
+        if candidate is None:
+            status = "TASK_CREATED"
+        elif c14 in {"FAIL", "BLOCKED"} or c13 in {"FAIL", "BLOCKED"}:
+            status = "PRODUCT_OR_REVIEW_BLOCKED"
+        elif c13 in PASSLIKE_C13:
+            status = "REVIEW_ACCEPTED"
+        elif c14 in PASSLIKE_C14:
+            status = "C14_PASS_WAIT_C13"
+        else:
+            status = "BUILDER_PR_WAIT_REVIEW"
+
+        activity.append({
+            "issue_number": issue_number,
+            "cell": cell,
+            "task_id": task_id,
+            "scope": scope,
+            "candidate_number": candidate_number,
+            "candidate_sha": candidate_sha,
+            "c14": c14,
+            "c13": c13,
+            "status": status,
+            "created_at": created_at,
+        })
+
+    activity.sort(key=lambda item: item["created_at"])
+    return activity
+
+
+def render_boss_activity(activity: list[dict], boss_login: str, warnings: list[str]) -> list[str]:
+    lines = [
+        "### Boss 14-Cell 今日工作",
+        "",
+        f"> Boss identity: `{boss_login}`.  ",
+        "> Scope: today\'s Formal C01-C12 Task Issues plus manual C14 Review Issues; C13 activity is shown from sealed review evidence.",
+        "",
+    ]
+    if not activity:
+        lines.extend([
+            "今天尚未发现 Boss 创建的正式 C01-C12 / C14 Review 工作项。",
+            "",
+        ])
+    else:
+        lines.extend([
+            "| Cell | Work item | Boss asked | Builder / candidate | C14 | C13 | Work status |",
+            "|---|---|---|---|---|---|---|",
+        ])
+        for item in activity:
+            scope = str(item["scope"]).replace("|", "\\|").replace("\n", " ").strip()
+            candidate = f"#{item['candidate_number']}" if item["candidate_number"] else "—"
+            lines.append(
+                f"| {item['cell']} | #{item['issue_number']} / {item['task_id']} | {scope} | "
+                f"{candidate} | {item['c14'] or '—'} | {item['c13'] or '—'} | {item['status']} |"
+            )
+        lines.append("")
+
+    lines.extend([
+        "### Runtime / 工具判断",
+        "",
+        "```text",
+        "RUNTIME_ACTION_REQUIRED = NO_PROVEN_GENERIC_FAILURE",
+        f"MONITOR_EVIDENCE_WARNINGS = {len(warnings)}",
+        "AUTO_REPAIR_RUNTIME = NO",
+        "```",
+        "",
+        "- C14/C13 的 `FAIL` / `BLOCKED` 默认表示候选或审核结果，**不等于 Runtime 故障**。",
+        "- 单条日志、旧文件 SHA 差异、历史 task 状态、监控读取 warning 默认记作 `NON_BLOCKING_OBSERVATION`，不得自动开 Runtime 修复。",
+        "- 只有证实存在通用执行链故障才重新打开 Runtime：任务丢失、重复付费派发、lease/attempt fencing 失效、错误 candidate/result adoption、Generic Builder 普遍无法产出 Draft PR、C14→C13 通用链断裂或 recovery 无法恢复真实在途任务。",
+        "- 本监控只汇总和分层，不 merge、不 deploy、不修改 verdict，也不创建 Runtime 修复任务。",
+        "",
+    ])
+    return lines
+
 def summarize(records: list[ReviewRecord], now: datetime, tz_name: str = DEFAULT_TZ) -> dict:
     tz = ZoneInfo(tz_name)
     out: dict[str, dict] = {}
