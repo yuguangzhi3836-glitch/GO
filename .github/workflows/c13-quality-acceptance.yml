@@ -144,6 +144,7 @@ jobs:
           ref: ${{ inputs.candidate_sha }}
           path: candidate
           persist-credentials: false
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -154,6 +155,16 @@ jobs:
           set -euo pipefail
           test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
           test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
+
+      - name: Verify the frozen review base before candidate tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUNTIME_TRANSPORT: ${{ inputs.runtime_transport }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          set -euo pipefail
+          python control-plane/c13-c14-lite/lite_cli.py review-brief --candidate-sha "$CANDIDATE_SHA" --repository "$GITHUB_REPOSITORY" --out "$RUNNER_TEMP/review_brief.json"
+          python control-plane/runtime-host-channel-v1/c1_review_base.py --candidate candidate --brief "$RUNNER_TEMP/review_brief.json"
 
       - name: Run the frozen machine inventory in a disposable container
         id: machine_run
@@ -323,8 +334,12 @@ jobs:
             --out "$RUNNER_TEMP/review_brief.json"
 
       - name: Bind the frozen candidate, its complete pull-request diff and machine evidence
+        env:
+          RUNTIME_TRANSPORT: ${{ inputs.runtime_transport }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
         run: |
           set -euo pipefail
+          python control-plane/runtime-host-channel-v1/c1_review_base.py --candidate candidate --brief "$RUNNER_TEMP/review_brief.json"
           test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
           test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
           mkdir -p "$RUNNER_TEMP/artifacts"

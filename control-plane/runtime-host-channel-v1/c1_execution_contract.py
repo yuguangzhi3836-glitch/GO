@@ -791,7 +791,7 @@ REVIEW_PAYLOAD_FIELDS = frozenset({
     "schema_version", "cell_id", "external_task_id",
     "candidate_sha", "application_tree", "issue_number",
     "review_request_id", "ledger_round_id", "c14_task_id", "c13_task_id",
-    "machine_inventory", "ai_model", "c14_run_id", "c14_runtime_task_id",
+    "machine_inventory", "ai_model", "c14_run_id", "c14_runtime_task_id", "frozen_base",
 })
 REVIEW_PAYLOAD_REQUIRED = (
     "schema_version", "cell_id", "external_task_id", "candidate_sha",
@@ -812,7 +812,7 @@ REVIEW_PAYLOAD_REFUSED = frozenset({
 })
 
 MAX_REVIEW_ID = 200
-MAX_MACHINE_INVENTORY = 400
+MAX_MACHINE_INVENTORY = 2048
 MAX_AI_MODEL = 200
 _SHA1_HEX = re.compile(r"^[0-9a-f]{40}$")
 _SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
@@ -884,6 +884,8 @@ def validate_review_task_payload(payload, *, allowed_owner_cs=LEGACY_OWNER_CS) -
     expected_task_id = normalised["c14_task_id"] if cell_id == "C14" else normalised["c13_task_id"]
     if normalised["external_task_id"] != expected_task_id:
         raise Refused("REVIEW_PAYLOAD_EXTERNAL_TASK_ID_IS_NOT_THE_CELLS_LITE_TASK_ID")
+    if "frozen_base" in payload:
+        normalised["frozen_base"] = validate_frozen_review_base(payload["frozen_base"])
     if "machine_inventory" in payload:
         normalised["machine_inventory"] = _bounded_text(
             payload["machine_inventory"], limit=MAX_MACHINE_INVENTORY,
@@ -913,10 +915,26 @@ def validate_review_task_payload(payload, *, allowed_owner_cs=LEGACY_OWNER_CS) -
     return normalised
 
 
+def validate_frozen_review_base(value):
+    """Explicit opt-in baseline; never inferred from a non-main PR."""
+    if type(value) is not dict or set(value) != {"ref", "sha", "pr_number"}:
+        raise Refused("REVIEW_FROZEN_BASE_INVALID")
+    ref = value["ref"]
+    if (not isinstance(ref, str) or len(ref) > 200
+            or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_./-]*", ref)
+            or any(part in ("", ".", "..") or part.endswith(".lock")
+                   for part in ref.split("/")) or ".." in ref or ref.endswith(".")):
+        raise Refused("REVIEW_FROZEN_BASE_REF_INVALID")
+    if type(value["pr_number"]) is not int or value["pr_number"] <= 0:
+        raise Refused("REVIEW_FROZEN_BASE_PR_INVALID")
+    return {"ref": ref, "sha": _require_sha1(value["sha"], "REVIEW_FROZEN_BASE_SHA_INVALID"),
+            "pr_number": value["pr_number"]}
+
+
 def build_review_task_payload(*, cell_id, external_task_id, candidate_sha, application_tree,
                              issue_number, review_request_id, ledger_round_id,
                              c14_task_id, c13_task_id, machine_inventory=None,
-                             ai_model=None, c14_run_id=None, c14_runtime_task_id=None,
+                             ai_model=None, c14_run_id=None, c14_runtime_task_id=None, frozen_base=None,
                              allowed_owner_cs=LEGACY_OWNER_CS) -> dict:
     payload = {
         "schema_version": REVIEW_PAYLOAD_SCHEMA_VERSION,
@@ -930,6 +948,8 @@ def build_review_task_payload(*, cell_id, external_task_id, candidate_sha, appli
         "c14_task_id": c14_task_id,
         "c13_task_id": c13_task_id,
     }
+    if frozen_base is not None:
+        payload["frozen_base"] = frozen_base
     if machine_inventory is not None:
         payload["machine_inventory"] = machine_inventory
     if ai_model is not None:
@@ -1218,6 +1238,10 @@ def dispatch_inputs(request: dict) -> dict:
         }
         if "c14_run_id" in payload:
             transport["c14_run_id"] = payload["c14_run_id"]
+        # Optional review binding rides in the existing envelope to preserve the
+        # ten-input platform limit. Unlike transport identity it IS review data.
+        if "frozen_base" in payload:
+            transport["frozen_base"] = payload["frozen_base"]
         inputs = {
             "runtime_transport": canonical(transport),
             "candidate_sha": payload["candidate_sha"],
