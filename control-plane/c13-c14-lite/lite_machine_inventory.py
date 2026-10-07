@@ -25,9 +25,14 @@ def inventory_paths(value: str, candidate: Path) -> list[str]:
         raise ValueError("INVALID_TEST_ROOT")
     result = []
     for token in tokens:
-        path = PurePosixPath(token)
-        if (not re.fullmatch(r"[A-Za-z0-9_./-]+", token)
-                or token != path.as_posix()
+        parts = token.split("::")
+        path_text, selectors = parts[0], parts[1:]
+        path = PurePosixPath(path_text)
+        if (len(parts) > 3
+                or any(not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", selector)
+                       for selector in selectors)
+                or not re.fullmatch(r"[A-Za-z0-9_./-]+", path_text)
+                or path_text != path.as_posix()
                 or ".." in path.parts
                 or path.parts[:2] != ("application", "tests")):
             raise ValueError("INVALID_TEST_PATH")
@@ -43,6 +48,8 @@ def inventory_paths(value: str, candidate: Path) -> list[str]:
             raise ValueError("TEST_PATH_OUTSIDE_INVENTORY")
         if not target.is_dir() and not (target.is_file() and target.suffix == ".py"):
             raise ValueError("INVALID_TEST_FILE")
+        # Keep an accepted pytest node id as one literal argv. Filesystem checks above
+        # apply only to its path; selectors never participate in path resolution.
         result.append("/srv/" + token)
     return result
 

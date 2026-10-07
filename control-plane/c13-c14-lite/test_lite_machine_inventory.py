@@ -56,6 +56,16 @@ class MachineInventoryTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("2 passed", result.stdout)
 
+    def test_node_id_remains_one_argument_and_selects_only_named_test(self):
+        (self.tests / "test_nodes.py").write_text(
+            "def test_selected(): assert True\n"
+            "def test_not_selected(): assert False\n")
+        value = "application/tests/test_nodes.py::test_selected"
+        self.assertEqual(inventory.inventory_paths(value, self.root), ["/srv/" + value])
+        result = self.pytest_run(value)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("1 passed", result.stdout)
+
     def test_failed_assertion_stays_failed_and_retains_junit(self):
         result = self.pytest_run("application/tests/test_bad.py")
         self.assertEqual(result.returncode, 1, result.stdout)
@@ -88,7 +98,9 @@ class MachineInventoryTests(unittest.TestCase):
                       "application/tests/missing.py", "application/tests//test_one.py",
                       "application/tests/test_one.py;touch /tmp/evil",
                       "$(touch /tmp/evil)", "application/tests/test_one.py -p evil",
-                      "application/tests/test_one.py::test_one"):
+                      "application/tests/test_one.py::",
+                      "application/tests/test_one.py::test_one[a]",
+                      "application/tests/test_one.py::Class::test_one::extra"):
             with self.subTest(value=value):
                 result = self.invoke(value)
                 self.assertNotEqual(result.returncode, 0)
