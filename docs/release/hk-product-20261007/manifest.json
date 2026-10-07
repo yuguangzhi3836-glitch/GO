@@ -1,0 +1,2457 @@
+{
+  "schema": "go.hk-product-candidate-preparation.v1",
+  "status": "PREPARED_NOT_ADMITTED",
+  "as_of": "2026-10-07",
+  "main_sha": "13c78ce531c8afd7cbfb738f99a65732e50e5e01",
+  "main_application_tree": "268f708ee56e99945a2174e6f584ac61dbdf19b2",
+  "retention_base": {
+    "pr": 376,
+    "sha": "9f889acfcd36a82c7565b723261ee046c2615314",
+    "application_tree": "dd745a7d7ab58b05c3f14c7794ca7ab826488bf3",
+    "basis": "2026-10-03 original Forge deployment record read; not a fresh host attestation",
+    "record": "https://github.com/chenzhenxi1-sudo/go-control-evidence/blob/main/evidence/forge-forge-deploy-20261003T084254Z-20261003T084359Z-forge-deploy-20261003T084254Z.json",
+    "image": "sha256:01632507d0d3b60054c1d9e56c5338b51085a69094b9beb4773e330c21191754",
+    "live_reverified_today": false
+  },
+  "included_prs": [
+    {
+      "pr": 385,
+      "sha": "b51f2f9edbd0b30c396cfd2c2136fa22899da67c",
+      "merged": false,
+      "application_files": [
+        {
+          "path": "application/src/go_hotel/services/registration_email.py",
+          "sha256": "f7efb5c679901644b95caf02d3fbb83b796126bd67fb3a990c19460c3faebb3b",
+          "git_blob": "8da13575916d14b49c6c7a0a5889087c354a3462"
+        },
+        {
+          "path": "application/tests/test_registration_email_configuration.py",
+          "sha256": "a319eb16144387dddf2b464bd7d5351f5b5e3f91a1df6fa49dbb74eeb5b7120c",
+          "git_blob": "82997873aaddd8162e494c8c983dde6b808e3bab"
+        }
+      ]
+    },
+    {
+      "pr": 477,
+      "sha": "d76196883b19ac02385c85d845916fcadb3c953d",
+      "merged": false,
+      "application_files": [
+        {
+          "path": "application/src/go_hotel/api/routes/onboarding.py",
+          "sha256": "325947b0086943c98f76c13449df9489b0618100337441f04bac6f7ffdb0571f",
+          "git_blob": "bfc04883114adeea2558c6962c93e5a9d8a335cd"
+        },
+        {
+          "path": "application/tests/test_sprint1h_onboarding.py",
+          "sha256": "e877cffd75e6c9c9cfa3c884ccee223288b173a525ddb8d58970fe08f528fea3",
+          "git_blob": "aed0b63e6d52265ff7aef33138a474ca5196660d"
+        }
+      ]
+    },
+    {
+      "pr": 543,
+      "sha": "3db4f74e25de09167e462537f68c42b6010f0517",
+      "merged": true,
+      "application_files": [
+        {
+          "path": "application/src/go_hotel/services/onboarding.py",
+          "sha256": "061f36177e31c49bcda068dc92f9fda83df82340ffb6d5ee3c4b2e16fdcc7388",
+          "git_blob": "759be35de28584e44a09c084059db1aa9f036953"
+        },
+        {
+          "path": "application/tests/workbench/test_onboarding_certification_binding.py",
+          "sha256": "741a9d3b5bc7669c0a818a3c7d84d80ae85c0670deb2b70d709c28d8a2a46455",
+          "git_blob": "1945330e8059a299995bf9107b6b75957e3fb1ff"
+        }
+      ]
+    },
+    {
+      "pr": 548,
+      "sha": "24d458aaf7474ba2f88d637bda015d3a3db788f1",
+      "merged": true,
+      "application_files": [
+        {
+          "path": "application/src/go_hotel/services/hotel_hard_hold_release.py",
+          "sha256": "46d5c0eca6d27fc30ba341b20df287f79122529e4bf1e7d42975e2d26d60f9c9",
+          "git_blob": "eead3594d865072479c53adf77f1196b52684992"
+        },
+        {
+          "path": "application/tests/hotel/test_hard_hold_release_recovery_v86.py",
+          "sha256": "7bf238ba58acd46f8e6711d98aed3b412ad1b22bb62f6c007e2ad016b846b8a3",
+          "git_blob": "005d73f835f639651d1f6f44c31119925202b801"
+        }
+      ]
+    }
+  ],
+  "retention_diff": {
+    "hk_only": [
+      {
+        "path": "application/alembic/versions/0135_go_ai_execution.py",
+        "hk_blob": "e6a17650c3d404db48c3340d3a89c28c03510fb6"
+      },
+      {
+        "path": "application/alembic/versions/0135_journey_search_trigram.py",
+        "hk_blob": "3b27a85564fa0258f6f9fcf6222f605f86464dec"
+      },
+      {
+        "path": "application/alembic/versions/0136_merge_go_ai_journey.py",
+        "hk_blob": "36b59347ff5892b74f0b21a90c3d1f622f9bfd7c"
+      },
+      {
+        "path": "application/alembic/versions/0137_hosted_money_unknown_episode.py",
+        "hk_blob": "ad8ad8ed8e7a32c3a089229708b6b4509097159a"
+      },
+      {
+        "path": "application/alembic/versions/0138_supplier_library_import.py",
+        "hk_blob": "24a9350bd937f07d636ef16dfd590b05c5f65591"
+      },
+      {
+        "path": "application/alembic/versions/0139_hosted_publication_review.py",
+        "hk_blob": "ff72873c7d9d39122c254503091ccee7076268b5"
+      },
+      {
+        "path": "application/alembic/versions/0140_ledger_account_width.py",
+        "hk_blob": "7992e415eca217a1bebb784706eb6397369259e1"
+      },
+      {
+        "path": "application/alembic/versions/0141_flight_coupons.py",
+        "hk_blob": "c8435103217d083bbbb13fe2d05445bcb9740565"
+      },
+      {
+        "path": "application/alembic/versions/0142_registration_verification.py",
+        "hk_blob": "8709204e69ede8c8109bfaa9caa141062bd3df14"
+      },
+      {
+        "path": "application/alembic/versions/0143_registration_privacy.py",
+        "hk_blob": "a1775cde19da691e19df0d2305d7016c5658280b"
+      },
+      {
+        "path": "application/alembic/versions/0144_credit_source_intent_index.py",
+        "hk_blob": "3a6915f8463df93cddad755f74575b1debef3e06"
+      },
+      {
+        "path": "application/alembic/versions/0145_source_latest_index.py",
+        "hk_blob": "08a2ed48a5b6389f6cb09278441ddb991ef1c0aa"
+      },
+      {
+        "path": "application/ci/next_depth/c12_transaction_capacity.py",
+        "hk_blob": "0b965111e2371a4a7cc1428bdeb7068ef229b080"
+      },
+      {
+        "path": "application/design/brand/si-direct-20261001.json",
+        "hk_blob": "fd8ad24d5469733aa2282b518d3061f50692a069"
+      },
+      {
+        "path": "application/docs/evidence/aoluguya-expanded-gallery-20260918/C13_REVIEW.json",
+        "hk_blob": "80770c0209e8c30d8380f8e675f95dac78ce0923"
+      },
+      {
+        "path": "application/docs/evidence/aoluguya-expanded-gallery-20260918/FINAL_TEST.log",
+        "hk_blob": "90c21b286f84ebdc1bb9b291e2ff0f4b033f69bc"
+      },
+      {
+        "path": "application/docs/evidence/aoluguya-expanded-gallery-20260918/PR198_HISTORICAL_GALLERY_TEST.mjs.txt",
+        "hk_blob": "606bc62292cc1a80159f6725763a0f791cfca866"
+      },
+      {
+        "path": "application/docs/evidence/aoluguya-expanded-gallery-20260918/PR198_HISTORICAL_TEST.log",
+        "hk_blob": "1726a573b39ab1879353e23a97a62a38edb6a930"
+      },
+      {
+        "path": "application/docs/evidence/aoluguya-expanded-gallery-20260918/REVIEW.md",
+        "hk_blob": "79a819871fa231e64e41ade5438be96b25a014b8"
+      },
+      {
+        "path": "application/docs/evidence/aoluguya-expanded-gallery-20260918/SOURCE_PROVENANCE.json",
+        "hk_blob": "54bdbbd4e74de1b90a95e2aa1d77aca814fa283d"
+      },
+      {
+        "path": "application/frontend/admin/hotel-direct-review.js",
+        "hk_blob": "dac8d3e01c784e5992d3ce982a191d6c0a77add2"
+      },
+      {
+        "path": "application/frontend/admin/rental-deposit-finance.js",
+        "hk_blob": "4c43305d0eaa9ea5c538e4dcafeb9b4de54dc224"
+      },
+      {
+        "path": "application/frontend/admin/ride-policy-operations.js",
+        "hk_blob": "3a89f536b5dc322a2c28eecc9594e8295adcbcab"
+      },
+      {
+        "path": "application/frontend/consumer/assets/go-si.svg",
+        "hk_blob": "6f5460cd9c38e6942565ddc8ef0b3e9af7e54e72"
+      },
+      {
+        "path": "application/frontend/consumer/date-range.css",
+        "hk_blob": "2d60c832031a59bae9b94c09df1f3a438fa01aaf"
+      },
+      {
+        "path": "application/frontend/consumer/date-range.js",
+        "hk_blob": "0caa12ec298ebde1b7f79193195fe75ce71f2ee8"
+      },
+      {
+        "path": "application/frontend/consumer/flight-coupons.js",
+        "hk_blob": "8a99eddf195a4db6dd4ced75a41e6ba0ac0a7b7c"
+      },
+      {
+        "path": "application/frontend/consumer/rental-deposit.js",
+        "hk_blob": "e7542900f954068c61f3920dcd91fb9d4013cecf"
+      },
+      {
+        "path": "application/frontend/consumer/rental-operations.js",
+        "hk_blob": "890e91637fbec1c36fb38adf3efb388ce0d27c95"
+      },
+      {
+        "path": "application/frontend/shared/privacy.html",
+        "hk_blob": "62be6c79cbcfac990e7b3a1c774a16ddc80b4396"
+      },
+      {
+        "path": "application/frontend/shared/privacy.js",
+        "hk_blob": "ce359d7e111991459f11e95d18a0d35eb71645b8"
+      },
+      {
+        "path": "application/frontend/shared/registration-terms.js",
+        "hk_blob": "1041ea331b464f4c9f17060f91d5313056f3d931"
+      },
+      {
+        "path": "application/frontend/shared/registration-verification.js",
+        "hk_blob": "70277bcb8dac61fdb869b9f85f960bfbebb4df98"
+      },
+      {
+        "path": "application/frontend/shared/rental-operations.js",
+        "hk_blob": "07cb596eedfa9c9bdbcd879148be172911c0f43a"
+      },
+      {
+        "path": "application/frontend/shared/supplier-workspace.js",
+        "hk_blob": "ae3511ee76ddc5bec23110005e7969c1ef8d39a0"
+      },
+      {
+        "path": "application/frontend/shared/ticket-operations.js",
+        "hk_blob": "fb4afc7a9f8c099f4fe6eff90f78f3da5791d47a"
+      },
+      {
+        "path": "application/mobile/go-app/assets/brand/go-si-direct.png",
+        "hk_blob": "e70e243e315de302b20a88882f65d7d7d6d7fcf6"
+      },
+      {
+        "path": "application/mobile/go-app/src/components/MobilitySearchForm.tsx",
+        "hk_blob": "cfb71d311178118a50032067358457e286476193"
+      },
+      {
+        "path": "application/mobile/go-app/src/domain/mobilitySearchInput.ts",
+        "hk_blob": "260ce5282b348555bb9e7651a8d4d3a79063613b"
+      },
+      {
+        "path": "application/mobile/go-app/src/screens/FlightCouponActionsScreen.tsx",
+        "hk_blob": "6c00c89d1d88a5e4f1ab9f7851f96b739c12aece"
+      },
+      {
+        "path": "application/scripts/check_flight_airport_models.py",
+        "hk_blob": "04f995e994f9fe79aa1a835455292e1990ec5274"
+      },
+      {
+        "path": "application/scripts/check_flight_search_release.cjs",
+        "hk_blob": "eadf7ee58eba0f7c2d0f00e2a06b2aa6d186df07"
+      },
+      {
+        "path": "application/scripts/fixtures/ride-cancellation.synthetic.json",
+        "hk_blob": "f5bcbbcf3eec089a77a1415913ce0c5156125361"
+      },
+      {
+        "path": "application/scripts/partner-mobile-acceptance/browser.mjs",
+        "hk_blob": "17781401573d62ca0c83efedc7e01eda94932739"
+      },
+      {
+        "path": "application/scripts/partner-mobile-acceptance/server.py",
+        "hk_blob": "882e2540c3bf87ba44dd4ba52396249aa52e4d88"
+      },
+      {
+        "path": "application/scripts/rental-attraction-acceptance/browser.mjs",
+        "hk_blob": "e9cb868ce2c801915d407e26e82b39409ffecdec"
+      },
+      {
+        "path": "application/scripts/rental-attraction-acceptance/nested-consent-sheet.test.mjs",
+        "hk_blob": "4eb9e9f124f14dd2821204a4bd50daf7ee29e7fc"
+      },
+      {
+        "path": "application/scripts/rental-attraction-acceptance/refund-consent-ui.test.mjs",
+        "hk_blob": "37a9e5efacc185fba410bb7d0f907b9cf85463b3"
+      },
+      {
+        "path": "application/scripts/rental-attraction-acceptance/supplier-read-race.test.mjs",
+        "hk_blob": "8db3c646326fbdb8e29ca0581e3df49d9c8bdc20"
+      },
+      {
+        "path": "application/scripts/rental-attraction-acceptance/supplier-refresh-failure.test.mjs",
+        "hk_blob": "5bb0e1923bea08aeb817fd3aa71bbf6c207c1e60"
+      },
+      {
+        "path": "application/scripts/sync_registration_profile.py",
+        "hk_blob": "e82d567a43ce9fb7afadd60803bec3462d868845"
+      },
+      {
+        "path": "application/scripts/test_catalog_graph_visibility.py",
+        "hk_blob": "4d03be4714f1b4405e05a517c0be0171fed95c4b"
+      },
+      {
+        "path": "application/scripts/test_catalog_scope.py",
+        "hk_blob": "797c7509dcd1499e6f6ab4614d4519f6ce81a5f6"
+      },
+      {
+        "path": "application/scripts/test_catalog_scope_postgres.py",
+        "hk_blob": "056ff75c199b969990c9c8877d8756b8852de5d9"
+      },
+      {
+        "path": "application/scripts/test_hotel_search_event_loop.py",
+        "hk_blob": "3ab036faab9c3dbe4c6f648124b91d699a0387ce"
+      },
+      {
+        "path": "application/scripts/ticket-acceptance/browser.mjs",
+        "hk_blob": "1eafce81f0f87bf7150817ff8add4e980f0ffe7d"
+      },
+      {
+        "path": "application/scripts/ticket-acceptance/checkin.test.mjs",
+        "hk_blob": "8618a9d90626a078d5c3e14591a9c883a490186d"
+      },
+      {
+        "path": "application/scripts/ticket-acceptance/prepare.py",
+        "hk_blob": "ae64335661b7d31fcb669cb692f732fe42851613"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/hotel_direct_submission.py",
+        "hk_blob": "c7d57836892e5b1ecd4c3c6a44acad1c9c77639d"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/registration_privacy.py",
+        "hk_blob": "21e7fcc0838d37171da114dda8edf2ab462133b0"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/registration_terms.py",
+        "hk_blob": "9907df621698eeb79c50e756462fa37f4d5a3f79"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/registration_verification.py",
+        "hk_blob": "d3f7c3c837f637f32618ed02c99bf662b45a8951"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/rental_damage.py",
+        "hk_blob": "c1f14e1fc7937ebdf72737e4906d3d3ad6bb6151"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/rental_deposit.py",
+        "hk_blob": "b5d41f0efe7ba5042c42f84ab65a96b716b553ea"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/rental_deposit_money.py",
+        "hk_blob": "5431ca6b7fa67d5d17f066aa84644b526e1453f8"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/rental_operations.py",
+        "hk_blob": "cd0c07e9a062d6235aaa45f951a61410b5a8e2c8"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/ride_policy_operations.py",
+        "hk_blob": "2d4c025670b96f314eeaab71b9a8976c19233a8b"
+      },
+      {
+        "path": "application/src/go_hotel/attractions/policy_registry.py",
+        "hk_blob": "9f34cccbc614a879428d194f02779b4dc241a0be"
+      },
+      {
+        "path": "application/src/go_hotel/connectors/supplier_runtime_controls.py",
+        "hk_blob": "5e2598949d04a01d2ba63228dcda456a7e48a4cf"
+      },
+      {
+        "path": "application/src/go_hotel/flight/airports.py",
+        "hk_blob": "7e7d6dad6f1426a49b41bd72d976ed56388714df"
+      },
+      {
+        "path": "application/src/go_hotel/flight/coupon_authority.py",
+        "hk_blob": "65c19d6f1e2f41d4ba3194bf24730c1acb009f6d"
+      },
+      {
+        "path": "application/src/go_hotel/flight/coupon_refunds.py",
+        "hk_blob": "63f41530abc5f28195ef962152cc53d4e7f8ceff"
+      },
+      {
+        "path": "application/src/go_hotel/flight/coupons.py",
+        "hk_blob": "bc4ac2d947c51d3d4b5460c6d0507664185f983b"
+      },
+      {
+        "path": "application/src/go_hotel/flight/money_view.py",
+        "hk_blob": "a46f26887adb734c7eb5e8ad7499631c54cbb3c4"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/consumer_service_terms.md",
+        "hk_blob": "ed5085a4a432333dd9f34087928bd586adf869a0"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/data_processing_terms.md",
+        "hk_blob": "44997b360753b259fe5f614e70ba7c9fcfff027a"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/electronic_signature_authorization.md",
+        "hk_blob": "7d0fca4ce88db9adb6a2bfb2d0c5dfffb67902d8"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/personal_vault_terms.md",
+        "hk_blob": "9a3743a34d3353105422be1fcc8fcf258ac9e0e2"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/platform_operating_rules.md",
+        "hk_blob": "40110351d466ab7ecca03901fe7f1ccedee1d904"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/privacy_policy.md",
+        "hk_blob": "6c7b2d5407ad3df11b573d99619b48a513b5b7cb"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/registry.json",
+        "hk_blob": "5c903ac6021c9ed53a8cfd19af23a4270779865c"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v1/supplier_service_terms.md",
+        "hk_blob": "41682920059886b9c891c819010b43c302a7410a"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/consumer_service_terms.md",
+        "hk_blob": "0a8702257ccd1cbae519051475741d0d3c49a6c5"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/data_processing_terms.md",
+        "hk_blob": "e4647057eee99a5c0023dc25386d46ad7d1e6a40"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/electronic_signature_authorization.md",
+        "hk_blob": "bf3a5b99e03398e5aa3eb520c03e332506767968"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/personal_vault_terms.md",
+        "hk_blob": "f23bb9f9901931878c5193fbbd957b6685467079"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/platform_operating_rules.md",
+        "hk_blob": "c1feff8f1698276b74682b678b1af56f95e28b8a"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/privacy_policy.md",
+        "hk_blob": "9aa1202f96b9e68444b5e6d147b7882e563bfdb1"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/registry.json",
+        "hk_blob": "b1a1869371c85b131ad2fe7a3722dbf447956221"
+      },
+      {
+        "path": "application/src/go_hotel/legal/registration/2026-09-19-draft-v2/supplier_service_terms.md",
+        "hk_blob": "44602daff70ad8db74c7e86e9c5277c18919bda9"
+      },
+      {
+        "path": "application/src/go_hotel/mobility/rental/change_receipts.py",
+        "hk_blob": "eea516f87c21504932640ea8e3f541d41e714223"
+      },
+      {
+        "path": "application/src/go_hotel/mobility/rental/damage.py",
+        "hk_blob": "15dcae1059c8701e6f683df8ff7dc7be90903166"
+      },
+      {
+        "path": "application/src/go_hotel/mobility/rental/deposit_authority.py",
+        "hk_blob": "b068c964322f6ac9781186d659810b6a66c15b2e"
+      },
+      {
+        "path": "application/src/go_hotel/mobility/ride/cancellation_policy.py",
+        "hk_blob": "306bdd8c9f26af099e88c473a2f7e432a1a84701"
+      },
+      {
+        "path": "application/src/go_hotel/mobility/ride/policy_operations.py",
+        "hk_blob": "d8e792c114921240387913b65a831550a2630aee"
+      },
+      {
+        "path": "application/src/go_hotel/security/external_navigation.py",
+        "hk_blob": "0e4356c8e8236e59220d1fbbc2020858ce0e8430"
+      },
+      {
+        "path": "application/src/go_hotel/services/catalog_scope.py",
+        "hk_blob": "434b553d1aa7324b6cb7494828fe6b5a96fea4f0"
+      },
+      {
+        "path": "application/src/go_hotel/services/consumer_ota_comparison.py",
+        "hk_blob": "fc916454bc503211b8d64a397099ff838194b2dd"
+      },
+      {
+        "path": "application/src/go_hotel/services/flight_command_lease.py",
+        "hk_blob": "93d015f960c1613db6cc083d033a797bb36660e5"
+      },
+      {
+        "path": "application/src/go_hotel/services/hosted_business_day.py",
+        "hk_blob": "3f7c0574aad0e3f45ce75a7797a4a4b5b8a60c22"
+      },
+      {
+        "path": "application/src/go_hotel/services/hosted_operation_authority.py",
+        "hk_blob": "6c238dba30d4b529a8537264e1d174bdd5b05f4b"
+      },
+      {
+        "path": "application/src/go_hotel/services/hosted_publication.py",
+        "hk_blob": "c985666c46e5316c91826bbc10947c351387dbe9"
+      },
+      {
+        "path": "application/src/go_hotel/services/hosted_room_registry.py",
+        "hk_blob": "21e20f06a3c9af27eb6e2a540b6e7e01fed8eec9"
+      },
+      {
+        "path": "application/src/go_hotel/services/hotel_cancellation_clock.py",
+        "hk_blob": "a74ffb9322014d8947502b07f99e7fdc9df6e396"
+      },
+      {
+        "path": "application/src/go_hotel/services/hotel_direct_submission_manifest.py",
+        "hk_blob": "8fce1e7be72cb12c67dadaf0fc6bad315bc131e5"
+      },
+      {
+        "path": "application/src/go_hotel/services/hotel_direct_submission_publication.py",
+        "hk_blob": "ea1bf7c980cf94161e08ee17cc23aba233f45b92"
+      },
+      {
+        "path": "application/src/go_hotel/services/hotel_direct_submission_review.py",
+        "hk_blob": "b12139ca0b46128c8dee0f87f8d6167c5b3df9b5"
+      },
+      {
+        "path": "application/src/go_hotel/services/hotel_direct_submission_verification.py",
+        "hk_blob": "448d7728984830a8fcb896ec619a43bd9bc193cf"
+      },
+      {
+        "path": "application/src/go_hotel/services/hotel_original_verification_scope.py",
+        "hk_blob": "960f5ed55567ddaa40421ec4e3efcfaee0ac5da6"
+      },
+      {
+        "path": "application/src/go_hotel/services/hotel_partner_media_upload.py",
+        "hk_blob": "f2ed2dce8aee4231658c060d8cb703e717484630"
+      },
+      {
+        "path": "application/src/go_hotel/services/registration_email.py",
+        "hk_blob": "eb0dc7ac382fa58e4234360b5f270538ab5911d1"
+      },
+      {
+        "path": "application/src/go_hotel/services/registration_privacy.py",
+        "hk_blob": "bd408972941257598caeda3630b8ed9c5b7080e2"
+      },
+      {
+        "path": "application/src/go_hotel/services/registration_terms.py",
+        "hk_blob": "2cfe01965bd83dccdc565963d442e13fde8fb50a"
+      },
+      {
+        "path": "application/src/go_hotel/services/registration_verification.py",
+        "hk_blob": "99495f2902a13451f64a0b16e9515fc12363fc11"
+      },
+      {
+        "path": "application/src/go_hotel/services/rental_deposit_money.py",
+        "hk_blob": "af810f588e8ca080a725d97ff8741a370858a58d"
+      },
+      {
+        "path": "application/src/go_hotel/services/rental_deposit_review.py",
+        "hk_blob": "df078f0ecd77750b656886f968a925835f53049a"
+      },
+      {
+        "path": "application/src/go_hotel/services/supplier_onboarding.py",
+        "hk_blob": "7b21d6771cf328728553d7449387fdd5206acc7d"
+      },
+      {
+        "path": "application/src/go_hotel/services/ticket_operations.py",
+        "hk_blob": "b5002242dc69a7bcfefdf3af4cc2ab8eef2eb89f"
+      },
+      {
+        "path": "application/tests/autonomy/test_policy_lifecycle_binding.py",
+        "hk_blob": "5e14ef48a9b1a1becb95f9d474a2046fc9b66098"
+      },
+      {
+        "path": "application/tests/evidence_hygiene.py",
+        "hk_blob": "5d8ed628278313aa99c0ae67d88067f0bd8ebbdd"
+      },
+      {
+        "path": "application/tests/evidence_hygiene_plugin.py",
+        "hk_blob": "072c6b99cdb190b48f5b2506bec27c208d117d8e"
+      },
+      {
+        "path": "application/tests/flight/test_c02_airport_resolver.py",
+        "hk_blob": "b8519b2828cbe2f766016990f7cb900bf2c0f797"
+      },
+      {
+        "path": "application/tests/flight/test_c02_three_end_change_quote.py",
+        "hk_blob": "e115ab76e974df379f2997329e504be4507c5718"
+      },
+      {
+        "path": "application/tests/go_ai/test_c08_complete_task_plan.py",
+        "hk_blob": "28efdaed0d727edb7898b1764583fee961159b35"
+      },
+      {
+        "path": "application/tests/go_ai/test_c08_durable_execution.py",
+        "hk_blob": "244db1c089cab2d41dc992691251cafbed162a9b"
+      },
+      {
+        "path": "application/tests/hosted_review_support.py",
+        "hk_blob": "71de618cae8710125c770e46db1c5bc98314c10b"
+      },
+      {
+        "path": "application/tests/independent_rental_attractions/test_attraction_independent.py",
+        "hk_blob": "cff443df4ad16913155ac2afc7fd266b6f9e7a8b"
+      },
+      {
+        "path": "application/tests/independent_rental_attractions/test_attraction_operations_independent.py",
+        "hk_blob": "b225a72775179010e4912c0b556b19dbb87897a2"
+      },
+      {
+        "path": "application/tests/independent_rental_attractions/test_attraction_voucher_projection.py",
+        "hk_blob": "97f464bfcc5b42d6f3e52ab60299edeb6a0dee66"
+      },
+      {
+        "path": "application/tests/independent_rental_attractions/test_completed_ledger.py",
+        "hk_blob": "3b1af6bd30a1b20739c20750ca5a030d1b139f98"
+      },
+      {
+        "path": "application/tests/independent_rental_attractions/test_http_cached_refund.py",
+        "hk_blob": "eea9a698aaf838097845501ab141c4a830384190"
+      },
+      {
+        "path": "application/tests/independent_rental_attractions/test_recovery_positive.py",
+        "hk_blob": "8daf8dd71a4ec96a98642a301e9d2c9e75567928"
+      },
+      {
+        "path": "application/tests/independent_rental_attractions/test_rental_independent.py",
+        "hk_blob": "8f6885e2cff3047ff2c32c43763267a832035588"
+      },
+      {
+        "path": "application/tests/independent_rental_attractions/test_supplier_authority.py",
+        "hk_blob": "2e468acfc881a4651a9e27573e48e755bce865d6"
+      },
+      {
+        "path": "application/tests/independent_ticket/test_independent_completed_money.py",
+        "hk_blob": "16a559fd3caf901306c90b8cc8b3f11d82b34ff0"
+      },
+      {
+        "path": "application/tests/independent_ticket/test_independent_coupon_readiness.py",
+        "hk_blob": "6fe4af25311e0643bfe827584d2108fb3e3adecb"
+      },
+      {
+        "path": "application/tests/independent_ticket/test_independent_money_view.py",
+        "hk_blob": "095dd7938d951a56020fbc1a5338219c3b63d1ee"
+      },
+      {
+        "path": "application/tests/independent_ticket/test_independent_ticket_operations.py",
+        "hk_blob": "f598da9014f6ac28b1614bc896c9ac994aefd9ff"
+      },
+      {
+        "path": "application/tests/journey/test_c10_pagination_search.py",
+        "hk_blob": "2ca1cd1ce0953d8951f295aee82f319ed7929567"
+      },
+      {
+        "path": "application/tests/manual/HOTEL_LIBRARY_BROWSER_ACCEPTANCE.md",
+        "hk_blob": "c3fab9faac278b5281a5f07a5ed7e50a9557b7bf"
+      },
+      {
+        "path": "application/tests/manual/hotel_library_browser_harness.py",
+        "hk_blob": "cf0334cd070401f07466d3d36cc94ef95721ba84"
+      },
+      {
+        "path": "application/tests/manual/hotel_library_http_acceptance.py",
+        "hk_blob": "2a1298f2bb691dfc04a8937af4d046f0638ed7c3"
+      },
+      {
+        "path": "application/tests/payments/test_c11_deposit_compensation.py",
+        "hk_blob": "bc6e7b5eeea6fed7557b0f662e43251c3e6c5bf7"
+      },
+      {
+        "path": "application/tests/payments/test_c11_deposit_ledger_width.py",
+        "hk_blob": "02e366abe24fd3053381b90dd7290f12038628ea"
+      },
+      {
+        "path": "application/tests/payments/test_c11_deposit_maintained_award.py",
+        "hk_blob": "c5b731043b4ed3ac20ff830eb9266bbe8b24c38c"
+      },
+      {
+        "path": "application/tests/payments/test_c11_deposit_operations_review.py",
+        "hk_blob": "8684451486f05dc51da8f6d37e28a29013d7eba6"
+      },
+      {
+        "path": "application/tests/payments/test_c11_rental_deposit_money.py",
+        "hk_blob": "acfc2216b179022c07d33d097a5224818654fe99"
+      },
+      {
+        "path": "application/tests/payments/test_c11_ride_acceptance_guard.py",
+        "hk_blob": "e5bfb15984d34589186a3972e865f9e14af85f67"
+      },
+      {
+        "path": "application/tests/registration_terms_fixture.cjs",
+        "hk_blob": "69ede83ee572b49785d952874b4c88eed01c0a1b"
+      },
+      {
+        "path": "application/tests/registration_terms_test_support.py",
+        "hk_blob": "bb562a6ecbdfaaf780253ac67197320b6a4e1498"
+      },
+      {
+        "path": "application/tests/ride_cancellation_fixture.py",
+        "hk_blob": "4ed626f02c894bcca5e58c85f5b3fdc091be42e3"
+      },
+      {
+        "path": "application/tests/test_account_holder_http_integration.py",
+        "hk_blob": "7766cdae25410a1367462395f1908eac6bb44764"
+      },
+      {
+        "path": "application/tests/test_attraction_operations_runtime.py",
+        "hk_blob": "8bd1dda311ab01cbcb5410fb57c96b23793456a6"
+      },
+      {
+        "path": "application/tests/test_c01_aoluguya_business_day.py",
+        "hk_blob": "eeac7775d936e98a429568702c58160a2172abcf"
+      },
+      {
+        "path": "application/tests/test_c01_booking_replay_matrix.py",
+        "hk_blob": "a82fe41c3f6fec7f909a73ce111507682b5d8a05"
+      },
+      {
+        "path": "application/tests/test_c01_cancellation_second_boundary.py",
+        "hk_blob": "aca5fe0b81107571a0c66ae4398b553cbc04b840"
+      },
+      {
+        "path": "application/tests/test_c01_hosted_content_authority.py",
+        "hk_blob": "3d4cc4e7a71906fc1eccff02f5b2910c5d3fe891"
+      },
+      {
+        "path": "application/tests/test_c01_hosted_media_authority.py",
+        "hk_blob": "dc3a331072037dd5247e9c1dac1aec4f60e9c770"
+      },
+      {
+        "path": "application/tests/test_c01_hosted_operating_journey.py",
+        "hk_blob": "580c039ed4ea6c461d2a59cb433b2ea771a73c55"
+      },
+      {
+        "path": "application/tests/test_c01_money_authority_matrix.py",
+        "hk_blob": "c60d58aa311f8a69e99e6187e13b75ec187b51b7"
+      },
+      {
+        "path": "application/tests/test_c01_room_registry_journey.py",
+        "hk_blob": "dfaa6b69a957b39a7d7f3a6dd15a1b9e7afaee22"
+      },
+      {
+        "path": "application/tests/test_c03_c06_change_quote_fencing.py",
+        "hk_blob": "ecee4eaf4992047e0a4a9cc7a5aca7968b0acb76"
+      },
+      {
+        "path": "application/tests/test_c05_cancellation_policy.py",
+        "hk_blob": "00f8d8fc1f0819f814b3cf938b9dce616cb95333"
+      },
+      {
+        "path": "application/tests/test_c05_engineering_currency.py",
+        "hk_blob": "19694404fa6d8f25eee6c3cb0c979fbd73974240"
+      },
+      {
+        "path": "application/tests/test_c05_policy_operations.py",
+        "hk_blob": "4d8b054b8a08c8e35d5932382afa1905ea8f1f12"
+      },
+      {
+        "path": "application/tests/test_c06_internal_policy_registry.py",
+        "hk_blob": "3caedb35ba29b934edd25fb894f47e2a13aab245"
+      },
+      {
+        "path": "application/tests/test_c10_lifecycle_supplier_identity.py",
+        "hk_blob": "028e1d1b810548ec8cc086bc5bca396905229203"
+      },
+      {
+        "path": "application/tests/test_c10_supplier_money_projection.py",
+        "hk_blob": "73520f30c8aeea3b4cda9c5c9f7e4ed363cf6596"
+      },
+      {
+        "path": "application/tests/test_c10_unknown_payment_projection.py",
+        "hk_blob": "e40c53b0dc89745ce559cb5182f60dc0507c7aac"
+      },
+      {
+        "path": "application/tests/test_c11_consumer_payment_source_boundary.py",
+        "hk_blob": "64ad53eeefaa75dcdd61bb8a13eb4902391793d3"
+      },
+      {
+        "path": "application/tests/test_c12_capacity_harness_guards.py",
+        "hk_blob": "9c4dac3481e6fa73b38b0308b524ad547b616300"
+      },
+      {
+        "path": "application/tests/test_c13_aoluguya_independent_day.py",
+        "hk_blob": "7bfeb8c67aab3b6f0d1140a2e96fb6a735966a14"
+      },
+      {
+        "path": "application/tests/test_c13_currency_day_scope.py",
+        "hk_blob": "242a63b33aee2445c332372ba96fb741ebab6466"
+      },
+      {
+        "path": "application/tests/test_c13_room_registry_authority.py",
+        "hk_blob": "d45504fa8fe996b9dc56e9154f3afaefa1b126a5"
+      },
+      {
+        "path": "application/tests/test_catalog_scope_nationwide.py",
+        "hk_blob": "79dc2b8bf88921e18612ad5c4eecc29aac1cc883"
+      },
+      {
+        "path": "application/tests/test_catalog_scope_nationwide_ui.cjs",
+        "hk_blob": "7625e0dd4b2e864c0fb6d7fb6f848ccbe284871a"
+      },
+      {
+        "path": "application/tests/test_consumer_ota_acceptance_contract.py",
+        "hk_blob": "1b10c7391e865cd725227d7220b5f0180d235d9e"
+      },
+      {
+        "path": "application/tests/test_consumer_ota_security_boundaries.py",
+        "hk_blob": "e78a9132843604b3f1f86d778d2aee687949ee9f"
+      },
+      {
+        "path": "application/tests/test_consumer_registration_open.py",
+        "hk_blob": "2f588c4463462740732173498b1db319f11b254d"
+      },
+      {
+        "path": "application/tests/test_consumer_registration_ui.cjs",
+        "hk_blob": "25e51d9030ec23be4b245ced21f5952b6c499d9e"
+      },
+      {
+        "path": "application/tests/test_credit_source_intent_index_migration.py",
+        "hk_blob": "870bc8de1376827940306c7438d26d68599f0785"
+      },
+      {
+        "path": "application/tests/test_ctrip_rate_plan_identity.py",
+        "hk_blob": "09405235190f96748b374b7908f3b6dd5b31c9ad"
+      },
+      {
+        "path": "application/tests/test_current_rental_vault_guards.py",
+        "hk_blob": "bd26adf9d9729f735fb47d3843a5d35a84cb9e76"
+      },
+      {
+        "path": "application/tests/test_database_pool_budget.py",
+        "hk_blob": "0e6bcb7f884a2429e51869e6de550508f5462bc9"
+      },
+      {
+        "path": "application/tests/test_external_order_money_projection.py",
+        "hk_blob": "cb66472646cfcd9c0c67e208fae2710db2a5a8d3"
+      },
+      {
+        "path": "application/tests/test_external_order_verification_clock.py",
+        "hk_blob": "b9bc6856a7679f4a41a766cd2db2a9dcccf2d0b0"
+      },
+      {
+        "path": "application/tests/test_external_orders_in_go_trips.py",
+        "hk_blob": "5984d30bd14cb44a445aef8e7b1b7ba484c90946"
+      },
+      {
+        "path": "application/tests/test_flight_coupon_migration.py",
+        "hk_blob": "96f438fa5610204826abc3791eedb1de2dd339b8"
+      },
+      {
+        "path": "application/tests/test_flight_partial_runtime.py",
+        "hk_blob": "8edca84cec7c5d28d8565b2e9280b35976c5603c"
+      },
+      {
+        "path": "application/tests/test_hosted_room_registry.py",
+        "hk_blob": "426260b929856bee1a496b83910041c3028c0d1b"
+      },
+      {
+        "path": "application/tests/test_hotel_cancellation_clock.py",
+        "hk_blob": "d9b6ae89b6500720b0ede490de9c1918a004e0a6"
+      },
+      {
+        "path": "application/tests/test_hotel_direct_review_ui.cjs",
+        "hk_blob": "d69093f954af88d100905f46da928f46fba721ac"
+      },
+      {
+        "path": "application/tests/test_hotel_direct_submission_api.py",
+        "hk_blob": "58bb667666fb8ac75eda42663314f2ea8d3e2cfb"
+      },
+      {
+        "path": "application/tests/test_hotel_direct_submission_full_app.py",
+        "hk_blob": "6f75b05537f8858b7c29560d02a8351ac80d95a7"
+      },
+      {
+        "path": "application/tests/test_hotel_direct_submission_gallery_probe.py",
+        "hk_blob": "25fbed6b72c322be23a4081d6972e8e0474a3c75"
+      },
+      {
+        "path": "application/tests/test_hotel_direct_submission_inspection.py",
+        "hk_blob": "27b316710772b41590afbf72ad65e276241877e0"
+      },
+      {
+        "path": "application/tests/test_hotel_direct_submission_manifest.py",
+        "hk_blob": "bf6803087035e6736ecea778bb760608d3406e24"
+      },
+      {
+        "path": "application/tests/test_hotel_direct_submission_publication.py",
+        "hk_blob": "45be7832fe13eaa8fb955440964366f688bf4be1"
+      },
+      {
+        "path": "application/tests/test_hotel_direct_submission_real_identity.py",
+        "hk_blob": "b71e914567134609590b6189a2faff7333e4f49b"
+      },
+      {
+        "path": "application/tests/test_hotel_direct_submission_review.py",
+        "hk_blob": "2aaeeb3fe2db23b07a40e2bb4a4701acbc05e358"
+      },
+      {
+        "path": "application/tests/test_hotel_direct_submission_verification.py",
+        "hk_blob": "052864211a71bc1ded7333cc7d16976404584123"
+      },
+      {
+        "path": "application/tests/test_hotel_original_verification_scope.py",
+        "hk_blob": "b18f6df116e9ed0e76398d940bd2c91b4f2efb40"
+      },
+      {
+        "path": "application/tests/test_hotel_partner_media_publication.py",
+        "hk_blob": "74a68663e0d88f5cc9684315911f3c105b27a603"
+      },
+      {
+        "path": "application/tests/test_hotel_partner_media_upload.py",
+        "hk_blob": "9d1513caa6a6ac5bb15d00099234dc3fc3f256eb"
+      },
+      {
+        "path": "application/tests/test_hotel_partner_selected_import.py",
+        "hk_blob": "9dc4d779d09d359adadecef63b2bf93a7af8d023"
+      },
+      {
+        "path": "application/tests/test_hotel_property_workspace.py",
+        "hk_blob": "49a16f07940ed629e1a5350b88a79eb1be47ef12"
+      },
+      {
+        "path": "application/tests/test_hotel_source_room_mapping.py",
+        "hk_blob": "60001dc88ab5354a9211da34e552a08312deb08a"
+      },
+      {
+        "path": "application/tests/test_idempotency_atomic_mutation.py",
+        "hk_blob": "a275427f84f98ab02a5eea4ae11665136b8bf445"
+      },
+      {
+        "path": "application/tests/test_identity_bootstrap_concurrency.py",
+        "hk_blob": "375e2e94eea65b885b5c00a5059351d31cb36f5e"
+      },
+      {
+        "path": "application/tests/test_ledger_account_width_migration.py",
+        "hk_blob": "f93292ab010372eefa15a22d48374af748205303"
+      },
+      {
+        "path": "application/tests/test_legacy_booking_async_isolation.py",
+        "hk_blob": "5b1023c82df1a85cf464006c914d2914575d3bb1"
+      },
+      {
+        "path": "application/tests/test_member_comparison_quote_validity.py",
+        "hk_blob": "fbc5ea020c13c3fe6a301ff697ea76ebf62c41f9"
+      },
+      {
+        "path": "application/tests/test_member_product_comparability.py",
+        "hk_blob": "92daf7657e301ffe36d642208fe0edec5a2c01b7"
+      },
+      {
+        "path": "application/tests/test_mobile_date_range.cjs",
+        "hk_blob": "cf5390651346a5e3c006dceebc8612a1e9944587"
+      },
+      {
+        "path": "application/tests/test_multi_instance_payment_regressions.py",
+        "hk_blob": "ee9e205625501e2c482a16ce81b99836ba563098"
+      },
+      {
+        "path": "application/tests/test_nationwide_registration_full_app.py",
+        "hk_blob": "c9db3cbe0f2335c01332709bd7c7ec3c6636166b"
+      },
+      {
+        "path": "application/tests/test_partner_mobile_repairs.py",
+        "hk_blob": "b448766c381385406a01cf770b00e1a98abf4e3a"
+      },
+      {
+        "path": "application/tests/test_payment_sandbox_audit_integrity.py",
+        "hk_blob": "1a17d3824d163bef9fd8b7cbc89581974cd34830"
+      },
+      {
+        "path": "application/tests/test_payment_transition_read_optimization.py",
+        "hk_blob": "27dd0455b7b182528d80ef59a778db0b045649fa"
+      },
+      {
+        "path": "application/tests/test_refund_http_replay_truth.py",
+        "hk_blob": "84dd8b7c4f5584f9c50642b7b7d58e224fecf7af"
+      },
+      {
+        "path": "application/tests/test_registration_migration.py",
+        "hk_blob": "7d58b966aa8a9a07e60e1df93c6d38dffe711173"
+      },
+      {
+        "path": "application/tests/test_registration_privacy.py",
+        "hk_blob": "095401c8f1a2a18e4da106f11f598891ca900bcd"
+      },
+      {
+        "path": "application/tests/test_registration_privacy_admin.py",
+        "hk_blob": "3ce65148a95651c2af5ff28013e8c7091276558f"
+      },
+      {
+        "path": "application/tests/test_registration_profile_sync.py",
+        "hk_blob": "4ea1398b59bf89c442eb9ed7c1172cc1ba4bf59e"
+      },
+      {
+        "path": "application/tests/test_registration_terms_admission.py",
+        "hk_blob": "be8bb177f5980feb0cf26998b64f83affd65be6e"
+      },
+      {
+        "path": "application/tests/test_registration_terms_reader.cjs",
+        "hk_blob": "b072787f029e2144361208be37f946bf4b2f0a39"
+      },
+      {
+        "path": "application/tests/test_registration_terms_registry.py",
+        "hk_blob": "d7422756888c6d01d7c279f7bdfc8d0abcd13e83"
+      },
+      {
+        "path": "application/tests/test_registration_verification.py",
+        "hk_blob": "4a269a3aabedee41d0e2cc5d572356965f445354"
+      },
+      {
+        "path": "application/tests/test_registration_verification_ui.cjs",
+        "hk_blob": "02e8b6a4ea962e5e3d0f8130591ac50af4bba27a"
+      },
+      {
+        "path": "application/tests/test_rental_attraction_preinventory.py",
+        "hk_blob": "e191d2ca12b93aebc8879da8b40515dabb0caee1"
+      },
+      {
+        "path": "application/tests/test_rental_compensation_authority.py",
+        "hk_blob": "38fea1ff72fbe26a281a5962fb38499314d7086b"
+      },
+      {
+        "path": "application/tests/test_rental_damage_disputes.py",
+        "hk_blob": "06111bc1d3ad7b3ca679877d5a01ed668cdb45ab"
+      },
+      {
+        "path": "application/tests/test_rental_deposit_authority.py",
+        "hk_blob": "8968fadb3657677a7f3cae5ab12da76117294738"
+      },
+      {
+        "path": "application/tests/test_rental_operations.py",
+        "hk_blob": "094466f11ce3de95dda4f9959c695aef84f90f69"
+      },
+      {
+        "path": "application/tests/test_rental_supplier_claim.py",
+        "hk_blob": "9d0fe7a9b733e21ec24506a34cfe458078d9d42c"
+      },
+      {
+        "path": "application/tests/test_source_history_reads.py",
+        "hk_blob": "3dbdbee0bcc2cf3605bee760c34ed9d0eb3c309e"
+      },
+      {
+        "path": "application/tests/test_supplier_hotel_import_ui.cjs",
+        "hk_blob": "ee27bbcd56143205e4793c488e2fa989cb73c518"
+      },
+      {
+        "path": "application/tests/test_supplier_import_migration.py",
+        "hk_blob": "24fe80a9469132fa58acba50aa45c9d284076bd9"
+      },
+      {
+        "path": "application/tests/test_supplier_money_graph_history_db.py",
+        "hk_blob": "a420e30299d0fb26400db93bb63c5ace449ce0cb"
+      },
+      {
+        "path": "application/tests/test_supplier_money_graph_scaling.py",
+        "hk_blob": "86589d6b50f8bea1df4fcc455bda9650b65db4ac"
+      },
+      {
+        "path": "application/tests/test_supplier_onboarding_and_member_comparison.py",
+        "hk_blob": "5de781390fa69d3117c3c0c7e8468898c2645baa"
+      },
+      {
+        "path": "application/tests/test_supplier_onboarding_hk_unified.py",
+        "hk_blob": "f61b0e9efb52884b44221b3f8a736596a7300ecc"
+      },
+      {
+        "path": "application/tests/test_supplier_preflight_runtime.py",
+        "hk_blob": "1e4491753f85a9925ead0a6701c1707827413fb3"
+      },
+      {
+        "path": "application/tests/test_supplier_registration_nationwide.py",
+        "hk_blob": "b31ab196428db6e222ad6d3e926e980015fca110"
+      },
+      {
+        "path": "application/tests/test_supplier_registration_ui.cjs",
+        "hk_blob": "5355442f3026aa9d4219a911f0e5f63fa371d812"
+      },
+      {
+        "path": "application/tests/test_supplier_runtime_controls.py",
+        "hk_blob": "748a5e65cda96aca1d9a4e4ecc5e46900b466f52"
+      },
+      {
+        "path": "application/tests/test_ticket_operations_runtime.py",
+        "hk_blob": "59c2fb227b1b162bfbd21be2248cf073f53988be"
+      },
+      {
+        "path": "application/tests/test_ticket_preinventory_boundaries.py",
+        "hk_blob": "f384a031b81c3dc6ac2df8a83bb4d9f4aaa333ca"
+      },
+      {
+        "path": "application/tests/test_transaction_read_optimization.py",
+        "hk_blob": "2dd9e29f9ca080a3f0105088b530e14137b1100f"
+      },
+      {
+        "path": "application/tests/test_v70_next_c01_authorization_replay.py",
+        "hk_blob": "8445bed95c232f5904a8f55d0dbd4d0e35f8147b"
+      },
+      {
+        "path": "application/tests/test_v70_r3_c02_coupon_authority.py",
+        "hk_blob": "b14af3952705ed76572036e2ee404fe545c442de"
+      },
+      {
+        "path": "application/tests/test_v70_r3_c04_admin_reconciliation.py",
+        "hk_blob": "4451f462fc9c3036f662c6151299aa4b0c9b9849"
+      },
+      {
+        "path": "application/tests/test_v70_r3_c04_http_get_zero_write.py",
+        "hk_blob": "d4139cf1b2e2cdadb63b20ca337109f9f5b0ac32"
+      },
+      {
+        "path": "application/tests/test_v70_r3_c05_current_unknown_episode.py",
+        "hk_blob": "d2967e27be0661c56f969177a1006b3b27e5f832"
+      },
+      {
+        "path": "application/tests/test_v70_r4_c01_unknown_episode.py",
+        "hk_blob": "6e4e0019c2cd36bfadd8b3012dcbfc1713c169ab"
+      },
+      {
+        "path": "application/tests/test_v70_r4_c05_episode_reference_reuse.py",
+        "hk_blob": "d1fe9b5421ea8abb3eecdfa96e19a23db971f197"
+      },
+      {
+        "path": "application/tests/test_v70_r4_c05_failed_episode.py",
+        "hk_blob": "5511896339d738ee1cc3321798cfe2341d64e16f"
+      },
+      {
+        "path": "application/tests/test_v70_r4_c07_consent_provenance.py",
+        "hk_blob": "63b128a6e8bc8d65c8d55dbff5d81629ac128e75"
+      },
+      {
+        "path": "application/tests/test_v70_r5_c05_concurrent_unknown.py",
+        "hk_blob": "8914debaedf2d440d320e67cfdedc97d70563e3a"
+      },
+      {
+        "path": "application/tests/test_v70_r5_c06_raw_payload_binding.py",
+        "hk_blob": "0b3b3e8954150ad3346e6f28937df742976a1747"
+      },
+      {
+        "path": "application/tests/test_v70_r6_c02_partial_party_authority.py",
+        "hk_blob": "9474731379677f277b473328b4085550905fc1a3"
+      },
+      {
+        "path": "application/tests/test_vertical_source_atomicity.py",
+        "hk_blob": "e64680204a43e0481c30a5d11b42db5aa177a633"
+      },
+      {
+        "path": "application/tests_frontend/date_range.test.mjs",
+        "hk_blob": "8881316a779c4bb5c57adf38205b51f8e934c555"
+      },
+      {
+        "path": "application/tests_frontend/fixtures/aoluguya_hyatt_expanded_40_plan.json",
+        "hk_blob": "8f397b0e10b65caa5ec69cfb4ca8e2fb3b6f85d7"
+      },
+      {
+        "path": "application/tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan.json",
+        "hk_blob": "2c3325ba26c35ad8b891298f21e6e4156e37a5b9"
+      },
+      {
+        "path": "application/tests_frontend/fixtures/aoluguya_hyatt_gallery_harvest_plan_legacy_jpeg.json",
+        "hk_blob": "d5e4c22e93658806c0dedad32fa62eaaf85088e5"
+      },
+      {
+        "path": "application/tests_frontend/fixtures/aoluguya_normalized_ingest_plan.json",
+        "hk_blob": "e0b5961cd8bffcdbae5023ca9bae9078330fc813"
+      },
+      {
+        "path": "application/tests_frontend/hotel_catalog_contacts.test.mjs",
+        "hk_blob": "75ed5c10312a8d2a58fb8678575e0f61202fe7d3"
+      },
+      {
+        "path": "application/tests_frontend/hotel_catalog_hyatt_gallery.test.mjs",
+        "hk_blob": "118d7d88cf65e6263c80f7bc18258b846c4482ba"
+      },
+      {
+        "path": "application/tests_frontend/hotel_catalog_reviewed_import.test.mjs",
+        "hk_blob": "fd4956a0519888d0d40425c42d6479175969167a"
+      },
+      {
+        "path": "application/tests_frontend/mobile_mobility_search_input.test.mjs",
+        "hk_blob": "3fc871a51bfb79682f58308cc788a5237aeb95ac"
+      },
+      {
+        "path": "application/tests_frontend/rental_deposit_operations.test.mjs",
+        "hk_blob": "2fb0fdb30e07d7452f16e0ce7eb44c7b2d1522b2"
+      },
+      {
+        "path": "application/tests_frontend/rental_operations_adapter.test.mjs",
+        "hk_blob": "3bf0d01d662e57e035919d6c3416c4bd31eb0c52"
+      },
+      {
+        "path": "application/tests_frontend/ride_policy_operations.test.mjs",
+        "hk_blob": "43502c7e69095edbf8afe548e29e7546f800d335"
+      }
+    ],
+    "main_only": [
+      {
+        "path": "application/alembic/versions/0135_supplier_onboarding.py",
+        "main_blob": "b9c5c165901aea8b0bb0ad000e050bca384e3c93"
+      },
+      {
+        "path": "application/script/builder_python_smoke.py",
+        "main_blob": "34c88a35d606fd8d3811ea45a16078d2aecfc0f9"
+      },
+      {
+        "path": "application/tests/hotel/test_hard_hold_release_recovery_v86.py",
+        "main_blob": "005d73f835f639651d1f6f44c31119925202b801"
+      },
+      {
+        "path": "application/tests/supplier_fixture.py",
+        "main_blob": "b6f51fcb49744ccbe22f15b75c2f00313cf0db62"
+      },
+      {
+        "path": "application/tests/test_c13_closed_review_brief.py",
+        "main_blob": "57809c9d95b4911c25c3481f6adf380eebdc4c65"
+      },
+      {
+        "path": "application/tests/test_c13_machine_inventory_entry.py",
+        "main_blob": "bc8af00afa425f41e0f7f18234927aebf4d0311e"
+      },
+      {
+        "path": "application/tests/test_c13_pg533_backend_entry.py",
+        "main_blob": "d10970838caffd7d51a5945a96c95e3108c6de40"
+      },
+      {
+        "path": "application/tests/test_c13_runtime_ingress_recovery.py",
+        "main_blob": "5bc45e87c25c22509c5866d52f4617af3a2ebf3a"
+      },
+      {
+        "path": "application/tests/test_consumer_registration_boundary.py",
+        "main_blob": "b9c216a5690c3a9ac7854945d1f738ba3a68ce48"
+      },
+      {
+        "path": "application/tests/test_supplier_onboarding_state.py",
+        "main_blob": "ff44508d8983a6f10572b4e69df2a9310ef3f8ef"
+      },
+      {
+        "path": "application/tests/workbench/test_builder_python_smoke.py",
+        "main_blob": "11b9c96c75182128055b7678b16b4ed301a4175b"
+      },
+      {
+        "path": "application/tests/workbench/test_onboarding_certification_binding.py",
+        "main_blob": "1945330e8059a299995bf9107b6b75957e3fb1ff"
+      }
+    ],
+    "changed": [
+      {
+        "path": "application/.pytest_cache/v/cache/nodeids",
+        "hk_blob": "8f9d019d53533315eee536685e3c791053cc1438",
+        "main_blob": "fedd116fc6d2c1dd4226b46f1ff043f2536a4853"
+      },
+      {
+        "path": "application/ci/next_depth/c11_postgres.py",
+        "hk_blob": "aa0306aca51bb8fd8b5e95efffcfd869075763c7",
+        "main_blob": "8924bc99d21a216855f7836e6f0a0885bf375cf5"
+      },
+      {
+        "path": "application/frontend/admin/config.js",
+        "hk_blob": "e88d4fa281956d18ad64c5ee52aeaaa48c2ad0fc",
+        "main_blob": "2cb214bdb5cd9fd9d6104beb40e627b258d58d1c"
+      },
+      {
+        "path": "application/frontend/admin/hotel-page-factory.js",
+        "hk_blob": "41000b7b9335b0037d1a0fd1320813643f644428",
+        "main_blob": "722586f2d67a0a7810e811ff88fddc113e3def75"
+      },
+      {
+        "path": "application/frontend/admin/index.html",
+        "hk_blob": "2de1946f99fd2e2fd8745ae2522482dd9cd3c0fd",
+        "main_blob": "2e55e8f8bf97136c9152bc667d67f3179a1bbd56"
+      },
+      {
+        "path": "application/frontend/consumer/app.js",
+        "hk_blob": "098b9230691707981966e0681a1d6d95fc342b5c",
+        "main_blob": "fa45cb28a51997ec9d9cdfc07ba6ed6a495cccfa"
+      },
+      {
+        "path": "application/frontend/consumer/assets/go-compact-lockup-v14.svg",
+        "hk_blob": "3508352abe94f7e91b80005d85f45fa7315d7d48",
+        "main_blob": "a003557922efdc986d067b08f21659004dd446e1"
+      },
+      {
+        "path": "application/frontend/consumer/assets/go-main-lockup-v14.svg",
+        "hk_blob": "3508352abe94f7e91b80005d85f45fa7315d7d48",
+        "main_blob": "7f86a6d69fbeadadd51fafb76277c2917450fc6f"
+      },
+      {
+        "path": "application/frontend/consumer/assets/go-main-lockup.svg",
+        "hk_blob": "3508352abe94f7e91b80005d85f45fa7315d7d48",
+        "main_blob": "7f86a6d69fbeadadd51fafb76277c2917450fc6f"
+      },
+      {
+        "path": "application/frontend/consumer/booking-travelers.js",
+        "hk_blob": "229cd9354538be712fc5a63d857db175598da509",
+        "main_blob": "af971c83a2c849feb01f52fa98acad6f6b5780a7"
+      },
+      {
+        "path": "application/frontend/consumer/direct.html",
+        "hk_blob": "a87f656a6e27b419b34cdf8e619b919aac0fda38",
+        "main_blob": "1a56691c7194cbbba8f0a8e3b9eea26d26a0d679"
+      },
+      {
+        "path": "application/frontend/consumer/direct.js",
+        "hk_blob": "caa2019b274765edb9d8ce1752b8c9116ef8dba6",
+        "main_blob": "e096170e6a2b7567fe24f67d6a18141e13d3ea62"
+      },
+      {
+        "path": "application/frontend/consumer/flight-changes.js",
+        "hk_blob": "0c89b9f058098b69e7d6eb0cae02677f6c64e470",
+        "main_blob": "f45fc88146b280c13c022bcc3df5c36150b51c09"
+      },
+      {
+        "path": "application/frontend/consumer/flight-journeys.js",
+        "hk_blob": "f30b14064352a11966ddbc400cbb97e5f8a3cc31",
+        "main_blob": "3ca505f0fa1a298e5e681a94d10599e88d85abd2"
+      },
+      {
+        "path": "application/frontend/consumer/index.html",
+        "hk_blob": "c325af93ad348eb92d0903fb40d39094719baa08",
+        "main_blob": "ffa0f53375551a8d844845536aaf78bfc2d31ccc"
+      },
+      {
+        "path": "application/frontend/consumer/qa-r1.4.1/attraction.html",
+        "hk_blob": "709d94397c3bdeced611aa5d77c877fa0badf3b9",
+        "main_blob": "1dfe19581cb5e8f2c6241aaa3b1a47388b944156"
+      },
+      {
+        "path": "application/frontend/consumer/qa-r1.4.1/flight.html",
+        "hk_blob": "7a1819eed129573e8783ebcc8b5685ec1986e6b0",
+        "main_blob": "80f31d26c9d0376f13c931ffff891f5ed695de1e"
+      },
+      {
+        "path": "application/frontend/consumer/qa-r1.4.1/hotel.html",
+        "hk_blob": "e323c7dd5cf1d0f04d03578425a9b0856e4b9ac5",
+        "main_blob": "9de2be2c9454333d3021e2b504c3e75d91f95ab2"
+      },
+      {
+        "path": "application/frontend/consumer/qa-r1.4.1/mobility.html",
+        "hk_blob": "6220ebb055b698b7d7a17cd68bedf9fb3fe48eeb",
+        "main_blob": "5cfe9dacbf9b037767ccf7afcf62b11e4e562491"
+      },
+      {
+        "path": "application/frontend/consumer/qa-r1.4.1/rail.html",
+        "hk_blob": "c295107aea38a4b55580a81df8d807799dc90ad0",
+        "main_blob": "ff0aa36fb447968d444b1c950c4e2dfa93f83250"
+      },
+      {
+        "path": "application/frontend/consumer/rental-after-sales.js",
+        "hk_blob": "e65e485849b84800abcb898c21c0daaeece60a3b",
+        "main_blob": "aae4bfc025667cdda3a339e38839b6c82e4e3080"
+      },
+      {
+        "path": "application/frontend/consumer/styles.css",
+        "hk_blob": "84e192d09b151c6b6254bd0c1e632a062daad8bd",
+        "main_blob": "fc7262a0ac04dd8fd6a79fe88cfaac334942e39d"
+      },
+      {
+        "path": "application/frontend/consumer/travel-status.js",
+        "hk_blob": "279dd431caf43e9014c7925f4e2dcdeb7e37e607",
+        "main_blob": "2baac53279c89ae7049f5e1377f99d3a59b470cf"
+      },
+      {
+        "path": "application/frontend/consumer/vault-manager.js",
+        "hk_blob": "0e32cf150d7852ea0d970351391c5cac28872175",
+        "main_blob": "273adb3ab2db89e44be84845b15bceed80b95016"
+      },
+      {
+        "path": "application/frontend/consumer/vi-reference-10.css",
+        "hk_blob": "0766fd5e583ffc0b855db1e9c20b77be00cb1976",
+        "main_blob": "bde63281de9afe79719d5a632883ebe5f15cd234"
+      },
+      {
+        "path": "application/frontend/shared/api.js",
+        "hk_blob": "d159e111af9c935dc46a77fbfb74ed6f73faf2d8",
+        "main_blob": "b4f61de510c4a85a7390b90709ba31dc524c61d8"
+      },
+      {
+        "path": "application/frontend/shared/app.js",
+        "hk_blob": "f516bfac17ffaeecb115f422d947bf1c26c68b46",
+        "main_blob": "014e0defedd22e917506613931d1e9aecf652afe"
+      },
+      {
+        "path": "application/frontend/shared/go-compact-v14-reverse.svg",
+        "hk_blob": "9f3d927283d93da0f3b922c7a17f48aa6f5a808c",
+        "main_blob": "644af1b1a10d8ae90d4a28c6aaba32e07340fa15"
+      },
+      {
+        "path": "application/frontend/shared/styles.css",
+        "hk_blob": "a0b965b3e81be6b6c280046954a8a9a166ec1943",
+        "main_blob": "bf7d025de5332cefe01af4542f847f902a3d281e"
+      },
+      {
+        "path": "application/frontend/supplier/config.js",
+        "hk_blob": "97e23e320029ec9f3fa3d8ee5fce3b81f0212cf1",
+        "main_blob": "10666bad46e9b02a660543363c02df83ae7aab11"
+      },
+      {
+        "path": "application/frontend/supplier/direct-value-economics.js",
+        "hk_blob": "c6bdf6a3835ec003f09d59b3b61f63776e762e1b",
+        "main_blob": "4a637af4b72e3b59ea5aaf8a082e7883faea7cda"
+      },
+      {
+        "path": "application/frontend/supplier/index.html",
+        "hk_blob": "f77cc00278116f66bad3f91040a09e79365bbcc5",
+        "main_blob": "206ca8637ba538b4e9d27d506ba76f32c29d8985"
+      },
+      {
+        "path": "application/mobile/go-app/App.tsx",
+        "hk_blob": "82e5cc0b419c5cc8031ade2d6c4f01a66ec35740",
+        "main_blob": "18b96fa81237dd39337e4acfe0f1c4acd59ce9b5"
+      },
+      {
+        "path": "application/mobile/go-app/scripts/contract-check.mjs",
+        "hk_blob": "efa5bc182b40a474aa0220a51484c81c24a7f2e3",
+        "main_blob": "a384264a55cd42d86f38781040fb1fa825bd6d23"
+      },
+      {
+        "path": "application/mobile/go-app/src/domain/bookingIntent.ts",
+        "hk_blob": "13b06664ece770bb351a937e55c74c5d649ee54c",
+        "main_blob": "111bf4eac32ce42af4f8bd120f933215e98a642d"
+      },
+      {
+        "path": "application/mobile/go-app/src/domain/orderActions.ts",
+        "hk_blob": "09c8d4808d3802bbb5655fd7cd67d47578004845",
+        "main_blob": "7728167c81e3cc13aff170aa847a8f7c18a77859"
+      },
+      {
+        "path": "application/mobile/go-app/src/domain/tripFacts.ts",
+        "hk_blob": "e171786a8bf6cc17948a243d91b5f0fb2ba3c7db",
+        "main_blob": "84905855292deaa429e4ed1e3a36b490e6a4fca6"
+      },
+      {
+        "path": "application/mobile/go-app/src/screens/AttractionTripDetailScreen.tsx",
+        "hk_blob": "01a0565b20d30ff5912c2316c8f0b9dd66fd5c90",
+        "main_blob": "699a2f8758023d052c8507d489fd69e8e64943c5"
+      },
+      {
+        "path": "application/mobile/go-app/src/screens/ChangeBookingScreen.tsx",
+        "hk_blob": "e3ca40441c74250a6d24223c7aba643a51e3bb05",
+        "main_blob": "c9c42a2e18564393f5cc28e04c7e0a91ee86fdc3"
+      },
+      {
+        "path": "application/mobile/go-app/src/screens/CheckoutScreen.tsx",
+        "hk_blob": "a01d6752e6fadb9ea557b68bbe910ae2f77e7c37",
+        "main_blob": "339408e254f459288bed526a25b725f16fc5d6a2"
+      },
+      {
+        "path": "application/mobile/go-app/src/screens/FlightTripDetailScreen.tsx",
+        "hk_blob": "de8f80ad2865f74a048baf798673faeee5cef97a",
+        "main_blob": "43e5ecc998e8fc957911b4a6e27b33219530a2cf"
+      },
+      {
+        "path": "application/mobile/go-app/src/screens/HomeScreen.tsx",
+        "hk_blob": "11cd66900c4e59b7067091775d47afad4f166d73",
+        "main_blob": "de4e9c6554a4c96f1dafb08d0d7221ada481ef25"
+      },
+      {
+        "path": "application/mobile/go-app/src/screens/HotelListScreen.tsx",
+        "hk_blob": "6bd79fc436000dc29826eedba4d98a96c6156ac7",
+        "main_blob": "f3b89e7dfba38a14447c5a0fa451fa1e5cc100dc"
+      },
+      {
+        "path": "application/mobile/go-app/src/screens/MobilityTripDetailScreen.tsx",
+        "hk_blob": "5220936397dfd49bec947a7f9cb14e53420dd7a3",
+        "main_blob": "0603c797a825f17df5f143ad975cfa4a7acf6783"
+      },
+      {
+        "path": "application/mobile/go-app/src/screens/RentalSearchScreen.tsx",
+        "hk_blob": "0e091a871bae9b28d266eb353479cc105072f908",
+        "main_blob": "b94f6a057d5784a39eb728983ae4dec5d34007c0"
+      },
+      {
+        "path": "application/mobile/go-app/src/screens/RideSearchScreen.tsx",
+        "hk_blob": "a9f761775090b484ace9a3a1c87b277f67a667eb",
+        "main_blob": "4f2646e3bab08deeb467877f3720b1446852ad93"
+      },
+      {
+        "path": "application/mobile/go-app/src/screens/TravelProfileImportScreen.tsx",
+        "hk_blob": "cfdfaedc47c23aca62306cce818f34092980a637",
+        "main_blob": "0e5f41f5f3f1575ce4b1700c0322cf731ce19eb7"
+      },
+      {
+        "path": "application/mobile/go-app/src/screens/TripsScreen.tsx",
+        "hk_blob": "898f1c9edf8b352fc4be6f62de1ebbb41c63f6c1",
+        "main_blob": "e25308f54d3d62074b89e2bf6d64e1481ff8b672"
+      },
+      {
+        "path": "application/mobile/go-app/src/screens/WalletScreen.tsx",
+        "hk_blob": "63bf2cce2a95a8fa9970053b9a39ad966f774dfa",
+        "main_blob": "7ed1464b26e9c413fd9ae6d1b4b5b0a558e8b3fd"
+      },
+      {
+        "path": "application/pyproject.toml",
+        "hk_blob": "d02845ad9d1a074c4557dc17e5a84238c92be5f7",
+        "main_blob": "bef88ca2402e06005a3d1a80bbe5facba3086f7b"
+      },
+      {
+        "path": "application/scripts/acceptance_runtime.py",
+        "hk_blob": "9dbf6bb5f587c92208d90d3b626ac1aa5358831b",
+        "main_blob": "b8aba894369ff725eec68b36383279d413ca8e7d"
+      },
+      {
+        "path": "application/scripts/r82_rc142_external_sandbox_executor_gate.py",
+        "hk_blob": "4ffd77c6e0fc4a66353ac2f49e22e4a2b58ee253",
+        "main_blob": "d669ed271e44626e9bc73c3961994d10f9e483c8"
+      },
+      {
+        "path": "application/scripts/sprint2d_preflight.py",
+        "hk_blob": "b669fe2cdb3bfa42572c150222f3fdc435d889c8",
+        "main_blob": "bfb75372fa0542226cc89fcae16c065bd92e7314"
+      },
+      {
+        "path": "application/scripts/staging_aoluguya_hosted_direct_bootstrap.py",
+        "hk_blob": "0a6f9e13dae97ce44e5b8920cbf93f8e417adb46",
+        "main_blob": "eca0d98045060978ec5313a7052252297d4881f4"
+      },
+      {
+        "path": "application/src/go_hotel/api/idempotency.py",
+        "hk_blob": "0d6d62667477b0bd1c3be793e9158d9f64ae3558",
+        "main_blob": "e726bbd6524bff4ea98de2f02befd065af315c69"
+      },
+      {
+        "path": "application/src/go_hotel/api/refund_confirmation.py",
+        "hk_blob": "774a707519f7a21d53b49c79bb7c531329f86231",
+        "main_blob": "b6c8317b2f8f18971a2f72727488ac7a1c39d530"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/attractions.py",
+        "hk_blob": "c20d6d0fac7ac260db3fc9e5d0ee3162e5a7db5a",
+        "main_blob": "bbd0f4962bec28c5d63dc3384310af21fddebb65"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/bff.py",
+        "hk_blob": "a48501688931349a51092352e6b30f297988c2ba",
+        "main_blob": "f466d2f010c97ce77b216ec72b668639976c900f"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/booking.py",
+        "hk_blob": "a96e2c21b3154b83cc9bedb572d98989e3c65de7",
+        "main_blob": "741ceda14c805d96bdc47916f29028506183c4fb"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/consumer_checkout.py",
+        "hk_blob": "ec84200b0cf006f45af4b38ac03a8b3013453955",
+        "main_blob": "0869b5938f2fc07d375c3818117865a635db46e4"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/consumer_identity.py",
+        "hk_blob": "d3e0b6986778804ea8b6049d74e988fec63568f8",
+        "main_blob": "74f8dc13da6c5dc93ca4e72ec31f3e1ebfc432b1"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/consumer_unified_lifecycle.py",
+        "hk_blob": "9d3955ed1a6855c78cde6536491bfe9ff252617b",
+        "main_blob": "3fd2b0c878271d8012d278b0163424b9c4dcedb2"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/dashboard.py",
+        "hk_blob": "b7f15d5e1aa0e8b0c6c31eb2db6ea62891e88845",
+        "main_blob": "38bce9efc1ef0b6d4357640eda6b2b6b600b3bf7"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/flight.py",
+        "hk_blob": "41f8837edbf0ae7ca16a5cd505cd819b2156ae78",
+        "main_blob": "b29e17d3ea65b68c51c506d34c07b175fbbabf67"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/go_identity_entitlements.py",
+        "hk_blob": "bf5439ed77c7733c787e905b47dd449838a6104d",
+        "main_blob": "fc0bf61aca8c109dd4857460b4350f80a563169c"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/hosted_direct_booking.py",
+        "hk_blob": "d97ee1432e2960c07cc41466bdfa51b94a5defc6",
+        "main_blob": "fbdbff31367c5e56d6d2c3561c927962a6f3802a"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/hotel.py",
+        "hk_blob": "6fae40b587f9f7c632feccfbae10bd33c634d4bd",
+        "main_blob": "2619ee04df86f3e54a64e3558cd5310887b0eb83"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/hotel_autopage_factory.py",
+        "hk_blob": "f27f68c0811af8f4272508ec4d096b2e1832f68d",
+        "main_blob": "1a2eb24828531ce73de892ac06bb40d93ab3d3ed"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/hotel_partner_core.py",
+        "hk_blob": "186813aa6e09e366730efd30af55e6854137a5cc",
+        "main_blob": "4820b3f9c8249a4ef373b78b49500309d73b7529"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/journey.py",
+        "hk_blob": "977e1ddce3aeee40bbe6a4a7dfedcb3f0a87cc70",
+        "main_blob": "81eeb34f47bea4ddde321120a183b4391a3015cd"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/mobility.py",
+        "hk_blob": "62fdd22f1e1b0c68b631a50f94277f13a4e06ebe",
+        "main_blob": "efd556aadaa7cad21d2d8c212b9eb1c480095f19"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/omnichannel_payment.py",
+        "hk_blob": "afd5f9f8c598d0e021473e11d1c3dc5b716f84c5",
+        "main_blob": "0652c1eec170bedb141db804ab03b57ded0b7cbf"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/operations_console.py",
+        "hk_blob": "3da7f6827f53c0f339aa8c8dade49c0576dd0db5",
+        "main_blob": "2e6f85b7fc883fab0f74e505951ce751f19cbb37"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/order_supplier_fulfillment.py",
+        "hk_blob": "fb40d04903fdcf4e5b341bca9893d3ac2e059a8d",
+        "main_blob": "702b32e14dd541f76526f80d13d329af16b9f370"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/personal_travel_vault.py",
+        "hk_blob": "74919d1090a83234a01cbc177dffd857f7c14e70",
+        "main_blob": "5814bcb87beb3e2e4906dd88cfbe4ee973268924"
+      },
+      {
+        "path": "application/src/go_hotel/api/routes/rail.py",
+        "hk_blob": "1eaa6b410a5908a9eeb6406b1e5bbcaf8c2aa8ae",
+        "main_blob": "99577a9f1feab5d64b5f866cbddcd2cf6ef82cd5"
+      },
+      {
+        "path": "application/src/go_hotel/attractions/service.py",
+        "hk_blob": "31a38a5120be46e87ae0bbdd7608784a25395331",
+        "main_blob": "5f8b4819386848b2ab3eebb1b50f511aee4cfedb"
+      },
+      {
+        "path": "application/src/go_hotel/attractions/validity.py",
+        "hk_blob": "179cd6aa6bea7248b8f8e1e41aaa4348348a47b8",
+        "main_blob": "de9a41eb136bef5f5f4be9803c406b904751956b"
+      },
+      {
+        "path": "application/src/go_hotel/autonomy/action_control.py",
+        "hk_blob": "ea5b9c08630c16a6fc33d45517952ac0b35ecb33",
+        "main_blob": "0679c035718801c387e6c424426ce3501d4382c6"
+      },
+      {
+        "path": "application/src/go_hotel/autonomy/condition_evidence.py",
+        "hk_blob": "fccb00b171d0b903b7c9c777d2b08dcf5dbbfcad",
+        "main_blob": "ac634c6eeecfa4060b0aaec31684d09ea0def350"
+      },
+      {
+        "path": "application/src/go_hotel/autonomy/durable.py",
+        "hk_blob": "e265a3846a5c7390ff7fafb8b5bb6465706521db",
+        "main_blob": "f133f861ebd933c851a16083ae8c47ee88866e67"
+      },
+      {
+        "path": "application/src/go_hotel/autonomy/types.py",
+        "hk_blob": "f946088563c2e644906eea05ab3a92b55306d811",
+        "main_blob": "79740d667baed1abf3b070ad8a95a3654138c692"
+      },
+      {
+        "path": "application/src/go_hotel/connectors/external_sandbox_runtime.py",
+        "hk_blob": "2b553a8aa62548a1da437cb379eae89e09841418",
+        "main_blob": "dcf1d8a45a12e6f6709095c73440893066ee080c"
+      },
+      {
+        "path": "application/src/go_hotel/consumer/service.py",
+        "hk_blob": "1f43a0f357154a0936d65db15439237e98eab543",
+        "main_blob": "096a5a520a882edff3904dc3e637dcb4f2351d8a"
+      },
+      {
+        "path": "application/src/go_hotel/core/config.py",
+        "hk_blob": "ac34472f78ffbf62148556d75dc7657d75f93890",
+        "main_blob": "bed96d3592c1fdf57e3ff7dfb06a7f1996f1b02b"
+      },
+      {
+        "path": "application/src/go_hotel/db/models.py",
+        "hk_blob": "96d58bf668034374bd7b6b58325b0b9581147650",
+        "main_blob": "fda6a9efcfcaab68e0550aa59e7d32785a2d167c"
+      },
+      {
+        "path": "application/src/go_hotel/db/session.py",
+        "hk_blob": "777f84fae0b22c0a056b053263defbe6a3c0d4f3",
+        "main_blob": "8ed0eb77831aae6ad2ad290f330c01e1b39295e8"
+      },
+      {
+        "path": "application/src/go_hotel/flight/changes.py",
+        "hk_blob": "79ea6f78d1de57ae609a5c6c1ba5aa9126722851",
+        "main_blob": "96918e8decc01cafeb081fd8a289750da8f91796"
+      },
+      {
+        "path": "application/src/go_hotel/flight/journeys.py",
+        "hk_blob": "bdf4cefff4d6a908d9a8d55a3e086db2e27a97c8",
+        "main_blob": "92a272e89d17d1cebf728a6b18083b020157842b"
+      },
+      {
+        "path": "application/src/go_hotel/flight/service.py",
+        "hk_blob": "63afae76a535b5bec38027cc5bd785814c6b6d73",
+        "main_blob": "2c766cf540636203bc824d458b6294da18e34236"
+      },
+      {
+        "path": "application/src/go_hotel/go_ai/planner.py",
+        "hk_blob": "f71d3a322fe81f214fcebfdce6bb7521b82848f9",
+        "main_blob": "fc13f2793b1aee2ea7cb9c2b05c12c04d7fdd9af"
+      },
+      {
+        "path": "application/src/go_hotel/go_ai/service.py",
+        "hk_blob": "e3f66f7c4fca49a9e16fccc78329af1c7cd5a5be",
+        "main_blob": "c11b6a660c0c6a58fca807effb91b39918606614"
+      },
+      {
+        "path": "application/src/go_hotel/journey/service.py",
+        "hk_blob": "c401578c19c011381386be8dacb618b4811bb0ed",
+        "main_blob": "8354c8e070c056d2388217eed94bfe05afb3c93c"
+      },
+      {
+        "path": "application/src/go_hotel/judgment/service.py",
+        "hk_blob": "74d6d17099ff850babc9e6d38355cd83375f3b80",
+        "main_blob": "154770137bcdb592e3309d08bafbcca81729cad4"
+      },
+      {
+        "path": "application/src/go_hotel/main.py",
+        "hk_blob": "e236d5432e2f8e97b134877497e9855ad8cf6bfa",
+        "main_blob": "d061d7f82b282b62a003b3784ce29e7c1eec4c76"
+      },
+      {
+        "path": "application/src/go_hotel/mobility/rental/changes.py",
+        "hk_blob": "0e5332c63bc546e1742029168b883f6d0ef11f83",
+        "main_blob": "479d33fa630b429adc7961f0e54d1af6f4ff6f9b"
+      },
+      {
+        "path": "application/src/go_hotel/mobility/rental/reconciliation.py",
+        "hk_blob": "3fdee475112a8124c9f71fc58ebd2953ca826d88",
+        "main_blob": "0c38f9e17b9e58c2269e79ed7182ad3b1e562281"
+      },
+      {
+        "path": "application/src/go_hotel/mobility/rental/service.py",
+        "hk_blob": "f30585695d8d414676da0fd2fb407c461e38298f",
+        "main_blob": "a8b1dc8f5ce551f186a823e79b040807a598c376"
+      },
+      {
+        "path": "application/src/go_hotel/mobility/ride/recovery_evidence.py",
+        "hk_blob": "3438857d17cb982b7ea36e2ca81ce8805a718e68",
+        "main_blob": "7fb7ac6c862f50f35d1d7f23e2e6073a29617c76"
+      },
+      {
+        "path": "application/src/go_hotel/mobility/ride/refunds.py",
+        "hk_blob": "a01582a93f71d18ce6734e2b313941ec43a20823",
+        "main_blob": "53029fbbd1fad50d136a8d201d396d2176e394e6"
+      },
+      {
+        "path": "application/src/go_hotel/mobility/ride/service.py",
+        "hk_blob": "dda20ea6903126f140f347efcc96c8bb1a5a4163",
+        "main_blob": "c543af5c19237fc8ded6a293686e232b7ea07588"
+      },
+      {
+        "path": "application/src/go_hotel/mobility/service.py",
+        "hk_blob": "093fe7884d08fc8d402de97877ab4cda92610186",
+        "main_blob": "1f6433945b5925117a216b688e3fa176aedf1298"
+      },
+      {
+        "path": "application/src/go_hotel/queue/durable_regional.py",
+        "hk_blob": "59fc1edd182b6bd21c7076df2c67f32e000bf0ec",
+        "main_blob": "038dded008d537ca27e708f8a1593bb226dedd70"
+      },
+      {
+        "path": "application/src/go_hotel/rail/service.py",
+        "hk_blob": "ac852173813b68389897ed3b0c392af5edfc9b40",
+        "main_blob": "3b6d783fde913080869c26bb954615df48d21785"
+      },
+      {
+        "path": "application/src/go_hotel/repositories/sql.py",
+        "hk_blob": "b6b5c02df98fe9b2539cb6f0bbac41d070416385",
+        "main_blob": "c948dfd8e89601a107296c12f4d0d6f948606d47"
+      },
+      {
+        "path": "application/src/go_hotel/routing/router.py",
+        "hk_blob": "67533f719445e978aa4784d76aeee1bb3f80a175",
+        "main_blob": "6656db71a9242233f0650eccd1120a4da43bab82"
+      },
+      {
+        "path": "application/src/go_hotel/security/deps.py",
+        "hk_blob": "9e75ebbb2048c4f2261aac78a426744af045d4f8",
+        "main_blob": "a0429f981771a9f7aebe9784514175f79ebbf4b2"
+      },
+      {
+        "path": "application/src/go_hotel/security/service.py",
+        "hk_blob": "63aa8e232dec4c4588042c50f1409f345a1c0d74",
+        "main_blob": "4775f4bd8dc5575cf232001754218ff7fc47bd69"
+      },
+      {
+        "path": "application/src/go_hotel/services/alipay_safeguarded_settlement.py",
+        "hk_blob": "0ceea1c49c1ea6eedcc431e92becd19e326c42c0",
+        "main_blob": "d35debb831a6ee5e9834c2051eb7d6bd9cc6246f"
+      },
+      {
+        "path": "application/src/go_hotel/services/aoluguya_supply_truth.py",
+        "hk_blob": "74abc77962dd19f0f2da61884c556f3dff92a43c",
+        "main_blob": "d30db9aa767afb238edf0160fed6a7f1e777872c"
+      },
+      {
+        "path": "application/src/go_hotel/services/booking.py",
+        "hk_blob": "a5bdd1b5103bfbaa68fd9f2921536e755409ce7c",
+        "main_blob": "e37562a1285c3cec6133696605408bc626c3c86f"
+      },
+      {
+        "path": "application/src/go_hotel/services/catalog_fare_snapshot.py",
+        "hk_blob": "5d8640e4432fdf9d8ae7cc7c6144f368f3f586b8",
+        "main_blob": "2732d033fb28555caf1c2e4c2fdd49b5143dd618"
+      },
+      {
+        "path": "application/src/go_hotel/services/consumer_unified_lifecycle.py",
+        "hk_blob": "4235f3b0bcf7669a4bd34054cee643f5c77dcfc4",
+        "main_blob": "d5a1e54672c2e71af59b4f7bbe7d44e680c8e6d5"
+      },
+      {
+        "path": "application/src/go_hotel/services/flight_change_resolution.py",
+        "hk_blob": "cf24ba2f40edb46a27f41d2d0a5f376fb490a6b3",
+        "main_blob": "f1e25506859c6a79fd037c8ca8956c02f5c92fef"
+      },
+      {
+        "path": "application/src/go_hotel/services/go_identity_entitlements.py",
+        "hk_blob": "9b239e7a0208da44eaf2d14edb26d67168171ef2",
+        "main_blob": "9e8d0abb5126bd3fca924fcdff548e1bce11047b"
+      },
+      {
+        "path": "application/src/go_hotel/services/guest_stay_fulfillment.py",
+        "hk_blob": "a292636390a46bb9745890dc6cf39f189bbd8666",
+        "main_blob": "e7f4a9a3b906a6072d6d4454679d0b9881a02440"
+      },
+      {
+        "path": "application/src/go_hotel/services/hosted_content_acceptance.py",
+        "hk_blob": "5d2ef59f697af0d082e9771d2a91c151b9d843f3",
+        "main_blob": "9a7d1609d9bbfbaee5085871cbad03ccf44299fd"
+      },
+      {
+        "path": "application/src/go_hotel/services/hosted_direct_booking.py",
+        "hk_blob": "8d9e9835b4b67441fdb93507892e87898bea6884",
+        "main_blob": "c45cd9912fc7b6566a9484c5ae933193aeefd9bf"
+      },
+      {
+        "path": "application/src/go_hotel/services/hosted_fare_rules.py",
+        "hk_blob": "f2559da4395022d0158d851bd7435a9370bd4bab",
+        "main_blob": "c47cb179c808fea1769dad59f1f9f5c99897c738"
+      },
+      {
+        "path": "application/src/go_hotel/services/hosted_frontdesk_uat.py",
+        "hk_blob": "f0c87b74776f2b8dcbfea1565b1dd5be7d792833",
+        "main_blob": "f59366c76383bdac2f470372d7a59ac86b4d337e"
+      },
+      {
+        "path": "application/src/go_hotel/services/hosted_money.py",
+        "hk_blob": "dcd0a0c2dd78256dd48395622f98cfa619119dbf",
+        "main_blob": "da6b63f3fee5ec50363368f20a190e35eb4ed7a8"
+      },
+      {
+        "path": "application/src/go_hotel/services/hosted_reservation_operations.py",
+        "hk_blob": "ce2bc54bed3889df17bf3947c2323cf75684e2d8",
+        "main_blob": "f09dc743a13d54bfd92684fe085a416f2bdc8e76"
+      },
+      {
+        "path": "application/src/go_hotel/services/hotel_autopage_factory.py",
+        "hk_blob": "8a541423054794d2441a199b46a85c30489e3836",
+        "main_blob": "d09a65df7067c12c845a81fe290111cccbe7538e"
+      },
+      {
+        "path": "application/src/go_hotel/services/hotel_catalog_quality.py",
+        "hk_blob": "51ef1a1ce51fd3b69d2b3dc6967119f6e391a363",
+        "main_blob": "a79792974ea92e0710d9eff17fb756a0d7caa2b7"
+      },
+      {
+        "path": "application/src/go_hotel/services/hotel_discovery_orchestrator.py",
+        "hk_blob": "244eb32a79989fbd643e4cf63f6a0fc67e570718",
+        "main_blob": "8693995c2bab4532075107045419132aaf8b3ef3"
+      },
+      {
+        "path": "application/src/go_hotel/services/hotel_hard_hold_release.py",
+        "hk_blob": "95a557a010b2555c24ee33796e11e2b5b22fef38",
+        "main_blob": "eead3594d865072479c53adf77f1196b52684992"
+      },
+      {
+        "path": "application/src/go_hotel/services/hotel_infrastructure_p0.py",
+        "hk_blob": "4de9998201f61d7619696708a7ec9ca96d19c3c6",
+        "main_blob": "d9bb3380a999789e7aeea03f1ee209b2fc7abd42"
+      },
+      {
+        "path": "application/src/go_hotel/services/hotel_partner_core.py",
+        "hk_blob": "80c4ede3c7e3c9a4e9049b886f0798e0dc488c53",
+        "main_blob": "0d9c0d546bd3ade7f404196256ca686309ffe50f"
+      },
+      {
+        "path": "application/src/go_hotel/services/mobility_refund_consent.py",
+        "hk_blob": "b1eeadf4f14661fde51aab75a53aefbc54fed548",
+        "main_blob": "37a74fc400f19f68ec54ac84730c3d82a3c28207"
+      },
+      {
+        "path": "application/src/go_hotel/services/omnichannel_payment.py",
+        "hk_blob": "3660cec9923e76dd22c7a637262c6655e1effaf6",
+        "main_blob": "097e4e726ea909441bb34ee8eaaa05ab53e7e44e"
+      },
+      {
+        "path": "application/src/go_hotel/services/onboarding.py",
+        "hk_blob": "41a989d7865e46ca6e12a092f86897ccb8d64254",
+        "main_blob": "759be35de28584e44a09c084059db1aa9f036953"
+      },
+      {
+        "path": "application/src/go_hotel/services/order_supplier_fulfillment.py",
+        "hk_blob": "4e76066c0786eb8522ce6cd06bc37557c84653fe",
+        "main_blob": "bb813453960d54033c2f7034e65520ebcc9e7932"
+      },
+      {
+        "path": "application/src/go_hotel/services/outbox.py",
+        "hk_blob": "277c40dcba9e5bfe352a1e4e8af69429d843b37b",
+        "main_blob": "31a54e21da11611116b5ffd16b062a2bf597ac24"
+      },
+      {
+        "path": "application/src/go_hotel/services/payment_sandbox_cutover.py",
+        "hk_blob": "ab2783c66a0c949b4a2cb42f537b84b2719ce7be",
+        "main_blob": "126c4c7bfee7e965a80d1680f5c4b876780f7d12"
+      },
+      {
+        "path": "application/src/go_hotel/services/payment_sandbox_runtime.py",
+        "hk_blob": "5d0a26fc60360078477bb2337687527e3e5ebc08",
+        "main_blob": "4915d278bec1e4506c6532cc96b75b8dc52008c5"
+      },
+      {
+        "path": "application/src/go_hotel/services/personal_travel_vault.py",
+        "hk_blob": "92c3452baedb4eafe698a3462c27315b252e6344",
+        "main_blob": "b9b5330dd539bcc308ecb550e1b84374e15dbf77"
+      },
+      {
+        "path": "application/src/go_hotel/services/production_connector_runtime.py",
+        "hk_blob": "cf776713c2df387f0d5664651280e38a018c91b0",
+        "main_blob": "6a340fac7353ffcf4b93a6bdbc9a0612826c97f0"
+      },
+      {
+        "path": "application/src/go_hotel/services/rail_change_resolution.py",
+        "hk_blob": "a2fca8dc6a0cd3d9090745e888950e3e16abee4a",
+        "main_blob": "9370671d796cfd81a627728a1734264abe28ac84"
+      },
+      {
+        "path": "application/src/go_hotel/services/rc20_vertical_evidence.py",
+        "hk_blob": "8f8ce40d02659ed0bd37a3a0a36dad1e01c23225",
+        "main_blob": "3704033df35ccaf70436c7e31da98deccd996df7"
+      },
+      {
+        "path": "application/src/go_hotel/services/real_external_execution.py",
+        "hk_blob": "b04988cc033916b075cea3e996685f2ebcb7c249",
+        "main_blob": "e0b07e63589a83256565139780456a3534225291"
+      },
+      {
+        "path": "application/src/go_hotel/services/recovery.py",
+        "hk_blob": "d35169a64c7bdaa58995c84f5c8e9d7ebaad5c2a",
+        "main_blob": "879a8cb4453a054607bee9b509da35db49086cdf"
+      },
+      {
+        "path": "application/src/go_hotel/services/regional_hotel_build.py",
+        "hk_blob": "0e96f7e87c7c61c57467008f2b648b3467e5e433",
+        "main_blob": "fa90749ee7c3ff225fd275b0796decb35febe5c4"
+      },
+      {
+        "path": "application/src/go_hotel/services/supplier_onboarding_state.py",
+        "hk_blob": "bc46cbcfe23d20261ea9cc907e7f920ffc65c391",
+        "main_blob": "d3d8e28011b58a06cd4cd581a69ec8b8f8bd99bf"
+      },
+      {
+        "path": "application/src/go_hotel/services/transaction_order_view.py",
+        "hk_blob": "ddf6fc4fca297d8a3bc60ec4be67e2d17d3a7fbe",
+        "main_blob": "ebf4b7b18ab01d823c4ecf3ce4635c088cf13470"
+      },
+      {
+        "path": "application/src/go_hotel/services/travel_operational_facts.py",
+        "hk_blob": "b58f0cebea7fafca19f564a6be58f94718f01113",
+        "main_blob": "e047edd4ec50cd83736ba0fb6d522925b59d1f13"
+      },
+      {
+        "path": "application/src/go_hotel/services/unified_money_movement.py",
+        "hk_blob": "2cb2cd6a6ccd5beac39efd42e1da30a98fedab68",
+        "main_blob": "60816d79f4ad8235d70cb6d5a88748d386d7d82b"
+      },
+      {
+        "path": "application/src/go_hotel/services/vertical_lifecycle_projection.py",
+        "hk_blob": "34a6f04cfc91ff849700f9e92eec5a61c0bd672c",
+        "main_blob": "4b9b81e1276647426061cf8dd241f97ab79cd4c6"
+      },
+      {
+        "path": "application/src/go_hotel/services/vertical_refund_recovery.py",
+        "hk_blob": "30bfa4a795382a304d80a2922aa17fe313d42275",
+        "main_blob": "1263ba0e8f3b690a3d2b0a7cdb67ef5edeeb65d2"
+      },
+      {
+        "path": "application/src/go_hotel/services/vertical_reservation_expiry.py",
+        "hk_blob": "43c91c38e5769cb122f1533114c95ff62ae8aa8d",
+        "main_blob": "310a6713e5977277ba0f1d485beefca3bddc7653"
+      },
+      {
+        "path": "application/src/go_hotel/services/vertical_source_runtime.py",
+        "hk_blob": "74ca95b5b1b6329c0e44df3bbbff023a53e07a3e",
+        "main_blob": "e04de09fd348fb61d205e529c710680470b1732f"
+      },
+      {
+        "path": "application/src/go_hotel/services/vertical_transaction_bridge.py",
+        "hk_blob": "b2a5e4aca3a4fd69e5eccfaafdd53f0d17ed123b",
+        "main_blob": "94c6dd4583c22ac342504cd8e4bc8bdfb4abc858"
+      },
+      {
+        "path": "application/src/go_hotel/travel_intelligence/preferences.py",
+        "hk_blob": "74182160de0ad6f1abfadd84f082d886b7800df1",
+        "main_blob": "d8cff6e1b95f4778a0a61252bf86f2bfebf877f4"
+      },
+      {
+        "path": "application/src/go_hotel/travel_intelligence/service.py",
+        "hk_blob": "96456115aa5260190432190ee2481f28662fe5c4",
+        "main_blob": "4d016cd831809e78fdd16ccc1fbfe5b666d2e849"
+      },
+      {
+        "path": "application/src/go_hotel/workers/reconciliation_worker.py",
+        "hk_blob": "ab05e87b889a844f24a98eabe26c72685297fe5c",
+        "main_blob": "d7def9f053a6552888f2898e226f7e8609a5e7cc"
+      },
+      {
+        "path": "application/tests/c07_preference_process_actor.py",
+        "hk_blob": "f2941b467293affda87732be656c6b04725df5f9",
+        "main_blob": "a12aca195f0b8210d1267874d9505e11847914af"
+      },
+      {
+        "path": "application/tests/conftest.py",
+        "hk_blob": "257a9de743d1710dce98e58ef89cb02761977685",
+        "main_blob": "2fe5af67e50a7564ba158f15a181c742193be2cd"
+      },
+      {
+        "path": "application/tests/go_ai/c08_hard_exit_worker.py",
+        "hk_blob": "4991a791846ceb44a797367d587eb90a55ea13eb",
+        "main_blob": "2f1d31742e564ada9bea5c622cd922313b216e1b"
+      },
+      {
+        "path": "application/tests/judgment/test_next_depth_concurrent_judgment.py",
+        "hk_blob": "946b0dfab11463c61691cb74d0e18be7413377eb",
+        "main_blob": "c27a41d750fa64d0bcafc0cff1e9069a52168030"
+      },
+      {
+        "path": "application/tests/payments/test_c11_flight_idempotency_recovery.py",
+        "hk_blob": "1b9436ef718eb5e89b4ff621bff5db8c67375e90",
+        "main_blob": "bfc245ff70951ef39dcfc9da030c5f9e8029a5c5"
+      },
+      {
+        "path": "application/tests/test_agent_native_lifecycle_p03.py",
+        "hk_blob": "ebadc2654348d2197aab72c52a4bc60f417173f0",
+        "main_blob": "3239f3bcf593fe423e22e0b1cb8e848f32a921e0"
+      },
+      {
+        "path": "application/tests/test_agent_transaction_gateway_six_vertical.py",
+        "hk_blob": "8a0b0ed593d271cf3ad12559c1a4eaf77d7e7828",
+        "main_blob": "b8403bbadfeb94f57fdc55c775715aea89fe9f58"
+      },
+      {
+        "path": "application/tests/test_agent_transaction_lifecycle_p02.py",
+        "hk_blob": "548923659d3646d5414ccc42dd3f956238f30cc8",
+        "main_blob": "5e4bc56ae81c3c9d2cd1b9e5737b1b44d3b72dd9"
+      },
+      {
+        "path": "application/tests/test_alipay_safeguarded_settlement_activation.py",
+        "hk_blob": "984222a06fe4727d815d80adc11ad756e1dcacd4",
+        "main_blob": "ba930bbf1fda2f8b70a8d2f65a51b2c71049d3bb"
+      },
+      {
+        "path": "application/tests/test_aoluguya_staging_bootstrap_cycle.py",
+        "hk_blob": "607b49000099842db48cabf1c82b0fac5177fedf",
+        "main_blob": "e6769ef3387ee6be2e2763ac9ef88e4351e32c65"
+      },
+      {
+        "path": "application/tests/test_c04_refund_terminal_integrity.py",
+        "hk_blob": "048af9f07826e936603b1e67be9b704f94edffa9",
+        "main_blob": "4ca8646f20a825638b5ad00337ef676f17804396"
+      },
+      {
+        "path": "application/tests/test_concurrency.py",
+        "hk_blob": "35fd7ca8234fd0621c62c5b2d96c62c0d75f2c0c",
+        "main_blob": "87188384d15cf8222998ef3baee30236ba4f1303"
+      },
+      {
+        "path": "application/tests/test_depth04_vault_management.py",
+        "hk_blob": "e784f492c4a3e8f1dc63fb748fbb9bb4f118fd67",
+        "main_blob": "5e6fdeb37ca3d8e808c91e8d239504cbb32cde59"
+      },
+      {
+        "path": "application/tests/test_depth05_flight_parties.py",
+        "hk_blob": "74a2f7650056042f8502a8798ba47856c1b2fc9c",
+        "main_blob": "bb11933592ce7a19b0fa53f6a3bca2a72b54286b"
+      },
+      {
+        "path": "application/tests/test_depth06_direct_checkout.py",
+        "hk_blob": "34278fcf354b375ccab05e8f323f1c27e01e69da",
+        "main_blob": "3b79251654d8030e8190737f11865ae416da6781"
+      },
+      {
+        "path": "application/tests/test_depth08_hosted_fare.py",
+        "hk_blob": "1e2d17a6f744a6b75b723cadd80f4b4e85c499f4",
+        "main_blob": "9c273653a233f25a53afd73687c7a68e3c8d1657"
+      },
+      {
+        "path": "application/tests/test_depth10_disruption_api.py",
+        "hk_blob": "a23da5a69ba2808b7001eb72b730cf0060de4602",
+        "main_blob": "41c9faccb987b9356f6e7f8fb2f9ca6f3b98901d"
+      },
+      {
+        "path": "application/tests/test_depth11_catalog_api.py",
+        "hk_blob": "3ae4a0407d55bf4f3ab464a929c4d6f132efd4b3",
+        "main_blob": "5f1567d455104e49489aa5e1e303dca1eaef7191"
+      },
+      {
+        "path": "application/tests/test_depth13_catalog_fare_api.py",
+        "hk_blob": "38f78bcb7bb33eb9dea365718c97ba017cfa440d",
+        "main_blob": "4966f26a41f5eaba5711e65ada09cfae8bc27e4f"
+      },
+      {
+        "path": "application/tests/test_depth18_regional_queue.py",
+        "hk_blob": "8f8ed268354636f44ed33d354648fada9079764f",
+        "main_blob": "e6dac4d334a31f0a2340a6f98c4cf88289ed31ff"
+      },
+      {
+        "path": "application/tests/test_depth19_ride_sync.py",
+        "hk_blob": "7c76928ec7b6aee41bedd8c9e5983c5aacaab045",
+        "main_blob": "ae21da2b291496b00dfb7fe8801dc132a7b3de75"
+      },
+      {
+        "path": "application/tests/test_depth21_refund_recovery.py",
+        "hk_blob": "3ea8cd0a46d0b4f8c57bc89235a686616e3fbf56",
+        "main_blob": "95105bafdfed63526ec317f6b8b715578fb54b92"
+      },
+      {
+        "path": "application/tests/test_depth22_rail_resolution.py",
+        "hk_blob": "81698066db991bf6badbf463e0883dc46ec90e5a",
+        "main_blob": "1e5e072215d69d05a463a081923746091288024b"
+      },
+      {
+        "path": "application/tests/test_depth23_capacity.py",
+        "hk_blob": "4a6acb5a6ea9dc309ca8909e8483ca75ef9c2c05",
+        "main_blob": "8a8ccb8040da655e725f98af035a5b7860dd6a44"
+      },
+      {
+        "path": "application/tests/test_depth24_expiry.py",
+        "hk_blob": "859de0340ee667c6363b3b17e457d8c2462a9d9e",
+        "main_blob": "47fb4e7bfaee14e9e8faa5950318974b488e45dc"
+      },
+      {
+        "path": "application/tests/test_depth25_migration_history.py",
+        "hk_blob": "f975cd9289fd80f393a809d1af4357334e4c2f2f",
+        "main_blob": "4cbfd996cf6b300930f4c08f34b015c9145226d6"
+      },
+      {
+        "path": "application/tests/test_depth27_session_isolation.py",
+        "hk_blob": "0e278acdc4123c2a91017204c8aa2f0ade0090d8",
+        "main_blob": "521453d3e3ef0dd58380da4f5fb8433d4e39f6a5"
+      },
+      {
+        "path": "application/tests/test_depth29_trip_reentry.py",
+        "hk_blob": "bef39204a603580e55f94f8dfe009f071e320d31",
+        "main_blob": "3353d4b676a79684eb07c7c6933c42a85bdc44c2"
+      },
+      {
+        "path": "application/tests/test_depth30_native_api_contract.py",
+        "hk_blob": "fabab79bda5f616a0650459deb08901dbe76679e",
+        "main_blob": "5df56fb80d8d29caae1daf0d4e5348190499df30"
+      },
+      {
+        "path": "application/tests/test_depth32_flight_refund_consent.py",
+        "hk_blob": "6bf3b3b1b31272a2860d7dd35dff7be71cf1c5c5",
+        "main_blob": "7a1f0e3ada1a3f3d039aa1887d3e1187ff681da1"
+      },
+      {
+        "path": "application/tests/test_depth33_mobility_refund_consent.py",
+        "hk_blob": "5002e969a61e38632d91a7dc7161a9eea7838a6c",
+        "main_blob": "b3da47578edd04533719c6e2852a525635addf5c"
+      },
+      {
+        "path": "application/tests/test_depth35_refresh_scope.py",
+        "hk_blob": "610580345e23039e2cca829a47627e3ff54568d5",
+        "main_blob": "7a9fdec3166a071ad5d6d6a18553c0e91d0d6987"
+      },
+      {
+        "path": "application/tests/test_depth41_transaction_views.py",
+        "hk_blob": "4e95ec0bb6f1cd0de229b577b947e9b0f9a11f9e",
+        "main_blob": "bdec04209170b39b44fc3b7830584318752c8bde"
+      },
+      {
+        "path": "application/tests/test_depth42_cross_end_journeys.py",
+        "hk_blob": "a20bd3c57ad84e3c9dcfca6c15dfab71e10bdee6",
+        "main_blob": "8f2b0af5b862124e74095c9b330e97d07576e8a5"
+      },
+      {
+        "path": "application/tests/test_depth47_credit_original_deadline.py",
+        "hk_blob": "284ed8e01ca945db5d85ea965ede71c4052ca018",
+        "main_blob": "15700693b820eb48871d2bbff918b326bf891dfd"
+      },
+      {
+        "path": "application/tests/test_depth48_flight_migration.py",
+        "hk_blob": "d785fec1169245f68968d6b9beaa600bba957ccf",
+        "main_blob": "b97576729969020a4a5db05c041aeb2da55199ca"
+      },
+      {
+        "path": "application/tests/test_final_depth_terminal_hardening.py",
+        "hk_blob": "4a607da746cf3a1bac10ead01c4bd267842b1d04",
+        "main_blob": "5b9807579a2f6a892e24d946f6dfa0cd45209394"
+      },
+      {
+        "path": "application/tests/test_final_depth_vault_booking_entry.py",
+        "hk_blob": "ffc6d7378ba944b658ac1fd64a46a713931bb752",
+        "main_blob": "6b9d1c6a2a86ad44917637cd88b083a3821b4eaf"
+      },
+      {
+        "path": "application/tests/test_first_go_hosted_direct_booking_pilot.py",
+        "hk_blob": "fd025b6f868a0f41bfe48532d1062b9bc9674506",
+        "main_blob": "8f28438512da8b26cb3805b4802361eaa77c138b"
+      },
+      {
+        "path": "application/tests/test_flight_journey_depth.py",
+        "hk_blob": "440b46c2761be01d12b9648b869341a1b997f789",
+        "main_blob": "e70f4aad7f86dba04fdf862512ddfec1ce5e78dd"
+      },
+      {
+        "path": "application/tests/test_guest_stay_fulfillment_settlement_eligibility.py",
+        "hk_blob": "065e3ec5c54ca9e290c634459c30623b17b5ba2e",
+        "main_blob": "ae79eb6ab3dea5a456cc86906c398dce5a4b2fcd"
+      },
+      {
+        "path": "application/tests/test_hosted_content_operations_acceptance.py",
+        "hk_blob": "94e058f0174d81f429953bdff246356d7d6605bc",
+        "main_blob": "ad4a90ac8fdd702012b69f44b4dd1f01a1f9f096"
+      },
+      {
+        "path": "application/tests/test_hosted_direct_inventory_matrix.py",
+        "hk_blob": "a68d217d894a1fc348236dc622ce809085890c09",
+        "main_blob": "c5d0ed0f94cfebab24c71ac889a2e1fc97926608"
+      },
+      {
+        "path": "application/tests/test_hosted_direct_reservation_operations.py",
+        "hk_blob": "806e207488e18b36d6533bac90815c24ddc81398",
+        "main_blob": "a2af994713b508a68b3c9ae4353efa73333d7310"
+      },
+      {
+        "path": "application/tests/test_hosted_frontdesk_uat_daily_close.py",
+        "hk_blob": "e934da3c7222831c0cf62dab16b5a12ec58dbf3a",
+        "main_blob": "2d278a8e4cadd4d3becc228c8244f387d17e5e7c"
+      },
+      {
+        "path": "application/tests/test_hotel_partner_self_operating_core.py",
+        "hk_blob": "ac7001daa6bea6c191bb761b31b3998f15b3343d",
+        "main_blob": "9c3508fa22b48ea3d6ed10bd26be8b2ba4e3cbae"
+      },
+      {
+        "path": "application/tests/test_master03_closure.py",
+        "hk_blob": "bec0a9527425bd3cdc5a309581bb2918970eedc1",
+        "main_blob": "c18e642cec12bd122ce3235910606e741100430f"
+      },
+      {
+        "path": "application/tests/test_master03_inventory_security.py",
+        "hk_blob": "62652f6cbe0306c458ade6c67059725a034df7d3",
+        "main_blob": "49da439ff2d6d7c317495c3060c0c993d87c7078"
+      },
+      {
+        "path": "application/tests/test_next_depth_c06_supplier_validity.py",
+        "hk_blob": "e350ebb17a40fa32c4df4d9fc5ef8d7772574307",
+        "main_blob": "d321207145eb653efd531145c343e0f1fe4332c9"
+      },
+      {
+        "path": "application/tests/test_omnichannel_payment_finance_os.py",
+        "hk_blob": "1d1d66fab6d25d4dd1e3ae541d96fb09719ee2a3",
+        "main_blob": "a1eabadcc8c8b44ed087fd973849ee19c7e28cbf"
+      },
+      {
+        "path": "application/tests/test_outbox_resilience.py",
+        "hk_blob": "276973c2261b86105a6c5c402f6b2b45c0cd928c",
+        "main_blob": "a55bcc7712a53cd91856c95660cddee9ae98f548"
+      },
+      {
+        "path": "application/tests/test_p0_0097_0098_rebuild.py",
+        "hk_blob": "4525d95b68177e6e511d6644e6d3e0018aac8eb0",
+        "main_blob": "3f2c8c1df5c4b29b2cae286f91b44e7763373511"
+      },
+      {
+        "path": "application/tests/test_p0_0100_real_external_execution.py",
+        "hk_blob": "610346ee6a4736556cf603efe7bdd2fa777e1f61",
+        "main_blob": "d5fd8df82a28c1c4617a999380a34c267449fcfc"
+      },
+      {
+        "path": "application/tests/test_p0_0101_postgres_race_matrix.py",
+        "hk_blob": "5ff42341129a0c7bcb2834088d01366649a1a39f",
+        "main_blob": "2b3c34660ccefe3190da20104e8100a0c92cdab3"
+      },
+      {
+        "path": "application/tests/test_p0_final_virtual_closure_stress.py",
+        "hk_blob": "f9d144ef8f77fe9886ef93302cae9b1f3e747408",
+        "main_blob": "c0edf17eade932d4462176f6e45d01d2d0cb1962"
+      },
+      {
+        "path": "application/tests/test_parent_implementation_code_review_debt_closure.py",
+        "hk_blob": "f4177b5b7f2dc5d391a70f90e20c45b5bfc6262b",
+        "main_blob": "0584fc374a186c9124fa10e1ea955f4c41d227a1"
+      },
+      {
+        "path": "application/tests/test_personal_travel_vault.py",
+        "hk_blob": "85590bb8c3ce21756d0a0beca6d7c7ebd6f2f322",
+        "main_blob": "d998e329bc900f7710ad553f07a025d262908c43"
+      },
+      {
+        "path": "application/tests/test_post_stay_dispute_refund_reconciliation.py",
+        "hk_blob": "3a54f575f583c6143569804fd5b3b108b189c92f",
+        "main_blob": "7f541c4b931942b7bd173071006d74bfac0433d9"
+      },
+      {
+        "path": "application/tests/test_rc15_aoluguya_supply_truth.py",
+        "hk_blob": "3adb069f59a4501515c0d495b9bd07811fffe1a9",
+        "main_blob": "3c8ce993ee91a7a97099a0c6d1a05c1b76787d09"
+      },
+      {
+        "path": "application/tests/test_rc191_registration_vault_tiered_build.py",
+        "hk_blob": "f9fdc70360f3dccbb124e3e399bb3536b43847a0",
+        "main_blob": "8939a90ceae6ff23ade920683fc0ca354f119628"
+      },
+      {
+        "path": "application/tests/test_rc20_2_all_b_to_a.py",
+        "hk_blob": "709416f2edf0925ef10f811e78cebf4da3435559",
+        "main_blob": "a109106ac5a4e247b93dc37c8ff2a585672dcc26"
+      },
+      {
+        "path": "application/tests/test_round2_c07_explicit_preferences.py",
+        "hk_blob": "4ff3a5ac87aada0a4d963939c0d1bdba81235acd",
+        "main_blob": "7b75fff13e21871f86f54c1335546e3294252e22"
+      },
+      {
+        "path": "application/tests/test_sprint1q_operational_dashboard.py",
+        "hk_blob": "29bdccce0137ff0b205b592e4e18ade4f854bd70",
+        "main_blob": "7520f0c8bf9b698a47b1ce15bcb7a0fab65398fa"
+      },
+      {
+        "path": "application/tests/test_sprint1y_consumer_identity.py",
+        "hk_blob": "280b5d511b49e0a767920cb137c85dbc77accfc4",
+        "main_blob": "258e739615b0aab4fca8a3e2a95177d2adbac28e"
+      },
+      {
+        "path": "application/tests/test_sprint1z_mobile.py",
+        "hk_blob": "92c65e95771a922216d0ee235923f0e2e1a8860f",
+        "main_blob": "0c1194216e9a81dcbe2cdf36488d24eedfcfc2a6"
+      },
+      {
+        "path": "application/tests/test_sprint2a_mobile_e2e.py",
+        "hk_blob": "b8acad4cf63b9e801c165510503bb03e68e4e73c",
+        "main_blob": "286114901906f87b0f657a6d39ff19536fce57d8"
+      },
+      {
+        "path": "application/tests/test_sprint2b_mobile_release.py",
+        "hk_blob": "9fdd2a8e28504af732bdea6e3ec8bb455ad36b05",
+        "main_blob": "833d9a93546307997f5f094e3c011cc38fd34100"
+      },
+      {
+        "path": "application/tests/test_sprint2d_bringup.py",
+        "hk_blob": "3460cb4c51b10db6177161f68a628a51039d11dd",
+        "main_blob": "eecbc91813a440d6f3cdfa5ce631f27444ff172e"
+      },
+      {
+        "path": "application/tests/test_sprint3a_flight.py",
+        "hk_blob": "461d530c67210cace3ad80cb36cab872783e336d",
+        "main_blob": "7ec15c49e11322ae6e08596096f13b3b36998e4b"
+      },
+      {
+        "path": "application/tests/test_sprint3b_rail.py",
+        "hk_blob": "63dfbb3f0c78884ed56069343d94fa698e5f6e18",
+        "main_blob": "9962ad72fa8e591c08c2ee3734f671f4b5a7bc62"
+      },
+      {
+        "path": "application/tests/test_sprint3c_mobility.py",
+        "hk_blob": "ec3d751d38f2fceff435185976a9160212a7216b",
+        "main_blob": "3f26e20d778feecdbdfcab22c67ae12277e75f7c"
+      },
+      {
+        "path": "application/tests/test_sprint3d_attractions.py",
+        "hk_blob": "880adaff73b5e9ec20cb5566abc993f1c011bd82",
+        "main_blob": "78ee741b53fbbafcebe6ff8874f89d3f751e58e1"
+      },
+      {
+        "path": "application/tests/test_sprint3e_unified_trips.py",
+        "hk_blob": "3485c0d576395198de76addf530a4f94729eb288",
+        "main_blob": "f63b049f4f7e3c4d69efbaf30b87fd5e69da4bd1"
+      },
+      {
+        "path": "application/tests/test_sprint3f_journey_intelligence.py",
+        "hk_blob": "7179e13f4a3c602493f26b93930e09984bd7eb0a",
+        "main_blob": "c255694c0ab604e18625454fcd05ec9074e76aa8"
+      },
+      {
+        "path": "application/tests/test_sprint3g_journey_recovery.py",
+        "hk_blob": "00ba71cd9b4be57ff09eb982a955afaecf848e4e",
+        "main_blob": "a46b5ade0f98c5c19411a6ff9f714f8eed273ce3"
+      },
+      {
+        "path": "application/tests/test_unified_money_movement_finance_close.py",
+        "hk_blob": "0c810e256a1d003ea70566a08c24f023f218bdbf",
+        "main_blob": "07dd403b7655564a8a7da542d7463cd84b9e1fbd"
+      },
+      {
+        "path": "application/tests/test_v70_next_c01_unknown_funding.py",
+        "hk_blob": "f2c0bb64c456d53bee89c05d98fb613941a371ea",
+        "main_blob": "f1d284d3d961e3a8621ce523bb5faf3cdc997e6c"
+      },
+      {
+        "path": "application/tests/test_v70_next_c05_recovery_evidence.py",
+        "hk_blob": "b2e0e6467a37bccf5a38ccdfbcfad34dcbb15d14",
+        "main_blob": "44d441cdad37bbbca7848772c4c1774dd9054a13"
+      },
+      {
+        "path": "application/tests/test_v70_round2_c05_recovery_fulfillment.py",
+        "hk_blob": "5c0d06f9e8abacdb70d0b9e49ef643c2a9faee80",
+        "main_blob": "fbda71ca973f0c89ddec9fd10b7da6fc1eab238c"
+      },
+      {
+        "path": "application/tests_frontend/booking_intent.test.mjs",
+        "hk_blob": "fbab1ed884145dab97f872a6d84122ba584bd813",
+        "main_blob": "8f8be8e8164fd136cca2fc264d37865620249e9b"
+      },
+      {
+        "path": "application/tests_frontend/brand_v14.test.mjs",
+        "hk_blob": "d7ca7c2f54f6646e5441214236808969440342b0",
+        "main_blob": "cc4856ed04e05ed403f56aba747544bae3ff9c56"
+      },
+      {
+        "path": "application/tests_frontend/mobile_order_actions.test.mjs",
+        "hk_blob": "f591705cdc8b652d2693f7838dfdb1e529a5957a",
+        "main_blob": "07e1043ff1960ca58385271b738f0eba0a2661e4"
+      },
+      {
+        "path": "application/tests_frontend/native_api_bridge.mjs",
+        "hk_blob": "066632c9d4b88b384264c9fb1e4258102cc970c7",
+        "main_blob": "b8149d882c442f87ddc90bf10ea0187e2b9639da"
+      }
+    ]
+  },
+  "validation": {
+    "sequential_git_apply_check": "PASS (all four patches)",
+    "exact_source_blobs": "PASS (8/8)",
+    "python_ast": "PASS (8/8 changed Python files)",
+    "isolated_email_unittest": "PASS (9 test methods, SMTP mocked)",
+    "migration_graph_static": {
+      "revisions": 146,
+      "heads": [
+        "0145_source_latest_index"
+      ],
+      "migration_files_changed": 0
+    },
+    "combined_pytest": "PENDING GitHub isolated PostgreSQL 18.4",
+    "review_for_combined_sha": "PENDING",
+    "browser_e2e": "NOT_RUN",
+    "image_build": "NOT_RUN",
+    "candidate_admission": "NOT_RUN"
+  },
+  "boundaries": {
+    "persistent_runtime": "DELIVERED / LIVE / FROZEN; no Runtime installation or engineering",
+    "merge_authorized": false,
+    "deployment_authorized": false,
+    "deployed": false,
+    "production": false,
+    "live_migration": false
+  },
+  "gates": [
+    "Fresh live eight-service image, source, DB revision and email readiness without secret disclosure",
+    "Combined exact-SHA isolated PostgreSQL regressions and original-source retention verification",
+    "Independent review of new combined candidate; old scoped PASS does not transfer",
+    "Source-bound build, candidate admission and canary as required by current formal channel",
+    "Confirm deployment and rollback authority from current records; prior GO-FORGE deployment has no Command Center DEPLOY record",
+    "Separate approval for exact deployment; then browser B/C registration, login and hotel onboarding acceptance"
+  ]
+}

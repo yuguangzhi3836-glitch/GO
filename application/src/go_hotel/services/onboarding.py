@@ -18,7 +18,7 @@ ALLOWED_TRANSITIONS = {
     "CREDENTIALS_PENDING": {"MAPPING_PENDING", "SUSPENDED"},
     "MAPPING_PENDING": {"CERTIFICATION_PENDING", "SUSPENDED"},
     "CERTIFICATION_PENDING": {"CERTIFIED", "MAPPING_PENDING", "SUSPENDED"},
-    "CERTIFIED": {"ACTIVATION_PENDING", "SUSPENDED"},
+    "CERTIFIED": {"CERTIFICATION_PENDING", "ACTIVATION_PENDING", "SUSPENDED"},
     "ACTIVATION_PENDING": {"ACTIVE", "CERTIFIED", "SUSPENDED"},
     "ACTIVE": {"SUSPENDED", "REVOKED"},
     "SUSPENDED": {"CREDENTIALS_PENDING", "MAPPING_PENDING", "CERTIFICATION_PENDING", "CERTIFIED", "ACTIVE", "REVOKED"},
@@ -111,15 +111,22 @@ class OnboardingService:
             if not onb: raise KeyError("ONBOARDING_NOT_FOUND")
             connector_id=onb.connector_id
             if onb.status not in {"CERTIFICATION_PENDING","CERTIFIED"}: raise ValueError("ONBOARDING_NOT_READY_FOR_CERTIFICATION")
+            previous_certification_id=s.scalar(select(func.max(ConnectorCertificationRow.certification_id)).where(ConnectorCertificationRow.connector_id==connector_id))
         report=await connector_service.certify(connector_id)
+        binding_error_to_raise=None
         with SessionLocal.begin() as s:
             onb=s.execute(select(SupplierConnectorOnboardingRow).where(SupplierConnectorOnboardingRow.onboarding_id==onboarding_id).with_for_update()).scalar_one()
-            cert=s.scalar(select(ConnectorCertificationRow).where(ConnectorCertificationRow.connector_id==connector_id).order_by(ConnectorCertificationRow.certification_id.desc()))
-            onb.last_certification_id=cert.certification_id if cert else None
-            if report.get("passed"):
-                self._transition(s,onb,"CERTIFIED","SANDBOX_CERTIFICATION_PASSED",actor_id,{"certification_id":onb.last_certification_id})
+            cert,binding_error=self._bind_certification_record(s,connector_id,report,previous_certification_id)
+            onb.last_certification_id=cert.certification_id if cert and cert.passed else None
+            if binding_error:
+                self._transition(s,onb,"CERTIFICATION_PENDING",binding_error,actor_id,{"report":report})
+                binding_error_to_raise=binding_error
+            elif cert and cert.passed:
+                self._transition(s,onb,"CERTIFIED","SANDBOX_CERTIFICATION_PASSED",actor_id,{"certification_id":cert.certification_id})
             else:
-                self._audit(s,onb,onb.status,onb.status,"SANDBOX_CERTIFICATION_FAILED",actor_id,{"report":report})
+                self._transition(s,onb,"CERTIFICATION_PENDING","SANDBOX_CERTIFICATION_FAILED",actor_id,{"certification_id":cert.certification_id if cert else None,"report":report})
+        if binding_error_to_raise:
+            raise ValueError(binding_error_to_raise)
         return report
     def request_activation(self,onboarding_id:str,actor_id:str):
         with SessionLocal.begin() as s:
@@ -155,6 +162,17 @@ class OnboardingService:
         if not cred: raise ValueError("ACTIVE_CREDENTIAL_REQUIRED")
         if maps<1: raise ValueError("APPROVED_PROPERTY_MAPPING_REQUIRED")
         if not cert or not cert.passed: raise ValueError("PASSED_CERTIFICATION_REQUIRED")
+    @staticmethod
+    def _bind_certification_record(s,connector_id:str,report:dict,previous_certification_id:int|None):
+        q=select(ConnectorCertificationRow).where(ConnectorCertificationRow.connector_id==connector_id)
+        if previous_certification_id is not None:
+            q=q.where(ConnectorCertificationRow.certification_id>previous_certification_id)
+        rows=s.scalars(q.order_by(ConnectorCertificationRow.certification_id.asc())).all()
+        matches=[row for row in rows if row.passed==bool(report.get("passed")) and row.report==report]
+        if len(matches)==1: return matches[0],None
+        if len(matches)>1: return None,"CERTIFICATION_RECORD_BINDING_AMBIGUOUS"
+        if rows: return None,"CERTIFICATION_RECORD_BINDING_MISMATCH"
+        return None,"CERTIFICATION_RECORD_BINDING_MISSING"
     def _transition(self,s,row,to_status,reason,actor_id,detail):
         old=row.status
         if old!=to_status and to_status not in ALLOWED_TRANSITIONS.get(old,set()): raise ValueError(f"INVALID_ONBOARDING_TRANSITION:{old}->{to_status}")

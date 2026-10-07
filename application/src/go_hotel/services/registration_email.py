@@ -19,11 +19,17 @@ def configuration():
         if not path:
             raise ValueError()
         value = json.loads(Path(path).read_text())
+        if not isinstance(value, dict):
+            raise ValueError()
         if value.get('sender') != SENDER or value.get('credential_reference') != 'hk-staging-registration-email':
             raise ValueError()
-        if value.get('tls') not in ('STARTTLS', 'SSL') or not value.get('host') or not value.get('username'):
+        if value.get('tls') not in ('STARTTLS', 'SSL'):
             raise ValueError()
-        if not isinstance(value.get('port'), int) or not 1 <= value['port'] <= 65535:
+        for field in ('host', 'username'):
+            if not isinstance(value.get(field), str) or not value[field].strip():
+                raise ValueError()
+        # bool is an int subclass, but is not a valid SMTP port configuration.
+        if type(value.get('port')) is not int or not 1 <= value['port'] <= 65535:
             raise ValueError()
         if not Path(value['password_file']).is_absolute():
             raise ValueError()
