@@ -13,6 +13,34 @@ import lite_machine_inventory as inventory
 
 
 class MachineInventoryTests(unittest.TestCase):
+    def test_control_tests_execute_with_application_tests_and_preserve_failure(self):
+        cp = self.root / "control-plane/boss-test-pr-live-integration-v1/tests"
+        cp.mkdir(parents=True)
+        path = cp / "test_control.py"
+        path.write_text("def test_ok(): assert True\ndef test_failure(): assert False\n")
+        value = "application/tests/test_two.py " + path.relative_to(self.root).as_posix()
+        result = self.pytest_run(value)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("1 failed, 2 passed", result.stdout)
+        self.assertIn('failures="1"', (self.root / "junit.xml").read_text())
+
+    def test_control_paths_refuse_escape_symlinks_and_unlisted_components(self):
+        cp = self.root / "control-plane/boss-test-pr-live-integration-v1/tests"
+        cp.mkdir(parents=True)
+        (cp / "test_ok.py").write_text("def test_ok(): pass\n")
+        (cp / "test_link.py").symlink_to(cp / "test_ok.py")
+        prefix = "control-plane/boss-test-pr-live-integration-v1/tests/"
+        for value in (prefix + "test_link.py", prefix + "../test_ok.py", prefix,
+                      prefix + "test_missing.py", prefix + "test_ok.py -p evil",
+                      "control-plane/other/tests/test_ok.py"):
+            with self.subTest(value=value):
+                self.assertNotEqual(self.invoke(value).returncode, 0)
+        # Even a parent symlink that points inside the checkout must fail.
+        actual = cp.parent.with_name("actual-component")
+        cp.parent.rename(actual)
+        cp.parent.symlink_to(actual, target_is_directory=True)
+        self.assertNotEqual(self.invoke(prefix + "test_ok.py").returncode, 0)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

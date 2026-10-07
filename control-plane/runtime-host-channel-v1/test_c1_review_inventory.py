@@ -57,6 +57,48 @@ def issue(inventory=None):
 
 
 class InventoryTests(unittest.TestCase):
+    def control_reader(self):
+        reader = Reader()
+        cp, component, tests = (x * 40 for x in "ef0")
+        reader.trees[ROOT].append(dict(path="control-plane", type="tree", mode="040000", sha=cp))
+        reader.trees[cp] = [dict(path="boss-test-pr-live-integration-v1", type="tree", mode="040000", sha=component)]
+        reader.trees[component] = [dict(path="tests", type="tree", mode="040000", sha=tests)]
+        reader.trees[tests] = [dict(path=name, type="blob", mode="100644", sha=BLOB)
+                               for name in ("test_live_integration.py", "test_test_pr_durability.py")]
+        return reader, cp, component, tests
+
+    def test_561_control_inventory_is_bound_to_candidate_root_and_same_round(self):
+        reader, *_ = self.control_reader()
+        value = " ".join("control-plane/boss-test-pr-live-integration-v1/tests/" + name
+                         for name in ("test_live_integration.py", "test_test_pr_durability.py"))
+        plan = self.plan(value, reader)
+        self.assertEqual(plan["would_enqueue"]["payload"]["machine_inventory"], value)
+        self.assertEqual(plan["would_enqueue"]["idempotency_key"], self.plan()["would_enqueue"]["idempotency_key"])
+        self.assertEqual(plan["would_enqueue"]["max_attempts"], 1)
+        self.assertFalse(plan["enqueued"])
+
+    def test_control_missing_symlink_and_submodule_at_every_component_refuse(self):
+        value = "control-plane/boss-test-pr-live-integration-v1/tests/test_live_integration.py"
+        for depth in range(4):
+            for kind, mode in (("blob", "120000"), ("commit", "160000"), (None, None)):
+                reader, cp, component, tests = self.control_reader()
+                entries = reader.trees[[ROOT, cp, component, tests][depth]]
+                entry = entries[-1] if depth == 0 else entries[0]
+                if kind is None:
+                    entries.remove(entry)
+                else:
+                    entry.update(type=kind, mode=mode)
+                with self.subTest(depth=depth, mode=mode), self.assertRaises(Refused):
+                    self.plan(value, reader)
+
+    def test_control_inventory_does_not_open_other_directories_or_shell_arguments(self):
+        for value in ("control-plane/other/tests/test_x.py",
+                      "control-plane/boss-test-pr-live-integration-v1/tests",
+                      "control-plane/boss-test-pr-live-integration-v1/tests/../test_x.py",
+                      "control-plane/boss-test-pr-live-integration-v1/tests/test_x.py --collect-only"):
+            with self.subTest(value=value), self.assertRaises(Refused):
+                self.plan(value)
+
     def plan(self, inventory=INVENTORY, reader=None):
         return plan_review_ingress(issue(inventory), reader=reader or Reader(), environ=ENV)
 

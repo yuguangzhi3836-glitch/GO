@@ -11,7 +11,8 @@ from c1_execution_contract import MAX_MACHINE_INVENTORY, MAX_REVIEW_TEST_FILES, 
 
 MARKER = "machine inventory:"
 TOKEN = re.compile(
-    r"application/tests/(?:[A-Za-z0-9_-]+/){0,8}test_[A-Za-z0-9_-]+\.py"
+    r"(?:application/tests/(?:[A-Za-z0-9_-]+/){0,8}"
+    r"|control-plane/boss-test-pr-live-integration-v1/tests/)test_[A-Za-z0-9_-]+\.py"
     r"(?:::[A-Za-z_][A-Za-z0-9_]*){0,2}\Z"
 )
 
@@ -39,17 +40,30 @@ def explicit_inventory(body):
     return " ".join(paths)
 
 
-def require_frozen_inventory(reader, application_tree, inventory):
-    """Require regular test files in this application's immutable Git tree.
+def require_frozen_inventory(reader, application_tree, inventory, *, candidate_sha=None):
+    """Require regular test files in the frozen application or candidate root tree.
 
     Pytest owns node collection; this verifies file provenance, not whether a
     class/function exists. Missing nodes must still fail in the machine job.
     Cache common tree reads and reject symlinks/submodules at every component.
     """
     cache = {}
+    root_tree = None
     for token in inventory.split():
-        parts = token.split("::", 1)[0].split("/")[1:]
-        tree = application_tree
+        parts = token.split("::", 1)[0].split("/")
+        if parts[0] == "application":
+            parts = parts[1:]
+            tree = application_tree
+        else:
+            # Control-plane bytes belong to the exact candidate ROOT, never main
+            # or the execution backend's application tree.
+            if not isinstance(candidate_sha, str) or not re.fullmatch("[0-9a-f]{40}", candidate_sha):
+                raise Refused("REVIEW_INVENTORY_CANDIDATE_SHA_REQUIRED")
+            if root_tree is None:
+                root_tree = reader.read_commit_tree(candidate_sha)
+                if not isinstance(root_tree, str) or not re.fullmatch("[0-9a-f]{40}", root_tree):
+                    raise Refused("REVIEW_INVENTORY_TREE_SHA_INVALID")
+            tree = root_tree
         for index, part in enumerate(parts):
             if tree not in cache:
                 cache[tree] = reader.read_tree(tree)

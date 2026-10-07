@@ -20,21 +20,25 @@ def inventory_paths(value: str, candidate: Path) -> list[str]:
     if not tokens or len(tokens) > 128:
         raise ValueError("INVALID_MACHINE_INVENTORY")
     root = candidate.resolve(strict=True)
-    boundary = root / "application" / "tests"
-    if boundary.is_symlink() or not boundary.is_dir():
-        raise ValueError("INVALID_TEST_ROOT")
     result = []
     for token in tokens:
         parts = token.split("::")
         path_text, selectors = parts[0], parts[1:]
         path = PurePosixPath(path_text)
+        control_test = bool(re.fullmatch(
+            r"control-plane/boss-test-pr-live-integration-v1/tests/test_[A-Za-z0-9_-]+\.py",
+            path_text))
+        boundary = (root / "control-plane/boss-test-pr-live-integration-v1/tests"
+                    if control_test else root / "application/tests")
+        if boundary.is_symlink() or not boundary.is_dir():
+            raise ValueError("INVALID_TEST_ROOT")
         if (len(parts) > 3
                 or any(not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", selector)
                        for selector in selectors)
                 or not re.fullmatch(r"[A-Za-z0-9_./-]+", path_text)
                 or path_text != path.as_posix()
                 or ".." in path.parts
-                or path.parts[:2] != ("application", "tests")):
+                or (path.parts[:2] != ("application", "tests") and not control_test)):
             raise ValueError("INVALID_TEST_PATH")
         # Reject every symlink component, including application/, even if the
         # target currently happens to stay inside the checkout.
