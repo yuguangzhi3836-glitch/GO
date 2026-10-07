@@ -32,6 +32,18 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from hk_agent import artifact_store, deployment_actions, test_pr, transport
 
 
+def git_blob(data):
+    """The identity git gives bytes: sha1 of ``blob <len>\\0<data>``."""
+    return hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+
+
+# The one file the fake checkout writes, stated the way `git ls-tree -r` states it.  The
+# source fingerprint refuses a file whose bytes do not hash back to its blob, so a listing
+# without identities would be refused before the durability step these fixtures are about.
+PYPROJECT = b"[project]\n"
+PYPROJECT_LISTING = "100644 blob %s\tapplication/pyproject.toml" % git_blob(PYPROJECT)
+
+
 class RefusingBuildRunner:
     """A TEST_PR build the artifact store must refuse.
 
@@ -59,9 +71,14 @@ class RefusingBuildRunner:
             elif "checkout" in argv:
                 context = self.workspace / "application"
                 context.mkdir(parents=True, exist_ok=True)
-                (context / "pyproject.toml").write_text("[project]\n", encoding="utf-8")
+                (context / "pyproject.toml").write_bytes(PYPROJECT)
             elif "rev-parse" in argv:
                 return self.completed("c" * 40)
+            elif "ls-tree" in argv:
+                # The commit's tracked set with each entry's blob identity.  The checkout
+                # branch above wrote exactly these bytes, so the fingerprint is taken over
+                # a tree that answers to the listing.
+                return self.completed(PYPROJECT_LISTING)
             return self.completed()
         if argv[0] != "/usr/bin/docker":
             raise AssertionError(argv)
@@ -72,7 +89,13 @@ class RefusingBuildRunner:
                                   if argv[3] == test_pr.BUILDER_IMAGE
                                   else "sha256:" + "a" * 64)
         if argv[1] == "run":
-            return self.completed(test_pr.DEPENDENCY_PROFILE_SHA256 if "--mount" in argv else "")
+            if "--mount" in argv:
+                return self.completed(test_pr.DEPENDENCY_PROFILE_SHA256)
+            # The isolated runtime check is where `alembic heads` is read back, so the fake
+            # answers with one head.  It does not report the source fingerprint: that is
+            # taken from the commit's tracked file list before the build, so a fake that
+            # reported it here would be answering a question nothing asks any more.
+            return self.completed("0145_source_latest_index (head)")
         if argv[1] in ("build", "load"):
             return self.completed()
         if argv[1] == "save":
@@ -243,6 +266,9 @@ class IntegrationTests(unittest.TestCase):
                                          "package_sha256": "b" * 64},
                     "gate_results": {"source_commit": "PASS"},
                     "application_health_proven": False, "deployment_performed": False,
+                    "migration_head": "0145_source_latest_index",
+                    "source_fingerprint": "d" * 64,
+                    "source_fingerprint_algorithm": test_pr.SOURCE_FINGERPRINT_ALGORITHM,
                 }
                 evidence = transport.evidence(signed, transport.dispatch_action(signed))
             finally:
@@ -521,6 +547,86 @@ class IntegrationTests(unittest.TestCase):
                         self.assertEqual(target.read_bytes(), backup_file.read_bytes())
                     else:
                         self.assertFalse(target.exists())
+
+
+class SourceFingerprintTests(unittest.TestCase):
+    """The source fingerprint a converged candidate is obliged to state.
+
+    What matters is not that the executor returns a digest but that it returns *the*
+    digest -- the one `ci/retention/verify_source.py` defines and the repository records a
+    candidate under.  So the vector below is pinned, and a tree whose bytes are not the
+    commit's bytes is refused rather than described: a fingerprint over the wrong tree is
+    indistinguishable from a correct one once it has been reported, which is why the
+    comparison against each file's git blob is here at all.
+    """
+
+    VECTOR = (("pyproject.toml", b"[project]\n"), ("src/go_hotel/__init__.py", b"# x\n"))
+    VECTOR_DIGEST = "863f9a6a1b83839414f4e0b3a363313d31d515383cf38514a08d29684f8c86fe"
+
+    def listing(self, entries, prefix="application/", mode="100644", kind="blob"):
+        return "\n".join("%s %s %s\t%s%s" % (mode, kind, git_blob(data), prefix, name)
+                         for name, data in entries)
+
+    def tree(self, entries):
+        raw = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+        self.addCleanup(raw.cleanup)
+        root = pathlib.Path(raw.name)
+        for name, data in entries:
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        return root
+
+    def test_the_algorithm_is_named_because_more_than_one_value_bears_that_name(self):
+        self.assertEqual(test_pr.SOURCE_FINGERPRINT_ALGORITHM, "application-tracked-tree-sha256/v1")
+
+    def test_a_tree_that_is_the_commit_reproduces_the_pinned_vector(self):
+        self.assertEqual(test_pr.source_tree_fingerprint(self.tree(self.VECTOR), self.listing(self.VECTOR)),
+                         self.VECTOR_DIGEST)
+
+    def test_the_vector_is_the_framing_the_repository_defines(self):
+        # Recomputed from the definition rather than from the function: one sha256 per
+        # file, sorted by path, joined as "<path>\0<sha256>\n" and hashed once more.  A
+        # change to the separator, the ordering or the second hash breaks this, which is
+        # the point -- the value is compared against another repository's candidate.
+        parts = sorted((name, hashlib.sha256(data).hexdigest()) for name, data in self.VECTOR)
+        framed = "".join("%s\0%s\n" % pair for pair in parts).encode()
+        self.assertEqual(hashlib.sha256(framed).hexdigest(), self.VECTOR_DIGEST)
+        self.assertEqual(test_pr.source_tree_fingerprint(self.tree(self.VECTOR), self.listing(self.VECTOR)),
+                         self.VECTOR_DIGEST)
+
+    def test_a_file_whose_bytes_are_not_its_blob_is_refused(self):
+        # The measured failure: an extraction taken on a host whose global git config sets
+        # `core.autocrlf=true` converted 1294 of a real candidate's 1323 files, and the
+        # tree digest came out describing that host.  Converting the vector's files is the
+        # same defect in miniature, and it has to be a refusal, not a value.
+        converted = tuple((name, data.replace(b"\n", b"\r\n")) for name, data in self.VECTOR)
+        with self.assertRaises(test_pr.Reject) as caught:
+            test_pr.source_tree_fingerprint(self.tree(converted), self.listing(self.VECTOR))
+        self.assertEqual(str(caught.exception), "TEST_PR_SOURCE_FINGERPRINT_REJECT")
+
+    def test_listings_that_are_not_the_commits_tracked_files_are_refused(self):
+        good = self.listing(self.VECTOR)
+        cases = {
+            "empty": "",
+            "outside application/": self.listing(self.VECTOR, prefix="vendor/"),
+            "parent escape": self.listing((("..", b"x"),)),
+            # Still inside `application/` as a string, but escaping it as a path: the prefix
+            # test alone would pass these, which is why the path shape is checked as well.
+            "posix absolute tail": self.listing((("/etc/pyproject.toml", b"[project]\n"),)),
+            "native absolute tail": self.listing(((str(pathlib.Path.cwd()), b"[project]\n"),)),
+            "windows separator": self.listing((("sub\\pyproject.toml", b"[project]\n"),)),
+            "no blob identity": "100644 blob\tapplication/pyproject.toml",
+            "symlink": self.listing(self.VECTOR, mode="120000"),
+            "submodule": self.listing(self.VECTOR, kind="commit"),
+            "missing file": self.listing((("gone.txt", b""),)),
+        }
+        for name, listing in cases.items():
+            with self.subTest(case=name):
+                self.assertNotEqual(listing, good)
+                with self.assertRaises(test_pr.Reject) as caught:
+                    test_pr.source_tree_fingerprint(self.tree(self.VECTOR), listing)
+                self.assertEqual(str(caught.exception), "TEST_PR_SOURCE_FINGERPRINT_REJECT")
 
 
 class FailureClosureTests(unittest.TestCase):

@@ -44,6 +44,45 @@ PR = re.compile(r"^[1-9][0-9]{0,8}$")
 DURABILITY_STAGE = "artifact_durability"
 DURABILITY_REASON = "ARTIFACT_DURABILITY_REJECT"
 
+# The two identity facts a converged candidate must state, as this executor reports them.
+#
+# Both were already established here and then discarded: `alembic heads` ran with the
+# runtime checks and its answer was dropped, and the fetched tree's own fingerprint was
+# never taken at all.  A candidate fact could therefore only be filled in from outside the
+# machine that built it, which is what made the identity an admission decision rather than
+# a derivation.
+#
+# `migration_head` is read back out of the check that already ran inside the image.
+# `source_fingerprint` is computed here, by the repository's own definition, over the
+# tracked files of the commit this executor fetched and verified -- the rule in
+# `ci/retention/verify_source.py`, whose output is the value recorded in
+# `docs/canonical-baseline/CURRENT_CANDIDATE.json` as `release_candidate_v1.source_fingerprint`.
+# Reproduced against the recorded specimen (commit bd25d7ac, application tree ad7d1de1,
+# 1323 tracked files) it yields 8e91fcf2... byte for byte, so this is that definition and
+# not a lookalike.
+#
+# The producer reads the working tree and then asserts every file's git blob against the
+# blob the candidate pins; that assertion, not the read, is what makes its value true.
+# The same read here without an assertion was measured wrong: an extraction of bd25d7ac
+# taken on a host whose global git config sets `core.autocrlf=true` rewrote 1294 of the
+# 1323 files, and the tree digest came out a7364cc9... instead of 8e91fcf2... .  Nothing
+# downstream could have told that value from a correct one, so this function makes the
+# producer's comparison itself: `git ls-tree` states each file's blob, and a file whose
+# bytes do not hash back to that blob is refused rather than fingerprinted.  Inside the
+# executor the comparison should never fire -- `_env` already disables system and global
+# git config -- but a value that is only correct while the environment cooperates is not
+# an identity, and the failure it hides is silent.
+#
+# The algorithm is named beside the value on purpose.  This repository holds more than one
+# thing called a source fingerprint -- `application/scripts/v70_source_tree_binding.py`
+# hashes a five-directory scope with a different byte form -- so a value that does not name
+# its own algorithm is a value that will eventually be read as the wrong one.
+SOURCE_FINGERPRINT_ALGORITHM = "application-tracked-tree-sha256/v1"
+SOURCE_TRACKED_PREFIX = "application/"
+SOURCE_BLOB_MODES = ("100644", "100755")
+HEAD_TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$")
+HEX64 = re.compile(r"^[0-9a-f]{64}$")
+
 
 class Reject(Exception):
     def __init__(self, code):
@@ -260,6 +299,72 @@ def runtime_source_digest(root):
     return digest.hexdigest()
 
 
+def single_alembic_head(report):
+    """The one migration head the built image is on, read from the check that already ran.
+
+    V1 executes no database migration, so the only graph a deployable candidate may declare
+    is the one the environment is already on, and a candidate that cannot be shown to have
+    exactly one head cannot make that claim.  Zero heads, several heads and an unparsable
+    answer are the same outcome here -- a refusal -- because a value guessed at is worse
+    than a value reported as absent.
+    """
+    heads = []
+    for line in report.splitlines():
+        if "(head)" not in line:
+            continue
+        token = line.strip().split(" ")[0]
+        if HEAD_TOKEN.fullmatch(token):
+            heads.append(token)
+    if len(heads) != 1:
+        raise Reject("TEST_PR_MIGRATION_HEAD_REJECT")
+    return heads[0]
+
+
+def source_tree_fingerprint(root, listing):
+    """The candidate's `source_fingerprint`, by the repository's own definition.
+
+    One `sha256` per tracked file, combined as `<path>\\0<sha256>\\n` in sorted path order
+    and hashed again.  The listing is `git ls-tree -r <commit> application`, so both the
+    file set and each file's expected blob identity come from the commit rather than from
+    whatever the working tree happens to hold -- which is why the caller passes that
+    listing and not a directory walk.
+
+    Each file is re-hashed as a git blob and compared with the identity the commit states.
+    A path that is missing, is a symlink, is not a regular blob, is absolute, or escapes
+    the tree is a refusal, and so is a file whose bytes do not hash back to its blob: a
+    fingerprint taken over a tree that is not the commit's tree describes this host, and it
+    is indistinguishable from a correct value once it has been reported.
+    """
+    root = pathlib.Path(root)
+    entries = {}
+    for line in listing.splitlines():
+        if not line.strip():
+            continue
+        meta, separator, path = line.partition("\t")
+        fields = meta.split()
+        if (not separator or len(fields) != 3
+                or fields[0] not in SOURCE_BLOB_MODES or fields[1] != "blob"
+                or not path.startswith(SOURCE_TRACKED_PREFIX)):
+            raise Reject("TEST_PR_SOURCE_FINGERPRINT_REJECT")
+        relative = path[len(SOURCE_TRACKED_PREFIX):]
+        parts = pathlib.PurePosixPath(relative).parts
+        if (not relative or "\\" in relative or ".." in parts
+                or pathlib.PurePosixPath(relative).is_absolute()
+                or pathlib.Path(relative).is_absolute()):
+            raise Reject("TEST_PR_SOURCE_FINGERPRINT_REJECT")
+        item = root / relative
+        if item.is_symlink() or not item.is_file():
+            raise Reject("TEST_PR_SOURCE_FINGERPRINT_REJECT")
+        data = item.read_bytes()
+        if hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest() != fields[2]:
+            raise Reject("TEST_PR_SOURCE_FINGERPRINT_REJECT")
+        entries[relative] = hashlib.sha256(data).hexdigest()
+    if not entries:
+        raise Reject("TEST_PR_SOURCE_FINGERPRINT_REJECT")
+    return hashlib.sha256(
+        "".join("%s\0%s\n" % (name, entries[name]) for name in sorted(entries)).encode()).hexdigest()
+
+
 def execute(task, runner=_run):
     source = validate_parameters(task["parameters"])
     commit = source["commit_sha"]
@@ -278,6 +383,13 @@ def execute(task, runner=_run):
         context = workspace / "application"
         if not (context / "pyproject.toml").is_file():
             raise Reject("TEST_PR_SOURCE_LAYOUT_REJECT")
+        # The tracked file set of the fetched commit, not of the working tree: the
+        # fingerprint below is defined over the commit, so both the file list and each
+        # file's blob identity have to come from the commit as well.  Taken before the
+        # build, so that a tree whose fingerprint cannot be taken does not cost a
+        # fifteen-minute build to discover.
+        listing = runner(["/usr/bin/git", "-C", str(workspace), "ls-tree", "-r", commit, "application"], env=env).stdout
+        source_fingerprint = source_tree_fingerprint(context, listing)
         _builder_image(runner)
         _verify_dependency_profile(
             _dependency_profile(context / "pyproject.toml", context, runner), runner)
@@ -288,7 +400,7 @@ def execute(task, runner=_run):
         image_id = runner(["/usr/bin/docker", "image", "inspect", image, "--format", "{{.Id}}"], timeout=30).stdout.strip()
         if not re.fullmatch(r"sha256:[0-9a-f]{64}", image_id):
             raise Reject("TEST_PR_IMAGE_ID_REJECT")
-        runner(["/usr/bin/docker", "run", "--rm", "--network", "none", "--read-only", "--cap-drop", "ALL",
+        runtime_checks = runner(["/usr/bin/docker", "run", "--rm", "--network", "none", "--read-only", "--cap-drop", "ALL",
                 "--security-opt", "no-new-privileges", "--pids-limit", "128", "--memory", "768m", "--cpus", "1.00",
                 "--tmpfs", "/tmp:rw,nosuid,nodev,size=64m", "--env", "PYTHONPYCACHEPREFIX=" + PYTHONPYCACHEPREFIX,
                 "--env", "PYTHONPATH=/app/src", "--workdir", "/app",
@@ -296,7 +408,10 @@ def execute(task, runner=_run):
                 "python -c \"import importlib.util,pathlib; p=importlib.util.find_spec('go_hotel'); "
                 "assert p and pathlib.Path(p.origin).resolve()==pathlib.Path('/app/src/go_hotel/__init__.py')\" "
                 "&& python -c " + shlex.quote(source_check)
-                + " && python -m compileall -q /app/src && alembic heads"], timeout=180)
+                + " && python -m compileall -q /app/src && alembic heads"], timeout=180).stdout
+        # The run that proved the runtime already asked `alembic heads`; its answer is read
+        # back here rather than asked a second time in a second place.
+        migration_head = single_alembic_head(runtime_checks)
         # Only now, with every gate above already PASS, is the exact built image
         # made durable.  Sealing is the last step on purpose: an image that failed
         # a gate must never reach the store, and an image that passes is no longer
@@ -313,6 +428,12 @@ def execute(task, runner=_run):
             "source_pr_number": source["pr_number"], "source_commit_sha": commit,
             "task_canonical_sha256": hashlib.sha256(__import__("hk_agent.transport", fromlist=["canonical"]).canonical(task)).hexdigest(),
             "built_image_id": image_id,
+            # The two identity facts a converged candidate is obliged to state.  The
+            # algorithm is named because the repository holds more than one value called a
+            # source fingerprint, and a reader has to be able to tell which one this is.
+            "migration_head": migration_head,
+            "source_fingerprint": source_fingerprint,
+            "source_fingerprint_algorithm": SOURCE_FINGERPRINT_ALGORITHM,
             # The build identity and the delivery identity are both stated: the
             # first is what docker inspect reported, the second is the immutable
             # package a later CANARY or DEPLOY resolves this same image from.
