@@ -78,6 +78,7 @@ from c1_execution_contract import (
     review_round_identity,
     sha256_hex,
     task_idempotency_key,
+    validate_frozen_review_base,
 )
 # Reading the candidate is not this module's business: both paths that need it - an Owner's
 # Review issue and a Builder run that just opened a PR - use the ONE definition in
@@ -229,8 +230,20 @@ def parse_review_issue(issue) -> dict:
     if not CANONICAL_SHA1.match(lowered[0]):
         raise Refused("REVIEW_CANDIDATE_SHA_INVALID")
 
-    return {"issue_number": number, "candidate_pr_number": pr_number,
-            "candidate_sha": lowered[0]}
+    parsed = {"issue_number": number, "candidate_pr_number": pr_number,
+              "candidate_sha": lowered[0]}
+    def base_values(marker):
+        lines = [line.strip().lstrip("-*+").strip() for line in body.splitlines()]
+        return [line[len(marker):].strip().strip("`").strip()
+                for line in lines if line.lower().startswith(marker)]
+    refs = base_values("candidate base ref:")
+    shas = base_values("candidate base sha:")
+    if refs or shas:
+        if len(refs) != 1 or len(shas) != 1:
+            raise Refused("REVIEW_FROZEN_BASE_INCOMPLETE_OR_AMBIGUOUS")
+        parsed["frozen_base"] = validate_frozen_review_base(
+            {"ref": refs[0], "sha": shas[0], "pr_number": pr_number})
+    return parsed
 
 
 # ------------------------------------------------------------------ round identity
@@ -266,6 +279,7 @@ def _plan(parsed, *, application_tree, machine_inventory, environ,
         c14_task_id=identity["c14_task_id"],
         c13_task_id=identity["c13_task_id"],
         machine_inventory=machine_inventory,
+        frozen_base=parsed.get("frozen_base"),
         allowed_owner_cs=REVIEW_INGRESS_OWNER_CS,
     )
     # Derived from the KIND as well as the task, exactly as the Builder ingress does, so a
@@ -305,6 +319,8 @@ def plan_review_ingress(issue, *, reader, environ=None) -> dict:
     """
     parsed = parse_review_issue(issue)
     inventory = explicit_inventory(issue["body"])
+    if parsed.get("frozen_base") is not None and inventory is None:
+        raise Refused("REVIEW_FROZEN_BASE_REQUIRES_EXPLICIT_INVENTORY")
     resolve_candidate(reader, parsed)
     application_tree = resolve_application_tree(reader, parsed["candidate_sha"])
     inventory_source = None

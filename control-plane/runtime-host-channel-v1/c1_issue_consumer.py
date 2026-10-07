@@ -278,7 +278,10 @@ class GitHubIssuesReader:
         base = document.get("base") or {}
         head = document.get("head") or {}
         return {"number": document.get("number"), "state": document.get("state"),
-                "base_ref": base.get("ref"), "head_sha": head.get("sha")}
+                "base_ref": base.get("ref"), "base_sha": base.get("sha"), "head_sha": head.get("sha")}
+
+    def read_compare(self, base_sha, head_sha):
+        return self._get_json("/repos/%s/compare/%s...%s" % (REPO, base_sha, head_sha))
 
     def read_pull_files(self, number: int) -> list:
         """One page of the pull request's changed files: each name and change status.

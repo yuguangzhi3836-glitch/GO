@@ -164,8 +164,12 @@ jobs:
             --out "$RUNNER_TEMP/review_brief.json"
 
       - name: Bind the exact frozen candidate and its complete pull-request diff
+        env:
+          RUNTIME_TRANSPORT: ${{ inputs.runtime_transport }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
         run: |
           set -euo pipefail
+          python control-plane/runtime-host-channel-v1/c1_review_base.py --candidate candidate --brief "$RUNNER_TEMP/review_brief.json"
           test "$(git -C candidate rev-parse HEAD)" = "${{ inputs.candidate_sha }}"
           test "$(git -C candidate rev-parse HEAD:application)" = "${{ inputs.application_tree }}"
           BASE_SHA="$(jq -er '.pull_request.base_sha' "$RUNNER_TEMP/review_brief.json")"

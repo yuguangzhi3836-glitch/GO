@@ -94,7 +94,17 @@ def resolve_candidate(reader, parsed) -> dict:
             raise Refused(REASON_PR_NOT_FOUND) from None
         raise
     base_ref = pull.get("base_ref")
-    if base_ref != REVIEW_BASE_BRANCH:
+    frozen = parsed.get("frozen_base")
+    if frozen is not None:
+        if (base_ref != frozen["ref"] or pull.get("base_sha") != frozen["sha"]
+                or pull.get("number") != frozen["pr_number"]):
+            raise Refused("REVIEW_CANDIDATE_BASE_MOVED")
+        comparison = reader.read_compare(frozen["sha"], parsed["candidate_sha"])
+        if (not isinstance(comparison, dict)
+                or comparison.get("status") != "ahead"
+                or (comparison.get("merge_base_commit") or {}).get("sha") != frozen["sha"]):
+            raise Refused("REVIEW_FROZEN_BASE_NOT_ANCESTOR")
+    elif base_ref != REVIEW_BASE_BRANCH:
         raise CandidatePrBaseIsNotMain(parsed["issue_number"], base_ref)
     head_sha = pull.get("head_sha")
     if not isinstance(head_sha, str) or head_sha.lower() != parsed["candidate_sha"]:
