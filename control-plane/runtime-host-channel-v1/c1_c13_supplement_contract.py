@@ -30,9 +30,16 @@ CASE_COUNTS = {path.removeprefix("application/"): count
                for path, count in zip(BUSINESS_PATHS, (4, 7, 3, 1))}
 ENVELOPE = {"profile": PROFILE, "prior_run_id": C13_RUN, "prior_run_attempt": 1,
             "prior_c13_root": C13_ROOT, "prior_c14_root": C14_ROOT}
-# Identity is one slot for this original round. Neither comments, inventory edits,
-# the newest run, nor a second BLOCKED verdict can open another paid slot.
-IDEMPOTENCY_KEY = "c13-pg-correction-v1:" + ROUND
+# The first correction slot reached GitHub once and terminated before pytest because the
+# execution backend rejected its frozen node id.  These facts are checked from the
+# installed read-only outbox before the final slot can be planned; they are not a retry
+# switch and cannot be supplied by the issue body.
+FAILED_CORRECTION_RUNTIME = "rt_67d93377c49440f99b311cca079280fd"
+FAILED_CORRECTION_REQUEST = "4df930cb2812ec444d03e1b197e3cbef4ba4c2b6e4d5a1b14847864f96f06c21"
+FAILED_CORRECTION_RUN = 37564091557
+# This is the final paid slot for the same frozen evidence scope.  Neither comments,
+# inventory edits, the newest run nor a verdict can open a third slot.
+IDEMPOTENCY_KEY = "c13-pg-correction-v2:" + ROUND
 MARKER = "c13 supplement:"
 
 
