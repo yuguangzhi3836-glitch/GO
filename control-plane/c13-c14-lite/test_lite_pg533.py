@@ -1,6 +1,9 @@
 """Synthetic machine-part aggregation and backend refusal tests; no PostgreSQL claim."""
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -98,10 +101,65 @@ class PG533Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"PRIOR_DIGEST"):self.assemble()
         self.assertFalse((self.fresh/"parts").exists())
 
+    @unittest.skipUnless(os.name == "posix", "POSIX output-file ownership regression")
+    def test_assembly_as_unprivileged_runner_preserves_container_owned_parts(self):
+        # Reproduce readable, non-writable output files in a writable runner
+        # directory. A root Linux test host drops DAC override capabilities in
+        # the child, including containers that map only uid 0. No privilege is
+        # added and no file's ownership or permissions are broadened.
+        source = {p.name: p.read_bytes() for p in self.fresh.iterdir()}
+        self.root.chmod(0o755)
+        if os.geteuid() == 0 and not sys.platform.startswith("linux"):
+            self.skipTest("root capability restriction requires Linux")
+        for path in self.fresh.iterdir():
+            path.chmod(0o444)
+        script = """
+import ctypes, json, os, sys
+from pathlib import Path
+import lite_pg533 as backend
+if os.geteuid() == 0:
+    class Header(ctypes.Structure):
+        _fields_ = [('version', ctypes.c_uint32), ('pid', ctypes.c_int)]
+    class Data(ctypes.Structure):
+        _fields_ = [('effective', ctypes.c_uint32), ('permitted', ctypes.c_uint32),
+                    ('inheritable', ctypes.c_uint32)]
+    libc = ctypes.CDLL(None, use_errno=True)
+    header, caps = Header(0x20080522, 0), (Data * 2)()
+    if libc.capget(ctypes.byref(header), caps): raise OSError(ctypes.get_errno())
+    caps[0].effective &= ~6  # CAP_DAC_OVERRIDE and CAP_DAC_READ_SEARCH
+    caps[0].permitted &= ~6
+    if libc.capset(ctypes.byref(header), caps): raise OSError(ctypes.get_errno())
+prior, review, c14, fresh = map(Path, sys.argv[1:])
+backend.fixed.C13_ROOT = json.loads((review/'c13_bundle.json').read_bytes())['C13_ROOT']
+backend.fixed.C14_ROOT = json.loads((c14/'c14_bundle.json').read_bytes())['C14_ROOT']
+backend.assemble(prior, review, c14, fresh, run_id=999999, run_attempt=1)
+"""
+        result = subprocess.run(
+            [sys.executable, "-c", script, *map(str, (self.prior, self.review, self.c14dir, self.fresh))],
+            cwd=Path(backend.__file__).parent, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(backend.cases((self.fresh/"junit.xml").read_bytes())), 24)
+        for name, value in source.items():
+            self.assertEqual((self.fresh/"parts"/("postgres-"+name)).read_bytes(), value)
+        manifest = json.loads((self.fresh/"manifest.json").read_bytes())
+        self.assertEqual(manifest["junit_sha256"], backend.sha((self.fresh/"junit.xml").read_bytes()))
+        self.assertEqual(manifest["evidence_parts"][0]["dialect"], "sqlite")
+        self.assertEqual(manifest["evidence_parts"][1]["fresh_cases"], 15)
+        self.assertFalse(manifest["authorizes_any_action"])
+
     def test_false_version_label_does_not_replace_per_case_engine_proof(self):
         self.database["observed_cases"][self.ids[0]]["after"]["dialect"]="sqlite"
         self.write_manifest()
         with self.assertRaisesRegex(ValueError,"CASE_NOT_OBSERVED"):self.assemble()
+
+    def test_replacement_failure_preserves_raw_bytes_and_fails_closed(self):
+        source = {p.name: p.read_bytes() for p in self.fresh.iterdir()}
+        with patch.object(backend.os, "replace", side_effect=PermissionError("read-only directory")):
+            with self.assertRaisesRegex(PermissionError, "read-only directory"):
+                self.assemble()
+        for name, value in source.items():
+            self.assertEqual((self.fresh/name).read_bytes(), value)
+        self.assertEqual(list(self.fresh.glob(".pg533-*")), [])
 
     def test_missing_engine_observation_refuses(self):
         del self.database["observed_cases"][self.ids[0]]

@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import shutil
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "runtime-host-channel-v1"))
@@ -21,6 +22,25 @@ def sha(raw):
 def require(condition, reason):
     if not condition:
         raise ValueError(reason)
+
+
+def write_aggregate(path, data):
+    """Publish runner-owned derived bytes without opening Docker's output for write.
+
+    The machine directory is runner-owned; a container-created JUnit can be
+    readable but not writable by that runner. Source bytes are already retained
+    in parts/. Replace the directory entry, never chmod/chown the source inode.
+    A failed write/replace leaves the old file intact and still fails the step.
+    """
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=path.parent, prefix=".pg533-", delete=False) as output:
+            temporary = Path(output.name)
+            output.write(data)
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def expected_selection(nodeids):
@@ -133,13 +153,13 @@ def assemble(prior, prior_review, c14_dir, fresh, *, run_id, run_attempt):
                        failures="0", errors="0", skipped="0")
     for case in retained + new:
         suite.append(copy.deepcopy(case))
-    (fresh / "junit.xml").write_bytes(ET.tostring(suite, encoding="utf-8", xml_declaration=True))
+    write_aggregate(fresh / "junit.xml", ET.tostring(suite, encoding="utf-8", xml_declaration=True))
     output = (b"RETAINED SOURCE: prior run 37484199333; only 9 SQLite migration cases retained.\n"
               + prior_bytes["stdout.txt"]
               + b"\nFRESH SOURCE: 15 PostgreSQL business cases; prior 11 business cases superseded.\n"
               + (parts / "postgres-stdout.txt").read_bytes())
-    (fresh / "stdout.txt").write_bytes(output)
-    (fresh / "test_inventory.txt").write_text(fixed.FULL_INVENTORY + "\n")
+    write_aggregate(fresh / "stdout.txt", output)
+    write_aggregate(fresh / "test_inventory.txt", (fixed.FULL_INVENTORY + "\n").encode("utf-8"))
     manifest.update(inventory=fixed.FULL_INVENTORY,
                     junit_sha256=sha((fresh / "junit.xml").read_bytes()),
                     stdout_sha256=sha(output), github_run_id=run_id, github_run_attempt=run_attempt,
@@ -153,7 +173,7 @@ def assemble(prior, prior_review, c14_dir, fresh, *, run_id, run_attempt):
                          "fresh_cases": 15, "inventory": fixed.INVENTORY}],
                     part_sha256={p.name: sha(p.read_bytes()) for p in parts.iterdir()},
                     authorizes_any_action=False)
-    (fresh / "manifest.json").write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
+    write_aggregate(fresh / "manifest.json", (json.dumps(manifest, sort_keys=True, indent=2) + "\n").encode("utf-8"))
     return manifest
 
 
