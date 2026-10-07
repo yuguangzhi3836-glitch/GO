@@ -2,9 +2,8 @@ name: AI production quality monitor
 
 on:
   schedule:
-    # Boss 14-Cell digest: 12:00 and 17:00 China/Singapore time (UTC+8).
-    - cron: "0 4 * * *"
-    - cron: "0 9 * * *"
+    # Refresh the observation-only Boss 14-Cell ledger every two hours.
+    - cron: "0 */2 * * *"
   workflow_dispatch:
   pull_request:
     paths:
