@@ -200,6 +200,85 @@ class MonitorTests(unittest.TestCase):
         self.assertEqual(len(warnings), 1)
         self.assertIn("workflow run identity missing; excluded", warnings[0])
 
+    def test_boss_activity_links_formal_task_to_builder_and_keeps_review_block_out_of_runtime(self):
+        now = datetime(2026, 10, 7, 4, 30, tzinfo=timezone.utc)
+        issues = [
+            {
+                "number": 522,
+                "title": "C11 · V86-R1-C11-01 · 补偿结算恢复收据冲突拒绝",
+                "body": "Task: scoped work",
+                "created_at": "2026-10-07T02:00:00Z",
+                "user": {"login": "yuguangzhi3836-glitch"},
+            },
+            {
+                "number": 999,
+                "title": "C01 · V99-R1-C01-01 · other user task",
+                "body": "Task: ignore",
+                "created_at": "2026-10-07T02:10:00Z",
+                "user": {"login": "someone-else"},
+            },
+        ]
+        pulls = [
+            {
+                "number": 527,
+                "title": "[Builder] C11 settlement replay",
+                "body": "Work order: V86-R1-C11-01\nIssue: #522",
+                "updated_at": "2026-10-07T03:00:00Z",
+                "head": {"sha": self.sha1},
+                "state": "open",
+                "draft": True,
+            }
+        ]
+        records = [
+            monitor.ReviewRecord("c14", self.sha1, "PASS_SCOPED", datetime(2026, 10, 7, 3, 10, tzinfo=timezone.utc)),
+            monitor.ReviewRecord("c13", self.sha1, "BLOCKED", datetime(2026, 10, 7, 3, 20, tzinfo=timezone.utc)),
+        ]
+        activity = monitor.build_boss_activity(
+            issues, pulls, records, now, "Asia/Shanghai", "yuguangzhi3836-glitch"
+        )
+        self.assertEqual(len(activity), 1)
+        self.assertEqual(activity[0]["candidate_number"], 527)
+        self.assertEqual(activity[0]["status"], "PRODUCT_OR_REVIEW_BLOCKED")
+        rendered = "\n".join(monitor.render_boss_activity(activity, "yuguangzhi3836-glitch", []))
+        self.assertIn("RUNTIME_ACTION_REQUIRED = NO_PROVEN_GENERIC_FAILURE", rendered)
+        self.assertIn("AUTO_REPAIR_RUNTIME = NO", rendered)
+
+    def test_boss_activity_includes_manual_c14_review_and_c13_result(self):
+        now = datetime(2026, 10, 7, 9, 0, tzinfo=timezone.utc)
+        issues = [{
+            "number": 533,
+            "title": "C14 · REVIEW · payment recovery review",
+            "body": "Candidate PR: #531\nCandidate SHA: " + self.sha2,
+            "created_at": "2026-10-07T05:00:00Z",
+            "user": {"login": "yuguangzhi3836-glitch"},
+        }]
+        pulls = [{
+            "number": 531,
+            "title": "candidate",
+            "body": "",
+            "updated_at": "2026-10-07T05:00:00Z",
+            "head": {"sha": self.sha2},
+            "state": "open",
+            "draft": True,
+        }]
+        records = [
+            monitor.ReviewRecord("c14", self.sha2, "PASS_SCOPED", datetime(2026, 10, 7, 5, 10, tzinfo=timezone.utc)),
+            monitor.ReviewRecord("c13", self.sha2, "PASS_SCOPED", datetime(2026, 10, 7, 5, 20, tzinfo=timezone.utc)),
+        ]
+        activity = monitor.build_boss_activity(
+            issues, pulls, records, now, "Asia/Shanghai", "yuguangzhi3836-glitch"
+        )
+        self.assertEqual(activity[0]["cell"], "C14")
+        self.assertEqual(activity[0]["candidate_number"], 531)
+        self.assertEqual(activity[0]["status"], "REVIEW_ACCEPTED")
+
+    def test_local_day_start_uses_business_timezone(self):
+        now = datetime(2026, 10, 7, 3, 59, tzinfo=timezone.utc)
+        self.assertEqual(
+            monitor._local_day_start(now, "Asia/Shanghai"),
+            datetime(2026, 10, 6, 16, 0, tzinfo=timezone.utc),
+        )
+
 
 
 if __name__ == "__main__":
