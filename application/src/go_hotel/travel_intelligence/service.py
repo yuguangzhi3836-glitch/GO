@@ -47,11 +47,12 @@ class TravelIntelligenceService(TravelPreferenceMixin):
         with SessionLocal() as s:
             traveler=s.get(TravelerProfileRow,traveler_id)
             if not traveler or traveler.status!="ACTIVE": raise ValueError("TRAVELER_NOT_FOUND")
+            bound_scope=self._bind_intent_scope(s, traveler, consent_scope)
         normalized=_simple_intent(raw_input)
         decision=self.create_decision(input_snapshot={"traveler_id":traveler_id,"session_id":session_id,"raw_input":raw_input},evidence_snapshot={"consent_scope":consent_scope},output_snapshot={"normalized_intent":normalized},correlation_id=correlation_id,rule_version="INTENT_NORMALIZATION_P0_1.0")
         iid=uuid.uuid4(); t=now()
         with SessionLocal.begin() as s:
-            s.add(TravelIntentRow(intent_id=iid,traveler_id=traveler_id,session_id=session_id,raw_input=raw_input,normalized_intent=normalized,consent_scope=consent_scope,status="ACTIVE",created_at=t,updated_at=t))
+            s.add(TravelIntentRow(intent_id=iid,traveler_id=traveler_id,session_id=session_id,raw_input=raw_input,normalized_intent=normalized,consent_scope=bound_scope,status="ACTIVE",created_at=t,updated_at=t))
         return {"intent_id":str(iid),"decision_id":str(decision.decision_id),"status":"ACTIVE","constraints":[]}
 
     def refine_intent(self, intent_id:str, *, traveler_id:str, session_id:str, raw_input:str, consent_scope:list[str], correlation_id:str)->dict:
@@ -60,7 +61,9 @@ class TravelIntelligenceService(TravelPreferenceMixin):
             row=s.get(TravelIntentRow,iid)
             if not row: raise ValueError("TRAVEL_INTENT_NOT_FOUND")
             if row.traveler_id!=traveler_id: raise ValueError("TRAVEL_INTENT_TRAVELER_MISMATCH")
-            normalized=_simple_intent(raw_input); row.raw_input=raw_input; row.normalized_intent=normalized; row.consent_scope=consent_scope; row.updated_at=now()
+            traveler=s.get(TravelerProfileRow,traveler_id)
+            if not traveler or traveler.status!="ACTIVE": raise ValueError("TRAVELER_NOT_FOUND")
+            normalized=_simple_intent(raw_input); row.raw_input=raw_input; row.normalized_intent=normalized; row.consent_scope=self._bind_intent_scope(s, traveler, consent_scope); row.updated_at=now()
         decision=self.create_decision(input_snapshot={"intent_id":intent_id,"raw_input":raw_input},evidence_snapshot={"consent_scope":consent_scope},output_snapshot={"normalized_intent":normalized},correlation_id=correlation_id,rule_version="INTENT_REFINEMENT_P0_1.0")
         return {"intent_id":intent_id,"decision_id":str(decision.decision_id),"status":"ACTIVE","constraints":[]}
 

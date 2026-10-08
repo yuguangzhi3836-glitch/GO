@@ -28,6 +28,12 @@ def consent(tid="traveler", user="owner", **overrides):
         "expires_at":(datetime.now(timezone.utc)+timedelta(days=30)).isoformat(), **overrides})["consent_id"]
 
 
+def context_consent(tid="traveler", user="owner", **overrides):
+    return vault.grant_consent(user, {"traveler_id":tid, "consent_type":"TRAVELER_CONTEXT",
+        "purpose":PURPOSE, "scope":["TRAVEL_INTENTS"],
+        "expires_at":(datetime.now(timezone.utc)+timedelta(days=30)).isoformat(), **overrides})["consent_id"]
+
+
 def save(cid, **overrides):
     return svc.save_preference("owner", "traveler", preference_key="HOTEL_ROOM",
         value={"quiet":True}, purpose=PURPOSE, consent_id=cid, confirmed=True, **overrides)
@@ -91,11 +97,15 @@ def test_no_implicit_promotion_and_graph_scopes_are_independent():
     assert graph["identity"] == {}
     with SessionLocal() as s:
         assert not list(s.scalars(select(ProfileFactRow)))
-    consent(consent_type="TRAVELER_CONTEXT",scope=["TRAVELER_IDENTITY","TRAVEL_INTENTS"])
+    context_consent(scope=["TRAVELER_IDENTITY","TRAVEL_INTENTS"])
     graph=svc.traveler_graph("traveler",purpose=PURPOSE)
     assert graph["identity"]["nationality"] == "CHN"
-    assert len(graph["recent_intents"]) == 1
+    assert graph["recent_intents"] == []
     assert graph["durable_preferences"] == []
+    svc.create_intent(traveler_id="traveler",session_id="session-2",raw_input="suite budget 700",
+        consent_scope=[PURPOSE],correlation_id="c07-session-2")
+    graph=svc.traveler_graph("traveler",purpose=PURPOSE)
+    assert graph["recent_intents"] == [{"raw_normalized":"suite budget 700","budget_max":700.0}]
     saved=save(cid)
     assert svc.traveler_graph("traveler",purpose=PURPOSE)["durable_preferences"] == [saved]
 
@@ -131,6 +141,29 @@ def test_existing_vault_consent_withdrawal_takes_effect_immediately():
     # Granting a different consent cannot revive a fact bound to the withdrawn one.
     consent()
     assert read()["preferences"] == []
+
+
+def test_revoked_traveler_context_grant_does_not_revive_old_intent_after_regrant():
+    traveler()
+    traveler(user="other-owner", tid="other-traveler")
+    first_grant=context_consent()
+    svc.create_intent(traveler_id="traveler",session_id="session-1",raw_input="quiet room budget 500",
+        consent_scope=[PURPOSE],correlation_id="c07-intent-1")
+    assert svc.traveler_graph("traveler",purpose=PURPOSE)["recent_intents"] == [
+        {"raw_normalized":"quiet room budget 500","budget_max":500.0}
+    ]
+    vault.revoke_consent("owner",first_grant)
+    assert svc.traveler_graph("traveler",purpose=PURPOSE)["recent_intents"] == []
+    context_consent()
+    assert svc.traveler_graph("traveler",purpose=PURPOSE)["recent_intents"] == []
+    svc.create_intent(traveler_id="traveler",session_id="session-2",raw_input="suite budget 900",
+        consent_scope=[PURPOSE],correlation_id="c07-intent-2")
+    graph=svc.traveler_graph("traveler",purpose=PURPOSE)
+    assert graph["recent_intents"] == [{"raw_normalized":"suite budget 900","budget_max":900.0}]
+    context_consent(tid="other-traveler", user="other-owner")
+    svc.create_intent(traveler_id="other-traveler",session_id="other-session",raw_input="late arrival budget 300",
+        consent_scope=[PURPOSE],correlation_id="c07-other-intent")
+    assert svc.traveler_graph("traveler",purpose=PURPOSE)["recent_intents"] == graph["recent_intents"]
 
 
 @pytest.mark.parametrize("confirmed", [False, None, 1, "true"])
