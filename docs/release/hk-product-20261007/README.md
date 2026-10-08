@@ -5,7 +5,7 @@
 ## 关键结论
 不能直接用 main 覆盖香港。读取 main@13c78ce531c8afd7cbfb738f99a65732e50e5e01 与 #376@9f889acfcd36a82c7565b723261ee046c2615314 的完整非截断 Git trees，application 分别为 1378 / 1640 个 blob；#376 独有 274，main 独有 12，共同路径内容不同 237。这是文件差异统计，不是缺陷数量。
 #376 独有内容包括注册邮件/条款/验证码、酒店资料审核、单日历以及 0135—0145 迁移链。main 的 0135_supplier_onboarding 不能覆盖香港的 0145 链。
-本候选以已部署记录绑定的 #376 为保留基线；#385 两个文件已在该基线且与原 PR blob 完全一致，本候选 diff 包含 #477/#543/#548 的六个原始产品/测试文件，以及 C13 失败后补充的一项测试夹具修复；不把整棵 main 合入香港。PR 是 stacked candidate，base 为 #376 原分支，不修改/合并 #376，也不把该历史分支的 Runtime 当成当前安装源。
+本候选以已部署记录绑定的 #376 为保留基线；#385 两个文件已在该基线且与原 PR blob 完全一致，本候选 diff 包含 #477/#543/#548 的六个原始产品/测试文件，以及 C13 失败后补充的两项同一测试夹具闭包修复；不把整棵 main 合入香港。PR 是 stacked candidate，base 为 #376 原分支，不修改/合并 #376，也不把该历史分支的 Runtime 当成当前安装源。
 
 ## 盘点
 | 成果 | 证据与当前状态 | 本候选处理 |
@@ -24,13 +24,13 @@
 
 ## 已完成的候选检查
 - #477/#543/#548 三组候选差异补丁依次 git apply --check 均成功；#385 两个文件在 #376 保留基线已字节一致，不重复应用。
-- 本候选 diff 的六个原始 Python 文件逐个 git hash-object，全部等于对应原始 PR 的 blob SHA；另有一个测试夹具文件仅补齐隔离签名密钥，不改产品代码；#385 两个保留文件另行验证等于原 PR blob。
-- 七个候选差异 application Python 文件及两个 #385 基线保留文件的 Python AST 检查通过。
+- 本候选 diff 的六个原始 Python 文件逐个 git hash-object，全部等于对应原始 PR 的 blob SHA；另有两个测试文件仅补齐隔离签名密钥并保持注册后 cookie 验证使用同一测试密钥，不改产品代码；#385 两个保留文件另行验证等于原 PR blob。
+- 八个候选差异 application Python 文件及两个 #385 基线保留文件的 Python AST 检查通过。
 - 邮件配置 9 个 unittest 方法通过，全部 SMTP mock，无发送邮件。
 - 静态解析全部 146 个迁移 revision，唯一 head 为 0145_source_latest_index；候选未更改任何迁移文件。
-- application 预计 1643 个 blob（原1640 + 三个新增测试）；除七个候选差异 application 文件外必须与 #376 字节一致；其中一个仅为 C13 测试夹具修复，#385 两个文件作为基线保留项单列核对。
+- application 预计 1643 个 blob（原1640 + 三个新增测试）；除八个候选差异 application 文件外必须与 #376 字节一致；其中两个仅为同一 C13 测试夹具闭包修复，#385 两个文件作为基线保留项单列核对。
 - 沿用既有 HK unified registration acceptance workflow，只新增此候选分支触发、补齐五份定向测试、保存 JUnit；原 PostgreSQL18.4、0145/legacy supplier 检查和六份回归全部保留。不修改 Runtime/审核工作流或预算。
-- C14 R3 已对 `89df1b6d2c98a0e71f6bf6a491c04d0ca75395d5` 给出 PASS_SCOPED；随后 C13 run 37741868917 在 PostgreSQL 18.4 执行 148 项，144 PASS、4 FAIL，首错为测试夹具未提供非开发 JWT 签名密钥。当前补丁仅修复该隔离测试依赖；新 SHA 的 CI 与 C14→C13 均须重新绑定，旧 PASS 不转授。
+- C14 R3 已对 `89df1b6d2c98a0e71f6bf6a491c04d0ca75395d5` 给出 PASS_SCOPED；随后 C13 run 37741868917 在 PostgreSQL 18.4 执行 148 项，144 PASS、4 FAIL，首错为测试夹具未提供非开发 JWT 签名密钥。当前补丁先修复该隔离测试依赖；随后 CI run 37745990418 在 PostgreSQL 18.4 执行 99 项，96 PASS、3 FAIL，注册已成功但后续请求因内层补丁恢复签名密钥而返回 401。现已在该测试文件加入每测试生命周期的稳定测试密钥；新 SHA 的 CI 与 C14→C13 均须重新绑定，旧 PASS 不转授。
 
 ## 发布前必须补齐
 1. 通过已有正式只读通道读回今日香港八服务 image/source、DB revision、健康、邮件配置 readiness 与 secret 挂载是否有效（不输出值）。桌面连接器本轮无在线设备；此事实不代表香港宕机。

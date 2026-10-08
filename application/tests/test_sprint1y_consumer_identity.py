@@ -1,4 +1,14 @@
+import pytest
+from go_hotel.core.config import settings
 from registration_terms_test_support import register_synthetic_consumer
+
+
+@pytest.fixture(autouse=True)
+def stable_synthetic_signing_key(monkeypatch):
+    # Registration cookies must be verified with the same test-only key that
+    # signed them after register_synthetic_consumer restores its inner patches.
+    monkeypatch.setattr(settings, 'jwt_signing_key', 'isolated-registration-test-key-32bytes-only')
+
 def csrf(client):
     return {"X-CSRF-Token": client.cookies.get("go_consumer_csrf")}
 
