@@ -1156,24 +1156,28 @@ class RuntimeSeparationTests(unittest.TestCase):
     DECLARED = "sha256:" + "d" * 64
     VERIFIED = "sha256:" + "a" * 64
 
-    def pointer(self, image):
-        return {"schema": "go.current-hk-runtime.v1", "status": "ACTIVE",
+    def go_repo(self, with_stray_pointer=False):
+        """A checkout that carries only the candidate pointer.
+
+        `with_stray_pointer` additionally writes a file at the retired path, to prove
+        the projection does not read it even if somebody recreates one.
+        """
+        root = pathlib.Path(tempfile.mkdtemp(prefix="ccs-go-"))
+        base = root / "docs" / "canonical-baseline"
+        base.mkdir(parents=True)
+        (base / "CURRENT_CANDIDATE.json").write_text(
+            json.dumps({"source_commit": "c" * 40, "final_release": "HOLD",
+                        "production": "HOLD"}), encoding="utf-8")
+        if with_stray_pointer:
+            (base / "CURRENT_HK_RUNTIME.json").write_text(json.dumps({
+                "schema": "go.current-hk-runtime.v1", "status": "ACTIVE",
                 "environment": "HK-STAGING", "host": "i-j6ccs8t04f1p4d8pe69z",
                 "runtime_generation": "DEPTH48",
                 "canonical_runtime_identity": {"canonical_main_commit": "b" * 40},
                 "product_source_identity": {"source_commit": "e" * 40},
-                "image": {"image_tag": "go-hotel:depth48", "image_config_id": image},
-                "release_acceptance": {"gate": "HOLD", "production": "UNTOUCHED_HOLD"}}
-
-    def go_repo(self, image):
-        root = pathlib.Path(tempfile.mkdtemp(prefix="ccs-go-"))
-        base = root / "docs" / "canonical-baseline"
-        base.mkdir(parents=True)
-        (base / "CURRENT_HK_RUNTIME.json").write_text(json.dumps(self.pointer(image)),
-                                                      encoding="utf-8")
-        (base / "CURRENT_CANDIDATE.json").write_text(
-            json.dumps({"source_commit": "c" * 40, "final_release": "HOLD",
-                        "production": "HOLD"}), encoding="utf-8")
+                "image": {"image_tag": "go-hotel:depth48", "image_config_id": self.DECLARED},
+                "release_acceptance": {"gate": "HOLD", "production": "UNTOUCHED_HOLD"},
+            }), encoding="utf-8")
         return str(root)
 
     def verify_pair(self, image, completed_at, status="SUCCESS"):
@@ -1185,58 +1189,86 @@ class RuntimeSeparationTests(unittest.TestCase):
         ev = evidence(tk, status=status, started_at=completed_at, completed_at=completed_at)
         return tk, ev
 
-    def test_declared_runtime_is_never_proven(self):
+    def test_the_repository_declares_no_runtime(self):
         tk, ev = self.verify_pair(self.VERIFIED, "2026-09-14T11:50:00Z")
         state = project(*layout(tasks=[("t.json", tk)], evidences=[("e.json", ev)]),
-                        go_repo=self.go_repo(self.VERIFIED))
+                        go_repo=self.go_repo())
         declared = state["control_state"]["repository_runtime_pointer"]
-        self.assertEqual(declared["state"], sp.STATE_OBSERVED)
+        self.assertEqual(declared["state"], sp.STATE_UNKNOWN)
+        self.assertIn("no runtime pointer", declared["reason"])
 
-    def test_match_when_declared_and_proven_images_agree(self):
+    def test_a_stray_runtime_pointer_is_never_read(self):
+        """Even if somebody recreates the retired file, it is not an authority here.
+
+        This is the regression that matters: the retired pointer must not be able to
+        steer anything, so a file at the old path changes nothing. The stray file below
+        declares the image the VERIFY Evidence proves; if it were read, the declared and
+        proven images would "agree" and the projection would say so. It does not.
+        """
+        tk, ev = self.verify_pair(self.DECLARED, "2026-09-14T11:50:00Z")
+        state = project(*layout(tasks=[("t.json", tk)], evidences=[("e.json", ev)]),
+                        go_repo=self.go_repo(with_stray_pointer=True))
+        control = state["control_state"]
+        self.assertEqual(control["repository_runtime_pointer"]["state"], sp.STATE_UNKNOWN)
+        self.assertIsNone(control["runtime_verification"]["value"]["repository_declared_image"])
+        self.assertEqual(control["runtime_verification"]["value"]["image_relation"], "UNKNOWN")
+
+    def test_verification_rests_on_signed_evidence_not_on_a_declaration(self):
+        """Fresh signed VERIFY establishes the live runtime with no pointer in the tree.
+
+        `runtime_verification_state` used to mean "the live image equals the declared image".
+        With nothing declared it now means "the live runtime is established by fresh signed
+        Evidence" -- which is the only runtime fact the repository can still publish. The
+        declared image stays absent, so the two questions cannot be confused.
+        """
         tk, ev = self.verify_pair(self.VERIFIED, "2026-09-14T11:50:00Z")
         state = project(*layout(tasks=[("t.json", tk)], evidences=[("e.json", ev)]),
-                        go_repo=self.go_repo(self.VERIFIED))
-        self.assertEqual(state["control_state"]["runtime_verification_state"], sp.RUNTIME_MATCH)
-        self.assertEqual(state["control_state"]["runtime_verification"]["value"]["image_relation"],
-                         "MATCH")
+                        go_repo=self.go_repo())
+        control = state["control_state"]
+        self.assertEqual(control["runtime_verification_state"], sp.RUNTIME_MATCH)
+        self.assertEqual(control["runtime_verification"]["value"]["verdict"], sp.RUNTIME_MATCH)
+        self.assertIsNone(control["runtime_verification"]["value"]["repository_declared_image"])
+        self.assertEqual(control["live_verified_runtime"]["value"]["image_config_id"],
+                         self.VERIFIED)
 
-    def test_drift_when_declared_and_proven_images_disagree(self):
+    def test_live_runtime_is_proven_from_signed_evidence_alone(self):
         tk, ev = self.verify_pair(self.VERIFIED, "2026-09-14T11:50:00Z")
         state = project(*layout(tasks=[("t.json", tk)], evidences=[("e.json", ev)]),
-                        go_repo=self.go_repo(self.DECLARED))
-        verification = state["control_state"]["runtime_verification"]
-        self.assertEqual(verification["value"]["verdict"], sp.RUNTIME_DRIFT)
-        self.assertEqual(verification["value"]["image_relation"], "DIFFER")
-        self.assertEqual(verification["value"]["repository_declared_image"], self.DECLARED)
-        self.assertEqual(verification["value"]["live_proven_image"], self.VERIFIED)
+                        go_repo=self.go_repo())
+        live = state["control_state"]["live_verified_runtime"]
+        # The rank depends on whether this fixture's Evidence reaches a COMPLETE
+        # terminal state; what must hold either way is that the identity comes from
+        # the signed VERIFY and from nothing else.
+        self.assertIn(live["state"], (sp.STATE_PROVEN, sp.STATE_OBSERVED))
+        self.assertEqual(live["value"]["image_config_id"], self.VERIFIED)
 
     def test_not_recently_verified_when_the_proof_is_old(self):
         tk, ev = self.verify_pair(self.VERIFIED, "2026-09-08T00:00:00Z")
         state = project(*layout(tasks=[("t.json", tk)], evidences=[("e.json", ev)]),
-                        go_repo=self.go_repo(self.VERIFIED), verification_window=3600)
+                        go_repo=self.go_repo(), verification_window=3600)
         self.assertEqual(state["control_state"]["runtime_verification_state"],
                          sp.RUNTIME_NOT_RECENTLY_VERIFIED)
         self.assertEqual(state["control_state"]["runtime_verification"]["value"]["verdict"],
                          sp.RUNTIME_NOT_RECENTLY_VERIFIED)
 
     def test_unknown_when_no_verify_evidence_exists(self):
-        _, state, status = build(*layout(), go_repo=self.go_repo(self.DECLARED))
+        _, state, status = build(*layout(), go_repo=self.go_repo())
         self.assertEqual(state["control_state"]["runtime_verification"]["state"], sp.STATE_UNKNOWN)
         self.assertEqual(state["control_state"]["runtime_verification_state"], sp.RUNTIME_UNKNOWN)
-        self.assertEqual(status["answers"]["repository_declared_runtime"]["state"], sp.STATE_OBSERVED)
+        self.assertEqual(status["answers"]["repository_declared_runtime"]["state"], sp.STATE_UNKNOWN)
         self.assertEqual(status["answers"]["live_verified_runtime"]["state"], sp.STATE_UNKNOWN)
 
     def test_repository_main_is_never_substituted_by_a_runtime_sha(self):
         tk, ev = self.verify_pair(self.VERIFIED, "2026-09-14T11:50:00Z")
         state = project(*layout(tasks=[("t.json", tk)], evidences=[("e.json", ev)]),
-                        go_repo=self.go_repo(self.VERIFIED))
+                        go_repo=self.go_repo(with_stray_pointer=True))
         control = state["control_state"]
         self.assertEqual(control["repository_main_sha"]["state"], sp.STATE_UNKNOWN)
         self.assertIsNone(control["repository_main_sha"]["value"])
-        self.assertEqual(control["runtime_built_from_main_sha"]["value"], "e" * 40)
-        self.assertEqual(control["runtime_canonical_main_sha"]["value"], "b" * 40)
-        self.assertNotEqual(control["runtime_built_from_main_sha"]["value"],
-                            control["repository_main_sha"]["value"])
+        # The retired pointer used to hand both of these SHAs out. Now nothing may:
+        # a signed live VERIFY is the only record of what a host is running.
+        self.assertIsNone(control["runtime_built_from_main_sha"]["value"])
+        self.assertIsNone(control["runtime_canonical_main_sha"]["value"])
 
     def test_repository_main_is_reported_when_supplied(self):
         state = project(*layout(), repository_main_sha="f" * 40)
@@ -1618,8 +1650,10 @@ class PortabilityTests(unittest.TestCase):
         self.assertEqual(sources["evidence"]["repository"], sp.EVIDENCE_REPOSITORY)
         self.assertEqual(sources["go"]["repository"], sp.GO_REPOSITORY)
         self.assertEqual(sources["tasks"]["head_sha"], "5b7caecd8e47751b13e4661d14b27880f19d1d71")
-        self.assertEqual(sources["go"]["canonical_runtime_pointer"],
-                         "docs/canonical-baseline/CURRENT_HK_RUNTIME.json")
+        # The retired runtime pointer must not appear as a source identity at all.
+        self.assertEqual(sources["go"]["canonical_candidate_pointer"],
+                         "docs/canonical-baseline/CURRENT_CANDIDATE.json")
+        self.assertNotIn("canonical_runtime_pointer", sources["go"])
 
     def test_no_machine_specific_path_appears_anywhere(self):
         tk = task()

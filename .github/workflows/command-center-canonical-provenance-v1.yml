@@ -147,7 +147,17 @@ jobs:
 
           # 2. the false drift: a file on disk that IS the commit's blob, whatever its line
           #    endings, must not be reported as drift
-          clean = 'docs/canonical-baseline/CURRENT_CANDIDATE.json'
+          #
+          # The sample has to be a path this change does not touch, or it would prove the
+          # opposite of what it means to. It used to be the candidate pointer, which the
+          # retirement edit does touch (it carried a "use CURRENT_HK_RUNTIME.json" sentence
+          # and a runtime_pointer key naming the retired file). A frozen historical
+          # projection is a strictly better sample: it is inside a component whose
+          # .gitattributes forces LF and whose SHA256SUMS pins every byte, so it cannot
+          # legitimately change at all and the check cannot be invalidated by an unrelated
+          # edit again.
+          clean = ('control-plane/command-center-state-v1/evidence/PROJECTION_20260914'
+                   '/CONTROL_STATUS_V1.json')
           clean_verdict = P.prove_checkout(repository, main, [(clean, repo / clean)])
           check('a_file_that_is_its_blob_is_not_drift', clean_verdict['verdict'] == 'PASS',
                 clean_verdict['refusal'])

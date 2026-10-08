@@ -198,9 +198,22 @@ jobs:
           assert status['scope'] == 'CONTROL_STATE_AND_STATUS_ONLY'
           assert status['answers']['hk_agent_online']['state'] == 'UNKNOWN', 'liveness was inferred'
           assert status['answers']['stuck_tasks']['answer']['value'] == 'NO'
-          assert status['answers']['runtime_verification']['value']['verdict'] == 'UNKNOWN', \
-                 'a repository pointer was fabricated'
+          # The retired repository pointer is gone, so a runtime verdict can only come
+          # from the newest signed VERIFY Evidence -- which this fixture carries, and
+          # which is inside the window.  The projection must prove MATCH from that
+          # proof alone, and must still refuse to declare a repository runtime of its
+          # own.  Asserting UNKNOWN here would be asserting the retired behaviour back.
+          runtime_answer = status['answers']['runtime_verification']
+          assert runtime_answer['state'] == 'PROVEN', runtime_answer['state']
+          assert runtime_answer['value']['verdict'] == 'MATCH', \
+                 'a fresh signed VERIFY proof did not establish the live runtime'
+          assert runtime_answer['value']['repository_declared_image'] is None, \
+                 'a repository runtime declaration was fabricated'
+          assert runtime_answer['value']['image_relation'] == 'UNKNOWN', \
+                 'the projection invented a relation to a declaration that is gone'
           assert status['answers']['repository_declared_runtime']['state'] == 'UNKNOWN'
+          assert status['answers']['repository_declared_runtime']['value'] is None, \
+                 'the repository still declares a runtime'
           channel = status['answers']['request_channel']
           # There is no deploy switch, so the enabled human set is the whole human
           # set.  A stale constant here is read by a connector as 'you may not

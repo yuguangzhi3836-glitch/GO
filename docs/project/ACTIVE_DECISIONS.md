@@ -44,7 +44,7 @@ When a decision changes:
 ### GO-D003 — Current business source and HK runtime identity
 
 - Status: `ACTIVE`
-- Decision: current business source is `application/`; active HK-STAGING business runtime is DEPTH48; current runtime identity is read from `docs/canonical-baseline/CURRENT_HK_RUNTIME.json` plus the active deploy definition, not reconstructed from old PRs/chats.
+- Decision: current business source is `application/`; active HK-STAGING business runtime is DEPTH48; current runtime identity is read from the newest signed VERIFY Evidence for HK-STAGING (`chenzhenxi1-sudo/go-control-evidence`) plus the active deploy definition, not reconstructed from old PRs/chats and not read from a repository pointer. The pointer that used to carry it (`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`) was retired on 2026-10-08.
 - Applies to: HK-STAGING business runtime reasoning.
 - Source: `README.md`, `AGENTS.md`, `GO_REPOSITORY_INDEX.md`.
 
@@ -88,7 +88,7 @@ When a decision changes:
 - Status: `ACTIVE` (recorded from current main evidence; made explicit here)
 - Decision: **Business Runtime**, **Control Plane** and **Release Acceptance** are three separate axes. `runtime is ACTIVE` never implies acceptance passed; a Control Plane service being maintenance-inactive is not a business-runtime gap; release acceptance is never granted by the existence of a merged PR.
 - Applies to: runtime reasoning, gate reporting, handoff summaries.
-- Source: `docs/canonical-baseline/CURRENT_HK_RUNTIME.json` axis split, `ci/` gate manifests.
+- Source: the retired `docs/canonical-baseline/CURRENT_HK_RUNTIME.json` axis split (removed 2026-10-08), `ci/` gate manifests.
 - Type: **governance** — wording discipline, not implementation.
 
 ### GO-D009 — Repository migration head is not the live database revision
@@ -97,7 +97,7 @@ When a decision changes:
 - Decision: the current-state layer records the **repository** migration head and the **live** database revision as two separate facts. A repository migration that has not been executed must be reported as pending, never as the current live revision.
 - Consequence at this checkpoint: repository head `0134_flight_status_width`; last confirmed live HK revision `0133_flight_change_plan`.
 - Applies to: any statement about "current database head".
-- Source: `ci/retention/BASELINE.json`, `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`.
+- Source: `ci/retention/BASELINE.json`, and the newest signed VERIFY Evidence for the live HK revision. The retired `docs/canonical-baseline/CURRENT_HK_RUNTIME.json` was the old source and was removed on 2026-10-08.
 - Type: **technical/operational** — expresses the existing no-live-mutation boundary.
 
 ### GO-D010 — Scoped acceptance does not transfer across source changes

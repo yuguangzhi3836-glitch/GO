@@ -44,8 +44,7 @@
   "source_composite_index": "docs/canonical-baseline/CURRENT_SOURCE_PARENT.json",
   "new_runtime_rebuilt": false,
   "pointer_scope": "SOURCE_LINEAGE_POINTER",
-  "pointer_note": "This file records the PR52 source-integration moment and is a SOURCE LINEAGE pointer, not the runtime pointer. For the active business runtime use docs/canonical-baseline/CURRENT_HK_RUNTIME.json. On 2026-09-15 the recorded source_commit was moved from the last code commit of PR52 to the PR head itself, because only a PR head is resolvable by the controlled TEST_PR channel; see the canonicalization block. The application tree and its fingerprint are unchanged and were re-derived rather than copied.",
-  "runtime_pointer": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
+  "pointer_note": "This file records the PR52 source-integration moment and is a SOURCE LINEAGE pointer, not a runtime pointer. It used to send readers to docs/canonical-baseline/CURRENT_HK_RUNTIME.json for the active business runtime, and carried a runtime_pointer key naming it; both were removed on 2026-10-08, because that file was retired. The runtime identity now comes from the newest signed VERIFY Evidence on chenzhenxi1-sudo/go-control-evidence. On 2026-09-15 the recorded source_commit was moved from the last code commit of PR52 to the PR head itself, because only a PR head is resolvable by the controlled TEST_PR channel; see the canonicalization block. The application tree and its fingerprint are unchanged and were re-derived rather than copied.",
   "runtime_status_20260913": {
     "note": "Written 2026-09-13. Does not rewrite the historical fields above.",
     "new_runtime_rebuilt": true,

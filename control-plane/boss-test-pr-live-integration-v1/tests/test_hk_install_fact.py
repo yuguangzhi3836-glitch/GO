@@ -4,8 +4,9 @@ What is proven here, in the order a deployment resolves it:
 
 * a candidate fact can only be installed under its own digest, and a legacy
   `go.hk-candidate-contract.v*` document cannot be installed at all;
-* the environment graph is a controlled fact derived from the canonical runtime pointer,
-  not something the executor reaches for at deployment time;
+* the environment graph is a controlled fact built from an operator-declared migration head,
+  not something the executor reaches for at deployment time -- and not something read out of
+  the repository, since the runtime pointer was retired on 2026-10-08;
 * the install fact's canonical byte form, its signature, its module set and its runtime
   digest all answer to the bytes that are actually on disk;
 * the launcher refuses to run any action at all when the fact is missing, unsigned,
@@ -188,11 +189,10 @@ class InstallCase(unittest.TestCase):
         """Replace the candidate under test with one the installer will refuse."""
         return self.write_candidate(document, name=name)
 
-    def pointer(self, head=HEAD, **over):
-        document = {"schema": "go.canonical-hk-runtime.v1", "environment": "HK-STAGING-01",
-                    "database": {"alembic_head": head}}
-        document.update(over)
-        return document
+    def declared_head(self, head=HEAD):
+        """The migration graph the operator declares. It used to be read from a repository
+        pointer; that pointer (CURRENT_HK_RUNTIME.json) was retired on 2026-10-08."""
+        return head
 
     def stage_runtime(self, drift_module=None):
         """A copy of the runtime directory, optionally with one module's bytes changed."""
@@ -240,7 +240,7 @@ class InstallCase(unittest.TestCase):
 
     # ---- the install ----
     def install(self, *, source_commit=SOURCE_COMMIT, source_tree=SOURCE_TREE,
-                allowed=None, pointer=None, signing_key=None, token=None, now=None,
+                allowed=None, migration_head=None, signing_key=None, token=None, now=None,
                 runtime_dir=None, launcher=None, candidates=None, shim=None, proof=None):
         real_load = installer.load_runtime
 
@@ -262,7 +262,7 @@ class InstallCase(unittest.TestCase):
                 state_dir=str(self.state), runtime_dir=str(runtime_dir or RUNTIME),
                 launcher_path=str(launcher or LAUNCHER),
                 candidate_sources=[str(p) for p in (candidates or [self.candidate])],
-                runtime_pointer=pointer if pointer is not None else self.pointer(),
+                migration_head=migration_head if migration_head is not None else self.declared_head(),
                 source_commit=source_commit, source_tree=source_tree,
                 installer_identity=SIGNER, signing_key=str(signing_key or self.signer),
                 canonical_proof=supplied,
@@ -431,14 +431,13 @@ class CandidateStoreTests(InstallCase):
 # §20 the environment graph
 # --------------------------------------------------------------------------- #
 class EnvironmentGraphTests(InstallCase):
-    def test_the_graph_is_the_canonical_pointer_s_head(self):
+    def test_the_graph_is_the_declared_head(self):
         self.install()
         graph = json.loads((self.state / "environment-graph-v1.json").read_text("utf-8"))
         self.assertEqual(graph["environment"], "HK-STAGING-01")
         self.assertEqual(graph["migration_head"], HEAD)
         self.assertEqual(graph["schema"], installer.ENVIRONMENT_GRAPH_SCHEMA)
-        self.assertEqual(graph["source_identity"],
-                         "docs/canonical-baseline/CURRENT_HK_RUNTIME.json")
+        self.assertEqual(graph["source_identity"], "operator-declared-migration-head")
 
     def test_the_graph_the_launcher_reads_is_the_installed_one(self):
         self.install()
@@ -447,28 +446,35 @@ class EnvironmentGraphTests(InstallCase):
                           str(self.state / "environment-graph-v1.json")):
             self.assertEqual(candidate_source.environment_migration_head(), HEAD)
 
-    def test_the_real_pointer_still_carries_the_head_the_installer_wants(self):
-        """The installer's input is the repository's own pointer, not a test invention."""
-        pointer = json.loads((REPO / "docs" / "canonical-baseline"
-                              / "CURRENT_HK_RUNTIME.json").read_text(encoding="utf-8"))
-        graph = installer.build_environment_graph(pointer)
-        self.assertEqual(graph["migration_head"], pointer["database"]["alembic_head"])
+    def test_the_installer_reads_no_repository_pointer(self):
+        """The installer's input is a declared head, not a file it goes and reads.
+
+        docs/canonical-baseline/CURRENT_HK_RUNTIME.json was retired on 2026-10-08. There must
+        be no module attribute naming it and no pointer argument to pass it, so a stray file
+        at that path cannot influence an install.
+        """
+        self.assertFalse((REPO / "docs" / "canonical-baseline"
+                          / "CURRENT_HK_RUNTIME.json").exists(),
+                         "the retired pointer must not be in the tree any more")
+        for residue in ("DEFAULT_RUNTIME_POINTER", "runtime_pointer"):
+            self.assertFalse(hasattr(installer, residue),
+                             "the installer still carries %s" % residue)
+        graph = installer.build_environment_graph(HEAD)
+        self.assertEqual(graph["migration_head"], HEAD)
         self.assertTrue(installer.MIGRATION_HEAD.fullmatch(graph["migration_head"]))
 
     def test_an_unsupported_environment_is_refused(self):
         with self.assertRaises(installer.InstallError) as caught:
-            installer.build_environment_graph(self.pointer(), "PRODUCTION")
+            installer.build_environment_graph(HEAD, "", "PRODUCTION")
         self.assertEqual(str(caught.exception), "E_INSTALL_ENVIRONMENT_UNSUPPORTED")
 
-    def test_a_pointer_without_a_head_stops_the_install(self):
-        for pointer in ({}, {"database": {}}, {"database": {"alembic_head": ""}},
-                        {"database": {"alembic_head": "not a head"}}, None):
-            with self.subTest(pointer=pointer):
+    def test_a_missing_or_unusable_declared_head_stops_the_install(self):
+        for head in (None, "", "not a head", 5, {"database": {"alembic_head": HEAD}}):
+            with self.subTest(head=head):
                 with self.assertRaises(installer.InstallError) as caught:
-                    installer.build_environment_graph(pointer)
-                self.assertIn(str(caught.exception),
-                              ("E_INSTALL_POINTER_INVALID",
-                               "E_INSTALL_POINTER_MIGRATION_HEAD_MISSING"))
+                    installer.build_environment_graph(head)
+                self.assertEqual(str(caught.exception),
+                                 "E_INSTALL_MIGRATION_HEAD_MISSING")
 
     def test_a_graph_that_does_not_match_what_was_installed_is_refused(self):
         self.install()

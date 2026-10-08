@@ -43,8 +43,8 @@ Every other key in `answers` is a **supporting field**, never a required one:
 | 4 | `answers.pr_tested.by_pr_number["X"]` | present or absent; `in_flight` lists pending ones |
 | 5 | `answers.pr_tested.by_pr_number["X"][0]` | `TEST_PR_OK`, immutable commit SHA, built image id, completion time |
 | 6 | `answers.verify` | lifecycle plus assertion rank |
-| 7 | `answers.repository_declared_runtime` | image config id, tag, generation, pointer path |
-| 8 | `answers.runtime_verification` | `MATCH` / `DRIFT` / `NOT_RECENTLY_VERIFIED` / `UNKNOWN` plus the image relation |
+| 7 | `answers.repository_declared_runtime` | always `UNKNOWN`: the repository publishes no runtime pointer (the last one was retired on 2026-10-08), so there is nothing declared to report |
+| 8 | `answers.runtime_verification` | `MATCH` / `DRIFT` / `NOT_RECENTLY_VERIFIED` / `UNKNOWN`, read from the newest signed VERIFY Evidence alone |
 | 9 | `answers.stuck_tasks.answer` | `YES` / `NO`, computed from `active_stuck_tasks` only |
 | 10 | `answers.last_failure` | task id plus `kind` = `FAILED_RECORD` or `EXPIRED_WITHOUT_EVIDENCE` |
 
@@ -88,7 +88,7 @@ is implemented here, and no answer may be read as if it were.
 Recorded facts that could feed a later readiness design stay in
 `CURRENT_CONTROL_STATE.control_state.informational` with `contract=false`
 (rollback candidate history from signed DEPLOY Evidence, the release gates read
-from the canonical pointer, Production). They are facts, not a verdict.
+from the candidate pointer, Production). They are facts, not a verdict.
 
 ## The distinctions a connector must preserve
 
@@ -96,10 +96,11 @@ from the canonical pointer, Production). They are facts, not a verdict.
    did we last hear from it". `answers.hk_agent_online` answers "is it online
    now" and is `PROVEN` only from liveness Evidence inside the freshness window.
    Never answer the second with the first.
-2. **A repository pointer is not the live runtime.** `repository_declared_runtime`
-   is what the repository declares; `live_verified_runtime` is what a VERIFY
-   Evidence actually proved. They are separate objects and the first can never
-   make the second `PROVEN`.
+2. **A repository declaration is not the live runtime.** `repository_declared_runtime`
+   is what the repository declares -- and it now declares nothing, because the pointer
+   that used to carry a runtime was retired on 2026-10-08. `live_verified_runtime` is
+   what a VERIFY Evidence actually proved. They are separate objects and the first can
+   never make the second `PROVEN`.
 3. **Expired history is not stuck work.** `answers.stuck_tasks.answer` reads
    `active_stuck_tasks` only. `recent_expired_tasks` and
    `historical_expired_tasks` are indexed separately and never change the answer.

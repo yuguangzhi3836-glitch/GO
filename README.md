@@ -33,8 +33,14 @@ HK-STAGING is a **separate axis** from repository `main` and from the Persistent
 
 For the current business-runtime identity use:
 
-- [CURRENT_HK_RUNTIME.json](docs/canonical-baseline/CURRENT_HK_RUNTIME.json)
+- the newest signed VERIFY Evidence for HK-STAGING on the evidence bus
+  (`chenzhenxi1-sudo/go-control-evidence`), which names the image that was current at
+  the moment it ran;
 - [GO_CURRENT_STATE.md](docs/project/GO_CURRENT_STATE.md)
+
+`docs/canonical-baseline/CURRENT_HK_RUNTIME.json` was retired on 2026-10-08. It was a
+declaration inside a repository, it demonstrably drifted from the host, and a file cannot
+truthfully say what a machine is running, so nothing reads it any more.
 
 Do not infer today's image, database revision, application tree or deployment status from historical values later in this README.
 
@@ -87,7 +93,7 @@ Do not infer product generation from a Pull Request number.
 
 本轮源码集成记录为 [PR52](https://github.com/yuguangzhi3836-glitch/GO/pull/52)，已纳入 DEPTH47 额度期限、DEPTH48 酒店金额与多航段改签、PR53 独立资金审计。产品源码应用树仍为 `ad7d1de1190f86ad29d1c6cdafbcedd592e27206`，1323 文件。本地 1796 项后端通过／6 项 PostgreSQL 跳过、270 项前端通过；六模块同单三角色接口、刷新／重登及独立 SQL 通过。详见 [本轮修复和明确边界](docs/canonical-baseline/DEPTH48_ORDERED_REPAIRS.md)。
 
-**本轮之后产品源码已不再只是候选**：DEPTH48 已作为业务运行时在 HK-STAGING 真实构建、启动、迁移并通过端到端健康检查。运行定义（`application/Dockerfile`、`deploy/hk-staging/`）已回写本仓库，当前状态见 [CURRENT_HK_RUNTIME.json](docs/canonical-baseline/CURRENT_HK_RUNTIME.json)。加上运行构建文件后的可运行应用树为 `06206c8127afb35de2f2307b6d0a529e54aa8f10`（1325 文件）——它与上面的 1323 文件产品源码树是两个不同身份，不要混用。
+**本轮之后产品源码已不再只是候选**：DEPTH48 已作为业务运行时在 HK-STAGING 真实构建、启动、迁移并通过端到端健康检查。运行定义（`application/Dockerfile`、`deploy/hk-staging/`）已回写本仓库；运行身份以最新一条签名 VERIFY Evidence 为准，本仓库不再声明运行状态。加上运行构建文件后的可运行应用树为 `06206c8127afb35de2f2307b6d0a529e54aa8f10`（1325 文件）——它与上面的 1323 文件产品源码树是两个不同身份，不要混用。
 
 `CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913` 仍作为**源码输入／装配件**保留，其中的镜像不是业务运行镜像（只有 `COPY application/ /opt/go/source/`，无 CMD、无依赖安装）。[下载与清单指纹](docs/canonical-baseline/CURRENT_SOURCE_PARENT.json)。固定运行时 CI、完整三端可见页面、Sealed Node 与最终发布仍为 HOLD。下列 DEPTH46 身份只描述已生成的历史运行父包，已被当前 DEPTH48 运行时代替。
 
@@ -103,7 +109,7 @@ PR47 was merged as `1c9847c82725b888d239686572f1f44b6dafc2cc` after isolated che
 
 The new parent combines the unchanged DEPTH45 application with a rebuilt, source-bound image and an independently preserved PR51 deployment-entry supplement. The supplement remains disabled and uninstalled. Package build/restore and archive results are recorded separately from application CI. DEPTH46 package build and restore passed; its 314,723,816-byte ZIP has SHA256 `cc9b16be9555a2499db29a9ce0ebc25879fedd2953577bedc1f5e6e833451ce9`. All 16 archive parts were read back. Build run 34718705172 succeeded at the build step and failed later because the branch moved; independent archive run 34719241031 succeeded. [Parent identity](docs/canonical-baseline/CURRENT_PARENT.json) records these separately.
 
-Full three-end UX, physical devices, PostgreSQL, complete Sealed Node and external provider/bank acceptance remain separate unfinished scopes. Source integration is not final release acceptance. Production remains HOLD. The HK-STAGING business runtime is no longer "HOLD": it is running DEPTH48 as of 2026-09-13 — see [CURRENT_HK_RUNTIME.json](docs/canonical-baseline/CURRENT_HK_RUNTIME.json). PR48 is historical source/evidence and is not a parallel development baseline.
+Full three-end UX, physical devices, PostgreSQL, complete Sealed Node and external provider/bank acceptance remain separate unfinished scopes. Source integration is not final release acceptance. Production remains HOLD. The HK-STAGING business runtime is no longer "HOLD": it has been running DEPTH48 since 2026-09-13, and its current identity is what the newest signed VERIFY Evidence proves — the repository declares no runtime. PR48 is historical source/evidence and is not a parallel development baseline.
 
 ## PR #40 and later: classification
 

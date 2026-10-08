@@ -27,19 +27,11 @@
     "note": "PR #402 changed Runtime/control-plane/docs; the application tree remained unchanged."
   },
   "business_runtime_snapshot": {
-    "source": "docs/canonical-baseline/CURRENT_HK_RUNTIME.json re-read at checkpoint_main_sha",
+    "source": "none: the repository publishes no runtime pointer. docs/canonical-baseline/CURRENT_HK_RUNTIME.json was retired on 2026-10-08",
     "environment": "HK-STAGING",
-    "runtime_generation": "DEPTH48",
-    "pointer_date": "2026-10-02",
-    "deployed_candidate_pr": 320,
-    "deployed_candidate_head": "eeafca1b15a4754ba36a0f138a27347cbbd12c73",
-    "deployed_candidate_state": "OPEN_DRAFT_UNMERGED",
-    "deployed_application_tree": "6f97ac5d572dae1de0b3e38b6201da2a6de14216",
-    "image_tag": "go-hk-test-pr:eeafca1b15a4754ba36a0f138a27347cbbd12c73",
-    "live_database_revision": "0145_source_latest_index",
-    "live_tables": 564,
-    "openapi_paths": 1059,
-    "note": "Repository source and HK business runtime remain separate axes; this Runtime closeout performed no HK business deployment or migration."
+    "identity_source": "the newest signed VERIFY Evidence for HK-STAGING on chenzhenxi1-sudo/go-control-evidence",
+    "recorded_values": "NONE",
+    "note": "This checkpoint records no runtime values. It used to copy them out of the retired pointer, which declared what was running, drifted from the host, and could not truthfully answer the question from inside a repository. Repository source and HK business runtime remain separate axes; this Runtime closeout performed no HK business deployment or migration."
   },
   "persistent_runtime_snapshot": {
     "status": "DELIVERED_END_TO_END_AUTO_PROGRESSION_LIVE_PROVEN",
@@ -172,7 +164,7 @@
   "limitations": [
     "This checkpoint is descriptive context and is not execution authority.",
     "Runtime Host service states are the last verified snapshot from the 2026-10-04 automatic-progression canary; re-read the host before mutation.",
-    "The HK runtime pointer is repository state; real HK state outranks it for deployment decisions.",
+    "The repository declares no runtime pointer any more: the retired one was removed on 2026-10-08. Real HK state outranks any repository document for deployment decisions.",
     "Repository main, deployed HK business source, Persistent Runtime state and release acceptance are separate axes.",
     "C13/C14 review never grants merge or deployment authority.",
     "Changing implementation facts must be re-derived; UNKNOWN must not be filled from memory."

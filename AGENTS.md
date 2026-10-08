@@ -2,17 +2,21 @@
 
 ## Current active runtime — read this before reasoning about HK-STAGING
 
-HK-STAGING runs the **DEPTH48 business runtime** since 2026-09-13. The single
-machine-readable pointer is `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`.
+HK-STAGING runs the **DEPTH48 business runtime** since 2026-09-13. No file in this
+repository declares what is running there: the pointer that used to
+(`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`) was retired on 2026-10-08. A
+runtime's identity comes from the newest signed VERIFY Evidence for HK-STAGING on the
+evidence bus (`chenzhenxi1-sudo/go-control-evidence`).
 
-Answer these from that file plus `deploy/hk-staging/README.md`, not from PR
-numbers, historical parents, or prior chat context:
+Answer the questions below from that Evidence plus `deploy/hk-staging/README.md`, not
+from PR numbers, historical parents, or prior chat context:
 
 1. Business source: `application/`
 2. Active HK runtime generation: DEPTH48
 3. Build definition: `application/Dockerfile` (`docker build -t <tag> application/`)
 4. Compose: `deploy/hk-staging/docker-compose.business-runtime.yml`
-5. Database head: `0133_flight_change_plan` (PostgreSQL 18.4)
+5. Database head: read it from the newest signed VERIFY Evidence; this file no longer
+   asserts a value, because the value it used to carry came from a retired pointer
 6. Business services (8): `api`, `outbox-worker`, `recovery-worker`,
    `reconciliation-worker`, `judgment-worker`, `mobile-engagement-worker`,
    `mobile-push-worker`, `mobile-push-receipt-worker`
@@ -79,7 +83,7 @@ Workstation roles and the current access-channel state are recorded in `docs/pro
 Do not infer product generation from Pull Request number. In particular:
 
 - PR #40 is an HK-STAGING archive, **not DEPTH40**.
-- Current source work is DEPTH48, integrated through PR52. DEPTH48 is now also the **active HK-STAGING business runtime**; its runtime definition is `application/Dockerfile` + `deploy/hk-staging/`. DEPTH46 is a **superseded historical** parent, not the current runtime. Check `docs/canonical-baseline/CURRENT_HK_RUNTIME.json` for live runtime state.
+- Current source work is DEPTH48, integrated through PR52. DEPTH48 is now also the **active HK-STAGING business runtime**; its runtime definition is `application/Dockerfile` + `deploy/hk-staging/`. DEPTH46 is a **superseded historical** parent, not the current runtime. Read live runtime state from the newest signed VERIFY Evidence; the repository declares no runtime pointer any more.
 - Newer PR or higher DEPTH number does not automatically mean canonical. Check lineage, retained fixes, tests, acceptance evidence, deployment compatibility, and explicit HOLD/PASS boundaries.
 
 ## GO Command Center
@@ -96,7 +100,7 @@ The repository snapshot contains source and sanitized configuration only. It doe
 
 The observed 2026-09-11 HK-STAGING runtime source and operational snapshot is under `hk-staging/`. Read `hk-staging/README.md` and `hk-staging/BASELINE_MANIFEST.md` when reasoning about the currently archived runtime source, Agent, Executor, Compose, systemd/Caddy configuration, or the documented live-vs-host build drift. This snapshot is evidence, not Execution Authority.
 
-`hk-staging/` is a **historical snapshot of the previous HK runtime generation**. The **active** business runtime definition is `application/Dockerfile` + `deploy/hk-staging/docker-compose.business-runtime.yml`; see `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`. Do not read the current business image, business source, or business service set from `hk-staging/`.
+`hk-staging/` is a **historical snapshot of the previous HK runtime generation**. The **active** business runtime definition is `application/Dockerfile` + `deploy/hk-staging/docker-compose.business-runtime.yml`; its live identity comes from the newest signed VERIFY Evidence, not from a repository pointer. Do not read the current business image, business source, or business service set from `hk-staging/`.
 
 Before any HK-STAGING Control Plane operation or planning—including
 `HK_STAGING_VERIFY`, `HK_STAGING_CANARY`, `HK_STAGING_DEPLOY`,

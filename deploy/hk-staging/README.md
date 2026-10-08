@@ -4,8 +4,11 @@ This directory holds the **canonical, GitHub-reproducible** definition of the
 business runtime that is currently active on HK-STAGING-01.
 
 It is not a plan, not a candidate, and not historical evidence: the definitions
-here describe what is running now. Machine-readable state is in
-[`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](../../docs/canonical-baseline/CURRENT_HK_RUNTIME.json).
+here describe what is running now. What the host is *actually* running is established
+from the newest signed VERIFY Evidence for HK-STAGING on the evidence bus
+(`chenzhenxi1-sudo/go-control-evidence`); this repository declares no runtime pointer.
+The pointer that used to stand here
+(`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`) was retired on 2026-10-08.
 
 ## Files
 
@@ -24,7 +27,7 @@ business source   application/                       (Python + alembic + fronten
 build definition  application/Dockerfile             docker build -t <tag> application/
 compose           deploy/hk-staging/docker-compose.business-runtime.yml
 env contract      deploy/hk-staging/RUNTIME_ENV_CONTRACT.md
-runtime state     docs/canonical-baseline/CURRENT_HK_RUNTIME.json
+runtime state     newest signed VERIFY Evidence on chenzhenxi1-sudo/go-control-evidence
 ```
 
 ## Build
@@ -36,8 +39,9 @@ docker build -t go-hotel:depth48-runtime application/
 ```
 
 No host-side files, previous parent, sealed package, or release tree is required.
-This was verified by a fresh GitHub-only checkout build (see `CURRENT_HK_RUNTIME.json`
-`fresh_checkout_build`).
+This was verified by a fresh GitHub-only checkout build, whose recorded result used to
+live in the retired `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`
+(`fresh_checkout_build`).
 
 ## Run
 

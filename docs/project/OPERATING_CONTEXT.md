@@ -234,14 +234,14 @@ Codex 主执行              WorkBuddy 主执行
 1. GitHub live `main` 与当前任务对应 PR / branch / commit；
 2. [`GO_CURRENT_STATE.md`](GO_CURRENT_STATE.md)；
 3. [`CONTEXT_CHECKPOINT.json`](CONTEXT_CHECKPOINT.json)；
-4. HK 业务运行时：[`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](../canonical-baseline/CURRENT_HK_RUNTIME.json)，真实部署决策再读 live HK；
+4. HK 业务运行时：运行身份以**最新一条签名 VERIFY Evidence**（证据仓 `chenzhenxi1-sudo/go-control-evidence`）为准，本仓库不再发布运行时指针（`docs/canonical-baseline/CURRENT_HK_RUNTIME.json` 已于 2026-10-08 退役），真实部署决策再读 live HK；
 5. Persistent Runtime：以 live rt01 / 当前 Runtime Evidence 为准；
 6. 涉及 HK-STAGING / Production / migration 时，重新读取当前 deploy Runbook / Evidence，不能沿用聊天里的旧路径或旧 revision。
 
 长期稳定的轴线只有这些：
 
 - **Repository source**：GitHub `main`；
-- **Business Runtime**：`application/` + `deploy/hk-staging/`，实际运行身份由 live HK / `CURRENT_HK_RUNTIME.json` 解释；
+- **Business Runtime**：`application/` + `deploy/hk-staging/`，实际运行身份由 live HK 与最新签名 VERIFY Evidence 解释（仓库不再声明运行时指针）；
 - **Persistent Runtime / AI execution transport**：`control-plane/runtime-host-channel-v1/` + rt01；
 - **Control Plane / deploy transport**：`command-center/`、相关 `control-plane/`、HK Agent/Executor；
 - **Release acceptance**：candidate / tests / C13-C14 review / Evidence；

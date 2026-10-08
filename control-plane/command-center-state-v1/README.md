@@ -80,7 +80,7 @@ It expresses, at minimum: the last Request, the last Signed Task, the last Signe
 Evidence, the currently active tasks, the last successful VERIFY, the last
 successful TEST_PR (with PR number and immutable SHA), the last failed task, the
 active stuck tasks, the recent and historical expired tasks, the last provable
-Hong Kong Agent activity, the repository runtime pointer, the live-runtime
+Hong Kong Agent activity, the (now absent) repository runtime pointer, the live-runtime
 verification status, runtime drift, and the projection time.
 
 ## P0-2 — CONTROL_STATUS_V1
@@ -134,7 +134,7 @@ non-contract data:
 ```
 CURRENT_CONTROL_STATE.control_state.informational.contract = false
   rollback_candidate_history   from successful signed DEPLOY Evidence
-  release_gates                read from the canonical pointer
+  release_gates                read from the candidate pointer
   final_release_gate / hk_deploy_gate / production
 CURRENT_CONTROL_STATE.control_state.deploy_capability
   {"capability": "SUPPORTED_PROVEN",
@@ -203,16 +203,19 @@ and therefore cannot produce `PROVEN`. Its binding is still reported, so **"wron
 key" is never quietly downgraded to "no key"**. `verification.proven_allowed`
 summarises the gate and `verification.fail_closed_reasons` names each failure.
 
-### 2. The repository runtime pointer is not the live runtime
+### 2. The live runtime is read out of signed Evidence, not out of the repository
 
 | Object | Meaning |
 |---|---|
-| `repository_runtime_pointer` | what the repository **declares**. `OBSERVED` at best, never `PROVEN` |
+| `repository_runtime_pointer` | always `UNKNOWN` with a reason: the repository publishes no runtime pointer. The one that existed (`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`) was retired on 2026-10-08 |
 | `live_verified_runtime` | the image the newest VERIFY Evidence actually named |
 | `runtime_verification` | `MATCH` / `DRIFT` / `NOT_RECENTLY_VERIFIED` / `UNKNOWN` |
 
-`MATCH` and `DRIFT` require a VERIFY Evidence inside the verification window.
-Older proof reports `NOT_RECENTLY_VERIFIED` even when the images agree.
+`MATCH` means the live runtime is established by a VERIFY Evidence inside the
+verification window; older proof reports `NOT_RECENTLY_VERIFIED`. `DRIFT` is no longer
+reachable, because there is nothing declared for a live runtime to drift *from* — the
+state stays in the enum rather than being renumbered. `repository_declared_image` and
+`image_relation` are kept in the contract and can only ever be `None` and `UNKNOWN`.
 
 ### 3. DEPLOY is exposed to chat; its readiness is not evaluated
 
@@ -271,8 +274,9 @@ facts survive only under `control_state.informational` with `contract=false`.
 
 ```
 repository_main_sha        UNKNOWN unless supplied via --repository-main-sha
-runtime_built_from_main_sha  the product source commit recorded by the runtime pointer
-runtime_canonical_main_sha   the main commit the canonical runtime definition was frozen at
+runtime_built_from_main_sha  always UNKNOWN: it was the product source commit recorded by
+                             the retired runtime pointer, and nothing may substitute for it
+runtime_canonical_main_sha   always UNKNOWN, for the same reason
 ```
 
 The projector never substitutes a runtime source SHA for the repository head.

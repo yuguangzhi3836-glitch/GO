@@ -29,19 +29,17 @@ The `application` tree did not change in the Runtime auto-review closeout; the c
 
 ## 2. HK-STAGING business runtime — separate axis
 
-`docs/canonical-baseline/CURRENT_HK_RUNTIME.json` was re-read at this checkpoint.
+**The repository publishes no runtime pointer.** `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`
+was retired on 2026-10-08: it declared what was running on HK-STAGING, it demonstrably drifted
+from the host, and a file inside a repository cannot truthfully answer that question. This
+checkpoint therefore records **no** runtime values. To establish the live identity, read the
+newest signed VERIFY Evidence for HK-STAGING on the evidence bus
+(`chenzhenxi1-sudo/go-control-evidence`) — it names the image, database revision and tree that
+were current at the moment it ran, and it is signed.
 
-| Item | Current pointer value |
-| --- | --- |
-| Environment | HK-STAGING |
-| Runtime generation label | `DEPTH48` |
-| Pointer/deploy date | 2026-10-02 |
-| Deployed candidate | PR `#320`, head `eeafca1b15a4754ba36a0f138a27347cbbd12c73` |
-| PR #320 state | open / Draft / unmerged |
-| Deployed application tree | `6f97ac5d572dae1de0b3e38b6201da2a6de14216` |
-| Image | `go-hk-test-pr:eeafca1b15a4754ba36a0f138a27347cbbd12c73` |
-| Live DB revision | `0145_source_latest_index` |
-| Live tables / OpenAPI paths | 564 / 1059 |
+The last values this section carried (runtime generation `DEPTH48`, image
+`go-hk-test-pr:eeafca1b…`, live DB revision `0145_source_latest_index`) were copied from that
+retired pointer and are no longer maintained here. They are history, not a current claim.
 
 Current GitHub source and current HK business runtime are **not the same tree**. Do not infer one from the other.
 
@@ -213,7 +211,7 @@ These PRs describe delivery transport, not product merge/release authority.
 
 ## 6. Current candidate facts
 
-- PR `#320` — open Draft, unmerged; nevertheless its candidate is the current HK business runtime according to `CURRENT_HK_RUNTIME.json`.
+- PR `#320` — open Draft, unmerged. Its candidate was recorded as the current HK business runtime in the now-retired `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`; that file no longer exists, and the live runtime identity must come from the newest signed VERIFY Evidence instead.
 - PR `#383` — Boss-owned Draft with an older per-cell entry design; read/review only, do not take over.
 - PR `#394` — historical review-ingress canary Draft; unmerged.
 - PR `#404` — automatic Builder->C14->C13 live E2E candidate; open Draft, unmerged.

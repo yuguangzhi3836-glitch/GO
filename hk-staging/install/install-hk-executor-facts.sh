@@ -40,6 +40,12 @@
 # attests facts this host produces. It is read, never copied, never modified. The canonical
 # proof does not add a second signer: it is an input to the install action, not an
 # attestation of it.
+#
+# The migration graph is DECLARED, not read out of the repository. It used to be copied from
+# docs/canonical-baseline/CURRENT_HK_RUNTIME.json, which was retired on 2026-10-08: there is
+# no repository pointer that says what is running on the host, and inventing a new one would
+# repeat the mistake. GO_MIGRATION_HEAD carries it, exactly like GO_SOURCE_COMMIT and
+# GO_SOURCE_TREE carry the identity of the staged tree.
 set -eu
 
 root=${1:?staged candidate root required}
@@ -54,7 +60,6 @@ test -d "$candidate_dir"
 test -f "$canonical_proof"
 test -d "$root/hk-staging/source/executor/runtime"
 test -f "$root/hk-staging/source/executor/go-hk-deployctl"
-test -f "$root/docs/canonical-baseline/CURRENT_HK_RUNTIME.json"
 
 # The staged tree must be the tree the manifest describes, or the install would hash files
 # nobody reviewed. This is the same gate install-hk-agent.sh applies to its own tree.
@@ -72,12 +77,13 @@ state_dir=${GO_HK_STATE_DIR:-/etc/go-hk-deployctl}
 # a proof that does not hold means nothing is written.
 source_commit=${GO_SOURCE_COMMIT:?GO_SOURCE_COMMIT required (40-hex commit of the staged tree)}
 source_tree=${GO_SOURCE_TREE:?GO_SOURCE_TREE required (40-hex tree object of that commit)}
+migration_head=${GO_MIGRATION_HEAD:?GO_MIGRATION_HEAD required (the migration graph this host is on)}
 
 python3 "$root/hk-staging/install/hk_install_facts.py" \
   --state-dir "$state_dir" \
   --runtime-dir "$root/hk-staging/source/executor/runtime" \
   --launcher "$root/hk-staging/source/executor/go-hk-deployctl" \
-  --runtime-pointer "$root/docs/canonical-baseline/CURRENT_HK_RUNTIME.json" \
+  --migration-head "$migration_head" \
   --source-commit "$source_commit" \
   --source-tree "$source_tree" \
   --canonical-proof "$canonical_proof" \

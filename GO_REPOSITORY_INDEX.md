@@ -2,8 +2,10 @@
 
 ## 当前状态（先读这一段）
 
-HK-STAGING 自 2026-09-13 起运行 **DEPTH48 业务运行时**。唯一机器可读指针：
-[`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](docs/canonical-baseline/CURRENT_HK_RUNTIME.json)。
+HK-STAGING 自 2026-09-13 起运行 **DEPTH48 业务运行时**。本仓库**不再**发布运行时指针：
+`docs/canonical-baseline/CURRENT_HK_RUNTIME.json` 已于 2026-10-08 退役（仓库里的声明文件无法
+如实说明一台机器在跑什么，且它与现场发生过漂移）。运行身份以**最新一条签名 VERIFY Evidence**
+为准（证据仓 `chenzhenxi1-sudo/go-control-evidence`）。
 
 - 业务源码：`application/`；构建定义：`application/Dockerfile`（`docker build -t <tag> application/`）
 - 运行 Compose：`deploy/hk-staging/docker-compose.business-runtime.yml`（8 个业务服务）
@@ -43,8 +45,8 @@ FINAL_RELEASE_GATE=HOLD；HOTEL_REPLICATION_GATE=HOLD。以上均为工程复核
 该目录区分当前运行镜像中的真实源码与服务器 host-side build context，包含现役 HK Agent、Executor 及四个 runtime、Compose、systemd、Caddy、去敏配置与 SHA-256 基线。它是源码/配置归档，不是 Execution Authority。
 
 > **该目录是上一代香港运行时的历史快照。** 业务运行时的当前定义在
-> [`deploy/hk-staging/`](deploy/hk-staging/)，当前运行状态见
-> [`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](docs/canonical-baseline/CURRENT_HK_RUNTIME.json)。
+> [`deploy/hk-staging/`](deploy/hk-staging/)；运行身份以最新一条签名 VERIFY Evidence 为准
+> （本仓库不再发布运行时指针）。
 
 Before any HK-STAGING deployment planning or execution, read
 [`docs/control-plane/hk-staging/HK_STAGING_DEPLOY_RUNBOOK.md`](docs/control-plane/hk-staging/HK_STAGING_DEPLOY_RUNBOOK.md).

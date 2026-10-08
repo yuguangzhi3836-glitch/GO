@@ -63,11 +63,13 @@ import go_deploy_request as deploy_gate
 from go_deploy_request import Reject
 
 ADMISSION_POINTER = 'docs/canonical-baseline/CURRENT_CANDIDATE.json'
-# The migration graph the environment currently supports is published by the
-# canonical runtime pointer -- not by the candidate and not by a Request.  V1
-# executes no migration, so "the graph the host is on" is the only graph a
-# deployable candidate may declare.  See CCV1-82 CONTRACT SPEC section 10.
-RUNTIME_POINTER = 'docs/canonical-baseline/CURRENT_HK_RUNTIME.json'
+# The migration graph the environment currently supports is a live fact about the
+# host -- not the candidate, and not a Request.  V1 executes no migration, so "the
+# graph the host is on" is the only graph a deployable candidate may declare.  See
+# CCV1-82 CONTRACT SPEC section 10.  It used to be read out of the repository
+# pointer `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`; that pointer was
+# retired on 2026-10-08 -- a file in a repository was never a truthful declaration
+# of what a host is running -- so the caller now supplies the value it verified.
 ADMISSION_SCHEMA = 'go.depth48.current-candidate.v1'
 CANDIDATE_SCHEMA = 'go.release-candidate.v1'
 SEALED_ARTIFACT_SCHEMA = 'go.sealed-artifact.v1'
@@ -104,8 +106,12 @@ def migration_refusal_plan_state(reason):
     return PLAN_STATE_BY_MIGRATION_REFUSAL.get(reason)
 
 
-def environment_migration_head(pointer):
-    """The migration graph the environment supports, out of the canonical pointer.
+def environment_migration_head(value):
+    """The migration graph the environment supports, as the caller verified it.
+
+    Accepts either the head string itself, or a mapping carrying
+    ``database.alembic_head`` -- the shape a host-local, root-owned record already
+    has.
 
     Returns the head a candidate's declaration is compared against, or raises
     `E_DATABASE_MIGRATION_GRAPH_MISMATCH`.  Raising rather than returning None is
@@ -113,8 +119,11 @@ def environment_migration_head(pointer):
     candidate's graph cannot be shown to be it, and "I could not tell" must not be
     rounded up to "they agree" at the one gate whose job is to refuse that.
     """
-    database = pointer.get('database') if isinstance(pointer, dict) else None
-    head = database.get('alembic_head') if isinstance(database, dict) else None
+    if isinstance(value, str):
+        head = value
+    else:
+        database = value.get('database') if isinstance(value, dict) else None
+        head = database.get('alembic_head') if isinstance(database, dict) else None
     if not isinstance(head, str) or not head:
         raise Reject(E_DATABASE_MIGRATION_GRAPH_MISMATCH)
     return head

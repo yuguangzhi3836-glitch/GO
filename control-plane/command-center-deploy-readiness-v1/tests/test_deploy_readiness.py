@@ -144,16 +144,15 @@ def control_state(**over):
         "sources": {"go": {"repository": "yuguangzhi3836-glitch/GO",
                            "canonical_candidate_pointer":
                                "docs/canonical-baseline/CURRENT_CANDIDATE.json",
-                           "canonical_runtime_pointer":
-                               "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
                            "head_sha": "0" * 40}},
         "freshness": {"live_verification_window_seconds": 86400},
         "control_state": {
             "live_verified_runtime": {"state": "PROVEN", "value": {
                 "image_config_id": CURRENT_IMAGE, "age_seconds": 60,
                 "verified_at": "2026-09-15T00:30:00Z"}},
-            "repository_runtime_pointer": {"value": {"image_config_id": CURRENT_IMAGE,
-                                                     "image_tag": "synthetic"}},
+            "repository_runtime_pointer": {"state": "UNKNOWN", "value": None,
+                                           "reason": "the repository publishes no runtime "
+                                                     "pointer", "evidence": []},
             "runtime_verification_state": "MATCH"},
         "tasks": [{"task_id": "go-boss-test-pr-52-synthetic", "action_id": "HK_STAGING_TEST_PR",
                    "issued_at": "2026-09-15T00:10:00Z", "lifecycle": "COMPLETE",
@@ -301,9 +300,12 @@ class Fixture:
                         "identities": identities}), encoding="utf-8")
         (self.go / "docs" / "canonical-baseline" / "CURRENT_CANDIDATE.json").write_text(
             json.dumps(candidate_pointer(**overrides.get("candidate", {}))), encoding="utf-8")
-        (self.go / "docs" / "canonical-baseline" / "CURRENT_HK_RUNTIME.json").write_text(
-            json.dumps({"image_config_id": CURRENT_IMAGE, "image_tag": "synthetic",
-                        "host": "i-synthetic", "runtime_generation": "SYNTHETIC"}),
+        # A stray file at the RETIRED pointer path, declaring a different image on purpose.
+        # Nothing may read it: the repository publishes no runtime pointer any more.
+        self.stray_runtime = self.go / "docs" / "canonical-baseline" / "CURRENT_HK_RUNTIME.json"
+        self.stray_runtime.write_text(
+            json.dumps({"image_config_id": "sha256:" + "f" * 64, "image_tag": "retired-and-wrong",
+                        "host": "i-retired", "runtime_generation": "RETIRED"}),
             encoding="utf-8")
         self.state_path = self.root / "CURRENT_CONTROL_STATE.json"
         self.state_path.write_text(json.dumps(control_state(**overrides.get("state", {}))),
@@ -531,6 +533,52 @@ class RetiredReleaseGateTests(unittest.TestCase):
         document = Fixture(mutate=mutate).evaluate()
         self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "FAIL")
         self.assertEqual(document["verdict"]["deploy_ready"], "NO")
+
+
+class RetiredRuntimePointerTests(unittest.TestCase):
+    """The repository declares no runtime, and a leftover file cannot pretend otherwise.
+
+    docs/canonical-baseline/CURRENT_HK_RUNTIME.json was retired on 2026-10-08. The live
+    runtime is established from signature-verified Evidence alone. These tests exist so the
+    retirement is *proven*: a stray file at the retired path, declaring a different image,
+    must change nothing.
+    """
+
+    def test_the_inputs_no_longer_name_a_runtime_pointer(self):
+        document = Fixture().evaluate()
+        self.assertNotIn("runtime_pointer", document["inputs"])
+        self.assertIn("candidate_pointer", document["inputs"])
+
+    def test_a_stray_runtime_pointer_is_never_read(self):
+        """The fixture writes a wrong image at the retired path on purpose."""
+        fixture = Fixture()
+        self.assertTrue(fixture.stray_runtime.is_file())
+        wrong = json.loads(fixture.stray_runtime.read_text(encoding="utf-8"))["image_config_id"]
+        document = fixture.evaluate()
+        self.assertNotEqual(wrong, CURRENT_IMAGE, "the stray pointer must disagree to prove a point")
+        self.assertEqual(gate_of(document, "VERIFY")["state"], "PASS")
+        self.assertEqual(document["verdict"]["deploy_ready"], "YES")
+
+    def test_deleting_the_stray_pointer_changes_nothing(self):
+        fixture = Fixture()
+        before = fixture.evaluate()
+        fixture.stray_runtime.unlink()
+        after = fixture.evaluate()
+        self.assertEqual(before["verdict"], after["verdict"])
+        self.assertEqual(before["gates"], after["gates"])
+        self.assertEqual(before["inputs"], after["inputs"])
+
+    def test_the_contract_no_longer_requires_a_runtime_pointer_input(self):
+        contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        schema = contract["properties"]["inputs"]
+        self.assertNotIn("runtime_pointer", schema["required"])
+        self.assertNotIn("runtime_pointer", schema["properties"])
+
+    def test_the_live_runtime_is_still_established_from_evidence_alone(self):
+        document = Fixture().evaluate()
+        verify = gate_of(document, "VERIFY")
+        self.assertEqual(verify["state"], "PASS")
+        self.assertEqual(verify["observed"]["image_config_id"], CURRENT_IMAGE)
 
 
 class DeploymentAuthorizationTests(unittest.TestCase):
