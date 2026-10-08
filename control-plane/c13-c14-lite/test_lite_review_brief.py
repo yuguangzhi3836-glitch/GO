@@ -373,6 +373,42 @@ class ReviewerStandardTests(unittest.TestCase):
             self.assertIn("PASS_SCOPED may include non-blocking findings and remaining risks",
                           prompt)
 
+    def test_stacked_candidate_delta_does_not_prove_inherited_file_absent(self):
+        # Reproduces the #558 R2 false scope finding without a paid AI call:
+        # an inherited #385 file is absent from base->head diff, not from HEAD.
+        inherited = "application/src/go_hotel/services/registration_email.py"
+        changed = "application/src/go_hotel/api/routes/onboarding.py"
+        for role in ("c14", "c13"):
+            facts = dict(fx.role_facts(role))
+            facts["changed_paths"] = [changed]
+            facts["candidate_diff"] = "diff --git a/" + changed + " b/" + changed
+            facts["review_brief"] = {"body": "Integrated #385, including " + inherited}
+            prompt = lite_ai_reviewer.build_prompt(role, facts)
+            for required in (
+                "GIT DELTA VERSUS FINAL CANDIDATE",
+                "they do NOT enumerate the final HEAD file tree",
+                "A file absent from this delta may exist unchanged",
+                "Never conclude that an inherited file is missing from HEAD",
+                "solely because the file does not appear in changed_paths or candidate_diff",
+                "a declaration, not independent proof of its HEAD blob",
+                "requires positive evidence about the frozen HEAD tree",
+                "actual IAM, actor attribution, permission boundaries",
+                "does not prove that its full functionality has passed",
+                inherited,
+                changed,
+            ):
+                self.assertIn(required, prompt, (role, required))
+
+    def test_scope_guidance_does_not_replace_the_existing_verdict_contract(self):
+        for role in ("c14", "c13"):
+            prompt = lite_ai_reviewer.build_prompt(role, fx.role_facts(role))
+            self.assertIn("Rework is justified only by a real blocking defect", prompt)
+            self.assertIn("not independent proof of its HEAD blob", prompt)
+            self.assertIn("distinction does not waive review of real changes", prompt)
+        for schema in (lite_ai_reviewer.C14_OUTPUT_SCHEMA, lite_ai_reviewer.C13_OUTPUT_SCHEMA):
+            self.assertNotIn("head_file_inventory", json.dumps(schema))
+            self.assertNotIn("integration_verifier", json.dumps(schema))
+
     def test_c14_is_told_it_is_not_a_github_process_checker(self):
         prompt = lite_ai_reviewer.build_prompt("c14", fx.role_facts("c14"))
         self.assertIn("You are not a second GitHub process checker", prompt)

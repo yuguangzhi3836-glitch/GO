@@ -9,6 +9,10 @@ import c1_issue_consumer as consumer
 from c1_issue_ingress import issue_identity_collisions
 from test_c1_issue_consumer import Case, ENABLED, FIXTURE_SOURCE, MOVED_ON_SOURCE
 
+# The candidate PR these review issues name has a real base; the review reads it and freezes
+# it, so the fixture has to answer for one.
+BASE_SHA = "9" * 40
+
 
 class Reader:
     def __init__(self, issues):
@@ -21,7 +25,10 @@ class Reader:
         return dict(issues=self.issues, listed=len(self.issues), pages_fetched=1)
 
     def read_pull(self, number):
-        return dict(number=number, base_ref="main", head_sha=FIXTURE_SOURCE)
+        return dict(number=number, base_ref="main", base_sha=BASE_SHA, head_sha=FIXTURE_SOURCE)
+
+    def read_compare(self, base_sha, head_sha):
+        return dict(status="ahead", merge_base_commit=dict(sha=base_sha))
 
     def read_pull_files(self, number):
         return []

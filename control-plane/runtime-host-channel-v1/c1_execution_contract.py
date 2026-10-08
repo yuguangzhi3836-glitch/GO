@@ -392,18 +392,56 @@ def review_request_id(candidate_sha: str, ledger_round_id: str) -> str:
 # The second is why this is a function of the issue number rather than of "the review
 # issue": naming a round is one question, and a second derivation would be a second answer
 # to it - which is the one thing a round identity may not have.
-def review_round_identity(issue_number: int, candidate_sha: str) -> dict:
+#
+# WHY A REVISION, AND WHY IT IS THE HUMAN'S
+# -----------------------------------------
+# A review round executes ONCE (`max_attempts = 1`). That is a property of a round, not of
+# the system: the failure it prevents is a failed review being silently retried on the same
+# inputs until it happens to pass, which is not a review.
+#
+# A DIFFERENT, REAL failure is the one that has no answer here: a C14 legitimately returns
+# FAIL, the FAIL is about the review BRIEF (the pull-request description claimed something
+# the diff contradicts), a human corrects the brief - and the round's inputs are now
+# different while the issue number and the candidate SHA are not, so the identity still
+# addresses the OLD round and no second review can exist. The candidate is unchanged and
+# correct; only the question asked about it changed.
+#
+# So the revision is a suffix on the SAME derivation rather than a second one: revision 1
+# is the historical identity, byte for byte, and revision n>1 appends `-R<n>`. Every
+# derived name - the round id, both Lite task ids, and therefore the request id and the
+# Runtime idempotency key - moves together, because they are all derived from this one
+# string. Nothing else about a round changes: a revision-n round is still one attempt.
+#
+# It is NEVER automatic. Nothing in this channel may increment it - not a failed verdict,
+# not a retry counter, not a timer. Only a human editing the Review issue can raise it,
+# which is what makes "a new round" a human statement that the inputs changed rather than a
+# machine's guess that they might have.
+MAX_REVIEW_REVISION = 99
+
+
+def review_round_identity(issue_number: int, candidate_sha: str, revision: int = 1) -> dict:
     """The round id and its two Lite task ids, derived from provenance and candidate.
 
     The candidate's first twelve hex characters, not the issue title: a second issue raised
     for a DIFFERENT candidate is a different round even if it describes the same PR, and
     re-raising the same one is the same round.
+
+    `revision` defaults to the historical round. Revision 1 produces exactly the string this
+    function has always produced; revision n>1 appends `-R<n>`. The Builder path never
+    passes it, so a Builder round is always revision 1 and a Builder cannot commission a
+    re-review of its own output.
     """
     if type(issue_number) is not int or issue_number <= 0:
         raise Refused("ISSUE_NUMBER_INVALID")
     _require_sha1(candidate_sha, "REVIEW_CANDIDATE_SHA_INVALID")
+    # `type(...) is not int` already excludes bool, which is an int subclass and must never
+    # be accepted as "revision 1".
+    if type(revision) is not int or revision < 1 or revision > MAX_REVIEW_REVISION:
+        raise Refused("REVIEW_REVISION_INVALID")
     short = candidate_sha.strip().lower()[:12]
     ledger_round_id = "FORMAL-REVIEW-I%d-%s" % (issue_number, short)
+    if revision != 1:
+        ledger_round_id = "%s-R%d" % (ledger_round_id, revision)
     return {
         "ledger_round_id": ledger_round_id,
         "c14_task_id": ledger_round_id + "-C14",

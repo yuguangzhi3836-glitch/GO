@@ -121,14 +121,16 @@ ISSUES_PATH = "/repos/%s/issues" % REPO
 # poll is admitted against, and the one the Builder workflow will re-check for itself.
 SOURCE_HEAD_PATH = "/repos/%s/commits/main" % REPO
 # A Formal Review issue (`C14 · REVIEW · ...`) names a pull request and the commit it is
-# about, and admission resolves both of them here. Four more read-only paths, all GET, and
-# all of them about the CANDIDATE rather than about main: the PR itself (is it aimed at
-# main, and is its head still the frozen commit), its file list (what did this candidate
-# change), the frozen commit (its root tree) and that tree (which entry is `application`).
+# about, and admission resolves both of them here. Five more read-only paths, all GET, and
+# all of them about the CANDIDATE rather than about main: the PR itself (what is its real
+# base, and is its head still the frozen commit), its file list (what did this candidate
+# change), the frozen commit (its root tree), that tree (which entry is `application`), and
+# the compare that proves the frozen base is an ancestor of the frozen commit.
 PULL_PATH = "/repos/%s/pulls/%%d" % REPO
 PULL_FILES_PATH = "/repos/%s/pulls/%%d/files" % REPO
 COMMIT_PATH = "/repos/%s/commits/%%s" % REPO
 TREE_PATH = "/repos/%s/git/trees/%%s" % REPO
+COMPARE_PATH = "/repos/%s/compare/%%s...%%s" % REPO
 PR_FILES_PER_PAGE = 100
 # The Runtime kernel and its database, as installed on the Runtime Host.
 RUNTIME_DIR = "/opt/go/c1-c14-runtime"
@@ -281,7 +283,12 @@ class GitHubIssuesReader:
                 "base_ref": base.get("ref"), "base_sha": base.get("sha"), "head_sha": head.get("sha")}
 
     def read_compare(self, base_sha, head_sha):
-        return self._get_json("/repos/%s/compare/%s...%s" % (REPO, base_sha, head_sha))
+        """Whether `base_sha` is an ancestor of `head_sha`, as GitHub itself computes it.
+
+        One GET. The frozen base has to be an ancestor of the frozen commit, and this is
+        the platform's own answer rather than a local guess.
+        """
+        return self._get_json(COMPARE_PATH % (base_sha, head_sha))
 
     def read_pull_files(self, number: int) -> list:
         """One page of the pull request's changed files: each name and change status.
@@ -446,6 +453,10 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
                  "candidate_pr_number": plan["candidate_pr_number"],
                  "candidate_sha": plan["candidate_sha"],
                  "ledger_round_id": plan["ledger_round_id"],
+                 # Which round this poll admitted, in the operator's own terms: a suffix
+                 # parsed back out of the round id would be a second answer to a question
+                 # the plan has already answered.
+                 "review_revision": plan["review_revision"],
                  "external_task_id": call["payload"]["external_task_id"],
                  "idempotency_key": call["idempotency_key"],
                  "payload_sha256": plan["payload_sha256"]}
@@ -550,9 +561,11 @@ def check(environ=None, *, token_loader=None) -> dict:
             "repo": REPO, "issues_endpoint": ISSUES_PATH,
             "source_head_endpoint": SOURCE_HEAD_PATH,
             "source_freshness": "issue source_anchor must equal the current main",
-            "review_admission": ("C14 · REVIEW issue: the candidate PR must be aimed at "
-                                 "main and its head must equal the frozen Candidate SHA"),
-            "review_candidate_paths": [PULL_PATH, PULL_FILES_PATH, COMMIT_PATH, TREE_PATH],
+            "review_admission": ("C14 · REVIEW issue: the candidate PR's head must equal the "
+                                 "frozen Candidate SHA, and the review range is that PR's "
+                                 "own base (read from GitHub) -> that frozen commit"),
+            "review_candidate_paths": [PULL_PATH, PULL_FILES_PATH, COMMIT_PATH, TREE_PATH,
+                                       COMPARE_PATH],
             "review_machine_scope": ("the candidate's own changed test paths, else the "
                                      "C13 workflow's declared default"),
             "github_access": "GET only", "interval_s": poll_interval_s(env),

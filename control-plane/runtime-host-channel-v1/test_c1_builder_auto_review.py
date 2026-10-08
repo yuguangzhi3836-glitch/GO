@@ -44,6 +44,7 @@ import c1_candidate_reads as reads  # noqa: E402
 import c1_review_issue_ingress as review_ingress  # noqa: E402
 import lite_bundle as lite_bundle_mod  # noqa: E402
 import os  # noqa: E402
+import re  # noqa: E402
 import lite_chain  # noqa: E402
 import lite_fixtures  # noqa: E402
 from test_c1_execution_loop import Clock, RuntimeDouble  # noqa: E402
@@ -309,6 +310,28 @@ class A_ABuilderWithADraftPrAdmitsItsOwnReview(Case):
         from_builder = contract.review_round_identity(BUILD_ISSUE, CANDIDATE)
         from_issue = review_ingress.round_identity(BUILD_ISSUE, CANDIDATE)
         self.assertEqual(from_builder, from_issue)
+
+    def test_a_builder_round_is_always_revision_one(self):
+        # The revision exists so a HUMAN can say "the question changed" about a review they
+        # commissioned. A Builder run that could raise it would be able to commission a
+        # re-review of its own output after a FAIL, which is a retry loop with a round's
+        # name - so the Builder path never passes a revision at all.
+        import inspect
+
+        source = (HERE / "c1_builder_candidate.py").read_text(encoding="utf-8")
+        self.assertNotIn("revision", source)
+        self.assertEqual(
+            list(inspect.signature(contract.review_round_identity).parameters)[1:],
+            ["candidate_sha", "revision"])
+
+        self.enqueue_builder()
+        self.tick(BuilderGitHub())
+        payload = self.c14_tasks()[0].payload
+        self.assertEqual(payload["ledger_round_id"],
+                         contract.review_round_identity(BUILD_ISSUE, CANDIDATE,
+                                                        revision=1)["ledger_round_id"])
+        self.assertIsNone(re.search(r"-R[0-9]+$", payload["ledger_round_id"]))
+        self.assertEqual(payload["external_task_id"], payload["c14_task_id"])
 
     def test_the_created_payload_is_a_valid_c14_task(self):
         self.enqueue_builder()

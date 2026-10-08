@@ -195,6 +195,22 @@ REVIEW_STANDARD = (
     "acceptance criteria or machine evidence. A practice that is merely good is not a "
     "requirement the candidate failed.",
     "- Finding nothing blocking is a valid and successful review result.",
+    "- GIT DELTA VERSUS FINAL CANDIDATE: changed_paths and candidate_diff describe ONLY "
+    "the changes between the pull request's frozen base and head; they do NOT enumerate "
+    "the final HEAD file tree. A file absent from this delta may exist unchanged in "
+    "both base and head, including work integrated from an earlier PR. Never conclude "
+    "that an inherited file is missing from HEAD or that an integration claim is false "
+    "solely because the file does not appear in changed_paths or candidate_diff.",
+    "- Distinguish evidence from claims: a review brief or release manifest saying "
+    "a file is integrated is a declaration, not independent proof of its HEAD blob. "
+    "Conversely, absence from the delta is not proof of absence from HEAD. An actual "
+    "missing-file or blob-mismatch finding requires positive evidence about the frozen "
+    "HEAD tree. If such evidence is unavailable and decisive for this stage, identify "
+    "what cannot be verified rather than assert a false absence.",
+    "- This distinction does not waive review of real changes: evaluate actual IAM, "
+    "actor attribution, permission boundaries, and other demonstrated rule violations "
+    "on their merits. Mere presence of inherited code also does not prove that its "
+    "full functionality has passed this round's quality acceptance.",
     "- Minor, advisory, stylistic, cleanup, readability, optional-hardening or "
     "future-improvement findings may be reported, but they do not require rework.",
     "- PASS_SCOPED may include non-blocking findings and remaining risks.",
