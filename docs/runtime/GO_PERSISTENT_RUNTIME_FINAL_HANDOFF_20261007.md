@@ -1,6 +1,16 @@
+> **HISTORY** — 历史 / 取证材料，不是当前操作说明。
+> **HISTORY** — historical / audit material, not current operating instructions.
+>
+> 当前入口：人（中文）[`README.md`](../../README.md) · AI（英文）[`AGENTS.md`](../../AGENTS.md)。
+> Current entry points: [`README.md`](../../README.md) (Chinese, humans) and [`AGENTS.md`](../../AGENTS.md) (English, AI).
+>
+> 本文档不定义正常操作路径，不得作为当前操作依据。This document does not define the normal path; do not use it as current operating guidance.
+
+---
+
 # GO Persistent Runtime · FINAL HANDOFF（2026-10-07）
 
-> **如果只想确认 Persistent Runtime 是否已经交付、当前怎么用、哪些历史不要再碰，请以本 PR 为最终入口。**
+> **历史说明（不再是最终入口）。** 想确认 Persistent Runtime 怎么用，请读仓库根 `README.md` §7 / `AGENTS.md` §5。
 
 本文件是 **最终收口**，不是新 Runtime feature。合并本 PR 之后，Persistent Runtime 在工程上封板（FROZEN）。
 

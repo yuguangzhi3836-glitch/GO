@@ -1,3 +1,13 @@
+> **HISTORY** — 历史 / 取证材料，不是当前操作说明。
+> **HISTORY** — historical / audit material, not current operating instructions.
+>
+> 当前入口：人（中文）[`README.md`](../../README.md) · AI（英文）[`AGENTS.md`](../../AGENTS.md)。
+> Current entry points: [`README.md`](../../README.md) (Chinese, humans) and [`AGENTS.md`](../../AGENTS.md) (English, AI).
+>
+> 本文档不定义正常操作路径，不得作为当前操作依据。This document does not define the normal path; do not use it as current operating guidance.
+
+---
+
 # GO Persistent Runtime — 老板使用说明
 
 > 面向 Product Owner / Boss。只讲“怎么派活、怎么发审核”。  
@@ -241,7 +251,7 @@ Formal Issue 是**任务入口**，不是聊天式状态面板。
 - 因此：看到 `c1-` 前缀的文件名，请先读
   [GO current state](../project/GO_CURRENT_STATE.md) 第 4 节，不要按名字判断它是现役还是退役。
 
-历史设计/验证文档在本目录中保留用于工程审计；老板日常派活以本 README 为准。
+历史设计/验证文档在本目录中保留用于工程审计；**老板日常派活以仓库根 `README.md` §7 为准**（本文件已降为 HISTORY）。
 
 ---
 

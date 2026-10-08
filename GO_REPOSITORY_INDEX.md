@@ -1,6 +1,16 @@
+> **HISTORY** — 历史 / 取证材料，不是当前操作说明。
+> **HISTORY** — historical / audit material, not current operating instructions.
+>
+> 当前入口：人（中文）[`README.md`](README.md) · AI（英文）[`AGENTS.md`](AGENTS.md)。
+> Current entry points: [`README.md`](README.md) (Chinese, humans) and [`AGENTS.md`](AGENTS.md) (English, AI).
+>
+> 本文档不定义正常操作路径，不得作为当前操作依据。This document does not define the normal path; do not use it as current operating guidance.
+
+---
+
 # GO 候选归档索引
 
-## 当前状态（先读这一段）
+## 历史状态（本文件已降为 HISTORY；当前入口见仓库根 README.md / AGENTS.md）
 
 HK-STAGING 自 2026-09-13 起运行 **DEPTH48 业务运行时**。本仓库**不再**发布运行时指针：
 `docs/canonical-baseline/CURRENT_HK_RUNTIME.json` 已于 2026-10-08 退役（仓库里的声明文件无法

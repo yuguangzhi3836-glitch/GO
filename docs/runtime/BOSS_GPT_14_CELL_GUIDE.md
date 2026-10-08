@@ -1,6 +1,16 @@
+> **HISTORY** — 历史 / 取证材料，不是当前操作说明。
+> **HISTORY** — historical / audit material, not current operating instructions.
+>
+> 当前入口：人（中文）[`README.md`](../../README.md) · AI（英文）[`AGENTS.md`](../../AGENTS.md)。
+> Current entry points: [`README.md`](../../README.md) (Chinese, humans) and [`AGENTS.md`](../../AGENTS.md) (English, AI).
+>
+> 本文档不定义正常操作路径，不得作为当前操作依据。This document does not define the normal path; do not use it as current operating guidance.
+
+---
+
 # GO Persistent Runtime / 14 Cell — Boss GPT 完整交付说明
 
-> **给余总 / Boss GPT 的单一入口。**
+> **历史说明（不再是单一入口）。** 当前入口是仓库根 `README.md`（中文）与 `AGENTS.md`（英文）。
 >
 > 这份文档同时回答四个问题：
 > 1. 我们这几天到底做了什么；

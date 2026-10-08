@@ -4,7 +4,7 @@ This directory holds the **canonical, GitHub-reproducible** definition of the
 business runtime that is currently active on HK-STAGING-01.
 
 It is not a plan, not a candidate, and not historical evidence: the definitions
-here describe what is running now. What the host is *actually* running is established
+here are the runtime definition that is active now. What the host is *actually* running is established
 from the newest signed VERIFY Evidence for HK-STAGING on the evidence bus
 (`chenzhenxi1-sudo/go-control-evidence`); this repository declares no runtime pointer.
 The pointer that used to stand here
@@ -76,16 +76,23 @@ curl -fsS http://127.0.0.1:8000/health
 docker run --rm --entrypoint python <tag> -c \
   "from alembic.config import Config; from alembic.script import ScriptDirectory; \
    print(ScriptDirectory.from_config(Config('/app/alembic.ini')).get_heads())"
-# ['0133_flight_change_plan']
+# prints the migration heads of the image under test - read them from that run
 ```
 
 ## Database
 
-The business runtime expects Alembic head `0133_flight_change_plan`.
+**This repository does not assert the live database revision.** Read it from the
+newest signed VERIFY Evidence for HK-STAGING
+(`chenzhenxi1-sudo/go-control-evidence`) - that is the only thing that says what
+the host is running.
+
 Forward migration only. Never drop, reset, or destructively downgrade the
-business database. See
-[`docs/control-plane/hk-staging/HK_STAGING_DEPLOY_RUNBOOK.md`](../../docs/control-plane/hk-staging/HK_STAGING_DEPLOY_RUNBOOK.md)
-before any deployment action.
+business database.
+
+**Deployment and inspection go through GO Forge**, not by hand. See the repository
+root [`AGENTS.md`](../../AGENTS.md) (AI) and [`README.md`](../../README.md) (human).
+Do not run `HK_STAGING_*` actions unless the Owner explicitly authorizes Old
+Command Center fallback mode.
 
 ## Superseded, and not to be confused with this runtime
 

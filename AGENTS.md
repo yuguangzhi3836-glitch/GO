@@ -1,158 +1,298 @@
-# GO repository operating instructions
+# GO — AI operating instructions
 
-## Current active runtime — read this before reasoning about HK-STAGING
+> This file is the **only CURRENT AI entry point** for this repository.
+> The human entry point is [`README.md`](README.md) (Chinese).
+> Every other Markdown file in this repository is **HISTORY**: it may be read for audit,
+> provenance or break-glass reasoning, but it does not define normal operation.
+>
+> Version note: this file deliberately hard-codes no fast-changing value (commit SHA, image id,
+> migration head, service state). Read those live. Runtime identity comes from the newest
+> **signed VERIFY Evidence**, never from a file in this repository.
 
-HK-STAGING runs the **DEPTH48 business runtime** since 2026-09-13. No file in this
-repository declares what is running there: the pointer that used to
-(`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`) was retired on 2026-10-08. A
-runtime's identity comes from the newest signed VERIFY Evidence for HK-STAGING on the
-evidence bus (`chenzhenxi1-sudo/go-control-evidence`).
+---
 
-Answer the questions below from that Evidence plus `deploy/hk-staging/README.md`, not
-from PR numbers, historical parents, or prior chat context:
+## CURRENT NORMAL PATH
 
-1. Business source: `application/`
-2. Active HK runtime generation: DEPTH48
-3. Build definition: `application/Dockerfile` (`docker build -t <tag> application/`)
-4. Compose: `deploy/hk-staging/docker-compose.business-runtime.yml`
-5. Database head: read it from the newest signed VERIFY Evidence; this file no longer
-   asserts a value, because the value it used to carry came from a retired pointer
-6. Business services (8): `api`, `outbox-worker`, `recovery-worker`,
-   `reconciliation-worker`, `judgment-worker`, `mobile-engagement-worker`,
-   `mobile-push-worker`, `mobile-push-receipt-worker`
-7. Protected non-targets: `caddy`, `redis`, PostgreSQL/RDS business data, media
-   volumes, HK Agent, Executor, signing keys, Task/Evidence/ledger, Control
-   Plane authority data, SSH access, Production
-8. Build: see `deploy/hk-staging/README.md`
-9. Smoke: `curl -fsS http://127.0.0.1:8000/health`, worker entrypoints, `alembic heads`
-10. Superseded: DEPTH46 parent, old R3.x HK runtime, `hk-staging/` 2026-09-11
-    snapshot, and the `CP11_DEPTH48_SOURCE_COMPOSITE_PARENT_20260913` image
-    (source input only, not a runnable business image)
-11. `deliverables/` and `evidence/` are historical evidence bound to their
-    original commit — not current authority
-12. **Control Plane and Business Runtime are two different axes.** Control Plane:
-    `command-center/`, `control-plane/`, `hk-staging/source/{agent,executor}`.
-    Business runtime: `application/` + `deploy/hk-staging/`.
+```text
+Deploy:
+Boss GPT -> GO-FORGE / FORGE_DEPLOY -> GO Forge -> HK-STAGING
 
-## Read project operating context first
+Inspect:
+Boss GPT -> GO-FORGE / FORGE_INSPECT -> GO Forge -> HK-STAGING
 
-Before taking over GO work, read:
+Build:
+Boss -> Formal C01-C12 Issue -> Persistent Runtime -> Builder -> Draft PR -> C14 -> C13
 
-1. `README.md`
-2. `docs/project/OPERATING_CONTEXT.md`
-3. `docs/project/GO_CURRENT_STATE.md`
-4. `docs/project/ACTIVE_DECISIONS.md`
-5. the relevant module state file under `docs/state/`
-6. `docs/project/CONTEXT_CHECKPOINT.json`
-7. `docs/project/CONTEXT_HANDOFF_PROTOCOL.md` when synchronizing or handing off project context
+Review:
+Boss -> C14 · REVIEW Issue -> Runtime -> C14 -> C13 when admitted
 
-Treat these as the current project-context entry point before reasoning about who owns product direction, who reviews/integrates work, which AI/agent is acting, which workstation should execute a task, or what the project currently believes to be true.
+Stop:
+GO-FORGE / FORGE_STOP
 
-**Do not synchronize GO by replaying every historical Pull Request by default.** Use the current-state layer plus the context checkpoint, then inspect changes after the checkpoint. Older PRs remain available for audit, provenance, conflict investigation, rollback/lineage questions, or an explicit historical request.
+Do NOT use Old Command Center or HK_STAGING_* unless the Owner explicitly requests fallback mode.
+```
 
-An open PR/branch is a candidate and must not be silently promoted into current project truth merely because it is newer or contains more code.
+If you are a zero-context AI: **the four lines above are the whole answer.** Everything below is
+detail. Do not go looking for a GUIDE/RUNBOOK/HANDOFF to learn "how it is done now" — those are
+HISTORY and several of them contradict the path above.
 
-`docs/project/CONTEXT_CHECKPOINT.json` records `checkpoint_main_sha` — the verified canonical `main` at which the current-state layer was last refreshed. It always names **canonical main**, never the context layer's own branch head. To compute what has changed, compare current `main` against that SHA and read only the delta.
+---
 
-Keep two identities apart when answering "where are we now":
+## 1. Truth order
 
-- the **repository** identity (`main` SHA, `main:application` tree, file count, source fingerprint, **repository** migration head);
-- the **live runtime** identity (HK-STAGING generation, deployed application tree, **live** database revision).
+When two sources disagree, the higher one wins. Do not average them.
 
-A repository migration that has not been executed is not the live database revision. A merged PR does not move the live runtime. `HK_DEPLOY`, `FINAL_RELEASE` and `PRODUCTION` are separate authorizations and are `HOLD` unless canonical main records otherwise.
+1. **Live state** — the real host, the real GitHub state (`main`, PR head, checks), the real
+   running process.
+2. **Signed Evidence** — `chenzhenxi1-sudo/go-control-evidence`. The newest signed VERIFY
+   Evidence is the only thing that says what HK-STAGING is actually running.
+3. **This file and `README.md`** — the current operating definition.
+4. **HISTORY** — everything else, including anything that calls itself CURRENT / FINAL / GUIDE /
+   HANDOFF / RUNBOOK. Useful for provenance, never for current truth.
 
-### Human / AI responsibility model
+Two hard consequences:
 
-- **余总 / Boss** is the product owner and final business-direction decision maker.
-- **Boss GPT** is a product exploration/development agent. Its branches and PRs are candidates, not automatically canonical and not Execution Authority.
-- **陈震曦 / Eason** is the technical operator, integrator, reviewer, and execution coordinator. He decides which workstation/agent receives a task and is responsible for connecting product candidates to real Git/test/package/control-plane/runtime work.
-- **Eason's ChatGPT** is a coordination, context, review, and task-decomposition layer. It is not product owner and is not deployment authority.
-- **Codex and WorkBuddy** are execution agents under Eason's control. Command execution capability does not grant deployment or Production authority.
+- **`main` is not the host.** A merged PR does not move a running environment. Repository bytes
+  and host bytes differ routinely; treat that as normal, not as a defect to fix.
+- **No file in this repository declares what a machine is running.** The pointer that used to
+  (`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`) was retired on 2026-10-08 and deleted.
 
-### Fixed workstation convention
+## 2. Ownership and authority
 
-- **Eason-8845**: default **Codex main execution workstation**. Use it for local mainline/source work, testing, Git, and tasks that benefit from its verified direct SSH paths to HK-STAGING and GO Command Center.
-- **Eason-13490** (observed Windows hostname `EASON`): default **WorkBuddy / second development workstation**. Its verified primary ECS path is **direct SSH key access** (`ssh hk-staging` / `ssh go-cc`); Alibaba Cloud Workbench CLI is retained as fallback only.
-- Both workstations are operated by Eason. A branch is not owned by a workstation merely because it was created there.
-- Before continuing work on either workstation, verify repository, branch, HEAD, working-tree state, and remote state. Never assume uncommitted state from the other workstation exists locally.
+- **余总 / Boss** — product owner and final business-direction decision maker.
+- **Boss GPT** — product exploration/development agent. Its branches, PRs and documents are
+  **candidates**: not automatically canonical, not Execution Authority.
+- **陈震曦 / Eason** — technical operator, integrator, reviewer, execution coordinator.
+- **Eason's ChatGPT** — coordination / context / review layer. Not product owner, not deployment
+  authority.
+- **Codex / WorkBuddy** — execution agents under Eason's control. Command capability is not
+  deployment authority.
 
-Workstation roles and the current access-channel state are recorded in `docs/project/OPERATING_CONTEXT.md` (section 「服务器访问通道」). The detailed per-identity inventory and recovery commands are on canonical main at `docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md`, with the machine-readable form in `docs/control-plane/access/connection-identities.v1.json`.
+Rules:
 
-### Product-lineage rule
+- **Do not touch any PR authored by `yuguangzhi3836-glitch` (the Boss).** No branch, commit,
+  merge, close, retarget, or edit — ever, regardless of how stale it looks.
+- A Pull Request is a proposal/review boundary, **not** Execution Authority. Never merge unless
+  the responsible human explicitly authorizes that specific merge, in that turn.
+- Documentation is not Execution Authority. Execution Authority is: live state · human approval ·
+  Signed Task · installed artifact · usable recovery record · signed Evidence.
+- Servers are **read-only by default**. Connectivity is capability, not authorization. Every
+  mutation requires fresh, explicit, per-action authorization.
 
-Do not infer product generation from Pull Request number. In particular:
+## 3. Mutation boundary
 
-- PR #40 is an HK-STAGING archive, **not DEPTH40**.
-- Current source work is DEPTH48, integrated through PR52. DEPTH48 is now also the **active HK-STAGING business runtime**; its runtime definition is `application/Dockerfile` + `deploy/hk-staging/`. DEPTH46 is a **superseded historical** parent, not the current runtime. Read live runtime state from the newest signed VERIFY Evidence; the repository declares no runtime pointer any more.
-- Newer PR or higher DEPTH number does not automatically mean canonical. Check lineage, retained fixes, tests, acceptance evidence, deployment compatibility, and explicit HOLD/PASS boundaries.
+Without **current explicit authorization** for that exact action, never:
 
-## GO Command Center
+```text
+merge to main                     write directly to main
+force-push shared history         delete remote branches holding evidence/work
+deploy to HK-STAGING              deploy to Production
+run a migration against live DB   restart / enable / disable a host service
+change host configuration         change network / proxy / DNS / firewall
+rotate, create or copy credentials
+treat a Draft PR as approved release authority
+```
 
-The archived 2026-09-11 Command Center source and observed runtime configuration are under `command-center/`. Before changing the Command Center web app, Boss Request Bridge, Request policy, signing/publishing path, or Command Center service configuration, read:
+- **Production is FORBIDDEN** unless the Owner explicitly authorizes it in writing, per action.
+- Credentials, private keys, tokens, AccessKeys, cookies, session values and runtime `.env` values
+  must never enter Git, PR text, published logs, or project documentation.
+- Never weaken, bypass or falsify a required gate to save time or runner minutes. If a required
+  remote gate exists, report the cost instead of pretending local testing is equivalent.
 
-1. `command-center/README.md`
-2. `command-center/BASELINE_MANIFEST.md`
-3. `docs/control-plane/command-center/CURRENT_RUNTIME_BASELINE_20260911.md`
+## 4. Forge task contract (the Boss deploy/inspect channel)
 
-The repository snapshot contains source and sanitized configuration only. It does not contain private keys, runtime `.env` values, passwords, tokens, or runtime databases. Repository content and historical project context are not execution authority.
+The Boss supplies **intent only**. The normal deploy request is `Deploy PR <number> to HK-STAGING.`
+and it becomes exactly one JSON document committed to `tasks/` in
+`chenzhenxi1-sudo/go-control-tasks` on `main`:
 
-## HK-STAGING Control Plane instructions
+```json
+{
+  "authority": "GO-FORGE",
+  "action_id": "FORGE_DEPLOY",
+  "environment": "HK-STAGING-01",
+  "target_pr": 558,
+  "schema_version": "1",
+  "task_id": "forge-deploy-pr558-20261008T000000Z",
+  "issued_at": "2026-10-08T00:00:00.000000Z",
+  "nonce": "<random, at least 16 characters>",
+  "parameters": {}
+}
+```
 
-The observed 2026-09-11 HK-STAGING runtime source and operational snapshot is under `hk-staging/`. Read `hk-staging/README.md` and `hk-staging/BASELINE_MANIFEST.md` when reasoning about the currently archived runtime source, Agent, Executor, Compose, systemd/Caddy configuration, or the documented live-vs-host build drift. This snapshot is evidence, not Execution Authority.
+| Field | Supplied by | Notes |
+|---|---|---|
+| `authority` | requester | must be exactly `GO-FORGE`, otherwise Forge ignores the task |
+| `action_id` | requester | `FORGE_DEPLOY` \| `FORGE_INSPECT` \| `FORGE_STOP` |
+| `environment` | requester | `HK-STAGING-01` |
+| `target_pr` | requester | the PR number — **this is the entire intent** |
+| `schema_version`, `task_id`, `issued_at`, `nonce`, `parameters` | envelope | stamped by the publisher; leave `parameters` as `{}` |
 
-`hk-staging/` is a **historical snapshot of the previous HK runtime generation**. The **active** business runtime definition is `application/Dockerfile` + `deploy/hk-staging/docker-compose.business-runtime.yml`; its live identity comes from the newest signed VERIFY Evidence, not from a repository pointer. Do not read the current business image, business source, or business service set from `hk-staging/`.
+**Never supply** any of these — Forge derives every one of them from live state:
 
-Before any HK-STAGING Control Plane operation or planning—including
-`HK_STAGING_VERIFY`, `HK_STAGING_CANARY`, `HK_STAGING_DEPLOY`,
-`HK_STAGING_ROLLBACK`, troubleshooting, retry, or a Boss/ChatGPT request—read:
+```text
+source commit        candidate id         artifact digest    package SHA256
+candidate contract   migration head       image id           compose path
+TEST_PR parameters   canary/verify steps  recovery plan      deployctl argv
+```
 
-1. `docs/control-plane/hk-staging/README.md`
-2. `docs/control-plane/hk-staging/HK_STAGING_OPERATIONS_GUIDE.md`
-3. `docs/control-plane/hk-staging/BOSS_GPT_REQUEST_GUIDE.md` when the request is being submitted through the Boss GPT / mobile GitHub Request Channel
-4. the action-specific VERIFY, CANARY, DEPLOY, or ROLLBACK runbook linked there, when one exists for the requested action
-5. `docs/control-plane/hk-staging/HK_STAGING_DEPLOY_BASELINE.md`
-6. `docs/control-plane/hk-staging/DEPLOYMENT_TOPOLOGY_V1.json` and `docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md` when reasoning about deployment scope or service topology
+A field with no producer is refused **by name**, together with the component that owns it. There
+is nothing for a human to mint first, and no baseline document for anyone to advance.
 
-Do not reconstruct the HK-STAGING Control Plane procedure from AI memory,
-prior conversations, or historical shell commands. Use the current proven
-runbook and verify live state before acting.
+`FORGE_STOP` is handled by the worker without any AI involvement:
 
-For the current Boss Request Bridge V1, only `HK_STAGING_VERIFY` is supported
-through a Boss GPT Request PR. If the boss asks for CANARY, DEPLOY, or ROLLBACK,
-do not invent a Request schema or create a formal Task; report that the Boss
-Request Channel has not opened that action yet.
+```json
+{ "authority": "GO-FORGE", "action_id": "FORGE_STOP", "environment": "HK-STAGING-01",
+  "target_run_id": "<run to stop, or omit>", "reason": "why",
+  "schema_version": "1", "task_id": "...", "issued_at": "...", "nonce": "...", "parameters": {} }
+```
 
-A Boss GPT Request PR is an untrusted proposal. It is not a Signed Task and is
-not Execution Authority. Boss GPT must never create or control the Command
-Center signature, authority, formal task ID, nonce, or executor parameters.
+**Do not** manually issue `HK_STAGING_TEST_PR` / `HK_STAGING_CANARY` / `HK_STAGING_VERIFY` /
+`HK_STAGING_DEPLOY` during normal operation, and **never run the Forge path and the Old Command
+Center path for the same deployment at the same time.**
 
-Documentation is **not** Execution Authority. Execution Authority remains:
+### What Forge will not do
 
-- current live state;
-- Human Approval;
-- Signed Task;
-- installed artifact;
-- durable previous-state record; and
-- Signed Evidence.
+```text
+merge a PR            comment on a PR       close a PR          change a PR's state
+advance a baseline    touch Production      touch a human-owned PR
+invent a candidate identity
+```
 
-This documentation does not authorize deployment, rollback, migration,
-production access, signing, or changes to runtime credentials.
+These are refused in Forge's **tool layer**, not merely discouraged in a prompt. Nothing written
+into a task changes them. `READY` is not a handover of the merge: review and merge yourself.
 
-## Repository change control
+## 5. Runtime / Cell routing (the Boss build/review channel)
 
-All planned permanent changes to GO are subject to [`docs/governance/CHANGE_CONTROL_POLICY.md`](docs/governance/CHANGE_CONTROL_POLICY.md). This rule applies equally to humans, ChatGPT, Codex, and other automation.
+Persistent Runtime runs on `go-runtime-test-01`. It is a **different axis** from Forge.
 
-For normal work, use:
+- **Builder**: a GitHub Issue titled `Cxx · <task-id> · <scope>` with `Cxx` in **C01–C12**, body
+  carrying a `Task:` paragraph and `Canonical source: <full 40-char SHA of current main at the
+  moment the Issue was created>`. The gate is `source_anchor == current main`; a stale SHA is
+  refused and no paid Builder runs.
+- **Review**: a GitHub Issue titled `C14 · REVIEW · <description>` with `Candidate PR: #<n>` and
+  `Candidate SHA: <the exact PR head at the moment the Issue was created>`. The gate is
+  `candidate_sha == PR head`; a later push invalidates it. **Never create a `C13 · REVIEW` Issue** —
+  only C14's sealed result can cause Runtime to create C13.
+- **kind IS the routing.** Each executor claims one kind; two executors claiming one kind is a
+  race and the boundary test asserts disjointness.
+- After a Builder produces exactly one Draft PR, Runtime automatically runs C14 and then C13.
+  C13/C14 produce sealed evidence **only** — they never merge and never deploy.
+- `c1_worker.py` is a **shared library**, not a worker. The retired thing is the unit that ran it
+  as a standalone executor. Do not infer status from a `c1-` filename prefix.
+- **"14 workers" is a wrong reading.** 14 = C01–C14 **Cells**; C13 and C14 are `control_only`.
+  Two executors actually run.
 
-`current main -> short-lived branch -> commits/tests -> Pull Request -> review -> merge`
+Cells: C01 Hotel · C02 Flight · C03 Rail · C04 Rental · C05 Ride · C06 Attraction ·
+C07 Traveler Intelligence · C08 GO AI Planning & Execution · C09 GO Judgment & Trust ·
+C10 Unified Trips · C11 Transaction & Finance · C12 Platform/Security/Model Gateway ·
+C13/C14 control-only review.
 
-Do not write directly to `main`, including for probes, convenience edits, temporary test files, documentation fixes, product changes, deployment-contract changes, or AI-generated changes. A Pull Request is a proposal/review boundary and is not Execution Authority. Do not merge unless explicitly authorized by the responsible human.
+## 6. Candidate identity boundary
 
-Any change that adds/removes/renames runtime service roles, introduces another business image family, changes protected non-targets, or otherwise alters HK-STAGING deployment topology must be classified as a topology change and follow [`docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md`](docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md). Normal DEPLOY must not accept an arbitrary caller-supplied service list or silently expand topology.
+- An open PR or branch is a **candidate**. It is never silently promoted to current truth because
+  it is newer or larger.
+- The live runtime identity is the newest signed VERIFY Evidence, and nothing else.
+- `comparison=DRIFT` is **not** a defect by itself. If the difference is accounted for by a
+  verified record it is recorded (`drift_explained=true`) and the run continues; only an
+  **unexplained** runtime stops a run and asks a human.
+- "Candidate" and "running version" are different things by definition — a deployment turns one
+  into the other.
 
+## 7. Evidence
 
-## Unified application source
+| What | Where |
+|---|---|
+| HK runtime identity (**only authority**) | `chenzhenxi1-sudo/go-control-evidence` → `evidence/`, newest signed VERIFY |
+| Forge task results | same repo — exactly one document per terminal task |
+| Forge run ledger | `chenzhenxi1-sudo/go-control-tasks` → `receipts/` |
+| Boss notification | one WeCom message per accepted task, to the owner's single chat |
+| C13/C14 round decisions | Runtime / GitHub Actions sealed artifacts |
 
-PR52 merged DEPTH47/DEPTH48 source repairs at `9a056e255374d4254208d519462e7cd5b693a78f`; PR53 ledger checks were included. The application tree is `ad7d1de1190f86ad29d1c6cdafbcedd592e27206`. See `docs/canonical-baseline/DEPTH48_ORDERED_REPAIRS.md`. DEPTH46 remains the latest complete parent; visible three-end acceptance, PostgreSQL, frozen-runtime CI and a new self-contained parent remain unfinished. On 2026-09-13 the user explicitly authorized uploading the new parent, source, workflows and subsequent fixes to this repository, running isolated CI, and merging the PR. Perform the source review, exact-source validation and conflict resolution before merging. This source-merge authorization does not authorize installation or Hong Kong/Production deployment. After merge, start subsequent work from application/ on current main using short-lived branches and reviewable PRs. Historical evidence remains bound to its original commit and scope.
+## 8. Active capability vs. history
 
-**Current canonical baseline (refreshed 2026-09-14):** canonical `main` is `8ffcde66d36c1bbf849218529ef015f6e81725af`; `main:application` is `dd815baf0105cce603e9a28b002cfb9d8b95d186` (1365 files, source fingerprint `a64f8185f19f1c78a70fc6662fbafc85f69273745a95503f97c2948ab6d85374`) and the repository migration head is `0134_flight_status_width`. The paragraph above records the DEPTH48 integration identity at merge time and remains historical. Current facts — including the live HK-STAGING runtime identity, the live database revision, the gate/release state and the open candidate PRs — belong to the current-state layer: see [`docs/project/GO_CURRENT_STATE.md`](docs/project/GO_CURRENT_STATE.md) and [`docs/project/CONTEXT_CHECKPOINT.json`](docs/project/CONTEXT_CHECKPOINT.json). PR #66, #67, #69, #70, #74 and #76 are merged; `HK_DEPLOY`, `FINAL_RELEASE` and `PRODUCTION` remain `HOLD`.
+ACTIVE: `application/` (business source) · `deploy/hk-staging/` (runtime definition) ·
+`application/Dockerfile` (build) · Forge operator source in `go-control-tasks`
+(`forge-operator/source/`) · `tasks/` + `receipts/` · the evidence repo ·
+Persistent Runtime on rt01.
+
+RETIRED / NOT ON THE NORMAL PATH: Old Command Center (`command-center/`, `control-plane/`,
+`hk-staging/source/{agent,executor}`) — source retained as **break-glass history only**; its
+request bridge and web service are stopped and disabled and its periodic timers were retired.
+
+HISTORY (bound to their original commit): `deliverables/`, `evidence/`, `hk-staging/`
+(2026-09-11 snapshot), all DEPTH parents, `docs/audits/**`, `docs/reviews/**`,
+`docs/control-plane/**`, `docs/project/**`, `docs/state/**`, `docs/runtime/**`, `docs/go-forge/**`.
+
+> **Known and deliberately unfixed:** parts of the Persistent Runtime (`runtime.py`,
+> runtime-host-agent, runtime bridge) have **zero bytes on `main`**; their source-of-record is a
+> retained branch, while the host runs more enabled units than `main` declares. This is a
+> **provenance gap**. Report it. Do not fix, stop, delete, reinstall or reconcile it as part of a
+> documentation or unrelated task.
+
+## 9. Repository change control
+
+All planned permanent changes follow
+[`docs/governance/CHANGE_CONTROL_POLICY.md`](docs/governance/CHANGE_CONTROL_POLICY.md), for humans,
+ChatGPT, Codex and other automation alike.
+
+```text
+current main -> short-lived branch -> commits/tests -> Pull Request -> review -> merge
+```
+
+Never write directly to `main` — including for probes, convenience edits, temporary test files,
+documentation fixes, or AI-generated changes.
+
+Any change that adds/removes/renames runtime service roles, introduces another business image
+family, changes protected non-targets, or otherwise alters HK-STAGING deployment topology is a
+**topology change** and must follow
+[`docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md`](docs/control-plane/hk-staging/TOPOLOGY_CHANGE_POLICY.md).
+
+**Protected non-targets** (never stop, remove or recreate as part of a business cutover):
+`caddy` · `redis` · PostgreSQL/RDS business data · persistent media volumes · HK Agent · Executor ·
+signing keys · Task/Evidence/ledger · Control Plane authority data · SSH access and key material ·
+Production.
+
+### Git and CI discipline
+
+- Prefer local iteration and targeted local tests; **GitHub Actions are an acceptance/checkpoint
+  layer, not the edit-test-fix loop.** Do not push merely to make CI repeat tests that already
+  passed locally.
+- Push only at a real boundary: explicit request · a coherent stage ready for review ·
+  remote-only validation is materially required · remote commit identity is required for a
+  candidate/artifact/Evidence/deployment binding · the task is complete.
+- Inspect `git diff` before commit; checkpoint locally whenever useful. A local commit does not
+  imply a push.
+- **Do not equate PR numbers with product generations.** PR #40 is an HK-STAGING archive, not
+  DEPTH40.
+
+## 10. Break-glass
+
+Old Command Center is used **only** when the Owner explicitly requests fallback mode for a
+specific action. It is not a convenience path.
+
+When explicitly in fallback mode, the only documents that may be consulted are:
+
+- `docs/control-plane/hk-staging/README.md`
+- `docs/control-plane/hk-staging/HK_STAGING_OPERATIONS_GUIDE.md`
+- the action-specific `HK_STAGING_*` runbook linked there
+
+They are HISTORY with break-glass value. They are not the normal path, and reading them is not a
+reason to use them. A Boss GPT must never choose on its own to use both paths at the same time.
+
+## 11. Working style (for execution agents)
+
+- **Lead with the conclusion, then the current state, then the next action.** Chinese by default;
+  keep SHAs, branches, paths, commands, protocol names in English.
+- Give exact, copy-pasteable commands. If one command is enough, do not list ten alternatives.
+- Make routine, reversible, low-risk decisions yourself. Ask only when the ambiguity materially
+  affects product intent, irreversible data/history, credentials, deployment/Production, a
+  conflict between valid baselines, destructive operations, or authority boundaries.
+- Do not ask twice for information already present in the task, this file, `README.md`, or Git state.
+- **Prefer evidence over confidence**: report branch, HEAD, test counts, PASS/FAIL/SKIP, changed
+  files, hashes, exact command output, PR number, CI status. Never convert partial evidence into a
+  broader PASS claim.
+- Correct mistakes directly, including mistakes by Eason, another AI, an older README, or a prior
+  assumption — say so and replace it with the verified fact.
+- Keep progress visible on long tasks. Do not narrate every trivial command.
+- Never hide a failed test behind an otherwise successful summary; never call a candidate
+  "canonical" without evidence.
