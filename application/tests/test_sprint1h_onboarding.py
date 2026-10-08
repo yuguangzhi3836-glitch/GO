@@ -1,5 +1,5 @@
 from go_hotel.db.session import SessionLocal
-from go_hotel.db.models import HotelExternalIdentityRow
+from go_hotel.db.models import ConnectorActivationAuditRow, HotelExternalIdentityRow, PropertyMappingCandidateRow
 from go_hotel.security.service import identity_service
 
 def admin_headers(username='go_admin',password='change-me-admin'):
@@ -58,9 +58,16 @@ def test_supplier_connector_onboarding_golden_path(client):
     r=client.put(f'/internal/v1/supplier-connectors/{oid}/rollout',json={'percent':25},headers=headers|{'X-Actor-ID':'go_governance'})
     assert r.status_code==200; assert r.json()['data']['rollout_percent']==25
 
+    principal=identity_service.authenticate(headers['Authorization'].split(' ',1)[1],touch_session=False)
     with SessionLocal() as s:
         ident=s.query(HotelExternalIdentityRow).filter_by(connector_id='conn_mock_hotel',external_hotel_id='mock_ext_001').one()
         assert ident.hotel_id=='htl_001'
+        reviewed=s.query(PropertyMappingCandidateRow).filter_by(mapping_id=mid).one()
+        assert reviewed.reviewed_by==principal.user_id
+        bound_reasons={'CREDENTIAL_REFERENCE_BOUND','CREDENTIAL_REFERENCE_READY','PROPERTY_MAPPING_APPROVED','SANDBOX_CERTIFICATION_PASSED','ACTIVATION_REQUESTED','ROLLOUT_CHANGED'}
+        audits=s.query(ConnectorActivationAuditRow).filter_by(onboarding_id=oid).all()
+        assert {a.actor_id for a in audits if a.reason in bound_reasons}=={principal.user_id}
+        assert {'go_connector_ops','go_mapping_admin','go_certifier','go_governance'}.isdisjoint({a.actor_id for a in audits})
 
 def test_activation_blocked_without_mapping_and_certification(client):
     headers=connector_headers()

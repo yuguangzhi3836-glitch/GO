@@ -29,7 +29,8 @@
           "sha256": "a319eb16144387dddf2b464bd7d5351f5b5e3f91a1df6fa49dbb74eeb5b7120c",
           "git_blob": "82997873aaddd8162e494c8c983dde6b808e3bab"
         }
-      ]
+      ],
+      "scope_class": "RETAINED_BASE_IDENTICAL_NOT_IN_CANDIDATE_DIFF"
     },
     {
       "pr": 477,
@@ -46,7 +47,8 @@
           "sha256": "e877cffd75e6c9c9cfa3c884ccee223288b173a525ddb8d58970fe08f528fea3",
           "git_blob": "aed0b63e6d52265ff7aef33138a474ca5196660d"
         }
-      ]
+      ],
+      "scope_class": "CANDIDATE_DIFF"
     },
     {
       "pr": 543,
@@ -63,7 +65,8 @@
           "sha256": "741a9d3b5bc7669c0a818a3c7d84d80ae85c0670deb2b70d709c28d8a2a46455",
           "git_blob": "1945330e8059a299995bf9107b6b75957e3fb1ff"
         }
-      ]
+      ],
+      "scope_class": "CANDIDATE_DIFF"
     },
     {
       "pr": 548,
@@ -80,7 +83,8 @@
           "sha256": "7bf238ba58acd46f8e6711d98aed3b412ad1b22bb62f6c007e2ad016b846b8a3",
           "git_blob": "005d73f835f639651d1f6f44c31119925202b801"
         }
-      ]
+      ],
+      "scope_class": "CANDIDATE_DIFF"
     }
   ],
   "retention_diff": {
@@ -2421,9 +2425,9 @@
     ]
   },
   "validation": {
-    "sequential_git_apply_check": "PASS (all four patches)",
-    "exact_source_blobs": "PASS (8/8)",
-    "python_ast": "PASS (8/8 changed Python files)",
+    "sequential_git_apply_check": "PASS (three candidate-diff patch groups; #385 already byte-identical in retention base)",
+    "exact_source_blobs": "PASS (6/6 candidate-diff files; 2/2 #385 retained-base files byte-identical)",
+    "python_ast": "PASS (6/6 candidate-diff Python files; 2/2 #385 retained-base Python files)",
     "isolated_email_unittest": "PASS (9 test methods, SMTP mocked)",
     "migration_graph_static": {
       "revisions": 146,
@@ -2453,5 +2457,18 @@
     "Source-bound build, candidate admission and canary as required by current formal channel",
     "Confirm deployment and rollback authority from current records; prior GO-FORGE deployment has no Command Center DEPLOY record",
     "Separate approval for exact deployment; then browser B/C registration, login and hotel onboarding acceptance"
-  ]
+  ],
+  "scope_accounting": {
+    "candidate_diff_application_files": 6,
+    "candidate_diff_prs": [
+      477,
+      543,
+      548
+    ],
+    "retained_base_identical_files": 2,
+    "retained_base_prs": [
+      385
+    ],
+    "note": "#385 product/test blobs are already present byte-identically in the #376 retention base and are not part of this candidate diff."
+  }
 }

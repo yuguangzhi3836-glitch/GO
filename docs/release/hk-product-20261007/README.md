@@ -5,14 +5,14 @@
 ## 关键结论
 不能直接用 main 覆盖香港。读取 main@13c78ce531c8afd7cbfb738f99a65732e50e5e01 与 #376@9f889acfcd36a82c7565b723261ee046c2615314 的完整非截断 Git trees，application 分别为 1378 / 1640 个 blob；#376 独有 274，main 独有 12，共同路径内容不同 237。这是文件差异统计，不是缺陷数量。
 #376 独有内容包括注册邮件/条款/验证码、酒店资料审核、单日历以及 0135—0145 迁移链。main 的 0135_supplier_onboarding 不能覆盖香港的 0145 链。
-本候选以已部署记录绑定的 #376 为保留基线，追加八个原始产品/测试文件；不把整棵 main 合入香港。PR 是 stacked candidate，base 为 #376 原分支，不修改/合并 #376，也不把该历史分支的 Runtime 当成当前安装源。
+本候选以已部署记录绑定的 #376 为保留基线；#385 两个文件已在该基线且与原 PR blob 完全一致，本候选 diff 只追加 #477/#543/#548 的六个原始产品/测试文件；不把整棵 main 合入香港。PR 是 stacked candidate，base 为 #376 原分支，不修改/合并 #376，也不把该历史分支的 Runtime 当成当前安装源。
 
 ## 盘点
 | 成果 | 证据与当前状态 | 本候选处理 |
 |---|---|---|
 | #376；内含 #365、#374/#375 注册语义与早期保留成果 | 已读 2026-10-03 原始部署记录；DEPLOY_SUCCESS / VERIFY_OK；当天八服务同镜像，0145 未迁移 | 完整保留；今日现场需重新确认 |
 | #378 | 香港指针对账 PR 尚未合并；main 指针仍停在 #320 | 不修改指针，不把旧指针当今天实测 |
-| #385 邮箱配置错误安全处理 | open Draft；精确 SHA b51f2f9edbd0b30c396cfd2c2136fa22899da67c；CI 37160966061 已读 success；独立服务级审核评论，非正式 C13/C14 | 纳入产品文件；SMTP 运行配置与真实收信仍待现场确认 |
+| #385 邮箱配置错误安全处理 | open Draft；精确 SHA b51f2f9edbd0b30c396cfd2c2136fa22899da67c；CI 37160966061 已读 success；独立服务级审核评论，非正式 C13/C14 | #376 保留基线已含相同两个 blob；不属于本候选 diff。SMTP 运行配置与真实收信仍待现场确认 |
 | #477 连接器入驻权限 | open Draft；精确 SHA d76196883b19ac02385c85d845916fcadb3c953d；评论记录 C14/C13 PASS_SCOPED + ACCEPT，5 项机器测试 | 纳入；本轮未重新下载该封存包，不转授新候选 PASS |
 | #543 本次认证事实绑定 | merged；精确原候选 3db4f74e25de09167e462537f68c42b6010f0517；前轮正式审核 8 项 PASS | 纳入；不是 B/C 注册完成证明 |
 | #548 酒店硬保留释放恢复 | merged；精确原候选 24d458aaf7474ba2f88d637bda015d3a3db788f1；前轮正式审核 8 项 PASS（SQLite/mock） | 纳入；真实供应商仍未验收 |
@@ -23,12 +23,12 @@
 | Runtime 与控制面成果 | #556 最终冻结 | 不部署 rt01、不追加 Runtime 工程 |
 
 ## 已完成的候选检查
-- 四组原补丁依次 git apply --check 均成功。
-- 集成后八个 Python 文件逐个 git hash-object，全部等于各原始 PR 的 blob SHA；无语义改写。
-- 八个文件 Python AST 检查通过。
+- #477/#543/#548 三组候选差异补丁依次 git apply --check 均成功；#385 两个文件在 #376 保留基线已字节一致，不重复应用。
+- 本候选 diff 的六个 Python 文件逐个 git hash-object，全部等于对应原始 PR 的 blob SHA；#385 两个保留文件另行验证等于原 PR blob；无语义改写。
+- 六个候选差异文件及两个 #385 基线保留文件的 Python AST 检查通过。
 - 邮件配置 9 个 unittest 方法通过，全部 SMTP mock，无发送邮件。
 - 静态解析全部 146 个迁移 revision，唯一 head 为 0145_source_latest_index；候选未更改任何迁移文件。
-- application 预计 1643 个 blob（原1640 + 三个新增测试）；除八个列明文件外必须与 #376 字节一致。
+- application 预计 1643 个 blob（原1640 + 三个新增测试）；除六个候选差异文件外必须与 #376 字节一致；#385 两个文件作为基线保留项单列核对。
 - 沿用既有 HK unified registration acceptance workflow，只新增此候选分支触发、补齐五份定向测试、保存 JUnit；原 PostgreSQL18.4、0145/legacy supplier 检查和六份回归全部保留。不修改 Runtime/审核工作流或预算。
 - 本机没有 pytest/SQLAlchemy/FastAPI 测试环境；未伪称完整集成回归通过。组合候选 CI 需以新 SHA 实际结果为准。
 
