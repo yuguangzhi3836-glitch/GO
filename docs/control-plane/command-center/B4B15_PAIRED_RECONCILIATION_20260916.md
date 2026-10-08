@@ -1,3 +1,13 @@
+> **HISTORY / BREAK-GLASS REFERENCE**
+>
+> This document is not the normal current operating path.
+>
+> Normal deployment and inspection are defined by [`/AGENTS.md`](../../../AGENTS.md) and use GO Forge.
+>
+> Do not issue `HK_STAGING_*` requests unless the Owner explicitly authorizes Old Command Center fallback mode.
+
+---
+
 # B4-B1.5 — the paired reconciliation: the canonical candidate now names the v3 artifact
 
 Date: 2026-09-16

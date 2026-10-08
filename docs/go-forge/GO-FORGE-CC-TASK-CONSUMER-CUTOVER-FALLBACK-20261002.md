@@ -1,3 +1,13 @@
+> **HISTORY** — 历史 / 取证材料，不是当前操作说明。
+> **HISTORY** — historical / audit material, not current operating instructions.
+>
+> 当前入口：人（中文）[`README.md`](../../README.md) · AI（英文）[`AGENTS.md`](../../AGENTS.md)。
+> Current entry points: [`README.md`](../../README.md) (Chinese, humans) and [`AGENTS.md`](../../AGENTS.md) (English, AI).
+>
+> 本文档不定义正常操作路径，不得作为当前操作依据。This document does not define the normal path; do not use it as current operating guidance.
+
+---
+
 # GO Forge — Command Center Task Consumer Cutover / Fallback
 
 **Date:** 2026-10-02（原始 2026-10-01；本次更新为 cutover 执行后的真实状态）
@@ -5,8 +15,8 @@
 **Owner:** chenzhenxi1-sudo
 **Purpose:** 记录 Task 主消费路径从旧 Command Center 切到 GO Forge 的方式，以及旧 CC 如何保留为独立兜底。
 
-> 本文件从「未来实施提醒」升级为**现行切换 / 运行文档**。
-> 下文 §14 是唯一权威的当前状态块；§3、§4、§7 已按真实现场改写。
+> 本文件曾从「未来实施提醒」升级为当时的切换 / 运行文档；**自 2026-10-08 起已降为 HISTORY**。
+> 下文 §14 是当时的状态记录，已不再是「唯一权威状态块」。当前状态见仓库根 `README.md`（中文）/ `AGENTS.md`（英文）。
 
 ---
 
@@ -47,7 +57,7 @@ Boss GPT → go-control-tasks → GO Forge → HK-STAGING
 Deploy PR <number> to HK-STAGING.
 ~~~
 
-对应的任务文档（唯一权威形态，见 tasks 仓 `GO_FORGE_BOSS_USAGE.md`）：
+对应的任务文档（历史形态；tasks 仓 `GO_FORGE_BOSS_USAGE.md` 已于 2026-10-08 降为 HISTORY）：
 
 ~~~json
 {
@@ -376,7 +386,7 @@ verify one Task enters CC
 
 ---
 
-## 14. 当前状态（唯一权威状态块）
+## 14. 历史状态记录（本文件已降为 HISTORY，不再是「唯一权威状态块」）
 
 ~~~text
 FORGE_READY_FOR_CUTOVER = YES

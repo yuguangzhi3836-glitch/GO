@@ -1,3 +1,13 @@
+> **HISTORY / BREAK-GLASS REFERENCE**
+>
+> This document is not the normal current operating path.
+>
+> Normal deployment and inspection are defined by [`/AGENTS.md`](../../../AGENTS.md) and use GO Forge.
+>
+> Do not issue `HK_STAGING_*` requests unless the Owner explicitly authorizes Old Command Center fallback mode.
+
+---
+
 # main 收敛装机记录 · 2026-09-19
 
 `main` = `71b9fb3a3bc97f77b86e4e1b958c557d58389d46`（由 #220 与 #232 两次 merge 构成）。

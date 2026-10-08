@@ -1,3 +1,13 @@
+> **HISTORY / BREAK-GLASS REFERENCE**
+>
+> This document is not the normal current operating path.
+>
+> Normal deployment and inspection are defined by [`/AGENTS.md`](../AGENTS.md) and use GO Forge.
+>
+> Do not issue `HK_STAGING_*` requests unless the Owner explicitly authorizes Old Command Center fallback mode.
+
+---
+
 # Command Center archive manifest — 2026-09-11
 
 - Host role: GO Command Center

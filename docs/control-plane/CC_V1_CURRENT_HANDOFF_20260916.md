@@ -1,3 +1,13 @@
+> **HISTORY / BREAK-GLASS REFERENCE**
+>
+> This document is not the normal current operating path.
+>
+> Normal deployment and inspection are defined by [`/AGENTS.md`](../../AGENTS.md) and use GO Forge.
+>
+> Do not issue `HK_STAGING_*` requests unless the Owner explicitly authorizes Old Command Center fallback mode.
+
+---
+
 # CC V1 CURRENT HANDOFF · 2026-09-16
 
 > 面向**下一次全新 WorkBuddy 会话**的唯一入口文件。所有身份值均于 2026-09-16 01:20–01:35 CST

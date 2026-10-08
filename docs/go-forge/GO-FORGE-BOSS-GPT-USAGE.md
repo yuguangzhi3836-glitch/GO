@@ -1,7 +1,18 @@
+> **HISTORY** — 历史 / 取证材料，不是当前操作说明。
+> **HISTORY** — historical / audit material, not current operating instructions.
+>
+> 当前入口：人（中文）[`README.md`](../../README.md) · AI（英文）[`AGENTS.md`](../../AGENTS.md)。
+> Current entry points: [`README.md`](../../README.md) (Chinese, humans) and [`AGENTS.md`](../../AGENTS.md) (English, AI).
+>
+> 本文档不定义正常操作路径，不得作为当前操作依据。This document does not define the normal path; do not use it as current operating guidance.
+
+---
+
 # GO Forge — Boss / Boss GPT usage
 
 **Date:** 2026-10-08
-**Status:** CURRENT — reflects the GO Forge V1 closeout of 2026-10-08
+**Status:** HISTORY — design/closeout record (kept as break-glass detail). The current
+Boss-facing contract lives in the repository root `AGENTS.md` (AI) and `README.md` (human).
 **Owner:** chenzhenxi1-sudo
 **Scope of this document:** how the Boss (or a Boss GPT with zero context) asks GO Forge to work on
 HK-STAGING-01, and what Forge will and will not do. It records usage only; it does not deploy, and

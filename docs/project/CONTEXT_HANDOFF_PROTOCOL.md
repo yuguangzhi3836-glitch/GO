@@ -1,12 +1,25 @@
+> **HISTORY** — 历史 / 取证材料，不是当前操作说明。
+> **HISTORY** — historical / audit material, not current operating instructions.
+>
+> 当前入口：人（中文）[`README.md`](../../README.md) · AI（英文）[`AGENTS.md`](../../AGENTS.md)。
+> Current entry points: [`README.md`](../../README.md) (Chinese, humans) and [`AGENTS.md`](../../AGENTS.md) (English, AI).
+>
+> 本文档不定义正常操作路径，不得作为当前操作依据。This document does not define the normal path; do not use it as current operating guidance.
+
+---
+
 # GO CONTEXT HANDOFF PROTOCOL
 
 ## Goal
 
 A fresh ChatGPT, Codex, WorkBuddy or human reviewer must be able to understand the current GO project without replaying hundreds of historical pull requests or depending on prior chat memory.
 
-## Startup sequence
+## Startup sequence (historical)
 
-Read in this order:
+The startup order below is the retired one. The current startup path is:
+`README.md` (Chinese, humans) and `AGENTS.md` (English, AI).
+
+Retired order, kept for audit:
 
 1. `README.md`
 2. `docs/project/OPERATING_CONTEXT.md`

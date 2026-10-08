@@ -1,3 +1,13 @@
+> **HISTORY / BREAK-GLASS REFERENCE**
+>
+> This document is not the normal current operating path.
+>
+> Normal deployment and inspection are defined by [`/AGENTS.md`](../../../AGENTS.md) and use GO Forge.
+>
+> Do not issue `HK_STAGING_*` requests unless the Owner explicitly authorizes Old Command Center fallback mode.
+
+---
+
 # GO Control Plane connection and identity runbook
 
 Verified on 2026-09-12 from the two fixed operator workstations used for GO work; **refreshed 2026-09-15** against canonical `main` `8610a4d`. On `Eason-13490` the verified primary ECS path changed from Alibaba Cloud Workbench CLI to **direct SSH key access** (Workbench CLI retained as fallback) - see the changelog in `connection-identities.v1.json`. This is a metadata-only inventory for recovery and automation. It is not Execution Authority: live state, Human Approval, Signed Tasks, installed artifacts, and Signed Evidence remain authoritative.
