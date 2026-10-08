@@ -439,9 +439,11 @@ Four properties are enforced by tests rather than asserted in prose:
   reason it failed, and records `REQUEST_BINDING_UNPROVEN` — never
   `REQUEST_VALIDATED`. Forging a positive fact would need the Task signing key.
 * **A refusal never loses its reason.** The Bridge's token is carried verbatim
-  with an `origin`; a token the contract cannot classify is
-  `UNCLASSIFIED_REJECT`, and the contract is checked against every refusing token
-  the Bridge sources can emit (96 today, zero unclassified).
+  with an `origin`, and a token the contract cannot classify is
+  `UNCLASSIFIED_REJECT`, so an unseen reason is surfaced rather than dropped. (The
+  cross-check that compared the classifier against every refusing token the
+  Bridge's own sources can emit was retired on 2026-10-08 with the Boss Deploy
+  Request component; this layer never read that component.)
 * **A duplicate or a replay is never a success.** Each is its own lifecycle and
   each is reported with `counted_as_success = false`.
 * **Nothing here is authority.** Every fact carries the same eight `false` values
