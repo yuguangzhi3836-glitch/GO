@@ -123,7 +123,8 @@ class RailService:
         with SessionLocal.begin() as s:
             o=s.get(RailOrderRow,order_id); o.status=tx['state']; o.updated_at=now(); append_vertical_evidence(s,'RAIL',order_id,'PAYMENT_CAPTURED',o.status,{'payment_intent_id':tx['payment_intent_id'],'capture_id':tx['capture_id'],'external_live':False}); s.flush(); return self._order(o)
     def _order(self,o):
-        return {"order_id":o.order_id,"account_id":o.account_id,"status":o.status,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"passengers":o.passengers,"passenger_count":len(o.passengers or []),"data_mode":"SIMULATION","external_live":False,"booking_reference":o.booking_reference if o.status=="TICKETED" else None,"ticket_numbers":o.ticket_numbers if o.status=="TICKETED" else [],"journey":o.current_journey,"created_at":_utc_iso(o.created_at),"updated_at":_utc_iso(o.updated_at)} | reservation_expiry.projection('RAIL',o)
+        issued = o.status in {"TICKETED", "UNKNOWN_EXTERNAL_STATE"}
+        return {"order_id":o.order_id,"account_id":o.account_id,"status":o.status,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"passengers":o.passengers,"passenger_count":len(o.passengers or []),"data_mode":"SIMULATION","external_live":False,"booking_reference":o.booking_reference if issued else None,"ticket_numbers":o.ticket_numbers if issued else [],"journey":o.current_journey,"created_at":_utc_iso(o.created_at),"updated_at":_utc_iso(o.updated_at)} | reservation_expiry.projection('RAIL',o)
     def order(self,account_id,order_id):
         with SessionLocal() as s:
             o=s.get(RailOrderRow,order_id)
