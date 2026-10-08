@@ -5,6 +5,8 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 from go_hotel.db.models import Base, GoAIInvocationRow, GoAIRequestRow
+from go_hotel.go_ai.complexity import ComplexityAssessment
+from go_hotel.go_ai.planner import GOAITaskPlanner
 from go_hotel.go_ai import service as service_module
 from go_hotel.go_ai.models import ProviderConfig
 from go_hotel.go_ai.providers import DeterministicTestProvider, GOAIProviderError
@@ -30,6 +32,23 @@ class SynthesisProvider(DeterministicTestProvider):
 
 
 @pytest.fixture
+def planner():
+    return GOAITaskPlanner()
+
+
+@pytest.fixture
+def tier_5_assessment():
+    return ComplexityAssessment(
+        tier="TIER_5_HIGH_ASSURANCE",
+        score=9,
+        reasons=("TRANSACTION_OR_MONEY_SENSITIVE",),
+        max_parallel_tasks=4,
+        requires_model_verification=True,
+        requires_deterministic_gate=True,
+    )
+
+
+@pytest.fixture
 def audit_session(monkeypatch, tmp_path):
     # File-backed SQLite lets the service's genuine worker thread persist its
     # own invocation audit; this never connects to a configured business DB.
@@ -41,6 +60,41 @@ def audit_session(monkeypatch, tmp_path):
     monkeypatch.setattr(service_module, "SessionLocal", factory)
     yield factory
     engine.dispose()
+
+
+def test_tier_5_planning_keeps_required_stages_under_parallel_budget(
+    planner, tier_5_assessment,
+):
+    plan = planner.plan(
+        "请比较 flight hotel rail budget 方案，并评估 payment refund 风险与约束",
+        tier_5_assessment,
+    )
+
+    assert [task.task_id for task in plan] == [
+        "task_flight",
+        "task_hotel",
+        "task_rail",
+        "task_budget",
+        "task_constraints",
+        "task_reasoning",
+        "task_risk",
+    ]
+
+
+def test_lower_tier_planning_stays_single_general_task(planner):
+    assessment = ComplexityAssessment(
+        tier="TIER_2_STANDARD",
+        score=2,
+        reasons=("NONTRIVIAL_INPUT",),
+        max_parallel_tasks=2,
+        requires_model_verification=False,
+        requires_deterministic_gate=False,
+    )
+
+    plan = planner.plan("Hello", assessment)
+
+    assert [task.task_id for task in plan] == ["task_main"]
+    assert [task.task_type for task in plan] == ["GENERAL"]
 
 
 @pytest.mark.parametrize(
