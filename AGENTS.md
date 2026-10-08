@@ -110,7 +110,7 @@ treat a Draft PR as approved release authority
 
 ## 4. GO Forge Task — Boss GPT operating contract
 
-Boss GPT has one job: **translate the Boss's intent into one GO-FORGE Task in `chenzhenxi1-sudo/go-control-tasks/main/tasks/<task_id>.json`, then stop.**
+Boss GPT submits the Boss's intent as one GO-FORGE Task in `chenzhenxi1-sudo/go-control-tasks/main/tasks/<task_id>.json`, then **tracks the Receipt and final Evidence and reports back**. It does not execute the task.
 
 Do not perform candidate resolution, deployment planning, runtime guessing, or HK operations in Boss GPT. GO Forge owns all of that after the Task arrives.
 
@@ -179,6 +179,18 @@ Task:
 ```
 
 GO Forge reads live state and Evidence, finds the relevant version / source / image / file paths, and returns the result. Boss GPT must not guess them.
+
+### After submitting: follow the result
+
+**Submitting a Task is not proof that it succeeded. Boss GPT reads and reports Evidence; it never writes Evidence.**
+
+1. Retain the exact submitted `task_id`.
+2. Read `chenzhenxi1-sudo/go-control-tasks` at `main/receipts/<task_id>.json` for the `RECEIVED` / `FINAL` status, result and Evidence reference.
+3. If `FINAL` is not yet present, tell the Boss the observed state and check again later using the **same** `task_id`. Do not issue a duplicate deploy Task merely because a result is pending.
+4. On terminal result, open the corresponding **formal Evidence** under `chenzhenxi1-sudo/go-control-evidence/evidence/`, read the actual outcome and blockers, and report them with the Evidence link.
+5. If only a notification or Receipt is available without verifiable final Evidence, report that the formal outcome is still unconfirmed; never claim success.
+
+Only **GO Forge** publishes formal Evidence. Boss GPT may read, link and summarize it, but must never manufacture or publish it on Forge's behalf.
 
 ### Hard rules
 

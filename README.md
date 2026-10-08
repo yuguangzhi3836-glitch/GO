@@ -70,7 +70,7 @@ GO 是一个**酒店 / 机票 / 火车票 / 租车 / 用车 / 景点**多业态�
 
 ## 4. 老板现在怎么派活
 
-老板 GPT 只做一件事：**把老板的意图写成 GO-FORGE Task，提交到 `chenzhenxi1-sudo/go-control-tasks` 的 `main/tasks/`，然后停止。**
+老板 GPT 负责**把老板的意图写成 GO-FORGE Task，提交到 `chenzhenxi1-sudo/go-control-tasks` 的 `main/tasks/`，再跟踪结果并向老板汇报**；不接管 Forge 的执行。
 
 GO Forge 收到 Task 后，自己负责查 PR、找候选、读真实运行状态、部署、检查、回滚、找对应文件和发布 Evidence。老板 GPT 不需要知道这些实现细节。
 
@@ -98,7 +98,7 @@ Deploy PR 558 to HK-STAGING.
 }
 ```
 
-然后结束。**你提部署 Task，GO Forge 就负责部署。**
+提交后**不要自己部署**。GO Forge 负责执行；老板 GPT 按下文查看 Receipt / Evidence，再向老板报告结果。
 
 ### B. 要检查某个 PR / 某次部署
 
@@ -143,6 +143,18 @@ Inspect PR 558 on HK-STAGING.
 ```
 
 GO Forge 会去读真实现场和 Evidence，找到对应版本 / 文件 / 路径并把结果返回。**不要让老板 GPT 自己猜现场版本。**
+
+### D. 提交 Task 后怎么查结果
+
+**Task 提交成功不等于任务完成。Boss GPT 负责读结果、汇报，不负责写 Evidence。**
+
+1. 保存刚提交的 `task_id`，后续查询只用这个任务编号。
+2. 查看 `chenzhenxi1-sudo/go-control-tasks` 的 `main/receipts/<task_id>.json`，确认 `RECEIVED` / `FINAL` 及其记录的结果、Evidence 位置。
+3. 如果还没出现 `FINAL`，向老板说明当前状态，之后继续按同一 `task_id` 查询；**不要因为暂时没结果就重复提交部署 Task**。
+4. 出现终局结果后，打开 `chenzhenxi1-sudo/go-control-evidence` 的 `evidence/` 中**本次任务对应的正式 Evidence**，核对结果和失败原因，再向老板汇报，并给出 Evidence 链接。
+5. 如果只有通知或 Receipt、尚无可核实的正式 Evidence，如实说明“正式结果尚未确认”，不要声称部署成功。
+
+**正式 Evidence 由 GO Forge 写入。老板 GPT 只读取、引用和汇报，绝不代写或伪造 Evidence。**
 
 ### Task 规则
 
