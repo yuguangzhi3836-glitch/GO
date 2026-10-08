@@ -4,22 +4,34 @@
   "environment": "HK-STAGING",
   "host": "i-j6ccs8t04f1p4d8pe69z",
   "runtime_generation": "DEPTH48",
-  "deployed_date": "2026-10-02",
-
+  "deployed_date": "2026-10-03",
   "pointer_update": {
-    "at": "2026-10-02",
-    "note": "Re-pointed at the runtime that is actually running on HK-STAGING, after GO Forge deployed the admitted candidate for PR #320 and verified it (formal deployctl VERIFY = VERIFY_OK, exit 0). Scope: the identity fields for the running runtime, plus the two measured values below. No candidate was modified, nothing was deployed by this change, no migration was run, and no baseline mechanism was refactored. Left alone on purpose: product_source_identity, canonical_runtime_identity and fresh_checkout_build describe the DEPTH48 integration into main and remain true as history; PR #320 is not merged, so replacing them with its tree would assert something false. runtime_generation stays DEPTH48 -- this update moves the pointer, it does not relabel a lineage. database.alembic_head was re-read and did NOT change (0145_source_latest_index), so the host's environment-graph-v1.json -- which the installer copies that field into -- needed no change either. Provenance, recorded because it is otherwise silently missing: the runtime was advanced on 2026-10-02T08:49:13Z by GO Forge (task forge-deploy-pr320-r3-20261002T1642Z, run 20261002T084029Z), which by design writes no Command Center DEPLOY record; the absence of such a record is a known owner-side reconciliation and not a property of this pointer.",
+    "at": "2026-10-03",
+    "note": "Re-pointed at the runtime actually running on HK-STAGING after GO Forge deployed PR #376 head 9f889acfcd36a82c7565b723261ee046c2615314 and the sealed HK verify returned VERIFY_OK. This is pointer reconciliation only: no candidate is modified, nothing is deployed by this commit, no migration is run, and Production is untouched. The deployment kept database head 0145_source_latest_index and replaced the eight business services from PR #320 image sha256:26c95472... with PR #376 image sha256:01632507.... product_source_identity, canonical_runtime_identity and fresh_checkout_build remain unchanged because they describe the older DEPTH48 integration/history rather than this unmerged runtime candidate; rewriting them to PR #376 would falsely claim canonical-main lineage. runtime_generation therefore remains DEPTH48. GO Forge evidence also records that its GO-FORGE-authority mutation did not create a Command Center DEPLOY record; that delivery-channel limitation is preserved as evidence and is not hidden by this pointer update.",
     "measured_against": {
       "host": "HK-STAGING-01 (i-j6ccs8t04f1p4d8pe69z)",
-      "image": "docker inspect <container>.Image over the eight business services, which report one value; docker images for the tag",
-      "alembic_head": "alembic current inside the running api container, from its own WorkingDir",
-      "tables_after_migration": "information_schema.tables where table_schema='public', read over the live database",
-      "openapi_paths": "the running api's /openapi.json, path count",
+      "image": "GO Forge final read-back: docker inspect over all eight business services; every target reports sha256:01632507d0d3b60054c1d9e56c5338b51085a69094b9beb4773e330c21191754",
+      "alembic_head": "sealed VERIFY / in-container alembic read-back: 0145_source_latest_index before and after; no migration",
+      "health": "/health returned {\"status\":\"ok\",\"service\":\"go-hotel-platform\"}; /openapi.json returned HTTP 200; exact OpenAPI path count was not recorded in the PR #376 deployment Evidence",
       "corroborating_evidence": [
-        "yuguangzhi3836-glitch/GO pull 320 head eeafca1b15a4754ba36a0f138a27347cbbd12c73, application tree 6f97ac5d572dae1de0b3e38b6201da2a6de14216",
-        "chenzhenxi1-sudo/go-control-evidence evidence/forge-forge-final-verify-v3-20261002T111155Z-20261002T111234Z-forge-final-verify-v3-20261002T111155Z.json (formal VERIFY, VERIFY_OK, exit 0)",
-        "/etc/go-command-center/current-candidate-override-v1.json: candidate pr320-eeafca1b-unified-pr315-on-main, artifact sha256:26c95472d494100dc5365b031335670b57570b86ac50fb1b4ebd161d7933530b"
+        "yuguangzhi3836-glitch/GO pull 376 head 9f889acfcd36a82c7565b723261ee046c2615314, application tree dd745a7d7ab58b05c3f14c7794ca7ab826488bf3",
+        "chenzhenxi1-sudo/go-control-evidence evidence/forge-forge-deploy-20261003T084254Z-20261003T084359Z-forge-deploy-20261003T084254Z.json (DEPLOY_SUCCESS, sealed VERIFY_OK)",
+        "chenzhenxi1-sudo/go-control-evidence GO_FORGE_READY-pr376-20261003T084359Z-forge-deploy-20261003T084254Z.json (GO_FORGE_READY=YES; merge action NONE)"
       ]
+    },
+    "superseded_2026_10_02": {
+      "deployed_date": "2026-10-02",
+      "source_pr": 320,
+      "source_commit": "eeafca1b15a4754ba36a0f138a27347cbbd12c73",
+      "application_git_tree": "6f97ac5d572dae1de0b3e38b6201da2a6de14216",
+      "image_config_id": "sha256:26c95472d494100dc5365b031335670b57570b86ac50fb1b4ebd161d7933530b",
+      "image_id_short": "26c95472d494",
+      "image_tag": "go-hk-test-pr:eeafca1b15a4754ba36a0f138a27347cbbd12c73",
+      "alembic_head": "0145_source_latest_index",
+      "tables_after_migration": 564,
+      "openapi_paths": 1059,
+      "superseded_by": "PR #376 deployment on 2026-10-03",
+      "rollback_available": true
     },
     "superseded_2026_10_01": {
       "deployed_date": "2026-10-01",
@@ -41,7 +53,6 @@
       "migration_steps": 19
     }
   },
-
   "source_of_truth": {
     "statement": "This file is the single authoritative pointer for the runtime that is actually running on HK-STAGING. Live state, Human Approval, Signed Task, installed artifact, durable previous-state record and Signed Evidence outrank this file for any execution decision.",
     "business_source": "application/",
@@ -49,7 +60,6 @@
     "runtime_compose": "deploy/hk-staging/docker-compose.business-runtime.yml",
     "runtime_env_contract": "deploy/hk-staging/RUNTIME_ENV_CONTRACT.md"
   },
-
   "product_source_identity": {
     "note": "Identity of the DEPTH48 product source as integrated into main. Unchanged by this runtime sync.",
     "source_commit": "6d0fd905d1b6004fd5cc5cf8d69d1bf26a0f700a",
@@ -57,7 +67,6 @@
     "application_files": 1323,
     "application_source_sha256": "8e91fcf25e66478d5dac105c2608a195a98290640f2ecbfcec24fda27f212ac8"
   },
-
   "canonical_runtime_identity": {
     "note": "Identity of the runnable application tree: product source plus the runtime build files that were required to make it run. This is the tree that a fresh clone builds.",
     "canonical_branch": "canonical/depth48-hk-runtime-20260913",
@@ -69,7 +78,6 @@
     "canonical_runtime_application_files": 1325,
     "canonical_runtime_source_sha256": "d90a9e26c3a64b98009aaf170056f4b3acfa6acebd41baaed276b7baf17c6925"
   },
-
   "runtime_files": {
     "dockerfile_path": "application/Dockerfile",
     "compose_path": "deploy/hk-staging/docker-compose.business-runtime.yml",
@@ -77,16 +85,14 @@
     "build_context": "application/",
     "build_command": "docker build -t <tag> application/"
   },
-
   "image": {
-    "image_tag": "go-hk-test-pr:eeafca1b15a4754ba36a0f138a27347cbbd12c73",
-    "image_config_id": "sha256:26c95472d494100dc5365b031335670b57570b86ac50fb1b4ebd161d7933530b",
-    "image_id_short": "26c95472d494",
-    "image_config_id_note": "Re-measured 2026-10-02 against `docker inspect <container>.Image` over all eight business services, which report one value. It previously carried the PR #298 image sha256:e1049b5c0f3f...; GO Forge's deploy of the admitted PR #320 candidate replaced it. The earlier correction of 2026-09-16 (a config id that was not an image on the host) is preserved here: this field carries the running image identity and is what the Control State projector and the Deploy Readiness evaluator compare against the image a signed VERIFY proves.",
+    "image_tag": "go-hk-test-pr:9f889acfcd36a82c7565b723261ee046c2615314",
+    "image_config_id": "sha256:01632507d0d3b60054c1d9e56c5338b51085a69094b9beb4773e330c21191754",
+    "image_id_short": "01632507d0d3",
+    "image_config_id_note": "Re-measured by GO Forge after the 2026-10-03 PR #376 deployment: all eight business services report this image, the API is healthy with RestartCount 0, and sealed VERIFY returned VERIFY_OK. It supersedes the PR #320 runtime image sha256:26c95472....",
     "base_image": "python:3.12-slim",
     "startup": "uvicorn go_hotel.main:app --host 0.0.0.0 --port 8000"
   },
-
   "database": {
     "engine": "PostgreSQL 18.4",
     "database": "go_hotel_stg",
@@ -95,15 +101,14 @@
     "previous_revision": "0137_hosted_unknown_episode",
     "migration_direction": "FORWARD_ONLY",
     "migration_steps": 8,
-    "policy": "Never drop, reset, or destructively downgrade business data."
+    "policy": "Never drop, reset, or destructively downgrade business data.",
+    "tables_after_migration_note": "564 was last explicitly counted on 2026-10-02. PR #376 deployment evidence proves no migration ran and alembic remained 0145 before/after, but did not re-count information_schema tables."
   },
-
   "compose": {
     "project": "go-822-staging",
     "cutover_command": "docker compose -p go-822-staging --env-file \"$GO_RUNTIME_ENV_FILE\" -f deploy/hk-staging/docker-compose.business-runtime.yml up -d --no-deps <service list>",
     "image_variable": "GO_BUSINESS_IMAGE_TAG"
   },
-
   "business_services": [
     "api",
     "outbox-worker",
@@ -114,7 +119,6 @@
     "mobile-push-worker",
     "mobile-push-receipt-worker"
   ],
-
   "protected_non_targets": [
     "caddy",
     "redis",
@@ -128,20 +132,19 @@
     "ssh-access-and-key-material",
     "production"
   ],
-
   "health_endpoint": {
     "local": "http://127.0.0.1:8000/health",
     "public": "https://staging-api.goaidirect.com/health",
     "expected_body": "{\"status\":\"ok\",\"service\":\"go-hotel-platform\"}",
-    "openapi_paths": 1059
+    "openapi_paths": null,
+    "openapi_http_status": 200,
+    "openapi_paths_note": "PR #376 deployment evidence proves /openapi.json returned HTTP 200 but does not record the exact path count. The previous value 1059 belonged to the superseded PR #320 runtime and is not carried forward as a current measurement."
   },
-
   "runtime_env": {
     "host_path": "/home/go-stg/control/r317-five-star-completeness-20260828/runtime.env",
     "values_archived": false,
     "contract_path": "deploy/hk-staging/RUNTIME_ENV_CONTRACT.md"
   },
-
   "fresh_checkout_build": {
     "github_only": true,
     "host_files_required": false,
@@ -151,7 +154,9 @@
     "build_context_source": "git archive of the pushed branch; no host-side file copied",
     "build_exit": 0,
     "image_size_mb": 428,
-    "alembic_heads": ["0133_flight_change_plan"],
+    "alembic_heads": [
+      "0133_flight_change_plan"
+    ],
     "alembic_revisions": 133,
     "empty_db_migrate_exit": 0,
     "empty_db_tables": 551,
@@ -160,7 +165,6 @@
     "container_fatal_errors": 0,
     "note": "Dockerfile, .dockerignore and pyproject.toml digests in the build context were verified against the GitHub blobs; the context had zero references to any host path. The empty-database migration produced 551 tables, matching the live HK database structurally."
   },
-
   "previous_runtime_status": "SUPERSEDED",
   "previous_runtime": {
     "generation": "R3.1.x / HYATT direct booking",
@@ -169,7 +173,6 @@
     "rollback_required": false,
     "images_removed_from_host": true
   },
-
   "superseded_pointers": [
     {
       "item": "CP11_DEPTH46_CONSOLIDATED_PARENT_20260913",
@@ -191,9 +194,24 @@
       "note": "Describes the DEPTH48 product source lineage. It is not the runtime pointer; use this file instead."
     }
   ],
-
   "axes": {
     "business_runtime": "This file. application/ + deploy/hk-staging/ define the business runtime.",
     "control_plane": "Separate axis: command-center/, control-plane/, hk-staging/source/{agent,executor}. Do not conflate with the business runtime."
+  },
+  "active_runtime_candidate": {
+    "source_repository": "yuguangzhi3836-glitch/GO",
+    "source_pr": 376,
+    "source_commit": "9f889acfcd36a82c7565b723261ee046c2615314",
+    "application_git_tree": "dd745a7d7ab58b05c3f14c7794ca7ab826488bf3",
+    "candidate_id": "pr376-9f889acf-hk-unified-pr365-registration",
+    "artifact_digest": "sha256:01632507d0d3b60054c1d9e56c5338b51085a69094b9beb4773e330c21191754",
+    "artifact_package_sha256": "625484a24b53e820dac8c92ab06f56ec416c31917c538b8f91d7de45b43942ab",
+    "candidate_contract_sha256": "b0c62bd6f7c50afae902c2ab8267ee72a2ece6ae5716ba002c0e31f6fdc7272f",
+    "deployment_task": "forge-deploy-20261003T084254Z",
+    "deployment_run": "20261003T084359Z-forge-deploy-20261003T084254Z",
+    "deployment_result": "DEPLOY_SUCCESS",
+    "verify_result": "VERIFY_OK",
+    "merged_to_main": false,
+    "note": "This block identifies the currently running unmerged candidate. It does not replace product_source_identity or canonical_runtime_identity, which are historical/canonical lineage fields."
   }
 }
