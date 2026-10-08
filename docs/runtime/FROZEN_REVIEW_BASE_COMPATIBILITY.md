@@ -26,8 +26,8 @@ Candidate base SHA: 2254cf3f141124900e19f3205b6928e1c172074a
 
 Admission verifies live PR number, base ref/SHA, head SHA and GitHub comparison
 merge base. The frozen base must be an ancestor, and an explicit regular-file
-machine inventory is mandatory. Without these fields the existing main-only
-admission remains. Builder admission is unchanged.
+machine inventory is mandatory whenever the two base lines are written.
+Builder admission is unchanged.
 
 The optional `frozen_base` object is part of the canonical Runtime payload and
 execution-request digest. It is copied unchanged into the C13 payload and the
@@ -77,3 +77,53 @@ Require actual enqueue/claim/run and sealed independent C14→C13 receipts.
 #562's approval/installation does not install this patch. No business deployment,
 payment, registration instruction, threshold increase or old verdict transfer is
 part of this change. #558 image/package acceptance remains its own review scope.
+
+---
+
+## Auto-frozen candidate base (2026-10-08) — supersedes the opt-in requirement
+
+Change classes: CONTROL_PLANE, TEST_ONLY, DOCUMENTATION.
+
+The 2026-10-07 repair above made a non-`main` candidate reviewable only if the Owner
+hand-wrote the two base lines. That made the Owner the source of a fact GitHub already
+knows, and it refused ordinary stacked/release-branch candidates for not carrying the
+right paperwork - `REVIEW_CANDIDATE_BASE_IS_NOT_MAIN`.
+
+The formal Review path now FREEZES THE CANDIDATE'S REAL BASE, whichever branch the pull
+request is actually aimed at:
+
+```
+Candidate PR + frozen HEAD
+  -> read the live PR
+  -> take base_ref / base_sha / head_sha from GitHub
+  -> verify the head is still the frozen commit
+  -> freeze the base (that IS the frozen identity)
+  -> verify that base is an ancestor of the frozen commit (GitHub compare)
+  -> the full base -> head diff is the review range
+  -> the frozen identity enters the C14 payload digest, the wire envelope, and C13
+```
+
+`Candidate base ref:` / `Candidate base SHA:` are still accepted, and their meaning is now
+an ASSERTION, not a permission: when written they must equal what GitHub reports, and a
+mismatch is refused (`REVIEW_CANDIDATE_BASE_MOVED`) rather than resolved. Writing them also
+keeps the explicit machine-inventory requirement. Leaving them out refuses nothing.
+
+What deliberately did NOT change:
+
+- Builder admission still requires a `main`-based Draft PR; `CandidatePrBaseIsNotMain` is
+  now only the Builder path's refusal, and the Builder never calls the review resolver.
+- `max_attempts=1`, the model/circuit-breaker limits, the Issue/SHA round identity and the
+  idempotency keys.
+- The machine-inventory rules: 20 files, 2048 characters for the explicit inventory, the
+  400-character changed-test bound, the restricted path/node grammar and the
+  regular-file/tree checks.
+- No service, queue, database, scheduler, reviewer, verifier, authority layer, attempt or
+  AI budget is added. The extra read is one existing GET (`/compare/{base}...{head}`).
+
+The executor-side gate (`c1_review_base.py`) accepts a payload that carries no binding at
+all by freezing the brief's own live PR facts, so a round admitted before the binding
+existed is still checked instead of being exempted.
+
+Verification of this revision is recorded in the PR that carries it (branch, HEAD, exact
+changed paths, test commands and results). Installation to a Runtime host is a separate,
+separately authorised step with its own installed-source readback.

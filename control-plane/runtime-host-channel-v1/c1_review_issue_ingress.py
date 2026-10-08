@@ -44,10 +44,17 @@ the two share is the shape of the check: a value the issue froze, compared with 
 equality against the value the platform reports now, and a refusal - never a repair - when
 they disagree.
 
+The candidate's BASE is not asked for and not assumed to be main: it is read from the live
+pull request and frozen, so a stacked or release-branch candidate is reviewable on its own
+terms. `Candidate base ref:` / `Candidate base SHA:` may still be written, and are then an
+assertion the live PR has to meet; they are no longer the permission slip that non-main
+candidates needed, and leaving them out no longer refuses anything.
+
 Read-only, and only ever read-only
 ----------------------------------
-Without an explicit inventory, four GETs at most per review issue: the pull request,
-its file list, the frozen commit and that commit's root tree. Explicit inventories
+Without an explicit inventory, five GETs at most per review issue: the pull request, the
+frozen commit and that commit's root tree, the candidate's file list, and the compare that
+proves the frozen base is an ancestor of the frozen commit. Explicit inventories
 instead resolve regular files through cached, depth-bounded frozen tree reads.
 No verb but GET, no comment, no label, no state change. The
 client lives in the consumer (`GitHubIssuesReader`), which is the only transport this
@@ -241,8 +248,13 @@ def parse_review_issue(issue) -> dict:
     if refs or shas:
         if len(refs) != 1 or len(shas) != 1:
             raise Refused("REVIEW_FROZEN_BASE_INCOMPLETE_OR_AMBIGUOUS")
+        # The two lines are an ASSERTION about the live PR: the round then refuses if the
+        # PR is not actually based on exactly this. Stating them is an opt-in to that
+        # stricter check (and to naming the machine inventory explicitly), NOT a privilege
+        # a non-main candidate needs - a PR on any base is reviewable without them.
         parsed["frozen_base"] = validate_frozen_review_base(
             {"ref": refs[0], "sha": shas[0], "pr_number": pr_number})
+        parsed["frozen_base_declared"] = True
     return parsed
 
 
@@ -316,10 +328,19 @@ def plan_review_ingress(issue, *, reader, environ=None) -> dict:
 
     There is no Runtime parameter here on purpose, for the same reason the Builder ingress
     has none: this function is not able to enqueue anything, in any configuration.
+
+    `resolve_candidate` freezes the candidate's REAL base - whichever branch the PR is
+    aimed at - and writes it back into the parsed facts, so the frozen identity exists
+    before the payload is built and therefore enters the payload digest, the wire envelope
+    and the C13 half without a second derivation.
     """
     parsed = parse_review_issue(issue)
     inventory = explicit_inventory(issue["body"])
-    if parsed.get("frozen_base") is not None and inventory is None:
+    # Only the ASSERTION mode asks for an explicit inventory. A round that auto-froze the
+    # candidate's own base keeps the ordinary scope rule (the candidate's changed tests,
+    # else the C13 workflow's declared default) - auto-freezing the base must not quietly
+    # turn into a second, heavier requirement.
+    if parsed.get("frozen_base_declared") and inventory is None:
         raise Refused("REVIEW_FROZEN_BASE_REQUIRES_EXPLICIT_INVENTORY")
     resolve_candidate(reader, parsed)
     application_tree = resolve_application_tree(reader, parsed["candidate_sha"])

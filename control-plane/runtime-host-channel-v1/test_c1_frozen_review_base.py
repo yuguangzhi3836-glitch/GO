@@ -10,7 +10,8 @@ import c1_execution_contract as contract
 import c1_c13c14_review as review
 import c1_review_base as gate
 import c1_review_issue_ingress as ingress
-from test_c1_review_issue_ingress import happy_reader, review_issue, CANDIDATE, CANDIDATE_TREE
+from test_c1_review_issue_ingress import (happy_reader, review_issue, CANDIDATE,
+                                          CANDIDATE_TREE, MAIN_SHA)
 
 BASE = {"ref": "release/hk", "sha": "a" * 40, "pr_number": 394}
 
@@ -54,9 +55,21 @@ class FrozenBaseIngress(unittest.TestCase):
                 with self.assertRaisesRegex(contract.Refused, "NOT_ANCESTOR"):
                     ingress.plan_review_ingress(issue(), reader=r)
 
-    def test_non_main_without_opt_in_still_refused(self):
-        with self.assertRaisesRegex(contract.Refused, "BASE_IS_NOT_MAIN"):
-            ingress.plan_review_ingress(review_issue(), reader=reader())
+    def test_non_main_without_opt_in_is_frozen_from_the_pr_not_refused(self):
+        # 这是本轮的缺陷本身：非-main 候选在没有手写 base 行时必须被**自动冻结**，
+        # 而不是 REFUSE(REVIEW_CANDIDATE_BASE_IS_NOT_MAIN)。
+        value = review_issue()
+        reader_ = happy_reader(pull=dict(happy_reader().pull, base_ref="release/next",
+                                         base_sha="e" * 40))
+        plan = ingress.plan_review_ingress(value, reader=reader_)
+        self.assertEqual(plan["would_enqueue"]["payload"]["frozen_base"],
+                         {"ref": "release/next", "sha": "e" * 40, "pr_number": 394})
+        self.assertEqual(plan["would_enqueue"]["max_attempts"], 1)
+
+    def test_main_without_opt_in_is_frozen_the_same_way(self):
+        plan = ingress.plan_review_ingress(review_issue(), reader=happy_reader())
+        self.assertEqual(plan["would_enqueue"]["payload"]["frozen_base"],
+                         {"ref": "main", "sha": MAIN_SHA, "pr_number": 394})
 
     def test_partial_duplicate_and_unsafe_binding_refused(self):
         for suffix in ("Candidate base ref: release/hk\n", "Candidate base SHA: " + "a" * 40,
@@ -185,9 +198,86 @@ class RealGitBaseline(unittest.TestCase):
         with self.assertRaisesRegex(contract.Refused, "NOT_ANCESTOR"):
             gate.verify(self.brief, base, self.head, self.repo)
 
-    def test_non_main_cannot_omit_binding_at_executor(self):
-        with self.assertRaisesRegex(contract.Refused, "REQUIRES_EXPLICIT"):
-            gate.verify(self.brief, None, self.head, self.repo)
+    def test_a_brief_without_a_carried_binding_verifies_against_its_own_base(self):
+        # A payload admitted before the binding existed carries no `frozen_base`. The brief's
+        # own live PR facts are still the real base, so the executor freezes THOSE rather
+        # than demanding that somebody retype them - and a non-main base is not a refusal.
+        self.assertIsNone(gate.verify(self.brief, None, self.head, self.repo))
+
+    def test_a_brief_without_a_binding_and_with_an_unrelated_base_is_refused(self):
+        self.git("checkout", "--orphan", "other")
+        self.git("rm", "-rf", ".")
+        self.commit("unrelated.txt")
+        other = self.git("rev-parse", "HEAD")
+        self.git("checkout", "--detach", self.head)
+        brief = copy.deepcopy(self.brief)
+        brief["pull_request"]["base_sha"] = other
+        with self.assertRaisesRegex(contract.Refused, "NOT_ANCESTOR"):
+            gate.verify(brief, None, self.head, self.repo)
+
+    def test_a_brief_without_a_binding_still_refuses_a_moved_head(self):
+        brief = copy.deepcopy(self.brief)
+        brief["pull_request"]["head_sha"] = self.base["sha"]
+        with self.assertRaisesRegex(contract.Refused, "BRIEF_MISMATCH"):
+            gate.verify(brief, None, self.head, self.repo)
+
+
+class AutoFrozenRoundCarriesItsIdentity(unittest.TestCase):
+    """The auto-frozen base is the SAME object the rest of the round travels with."""
+
+    def auto_plan(self):
+        reader = happy_reader(pull=dict(happy_reader().pull, base_ref="release/next",
+                                        base_sha="e" * 40))
+        return ingress.plan_review_ingress(review_issue(), reader=reader)
+
+    def test_auto_frozen_base_reaches_c14_then_c13_unchanged(self):
+        payload = self.auto_plan()["would_enqueue"]["payload"]
+        frozen = {"ref": "release/next", "sha": "e" * 40, "pr_number": 394}
+        self.assertEqual(payload["frozen_base"], frozen)
+        c13 = review.c13_payload_from_c14(payload, {"github_run_id": 77,
+                                                    "runtime_task_id": "rt_auto"})
+        self.assertEqual(c13["frozen_base"], frozen)
+        for kind, body in ((contract.C14_REVIEW_KIND, payload),
+                           (contract.C13_REVIEW_KIND, c13)):
+            request = {"payload": body, "task_kind": kind, "runtime_task_id": "rt_auto",
+                       "attempt": 1, "execution_request_id": "a" * 64,
+                       "owner_c": body["cell_id"]}
+            self.assertEqual(
+                review.validate_review_payload_for_request(request)["frozen_base"], frozen)
+            inputs = contract.dispatch_inputs(request)
+            self.assertLessEqual(len(inputs), 10)
+            self.assertEqual(json.loads(inputs["runtime_transport"])["frozen_base"], frozen)
+
+    def test_the_auto_round_still_buys_exactly_one_attempt(self):
+        plan = self.auto_plan()
+        self.assertEqual(plan["would_enqueue"]["max_attempts"], 1)
+        self.assertEqual(plan["would_enqueue"]["owner_c"], "C14")
+        self.assertEqual(plan["would_enqueue"]["kind"], contract.C14_REVIEW_KIND)
+
+    def test_auto_freeze_does_not_touch_the_inventory_rules(self):
+        # The auto path keeps the ORDINARY scope rule: the candidate's changed tests, else
+        # the workflow default. 20 files / 2048 chars / the path grammar are untouched.
+        plan = self.auto_plan()
+        self.assertEqual(plan["machine_inventory"],
+                         "application/tests/workbench/test_x.py")
+        self.assertEqual(plan["machine_inventory_source"], "candidate_changed_tests")
+        self.assertEqual(contract.MAX_REVIEW_TEST_FILES, 20)
+        self.assertEqual(contract.MAX_MACHINE_INVENTORY, 2048)
+        self.assertEqual(contract.MAX_REVIEW_INVENTORY_CHARS, 400)
+
+    def test_the_builder_still_refuses_a_non_main_pr(self):
+        # The Builder keeps its own rule; the review path's relaxation is not inherited.
+        import c1_builder_candidate as builder
+        import c1_candidate_reads as reads
+
+        self.assertEqual(builder.CANDIDATE_BASE_BRANCH, "main")
+        source = (Path(builder.__file__)).read_text(encoding="utf-8")
+        self.assertIn("CandidatePrBaseIsNotMain", source)
+        self.assertEqual(reads.REASON_PR_BASE_NOT_MAIN,
+                         "REVIEW_CANDIDATE_BASE_IS_NOT_MAIN")
+        # ...and the review ingress no longer raises it at all.
+        ingress_source = (Path(ingress.__file__)).read_text(encoding="utf-8")
+        self.assertNotIn("CandidatePrBaseIsNotMain(", ingress_source)
 
 
 if __name__ == "__main__":

@@ -40,6 +40,9 @@ FIXTURE = HERE / "issue_fixtures" / "real_c01_issues.json"
 CANDIDATE = "0cb92ac7900cd177be383a4429a2759007119a10"
 CANDIDATE_TREE = "34c5ab3cc0eaf97a0556fedc6f7dbc661e1578f0"
 ROOT_TREE = "dee681bfc20026817cedde1cb822a0a072ad8d52"
+# The live base the happy-path PR is aimed at. It is a value of the PR, not an input to the
+# review: the ingress reads it and freezes it.
+MAIN_SHA = "d" * 40
 MOVED_HEAD = "1" * 40
 PR_NUMBER = 394
 ISSUE_NUMBER = 901
@@ -75,18 +78,19 @@ def only_such_issue():
 class FakeReader:
     """The consumer's candidate reads, answered from canned documents.
 
-    Only the four methods the review ingress is allowed to ask for exist here, so a call it
+    Only the five methods the review ingress is allowed to ask for exist here, so a call it
     was not supposed to make fails loudly instead of silently reaching further.
     """
 
     def __init__(self, *, pull=None, files=None, commit_trees=None, trees=None,
-                 missing_pull=False, missing_commit=False):
+                 missing_pull=False, missing_commit=False, compare=None):
         self.pull = pull
         self.files = [] if files is None else files
         self.commit_trees = dict(commit_trees or {})
         self.trees = dict(trees or {})
         self.missing_pull = missing_pull
         self.missing_commit = missing_commit
+        self.compare = compare
         self.calls = []
 
     def read_pull(self, number):
@@ -94,6 +98,14 @@ class FakeReader:
         if self.missing_pull:
             raise contract.Refused("GITHUB_HTTP_404")
         return dict(self.pull or {})
+
+    def read_compare(self, base_sha, head_sha):
+        self.calls.append(("read_compare", (base_sha, head_sha)))
+        if self.compare is not None:
+            return self.compare
+        # The ordinary answer for a candidate branched off its own base: that base IS the
+        # merge base of `base...head`.
+        return {"status": "ahead", "merge_base_commit": {"sha": base_sha}}
 
     def read_pull_files(self, number):
         self.calls.append(("read_pull_files", number))
@@ -116,7 +128,7 @@ def happy_reader(**over) -> FakeReader:
     """A reader whose answers describe PR #394 at the frozen candidate commit."""
     base = dict(
         pull={"number": PR_NUMBER, "state": "open", "base_ref": "main",
-              "head_sha": CANDIDATE},
+              "base_sha": MAIN_SHA, "head_sha": CANDIDATE},
         files=[{"filename": "application/tests/workbench/test_x.py", "status": "added"}],
         commit_trees={CANDIDATE: ROOT_TREE},
         trees={ROOT_TREE: [{"path": "README.md", "mode": "100644", "type": "blob",
@@ -169,10 +181,15 @@ class ReviewOpener:
             sha = path.rsplit("/", 1)[1]
             return FakeResponse(json.dumps(
                 {"commit": {"tree": {"sha": self.reader.read_commit_tree(sha)}}}).encode("utf-8"))
+        if "/compare/" in path:
+            pair = path.rsplit("/", 1)[1].split("...")
+            return FakeResponse(json.dumps(
+                self.reader.read_compare(*pair)).encode("utf-8"))
         if "/pulls/" in path:
             return FakeResponse(json.dumps({
                 "number": PR_NUMBER, "state": "open",
-                "base": {"ref": self.reader.pull["base_ref"]},
+                "base": {"ref": self.reader.pull["base_ref"],
+                         "sha": self.reader.pull.get("base_sha")},
                 "head": {"sha": self.reader.pull["head_sha"]}}).encode("utf-8"))
         raise AssertionError("unexpected path %s" % path)
 
@@ -374,7 +391,7 @@ class B_TheOwnerCannotCommissionTheSecondHalf(Case):
 def happy_kwargs():
     """`ReviewOpener` keyword form of the happy-path documents (the opener builds a reader)."""
     return {"pull": {"number": PR_NUMBER, "state": "open", "base_ref": "main",
-                     "head_sha": CANDIDATE},
+                     "base_sha": MAIN_SHA, "head_sha": CANDIDATE},
             "files": [{"filename": "application/tests/workbench/test_x.py",
                        "status": "added"}],
             "commit_trees": {CANDIDATE: ROOT_TREE},
@@ -448,7 +465,7 @@ class C_MalformedIssuesFailClosed(unittest.TestCase):
         self.assertFalse(ingress.looks_like_review_issue(builder))
 
 
-# ======================================================= D: the candidate is frozen
+# ============ D: the candidate is frozen (head, and its REAL base read from the PR)
 class D_TheCandidateIsFrozen(Case):
     def test_a_moved_head_is_refused_and_carries_both_commits(self):
         reader = happy_reader(pull={"number": PR_NUMBER, "state": "open",
@@ -470,13 +487,30 @@ class D_TheCandidateIsFrozen(Case):
             ingress.ingest_review(review_issue(), reader=reader, runtime=rt, environ=ENABLED)
         self.assertEqual(rt.task_count(), 0)
 
-    def test_a_base_that_is_not_main_is_refused(self):
+    def test_a_non_main_base_is_frozen_from_the_pr_not_refused(self):
+        # #565 之前这条会 REFUSE(REVIEW_CANDIDATE_BASE_IS_NOT_MAIN)。现在 base 是候选 PR
+        # 自己的事实：读出来、冻住、进 payload，而不是要求 Owner 手写或要求 base=main。
         reader = happy_reader(pull={"number": PR_NUMBER, "state": "open",
-                                    "base_ref": "release/next", "head_sha": CANDIDATE})
-        with self.assertRaises(ingress.CandidatePrBaseIsNotMain) as caught:
+                                    "base_ref": "release/next", "base_sha": "e" * 40,
+                                    "head_sha": CANDIDATE})
+        plan = ingress.plan_review_ingress(review_issue(), reader=reader, environ=ENABLED)
+        self.assertEqual(plan["would_enqueue"]["payload"]["frozen_base"],
+                         {"ref": "release/next", "sha": "e" * 40, "pr_number": PR_NUMBER})
+        # 没有手写 base 字段 => 不触发“必须显式 inventory”的收窄规则。
+        self.assertEqual(plan["machine_inventory_source"], "candidate_changed_tests")
+
+    def test_a_main_base_is_frozen_the_same_way(self):
+        plan = ingress.plan_review_ingress(review_issue(), reader=happy_reader(),
+                                           environ=ENABLED)
+        self.assertEqual(plan["would_enqueue"]["payload"]["frozen_base"],
+                         {"ref": "main", "sha": MAIN_SHA, "pr_number": PR_NUMBER})
+
+    def test_a_non_ancestor_base_is_refused(self):
+        reader = happy_reader(compare={"status": "diverged",
+                                       "merge_base_commit": {"sha": "9" * 40}})
+        with self.assertRaises(contract.Refused) as caught:
             ingress.plan_review_ingress(review_issue(), reader=reader, environ=ENABLED)
-        self.assertEqual(caught.exception.reason, "REVIEW_CANDIDATE_BASE_IS_NOT_MAIN")
-        self.assertEqual(caught.exception.base_ref, "release/next")
+        self.assertEqual(caught.exception.reason, "REVIEW_FROZEN_BASE_NOT_ANCESTOR")
 
     def test_a_missing_pull_request_is_refused_by_name(self):
         reader = happy_reader()
@@ -664,9 +698,12 @@ class H_ReadOnlyAndBounded(unittest.TestCase):
         candidate_paths = [call["url"].split("?")[0] for call in opener.calls
                            if "/pulls/" in call["url"]
                            or "/git/trees/" in call["url"]
+                           or "/compare/" in call["url"]
                            or (consumer.COMMIT_PATH.split("%")[0] in call["url"]
                                and not call["url"].endswith("/commits/main"))]
-        self.assertEqual(len(candidate_paths), 4, candidate_paths)
+        # PULL, PULL_FILES, COMMIT, TREE, COMPARE. The compare is the extra read that proves
+        # the frozen base is an ancestor of the frozen commit - one GET, and no store.
+        self.assertEqual(len(candidate_paths), 5, candidate_paths)
 
     def test_the_machine_scope_is_the_candidates_own_tests(self):
         reader = happy_reader(files=[

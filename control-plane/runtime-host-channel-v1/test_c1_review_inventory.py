@@ -8,6 +8,9 @@ from c1_review_inventory import explicit_inventory
 from c1_review_issue_ingress import plan_review_ingress, ingest_review
 
 SHA = "0b7d0403f9f171844fdcf9bf3330ff9386e82943"
+# The candidate's REAL base is read from the PR and frozen, so the PR the fixture describes
+# has one - a fixture PR with no base is not a candidate, it is an incomplete document.
+BASE = "1" * 40
 ROOT, APP, TESTS, BLOB = (character * 40 for character in "abcd")
 FILES = [
     "test_depth25_migration_history.py",
@@ -34,7 +37,11 @@ class Reader:
         }
 
     def read_pull(self, number):
-        return dict(head_sha=self.head, base_ref="main")
+        return dict(number=531, head_sha=self.head, base_ref="main", base_sha=BASE)
+
+    def read_compare(self, base_sha, head_sha):
+        assert base_sha == BASE and head_sha == SHA
+        return dict(status="ahead", merge_base_commit=dict(sha=BASE))
 
     def read_commit_tree(self, sha):
         assert sha == SHA

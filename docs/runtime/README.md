@@ -97,6 +97,11 @@ Candidate SHA: 0cb92ac7900cd177be383a4429a2759007119a10
 - Issue 只能启动 C14。
 - 只有 C14 的 sealed result 允许继续时，Runtime 才会自动创建 C13。
 - Candidate SHA 必须等于这个 PR **创建 Review Issue 时的当前 head**。
+- 候选的 **base 不需要你填**：Runtime 直接读这个 PR 在 GitHub 上的真实 base（可以是
+  `main`，也可以是它 stacking 的那个分支），并把它冻结成审核区间。审核范围就是
+  `真实 base → 冻结 head` 的完整 diff。
+- 只有在你想**额外声明并强制核对** base 时，才写 `Candidate base ref:` / `Candidate base SHA:`
+  两行；写错会被拒绝，不写也不会被拒绝。
 - 如果 PR 后来又 push 了新 commit，旧 Review Issue 会被拒绝；对新的 head 新建一张 Review Issue。
 - C13/C14 只做审核和 Evidence，**不会 merge，也不会 deploy**。
 
