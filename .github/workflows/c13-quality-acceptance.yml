@@ -197,10 +197,16 @@ jobs:
           # job it claims to be.
           #
           # `application/tests/conftest.py` decides WHICH database the suite runs against
-          # from GO_TEST_DATABASE_URL, and when it is absent it OVERWRITES DATABASE_URL with
-          # a private SQLite file. Passing DATABASE_URL alone therefore leaves the published
-          # manifest saying "PostgreSQL 18.4" while every assertion ran on SQLite - measured
-          # on a real round, not imagined.
+          # from GO_TEST_DATABASE_URL, and when it is absent it falls back to a private
+          # SQLite file. Passing DATABASE_URL alone therefore leaves the published manifest
+          # saying "PostgreSQL 18.4" while every assertion ran on SQLite - measured on a real
+          # round, not imagined.
+          #
+          # That first clause is only true on this branch. On main the fixture overwrote
+          # DATABASE_URL UNCONDITIONALLY, so a candidate derived from main could not run
+          # against PostgreSQL however the job was configured - supplying a database nobody
+          # reads is the same defect as reporting one nobody used. The fixture is corrected
+          # here, in one line, touching no assertion and no interface.
           #
           # JWT_SIGNING_KEY is the variable the product's own registration CI sets.
           # `registration_verification.ready()` refuses a key that is missing, shorter than
@@ -319,6 +325,50 @@ jobs:
           path: ${{ runner.temp }}/machine
           if-no-files-found: error
           retention-days: 90
+
+      # EVIDENCE FIRST, REFUSAL SECOND. Everything this round measured - the manifest, the
+      # JUnit file, the raw stdout and the database observation - is already on disk and
+      # already uploaded by the step above, so an unproven round still leaves a complete
+      # record behind. What it must not leave behind is a C13 AI review.
+      #
+      # Until this step existed, a machine job that never reached PostgreSQL stayed GREEN.
+      # The round then ran the fresh AI review - a paid call - of a candidate whose "PostgreSQL
+      # 18.4" evidence had actually been produced on SQLite, and the only thing that objected
+      # was the seal, at the very end, after the money was spent. A measurement that is
+      # reported but not enforced is a measurement the next stage does not have to believe.
+      #
+      # So the job refuses here, where the fact was measured. `c13-ai-review` declares
+      # `needs: c13-machine-test` and no `if:`, so a failed machine job SKIPS it: no review is
+      # requested, no artifact is downloaded, and no credential is ever unsealed. Deleting
+      # this step restores the old shape silently, which is why the offline suite extracts
+      # this script from the shipped bytes and runs it against proven and unproven manifests.
+      - name: Refuse an unproven machine test (no PostgreSQL connection observed)
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, pathlib, sys
+          root = pathlib.Path(os.environ["RUNNER_TEMP"]) / "machine"
+          manifest_path = root / "manifest.json"
+          if not manifest_path.is_file():
+              sys.exit("C13_MACHINE_TEST_DID_NOT_PROVE_POSTGRESQL: no manifest was recorded")
+          manifest = json.loads(manifest_path.read_text())
+          observation = manifest.get("database_observation") or {}
+          # Both halves are required, and neither is read from the manifest's own summary:
+          # the observation is the measurement, the version is the name the record binds.
+          # A proven observation with no readable version is refused exactly like an unproven
+          # one, because the C13 record has nothing it may name.
+          proven = observation.get("postgresql_actually_used") is True
+          version = manifest.get("postgres_version")
+          named = isinstance(version, str) and version.strip() != ""
+          if not (proven and named):
+              sys.exit(
+                  "C13_MACHINE_TEST_DID_NOT_PROVE_POSTGRESQL: postgresql_actually_used=%r "
+                  "postgres_version=%r reason=%r dialects_used=%r observation_errors=%r"
+                  % (observation.get("postgresql_actually_used"), version,
+                     observation.get("reason"), observation.get("dialects_used"),
+                     observation.get("observation_errors")))
+          print("MACHINE_TEST_PROVED_POSTGRESQL", version)
+          PY
 
   c13-ai-review:
     name: C13 fresh AI quality review (no candidate execution, no Docker)

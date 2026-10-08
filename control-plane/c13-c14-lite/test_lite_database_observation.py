@@ -21,8 +21,10 @@ tests here are measurements too:
 * the workflow's **real embedded manifest block** is extracted and executed, so the claim
   the round publishes is tested as the bytes that actually run rather than as a pattern;
 * the backend's version source is pinned to the observation, and to nothing else;
-* and the refusal that makes an unproven round cost something is pinned to the pre-existing
-  ``c13_machine_job_postgres_missing`` rule rather than to anything this revision added.
+* and both refusals an unproven round must meet are pinned as bytes: the JOB refusal (the
+  shipped script, executed, which stops the round before the paid review is requested) and
+  the SEAL refusal (the pre-existing ``c13_machine_job_postgres_missing`` rule, which is
+  what still charges the record when the job's own refusal is bypassed).
 
 Nothing here needs PostgreSQL or Docker: a read-only-against-a-real-server round is proven
 on a real disposable PostgreSQL 18.4 in the PR's evidence, and what these tests pin is that
@@ -553,6 +555,163 @@ class MachineStepInvocationTests(unittest.TestCase):
     def test_the_shipped_step_writes_the_sidecar_the_manifest_reads(self):
         machine = self.machine()
         self.assertIn(f"{observation.OUT_ENV}=" + observation.DEFAULT_OUT, machine)
+
+
+class MachineRefusalTests(unittest.TestCase):
+    """An unproven machine test must COST the round, and it must cost it here.
+
+    Reporting the truth is not the same as acting on it. Until this refusal existed a round
+    whose machine job never reached PostgreSQL stayed GREEN: the (paid) fresh AI review ran
+    against a candidate whose "PostgreSQL 18.4" evidence had been produced on SQLite, and
+    only the seal objected - after the money had been spent. The refusal is therefore pinned
+    twice: its ORDER in the job (evidence is preserved first) and its BEHAVIOUR (the shipped
+    script, extracted from the shipped YAML and executed, refuses exactly the shapes that
+    must not proceed).
+    """
+
+    TOKEN = "C13_MACHINE_TEST_DID_NOT_PROVE_POSTGRESQL"
+
+    def script(self) -> str:
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        step = workflow.split("      - name: Refuse an unproven machine test", 1)[1]
+        self.assertIn("python - <<'PY'", step, "the refusal step lost its embedded script")
+        return textwrap.dedent(step.split("python - <<'PY'\n", 1)[1].split("\n          PY", 1)[0])
+
+    def refuse(self, manifest) -> "subprocess.CompletedProcess":
+        root = pathlib.Path(tempfile.mkdtemp())
+        machine = root / "machine"
+        machine.mkdir()
+        if manifest is not None:
+            (machine / "manifest.json").write_text(
+                manifest if isinstance(manifest, str) else json.dumps(manifest))
+        return subprocess.run(
+            [sys.executable, "-c", self.script()], capture_output=True, text=True, timeout=60,
+            env={k: v for k, v in os.environ.items() if k != "RUNNER_TEMP"} | {"RUNNER_TEMP": str(root)})
+
+    def proven_manifest(self, used=True, version="18.4") -> dict:
+        observation_record = {
+            "observed": True,
+            "how": "sqlalchemy-engine-connect",
+            "dialects_used": ["postgresql"] if used else ["sqlite"],
+            "postgresql_actually_used": used,
+            "observed_postgres_version": version,
+            "postgres_version": version,
+            "reason": "POSTGRESQL_ENGINE_CONNECTED" if used else "NO_POSTGRESQL_ENGINE_CONNECTED",
+            "observation_errors": [],
+        }
+        return {"postgres_version": version if used else None,
+                "database_observation": observation_record}
+
+    # --- behaviour ---------------------------------------------------------------------
+
+    def test_a_proven_round_is_not_refused(self):
+        result = self.refuse(self.proven_manifest())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("MACHINE_TEST_PROVED_POSTGRESQL 18.4", result.stdout)
+
+    def test_a_round_that_never_connected_to_postgresql_is_refused(self):
+        result = self.refuse(self.proven_manifest(used=False, version=None))
+        self.assertNotEqual(result.returncode, 0, "an unproven round must fail the job")
+        self.assertIn(self.TOKEN, result.stderr)
+        self.assertIn("NO_POSTGRESQL_ENGINE_CONNECTED", result.stderr)
+
+    def test_a_proven_connection_with_no_readable_version_is_refused(self):
+        """The record binds a version; a measurement that named none cannot be sealed."""
+        manifest = self.proven_manifest()
+        manifest["postgres_version"] = None
+        result = self.refuse(manifest)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(self.TOKEN, result.stderr)
+
+    def test_a_round_with_no_observation_at_all_is_refused(self):
+        manifest = self.proven_manifest()
+        manifest["database_observation"] = None
+        result = self.refuse(manifest)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(self.TOKEN, result.stderr)
+
+    def test_a_round_that_recorded_no_manifest_is_refused(self):
+        result = self.refuse(None)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(self.TOKEN, result.stderr)
+
+    def test_a_version_nobody_read_is_not_a_version(self):
+        """A blank version is the shape a literal used to leave behind; it is refused too."""
+        manifest = self.proven_manifest()
+        manifest["postgres_version"] = "   "
+        result = self.refuse(manifest)
+        self.assertNotEqual(result.returncode, 0)
+
+    # --- the shape of the job ----------------------------------------------------------
+
+    def test_the_refusal_runs_after_the_evidence_has_been_preserved(self):
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        recorded = workflow.index("      - name: Record the machine-test manifest")
+        published = workflow.index("      - name: Publish the machine-test evidence")
+        refused = workflow.index("      - name: Refuse an unproven machine test")
+        self.assertLess(recorded, refused,
+                        "the manifest has to be written before the round refuses")
+        self.assertLess(published, refused,
+                        "the evidence has to be uploaded before the round refuses")
+
+    def test_the_machine_evidence_is_still_uploaded_when_the_refusal_fires(self):
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        step = workflow.split("      - name: Publish the machine-test evidence", 1)[1]
+        self.assertIn("if: ${{ always() && steps.machine_run.outcome != 'skipped' }}",
+                      step.split("        uses:", 1)[0])
+
+    def test_the_paid_review_cannot_start_without_a_proven_machine_test(self):
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        head = workflow.split("\n  c13-ai-review:", 1)[1].split("    steps:", 1)[0]
+        self.assertIn("needs: c13-machine-test", head)
+        self.assertNotIn("if:", head,
+                         "a failed machine job must SKIP the review, not run it anyway")
+
+
+CANDIDATE_CONFTEST = REPO_ROOT / "application" / "tests" / "conftest.py"
+
+
+@unittest.skipUnless(CANDIDATE_CONFTEST.is_file(), "the candidate tree is not checked out")
+class CandidateFixtureDatabaseSelectionTests(unittest.TestCase):
+    """The C13 job supplies a PostgreSQL URL; the candidate's fixture has to read it.
+
+    On main, ``application/tests/conftest.py`` overwrote ``DATABASE_URL`` with a private
+    SQLite file UNCONDITIONALLY, so the machine job could pass the correct
+    ``GO_TEST_DATABASE_URL`` and the suite would still run on SQLite - the job would have been
+    reporting a database nobody read. The fix is one expression: honour the variable when it
+    is present, keep the SQLite default when it is not. Both halves are asserted against the
+    real fixture, executed as its own process, because "the default behaviour is unchanged"
+    is exactly the claim a reader cannot check by reading a diff.
+    """
+
+    def database_url(self, test_database_url) -> str:
+        source = (
+            "import importlib.util, json, os\n"
+            "spec = importlib.util.spec_from_file_location('candidate_conftest', %r)\n"
+            "module = importlib.util.module_from_spec(spec)\n"
+            "spec.loader.exec_module(module)\n"
+            "print(json.dumps(os.environ.get('DATABASE_URL')))\n" % str(CANDIDATE_CONFTEST)
+        )
+        environment = {k: v for k, v in os.environ.items()
+                       if k not in ("DATABASE_URL", "GO_TEST_DATABASE_URL")}
+        if test_database_url is not None:
+            environment["GO_TEST_DATABASE_URL"] = test_database_url
+        result = subprocess.run([sys.executable, "-c", source], capture_output=True,
+                                text=True, timeout=120, env=environment)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout.strip())
+
+    def test_an_isolated_job_supplying_postgresql_is_obeyed(self):
+        url = "postgresql+psycopg://c13:c13@host.docker.internal:5432/c13_lite"
+        self.assertEqual(self.database_url(url), url)
+
+    def test_without_the_variable_the_sqlite_default_is_unchanged(self):
+        url = self.database_url(None)
+        self.assertTrue(url.startswith("sqlite+pysqlite:///"), url)
+
+    def test_an_empty_variable_is_not_a_database(self):
+        url = self.database_url("")
+        self.assertTrue(url.startswith("sqlite+pysqlite:///"), url)
 
 
 if __name__ == "__main__":
