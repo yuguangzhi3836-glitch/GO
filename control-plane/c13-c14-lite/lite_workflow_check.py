@@ -74,13 +74,15 @@ TEST_DATABASE_URL_ENV = "GO_TEST_DATABASE_URL"
 #: ``REGISTRATION_VERIFICATION_NOT_READY`` - a red about the sandbox rather than the candidate.
 TEST_SIGNING_KEY_ENV = "JWT_SIGNING_KEY"
 
-#: The trusted backend module the machine step runs on BOTH sides of its pytest invocation.
-#: It reads no URL out of the environment: it connects to the PostgreSQL service the job
-#: starts and fingerprints that database's own schema before and after the inventory, so a
-#: round may name a PostgreSQL version only when the database itself showed the inventory's
-#: work. Its presence on both sides is what this module checks; what it OBSERVED is checked
-#: by executing it, not by reading the workflow.
-DATABASE_OBSERVATION_MODULE = "lite_database_observation.py"
+#: The trusted backend plugin the machine step loads into its pytest invocation. It reads
+#: no URL out of the environment: it listens to SQLAlchemy's ``engine_connect`` event and
+#: reports the DIALECT of every engine the inventory really connected with, so a round may
+#: name a PostgreSQL version only when a PostgreSQL engine really connected. That the step
+#: LOADS it is what this module checks - what it OBSERVED is checked by running it, not by
+#: reading the workflow. Loading it is the whole requirement: a plugin that is mounted but
+#: never loaded reports nothing, the manifest then carries no version, and the pre-existing
+#: ``c13_machine_job_postgres_missing`` rule refuses the C13 record at seal time.
+DATABASE_OBSERVATION_PLUGIN = "lite_database_observation"
 
 try:  # pragma: no cover - trivial import guard
     import yaml
@@ -325,18 +327,19 @@ def check_machine_step_runs_against_postgres(name: str, document: dict, raw: str
        identity tests in the frozen inventory failed for a reason that had nothing to do with
        the candidate.
 
-    DELIBERATELY NARROWED. This check used to also judge the *shape* of the two values: the
-    URL had to start with ``postgresql``, the key had to be at least 32 characters and must
-    not carry the shipped prefix. Those three branches are gone, because each of them was a
-    string standing in for a fact that is now measured. The machine step observes the
-    PostgreSQL service's own schema before and after the pytest run, and the manifest
-    reports a version only when that observation shows the inventory used the database - so
-    a wrong value is caught where it actually happens, by the machine that actually ran,
-    instead of by a pattern match performed at review time. What survives is what an offline
-    read is still allowed to promise: the two variables are PASSED to the container as
-    literals rather than built from something this scan cannot see, and the observation is
-    still there at all, on BOTH sides of the run. Deleting either half is a silent
-    regression, which is the thing this guard exists to prevent.
+    DELIBERATELY NARROWED TWICE. This check used to also judge the *shape* of the two values:
+    the URL had to start with ``postgresql``, the key had to be at least 32 characters and
+    must not carry the shipped prefix. Those three branches are gone, because each of them
+    was a string standing in for a fact that is now measured. It then required the
+    observation to run on BOTH sides of the pytest line - which is the shape that revision
+    needed, because it proved PostgreSQL was used by watching the database's own schema
+    move, and a schema is exactly what a read-only suite never touches. Three things can now
+    be promised offline and nothing more: the two variables are PASSED to the container as
+    literals rather than built from something this scan cannot see, and the machine step
+    LOADS the observation plugin into the test process itself - which asks the only question
+    that decides the record ("which engine did this process connect with?") and answers it
+    without depending on whether the suite happened to create a table. Deleting any of them
+    is a silent regression, which is the thing this guard exists to prevent.
     """
     if name != C13_WORKFLOW:
         return
@@ -367,27 +370,24 @@ def check_machine_step_runs_against_postgres(name: str, document: dict, raw: str
                 f"{name}: {variable} is built from a shell variable ({value}); the value "
                 "must be written here so it can be checked")
 
-    lines = code.splitlines()
-    pytest_at = [index for index, line in enumerate(lines) if "python -m pytest" in line]
-    # A line counts only when it both NAMES the module and selects a phase. Matching on the
-    # name alone was wrong, and the mutation run is how it was found: the step also MOUNTS
-    # the module, and that mount line sits above the pytest line - so a step whose only
-    # observation had been deleted still looked like it observed the database first.
-    observed_before = [index for index, line in enumerate(lines)
-                       if DATABASE_OBSERVATION_MODULE in line and "--phase before" in line]
-    observed_after = [index for index, line in enumerate(lines)
-                      if DATABASE_OBSERVATION_MODULE in line and "--phase after" in line]
-    if not pytest_at:
-        failures.append(f"{name}: no 'python -m pytest' command found in the container step")
-        return
-    first, last = min(pytest_at), max(pytest_at)
-    if not observed_before or min(observed_before) > first or not observed_after or max(observed_after) < last:
+    # The observation has to be LOADED, not merely present. The step also MOUNTS the plugin,
+    # and a mount on its own satisfies any check that only looks for the module's name - the
+    # mutation run is how that was found. `-p <name>` is what makes pytest import it, and an
+    # unloaded plugin observes nothing.
+    #
+    # Matched as a whole option, not as a substring. `-p lite_database_observation` is a
+    # PREFIX of `-p lite_database_observation_typo`, so a plain ``in`` test accepts a renamed
+    # plugin - found by mutating the shipped bytes, not by reading them. The name may be
+    # followed by the shell quote that closes the ``bash -lc`` string, so the boundary is
+    # "no identifier character next", not "end of line".
+    loaded = re.compile(r"-p\s+" + re.escape(DATABASE_OBSERVATION_PLUGIN) + r"(?![A-Za-z0-9_])")
+    if not any(loaded.search(line) for line in code.splitlines()):
         failures.append(
-            f"{name}: the machine step must RUN the observation on the PostgreSQL service's "
-            f"own schema BEFORE and AFTER the inventory (a {DATABASE_OBSERVATION_MODULE} call "
-            "with --phase before above the pytest line and --phase after below it); mounting "
-            "the module is not observing, and with only its own environment variables to go "
-            "on the job would publish a run that quietly used SQLite as PostgreSQL")
+            f"{name}: the machine step must load the observation plugin into its pytest "
+            f"invocation (`-p {DATABASE_OBSERVATION_PLUGIN}`); mounting the module is not "
+            "loading it, and a step that never loads it reports no engine observation, so "
+            "the job would fall back to publishing a run that quietly used SQLite as "
+            "PostgreSQL")
 
 
 def check_spec_carries_the_frozen_review_content(name: str, raw: str, failures: list) -> None:

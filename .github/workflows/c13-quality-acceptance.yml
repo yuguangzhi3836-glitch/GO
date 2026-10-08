@@ -213,17 +213,28 @@ jobs:
           #
           # Neither of them, however, is PROOF. A value the job writes into its own
           # environment says what the job intended; it does not say what the suite did. So
-          # the run is bracketed by two observations of the PostgreSQL service itself
-          # (lite_database_observation.py, mounted read-only from this run's own commit):
-          # a fingerprint of that database's schema before the inventory and after it. The
-          # container's only other actions are pip installs, so a fingerprint that moved is
-          # the inventory's own doing - and a fingerprint that did not move means the
-          # database the suite used cannot be named, so the step fails instead of publishing
-          # a version nobody observed.
+          # the inventory runs with lite_database_observation.py loaded as a pytest plugin
+          # (-p, mounted read-only from this run's own commit). It listens to SQLAlchemy's
+          # engine_connect event - which fires when a Connection is PROCURED, not when an
+          # Engine is built - and reports the DIALECT of every engine that really connected.
+          # The manifest may then name a PostgreSQL version, and only the one the server
+          # itself reported through that engine; a run that reached SQLite reports sqlite and
+          # is refused a version. Nothing is read from the schema: a read-only suite that
+          # creates no table is still a PostgreSQL suite, and an engine that was built and
+          # never used is still not evidence of anything.
+          #
+          # `-p lite_database_observation` sits AFTER `"$@"` on purpose. `python -m pytest
+          # "$@"` is itself asserted by test_lite_machine_inventory, because `"$@"` has to
+          # reach pytest as separate quoted argv elements rather than being spliced into
+          # this shell string by a candidate-supplied path. Options already trail `"$@"`
+          # here (`-q --junitxml`), so the plugin rides along in the same place instead of
+          # disturbing an argv boundary that another test is watching.
           docker run --rm \
             -v "$PWD/candidate:/srv:ro" \
             -v "$PWD/control-plane/c13-c14-lite/lite_database_observation.py:/opt/lite_database_observation.py:ro" \
             -v "$RUNNER_TEMP/machine:/out" \
+            -e PYTHONPATH=/opt \
+            -e C13_DATABASE_OBSERVATION_OUT=/out/database.json \
             -e PGHOST=host.docker.internal \
             -e PGPORT=5432 \
             -e PGUSER=postgres \
@@ -236,18 +247,7 @@ jobs:
             -w /srv/application \
             --add-host=host.docker.internal:host-gateway \
             go-c13-machine:local \
-            bash -lc '
-              pip install -q pytest &&
-              cp -r /srv/application /tmp/candidate-application &&
-              pip install -q "/tmp/candidate-application[dev]" &&
-              python /opt/lite_database_observation.py --phase before --out /out/database-before.json ;
-              python -m pytest "$@" -q --junitxml=/out/junit.xml ;
-              pytest_status=$? ;
-              python /opt/lite_database_observation.py --phase after --before /out/database-before.json --out /out/database.json ;
-              observation_status=$? ;
-              if [ "$pytest_status" -ne 0 ]; then exit "$pytest_status"; fi ;
-              exit "$observation_status"
-            ' c13-tests "${test_paths[@]}" \
+            bash -lc 'pip install -q pytest && cp -r /srv/application /tmp/candidate-application && pip install -q "/tmp/candidate-application[dev]" && python -m pytest "$@" -q --junitxml=/out/junit.xml -p lite_database_observation' c13-tests "${test_paths[@]}" \
             2>&1 | tee "$RUNNER_TEMP/machine/stdout.txt"
           pipeline_status=("${PIPESTATUS[@]}")
           set -e
@@ -284,9 +284,12 @@ jobs:
           # sealed C13 record and the round decision all read it, while the suite may have
           # run on SQLite - the workflow said PostgreSQL because the workflow always said
           # PostgreSQL. It now carries the version `lite_database_observation.py` read from
-          # the server, and it carries NOTHING when that observation could not show the
-          # inventory used the database, so an unproven round cannot describe itself as a
-          # PostgreSQL test. The raw observation travels alongside it, so a reader can see
+          # the server through the engine the inventory used, and it carries NOTHING when
+          # that observation did not show a PostgreSQL dialect on a real connection, so an
+          # unproven round cannot describe itself as a PostgreSQL test. The refusal is not
+          # enforced here: it is the pre-existing `c13_machine_job_postgres_missing` rule in
+          # `lite_bundle.validate_c13`, which rejects a C13 record whose machine job cannot
+          # name its database. The raw observation travels alongside it, so a reader can see
           # what was measured rather than only what was concluded.
           observation = read_json("database.json")
           proven = isinstance(observation, dict) and observation.get("postgresql_actually_used") is True

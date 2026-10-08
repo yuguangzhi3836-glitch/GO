@@ -198,8 +198,10 @@ class MachineDatabaseSelectionTests(unittest.TestCase):
 
     What this guard does NOT do any more is judge the shape of the two values - see
     ``test_value_shape_is_no_longer_the_guards_business``, which asserts the narrowing on
-    purpose. The fact those patterns stood in for is now measured by the machine that ran,
-    and ``test_lite_database_observation.py`` executes that measurement.
+    purpose. Nor does it require the observation to run around the pytest line, which was
+    the shape a schema-watching revision needed. The fact those patterns stood in for is now
+    measured inside the test process itself, and ``test_lite_database_observation.py``
+    executes that measurement.
     """
 
     TEMPLATE = (
@@ -221,21 +223,14 @@ class MachineDatabaseSelectionTests(unittest.TestCase):
         "            ' c13-tests app\n"
     )
 
-    #: The observation on both sides of the inventory, as the shipped step does it.
-    OBSERVATION = (
-        "              python /opt/lite_database_observation.py --phase before --out /out/db-before.json ;\n"
-        "              python -m pytest application/tests -q --junitxml=/out/junit.xml ;\n"
-        "              python /opt/lite_database_observation.py --phase after --before /out/db-before.json --out /out/database.json\n"
+    #: The inventory with the observation plugin loaded, as the shipped step does it.
+    OBSERVING = (
+        "              python -m pytest -p lite_database_observation application/tests -q --junitxml=/out/junit.xml\n"
     )
-    #: Nothing observes the database: the job would be back to reporting a version it
-    #: derived from its own environment.
-    UNOBSERVED = (
+    #: The module is MOUNTED and never loaded, so nothing asks the test process which engine
+    #: it connected with and the job is back to reporting a version from its own environment.
+    UNLOADED = (
         "              python -m pytest application/tests -q --junitxml=/out/junit.xml\n"
-    )
-    #: Only the AFTER side: nothing to compare against, so nothing is proven.
-    AFTER_ONLY = (
-        "              python -m pytest application/tests -q --junitxml=/out/junit.xml ;\n"
-        "              python /opt/lite_database_observation.py --phase after --before /out/db-before.json --out /out/database.json\n"
     )
 
     DATABASE_ARGUMENT = (
@@ -248,7 +243,7 @@ class MachineDatabaseSelectionTests(unittest.TestCase):
 
     def failures_for(self, arguments, commands=None):
         if commands is None:
-            commands = self.OBSERVATION
+            commands = self.OBSERVING
         failures = []
         raw = self.TEMPLATE.format(arguments=arguments, commands=commands)
         lite_workflow_check.check_machine_step_runs_against_postgres(
@@ -288,39 +283,25 @@ class MachineDatabaseSelectionTests(unittest.TestCase):
             "without JWT_SIGNING_KEY registration verification refuses with "
             "REGISTRATION_VERIFICATION_NOT_READY")
 
-    def test_a_step_that_never_observes_the_database_is_rejected(self):
-        """The template MOUNTS the module and never calls it - on purpose.
+    def test_a_step_that_never_loads_the_observation_is_rejected(self):
+        """The template MOUNTS the module and never loads it - on purpose.
 
         Matching the module's name alone was the guard's first shape, and a mutation run
-        showed why that was wrong: the real step mounts the module above its pytest line,
-        so a step whose only observation had been deleted still looked like it had observed
-        the database first.
+        showed why that was wrong: the real step mounts the module above its pytest line, so
+        a step whose observation had been deleted still looked like it had one. What makes
+        the plugin observe is pytest importing it, and that is what is checked.
         """
-        failures = self.both(commands=self.UNOBSERVED)
+        failures = self.both(commands=self.UNLOADED)
         self.assertEqual(len(failures), 1, failures)
-        self.assertIn("BEFORE and AFTER", failures[0])
-
-    def test_a_step_that_observes_only_after_the_run_is_rejected(self):
-        failures = self.both(commands=self.AFTER_ONLY)
-        self.assertEqual(len(failures), 1, failures)
-        self.assertIn("BEFORE and AFTER", failures[0])
-
-    def test_a_step_that_observes_only_before_the_run_is_rejected(self):
-        before_only = (
-            "              python /opt/lite_database_observation.py --phase before --out /out/db-before.json ;\n"
-            "              python -m pytest application/tests -q --junitxml=/out/junit.xml\n"
-        )
-        failures = self.both(commands=before_only)
-        self.assertEqual(len(failures), 1, failures)
-        self.assertIn("BEFORE and AFTER", failures[0])
+        self.assertIn("load the observation plugin", failures[0])
 
     def test_value_shape_is_no_longer_the_guards_business(self):
         """A SQLite URL or a placeholder key is now caught by the machine that ran.
 
         Asserted deliberately, so the narrowing is a decision on the record rather than a
-        guard someone deleted. Neither value can produce a false GREEN any more: a run on
-        SQLite leaves the PostgreSQL service's schema untouched, the observation refuses to
-        name a version, and the manifest carries no version - which
+        guard someone deleted. Neither value can produce a false GREEN any more: with a
+        SQLite URL the engines the suite builds report the ``sqlite`` dialect, the
+        observation refuses to name a version, and the manifest carries no version - which
         ``test_lite_database_observation.py`` executes end to end. Re-adding these pattern
         checks would add a second, weaker opinion about something already measured.
         """
@@ -337,7 +318,7 @@ class MachineDatabaseSelectionTests(unittest.TestCase):
             "          # GO_TEST_DATABASE_URL and JWT_SIGNING_KEY are required here.\n"
             "          # -e GO_TEST_DATABASE_URL=\"postgresql+psycopg://x\" \\\n"
             "          # -e JWT_SIGNING_KEY=\"c13-lite-test-only-signing-key-32bytes\" \\\n"
-            "          # python /opt/lite_database_observation.py --phase before \\\n"
+            "          # python -m pytest -p lite_database_observation application/tests \\\n"
             "          docker run --rm -w /srv/application go-c13-machine:local \\\n"
             "            bash -lc 'python -m pytest application/tests -q'\n"
         )

@@ -1,232 +1,275 @@
-"""Observe which database the C13 machine inventory actually ran against.
+"""Observe the database engine the C13 machine inventory ACTUALLY ran on.
 
 C13's machine job is the only place in this cell where candidate code executes, and the
 whole reason it runs in a disposable container is PostgreSQL 18.4: the constraints,
 transaction behaviour and column types that decide whether a migration is correct are
-*PostgreSQL's*, not SQLite's. For a while the job published a version it had never
-looked at. The version was a literal in the workflow, and the database the suite used
-was chosen by the candidate's own ``application/tests/conftest.py`` - which, when
-``GO_TEST_DATABASE_URL`` is absent, replaces ``DATABASE_URL`` with a private SQLite
-file. A real round therefore recorded ``"postgres_version": "18.4"`` while every
-assertion ran on SQLite. ``docs/acceptance/c13-supplement-533/database-preflight.json``
-reached the same finding independently and named it exactly:
-``"manifest_version_source": "literal in workflow, not actual application database
-observation"``.
+*PostgreSQL's*, not SQLite's. For a while the job published a version it had never looked
+at. The version was a literal in the workflow, and the database the suite used was chosen
+by the candidate's own ``application/tests/conftest.py`` - which, when
+``GO_TEST_DATABASE_URL`` is absent, replaces ``DATABASE_URL`` with a private SQLite file.
+A real round therefore recorded ``"postgres_version": "18.4"`` while every assertion ran on
+SQLite. ``docs/acceptance/c13-supplement-533/database-preflight.json`` reached the same
+finding independently and named it exactly: ``"manifest_version_source": "literal in
+workflow, not actual application database observation"``.
 
-This module is the missing half. It reads no URL out of the environment and trusts no
-string: it connects to the PostgreSQL service the job already starts, over the libpq
-variables the job already passes, and takes a **fingerprint of that database's own
-schema** before and after the pytest run. The two probes bracket the run inside a
-container whose only other actions are pip installs, so a changed fingerprint is the
-suite's own doing. When the fingerprints are equal nothing can be said about which
-database ran - so nothing is claimed, and the caller fails closed. Only an observation
-that the database itself changed lets a round name a PostgreSQL version, and the name it
-may use is the one the server reported, never one written down here.
+This module is the missing half, and it asks the question directly: **which database engine
+did this pytest process actually connect with?** It is a pytest plugin, so the answer comes
+from the process itself rather than from anything written around it. It reads no URL out of
+the environment and trusts no string.
 
-What this deliberately is NOT:
+How the answer is obtained
+--------------------------
 
-* not a pytest plugin and not a profile - the Owner-authorized #533 supplement plugin
-  was removed from the machine step and must not come back;
-* not a new service, database, role or reviewer - it uses the disposable PostgreSQL
-  service the job already starts and the credentials the job already has;
-* not a system of record - it produces one small JSON observation per phase, and the
-  manifest is what hash-binds it.
+``sqlalchemy.engine.Engine`` is listened to at class level, so every engine the suite
+builds reports itself. The hook is the ``engine_connect`` event, which fires when a
+``Connection`` is *procured* - not when an ``Engine`` is constructed. That difference is
+the point: a suite that builds an engine and never touches it must not be reported as
+having used a database, and a suite that runs a single read-only ``SELECT`` - creating no
+table and changing no schema - must not be reported as not having used one. Both were
+measured on a real disposable PostgreSQL 18.4 (see the PR evidence), and *neither* the
+schema nor any row it contains is part of the judgement here.
+
+When at least one engine that actually connected reports the ``postgresql`` dialect, the
+server's own ``server_version_num`` is read through that same engine, and the version it
+reports is the only version this module will ever name. It is read from the server, never
+computed from an environment variable, so no literal can be substituted for a measurement.
+``version_text`` renders the server's own arithmetic (180004 -> "18.4"); if a future server
+answers 19.2, the record says 19.2.
+
+What this deliberately is NOT
+-----------------------------
+
+* not a schema observation - an earlier revision proved "PostgreSQL was used" by watching
+  the database's table list change. That was wrong twice over: it turned a hard condition
+  out of something that a legitimate read-only suite never does, and it let a *write* count
+  as evidence of a *connection*. The engine reports the dialect; nothing else is consulted;
+* not a new service, database, role or reviewer - it uses the disposable PostgreSQL the job
+  already starts, the engine the suite already builds, and the credentials the job already
+  has;
+* not a gate. It reports what it saw and changes nothing about the run: the manifest is the
+  only consumer, and the pre-existing ``c13_machine_job_postgres_missing`` rule in
+  ``lite_bundle`` is what refuses a C13 record that cannot name its database. This module
+  never raises into the test session and never alters an exit status - an observation that
+  could turn a green suite red would be a worse defect than the one it repairs.
+
+Boundary, stated plainly: the hook sees SQLAlchemy engines. A candidate that reached the
+database through a raw driver without SQLAlchemy would connect unseen, and this module
+would then report that no engine connected - so such a round fails closed rather than being
+credited with a PostgreSQL test it cannot show.
 """
 from __future__ import annotations
 
-import argparse
-import hashlib
 import json
 import os
 import pathlib
-import sys
 
-#: The schema the product's own migrations write into. Named once, so the before and the
-#: after fingerprint cannot disagree about what they were looking at.
-SCHEMA = "public"
+#: The one line the CI log carries, so the observation can be read without unzipping the
+#: evidence bundle. It lands in the hashed ``stdout.txt`` as well as in the sidecar.
+REPORT_PREFIX = "C13_DATABASE_OBSERVATION"
 
-#: The server's own answer, never an environment variable. ``server_version_num`` is the
-#: machine form of the version (18.4 -> 180004) and ``current_database()`` proves both
-#: phases were pointed at the same database.
+#: The dialect that has to be observed for a round to be allowed to call itself a
+#: PostgreSQL test.
+POSTGRESQL = "postgresql"
+
+#: Where the sidecar goes. The workflow's manifest hash-binds this file; tests point the
+#: variable at a temporary path.
+OUT_ENV = "C13_DATABASE_OBSERVATION_OUT"
+DEFAULT_OUT = "/out/database.json"
+
+#: Asked of the SERVER, over the engine the suite used. Never read from the environment.
 SERVER_FACTS = "SELECT current_setting('server_version_num')::int, current_database()"
 
-#: Every table the database holds in the observed schema, ordered so the fingerprint is a
-#: function of the SET and not of the catalog's row order.
-TABLES = ("SELECT table_name FROM information_schema.tables "
-          "WHERE table_schema = %s ORDER BY table_name")
+#: One row per (dialect, driver, url) that actually opened a connection.
+_ENGINES: list = []
+#: True while this module is reading the server's facts, so its own connection is not
+#: mistaken for one made by the tests.
+_PROBING = False
 
-#: A probe that cannot answer is a record, not a crash: the run still has to produce its
-#: test evidence, and it is the AFTER phase that refuses to name a version.
-CONNECT_TIMEOUT_SECONDS = 15
+#: Errors raised inside the engine hook, which are recorded rather than propagated.
+_ERRORS: list = []
 
-#: The one line the CI log carries, so the proof can be read without unzipping anything.
-#: The witness (before the run) and the verdict (after it) share this prefix and differ by
-#: suffix, so `grep C13_DATABASE_OBSERVATION` shows both halves of the measurement.
-REPORT_PREFIX = "C13_DATABASE_OBSERVATION"
-WITNESS_SUFFIX = "_WITNESS"
+#: Why the engine hook could not be attached, when that is the case.
+_UNAVAILABLE = None
 
 
-def _params() -> dict:
-    """The connection, from the libpq variables the machine step already passes."""
-    return {
-        "host": os.environ.get("PGHOST", "host.docker.internal"),
-        "port": int(os.environ.get("PGPORT", "5432")),
-        "user": os.environ.get("PGUSER", "postgres"),
-        "password": os.environ.get("PGPASSWORD", ""),
-        "dbname": os.environ.get("PGDATABASE", "c13_lite"),
-        "connect_timeout": CONNECT_TIMEOUT_SECONDS,
-    }
-
-
-def version_text(server_version_num: int) -> str:
+def version_text(server_version_num) -> str:
     """``180004`` -> ``"18.4"``. PostgreSQL's own arithmetic, not ours."""
     major, minor = divmod(int(server_version_num), 10000)
     return f"{major}.{minor}"
 
 
-def fingerprint(tables) -> str:
-    """A digest of the observed table set; equal digests mean "nothing to report"."""
-    return hashlib.sha256("\n".join(tables).encode("utf-8")).hexdigest()
+def reset() -> None:
+    """Forget every observation. Tests use this; the plugin's own session never repeats."""
+    _ENGINES.clear()
+    _ERRORS.clear()
 
 
-def probe() -> dict:
-    """One observation of the PostgreSQL service, or a record of why there is none."""
-    try:
-        # Imported here so that a missing driver is a record rather than a traceback: the
-        # run has to survive to the AFTER phase, which is where the refusal happens.
-        import psycopg
-    except Exception as error:  # noqa: BLE001 - any import failure is the same fact
-        return {"reachable": False, "reason": "PSYCOPG_UNAVAILABLE",
-                "error": type(error).__name__}
-    try:
-        with psycopg.connect(**_params(), autocommit=True) as connection:
-            server_version_num, database = connection.execute(SERVER_FACTS).fetchone()
-            tables = [row[0] for row in connection.execute(TABLES, (SCHEMA,)).fetchall()]
-    except Exception as error:  # noqa: BLE001 - unreachable is a result, not a defect
-        return {"reachable": False, "reason": "POSTGRESQL_NOT_REACHED",
-                "error": f"{type(error).__name__}: {error}"[:400]}
-    return {
-        "reachable": True,
-        "database": database,
-        "schema": SCHEMA,
-        "server_version_num": int(server_version_num),
-        "observed_postgres_version": version_text(server_version_num),
-        "tables": len(tables),
-        "schema_fingerprint": fingerprint(tables),
-    }
+def _row(dialect, driver, url) -> dict:
+    for row in _ENGINES:
+        if (row["dialect"], row["driver"], row["url"]) == (dialect, driver, url):
+            return row
+    row = {"dialect": dialect, "driver": driver, "url": url, "connections": 0,
+           "server_version_num": None, "database": None, "engine": None}
+    _ENGINES.append(row)
+    return row
 
 
-def evaluate(before: dict, after: dict) -> dict:
-    """What this round may claim, given the two observations.
+def observe_connection(connection) -> None:
+    """Record an engine that ACTUALLY procured a connection, and which dialect it used.
 
-    ``postgresql_actually_used`` is true only when the service answered BOTH probes, both
-    probes were pointed at the same database, and that database's schema fingerprint
-    moved between them. When that cannot be shown, ``postgres_version`` stays ``None`` -
-    the record keeps the server's version as an *observation*, but the round may not
-    report a PostgreSQL test it did not prove. The reason is carried separately so a
-    refusal can be read instead of guessed at.
+    Called from the ``engine_connect`` event. Nothing is inferred: a row exists here only
+    because a connection was really handed out, which is why an engine that was built and
+    never used stays invisible.
     """
-    same_database = bool(before.get("database")) and before.get("database") == after.get("database")
-    changed = bool(before.get("schema_fingerprint")) and (
-        before.get("schema_fingerprint") != after.get("schema_fingerprint"))
-    used = bool(before.get("reachable") and after.get("reachable") and same_database and changed)
-    if used:
-        reason = "POSTGRESQL_OBSERVED"
-    elif not before.get("reachable"):
-        reason = before.get("reason") or "POSTGRESQL_NOT_REACHED"
-    elif not after.get("reachable"):
-        reason = after.get("reason") or "POSTGRESQL_NOT_REACHED"
-    elif not same_database:
-        reason = "PROBES_DISAGREE_ABOUT_THE_DATABASE"
+    if _PROBING:
+        return
+    dialect = connection.dialect
+    engine = getattr(connection, "engine", None)
+    url = engine.url.render_as_string(hide_password=True) if engine is not None else None
+    row = _row(dialect.name, dialect.driver, url)
+    row["connections"] += 1
+    if engine is not None:
+        row["engine"] = engine
+
+
+def _read_server_facts(row: dict) -> None:
+    """Ask the server for its own version, through the engine the suite used."""
+    try:
+        with row["engine"].connect() as probe:
+            num, database = probe.exec_driver_sql(SERVER_FACTS).fetchone()
+    except Exception as error:  # noqa: BLE001 - an unreadable version is a record, not a crash
+        row["error"] = f"{type(error).__name__}: {error}"[:200]
+        return
+    row["server_version_num"] = int(num)
+    row["database"] = database
+
+
+def observe() -> dict:
+    """What this pytest process actually connected with, and nothing else.
+
+    Exactly one reason describes every outcome, and ``postgresql_actually_used`` is true
+    for one of them. There is no path on which a version is named without a PostgreSQL
+    dialect having been observed on a real connection.
+    """
+    global _PROBING
+    _PROBING = True
+    try:
+        for row in _ENGINES:
+            if row["dialect"] == POSTGRESQL and row["engine"] is not None:
+                _read_server_facts(row)
+    finally:
+        _PROBING = False
+
+    engines = [{key: value for key, value in row.items() if key != "engine"}
+               for row in _ENGINES]
+    dialects = sorted({row["dialect"] for row in _ENGINES})
+    postgres = [row for row in _ENGINES if row["dialect"] == POSTGRESQL]
+    versions = sorted({row["server_version_num"] for row in postgres
+                       if row["server_version_num"] is not None})
+
+    if not _ENGINES:
+        reason = "SQLALCHEMY_UNAVAILABLE" if _UNAVAILABLE else "NO_DATABASE_ENGINE_CONNECTED"
+    elif not postgres:
+        reason = "NO_POSTGRESQL_ENGINE_CONNECTED"
+    elif not versions:
+        reason = "POSTGRESQL_CONNECTED_VERSION_UNREADABLE"
+    elif len(versions) > 1:
+        # Two different servers answered. Naming either one would be a guess.
+        reason = "AMBIGUOUS_POSTGRESQL_SERVERS"
     else:
-        reason = "SCHEMA_UNCHANGED_BY_THE_RUN"
+        reason = "POSTGRESQL_ENGINE_CONNECTED"
+
+    proven = reason == "POSTGRESQL_ENGINE_CONNECTED"
     return {
         "observed": True,
-        "postgresql_actually_used": used,
-        "schema_changed_during_the_run": changed,
+        "how": "sqlalchemy-engine-connect",
+        "unavailable": _UNAVAILABLE,
+        "observation_errors": list(_ERRORS),
+        "connections_observed": sum(row["connections"] for row in _ENGINES),
+        "dialects_used": dialects,
+        "engines": engines,
+        "postgresql_actually_used": proven,
+        "observed_postgres_version": version_text(versions[0]) if proven else None,
+        # THE CLAIM. It exists only where the evidence does.
+        "postgres_version": version_text(versions[0]) if proven else None,
+        "database": postgres[0]["database"] if len(postgres) == 1 and proven else None,
         "reason": reason,
-        "database": after.get("database"),
-        "observed_postgres_version": after.get("observed_postgres_version"),
-        # THE CLAIM. It exists only where the proof does.
-        "postgres_version": after.get("observed_postgres_version") if used else None,
-        "before": before,
-        "after": after,
     }
 
 
-def _write(path: str, payload: dict) -> None:
-    pathlib.Path(path).write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n",
-                                  encoding="utf-8")
-
-
-def _read(path: str):
-    try:
-        return json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
-
-
-def _summary(record: dict) -> dict:
-    """The greppable line: the verdict and both measurements, nothing else."""
-    before, after = record.get("before") or {}, record.get("after") or {}
+def summary(record: dict) -> dict:
+    """The greppable line: the verdict and what it was measured from, nothing else."""
     return {
         "postgresql_actually_used": record.get("postgresql_actually_used"),
         "postgres_version": record.get("postgres_version"),
-        "observed_postgres_version": record.get("observed_postgres_version"),
-        "database": record.get("database"),
-        "tables_before": before.get("tables"),
-        "tables_after": after.get("tables"),
+        "dialects_used": record.get("dialects_used"),
+        "connections_observed": record.get("connections_observed"),
+        "engines": [{key: row.get(key) for key in
+                     ("dialect", "driver", "url", "connections", "server_version_num",
+                      "database")}
+                    for row in record.get("engines") or []],
         "reason": record.get("reason"),
     }
 
 
-def _witness(observation: dict) -> dict:
-    """The before-phase line: what was seen, with no verdict, because there is none yet.
+def write_report(record: dict, path: str | None = None) -> str | None:
+    """Write the sidecar the manifest hash-binds. Never raises into the test session.
 
-    Written this way for a reason. The first version printed the verdict shape with every
-    field ``null``, which in a successful run reads like a verdict that failed to form -
-    and this whole change exists so that a reader can tell what was measured from what was
-    concluded. There is no conclusion before the run, so this line does not look like one.
+    If the path cannot be written the log line still carries the observation, and the
+    manifest falls back to ``null`` - a refusal, which is the safe direction.
     """
-    return {
-        "phase": "before",
-        "reachable": observation.get("reachable"),
-        "database": observation.get("database"),
-        "observed_postgres_version": observation.get("observed_postgres_version"),
-        "tables": observation.get("tables"),
-        "schema_fingerprint": observation.get("schema_fingerprint"),
-        "reason": observation.get("reason"),
-    }
+    target = pathlib.Path(path or os.environ.get(OUT_ENV) or DEFAULT_OUT)
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n",
+                          encoding="utf-8")
+    except OSError:
+        return None
+    return str(target)
 
 
-def main(argv=None, probe_fn=None) -> int:
-    parser = argparse.ArgumentParser(description="Observe the database the C13 inventory ran on")
-    parser.add_argument("--phase", choices=("before", "after"), required=True)
-    parser.add_argument("--out", required=True, help="where to write this phase's JSON record")
-    parser.add_argument("--before", help="the before-phase record, required for --phase after")
-    args = parser.parse_args(argv)
+def _on_engine_connect(connection, *_legacy_branch) -> None:
+    """The hook, and why it is shaped this way.
 
-    observation = (probe_fn or probe)()
+    ``engine_connect`` was ``(conn, branch)`` through SQLAlchemy 1.4 and is ``(conn)`` from
+    2.0. Declaring two named parameters would trip SQLAlchemy's legacy-conversion shim,
+    which issues a deprecation warning and is scheduled for removal; declaring one named
+    parameter keeps the current contract and still tolerates the old second argument, so a
+    candidate whose own pin differs cannot break the observation by arity.
 
-    if args.phase == "before":
-        # A witness, not a gate: the run must still happen, and the AFTER phase is what
-        # refuses to name a version.
-        _write(args.out, observation)
-        print(f"{REPORT_PREFIX}{WITNESS_SUFFIX} {json.dumps(_witness(observation))}")
-        return 0
-
-    if not args.before:
-        parser.error("--phase after requires --before <the before-phase record>")
-    before = _read(args.before)
-    if before is None:
-        # The container never got as far as its first probe, so there is nothing to
-        # compare - which is exactly a run whose database cannot be named.
-        before = {"reachable": False, "reason": "BEFORE_PHASE_RECORD_MISSING"}
-    record = evaluate(before, observation)
-    _write(args.out, record)
-    print(f"{REPORT_PREFIX} {json.dumps(_summary(record))}")
-    return 0 if record["postgresql_actually_used"] else 1
+    Nothing here may raise. This runs inside ``Connection.__init__``; an exception would
+    surface as a failure of the candidate's OWN tests, and an observation that can fail a
+    suite it is only supposed to describe is a worse defect than the one this module
+    repairs. A failure is therefore recorded and the record stays honest - the run is not
+    affected, and the version simply is not claimed.
+    """
+    try:
+        observe_connection(connection)
+    except Exception as error:  # noqa: BLE001 - see the docstring: never breaks a test
+        _ERRORS.append(f"{type(error).__name__}: {error}"[:200])
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+def _attach() -> str | None:
+    """Listen to every SQLAlchemy engine this process will build. Returns why, if not."""
+    try:
+        from sqlalchemy import event
+        from sqlalchemy.engine import Engine
+    except Exception as error:  # noqa: BLE001 - unobservable is a recorded fact
+        return f"{type(error).__name__}: {error}"[:200]
+    try:
+        # Class-level, so it covers engines built AFTER this line - which is all of them,
+        # because a pytest plugin is imported before any conftest or test module.
+        event.listen(Engine, "engine_connect", _on_engine_connect)
+    except Exception as error:  # noqa: BLE001
+        return f"{type(error).__name__}: {error}"[:200]
+    return None
+
+
+_UNAVAILABLE = _attach()
+
+
+def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001 - pytest hook signature
+    """Report after the run. Deliberately after: nothing here can affect a test result."""
+    record = observe()
+    write_report(record)
+    print(f"{REPORT_PREFIX} " + json.dumps(summary(record)))
