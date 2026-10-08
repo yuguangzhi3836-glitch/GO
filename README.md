@@ -2,7 +2,7 @@
 
 > **本文件是 GO 仓库唯一的人类 CURRENT 入口。**
 > AI 的操作入口是同目录的 [`AGENTS.md`](AGENTS.md)。
-> 除这两个文件以外的 Markdown 全部属于 **HISTORY**（历史 / 取证 / break-glass），不再指导当前正常操作，见 [§10](#10-history-在哪里)。
+> 除这两个文件以外的 Markdown 全部属于 **HISTORY**（历史 / 取证 / break-glass），不再作为当前正常操作入口，见 [§10](#10-history-在哪里)。HISTORY 不等于“里面每句话都失效”：Evidence、治理约束、回滚资料或被机器按字节绑定的组件说明仍可能有效，但不能推翻根 README / AGENTS 的当前路线。
 >
 > 本文件**不写死会快速变化的值**（commit SHA、镜像 id、迁移 head、服务运行状态）。这些事实请现场重读：
 > 运行身份以**最新一条签名 VERIFY Evidence** 为准；仓库侧身份以 `main` 现场为准。
@@ -62,7 +62,7 @@ GO 是一个**酒店 / 机票 / 火车票 / 租车 / 用车 / 景点**多业态�
 | Forge 任务总线 | 同上 → `tasks/`（入）/ `receipts/`（运行账） | **ACTIVE** |
 | 签名证据 | `chenzhenxi1-sudo/go-control-evidence` → `evidence/` | **ACTIVE** |
 | Persistent Runtime | 运行时在 `go-runtime-test-01`；仓库侧源码在 `control-plane/runtime-host-channel-v1/`（部分组件只在分支，见 §12） | **ACTIVE** |
-| 旧 Command Center | `command-center/`、`control-plane/`、`hk-staging/source/{agent,executor}` | **退役，不在正常路径**；源码保留作 break-glass |
+| 旧 Command Center | `command-center/`、`control-plane/` 下的旧 CC 组件、`hk-staging/source/{agent,executor}` | **退役，不在正常路径**；只保留有历史 / break-glass 价值的内容。注意：`control-plane/` 不是整体退役，Persistent Runtime 等当前能力仍在其中 |
 | `deliverables/`、`evidence/`、`hk-staging/`（2026-09-11 快照）、各 DEPTH 父包 | 仓库内归档 | **HISTORY**，绑定其原始 commit，不是当前权威 |
 
 **保护非目标（任何业务切换都不得停止、删除或重建）**：
@@ -279,7 +279,7 @@ Candidate SHA: <创建这张 Issue 时该 PR 的精确 head SHA>
 
 ## 10. HISTORY 在哪里
 
-**除 `README.md` 与 `AGENTS.md` 之外的所有 Markdown 都是 HISTORY。**
+**除根 `README.md` 与根 `AGENTS.md` 之外的所有 Markdown 都是 HISTORY（即：不是 CURRENT 操作入口）。** HISTORY 文件中的某些 Evidence、约束或机器绑定事实仍可能有效；只是它们不能自行定义当前正常路线。
 
 它们可以读、可以查证、可以拿来做取证，但**不能再指导当前正常操作**。典型：
 
