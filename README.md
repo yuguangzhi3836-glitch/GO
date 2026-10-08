@@ -103,16 +103,11 @@ Inspect HK-STAGING for the current runtime identity.
 | `action_id` | 老板 | `FORGE_DEPLOY` 部署 / `FORGE_INSPECT` 只看 / `FORGE_STOP` 停一次运行 |
 | `environment` | 老板 | `HK-STAGING-01` |
 | `target_pr` | 老板 | PR 号。**这就是全部意图。** |
-| `schema_version` / `task_id` / `issued_at` / `nonce` / `parameters` | 信封 | 由发布器盖章；`parameters` 留 `{}` |
+| `schema_version` / `task_id` / `issued_at` / `nonce` / `parameters` | 信封 | 创建 Task 时生成；`parameters` 留 `{}` |
 
 **不要**自己提供：源码 commit、候选 id、artifact/package 摘要、image id、migration head、compose 路径、TEST_PR 参数、deployctl argv。**全部由 Forge 从现场推导**；字段没有生产者时 Forge 会**按名字拒绝**，并指出它属于哪个组件。
 
-发布器（在 Command Center 主机上，由执行方使用）：
-```text
-python3 /opt/go-forge/forge_publish.py --action-id FORGE_DEPLOY  --target-pr <n>
-python3 /opt/go-forge/forge_publish.py --action-id FORGE_INSPECT --target-pr <n>
-python3 /opt/go-forge/forge_publish.py --stop --target-run-id <run_id> --reason "..."
-```
+老板 GPT / 执行 AI 到这里就结束：生成最小 Task JSON，写入 `chenzhenxi1-sudo/go-control-tasks/tasks/`。后续候选解析、现场检查、部署、验证、回滚和 Evidence 全部由 GO Forge 自己处理。
 
 ### 派开发任务（开发轴）
 
