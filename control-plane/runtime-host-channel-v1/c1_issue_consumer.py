@@ -453,6 +453,10 @@ def poll_once(*, reader, runtime=None, runtime_factory=None, environ=None,
                  "candidate_pr_number": plan["candidate_pr_number"],
                  "candidate_sha": plan["candidate_sha"],
                  "ledger_round_id": plan["ledger_round_id"],
+                 # Which round this poll admitted, in the operator's own terms: a suffix
+                 # parsed back out of the round id would be a second answer to a question
+                 # the plan has already answered.
+                 "review_revision": plan["review_revision"],
                  "external_task_id": call["payload"]["external_task_id"],
                  "idempotency_key": call["idempotency_key"],
                  "payload_sha256": plan["payload_sha256"]}

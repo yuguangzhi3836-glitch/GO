@@ -279,6 +279,34 @@ class AutoFrozenRoundCarriesItsIdentity(unittest.TestCase):
         ingress_source = (Path(ingress.__file__)).read_text(encoding="utf-8")
         self.assertNotIn("CandidatePrBaseIsNotMain(", ingress_source)
 
+    def test_a_raised_revision_keeps_the_auto_frozen_base_and_only_moves_the_identity(self):
+        # The two capabilities are orthogonal: raising a review's revision must not re-derive
+        # the base, re-read the candidate's files, or change the frozen object - only WHICH
+        # round it is. A revision that quietly re-froze a moved base would be exactly the
+        # silent base change the frozen-base work exists to prevent.
+        def plan(revision=None):
+            value = review_issue()
+            if revision is not None:
+                value["body"] += "Review revision: %s\n" % revision
+            reader = happy_reader(pull=dict(happy_reader().pull, base_ref="release/next",
+                                            base_sha="e" * 40))
+            return ingress.plan_review_ingress(value, reader=reader), reader
+
+        first, r1_reader = plan()
+        second, r2_reader = plan("2")
+        frozen = {"ref": "release/next", "sha": "e" * 40, "pr_number": 394}
+        for name, built in (("R1", first), ("R2", second)):
+            with self.subTest(round=name):
+                payload = built["would_enqueue"]["payload"]
+                self.assertEqual(payload["frozen_base"], frozen)
+                self.assertEqual(payload["candidate_sha"], CANDIDATE)
+                self.assertEqual(payload["application_tree"], CANDIDATE_TREE)
+                self.assertEqual(built["would_enqueue"]["max_attempts"], 1)
+        self.assertNotEqual(first["ledger_round_id"], second["ledger_round_id"])
+        # The same reads, in the same order, at both revisions: a revision is not a heavier
+        # admission requirement.
+        self.assertEqual([c[0] for c in r1_reader.calls], [c[0] for c in r2_reader.calls])
+
 
 if __name__ == "__main__":
     unittest.main()

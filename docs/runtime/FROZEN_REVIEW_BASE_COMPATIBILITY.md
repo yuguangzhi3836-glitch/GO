@@ -127,3 +127,77 @@ existed is still checked instead of being exempted.
 Verification of this revision is recorded in the PR that carries it (branch, HEAD, exact
 changed paths, test commands and results). Installation to a Runtime host is a separate,
 separately authorised step with its own installed-source readback.
+
+---
+
+## An explicit, human-raised review revision (2026-10-08) — a corrected brief can be reviewed
+
+Change classes: CONTROL_PLANE, TEST_ONLY, DOCUMENTATION.
+
+### The failure this answers
+
+The C14 round for #559 ran, executed correctly and sealed `FAIL`. Its single MAJOR
+(`C14-IAM-001`) was about the pull request's DESCRIPTION - it claimed no permission change
+while the diff adds a supplier-onboarding `admin:connector` boundary. The Owner corrected
+the description in place. The candidate SHA did not move, the issue did not change, and the
+round identity is a function of exactly those two things - so the corrected brief could not
+be reviewed at all. That is a real failure with no answer in the previous design.
+
+### The rule
+
+`review_round_identity(issue_number, candidate_sha, revision=1)`. One derivation, one extra
+suffix:
+
+| revision | `ledger_round_id` |
+|---|---|
+| 1 (default, and the historical round) | `FORMAL-REVIEW-I559-22df468b7ed2` |
+| 2 | `FORMAL-REVIEW-I559-22df468b7ed2-R2` |
+
+Every other name is derived from the round id, so they all move together: `-C14` / `-C13`
+task ids, `review_request_id(candidate_sha, ledger_round_id)` and the Runtime
+`task_idempotency_key`. There is no second identity algorithm: the revision is a suffix on
+the string the contract already produces, not a parallel derivation.
+
+Revision 1 is byte-identical to what this channel has produced since the identity existed,
+which is what keeps every recorded Evidence row, sealed receipt and idempotency key valid.
+
+### How it is raised, and by whom
+
+An Owner may write one optional line in a Formal Review issue:
+
+```
+Review revision: 2
+```
+
+- Absent means revision 1. `Review revision: 1` is identical to leaving it out.
+- The value is a plain decimal, `1..99`. Zero, negatives, non-integers, `2.5`, `1e2`,
+  leading zeros and blank values are refused (`REVIEW_REVISION_INVALID`), as is the upper
+  bound (`> 99`).
+- Written twice with two different values it is refused (`REVIEW_REVISION_AMBIGUOUS`)
+  rather than resolved by preference, exactly as the `Candidate PR:` / `Candidate SHA:`
+  lines already are. The same value twice is one revision stated twice.
+- **Nothing else may raise it.** No verdict, retry counter, timer or automation. Only an
+  Owner editing the issue can, which is what makes a new round a human statement that the
+  inputs changed rather than a machine's guess that they might have. The Builder path does
+  not pass a revision at all and is therefore always revision 1: a Builder cannot commission
+  a re-review of its own `FAIL`.
+
+### What deliberately does NOT change
+
+- `max_attempts = 1`. A revision-n round is still exactly one attempt. The revision creates
+  a NEW round; it never retries an old one, never resets an old task, and never re-runs an
+  old GitHub Actions run.
+- C14 admission to C13: still only `PASS_SCOPED` / `NOT_APPLICABLE`. `FAIL` and `BLOCKED`
+  still create no C13 and no round decision.
+- The frozen-base behaviour above. Raising a revision does not re-read the pull request any
+  differently, does not re-freeze the base, and does not change the machine inventory.
+- Builder admission, the machine-inventory rules, and every existing Evidence row.
+- No new payload field, schema version, DB column, queue, service, scheduler, reviewer,
+  verifier or authority layer. `ledger_round_id` is already in the payload and already
+  travels to the C13 half, so the suffix needs no new wire field.
+
+### Scope note
+
+Raising a revision is the Owner saying the round's INPUTS changed. It is not a way to
+re-litigate a verdict on unchanged inputs - if nothing about the brief changed, the correct
+answer is the original sealed verdict.

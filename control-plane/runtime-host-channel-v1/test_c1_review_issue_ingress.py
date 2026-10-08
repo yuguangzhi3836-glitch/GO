@@ -11,6 +11,8 @@ Coverage map (the shape this round had to prove):
   G  TheBuilderPathIsUntouched               #79-#88 still stale-refused; keys unchanged
   H  ReadOnlyAndBounded                      GET-only transport, no store, no second loop
   I  U6AndLegacyAreUntouched                 gate still disabled; no legacy kind producer
+  J  ARoundCanBeRaisedOnlyByRevision         `Review revision: n` = a new human round; R1
+                                             stays byte-identical; a round is still 1 attempt
 
 No network, no Runtime host, no model call, no GitHub write.
 """
@@ -790,6 +792,253 @@ class I_U6AndLegacyAreUntouched(unittest.TestCase):
         for forbidden in ("AI_WORK_V1", "AI_TASK_V1"):
             with self.subTest(token=forbidden):
                 self.assertNotIn(forbidden, source)
+
+
+# ======================= J: a corrected review is a NEW round, and only a human can say so
+class J_ARoundCanBeRaisedOnlyByRevision(Case):
+    """`Review revision: n` is the human's statement that a round's INPUTS changed.
+
+    The failure it answers is real and has no other answer: C14 legitimately returns FAIL,
+    the FAIL is about the pull request's DESCRIPTION rather than its code, a human corrects
+    the description - and the issue number and the candidate SHA are both unchanged, so the
+    derived identity still addresses the round that already ran. Without a revision, the
+    corrected review cannot exist at all.
+
+    What must NOT change: revision 1 is the identity this channel has always derived, a
+    round is still one attempt, and nothing but an Owner editing the issue may raise it.
+    """
+
+    def body(self, revision=None, sha=CANDIDATE, pr=PR_NUMBER):
+        text = "Candidate PR: #%d\nCandidate SHA: %s\n" % (pr, sha)
+        if revision is not None:
+            text += "Review revision: %s\n" % revision
+        return text
+
+    def plan_for(self, body, *, issue_number=ISSUE_NUMBER, **reader_over):
+        return ingress.plan_review_ingress(
+            review_issue(issue_number, body=body),
+            reader=happy_reader(**reader_over), environ=ENABLED)
+
+    def poll(self, rt, listing):
+        return consumer.poll_once(
+            reader=consumer.GitHubIssuesReader(
+                token_loader=lambda: TEST_TOKEN,
+                opener=ReviewOpener(listing, **happy_kwargs()), api_base=FAKE_API),
+            runtime_factory=lambda: rt, environ=ENABLED)
+
+    def identities(self, plan):
+        payload = plan["would_enqueue"]["payload"]
+        return {
+            "ledger_round_id": plan["ledger_round_id"],
+            "c14_task_id": payload["c14_task_id"],
+            "c13_task_id": payload["c13_task_id"],
+            "review_request_id": payload["review_request_id"],
+            "idempotency_key": plan["would_enqueue"]["idempotency_key"],
+            "external_task_id": payload["external_task_id"],
+        }
+
+    # ------------------------------------------------------------ compatibility (1-3)
+    def test_an_absent_line_is_revision_one_and_byte_identical_to_history(self):
+        # The compatibility rule the whole design turns on: the identity this ingress
+        # produced before the revision existed must be produced unchanged. `main` derives it
+        # from `review_round_identity(issue, sha)` with no third argument, so that call IS
+        # the historical answer and this compares against it rather than restating a literal.
+        plan = self.plan_for(self.body())
+        historical = contract.review_round_identity(ISSUE_NUMBER, CANDIDATE)
+        self.assertEqual(plan["ledger_round_id"], "FORMAL-REVIEW-I901-%s" % SHORT)
+        self.assertEqual(plan["ledger_round_id"], historical["ledger_round_id"])
+        self.assertEqual(plan["would_enqueue"]["payload"]["c14_task_id"],
+                         historical["c14_task_id"])
+        self.assertEqual(plan["would_enqueue"]["payload"]["c13_task_id"],
+                         historical["c13_task_id"])
+        self.assertEqual(plan["review_revision"], 1)
+        # "no revision suffix" is a regex rather than `"-R" not in ...`: the historical id
+        # ends in `-REVIEW`, which contains those two characters by accident.
+        self.assertIsNone(re.search(r"-R[0-9]+$", plan["ledger_round_id"]))
+
+    def test_stating_revision_one_is_the_same_as_not_stating_it(self):
+        absent = self.plan_for(self.body())
+        stated = self.plan_for(self.body(revision="1"))
+        self.assertEqual(stated, absent)
+        self.assertEqual(stated["review_revision"], 1)
+
+    # --------------------------------------------------------------- new round (4-6)
+    def test_the_same_issue_and_candidate_at_a_new_revision_is_a_new_round(self):
+        first = self.plan_for(self.body())
+        second = self.plan_for(self.body(revision="2"))
+        self.assertNotEqual(first["ledger_round_id"], second["ledger_round_id"])
+        self.assertNotEqual(first["would_enqueue"]["idempotency_key"],
+                            second["would_enqueue"]["idempotency_key"])
+        self.assertNotEqual(first["payload_sha256"], second["payload_sha256"])
+
+    def test_revision_two_is_the_historical_id_with_an_r2_suffix(self):
+        plan = self.plan_for(self.body(revision="2"))
+        self.assertEqual(plan["ledger_round_id"], "FORMAL-REVIEW-I901-%s-R2" % SHORT)
+        self.assertEqual(plan["review_revision"], 2)
+
+    def test_every_derived_name_of_r2_differs_from_r1(self):
+        first = self.identities(self.plan_for(self.body()))
+        second = self.identities(self.plan_for(self.body(revision="2")))
+        for key in ("ledger_round_id", "c14_task_id", "c13_task_id",
+                    "review_request_id", "idempotency_key", "external_task_id"):
+            with self.subTest(key=key):
+                self.assertNotEqual(first[key], second[key])
+        # ...and R2 is still the SAME candidate, tree and inventory: the revision changes
+        # which round this is, never what is being reviewed.
+        p1 = self.plan_for(self.body())["would_enqueue"]["payload"]
+        p2 = self.plan_for(self.body(revision="2"))["would_enqueue"]["payload"]
+        for key in ("candidate_sha", "application_tree", "issue_number", "cell_id",
+                    "machine_inventory", "frozen_base", "schema_version"):
+            with self.subTest(key=key):
+                self.assertEqual(p1.get(key), p2.get(key))
+
+    def test_r2_is_no_more_than_the_derived_names_of_r1(self):
+        # The design constraint, stated as a test: nothing about the round's identity is a
+        # second algorithm. Every R2 name is R1's name with the revision appended to the
+        # round id the contract already produces.
+        r1 = self.identities(self.plan_for(self.body()))
+        r2 = self.identities(self.plan_for(self.body(revision="2")))
+        for key in ("ledger_round_id", "c14_task_id", "c13_task_id"):
+            with self.subTest(key=key):
+                self.assertEqual(r2[key], r1[key].replace(SHORT, SHORT + "-R2"))
+        self.assertEqual(r2["review_request_id"],
+                         contract.review_request_id(CANDIDATE, r2["ledger_round_id"]))
+
+    # ---------------------------------------------------------------- repeat is free (7)
+    def test_repeated_polling_of_r2_is_still_one_paid_task(self):
+        rt = self.runtime()
+        ids = {self.poll(rt, [review_issue(body=self.body(revision="2"))])
+               ["review_enqueued"][0]["runtime_task_id"] for _ in range(10)}
+        self.assertEqual(len(ids), 1, ids)
+        self.assertEqual(rt.task_count(), 1)
+        row = rt.rows()[0]
+        self.assertEqual(row[2], contract.C14_REVIEW_KIND)
+        self.assertEqual(row[5], ingress.REVIEW_INGRESS_MAX_ATTEMPTS)
+        self.assertIn("-R2-C14", row[4])
+
+    # ------------------------------------------------------------------ invalid (8-12)
+    def test_invalid_revisions_are_refused(self):
+        for text, why in (("0", "zero is not a revision"),
+                          ("-1", "no negative revisions"),
+                          ("-3", "no negative revisions"),
+                          ("two", "not a number"),
+                          ("2.5", "not an integer"),
+                          ("1e2", "not a plain integer"),
+                          ("two 2", "not a plain integer"),
+                          ("", "an empty value is not a revision"),
+                          ("100", "above MAX_REVIEW_REVISION")):
+            with self.subTest(value=text, why=why):
+                with self.assertRaises(contract.Refused) as caught:
+                    self.plan_for(self.body(revision=text))
+                self.assertEqual(caught.exception.reason, "REVIEW_REVISION_INVALID")
+
+    def test_a_revision_stated_twice_and_disagreeing_is_ambiguous_not_resolved(self):
+        body = (self.body() + "Review revision: 2\nReview revision: 3\n")
+        with self.assertRaises(contract.Refused) as caught:
+            self.plan_for(body)
+        self.assertEqual(caught.exception.reason, "REVIEW_REVISION_AMBIGUOUS")
+
+    def test_a_revision_stated_twice_with_one_value_is_one_revision(self):
+        # The same convention the candidate lines already hold: stated twice, agreeing, is
+        # a value stated twice rather than an ambiguity.
+        body = self.body() + "Review revision: 2\nReview revision: 2\n"
+        self.assertEqual(self.plan_for(body)["review_revision"], 2)
+
+    def test_explicit_revision_one_and_explicit_revision_two_are_both_accepted(self):
+        self.assertEqual(self.plan_for(self.body(revision="1"))["review_revision"], 1)
+        self.assertEqual(self.plan_for(self.body(revision="2"))["review_revision"], 2)
+
+    def test_the_upper_bound_is_a_bound_and_not_an_unbounded_suffix(self):
+        self.assertEqual(self.plan_for(self.body(revision="99"))["review_revision"], 99)
+        with self.assertRaises(contract.Refused):
+            self.plan_for(self.body(revision="100"))
+
+    def test_a_malformed_revision_never_reaches_a_runtime(self):
+        rt = self.runtime()
+        result = self.poll(rt, [review_issue(body=self.body(revision="0"))])
+        self.assertEqual(result["review_planned"], [])
+        self.assertEqual(result["review_enqueued"], [])
+        self.assertEqual(result["review_refused"][0]["reason"], "REVIEW_REVISION_INVALID")
+        self.assertEqual(rt.task_count(), 0)
+
+    # ------------------------------------------------- the old round is never touched (16)
+    def test_raising_the_revision_leaves_r1_byte_identical_and_creates_only_r2(self):
+        rt = self.runtime()
+        first = self.poll(rt, [review_issue(body=self.body())])
+        r1_id = first["review_enqueued"][0]["runtime_task_id"]
+        before = rt.rows()
+        self.assertEqual(len(before), 1)
+
+        second = self.poll(rt, [review_issue(body=self.body(revision="2"))])
+        r2_id = second["review_enqueued"][0]["runtime_task_id"]
+        self.assertNotEqual(r1_id, r2_id)
+
+        rows = rt.rows()
+        self.assertEqual(rt.task_count(), 2, "one new round, not a rewrite of the old one")
+        self.assertEqual(rows[0], before[0], "R1's row is byte-identical, not updated")
+        self.assertEqual(rows[0][0], r1_id)
+        self.assertIn("FORMAL-REVIEW-I901-%s-C14" % SHORT, rows[0][4])
+        self.assertIn("FORMAL-REVIEW-I901-%s-R2-C14" % SHORT, rows[1][4])
+
+    def test_a_round_is_still_exactly_one_attempt_whatever_its_revision(self):
+        for revision in (None, "1", "2", "99"):
+            with self.subTest(revision=revision):
+                rt = self.runtime()
+                self.poll(rt, [review_issue(body=self.body(revision=revision))])
+                self.assertEqual(rt.rows()[0][5], 1)
+
+    # ------------------------------------------- the revision is the human's, not the code's
+    def test_the_revision_marker_is_read_in_exactly_one_place(self):
+        # A revision a second module could also read is a second answer to "which round is
+        # this". The literal lives in the parser's marker constant and nowhere else.
+        readers = sorted(path.name for path in HERE.glob("c1_*.py")
+                         if ingress.REVIEW_REVISION_MARKER in
+                         path.read_text(encoding="utf-8"))
+        self.assertEqual(readers, ["c1_review_issue_ingress.py"])
+
+    def test_nothing_in_the_channel_may_raise_a_revision_by_itself(self):
+        # A revision that a failed verdict, a retry counter or a timer could raise would be
+        # a retry loop wearing a round's name. Nothing derives one either: the contract takes
+        # it as an argument and defaults it to the historical round, and the bound is one
+        # constant rather than a value a caller may pick.
+        for path in sorted(HERE.glob("c1_*.py")):
+            source = path.read_text(encoding="utf-8")
+            for token in ("revision + 1", "revision += 1", "review_revision + 1"):
+                with self.subTest(source=path.name, token=token):
+                    self.assertNotIn(token, source)
+        holders = sorted(path.name for path in HERE.glob("c1_*.py")
+                         if "MAX_REVIEW_REVISION" in path.read_text(encoding="utf-8"))
+        self.assertEqual(holders, ["c1_execution_contract.py"])
+        import inspect
+
+        parameter = inspect.signature(
+            contract.review_round_identity).parameters["revision"]
+        self.assertIs(parameter.default, 1)
+        self.assertIsNone(getattr(ingress, "next_revision", None))
+
+    def test_the_revision_is_not_a_payload_field(self):
+        # No schema change, no new DB column: the revision is carried by the round id, which
+        # is already in the payload. A payload field would be a second answer to "which
+        # round is this", and the schema would have to version for it.
+        payload = self.plan_for(self.body(revision="2"))["would_enqueue"]["payload"]
+        self.assertNotIn("review_revision", payload)
+        self.assertNotIn("revision", payload)
+        contract.validate_review_task_payload(payload, allowed_owner_cs=("C14",))
+        self.assertEqual(contract.REVIEW_PAYLOAD_SCHEMA_VERSION, 1)
+
+    def test_the_revision_does_not_touch_the_frozen_candidate_reads(self):
+        # Raising a revision must not turn into a heavier requirement: the reads are the
+        # same five GETs, and the frozen base is the same base, at any revision.
+        r1 = happy_reader()
+        r2 = happy_reader()
+        first = ingress.plan_review_ingress(review_issue(body=self.body()), reader=r1,
+                                            environ=ENABLED)
+        second = ingress.plan_review_ingress(review_issue(body=self.body(revision="2")),
+                                             reader=r2, environ=ENABLED)
+        self.assertEqual([c[0] for c in r1.calls], [c[0] for c in r2.calls])
+        self.assertEqual(first["would_enqueue"]["payload"]["frozen_base"],
+                         second["would_enqueue"]["payload"]["frozen_base"])
+        self.assertEqual(len(r2.calls), 5)
 
 
 if __name__ == "__main__":

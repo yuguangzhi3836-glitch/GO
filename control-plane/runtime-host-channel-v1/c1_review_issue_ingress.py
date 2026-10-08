@@ -32,6 +32,19 @@ A human-facing form that asked for six
 identifiers would be a form nobody fills in correctly, and the identifiers would then be
 whatever the human guessed.
 
+A corrected review, without a second admission path
+---------------------------------------------------
+`Review revision: 2` is the one OTHER thing an Owner may write, and it exists because of a
+failure this channel could otherwise not answer: C14 legitimately returns FAIL, the FAIL is
+about the review BRIEF rather than the candidate, a human fixes the brief on the pull
+request - and the issue number and the candidate SHA are both unchanged, so the derived
+round id still names the round that already ran. Raising the revision is the human saying
+"the question changed"; the whole identity moves as one string, so the new round gets its
+own C14 task, its own request id and its own Runtime idempotency key.
+It is never automatic: no verdict, counter or timer may raise it. It is omitted on every
+ordinary round, and its absence means revision 1, which is byte-identical to the identity
+this ingress has always produced.
+
 Two gates, and they are deliberately not the same gate
 ------------------------------------------------------
 A Builder issue is admitted against `source_anchor == current main`, because a Builder task
@@ -121,6 +134,12 @@ REVIEW_MARKER = "REVIEW"
 # anything.
 CANDIDATE_PR_MARKER = "candidate pr:"
 CANDIDATE_SHA_MARKER = "candidate sha:"
+# The one OPTIONAL line. Its absence is the historical round (revision 1), which is why it
+# is not "revision defaults to 1" in the payload but "revision 1 IS the identity this
+# channel has always derived". A plain decimal, no sign, no zero-padding, no leading zeros:
+# `1` and `01` must not be two spellings of the same round.
+REVIEW_REVISION_MARKER = "review revision:"
+REVIEW_REVISION_TEXT = re.compile(r"^[1-9][0-9]*$")
 
 # The task class this ingress produces, and the cells allowed to own it - asked of the
 # contract so that "C14_REVIEW_V1 belongs to C14" has one answer, the same one the
@@ -237,14 +256,33 @@ def parse_review_issue(issue) -> dict:
     if not CANONICAL_SHA1.match(lowered[0]):
         raise Refused("REVIEW_CANDIDATE_SHA_INVALID")
 
-    parsed = {"issue_number": number, "candidate_pr_number": pr_number,
-              "candidate_sha": lowered[0]}
-    def base_values(marker):
+    # Exactly the lines that STATE the marker, empty values included. This is deliberately
+    # not `_read_marked`: that one drops an empty value, which for the candidate lines means
+    # "the line was not there" and is refused as NOT_FOUND - but for a revision, dropping it
+    # would silently read `Review revision:` (blank) as revision 1, and a human who wrote
+    # the marker meant to say something. A stated-but-unreadable revision is refused.
+    def stated(marker):
         lines = [line.strip().lstrip("-*+").strip() for line in body.splitlines()]
         return [line[len(marker):].strip().strip("`").strip()
                 for line in lines if line.lower().startswith(marker)]
-    refs = base_values("candidate base ref:")
-    shas = base_values("candidate base sha:")
+
+    # The OPTIONAL revision. Absent is not "missing input" - it is revision 1, the round this
+    # issue has always named. Stated twice with two different values it is refused rather
+    # than resolved by preference, exactly as the candidate lines are: an identity a reader
+    # has to guess is not an identity. The same value twice is one revision stated twice.
+    revision_values = stated(REVIEW_REVISION_MARKER)
+    if len(set(revision_values)) > 1:
+        raise Refused("REVIEW_REVISION_AMBIGUOUS")
+    revision = 1
+    if revision_values:
+        if not REVIEW_REVISION_TEXT.match(revision_values[0]):
+            raise Refused("REVIEW_REVISION_INVALID")
+        revision = int(revision_values[0])
+
+    parsed = {"issue_number": number, "candidate_pr_number": pr_number,
+              "candidate_sha": lowered[0], "review_revision": revision}
+    refs = stated("candidate base ref:")
+    shas = stated("candidate base sha:")
     if refs or shas:
         if len(refs) != 1 or len(shas) != 1:
             raise Refused("REVIEW_FROZEN_BASE_INCOMPLETE_OR_AMBIGUOUS")
@@ -259,26 +297,31 @@ def parse_review_issue(issue) -> dict:
 
 
 # ------------------------------------------------------------------ round identity
-def round_identity(issue_number: int, candidate_sha: str) -> dict:
+def round_identity(issue_number: int, candidate_sha: str, revision: int = 1) -> dict:
     """The round's Ledger/Lite identity, derived from provenance and the FROZEN candidate.
 
-    Deterministic by construction, which is what makes re-polling free: the same issue and
-    the same candidate produce the same round, the same two Lite task ids and therefore the
-    same Runtime idempotency key, so the kernel answers a repeat with the task it already
-    has rather than creating a second one.
+    Deterministic by construction, which is what makes re-polling free: the same issue, the
+    same candidate and the same revision produce the same round, the same two Lite task ids
+    and therefore the same Runtime idempotency key, so the kernel answers a repeat with the
+    task it already has rather than creating a second one.
+
+    `revision` is the human's correction of a round's INPUTS, not a retry counter: it is the
+    only thing that can make the same issue and the same candidate name a different round,
+    and only an Owner editing the issue can set it. Revision 1 is the historical identity.
 
     The derivation itself lives in the contract, because this is not the only path that names
     a round: a Builder run that just opened a pull request names one the same way, from its
     OWN originating issue and the candidate it produced. Two derivations would be two answers
     to "which round is this".
     """
-    return review_round_identity(issue_number, candidate_sha)
+    return review_round_identity(issue_number, candidate_sha, revision)
 
 
 # --------------------------------------------------------------------- planning
 def _plan(parsed, *, application_tree, machine_inventory, environ,
           inventory_source=None) -> dict:
-    identity = round_identity(parsed["issue_number"], parsed["candidate_sha"])
+    identity = round_identity(parsed["issue_number"], parsed["candidate_sha"],
+                              parsed.get("review_revision", 1))
     request_id = review_request_id(parsed["candidate_sha"], identity["ledger_round_id"])
     payload = build_review_task_payload(
         cell_id=REVIEW_CELL,
@@ -308,6 +351,11 @@ def _plan(parsed, *, application_tree, machine_inventory, environ,
         "candidate_sha": parsed["candidate_sha"],
         "application_tree": application_tree,
         "ledger_round_id": identity["ledger_round_id"],
+        # Reported so an operator (and the consumer's log line) can see WHICH round this
+        # plan is, rather than having to parse the suffix out of the round id. It is not a
+        # payload field: the revision is carried by the round id, which is already in the
+        # payload, the request id and the idempotency key.
+        "review_revision": parsed.get("review_revision", 1),
         "machine_inventory": machine_inventory,
         "machine_inventory_source": (inventory_source or
                                      ("candidate_changed_tests" if machine_inventory
