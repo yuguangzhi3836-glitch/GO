@@ -108,11 +108,21 @@ treat a Draft PR as approved release authority
 - Never weaken, bypass or falsify a required gate to save time or runner minutes. If a required
   remote gate exists, report the cost instead of pretending local testing is equivalent.
 
-## 4. Forge task contract (the Boss deploy/inspect channel)
+## 4. GO Forge Task — Boss GPT operating contract
 
-The Boss supplies **intent only**. The normal deploy request is `Deploy PR <number> to HK-STAGING.`
-and it becomes exactly one JSON document committed to `tasks/` in
-`chenzhenxi1-sudo/go-control-tasks` on `main`:
+Boss GPT has one job: **translate the Boss's intent into one GO-FORGE Task in `chenzhenxi1-sudo/go-control-tasks/main/tasks/<task_id>.json`, then stop.**
+
+Do not perform candidate resolution, deployment planning, runtime guessing, or HK operations in Boss GPT. GO Forge owns all of that after the Task arrives.
+
+### Deploy
+
+Boss intent:
+
+```text
+Deploy PR 558 to HK-STAGING.
+```
+
+Task:
 
 ```json
 {
@@ -121,54 +131,68 @@ and it becomes exactly one JSON document committed to `tasks/` in
   "environment": "HK-STAGING-01",
   "target_pr": 558,
   "schema_version": "1",
-  "task_id": "forge-deploy-pr558-20261008T000000Z",
-  "issued_at": "2026-10-08T00:00:00.000000Z",
-  "nonce": "<random, at least 16 characters>",
+  "task_id": "forge-deploy-pr558-<unique>",
+  "issued_at": "<UTC ISO-8601>",
+  "nonce": "<unique random string>",
   "parameters": {}
 }
 ```
 
-| Field | Supplied by | Notes |
-|---|---|---|
-| `authority` | requester | must be exactly `GO-FORGE`, otherwise Forge ignores the task |
-| `action_id` | requester | `FORGE_DEPLOY` \| `FORGE_INSPECT` \| `FORGE_STOP` |
-| `environment` | requester | `HK-STAGING-01` |
-| `target_pr` | requester | the PR number — **this is the entire intent** |
-| `schema_version`, `task_id`, `issued_at`, `nonce`, `parameters` | envelope | stamped by the publisher; leave `parameters` as `{}` |
+**A deploy Task means: GO Forge deploys.**
 
-**Never supply** any of these — Forge derives every one of them from live state:
+### Inspect a PR / deployment
 
-```text
-source commit        candidate id         artifact digest    package SHA256
-candidate contract   migration head       image id           compose path
-TEST_PR parameters   canary/verify steps  recovery plan      deployctl argv
-```
-
-A field with no producer is refused **by name**, together with the component that owns it. There
-is nothing for a human to mint first, and no baseline document for anyone to advance.
-
-`FORGE_STOP` is handled by the worker without any AI involvement:
+For a specific PR, use the same envelope with:
 
 ```json
-{ "authority": "GO-FORGE", "action_id": "FORGE_STOP", "environment": "HK-STAGING-01",
-  "target_run_id": "<run to stop, or omit>", "reason": "why",
-  "schema_version": "1", "task_id": "...", "issued_at": "...", "nonce": "...", "parameters": {} }
+{
+  "action_id": "FORGE_INSPECT",
+  "target_pr": 558
+}
 ```
 
-**Do not** manually issue `HK_STAGING_TEST_PR` / `HK_STAGING_CANARY` / `HK_STAGING_VERIFY` /
-`HK_STAGING_DEPLOY` during normal operation, and **never run the Forge path and the Old Command
-Center path for the same deployment at the same time.**
+`FORGE_INSPECT` is read-only: inspect and report, never deploy.
 
-### What Forge will not do
+### Inspect the actual HK runtime / files
+
+A general runtime inspection does not need a PR first. Example Boss intent:
 
 ```text
-merge a PR            comment on a PR       close a PR          change a PR's state
-advance a baseline    touch Production      touch a human-owned PR
-invent a candidate identity
+Show me what version HK-STAGING-01 is actually running, which source/image/files it corresponds to, and return the evidence.
 ```
 
-These are refused in Forge's **tool layer**, not merely discouraged in a prompt. Nothing written
-into a task changes them. `READY` is not a handover of the merge: review and merge yourself.
+Task:
+
+```json
+{
+  "authority": "GO-FORGE",
+  "action_id": "FORGE_INSPECT",
+  "environment": "HK-STAGING-01",
+  "schema_version": "1",
+  "task_id": "forge-inspect-<unique>",
+  "issued_at": "<UTC ISO-8601>",
+  "nonce": "<unique random string>",
+  "parameters": {
+    "request": "Inspect the actual HK-STAGING-01 runtime identity, corresponding source/image/key file paths and Evidence, then report the result."
+  }
+}
+```
+
+GO Forge reads live state and Evidence, finds the relevant version / source / image / file paths, and returns the result. Boss GPT must not guess them.
+
+### Hard rules
+
+- Task path: `chenzhenxi1-sudo/go-control-tasks/main/tasks/<task_id>.json`
+- `authority = GO-FORGE`
+- deploy = `FORGE_DEPLOY`
+- inspect / current version / corresponding files = `FORGE_INSPECT`
+- `environment = HK-STAGING-01`
+- generate a unique `task_id`, current `issued_at`, unique `nonce`; keep deploy `parameters = {}`
+- never supply source commit, candidate id, artifact digest, package SHA, image id, migration head, compose path, TEST_PR parameters, canary/verify steps, recovery plan or deployctl argv
+- never issue `HK_STAGING_TEST_PR / HK_STAGING_CANARY / HK_STAGING_VERIFY / HK_STAGING_DEPLOY` during normal operation; Old Command Center is fallback only
+- read `receipts/<task_id>.json` for receipt/status; signed Evidence is the final authority
+
+`FORGE_STOP` remains available for a specifically authorized stop order; it is not part of normal deploy/inspect usage.
 
 ## 5. Runtime / Cell routing (the Boss build/review channel)
 
