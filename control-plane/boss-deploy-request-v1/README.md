@@ -1,3 +1,13 @@
+> **HISTORY / BREAK-GLASS REFERENCE**
+>
+> This document is not the normal current operating path.
+>
+> Normal deployment and inspection are defined by [`/AGENTS.md`](../../AGENTS.md) and use GO Forge.
+>
+> Do not issue `HK_STAGING_*` requests unless the Owner explicitly authorizes Old Command Center fallback mode.
+
+---
+
 # Boss 部署请求入口 V1（Bridge 1.7 候选）
 
 本候选补齐 `HK_STAGING_DEPLOY` 的 Request → 指挥中心校验 → 签名 Task 入口，并增加一条**只读**的 `CONTROL_PLANE_HEALTH` 探活路径（见下节）。源码开发已获用户授权；本包默认关闭部署入口，尚未安装、启用或向香港发送任何任务。它不改变香港 Agent、执行器、应用候选或 Production。
