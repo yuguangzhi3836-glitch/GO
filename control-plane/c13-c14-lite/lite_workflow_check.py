@@ -60,6 +60,27 @@ CANDIDATE_DIFF_REDIRECT = "candidate.diff"
 #: the candidate against its own idea of best practice.
 REVIEW_BRIEF_REDIRECT = "review_brief.json"
 
+#: The variable the candidate's own test bootstrap reads to decide WHICH database the suite
+#: runs against. ``application/tests/conftest.py`` sets ``DATABASE_URL`` from it when present
+#: and otherwise OVERWRITES ``DATABASE_URL`` with a private SQLite file - so passing
+#: ``DATABASE_URL`` alone does not make the run PostgreSQL, it only makes it look like one
+#: (measured on a real round: the published manifest recorded PostgreSQL 18.4 while the whole
+#: inventory ran on SQLite).
+TEST_DATABASE_URL_ENV = "GO_TEST_DATABASE_URL"
+
+#: The variable the product's own registration CI sets so that ``settings.jwt_signing_key`` is
+#: not the shipped placeholder. ``registration_verification.ready()`` refuses a key that is
+#: missing, shorter than 32 characters, or starts with ``dev-``, and the refusal surfaces as
+#: ``REGISTRATION_VERIFICATION_NOT_READY`` - a red about the sandbox rather than the candidate.
+TEST_SIGNING_KEY_ENV = "JWT_SIGNING_KEY"
+
+#: The prefix of the shipped placeholder key. A value that is still this is not a key.
+DEFAULT_SIGNING_KEY_PREFIX = "dev-"
+
+#: The shortest key ``registration_verification`` will accept, mirrored here so the check can
+#: refuse a value that would fail at run time instead of at review time.
+MINIMUM_SIGNING_KEY_LENGTH = 32
+
 try:  # pragma: no cover - trivial import guard
     import yaml
 except ImportError:  # pragma: no cover
@@ -247,6 +268,110 @@ def check_machine_step_installs_candidate_dependencies(name: str, document: dict
     if pytest_at and min(candidate_at) > min(pytest_at):
         failures.append(
             f"{name}: the candidate's dependencies are installed after pytest runs")
+
+
+def _pytest_container_command(document: dict, raw: str) -> str | None:
+    """The ``run`` text of the step that starts the container and runs the inventory.
+
+    Located through the parsed document when a parser is available, so a check reads the
+    text under test rather than whatever happens to be on disk; falls back to the whole
+    workflow text otherwise.
+    """
+    parsed = _document_from(raw)
+    if parsed is not None:
+        for job in (parsed.get("jobs") or {}).values():
+            for step in (job or {}).get("steps", []) or []:
+                text = step.get("run") or ""
+                if (isinstance(text, str) and "docker run" in text
+                        and "python -m pytest" in text):
+                    return text
+    if "docker run" in raw and "python -m pytest" in raw:
+        return raw
+    return None
+
+
+def _container_env_values(command_code: str) -> dict:
+    """Every ``-e NAME=value`` / ``--env NAME=value`` handed to the container, last wins.
+
+    Values are read as written, quotes stripped. A value built from a shell variable is
+    returned as that variable reference, which is exactly what the caller must refuse: a
+    guard that cannot see the value cannot promise anything about it.
+    """
+    values: dict = {}
+    for match in re.finditer(
+            r"(?:^|\s)(?:-e|--env)[=\s]+([A-Za-z_][A-Za-z0-9_]*)=(\S+)", command_code):
+        values[match.group(1)] = match.group(2).strip().strip('"\'')
+    return values
+
+
+def check_machine_step_runs_against_postgres(name: str, document: dict, raw: str, failures: list) -> None:
+    """C13's machine job must actually run on the database it advertises, with a usable key.
+
+    Two measured defects, both proving the same thing: an environment that is *named* in the
+    evidence but not *passed* to the container.
+
+    1. ``application/tests/conftest.py`` chooses the database from ``GO_TEST_DATABASE_URL``.
+       When that variable is absent it replaces ``DATABASE_URL`` with a private SQLite file,
+       so the machine job published ``"postgres_version": "18.4"`` in its manifest while the
+       entire inventory ran on SQLite - the constraints, transaction behaviour and types that
+       PostgreSQL 18.4 is there to exercise were never exercised, and nothing said so.
+
+    2. ``registration_verification.ready()`` raises ``REGISTRATION_VERIFICATION_NOT_READY``
+       when ``settings.jwt_signing_key`` is missing, is shorter than 32 characters, or still
+       carries the shipped ``dev-`` prefix. The product's own registration CI sets
+       ``JWT_SIGNING_KEY`` for exactly that reason; the machine container did not, so four
+       identity tests in the frozen inventory failed for a reason that had nothing to do with
+       the candidate.
+
+    The check asks for the VALUES, not for the variable names: ``-e GO_TEST_DATABASE_URL=``
+    set to a SQLite URL would reproduce defect 1 with the variable present, and a ``dev-`` key
+    reproduces defect 2 while looking like a fix.
+    """
+    if name != C13_WORKFLOW:
+        return
+
+    command = _pytest_container_command(document, raw)
+    if command is None:
+        failures.append(f"{name}: no container step running pytest was found")
+        return
+
+    # Comments first: this step explains both defects in prose, and a scan that read the
+    # explanation as the setting would pass on a step whose real arguments were deleted.
+    code = "\n".join(_code_lines(command))
+    values = _container_env_values(code)
+
+    database_url = values.get(TEST_DATABASE_URL_ENV, "")
+    if not database_url:
+        failures.append(
+            f"{name}: the machine container is not given {TEST_DATABASE_URL_ENV}; the "
+            "candidate's conftest then falls back to SQLite and the run is not the "
+            "PostgreSQL 18.4 it reports")
+    elif database_url.startswith("$"):
+        failures.append(
+            f"{name}: {TEST_DATABASE_URL_ENV} is built from a shell variable "
+            f"({database_url}); the value must be written here so it can be checked")
+    elif not database_url.startswith("postgresql"):
+        failures.append(
+            f"{name}: {TEST_DATABASE_URL_ENV} must select PostgreSQL, not "
+            f"{database_url.split(':', 1)[0]}")
+
+    signing_key = values.get(TEST_SIGNING_KEY_ENV, "")
+    if not signing_key:
+        failures.append(
+            f"{name}: the machine container is not given {TEST_SIGNING_KEY_ENV}; "
+            "registration_verification then refuses with "
+            "REGISTRATION_VERIFICATION_NOT_READY")
+    elif signing_key.startswith("$"):
+        failures.append(
+            f"{name}: {TEST_SIGNING_KEY_ENV} is built from a shell variable "
+            f"({signing_key}); the value must be written here so it can be checked")
+    elif signing_key.startswith(DEFAULT_SIGNING_KEY_PREFIX):
+        failures.append(
+            f"{name}: {TEST_SIGNING_KEY_ENV} is still the shipped placeholder")
+    elif len(signing_key) < MINIMUM_SIGNING_KEY_LENGTH:
+        failures.append(
+            f"{name}: {TEST_SIGNING_KEY_ENV} is shorter than "
+            f"{MINIMUM_SIGNING_KEY_LENGTH} characters, so registration_verification refuses it")
 
 
 def check_spec_carries_the_frozen_review_content(name: str, raw: str, failures: list) -> None:
@@ -667,6 +792,7 @@ def run() -> dict:
         check_readback_declares_the_run_head(name, raw, failures)
         check_changed_path_boundary(name, raw, failures)
         check_machine_step_installs_candidate_dependencies(name, document, raw, failures)
+        check_machine_step_runs_against_postgres(name, document, raw, failures)
         check_workflow_identity_source(name, raw, failures)
         check_raw_evidence_survives_a_refused_seal(name, raw, failures)
         check_rule_input_is_governance_data(name, document, raw, failures)

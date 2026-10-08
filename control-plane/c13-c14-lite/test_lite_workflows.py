@@ -180,6 +180,128 @@ class MachineDependencyInstallTests(unittest.TestCase):
         self.assertEqual(failures, [])
 
 
+class MachineDatabaseSelectionTests(unittest.TestCase):
+    """The machine container must be given what its own suite reads, not what it advertises.
+
+    Two defects measured on a real round of the frozen inventory:
+
+    * ``application/tests/conftest.py`` picks the database from ``GO_TEST_DATABASE_URL`` and
+      overwrites ``DATABASE_URL`` with SQLite when it is absent, so the job published
+      ``postgres_version: 18.4`` while every assertion ran on SQLite.
+    * ``registration_verification.ready()`` refuses a missing / short / ``dev-`` signing key,
+      so four identity tests failed with ``REGISTRATION_VERIFICATION_NOT_READY`` for an
+      environmental reason.
+
+    The container is built here from the real workflow's own docker-run shape, so a test
+    proves the guard, not the fixture.
+    """
+
+    TEMPLATE = (
+        "name: x\n"
+        "jobs:\n"
+        "  c13-machine-test:\n"
+        "    steps:\n"
+        "      - name: Run the frozen machine inventory in a disposable container\n"
+        "        run: |\n"
+        "          set -euo pipefail\n"
+        "          docker run --rm \\\n"
+        "            -v candidate:/srv:ro \\\n"
+        "{arguments}"
+        "            -w /srv/application \\\n"
+        "            go-c13-machine:local \\\n"
+        "            bash -lc 'python -m pytest application/tests -q'\n"
+    )
+
+    DATABASE_ARGUMENT = (
+        '            -e GO_TEST_DATABASE_URL="postgresql+psycopg://postgres:pw@'
+        'host.docker.internal:5432/c13_lite" \\\n'
+    )
+    SIGNING_KEY_ARGUMENT = (
+        '            -e JWT_SIGNING_KEY="c13-lite-test-only-signing-key-32bytes" \\\n'
+    )
+
+    def failures_for(self, arguments):
+        failures = []
+        raw = self.TEMPLATE.format(arguments=arguments)
+        lite_workflow_check.check_machine_step_runs_against_postgres(
+            lite_workflow_check.C13_WORKFLOW, {}, raw, failures)
+        return failures
+
+    def both(self, database=None, key=None):
+        if database is None:
+            database = self.DATABASE_ARGUMENT
+        if key is None:
+            key = self.SIGNING_KEY_ARGUMENT
+        return self.failures_for(database + key)
+
+    def test_the_shipped_machine_step_runs_against_postgres_with_a_usable_key(self):
+        failures = []
+        raw = (WORKFLOW_DIR / lite_workflow_check.C13_WORKFLOW).read_text(encoding="utf-8")
+        lite_workflow_check.check_machine_step_runs_against_postgres(
+            lite_workflow_check.C13_WORKFLOW, {}, raw, failures)
+        self.assertEqual(failures, [])
+
+    def test_a_container_without_the_test_database_url_is_rejected(self):
+        failures = self.failures_for(self.SIGNING_KEY_ARGUMENT)
+        self.assertTrue(
+            failures,
+            "without GO_TEST_DATABASE_URL the suite runs on SQLite while the manifest "
+            "records PostgreSQL")
+
+    def test_a_sqlite_test_database_url_is_rejected(self):
+        sqlite_argument = (
+            '            -e GO_TEST_DATABASE_URL="sqlite+pysqlite:///tmp/x.db" \\\n'
+        )
+        failures = self.both(database=sqlite_argument)
+        self.assertTrue(failures, "the variable being present is not the same as PostgreSQL")
+
+    def test_a_test_database_url_hidden_behind_a_shell_variable_is_rejected(self):
+        indirect = '            -e GO_TEST_DATABASE_URL="$PGURL" \\\n'
+        failures = self.both(database=indirect)
+        self.assertTrue(failures, "a value the guard cannot read is a value it cannot vouch for")
+
+    def test_a_container_without_a_signing_key_is_rejected(self):
+        failures = self.failures_for(self.DATABASE_ARGUMENT)
+        self.assertTrue(
+            failures,
+            "without JWT_SIGNING_KEY registration verification refuses with "
+            "REGISTRATION_VERIFICATION_NOT_READY")
+
+    def test_the_shipped_placeholder_signing_key_is_rejected(self):
+        placeholder = '            -e JWT_SIGNING_KEY="dev-only-change-me-jwt" \\\n'
+        failures = self.both(key=placeholder)
+        self.assertTrue(failures, "the shipped default is not a key")
+
+    def test_a_short_signing_key_is_rejected(self):
+        short = '            -e JWT_SIGNING_KEY="tooshort" \\\n'
+        failures = self.both(key=short)
+        self.assertTrue(failures, "registration_verification refuses anything under 32 chars")
+
+    def test_the_explanation_alone_does_not_satisfy_the_guard(self):
+        # The fixed step explains both defects in prose. A scan that read the explanation as
+        # the setting would pass on a step whose real arguments had been deleted.
+        prose = (
+            "      - name: Run the frozen machine inventory in a disposable container\n"
+            "        run: |\n"
+            "          # GO_TEST_DATABASE_URL and JWT_SIGNING_KEY are required here.\n"
+            "          # -e GO_TEST_DATABASE_URL=\"postgresql+psycopg://x\" \\\n"
+            "          # -e JWT_SIGNING_KEY=\"c13-lite-test-only-signing-key-32bytes\" \\\n"
+            "          docker run --rm -w /srv/application go-c13-machine:local \\\n"
+            "            bash -lc 'python -m pytest application/tests -q'\n"
+        )
+        failures = []
+        lite_workflow_check.check_machine_step_runs_against_postgres(
+            lite_workflow_check.C13_WORKFLOW, {}, ("name: x\njobs:\n  c13-machine-test:\n"
+                                                   "    steps:\n" + prose), failures)
+        self.assertEqual(len(failures), 2, failures)
+
+    def test_another_cell_is_left_alone(self):
+        failures = []
+        lite_workflow_check.check_machine_step_runs_against_postgres(
+            lite_workflow_check.C14_WORKFLOW, {}, "anything", failures)
+        self.assertEqual(failures, [])
+
+
 class DispatchEnvRobustnessTests(unittest.TestCase):
     """Regression tests for the two bugs the first real run exposed.
 

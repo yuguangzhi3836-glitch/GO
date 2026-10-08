@@ -193,6 +193,23 @@ jobs:
           docker build -f control-plane/c13-c14-lite/machine.Dockerfile \
             -t go-c13-machine:local control-plane/c13-c14-lite
           set +e
+          # The two variables below are not decoration: without them this job is not the
+          # job it claims to be.
+          #
+          # `application/tests/conftest.py` decides WHICH database the suite runs against
+          # from GO_TEST_DATABASE_URL, and when it is absent it OVERWRITES DATABASE_URL with
+          # a private SQLite file. Passing DATABASE_URL alone therefore leaves the published
+          # manifest saying "PostgreSQL 18.4" while every assertion ran on SQLite - measured
+          # on a real round, not imagined.
+          #
+          # JWT_SIGNING_KEY is the variable the product's own registration CI sets.
+          # `registration_verification.ready()` refuses a key that is missing, shorter than
+          # 32 characters, or starts with `dev-`, so without it the registration tests fail
+          # with REGISTRATION_VERIFICATION_NOT_READY - a red about the sandbox rather than
+          # about the candidate.
+          #
+          # Both values are test-only literals confined to this disposable container. Neither
+          # is a secret and neither grants any authority.
           docker run --rm \
             -v "$PWD/candidate:/srv:ro" \
             -v "$RUNNER_TEMP/machine:/out" \
@@ -202,6 +219,8 @@ jobs:
             -e PGPASSWORD=c13-lite-local-only \
             -e PGDATABASE=c13_lite \
             -e DATABASE_URL="postgresql+psycopg://postgres:c13-lite-local-only@host.docker.internal:5432/c13_lite" \
+            -e GO_TEST_DATABASE_URL="postgresql+psycopg://postgres:c13-lite-local-only@host.docker.internal:5432/c13_lite" \
+            -e JWT_SIGNING_KEY="c13-lite-test-only-signing-key-32bytes" \
             -e GO_MEDIA_CACHE_DIR=/tmp/go-media-cache \
             -w /srv/application \
             --add-host=host.docker.internal:host-gateway \
