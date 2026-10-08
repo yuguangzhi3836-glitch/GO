@@ -74,12 +74,13 @@ TEST_DATABASE_URL_ENV = "GO_TEST_DATABASE_URL"
 #: ``REGISTRATION_VERIFICATION_NOT_READY`` - a red about the sandbox rather than the candidate.
 TEST_SIGNING_KEY_ENV = "JWT_SIGNING_KEY"
 
-#: The prefix of the shipped placeholder key. A value that is still this is not a key.
-DEFAULT_SIGNING_KEY_PREFIX = "dev-"
-
-#: The shortest key ``registration_verification`` will accept, mirrored here so the check can
-#: refuse a value that would fail at run time instead of at review time.
-MINIMUM_SIGNING_KEY_LENGTH = 32
+#: The trusted backend module the machine step runs on BOTH sides of its pytest invocation.
+#: It reads no URL out of the environment: it connects to the PostgreSQL service the job
+#: starts and fingerprints that database's own schema before and after the inventory, so a
+#: round may name a PostgreSQL version only when the database itself showed the inventory's
+#: work. Its presence on both sides is what this module checks; what it OBSERVED is checked
+#: by executing it, not by reading the workflow.
+DATABASE_OBSERVATION_MODULE = "lite_database_observation.py"
 
 try:  # pragma: no cover - trivial import guard
     import yaml
@@ -305,7 +306,8 @@ def _container_env_values(command_code: str) -> dict:
 
 
 def check_machine_step_runs_against_postgres(name: str, document: dict, raw: str, failures: list) -> None:
-    """C13's machine job must actually run on the database it advertises, with a usable key.
+    """C13's machine job must be given the environment its own suite reads, and must
+    measure what it reports.
 
     Two measured defects, both proving the same thing: an environment that is *named* in the
     evidence but not *passed* to the container.
@@ -323,9 +325,18 @@ def check_machine_step_runs_against_postgres(name: str, document: dict, raw: str
        identity tests in the frozen inventory failed for a reason that had nothing to do with
        the candidate.
 
-    The check asks for the VALUES, not for the variable names: ``-e GO_TEST_DATABASE_URL=``
-    set to a SQLite URL would reproduce defect 1 with the variable present, and a ``dev-`` key
-    reproduces defect 2 while looking like a fix.
+    DELIBERATELY NARROWED. This check used to also judge the *shape* of the two values: the
+    URL had to start with ``postgresql``, the key had to be at least 32 characters and must
+    not carry the shipped prefix. Those three branches are gone, because each of them was a
+    string standing in for a fact that is now measured. The machine step observes the
+    PostgreSQL service's own schema before and after the pytest run, and the manifest
+    reports a version only when that observation shows the inventory used the database - so
+    a wrong value is caught where it actually happens, by the machine that actually ran,
+    instead of by a pattern match performed at review time. What survives is what an offline
+    read is still allowed to promise: the two variables are PASSED to the container as
+    literals rather than built from something this scan cannot see, and the observation is
+    still there at all, on BOTH sides of the run. Deleting either half is a silent
+    regression, which is the thing this guard exists to prevent.
     """
     if name != C13_WORKFLOW:
         return
@@ -340,38 +351,43 @@ def check_machine_step_runs_against_postgres(name: str, document: dict, raw: str
     code = "\n".join(_code_lines(command))
     values = _container_env_values(code)
 
-    database_url = values.get(TEST_DATABASE_URL_ENV, "")
-    if not database_url:
-        failures.append(
-            f"{name}: the machine container is not given {TEST_DATABASE_URL_ENV}; the "
-            "candidate's conftest then falls back to SQLite and the run is not the "
-            "PostgreSQL 18.4 it reports")
-    elif database_url.startswith("$"):
-        failures.append(
-            f"{name}: {TEST_DATABASE_URL_ENV} is built from a shell variable "
-            f"({database_url}); the value must be written here so it can be checked")
-    elif not database_url.startswith("postgresql"):
-        failures.append(
-            f"{name}: {TEST_DATABASE_URL_ENV} must select PostgreSQL, not "
-            f"{database_url.split(':', 1)[0]}")
+    for variable, consequence in (
+            (TEST_DATABASE_URL_ENV,
+             "the candidate's conftest then falls back to SQLite and the run is not the "
+             "PostgreSQL it reports"),
+            (TEST_SIGNING_KEY_ENV,
+             "registration_verification then refuses with "
+             "REGISTRATION_VERIFICATION_NOT_READY")):
+        value = values.get(variable, "")
+        if not value:
+            failures.append(
+                f"{name}: the machine container is not given {variable}; {consequence}")
+        elif value.startswith("$"):
+            failures.append(
+                f"{name}: {variable} is built from a shell variable ({value}); the value "
+                "must be written here so it can be checked")
 
-    signing_key = values.get(TEST_SIGNING_KEY_ENV, "")
-    if not signing_key:
+    lines = code.splitlines()
+    pytest_at = [index for index, line in enumerate(lines) if "python -m pytest" in line]
+    # A line counts only when it both NAMES the module and selects a phase. Matching on the
+    # name alone was wrong, and the mutation run is how it was found: the step also MOUNTS
+    # the module, and that mount line sits above the pytest line - so a step whose only
+    # observation had been deleted still looked like it observed the database first.
+    observed_before = [index for index, line in enumerate(lines)
+                       if DATABASE_OBSERVATION_MODULE in line and "--phase before" in line]
+    observed_after = [index for index, line in enumerate(lines)
+                      if DATABASE_OBSERVATION_MODULE in line and "--phase after" in line]
+    if not pytest_at:
+        failures.append(f"{name}: no 'python -m pytest' command found in the container step")
+        return
+    first, last = min(pytest_at), max(pytest_at)
+    if not observed_before or min(observed_before) > first or not observed_after or max(observed_after) < last:
         failures.append(
-            f"{name}: the machine container is not given {TEST_SIGNING_KEY_ENV}; "
-            "registration_verification then refuses with "
-            "REGISTRATION_VERIFICATION_NOT_READY")
-    elif signing_key.startswith("$"):
-        failures.append(
-            f"{name}: {TEST_SIGNING_KEY_ENV} is built from a shell variable "
-            f"({signing_key}); the value must be written here so it can be checked")
-    elif signing_key.startswith(DEFAULT_SIGNING_KEY_PREFIX):
-        failures.append(
-            f"{name}: {TEST_SIGNING_KEY_ENV} is still the shipped placeholder")
-    elif len(signing_key) < MINIMUM_SIGNING_KEY_LENGTH:
-        failures.append(
-            f"{name}: {TEST_SIGNING_KEY_ENV} is shorter than "
-            f"{MINIMUM_SIGNING_KEY_LENGTH} characters, so registration_verification refuses it")
+            f"{name}: the machine step must RUN the observation on the PostgreSQL service's "
+            f"own schema BEFORE and AFTER the inventory (a {DATABASE_OBSERVATION_MODULE} call "
+            "with --phase before above the pytest line and --phase after below it); mounting "
+            "the module is not observing, and with only its own environment variables to go "
+            "on the job would publish a run that quietly used SQLite as PostgreSQL")
 
 
 def check_spec_carries_the_frozen_review_content(name: str, raw: str, failures: list) -> None:

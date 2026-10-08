@@ -210,8 +210,19 @@ jobs:
           #
           # Both values are test-only literals confined to this disposable container. Neither
           # is a secret and neither grants any authority.
+          #
+          # Neither of them, however, is PROOF. A value the job writes into its own
+          # environment says what the job intended; it does not say what the suite did. So
+          # the run is bracketed by two observations of the PostgreSQL service itself
+          # (lite_database_observation.py, mounted read-only from this run's own commit):
+          # a fingerprint of that database's schema before the inventory and after it. The
+          # container's only other actions are pip installs, so a fingerprint that moved is
+          # the inventory's own doing - and a fingerprint that did not move means the
+          # database the suite used cannot be named, so the step fails instead of publishing
+          # a version nobody observed.
           docker run --rm \
             -v "$PWD/candidate:/srv:ro" \
+            -v "$PWD/control-plane/c13-c14-lite/lite_database_observation.py:/opt/lite_database_observation.py:ro" \
             -v "$RUNNER_TEMP/machine:/out" \
             -e PGHOST=host.docker.internal \
             -e PGPORT=5432 \
@@ -225,7 +236,18 @@ jobs:
             -w /srv/application \
             --add-host=host.docker.internal:host-gateway \
             go-c13-machine:local \
-            bash -lc 'pip install -q pytest && cp -r /srv/application /tmp/candidate-application && pip install -q "/tmp/candidate-application[dev]" && python -m pytest "$@" -q --junitxml=/out/junit.xml' c13-tests "${test_paths[@]}" \
+            bash -lc '
+              pip install -q pytest &&
+              cp -r /srv/application /tmp/candidate-application &&
+              pip install -q "/tmp/candidate-application[dev]" &&
+              python /opt/lite_database_observation.py --phase before --out /out/database-before.json ;
+              python -m pytest "$@" -q --junitxml=/out/junit.xml ;
+              pytest_status=$? ;
+              python /opt/lite_database_observation.py --phase after --before /out/database-before.json --out /out/database.json ;
+              observation_status=$? ;
+              if [ "$pytest_status" -ne 0 ]; then exit "$pytest_status"; fi ;
+              exit "$observation_status"
+            ' c13-tests "${test_paths[@]}" \
             2>&1 | tee "$RUNNER_TEMP/machine/stdout.txt"
           pipeline_status=("${PIPESTATUS[@]}")
           set -e
@@ -249,9 +271,29 @@ jobs:
           def sha(name):
               path = root / name
               return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+          def read_json(name):
+              path = root / name
+              if not path.is_file():
+                  return None
+              try:
+                  return json.loads(path.read_text())
+              except ValueError:
+                  return None
+          # WHICH DATABASE THIS MANIFEST MAY REPORT is the one the machine step OBSERVED, not
+          # one written here. This field used to be the literal "18.4": the reviewer, the
+          # sealed C13 record and the round decision all read it, while the suite may have
+          # run on SQLite - the workflow said PostgreSQL because the workflow always said
+          # PostgreSQL. It now carries the version `lite_database_observation.py` read from
+          # the server, and it carries NOTHING when that observation could not show the
+          # inventory used the database, so an unproven round cannot describe itself as a
+          # PostgreSQL test. The raw observation travels alongside it, so a reader can see
+          # what was measured rather than only what was concluded.
+          observation = read_json("database.json")
+          proven = isinstance(observation, dict) and observation.get("postgresql_actually_used") is True
           manifest = {
               "inventory": os.environ["MACHINE_INVENTORY"],
-              "postgres_version": "18.4",
+              "postgres_version": observation.get("postgres_version") if proven else None,
+              "database_observation": observation,
               "docker_used": (root / "exit_code.txt").is_file(),
               "exit_code": int((root / "exit_code.txt").read_text()) if (root / "exit_code.txt").is_file() else None,
               "step_outcome": os.environ["MACHINE_OUTCOME"],

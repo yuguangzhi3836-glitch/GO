@@ -141,7 +141,11 @@ def _env_spec(role: str) -> dict:
         "test_inventory_sha256": os.environ.get("LITE_TEST_INVENTORY_SHA256", ""),
         "runner": os.environ.get("LITE_RUNNER", "ubuntu-24.04"),
         "runner_os": os.environ.get("LITE_RUNNER_OS", "Linux"),
-        "postgres_version": os.environ.get("LITE_POSTGRES_VERSION", "18.4"),
+        # Deliberately NOT here. `postgres_version` is a machine-job fact, so it is read
+        # from the machine job's own observation of the PostgreSQL service - see
+        # `_observed_postgres_version` and its use in `cmd_spec`. It used to default to
+        # the literal "18.4" in this function, which is how a round whose whole inventory
+        # ran on SQLite came to be sealed and reported as a PostgreSQL 18.4 round.
         "docker_used": os.environ.get("LITE_DOCKER_USED", "true").lower() == "true",
         # The authoritatively declared rule sources, already resolved read-only from the
         # default branch's own commit by the ``rule-input`` step. Derived once here and
@@ -243,6 +247,28 @@ def _machine_evidence(manifest_path, junit_path) -> dict:
         "junit_sha256": manifest.get("junit_sha256"),
         "stdout_sha256": manifest.get("stdout_sha256"),
     }
+
+
+def _observed_postgres_version(manifest_path) -> str | None:
+    """The PostgreSQL version this round PROVED, read from the machine manifest.
+
+    The manifest carries the version the machine step read out of the PostgreSQL service
+    it ran against, and carries ``None`` when that observation could not show the
+    inventory used the database. This is the only source for the C13 record's version
+    claim: a literal here would describe the sandbox the round was *supposed* to use
+    rather than the one it used, which is exactly the defect
+    ``docs/acceptance/c13-supplement-533/database-preflight.json`` recorded as
+    ``"manifest_version_source": "literal in workflow, not actual application database
+    observation"``. Absent or unreadable evidence yields ``None`` - never a default,
+    because a default is a claim nobody measured and C13 must not make one.
+    """
+    try:
+        manifest = _read(manifest_path)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(manifest, dict):
+        return None
+    return manifest.get("postgres_version") or None
 
 
 def _read_review_brief(path) -> dict:
@@ -353,6 +379,14 @@ def cmd_spec(args) -> int:
         raise SystemExit("spec: c13 requires --machine-manifest and --junit (machine evidence is an input)")
     if args.role != "c13" and (args.machine_manifest or args.junit):
         raise SystemExit("spec: --machine-manifest and --junit are c13 only")
+    if args.role == "c13":
+        # WHAT THIS CELL MAY REPORT COMES FROM THE OBSERVATION, not from a default. The
+        # machine manifest is the only artefact that carries the version the PostgreSQL
+        # service itself reported for a run whose schema provably moved. It is also
+        # written into `$RUNNER_TEMP/spec.json` and read back by `seal`, so the value the
+        # reviewer sees and the value the sealed record binds are the same derivation -
+        # they cannot disagree, and neither can invent a version.
+        spec["postgres_version"] = _observed_postgres_version(args.machine_manifest)
     # The frozen scope, not a re-derivation of it: the digest has to be the one this round
     # bound, and it has to be non-empty. Either check failing means the reviewer would be
     # asked to review something other than what was frozen, so the round stops here - before
@@ -450,7 +484,11 @@ def _machine_job(spec: dict, artifacts: dict) -> dict:
     return {
         "runner": spec.get("runner", "ubuntu-24.04"),
         "runner_os": spec.get("runner_os", "Linux"),
-        "postgres_version": spec.get("postgres_version", "18.4"),
+        # No default: an unobserved round must FAIL the seal rather than be sealed with a
+        # version nobody measured. `lite_bundle` refuses an empty `postgres_version` with
+        # `c13_machine_job_postgres_missing`, which is the correct outcome - a C13 record
+        # says PostgreSQL only when the machine step observed PostgreSQL.
+        "postgres_version": spec.get("postgres_version"),
         "docker_used": bool(spec.get("docker_used", True)),
         "test_inventory_sha256": spec.get("test_inventory_sha256") or lite_canonical.digest_bytes(artifacts["manifest"]),
         "junit_sha256": lite_canonical.digest_bytes(artifacts["junit"]),

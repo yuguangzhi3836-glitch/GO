@@ -181,7 +181,8 @@ class MachineDependencyInstallTests(unittest.TestCase):
 
 
 class MachineDatabaseSelectionTests(unittest.TestCase):
-    """The machine container must be given what its own suite reads, not what it advertises.
+    """The machine container must be given what its own suite reads, not what it advertises,
+    and must measure the database it reports.
 
     Two defects measured on a real round of the frozen inventory:
 
@@ -194,6 +195,11 @@ class MachineDatabaseSelectionTests(unittest.TestCase):
 
     The container is built here from the real workflow's own docker-run shape, so a test
     proves the guard, not the fixture.
+
+    What this guard does NOT do any more is judge the shape of the two values - see
+    ``test_value_shape_is_no_longer_the_guards_business``, which asserts the narrowing on
+    purpose. The fact those patterns stood in for is now measured by the machine that ran,
+    and ``test_lite_database_observation.py`` executes that measurement.
     """
 
     TEMPLATE = (
@@ -206,10 +212,30 @@ class MachineDatabaseSelectionTests(unittest.TestCase):
         "          set -euo pipefail\n"
         "          docker run --rm \\\n"
         "            -v candidate:/srv:ro \\\n"
+        "            -v tools/lite_database_observation.py:/opt/lite_database_observation.py:ro \\\n"
         "{arguments}"
         "            -w /srv/application \\\n"
         "            go-c13-machine:local \\\n"
-        "            bash -lc 'python -m pytest application/tests -q'\n"
+        "            bash -lc '\n"
+        "{commands}"
+        "            ' c13-tests app\n"
+    )
+
+    #: The observation on both sides of the inventory, as the shipped step does it.
+    OBSERVATION = (
+        "              python /opt/lite_database_observation.py --phase before --out /out/db-before.json ;\n"
+        "              python -m pytest application/tests -q --junitxml=/out/junit.xml ;\n"
+        "              python /opt/lite_database_observation.py --phase after --before /out/db-before.json --out /out/database.json\n"
+    )
+    #: Nothing observes the database: the job would be back to reporting a version it
+    #: derived from its own environment.
+    UNOBSERVED = (
+        "              python -m pytest application/tests -q --junitxml=/out/junit.xml\n"
+    )
+    #: Only the AFTER side: nothing to compare against, so nothing is proven.
+    AFTER_ONLY = (
+        "              python -m pytest application/tests -q --junitxml=/out/junit.xml ;\n"
+        "              python /opt/lite_database_observation.py --phase after --before /out/db-before.json --out /out/database.json\n"
     )
 
     DATABASE_ARGUMENT = (
@@ -220,19 +246,21 @@ class MachineDatabaseSelectionTests(unittest.TestCase):
         '            -e JWT_SIGNING_KEY="c13-lite-test-only-signing-key-32bytes" \\\n'
     )
 
-    def failures_for(self, arguments):
+    def failures_for(self, arguments, commands=None):
+        if commands is None:
+            commands = self.OBSERVATION
         failures = []
-        raw = self.TEMPLATE.format(arguments=arguments)
+        raw = self.TEMPLATE.format(arguments=arguments, commands=commands)
         lite_workflow_check.check_machine_step_runs_against_postgres(
             lite_workflow_check.C13_WORKFLOW, {}, raw, failures)
         return failures
 
-    def both(self, database=None, key=None):
+    def both(self, database=None, key=None, commands=None):
         if database is None:
             database = self.DATABASE_ARGUMENT
         if key is None:
             key = self.SIGNING_KEY_ARGUMENT
-        return self.failures_for(database + key)
+        return self.failures_for(database + key, commands)
 
     def test_the_shipped_machine_step_runs_against_postgres_with_a_usable_key(self):
         failures = []
@@ -248,13 +276,6 @@ class MachineDatabaseSelectionTests(unittest.TestCase):
             "without GO_TEST_DATABASE_URL the suite runs on SQLite while the manifest "
             "records PostgreSQL")
 
-    def test_a_sqlite_test_database_url_is_rejected(self):
-        sqlite_argument = (
-            '            -e GO_TEST_DATABASE_URL="sqlite+pysqlite:///tmp/x.db" \\\n'
-        )
-        failures = self.both(database=sqlite_argument)
-        self.assertTrue(failures, "the variable being present is not the same as PostgreSQL")
-
     def test_a_test_database_url_hidden_behind_a_shell_variable_is_rejected(self):
         indirect = '            -e GO_TEST_DATABASE_URL="$PGURL" \\\n'
         failures = self.both(database=indirect)
@@ -267,15 +288,45 @@ class MachineDatabaseSelectionTests(unittest.TestCase):
             "without JWT_SIGNING_KEY registration verification refuses with "
             "REGISTRATION_VERIFICATION_NOT_READY")
 
-    def test_the_shipped_placeholder_signing_key_is_rejected(self):
-        placeholder = '            -e JWT_SIGNING_KEY="dev-only-change-me-jwt" \\\n'
-        failures = self.both(key=placeholder)
-        self.assertTrue(failures, "the shipped default is not a key")
+    def test_a_step_that_never_observes_the_database_is_rejected(self):
+        """The template MOUNTS the module and never calls it - on purpose.
 
-    def test_a_short_signing_key_is_rejected(self):
-        short = '            -e JWT_SIGNING_KEY="tooshort" \\\n'
-        failures = self.both(key=short)
-        self.assertTrue(failures, "registration_verification refuses anything under 32 chars")
+        Matching the module's name alone was the guard's first shape, and a mutation run
+        showed why that was wrong: the real step mounts the module above its pytest line,
+        so a step whose only observation had been deleted still looked like it had observed
+        the database first.
+        """
+        failures = self.both(commands=self.UNOBSERVED)
+        self.assertEqual(len(failures), 1, failures)
+        self.assertIn("BEFORE and AFTER", failures[0])
+
+    def test_a_step_that_observes_only_after_the_run_is_rejected(self):
+        failures = self.both(commands=self.AFTER_ONLY)
+        self.assertEqual(len(failures), 1, failures)
+        self.assertIn("BEFORE and AFTER", failures[0])
+
+    def test_a_step_that_observes_only_before_the_run_is_rejected(self):
+        before_only = (
+            "              python /opt/lite_database_observation.py --phase before --out /out/db-before.json ;\n"
+            "              python -m pytest application/tests -q --junitxml=/out/junit.xml\n"
+        )
+        failures = self.both(commands=before_only)
+        self.assertEqual(len(failures), 1, failures)
+        self.assertIn("BEFORE and AFTER", failures[0])
+
+    def test_value_shape_is_no_longer_the_guards_business(self):
+        """A SQLite URL or a placeholder key is now caught by the machine that ran.
+
+        Asserted deliberately, so the narrowing is a decision on the record rather than a
+        guard someone deleted. Neither value can produce a false GREEN any more: a run on
+        SQLite leaves the PostgreSQL service's schema untouched, the observation refuses to
+        name a version, and the manifest carries no version - which
+        ``test_lite_database_observation.py`` executes end to end. Re-adding these pattern
+        checks would add a second, weaker opinion about something already measured.
+        """
+        sqlite_argument = '            -e GO_TEST_DATABASE_URL="sqlite+pysqlite:///tmp/x.db" \\\n'
+        placeholder = '            -e JWT_SIGNING_KEY="dev-only-change-me-jwt" \\\n'
+        self.assertEqual(self.both(database=sqlite_argument, key=placeholder), [])
 
     def test_the_explanation_alone_does_not_satisfy_the_guard(self):
         # The fixed step explains both defects in prose. A scan that read the explanation as
@@ -286,6 +337,7 @@ class MachineDatabaseSelectionTests(unittest.TestCase):
             "          # GO_TEST_DATABASE_URL and JWT_SIGNING_KEY are required here.\n"
             "          # -e GO_TEST_DATABASE_URL=\"postgresql+psycopg://x\" \\\n"
             "          # -e JWT_SIGNING_KEY=\"c13-lite-test-only-signing-key-32bytes\" \\\n"
+            "          # python /opt/lite_database_observation.py --phase before \\\n"
             "          docker run --rm -w /srv/application go-c13-machine:local \\\n"
             "            bash -lc 'python -m pytest application/tests -q'\n"
         )
@@ -293,7 +345,7 @@ class MachineDatabaseSelectionTests(unittest.TestCase):
         lite_workflow_check.check_machine_step_runs_against_postgres(
             lite_workflow_check.C13_WORKFLOW, {}, ("name: x\njobs:\n  c13-machine-test:\n"
                                                    "    steps:\n" + prose), failures)
-        self.assertEqual(len(failures), 2, failures)
+        self.assertEqual(len(failures), 3, failures)
 
     def test_another_cell_is_left_alone(self):
         failures = []
