@@ -36,7 +36,7 @@
     "plan_id"
   ],
   "x-go-capability-vs-enablement": {
-    "note": "A Request schema describes what is structurally expressible. It is NOT a statement of what the channel currently accepts. ChatGPT must use currently_enabled_request_action only. The enabled set is the Bridge's own channel contract: control-plane/boss-deploy-request-v1/config.json lists all six actions, with deployment_authorization=\"request\" and publish_enabled=true. There is no deploy switch to open.",
+    "note": "A Request schema describes what is structurally expressible. It is NOT a statement of what the channel currently accepts. ChatGPT must use currently_enabled_request_action only. The enabled set is the channel contract declared in this repository: all six actions are listed, with deployment_authorization=\"request\" and publish_enabled=true. There is no deploy switch to open.",
     "known_capabilities": [
       "HK_STAGING_VERIFY",
       "HK_STAGING_TEST_PR",

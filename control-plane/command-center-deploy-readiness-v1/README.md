@@ -23,11 +23,12 @@ the plan's canary declaration instead of re-deriving it. That allowed
 DEPLOY_READY=YES   while   the live Bridge would deterministically reject
 ```
 
-which is worse than no verdict: it reads as permission. So the live Boss Request
-Bridge is now the fact source. Its bundle contract
-(`boss-deploy-request-v1/go_deploy_request.py`) is ported here rule for rule, the
-`BRIDGE_ACCEPTANCE` gate fails whenever those rules would refuse, and **no gate
-is advisory any more**.
+which is worse than no verdict: it reads as permission. So the acceptance rules
+the Old Command Center Bridge enforced are ported here rule for rule and frozen in
+this component, the `BRIDGE_ACCEPTANCE` gate fails whenever those rules would
+refuse, and **no gate is advisory any more**. The
+`control-plane/boss-deploy-request-v1` component those rules came from was retired
+on 2026-10-08; this component is the only copy they now exist in.
 
 Load-bearing consequences:
 
@@ -56,13 +57,12 @@ Load-bearing consequences:
   Bridge refuses such a request before it reads the plan at all.
 * The authority is an **authenticated GitHub identity, not a key** (2026-09-16
   scope reset): no approval is signed, no approval public key is published and
-  none has to be rotated. The authorised logins are ported from the live gate and
-  a test re-reads `go_deploy_request.py` so the two allowlists cannot drift. See
-  `docs/project/CC_V1_SCOPE_20260916.md`.
+  none has to be rotated. The authorised logins are frozen in this component.
+  See `docs/project/CC_V1_SCOPE_20260916.md`.
 
-A test re-reads the live Bridge's source and fails if any ported constant, exact
-field set, topology list, gate name set or freshness window drifts. The copy in
-this component therefore cannot silently diverge from the real gate.
+The constants below were ported from the Bridge's source, and that source was
+retired on 2026-10-08: this component is the only copy left, and nothing re-reads
+an external file any more. The copy here can now only change by an edit here.
 
 ## What it reads
 

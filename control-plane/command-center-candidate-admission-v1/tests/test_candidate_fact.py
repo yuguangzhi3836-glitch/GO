@@ -504,31 +504,6 @@ class AdmissionDigestTests(unittest.TestCase):
                          cf.E_DATABASE_MIGRATION_REQUIRED)
         self.assertEqual(cf.public_migration_reason("something_else"), "something_else")
 
-    def test_the_two_layers_declare_the_same_two_codes(self):
-        """Cross-layer agreement without a cross-layer import.
-
-        The admission component and the plan derivation must refuse migration in the
-        same two words. They deliberately do not import each other -- a component
-        reaching into another component's source would be a new coupling -- so the
-        agreement is pinned here by reading both sources, the way the request
-        visibility component pins the Bridge's refusal vocabulary.
-        """
-        plan = (ROOT.parents[0] / "boss-deploy-request-v1" / "plan_derivation.py")
-        self.assertTrue(plan.is_file(), plan)
-        source = plan.read_text(encoding="utf-8")
-        for name in ("E_DATABASE_MIGRATION_REQUIRED",
-                     "E_DATABASE_MIGRATION_GRAPH_MISMATCH"):
-            self.assertIn("%s = '" % name, source, name)
-        self.assertEqual(
-            cf.E_DATABASE_MIGRATION_REQUIRED,
-            cf.public_migration_reason("candidate_migration_required"))
-        self.assertEqual(
-            cf.E_DATABASE_MIGRATION_GRAPH_MISMATCH,
-            cf.public_migration_reason("candidate_migration_head"))
-        # The plan derivation's own pre-convergence token maps into the same pair.
-        self.assertIn(
-            "'migration_required_not_supported': E_DATABASE_MIGRATION_REQUIRED", source)
-
     def test_a_refused_candidate_carries_no_digest(self):
         result = self._admit(converged(source_commit="main"))
         self.assertEqual(result["verdict"]["admission"], "REJECT")

@@ -144,9 +144,9 @@ HUMAN_REQUEST_ACTIONS = ("HK_STAGING_VERIFY", "HK_STAGING_TEST_PR", "HK_STAGING_
                          "HK_STAGING_CANARY", "HK_STAGING_ROLLBACK")
 PLATFORM_REQUEST_ACTIONS = ("CONTROL_PLANE_HEALTH",)
 # What the channel can create *right now*, per class. There is no deploy switch,
-# so DEPLOY is present here exactly as the Bridge's own channel contract lists it:
-# `control-plane/boss-deploy-request-v1/config.json` carries all six actions with
-# `deployment_authorization: "request"`, and the authenticated DEPLOY Request is
+# so DEPLOY is present here exactly as this repository's own channel contract lists
+# it: all six actions are declared with `deployment_authorization: "request"`, and
+# the authenticated DEPLOY Request is
 # itself the authorisation. Absence from this set is a claim that the action is
 # refused by the contract, so a stale constant here reads to a connector as
 # "you may not deploy" -- which is the one answer this projection must never

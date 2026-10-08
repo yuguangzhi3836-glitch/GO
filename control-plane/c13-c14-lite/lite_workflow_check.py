@@ -195,9 +195,9 @@ def check_machine_step_installs_candidate_dependencies(name: str, document: dict
     The first real C13 could not collect its inventory at all (CCV1-147A, measured): the
     machine job installed pytest and nothing else, while the candidate's own
     ``application/pyproject.toml`` declares the dependencies its tests import - the inventory
-    ``control-plane/boss-deploy-request-v1/tests/test_deploy_entry.py`` imports
-    ``cryptography``, and only that declaration provides it. Installing a package list written
-    inside this workflow would be the same defect one level down, so the check asks for an
+    the first machine job actually collected imported ``cryptography``, and only that
+    declaration provides it. Installing a package list written inside this workflow would be
+    the same defect one level down, so the check asks for an
     install OF THE CANDIDATE'S PROJECT rather than for any particular package name - and it
     asks for it before pytest runs, because after is the same as never.
     """

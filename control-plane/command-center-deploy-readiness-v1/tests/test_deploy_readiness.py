@@ -1,9 +1,9 @@
 """Isolated tests for the read-only Deploy Readiness evaluator (CC V1-06 / #101).
 
-This revision exists because the first one could report YES while the live Boss
-Request Bridge would deterministically refuse the same request: CANARY and
-RELEASE_GATES were advisory, and the canary declaration was reported rather than
-re-derived. The rules pinned here are therefore:
+This revision exists because the first one could report YES while the acceptance
+gate the Old Command Center Bridge enforced would deterministically refuse the same
+request: CANARY and RELEASE_GATES were advisory, and the canary declaration was
+reported rather than re-derived. The rules pinned here are therefore:
 
   * every mandatory gate PASSes              -> YES
   * any mandatory gate FAILs                 -> NO
@@ -31,7 +31,6 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 REPO = ROOT.parent
-BOSS = REPO / "boss-deploy-request-v1"
 sys.path.insert(0, str(ROOT))
 
 loader = importlib.machinery.SourceFileLoader(
@@ -791,161 +790,6 @@ class BridgeAcceptanceTests(unittest.TestCase):
     def test_no_bridge_gate_without_a_bundle(self):
         document = Fixture(bundle=False).evaluate()
         self.assertEqual(gate_of(document, "BRIDGE_ACCEPTANCE")["state"], "UNKNOWN")
-
-
-class LiveBridgeContractTests(unittest.TestCase):
-    """The ported constants must equal the live Bridge's own, or this component lies."""
-
-    def setUp(self):
-        self.source = (BOSS / "go_deploy_request.py").read_text(encoding="utf-8")
-
-    def brace_set(self, name):
-        found = re.search(r"^%s = [\{\(](.*?)[\}\)]" % name, self.source, re.M | re.S)
-        self.assertIsNotNone(found, name)
-        return set(re.findall(r"'([a-z_]+)'", found.group(1)))
-
-    def exact_fields(self, marker):
-        """The field set the live gate compares that object against.
-
-        The gate names the set either inline or through a module constant: eef48f8
-        named the approval's set once so the approver-side tool and the tests read
-        the same one. Both forms have to be resolved, or the drift this test exists
-        to catch would hide behind a rename.
-        """
-        inline = re.search(r"exact\([^,]+,\{([^}]*)\},'%s'\)" % marker, self.source)
-        if inline is not None:
-            return set(re.findall(r"'([A-Za-z0-9_]+)'", inline.group(1)))
-        named = re.search(r"exact\([^,]+,\s*([A-Z][A-Z0-9_]*)\s*,'%s'\)" % marker, self.source)
-        self.assertIsNotNone(named, marker)
-        constant = named.group(1)
-        declared = re.search(r"^%s = [\(\{]([^\)\}]*)[\)\}]" % re.escape(constant),
-                             self.source, re.M)
-        self.assertIsNotNone(declared, "the field set %s is never declared" % constant)
-        return set(re.findall(r"'([A-Za-z0-9_]+)'", declared.group(1)))
-
-    def test_the_retired_release_gates_are_gone_from_the_live_contract(self):
-        """The drift guard, inverted: the four declarations must not come back.
-
-        They were product acceptance verdicts no machine process here can produce, and
-        the live executor never read them, so the live gate must not declare them and this
-        evaluator must not port them.
-        """
-        for name in ("three_end_ux", "six_vertical_closed_loop", "sealed_node", "final_release"):
-            with self.subTest(gate=name):
-                self.assertNotIn("'%s'" % name, self.source)
-        self.assertIsNone(re.search(r"^RELEASE_GATES = \{", self.source, re.M))
-        self.assertFalse(hasattr(R, "REQUIRED_PLAN_GATES"))
-
-    def test_the_test_pr_constants_match_the_live_contract(self):
-        self.assertEqual(self.brace_set("TEST_PR_GATES"), set(R.TEST_PR_GATES))
-        self.assertEqual(set(R.TEST_PR_PARAMETERS) | set(R.TEST_PR_SOURCE),
-                         {"builder_profile", "source", "repository", "pr_number", "commit_sha"})
-
-    def test_canary_and_verify_gate_names_match(self):
-        self.assertEqual(self.brace_set("CANARY_GATES"), set(R.CANARY_GATES))
-        self.assertEqual(self.brace_set("VERIFY_GATES"), set(R.VERIFY_GATES))
-
-    def test_the_fixed_service_topology_matches(self):
-        found = re.search(r"^SERVICES = \[(.*?)\]", self.source, re.M | re.S)
-        self.assertIsNotNone(found)
-        self.assertEqual(re.findall(r"'([a-z-]+)'", found.group(1)), list(R.SERVICES))
-
-    def test_the_protected_non_targets_match(self):
-        self.assertIn("plan['protected_non_targets']!=['redis','caddy']", self.source)
-        self.assertEqual(list(R.PROTECTED_NON_TARGETS), ["redis", "caddy"])
-
-    def test_the_exact_field_sets_match(self):
-        self.assertEqual(self.exact_fields("plan_fields"), set(R.PLAN_FIELDS))
-        self.assertEqual(self.exact_fields("approval_fields"), set(R.APPROVAL_FIELDS))
-        self.assertEqual(self.exact_fields("candidate_fields"), set(R.CANDIDATE_FIELDS))
-        self.assertEqual(self.exact_fields("task_fields"), set(R.TASK_FIELDS))
-
-    def test_the_approval_scope_and_authority_match(self):
-        self.assertIn("'%s'" % R.APPROVAL_SCOPE, self.source)
-        self.assertIn("'%s'" % R.TASK_AUTHORITY, self.source)
-
-    def test_the_deployment_authorization_form_matches_the_live_gate(self):
-        """The authorisation's id is derived, on both sides, the same way.
-
-        This is what replaced the switch. What stops a hand-written authorisation is not
-        a signature -- there is no approval key -- but the derivation: the id has to be
-        the derived form of the Request digest the record cites, so a record that cites
-        nothing, or cites something and names itself, is refused.
-        """
-        derived = re.search(r"return '(approval-)'\+request_sha256\[:(\d+)\]", self.source)
-        self.assertIsNotNone(derived, "the live gate no longer derives the approval id")
-        self.assertEqual(derived.group(1), R.APPROVAL_ID_PREFIX)
-        self.assertEqual(int(derived.group(2)), 16)
-        bridge = (BOSS / "go-boss-request-bridge").read_text(encoding="utf-8")
-        mode = re.search(r'^AUTHORIZATION_MODE = "([a-z]+)"', bridge, re.M)
-        self.assertIsNotNone(mode, "the live Bridge no longer declares an authorisation mode")
-        self.assertEqual(mode.group(1), R.AUTHORIZATION_MODE)
-        self.assertNotIn("deployment_requests_enabled", bridge.replace(
-            "`deployment_requests_enabled`", ""))
-
-    def test_the_plan_name_is_derived_by_the_live_gate(self):
-        """The name is a function, and the port has to return the same one."""
-        self.assertIn("def plan_id_for(candidate,canary_task):", self.source)
-        candidate = {"source_commit": COMMIT, "image_id": CANDIDATE_IMAGE}
-        canary = {"parameters": {"release_id": "boss-request-canary-synthetic"}}
-        self.assertEqual(R.derived_plan_id(candidate, canary),
-                         "hkstg-%s-%s-%s" % (COMMIT[:12], CANDIDATE_IMAGE[7:19],
-                                             hashlib.sha256(
-                                                 b"boss-request-canary-synthetic").hexdigest()[:12]))
-        self.assertIsNone(R.derived_plan_id(candidate, {"parameters": {}}))
-
-    def test_the_forbidden_operations_match(self):
-        found = re.search(r"plan\[k\] is not False for k in \[(.*?)\]", self.source)
-        self.assertIsNotNone(found)
-        self.assertEqual(set(re.findall(r"'([a-z_]+)'", found.group(1))),
-                         set(R.FORBIDDEN_OPERATIONS))
-
-    def scalar(self, name):
-        """The right-hand side of a module constant, whatever shape it has."""
-        found = re.search(r"^%s = (.*)$" % name, self.source, re.M)
-        self.assertIsNotNone(found, name)
-        return found.group(1).strip()
-
-    def test_the_freshness_windows_match(self):
-        # The windows are named constants now, so the guard reads the constant and the
-        # value rather than a literal that a rename would silently invalidate.
-        self.assertIn("CANARY_ACTION,authority_key,hk_key,at,CANARY_EVIDENCE_MAX_AGE",
-                      self.source)
-        self.assertIn("VERIFY_ACTION,authority_key,hk_key,at,VERIFY_EVIDENCE_MAX_AGE",
-                      self.source)
-        self.assertEqual(self.scalar("CANARY_ACTION"), "'HK_STAGING_CANARY'")
-        self.assertEqual(self.scalar("VERIFY_ACTION"), "'HK_STAGING_VERIFY'")
-        self.assertEqual(self.scalar("CANARY_EVIDENCE_MAX_AGE"), str(R.CANARY_MAX_AGE_SECONDS))
-        self.assertEqual(self.scalar("VERIFY_EVIDENCE_MAX_AGE"), str(R.PREFLIGHT_MAX_AGE_SECONDS))
-        self.assertEqual(self.scalar("APPROVAL_MAX_LIFE"), "dt.timedelta(minutes=15)")
-        self.assertEqual(R.APPROVAL_MAX_WINDOW_SECONDS, 900)
-
-    def test_the_bridge_still_takes_the_task_key_from_the_store(self):
-        self.assertIn("public_key(read_secure(store/'authority.pub',4096))", self.source)
-        self.assertIn("public_key(read_secure(store/'hk-evidence.pub',4096))", self.source)
-        self.assertIn(
-            "validate_bundle(bundle,plan_id,authority,hk,at,approval_identity,request_sha256)",
-            self.source)
-        # The approval is the Request, so the digest is not optional: a gate that can be
-        # called without one would accept an approval that could name any Request.
-        self.assertIn("if request_sha256 is None: raise Reject('approval_request_digest_missing')",
-                      self.source)
-        self.assertIn("if approval['request_sha256']!=request_sha256: raise Reject('approval_request_mismatch')",
-                      self.source)
-
-    def test_the_two_authorised_approval_identities_match_the_live_gate(self):
-        """The allowlist the scope reset introduced, read from the live gate."""
-
-        found = re.search(r"^APPROVAL_IDENTITIES = \(([^)]*)\)", self.source, re.M)
-        self.assertIsNotNone(found)
-        self.assertEqual(tuple(re.findall(r"'([^']+)'", found.group(1))),
-                         tuple(R.APPROVAL_IDENTITIES))
-
-    def test_the_cancelled_approval_key_is_gone_from_the_live_gate(self):
-        """The scope reset deleted the dedicated approval key; it must not return."""
-
-        self.assertNotIn("approval-authority.pub", self.source)
-        self.assertNotIn("approval_authority", self.source)
 
 
 class ContractTests(unittest.TestCase):

@@ -230,8 +230,6 @@ jobs:
           del tampered['x-go-gates']['BRIDGE_ACCEPTANCE']
           check('the_contract_cannot_drop_a_gate_silently',
                 set(tampered['x-go-gates']) - {'note'} != set(R.MANDATORY_GATES))
-          check('the_live_bridge_contract_is_the_fact_source',
-                (t.BOSS / 'go_deploy_request.py').is_file())
 
           if failures:
               print('E2E_FAILED: %s' % ', '.join(failures), flush=True)

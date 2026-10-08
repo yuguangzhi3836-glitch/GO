@@ -48,11 +48,6 @@ READINESS_COMPONENT = ROOT.parent / "command-center-deploy-readiness-v1"
 REQUESTS_COMPONENT = ROOT.parent / "command-center-request-visibility-v1"
 FACT_EXPORTER = REQUESTS_COMPONENT / "command-center" / "go-request-fact-export"
 FACT_CONTRACT = REQUESTS_COMPONENT / "contracts" / "request_fact_v1.schema.json"
-# The Bridge is where a Request is accepted or refused, so its channel config is
-# the authority for what an action may be. Loaded from the outside for the same
-# reason as the two above: a constant compared against a fixture built from that
-# constant cannot fail.
-BRIDGE_COMPONENT = ROOT.parent / "boss-deploy-request-v1"
 READINESS_EVALUATOR = READINESS_COMPONENT / "command-center" / "go-deploy-readiness"
 READINESS_FIXTURES = READINESS_COMPONENT / "tests" / "test_deploy_readiness.py"
 _SIBLINGS = {}
@@ -1365,23 +1360,20 @@ class RequestChannelTests(unittest.TestCase):
         # is the one it used to.
         self.assertIn("HK_STAGING_DEPLOY", sp.ENABLED_REQUEST_ACTIONS)
 
-    def test_the_enabled_set_is_pinned_to_the_bridge_channel_contract(self):
+    def test_the_enabled_set_is_exactly_its_two_halves(self):
         """Measured on 2026-09-17, the failure this pins was live.
 
         These constants said DEPLOY was not requestable for as long as the
         deployment authorisation model had been different, and CONTROL_STATUS_V1
-        told the connector not to deploy -- the one action V1 exists for. Nothing
-        caught it, because nothing tied the constant to the contract it describes.
-        The Bridge's own shipped config is that contract, and the
-        request-visibility component already pins its action registry to it.
+        told the connector not to deploy -- the one action V1 exists for. The
+        external contract they used to be tied to (the Bridge's own shipped config)
+        was retired on 2026-10-08. What remains as an invariant inside this
+        component is that the enabled set is exactly its two halves.
         """
-        config = json.loads((BRIDGE_COMPONENT / "config.json").read_text(encoding="utf-8"))
-        allowed = config["allowed_actions"]
-        self.assertEqual(sorted(sp.ENABLED_REQUEST_ACTIONS), sorted(allowed))
         self.assertEqual(sorted(list(sp.HUMAN_REQUEST_ACTIONS) + list(sp.PLATFORM_REQUEST_ACTIONS)),
-                         sorted(allowed))
+                         sorted(sp.ENABLED_REQUEST_ACTIONS))
         self.assertEqual(set(sp.PLATFORM_REQUEST_ACTIONS),
-                         set(allowed) - set(sp.HUMAN_REQUEST_ACTIONS))
+                         set(sp.ENABLED_REQUEST_ACTIONS) - set(sp.HUMAN_REQUEST_ACTIONS))
         # The set the connector is told it may write for is the human half, and it
         # has to be the enabled half too -- otherwise "enabled" and "allowed to
         # write" disagree, which is precisely how the wrong answer was produced.

@@ -33,26 +33,6 @@ CONTRACT = ROOT / D.CONTRACT_FILE
 AT = D.parse_time("2026-09-15T01:00:00Z")
 COMMIT = "a" * 40
 
-BRIDGE_SOURCES = (
-    REPO / "control-plane" / "boss-test-pr-live-integration-v1" / "command-center"
-    / "go-boss-request-bridge",
-    REPO / "control-plane" / "boss-deploy-request-v1" / "go-boss-request-bridge",
-    REPO / "control-plane" / "boss-deploy-request-v1" / "go_deploy_request.py",
-)
-# Both call shapes, exactly as CC V1-05.1 established.
-REJECT_CALL = re.compile(r"Reject\(\s*['\"]([a-z0-9_]+)['\"]")
-REASON_ARGUMENT = re.compile(r"(?:exact|match)\([^()]*?['\"]([a-z0-9_]+)['\"]\s*\)")
-
-
-def bridge_tokens():
-    direct, passed = set(), set()
-    for path in BRIDGE_SOURCES:
-        text = path.read_text(encoding="utf-8")
-        direct |= set(REJECT_CALL.findall(text))
-        passed |= set(REASON_ARGUMENT.findall(text))
-    return direct | passed
-
-
 def readiness(verdict="YES", gates=None, boundary=None, contract=None):
     base = [("DEPLOYMENT_PLAN", True, {"plan_id": "release-one"}),
             ("APPROVED_CANDIDATE", True, {"source_commit": COMMIT}),
@@ -130,19 +110,16 @@ def check(document, name):
 
 
 class VocabularyTests(unittest.TestCase):
-    """No new refusal vocabulary: every token here must be the Bridge's own."""
+    """The request check table must stay closed, staged and reachable.
+
+    The membership check against the Bridge's own refusal vocabulary was retired on
+    2026-10-08 with the Old Command Center; the table's internal invariants remain.
+    """
 
     @classmethod
     def setUpClass(cls):
         cls.checks = D.Checks(CONTRACT)
         cls.schema = json.loads(CONTRACT.read_text(encoding="utf-8"))
-        cls.bridge = bridge_tokens()
-
-    def test_every_request_check_token_is_a_bridge_token(self):
-        self.assertGreaterEqual(len(self.bridge), 96, "the Bridge extraction shrank")
-        stray = sorted(entry["token"] for entry in self.checks.request_checks
-                       if entry["token"] not in self.bridge)
-        self.assertEqual(stray, [], "this component invents refusal vocabulary: %s" % stray)
 
     def test_the_check_table_is_closed_and_declares_its_stage(self):
         stages = set(self.schema["x-go-stages"]) - {"note"}

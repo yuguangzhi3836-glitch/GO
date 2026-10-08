@@ -36,16 +36,13 @@ AT = dt.datetime(2026, 9, 14, 13, 0, tzinfo=dt.timezone.utc)
 HEAD = "a" * 40
 REQUEST_ID = "synthetic-request-1"
 
-# Every place a Request can be refused, as it exists in this repository.
+# The one Bridge source that still exists in this repository. It is kept because the
+# scan below has to be able to fail against something real. The Old Command Center
+# Bridge that owned the full six-action channel was retired on 2026-10-08, so the
+# vocabulary this scan covers is narrower than it was while that component existed.
 BRIDGE_SOURCES = (
     REPO / "control-plane" / "boss-test-pr-live-integration-v1" / "command-center"
     / "go-boss-request-bridge",
-    REPO / "control-plane" / "boss-deploy-request-v1" / "go-boss-request-bridge",
-    REPO / "control-plane" / "boss-deploy-request-v1" / "go_deploy_request.py",
-    # The derivation module's refusals are emitted by the Bridge: persistent_process
-    # calls it inside the DEPLOY branch and the Reject propagates out of the tick, so a
-    # token it can raise is a token the channel can report to a Boss.
-    REPO / "control-plane" / "boss-deploy-request-v1" / "plan_derivation.py",
 )
 # Every refusing token is a literal string at its call site, but there are two
 # call shapes and they must both be scanned: ``Reject("token")`` raised directly,
@@ -174,55 +171,17 @@ def only_fact(root, out="out"):
 
 
 class VocabularyCoverageTests(unittest.TestCase):
-    """No refusal reason the Bridge can emit may be unknown to the contract."""
+    """The classification tables must stay closed and self-consistent.
+
+    The scan that proved this component covered the whole Bridge refusal vocabulary
+    read the Old Command Center Bridge, which was retired on 2026-10-08 with that
+    component's source. Everything here that does not need that external source
+    remains.
+    """
 
     @classmethod
     def setUpClass(cls):
         cls.vocabulary = X.Vocabulary(CONTRACT)
-
-    def test_the_bridge_sources_are_where_the_contract_says_they_are(self):
-        for path in BRIDGE_SOURCES:
-            self.assertTrue(path.is_file(), "Bridge source moved or vanished: %s" % path)
-
-    def test_both_refusal_call_shapes_are_scanned(self):
-        direct, passed = bridge_refusal_tokens()
-        self.assertGreater(len(direct), 50, "the direct extraction found too few tokens")
-        self.assertGreater(len(passed), 10, "the reason-argument extraction found too few tokens")
-        self.assertTrue(passed - direct, "the two shapes must not be identical")
-
-    def test_every_refusal_token_the_bridge_can_emit_is_classified(self):
-        direct, passed = bridge_refusal_tokens()
-        tokens = direct | passed
-        self.assertGreaterEqual(len(tokens), 96,
-                                "the extraction found suspiciously few tokens: %d" % len(tokens))
-        unclassified = sorted(t for t in tokens
-                              if self.vocabulary.classify(t) == "UNCLASSIFIED_REJECT")
-        self.assertEqual(unclassified, [],
-                         "the Bridge can emit a refusal the contract never classifies: %s"
-                         % unclassified)
-        # A token reachable only through the reason argument must be classified
-        # too: those are the ones a single-shape scan misses.
-        missed = sorted(t for t in (passed - direct)
-                        if self.vocabulary.classify(t) == "UNCLASSIFIED_REJECT")
-        self.assertEqual(missed, [], "unclassified reason arguments: %s" % missed)
-
-    def test_refusals_raised_through_a_named_constant_are_classified_too(self):
-        """The third call shape, and the one a stable code is most likely to use.
-
-        Both converged migration codes are raised as module constants, so a scan that
-        only reads literals would prove nothing about them while still reporting that
-        every Bridge refusal is classified.
-        """
-        named = bridge_named_refusal_tokens()
-        self.assertTrue(named, "no named refusal constants were found to check")
-        unclassified = sorted(token for token in named
-                              if self.vocabulary.classify(token) == "UNCLASSIFIED_REJECT")
-        self.assertEqual(unclassified, [],
-                         "a named refusal constant is unclassified: %s" % unclassified)
-        for code in ("E_DATABASE_MIGRATION_REQUIRED",
-                     "E_DATABASE_MIGRATION_GRAPH_MISMATCH"):
-            self.assertIn(code, named, "%s is not raised as a named constant" % code)
-            self.assertEqual(self.vocabulary.classify(code), "NOT_ALLOWED")
 
     def test_every_class_maps_to_exactly_one_kind(self):
         schema = json.loads(CONTRACT.read_text(encoding="utf-8"))
@@ -790,12 +749,8 @@ class SemanticDedupTests(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
-# The action registry, pinned against the peer that owns it
+# The action registry, pinned against the contract this component publishes
 # --------------------------------------------------------------------------- #
-BRIDGE_COMPONENT = ROOT.parent / "boss-deploy-request-v1"
-BRIDGE_SOURCE = BRIDGE_COMPONENT / "go-boss-request-bridge"
-
-
 def health_task(request_id=REQUEST_ID):
     """A read-only CONTROL_PLANE_HEALTH Task, as the Bridge signs one.
 
@@ -812,24 +767,20 @@ def health_task(request_id=REQUEST_ID):
 
 
 class ActionRegistryTests(unittest.TestCase):
-    """The exporter's action list is the Bridge's channel contract."""
+    """The exporter's action list is the enum of the contract it publishes."""
 
-    def test_the_registry_is_exactly_the_bridge_channel_actions(self):
-        """Pinned to the peer's own configuration, not to a copy of this tuple.
+    def test_the_registry_is_exactly_the_published_contract_enum(self):
+        """Pinned to the contract this component publishes, not to a copy of this tuple.
 
-        Comparing this constant with a fixture built from this constant cannot
-        fail, so it protects nothing. The Bridge is where a submission is accepted
-        or refused, and its config is the authority for what an action may be.
+        Comparing this constant with a fixture built from this constant cannot fail,
+        so it protects nothing. The published fact contract is a separate artifact
+        this component owns and a consumer validates against, so that is what the
+        exporter's list has to equal. The Bridge config this used to be pinned to
+        was retired on 2026-10-08 with the Old Command Center.
         """
-        config = json.loads((BRIDGE_COMPONENT / "config.json").read_text(encoding="utf-8"))
-        self.assertEqual(sorted(X.ACTION_IDS), sorted(config["allowed_actions"]))
-
-    def test_the_bridge_really_treats_that_config_as_its_channel_contract(self):
-        """So that the file above is the contract, and not just a file."""
-        source = BRIDGE_SOURCE.read_text(encoding="utf-8")
-        self.assertIn("!=CHANNEL_ACTIONS", source,
-                      "the Bridge no longer checks its config against the exact list")
-        self.assertIn("allowed_actions", source)
+        schema = json.loads(CONTRACT.read_text(encoding="utf-8"))
+        self.assertEqual(sorted(X.ACTION_IDS),
+                         sorted(schema["properties"]["action_id"]["enum"]))
 
     def test_a_published_health_request_mints_a_validated_fact(self):
         """The live defect, pinned. Measured on the Command Center host:

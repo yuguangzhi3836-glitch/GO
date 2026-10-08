@@ -160,10 +160,10 @@ Two things to keep straight:
   left as a footgun.
 * **The Bridge needed a revision for this.** `CONTROL_PLANE_HEALTH` was valid on
   the agent and understood by the projector, but the Bridge -- the only Task
-  signer -- rejected the action outright. `control-plane/boss-deploy-request-v1`
-  now accepts it (Bridge `1.5.0-control-plane-health`), read-only, parameterless,
-  with an explicit fail-closed dispatch. The Request was never the hard part; the
-  signer was.
+  signer -- rejected the action outright. The Old Command Center Bridge accepted
+  it from `1.5.0-control-plane-health` onward: read-only, parameterless, with an
+  explicit fail-closed dispatch. That component was retired on 2026-10-08. The
+  Request was never the hard part; the signer was.
 
 ### A measured growth defect this install exposed
 

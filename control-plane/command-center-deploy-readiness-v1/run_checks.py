@@ -79,8 +79,7 @@ summary = {
     "deploy_mode_is_mandatory": True,
     "no_standing_deployment_authorization_is_expressible": True,
     "yes_implies_the_live_bridge_would_accept": True,
-    "bridge_rules_are_read_from_the_live_bridge_component": str(
-        (ROOT.parent / "boss-deploy-request-v1" / "go_deploy_request.py").is_file()).upper(),
+    "acceptance_rules_are_frozen_in_this_component": True,
     "approval_authority_is_an_authenticated_github_identity": True,
     "approval_identities_are_ported_from_the_live_bridge": True,
     "no_approval_private_key_is_required_or_expected": True,
