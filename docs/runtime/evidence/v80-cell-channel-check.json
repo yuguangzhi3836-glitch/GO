@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "task_id": "V80-R1-C12-01",
+  "objective": "post-install cell routing and execution acceptance",
+  "recorded_at_utc": "2026-10-05T16:04:41Z",
+  "source_sha": "be2816965bb8917d75d7f59435e55160ecc7e2d7",
+  "cell_id": "C12",
+  "classification": [
+    "TEST_ONLY",
+    "DOCUMENTATION"
+  ],
+  "status_distinctions": {
+    "offline_route_acceptance": "OFFLINE_ROUTE_PASS",
+    "builder_execution_context": "LIVE_BUILDER_THIS_RUN",
+    "host_heartbeat": "HOST_HEARTBEAT_NOT_OBSERVED",
+    "per_cell_live_execution": "PER_CELL_LIVE_NOT_TESTED"
+  },
+  "commands": [
+    {
+      "kind": "pytest_adapter",
+      "command": "/tmp/gh-aw/python/venv/bin/python -m pytest application/tests/test_c13_v80_cell_channel.py -q"
+    },
+    {
+      "kind": "suite_payload",
+      "command": "embedded unittest runner inside application/tests/test_c13_v80_cell_channel.py loading test_c1_cell_generalization, test_c1_ingress_recovery, and test_c1_c13c14_review_transport by name",
+      "cwd": "control-plane/runtime-host-channel-v1"
+    }
+  ],
+  "suite_results": [
+    {
+      "name": "test_c1_cell_generalization",
+      "tests": 48,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "test_c1_ingress_recovery",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "test_c1_c13c14_review_transport",
+      "tests": 65,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "total": {
+    "tests": 126,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "route_coverage": [
+    {
+      "cell": "C01",
+      "result": "OFFLINE_ROUTE_PASS",
+      "evidence": [
+        "builder range includes C01 via workbench-derived C01-C12 set",
+        "issue-path routing explicitly exercised for C01",
+        "request identity frozen for C1"
+      ]
+    },
+    {
+      "cell": "C02",
+      "result": "OFFLINE_ROUTE_PASS",
+      "evidence": [
+        "builder range includes C02 via workbench-derived C01-C12 set",
+        "issue-path routing explicitly exercised for C02",
+        "distinct execution identity verified for C2"
+      ]
+    },
+    {
+      "cell": "C03",
+      "result": "OFFLINE_ROUTE_PASS",
+      "evidence": [
+        "builder range includes C03 via workbench-derived C01-C12 set",
+        "global cell canonicalizer accepts C03/C3"
+      ]
+    },
+    {
+      "cell": "C04",
+      "result": "OFFLINE_ROUTE_PASS",
+      "evidence": [
+        "builder range includes C04 via workbench-derived C01-C12 set",
+        "global cell canonicalizer accepts C04/C4"
+      ]
+    },
+    {
+      "cell": "C05",
+      "result": "OFFLINE_ROUTE_PASS",
+      "evidence": [
+        "builder range includes C05 via workbench-derived C01-C12 set",
+        "global cell canonicalizer accepts C05/C5"
+      ]
+    },
+    {
+      "cell": "C06",
+      "result": "OFFLINE_ROUTE_PASS",
+      "evidence": [
+        "builder range includes C06 via workbench-derived C01-C12 set",
+        "global cell canonicalizer accepts C06/C6"
+      ]
+    },
+    {
+      "cell": "C07",
+      "result": "OFFLINE_ROUTE_PASS",
+      "evidence": [
+        "builder range includes C07 via workbench-derived C01-C12 set",
+        "failure completion is reported back to owning cell C7"
+      ]
+    },
+    {
+      "cell": "C08",
+      "result": "OFFLINE_ROUTE_PASS",
+      "evidence": [
+        "builder range includes C08 via workbench-derived C01-C12 set",
+        "independent queued work remains isolated from another cell's failure"
+      ]
+    },
+    {
+      "cell": "C09",
+      "result": "OFFLINE_ROUTE_PASS",
+      "evidence": [
+        "builder range includes C09 via workbench-derived C01-C12 set",
+        "issue-path routing explicitly exercised for C09"
+      ]
+    },
+    {
+      "cell": "C10",
+      "result": "OFFLINE_ROUTE_PASS",
+      "evidence": [
+        "builder range includes C10 via workbench-derived C01-C12 set",
+        "global cell canonicalizer accepts C10"
+      ]
+    },
+    {
+      "cell": "C11",
+      "result": "OFFLINE_ROUTE_PASS",
+      "evidence": [
+        "builder range includes C11 via workbench-derived C01-C12 set",
+        "global cell canonicalizer accepts C11"
+      ]
+    },
+    {
+      "cell": "C12",
+      "result": "OFFLINE_ROUTE_PASS",
+      "evidence": [
+        "issue-path routing explicitly exercised for C12",
+        "worker claim and scan-order identity exercised for C12",
+        "restart resume exactly-once exercised for C12",
+        "run-name lookup path exercised for C12"
+      ]
+    }
+  ],
+  "review_boundary": {
+    "C13": {
+      "accepted_scope": "review-only",
+      "evidence": [
+        "allowed_owner_cs_for_kind(C13_REVIEW_V1) == ['C13']",
+        "C13 run names start with C13",
+        "C13 payload refuses C14 ownership"
+      ]
+    },
+    "C14": {
+      "accepted_scope": "review-only",
+      "evidence": [
+        "allowed_owner_cs_for_kind(C14_REVIEW_V1) == ['C14']",
+        "C14 run names start with C14",
+        "C14 payload refuses C13 ownership"
+      ]
+    },
+    "builder_refusal": [
+      "Builder owner range is exactly C01-C12",
+      "control-only cells C13/C14 are never claimed by builder worker",
+      "issue ingress refuses C13/C14 builder tasks before runtime enqueue"
+    ]
+  },
+  "limits": [
+    "This evidence is offline channel acceptance from the frozen checkout.",
+    "No host shell, SSH, heartbeat probe or live per-cell execution was performed.",
+    "No claim is made that C13 or C14 already passed beyond the review-only boundary."
+  ]
+}
