@@ -5495,7 +5495,7 @@ class OmnichannelLedgerEntryRow(Base):
     ledger_entry_id: Mapped[str]=mapped_column(String(64),primary_key=True)
     transaction_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     payment_intent_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
-    account_code: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
+    account_code: Mapped[str]=mapped_column(String(128),nullable=False,index=True)
     direction: Mapped[str]=mapped_column(String(8),nullable=False)
     amount_minor: Mapped[int]=mapped_column(BigInteger,nullable=False)
     currency: Mapped[str]=mapped_column(String(3),nullable=False)
@@ -6309,7 +6309,7 @@ class HostedDirectReservationRow(Base):
     check_out: Mapped[str]=mapped_column(String(10),nullable=False)
     amount_minor: Mapped[int]=mapped_column(Integer,nullable=False)
     currency: Mapped[str]=mapped_column(String(8),nullable=False)
-    reservation_state: Mapped[str]=mapped_column(String(40),nullable=False,index=True)
+    reservation_state: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     payment_state: Mapped[str]=mapped_column(String(40),nullable=False,index=True)
     hotel_confirmation_reference: Mapped[str|None]=mapped_column(String(128))
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
@@ -8015,4 +8015,45 @@ class CatalogOrderFareSnapshotRow(Base):
     snapshot_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     accepted_by: Mapped[str] = mapped_column(String(64), nullable=False)
     acceptance_kind: Mapped[str] = mapped_column(String(40), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class HostedMoneyUnknownEpisodeRow(Base):
+    __tablename__ = 'hosted_money_unknown_episode'
+    __table_args__ = (
+        UniqueConstraint('money_movement_id', 'episode_generation', name='uq_hosted_money_unknown_generation'),
+    )
+    episode_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    authorization_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    hosted_reservation_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    money_movement_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    funding_leg: Mapped[str] = mapped_column(String(40), nullable=False)
+    episode_generation: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    open_evidence_reference: Mapped[str] = mapped_column(String(512), nullable=False)
+    open_evidence_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    resolution_decision: Mapped[str | None] = mapped_column(String(32))
+    resolution_evidence_reference: Mapped[str | None] = mapped_column(String(512))
+    resolution_evidence_digest: Mapped[str | None] = mapped_column(String(64))
+    opened_by: Mapped[str] = mapped_column(String(64), nullable=False)
+    resolved_by: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class HostedMoneyUnknownEpisodeAuditRow(Base):
+    __tablename__ = 'hosted_money_unknown_episode_audit'
+    __table_args__ = (
+        UniqueConstraint('episode_id', 'sequence', name='uq_hosted_money_unknown_audit_sequence'),
+    )
+    audit_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    episode_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    actor_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    evidence_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    previous_hash: Mapped[str | None] = mapped_column(String(64))
+    event_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
