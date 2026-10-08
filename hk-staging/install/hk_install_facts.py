@@ -8,10 +8,11 @@ the Command Center publishes. It answers three questions and writes three kinds 
 1. **Which candidate facts may this host deploy?** Each approved converged candidate is
    read, validated, digested, and filed under its own digest in
    `<state>/candidates-v1/<candidate_contract_sha256>.json`.
-2. **Which migration graph is this host on?** The canonical runtime pointer's
-   `database.alembic_head` is turned into a root-owned local fact,
-   `<state>/environment-graph-v1.json`. The executor never reaches the network, so this
-   conversion happens here, once, under review -- not per deployment.
+2. **Which migration graph is this host on?** The migration head the operator declares is
+   turned into a root-owned local fact, `<state>/environment-graph-v1.json`. Nothing in the
+   repository is read to establish it: the pointer that used to carry it was retired on
+   2026-10-08. The executor never reaches the network, so this conversion happens here,
+   once, under review -- not per deployment.
 3. **Which bytes are installed?** The launcher, the nine runtime modules, the candidate
    facts and the environment graph are hashed, assembled into an install fact, signed with
    the HK evidence identity, and written atomically.
@@ -60,7 +61,6 @@ REPO_ROOT = HERE.parents[1]
 STATE_DIR = '/etc/go-hk-deployctl'
 DEFAULT_RUNTIME = REPO_ROOT / 'hk-staging' / 'source' / 'executor' / 'runtime'
 DEFAULT_LAUNCHER = REPO_ROOT / 'hk-staging' / 'source' / 'executor' / 'go-hk-deployctl'
-DEFAULT_RUNTIME_POINTER = REPO_ROOT / 'docs' / 'canonical-baseline' / 'CURRENT_HK_RUNTIME.json'
 
 ENVIRONMENT_GRAPH_SCHEMA = 'go.hk-environment-graph.v1'
 ENVIRONMENT = 'HK-STAGING-01'
@@ -172,32 +172,26 @@ def ensure_directory(path, mode=0o700):
 # --------------------------------------------------------------------------- #
 # the controlled facts
 # --------------------------------------------------------------------------- #
-def build_environment_graph(pointer, environment=ENVIRONMENT):
-    """Turn the canonical runtime pointer into the root-owned local fact.
+def build_environment_graph(migration_head, source_commit='', environment=ENVIRONMENT):
+    """Turn an operator-declared migration head into the root-owned local fact.
 
-    `database.alembic_head` is the only authority for the graph this host supports. The
-    value is copied, not recomputed and not guessed; a pointer that does not state it
-    stops the install, because an environment whose graph cannot be established must not
-    be handed a fact that claims it can.
+    The head used to be copied out of `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`. That
+    pointer was retired on 2026-10-08, so the head is declared explicitly now -- the same way
+    the staged tree's commit and tree already are -- and no file in the repository is read to
+    establish it. The value is copied, never recomputed and never guessed; a head that is not
+    a head stops the install, because an environment whose graph cannot be established must
+    not be handed a fact that claims it can.
     """
-    if not isinstance(pointer, dict):
-        raise InstallError('E_INSTALL_POINTER_INVALID')
-    database = pointer.get('database')
-    head = database.get('alembic_head') if isinstance(database, dict) else None
-    if not isinstance(head, str) or MIGRATION_HEAD.fullmatch(head) is None:
-        raise InstallError('E_INSTALL_POINTER_MIGRATION_HEAD_MISSING')
     if environment != ENVIRONMENT:
         raise InstallError('E_INSTALL_ENVIRONMENT_UNSUPPORTED')
-    candidate = pointer.get('release_candidate_v1')
-    commit = pointer.get('candidate_commit') or pointer.get('source_commit')
-    if commit is None and isinstance(candidate, dict):
-        commit = candidate.get('source_commit')
+    if not isinstance(migration_head, str) or MIGRATION_HEAD.fullmatch(migration_head) is None:
+        raise InstallError('E_INSTALL_MIGRATION_HEAD_MISSING')
     return {
         'schema': ENVIRONMENT_GRAPH_SCHEMA,
         'environment': environment,
-        'migration_head': head,
-        'source_identity': 'docs/canonical-baseline/CURRENT_HK_RUNTIME.json',
-        'source_commit': commit if isinstance(commit, str) else '',
+        'migration_head': migration_head,
+        'source_identity': 'operator-declared-migration-head',
+        'source_commit': source_commit if isinstance(source_commit, str) else '',
     }
 
 
@@ -431,7 +425,7 @@ def previous_installation_id(fact_path):
     return value if isinstance(value, str) else None
 
 
-def install(*, state_dir, runtime_dir, launcher_path, candidate_sources, runtime_pointer,
+def install(*, state_dir, runtime_dir, launcher_path, candidate_sources, migration_head,
             source_commit, source_tree, installer_identity, signing_key,
             canonical_proof=None, allowed_commits=None, environment=ENVIRONMENT,
             compose_overlays=(), now=None, token=None, atomic=atomic_write):
@@ -455,7 +449,7 @@ def install(*, state_dir, runtime_dir, launcher_path, candidate_sources, runtime
     key_path = os.path.join(state_dir, 'keys', 'install-fact-signing.pub')
 
     lineage = set(allowed_commits) if allowed_commits else {source_commit}
-    graph = build_environment_graph(runtime_pointer, environment)
+    graph = build_environment_graph(migration_head, source_commit, environment)
     graph_bytes = json.dumps(graph, sort_keys=True, ensure_ascii=False,
                              separators=(',', ':')).encode('utf-8') + b'\n'
 
@@ -532,7 +526,9 @@ def _parser():
                         help='an approved converged candidate fact JSON (repeatable)')
     parser.add_argument('--candidate-dir', default=None,
                         help='or a directory of them')
-    parser.add_argument('--runtime-pointer', default=str(DEFAULT_RUNTIME_POINTER))
+    parser.add_argument('--migration-head', required=True,
+                        help='the migration graph this host is on, declared by the operator; '
+                             'there is no repository pointer to read it from any more')
     parser.add_argument('--source-commit', required=True)
     parser.add_argument('--source-tree', required=True)
     parser.add_argument('--canonical-proof', required=True,
@@ -558,7 +554,6 @@ def main(argv=None):
     candidates = list(args.candidate)
     if args.candidate_dir:
         candidates += sorted(str(p) for p in pathlib.Path(args.candidate_dir).glob('*.json'))
-    pointer = json.loads(pathlib.Path(args.runtime_pointer).read_text(encoding='utf-8'))
     try:
         proof = json.loads(pathlib.Path(args.canonical_proof).read_text(encoding='utf-8'))
     except (OSError, ValueError):
@@ -568,7 +563,7 @@ def main(argv=None):
     try:
         summary = install(state_dir=args.state_dir, runtime_dir=args.runtime_dir,
                           launcher_path=args.launcher, candidate_sources=candidates,
-                          runtime_pointer=pointer, source_commit=args.source_commit,
+                          migration_head=args.migration_head, source_commit=args.source_commit,
                           source_tree=args.source_tree,
                           installer_identity=args.installer_identity,
                           signing_key=args.signing_key, canonical_proof=proof,

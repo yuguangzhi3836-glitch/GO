@@ -825,7 +825,6 @@ class Inputs:
         self.go_repo = pathlib.Path(go_repo) if go_repo else None
         self.identities = Identities(self.go_repo)
         self.candidate, self.candidate_error = self._pointer("canonical_candidate_pointer")
-        self.runtime_pointer, self.runtime_pointer_error = self._pointer("canonical_runtime_pointer")
         self.bundle, self.bundle_files, self.bundle_error = self._bundle(bundle_dir)
         self._bridge = None
 
@@ -893,14 +892,6 @@ class Inputs:
             return None
         value = block.get("value")
         return value if isinstance(value, dict) else None
-
-    def declared_runtime(self):
-        value = self.cs.get("repository_runtime_pointer") or {}
-        value = value.get("value")
-        return value if isinstance(value, dict) else None
-
-    def runtime_pointer_file(self):
-        return self.runtime_pointer
 
     def test_pr_for(self, commit_sha):
         """The newest TEST_PR Task whose immutable commit SHA is this commit."""
@@ -1222,11 +1213,9 @@ def gate_verify(inputs):
                     "the newest verified VERIFY is %d s old, outside the %d s window"
                     % (age, window),
                     observed={"age_seconds": age}, expected={"max_age_seconds": window})
-    declared = (inputs.declared_runtime() or {}).get("image_config_id")
-    if declared and declared != verified.get("image_config_id"):
-        return gate("VERIFY", "FAIL",
-                    "the verified live runtime is not the runtime the repository declares",
-                    observed={"verified": verified.get("image_config_id"), "declared": declared})
+    # There is no repository-declared runtime to compare against any more. The pointer that
+    # used to carry one was retired on 2026-10-08, and signed live Evidence is the only
+    # runtime identity the repository publishes, so the age check above is the whole gate.
     if inputs.plan() is not None:
         problems, _detail = inputs.bridge()
         preflight = [p for p in problems if p.startswith("preflight_")]
@@ -1253,12 +1242,16 @@ def gate_current_runtime(inputs):
         return gate("CURRENT_RUNTIME", "UNKNOWN",
                     "no signature-verified live runtime exists to compare the plan's expected "
                     "image against")
+    # ``runtime_verification_state`` is the projection's own reading of the newest signed VERIFY
+    # Evidence. Since the repository declares no runtime any more, DRIFT is not something the
+    # projection can reach, but a state document that says it is still refused rather than
+    # rounded up.
     if state == "DRIFT":
-        return gate("CURRENT_RUNTIME", "FAIL", "the live runtime drifted from the declared runtime",
+        return gate("CURRENT_RUNTIME", "FAIL", "the live runtime drifted from what the projection expects",
                     observed={"runtime_verification_state": state})
     if state != "MATCH":
         return gate("CURRENT_RUNTIME", "UNKNOWN",
-                    "the live runtime cannot be matched to the declared runtime: %s" % state,
+                    "the live runtime is not established by recent signed Evidence: %s" % state,
                     observed={"runtime_verification_state": state})
     expected = body.get("expected_current_image_id")
     if expected != verified.get("image_config_id"):
@@ -1463,7 +1456,6 @@ def evaluate(control_state, go_repo, bundle_dir, at, generated_at):
                        "head_sha": None},
                    "go_repository": None if inputs.go_repo is None else inputs.go_repo.name,
                    "candidate_pointer": inputs.go_source.get("canonical_candidate_pointer"),
-                   "runtime_pointer": inputs.go_source.get("canonical_runtime_pointer"),
                    "live_bundle": {"supplied": inputs.bundle is not None,
                                    "files": inputs.bundle_files,
                                    "plan_id": (inputs.plan_body() or {}).get("plan_id"),
@@ -1503,6 +1495,10 @@ def evaluate(control_state, go_repo, bundle_dir, at, generated_at):
             "than chosen, and LIVE_DEPLOY_MODE reads whether the deployed configuration "
             "accepts request-authorised deployments at all. A standing authorisation is not "
             "expressible in this contract.",
+            "There is no repository-declared runtime any more. The pointer that used to carry "
+            "one (docs/canonical-baseline/CURRENT_HK_RUNTIME.json) was retired on 2026-10-08, "
+            "so the VERIFY gate establishes the live runtime from signature-verified Evidence "
+            "alone and CURRENT_RUNTIME compares the plan against that Evidence.",
             "Nothing here creates, signs or publishes a Task, and nothing here can grant a "
             "deployment authorisation.",
         ],
@@ -1573,23 +1569,27 @@ def run_selftest():
                  "rollback_relation": {"relation": "REPLACES_CURRENT_KNOWN_GOOD",
                                        "previous_known_good_image_id": "sha256:" + "e" * 64}}}),
             encoding="utf-8")
+        # A stray file left at the RETIRED pointer path, deliberately declaring a DIFFERENT
+        # image from the one signed Evidence proves. The evaluator must never read it: the
+        # repository publishes no runtime pointer any more. It is here so the retirement is
+        # proven rather than assumed.
         (go / "CURRENT_HK_RUNTIME.json").write_text(json.dumps(
-            {"image_config_id": "sha256:" + "e" * 64, "image_tag": "synthetic",
-             "host": "i-synthetic", "runtime_generation": "SYNTHETIC"}), encoding="utf-8")
+            {"image_config_id": "sha256:" + "f" * 64, "image_tag": "retired-and-wrong",
+             "host": "i-retired", "runtime_generation": "RETIRED"}), encoding="utf-8")
         state = {
             "schema_version": "1", "contract": STATE_CONTRACT,
             "sources": {"go": {"repository": "yuguangzhi3836-glitch/GO",
                                "canonical_candidate_pointer":
                                    "docs/canonical-baseline/CURRENT_CANDIDATE.json",
-                               "canonical_runtime_pointer":
-                                   "docs/canonical-baseline/CURRENT_HK_RUNTIME.json",
                                "head_sha": "0" * 40}},
             "freshness": {"live_verification_window_seconds": 86400},
             "control_state": {
                 "live_verified_runtime": {"state": "PROVEN", "value": {
                     "image_config_id": "sha256:" + "e" * 64, "age_seconds": 60,
                     "verified_at": "2026-09-15T00:30:00Z"}},
-                "repository_runtime_pointer": {"value": {"image_config_id": "sha256:" + "e" * 64}},
+                "repository_runtime_pointer": {"state": "UNKNOWN", "value": None,
+                                               "reason": "the repository publishes no runtime "
+                                                         "pointer", "evidence": []},
                 "runtime_verification_state": "MATCH"},
             "tasks": [{"task_id": "synthetic-test-pr", "action_id": "HK_STAGING_TEST_PR",
                        "issued_at": "2026-09-15T00:10:00Z", "lifecycle": "COMPLETE",
@@ -1617,6 +1617,10 @@ def run_selftest():
         check("identity_absent_is_declared",
               document["identity"]["roles"]["TASK"]["binding"] != "BOUND")
         check("canary_blocks_when_unknown", "CANARY" in document["verdict"]["unknown"])
+        check("the_retired_runtime_pointer_is_never_read",
+              "runtime_pointer" not in document["inputs"]
+              and [g for g in document["gates"] if g["gate"] == "VERIFY"][0]["state"] != "FAIL",
+              document["inputs"].get("runtime_pointer"))
 
         channel_only = root / "channel-only"
         channel_only.mkdir()

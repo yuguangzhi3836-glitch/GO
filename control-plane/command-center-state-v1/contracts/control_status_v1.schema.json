@@ -43,7 +43,7 @@
         "verify": {"$ref": "#/$defs/assertion",
           "description": "Q6: the newest HK_STAGING_VERIFY task."},
         "repository_declared_runtime": {"$ref": "#/$defs/assertion",
-          "description": "Q7: what the repository declares. A declaration is never the truth about what is running."},
+          "description": "Q7: what the repository declares. It declares nothing now -- the runtime pointer was retired on 2026-10-08 -- so this is always UNKNOWN with a reason. A declaration would never be the truth about what is running."},
         "runtime_verification": {"$ref": "#/$defs/assertion",
           "description": "Q8: MATCH / DRIFT / NOT_RECENTLY_VERIFIED / UNKNOWN plus the image relation."},
         "stuck_tasks": {
@@ -181,7 +181,7 @@
   },
   "x-go-notes": [
     "answers.hk_agent_online is derived only from fresh signed CONTROL_PLANE_HEALTH Evidence. answers.hk_agent_recent_activity reports the last signed activity at any age and is explicitly NOT liveness.",
-    "answers.repository_declared_runtime and answers.live_verified_runtime are separate objects. A repository pointer can never make the live runtime PROVEN.",
+    "answers.repository_declared_runtime and answers.live_verified_runtime are separate objects. A repository declaration can never make the live runtime PROVEN -- and since 2026-10-08 there is no declaration to read at all.",
     "answers.stuck_tasks.answer reads active_stuck_tasks only; recently and historically expired tasks are reported separately and never change the current-health answer.",
     "answers.request_channel distinguishes known_capability from currently_enabled_request_action. HK_STAGING_DEPLOY is both proven and enabled: there is no deploy switch, so the connector may create a DEPLOY Request exactly as it may create a VERIFY, TEST_PR, CANARY or ROLLBACK one. It must not conclude from this that the host will accept it -- that is live_request_switch, a live-host fact, and the host answers with its own refusal token.",
     "answers.request_fate reports why a Request did not become a Task, from facts the Bridge exported read-only. A Request file existing is not an acceptance: BECAME_A_TASK appears only when a signed Task on the control bus carries that Request's digest and verifies. A refusal carries the Bridge's own reason code, unmodified, and a duplicate or replay carries counted_as_success=false.",

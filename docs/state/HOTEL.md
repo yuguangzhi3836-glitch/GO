@@ -11,7 +11,7 @@ Truth classes: `CURRENT_MAIN_FACT` · `ACTIVE_CANDIDATE` · `UNKNOWN / HOLD / BL
 - Current native hotel booking path uses payment authorization before supplier booking and captures only after supplier booking succeeds.
 - The connector registry on this baseline still registers a **mock** hotel connector and `default()` returns `conn_mock_hotel`. Repository code alone does not prove a production hotel inventory authority.
 - Hotel offer/prebook models expose inventory/hold-related fields, but model fields and mock behavior must not be treated as proof of real supplier inventory locking.
-- HK-STAGING active business runtime is DEPTH48; runtime identity must be read from [`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`](../canonical-baseline/CURRENT_HK_RUNTIME.json).
+- HK-STAGING active business runtime is DEPTH48; its live identity must be read from the newest signed VERIFY Evidence for HK-STAGING (`chenzhenxi1-sudo/go-control-evidence`). The repository publishes no runtime pointer: `docs/canonical-baseline/CURRENT_HK_RUNTIME.json` was retired on 2026-10-08.
 - The repository-side changes merged between the two context baselines (PR #66–#76) did **not** touch hotel booking/connector source; they were concentrated in flight, judgment, journey, mobility, travel-intelligence, go_ai, API, migration `0134` and CI/evidence. The hotel card therefore carries forward, while the shared migration chain advanced.
 
 ## ACTIVE CANDIDATES
@@ -35,6 +35,5 @@ Truth classes: `CURRENT_MAIN_FACT` · `ACTIVE_CANDIDATE` · `UNKNOWN / HOLD / BL
 - `application/src/go_hotel/connectors/registry.py`
 - `application/src/go_hotel/connectors/mock_hotel.py`
 - `README.md`
-- `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`
 
 HOTEL_STATE_STATUS=REFRESHED_AT_MAIN_8ffcde66

@@ -253,7 +253,7 @@
         "deploy_capability": {"$ref": "#/$defs/assertion",
           "description": "Capability classification only: SUPPORTED_PROVEN with request_enabled=true and readiness_evaluation=NOT_IN_SCOPE. The DEPLOY capability is proven and its Request is enabled, with no switch to open. Never a readiness verdict."},
         "repository_runtime_pointer": {"$ref": "#/$defs/assertion",
-          "description": "What the repository DECLARES. Never the truth about what is running on Hong Kong, so never PROVEN."},
+          "description": "Kept for contract stability. Always state=UNKNOWN with a reason: the repository publishes no runtime pointer any more. The last one (docs/canonical-baseline/CURRENT_HK_RUNTIME.json) was retired on 2026-10-08, because a declaration inside a repository could not truthfully say what a host is running. Never PROVEN, and now never anything else either."},
         "live_verified_runtime": {"$ref": "#/$defs/assertion",
           "description": "The image named by the newest VERIFY Evidence. PROVEN only when that Evidence's signature verified."},
         "runtime_verification": {"$ref": "#/$defs/assertion"},

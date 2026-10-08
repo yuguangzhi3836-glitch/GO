@@ -25,10 +25,13 @@ VERIFIER_IDENTITY_COLLISION anomaly.
 
 Runtime discipline
 ------------------
-A repository pointer is a *declaration*.  It is never the truth about what is
-running on Hong Kong.  ``repository_runtime_pointer`` and ``live_verified_runtime``
-are separate objects, and ``runtime_verification`` reports MATCH / DRIFT /
-NOT_RECENTLY_VERIFIED / UNKNOWN.
+There is no repository pointer any more: the one that existed was retired on
+2026-10-08, because a declaration inside a repository is never the truth about what
+is running on Hong Kong.  ``repository_runtime_pointer`` is therefore always
+UNKNOWN, and ``runtime_verification`` is read out of ``live_verified_runtime`` --
+the newest signed VERIFY Evidence -- reporting MATCH / NOT_RECENTLY_VERIFIED /
+UNKNOWN.  DRIFT stays in the enum but is unreachable: there is nothing declared for
+a live runtime to drift from.
 
 Portability
 -----------
@@ -88,7 +91,11 @@ LIVENESS_MAX_PROBES_PER_24H = 48
 TASKS_REPOSITORY = "chenzhenxi1-sudo/go-control-tasks"
 EVIDENCE_REPOSITORY = "chenzhenxi1-sudo/go-control-evidence"
 GO_REPOSITORY = "yuguangzhi3836-glitch/GO"
-CANONICAL_RUNTIME_POINTER = "docs/canonical-baseline/CURRENT_HK_RUNTIME.json"
+# The retired `docs/canonical-baseline/CURRENT_HK_RUNTIME.json` pointer lived here. It was
+# removed on 2026-10-08: a repository file claiming to be "the single authoritative pointer
+# for the runtime actually running on HK-STAGING" could not be kept true, and its drift is
+# precisely what made a verified deployment look wrong. A runtime's identity is now
+# established from signed live Evidence, never from a repository declaration.
 CANONICAL_CANDIDATE_POINTER = "docs/canonical-baseline/CURRENT_CANDIDATE.json"
 
 TASK_VERIFIER_IDENTITY = "GO Command Center task-manifest signer"
@@ -1696,24 +1703,26 @@ def newest_for(tasks, action):
 
 
 def canonical_pointers(go_repo):
-    out = {"runtime": None, "candidate": None, "hold": {}, "read_errors": []}
+    """The pointers the repository still publishes.
+
+    Only the candidate pointer remains. The runtime pointer was retired on
+    2026-10-08, so there is no ``runtime`` key any more and nothing reads one --
+    a runtime's identity is established from signed live Evidence instead.
+    """
+    out = {"candidate": None, "hold": {}, "read_errors": []}
     if not go_repo:
         return out
     base = pathlib.Path(go_repo) / "docs" / "canonical-baseline"
-    for key, name in (("runtime", "CURRENT_HK_RUNTIME.json"),
-                      ("candidate", "CURRENT_CANDIDATE.json")):
-        try:
-            out[key] = read_json(base / name)
-        except (OSError, ValueError) as exc:
-            out["read_errors"].append("%s:%s" % (name, type(exc).__name__))
-    runtime = out["runtime"] or {}
+    try:
+        out["candidate"] = read_json(base / "CURRENT_CANDIDATE.json")
+    except (OSError, ValueError) as exc:
+        out["read_errors"].append("CURRENT_CANDIDATE.json:%s" % type(exc).__name__)
     candidate = out["candidate"] or {}
-    release = runtime.get("release_acceptance") or {}
     out["hold"] = {
         "hk_deploy": "HOLD",
-        "final_release": release.get("gate", candidate.get("final_release", "UNKNOWN")),
-        "production": release.get("production", candidate.get("production", "UNKNOWN")),
-        "runtime_status": runtime.get("status"),
+        "final_release": candidate.get("final_release", "UNKNOWN"),
+        "production": candidate.get("production", "UNKNOWN"),
+        "runtime_status": None,
     }
     return out
 
@@ -1733,7 +1742,6 @@ def source_identity(args, request_count, fact_count=0):
                           "collected": fact_count,
                           "exporter": "control-plane/command-center-request-visibility-v1"},
         "go": {"repository": GO_REPOSITORY, "ref": args.go_ref, "head_sha": args.go_head,
-               "canonical_runtime_pointer": CANONICAL_RUNTIME_POINTER,
                "canonical_candidate_pointer": CANONICAL_CANDIDATE_POINTER},
     }
 
@@ -1828,24 +1836,15 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
                                  [probe])
 
     # ---- repository-declared runtime vs live verified runtime -------------- #
-    runtime = pointers["runtime"] or {}
-    image = runtime.get("image") or {}
-    pointer_image = image.get("image_config_id")
-    runtime_identity = runtime.get("canonical_runtime_identity") or {}
-    source_identity_block = runtime.get("product_source_identity") or {}
-
-    if pointer_image:
-        repository_runtime = assertion(
-            STATE_OBSERVED, {"image_config_id": pointer_image,
-                             "image_tag": image.get("image_tag"),
-                             "runtime_generation": runtime.get("runtime_generation"),
-                             "host": runtime.get("host"),
-                             "pointer_path": CANONICAL_RUNTIME_POINTER},
-            "the repository declares this runtime. A declaration is never the truth about what is "
-            "running on Hong Kong, so this can never be PROVEN",
-            [CANONICAL_RUNTIME_POINTER])
-    else:
-        repository_runtime = unknown("no canonical runtime pointer was supplied")
+    # There is no repository-declared runtime any more. The pointer that used to carry
+    # one was retired on 2026-10-08, so the only runtime identity this projection can
+    # name -- and the only thing verification can rest on -- is the one signed live
+    # Evidence proves. The comparison the state used to report was "declared vs proven";
+    # it is now "is the live runtime established by fresh signed Evidence at all".
+    repository_runtime = unknown(
+        "the repository publishes no runtime pointer: the retired "
+        "docs/canonical-baseline/CURRENT_HK_RUNTIME.json was the last one, and a "
+        "runtime's identity is established from signed live Evidence")
 
     newest_verify = newest_for(successes, "HK_STAGING_VERIFY")
     live_image, live_state = None, RUNTIME_UNKNOWN
@@ -1862,77 +1861,42 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
             "the newest VERIFY Evidence names the image that was current at that moment. This is a "
             "point-in-time proof, not a continuous statement",
             [newest_verify["evidence"]["source"]["path"]])
-        if pointer_image and live_image == pointer_image:
-            image_relation = "MATCH"
-        elif pointer_image:
-            image_relation = "DIFFER"
-        else:
-            image_relation = "UNKNOWN"
-        detail = {"verdict": RUNTIME_UNKNOWN, "image_relation": image_relation,
-                  "repository_declared_image": pointer_image,
+        # `image_relation` and `repository_declared_image` stay in the published contract but
+        # can only ever carry these values now: there is nothing declared to relate to.
+        detail = {"verdict": RUNTIME_UNKNOWN, "image_relation": "UNKNOWN",
+                  "repository_declared_image": None,
                   "live_proven_image": live_image,
                   "live_verification_age_seconds": int(verify_age),
                   "live_verification_rank": "SIGNATURE_VERIFIED" if verified else "OBSERVED_ONLY"}
-        refs = sorted({newest_verify["evidence"]["source"]["path"]}
-                      | ({CANONICAL_RUNTIME_POINTER} if pointer_image else set()))
-        fresh = verify_age <= verification_window
-        if not fresh:
+        refs = sorted({newest_verify["evidence"]["source"]["path"]})
+        if verify_age > verification_window:
             live_state = RUNTIME_NOT_RECENTLY_VERIFIED
             detail["verdict"] = live_state
             verification_assertion = assertion(
                 STATE_OBSERVED, detail,
                 "the newest VERIFY Evidence is %d s old, outside the %d s window, so the live "
-                "runtime is not recently verified. The declared and proven images %s"
-                % (int(verify_age), verification_window,
-                   "are the same image" if image_relation == "MATCH" else
-                   "differ" if image_relation == "DIFFER" else "cannot be compared"),
+                "runtime is not recently verified" % (int(verify_age), verification_window),
                 refs)
-        elif image_relation == "MATCH":
+        else:
             live_state = RUNTIME_MATCH
             detail["verdict"] = live_state
             verification_assertion = assertion(
                 STATE_PROVEN if verified else STATE_OBSERVED, detail,
-                "the live VERIFY Evidence and the repository pointer name the same image",
-                refs)
-        elif image_relation == "DIFFER":
-            live_state = RUNTIME_DRIFT
-            detail["verdict"] = live_state
-            verification_assertion = assertion(
-                STATE_PROVEN if verified else STATE_OBSERVED, detail,
-                "the live VERIFY Evidence names %s while the repository pointer declares %s: the "
-                "declared runtime has no live proof and the proven runtime is not the declared one"
-                % (live_image, pointer_image), refs)
-        else:
-            verification_assertion = assertion(
-                STATE_OBSERVED, detail,
-                "no repository pointer was supplied, so the live runtime cannot be compared", refs)
+                "the live runtime is established by the newest signed VERIFY Evidence inside the "
+                "window. There is no repository-declared runtime to compare it against: the "
+                "retired pointer was the last one, and signed Evidence is the only identity the "
+                "repository publishes", refs)
     else:
         live_verified = unknown("no VERIFY Evidence carrying a runtime image was observed")
         verification_assertion = unknown(
             "no VERIFY Evidence exists on the control bus, so live runtime verification is unknown")
 
-    runtime_identity_assertion = unknown("no canonical runtime pointer supplied")
-    if runtime:
-        pointer_host = normalize_instance(runtime.get("host"))
-        probe_host = normalize_instance(
-            (newest_health or {}).get("liveness_payload", {}).get("hostname")) if newest_health else None
-        identity = {"pointer_host": runtime.get("host"), "normalized": pointer_host,
-                    "last_probe_host": (newest_health or {}).get("liveness_payload", {})
-                    .get("hostname") if newest_health else None}
-        if pointer_host and probe_host:
-            identity["host_matches_last_probe"] = pointer_host == probe_host
-            runtime_identity_assertion = assertion(
-                STATE_OBSERVED, identity,
-                "the canonical runtime host and the host that signed liveness Evidence are the same "
-                "instance" if pointer_host == probe_host else
-                "RUNTIME IDENTITY MISMATCH: the canonical pointer names %s but liveness Evidence was "
-                "signed by %s" % (pointer_host, probe_host),
-                [newest_health["evidence"]["source"]["path"]])
-        else:
-            runtime_identity_assertion = assertion(
-                STATE_OBSERVED, identity,
-                "canonical pointer host only; no signed liveness Evidence is available to bind it to "
-                "a live machine")
+    # The host-identity check used to compare the retired pointer's declared host against the
+    # host that signed liveness Evidence. There is no declared host any more, and inventing one
+    # would repeat exactly the mistake the pointer made, so it is reported as unestablished.
+    runtime_identity_assertion = unknown(
+        "the repository publishes no runtime pointer any more, so there is no declared runtime "
+        "host to bind to signed liveness Evidence")
 
     # ---- health, verify, test_pr ------------------------------------------ #
     health_assertion = unknown("no Evidence of any kind exists on the control bus")
@@ -2084,18 +2048,12 @@ def build_state(loaded, task_verifier, evidence_verifier, at, options):
                            "the current repository main revision was not supplied. The projector "
                            "reads local checkouts and never runs git, so it will not substitute a "
                            "runtime source SHA for the repository head"))
-    runtime_built_from = (assertion(
-        STATE_OBSERVED, source_identity_block.get("source_commit"),
-        "the repository records the product source commit that this runtime was built from",
-        [CANONICAL_RUNTIME_POINTER])
-        if source_identity_block.get("source_commit")
-        else unknown("the canonical runtime pointer does not record a product source commit"))
-    runtime_canonical_main = (assertion(
-        STATE_OBSERVED, runtime_identity.get("canonical_main_commit"),
-        "the repository records the main commit at which the canonical runtime definition was "
-        "frozen", [CANONICAL_RUNTIME_POINTER])
-        if runtime_identity.get("canonical_main_commit")
-        else unknown("the canonical runtime pointer does not record a canonical main commit"))
+    runtime_built_from = unknown(
+        "the repository publishes no runtime pointer any more, so no product source commit is "
+        "declared for the running runtime; the signed live VERIFY Evidence is the record")
+    runtime_canonical_main = unknown(
+        "the repository publishes no runtime pointer any more, so no canonical main commit is "
+        "declared for the running runtime")
 
     # ---- deploy capability classification ---------------------------------- #
     # Capability only. This contract does not evaluate deploy readiness: real

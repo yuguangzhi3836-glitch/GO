@@ -46,7 +46,6 @@ For Command Center work, use the current Command Center sources identified by `A
 - `docs/project/OPERATING_CONTEXT.md`
 - `docs/control-plane/access/CONNECTION_AND_IDENTITY_RUNBOOK.md`
 - `docs/control-plane/access/connection-identities.v1.json`
-- `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`
 - `docs/control-plane/PR51_DEPLOY_CAPABILITY_CLOSEOUT_20260913.md`
 - `docs/control-plane/hk-staging/README.md`
 - `docs/control-plane/hk-staging/HK_STAGING_OPERATIONS_GUIDE.md`

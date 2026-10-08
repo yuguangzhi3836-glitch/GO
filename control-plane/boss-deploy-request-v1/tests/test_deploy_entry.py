@@ -257,11 +257,15 @@ class Fixture:
                                   'previous_known_good_image_id': self.current}}}
 
     def supported_migration_head(self):
-        """The head the canonical runtime pointer publishes for this environment."""
+        """The head the host's own environment graph declares for this environment.
+
+        No repository file is read for it: the pointer that used to publish one was retired
+        on 2026-10-08, so the host-local record is the only place it can come from.
+        """
         return '0133_flight_change_plan'
 
-    # The pointer publishes this beside the fact it is about.  The derivation consumes
-    # it; it never recomputes it.
+    # Candidate admission publishes this beside the fact it is about.  The derivation
+    # consumes it; it never recomputes it.
     candidate_contract = 'd0' * 32
 
     def verify_baseline(self):
@@ -1553,7 +1557,7 @@ class QueueTests(unittest.TestCase):
         # The plan is derived, so these four readers are the seams: the GO repository
         # (candidate admission), the evidence repository (the signed TEST_PR, canary and
         # preflight Evidence), the root-owned baseline the preflight was derived from, and
-        # the canonical runtime pointer the environment's migration graph is read from.
+        # the host-local environment graph the migration graph is read from.
         self.stack.enter_context(patch.object(bridge,'read_admission',side_effect=self.f.admission_pointer))
         self.stack.enter_context(patch.object(bridge,'read_evidence',side_effect=self.f.read_evidence))
         self.stack.enter_context(patch.object(bridge,'load_baseline',side_effect=self.f.verify_baseline))
@@ -2061,8 +2065,8 @@ class DerivationTests(unittest.TestCase):
     def test_a_candidate_on_another_migration_graph_is_refused(self):
         """The candidate must declare the graph the environment is on.
 
-        V1 runs no migration, so a candidate whose declared head is not the head the
-        canonical runtime pointer publishes for this host is not deployable here --
+        V1 runs no migration, so a candidate whose declared head is not the head this
+        host's own environment graph declares is not deployable here --
         and that is a different refusal from "this candidate wants a migration", which
         is why it carries a different code.
         """

@@ -53,5 +53,6 @@ Present in the container environment but not application configuration:
 - The env file lives on the host only. It is referenced by path through
   `GO_RUNTIME_ENV_FILE`. It is never copied into this repository, into an image
   layer, into evidence, or into PR text.
-- Only key names, paths, and non-secret fingerprints may be recorded here or in
-  `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`.
+- Only key names, paths, and non-secret fingerprints may be recorded here or in any
+  repository document. The retired `docs/canonical-baseline/CURRENT_HK_RUNTIME.json`,
+  which used to be one of those documents, was removed on 2026-10-08.

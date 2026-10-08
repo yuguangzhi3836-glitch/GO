@@ -514,19 +514,20 @@ def read_admission():
 def read_supported_migration_head():
     """The migration graph the environment currently supports.
 
-    Read from the canonical runtime pointer in the GO repository -- the same
-    read-only resolver the candidate pointer already uses, and no new authority --
-    rather than from the host or from the Request.  V1 executes no database
-    migration, so the graph canonical main declares for this environment is the
-    only graph a deployable candidate may declare for it.  A pointer that cannot be
-    read, or that carries no head, raises rather than returning something benign:
-    an unestablished environment graph must not let a candidate through.
+    Taken from this host's own root-owned record -- never from the repository, and
+    never from the Request.  V1 executes no database migration, so the graph the
+    host is actually on is the only graph a deployable candidate may declare for it.
+    The repository pointer this once fell back to
+    (`docs/canonical-baseline/CURRENT_HK_RUNTIME.json`) was retired on 2026-10-08:
+    a file in a repository could not truthfully declare what a host is running, and
+    it demonstrably drifted.  A host record that is absent, or that carries no head,
+    raises rather than returning something benign: an unestablished environment
+    graph must not let a candidate through.
     """
     local = local_runtime_override()
     if local is not None:
         return plan_derivation.environment_migration_head(local)
-    return plan_derivation.environment_migration_head(deploy_gate.parse_json(
-        read_repo_file(GO_REPOSITORY, PR_RESOLVER_KEY, plan_derivation.RUNTIME_POINTER)))
+    raise Reject(plan_derivation.E_DATABASE_MIGRATION_GRAPH_MISMATCH)
 
 def read_evidence(task):
     """The signed Evidence of one published Task, addressed by the Task itself.
