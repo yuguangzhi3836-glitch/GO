@@ -2426,8 +2426,8 @@
   },
   "validation": {
     "sequential_git_apply_check": "PASS (three candidate-diff patch groups; #385 already byte-identical in retention base)",
-    "exact_source_blobs": "PASS (6/6 candidate-diff files; 2/2 #385 retained-base files byte-identical)",
-    "python_ast": "PASS (6/6 candidate-diff Python files; 2/2 #385 retained-base Python files)",
+    "exact_source_blobs": "PASS (6/6 original candidate-diff files; 2/2 #385 retained-base files byte-identical; 1 direct C13 test-fixture remediation not claimed as original-source identical)",
+    "python_ast": "PASS (7 candidate-diff application Python files; 2/2 #385 retained-base Python files)",
     "isolated_email_unittest": "PASS (9 test methods, SMTP mocked)",
     "migration_graph_static": {
       "revisions": 146,
@@ -2436,8 +2436,8 @@
       ],
       "migration_files_changed": 0
     },
-    "combined_pytest": "PENDING GitHub isolated PostgreSQL 18.4",
-    "review_for_combined_sha": "PENDING",
+    "combined_pytest": "PENDING NEW SHA; prior C13 run 37741868917 on 89df1b6d2c98 executed 148 tests: 144 PASS, 4 FAIL from missing synthetic JWT signing key",
+    "review_for_combined_sha": "C14 R3 PASS_SCOPED on 89df1b6d2c98 (run 37741731796); new remediation SHA requires fresh C14 then C13",
     "browser_e2e": "NOT_RUN",
     "image_build": "NOT_RUN",
     "candidate_admission": "NOT_RUN"
@@ -2459,7 +2459,7 @@
     "Separate approval for exact deployment; then browser B/C registration, login and hotel onboarding acceptance"
   ],
   "scope_accounting": {
-    "candidate_diff_application_files": 6,
+    "candidate_diff_application_files": 7,
     "candidate_diff_prs": [
       477,
       543,
@@ -2469,6 +2469,13 @@
     "retained_base_prs": [
       385
     ],
-    "note": "#385 product/test blobs are already present byte-identically in the #376 retention base and are not part of this candidate diff."
+    "note": "#385 product/test blobs are already present byte-identically in the #376 retention base and are not part of this candidate diff. The seventh candidate-diff application file is the direct C13 test-fixture remediation above, not a re-imported paid product patch.",
+    "direct_remediation_files": [
+      {
+        "path": "application/tests/registration_terms_test_support.py",
+        "class": "TEST_ONLY_C13_DETERMINISTIC_FAILURE_REMEDIATION",
+        "evidence": "C13 run 37741868917; first failure REGISTRATION_VERIFICATION_NOT_READY because synthetic fixture omitted non-development jwt_signing_key"
+      }
+    ]
   }
 }
