@@ -193,20 +193,67 @@ jobs:
           docker build -f control-plane/c13-c14-lite/machine.Dockerfile \
             -t go-c13-machine:local control-plane/c13-c14-lite
           set +e
+          # The two variables below are not decoration: without them this job is not the
+          # job it claims to be.
+          #
+          # `application/tests/conftest.py` decides WHICH database the suite runs against
+          # from GO_TEST_DATABASE_URL, and when it is absent it falls back to a private
+          # SQLite file. Passing DATABASE_URL alone therefore leaves the published manifest
+          # saying "PostgreSQL 18.4" while every assertion ran on SQLite - measured on a real
+          # round, not imagined.
+          #
+          # That first clause is only true on this branch. On main the fixture overwrote
+          # DATABASE_URL UNCONDITIONALLY, so a candidate derived from main could not run
+          # against PostgreSQL however the job was configured - supplying a database nobody
+          # reads is the same defect as reporting one nobody used. The fixture is corrected
+          # here, in one line, touching no assertion and no interface.
+          #
+          # JWT_SIGNING_KEY is the variable the product's own registration CI sets.
+          # `registration_verification.ready()` refuses a key that is missing, shorter than
+          # 32 characters, or starts with `dev-`, so without it the registration tests fail
+          # with REGISTRATION_VERIFICATION_NOT_READY - a red about the sandbox rather than
+          # about the candidate.
+          #
+          # Both values are test-only literals confined to this disposable container. Neither
+          # is a secret and neither grants any authority.
+          #
+          # Neither of them, however, is PROOF. A value the job writes into its own
+          # environment says what the job intended; it does not say what the suite did. So
+          # the inventory runs with lite_database_observation.py loaded as a pytest plugin
+          # (-p, mounted read-only from this run's own commit). It listens to SQLAlchemy's
+          # engine_connect event - which fires when a Connection is PROCURED, not when an
+          # Engine is built - and reports the DIALECT of every engine that really connected.
+          # The manifest may then name a PostgreSQL version, and only the one the server
+          # itself reported through that engine; a run that reached SQLite reports sqlite and
+          # is refused a version. Nothing is read from the schema: a read-only suite that
+          # creates no table is still a PostgreSQL suite, and an engine that was built and
+          # never used is still not evidence of anything.
+          #
+          # `-p lite_database_observation` sits AFTER `"$@"` on purpose. `python -m pytest
+          # "$@"` is itself asserted by test_lite_machine_inventory, because `"$@"` has to
+          # reach pytest as separate quoted argv elements rather than being spliced into
+          # this shell string by a candidate-supplied path. Options already trail `"$@"`
+          # here (`-q --junitxml`), so the plugin rides along in the same place instead of
+          # disturbing an argv boundary that another test is watching.
           docker run --rm \
             -v "$PWD/candidate:/srv:ro" \
+            -v "$PWD/control-plane/c13-c14-lite/lite_database_observation.py:/opt/lite_database_observation.py:ro" \
             -v "$RUNNER_TEMP/machine:/out" \
+            -e PYTHONPATH=/opt \
+            -e C13_DATABASE_OBSERVATION_OUT=/out/database.json \
             -e PGHOST=host.docker.internal \
             -e PGPORT=5432 \
             -e PGUSER=postgres \
             -e PGPASSWORD=c13-lite-local-only \
             -e PGDATABASE=c13_lite \
             -e DATABASE_URL="postgresql+psycopg://postgres:c13-lite-local-only@host.docker.internal:5432/c13_lite" \
+            -e GO_TEST_DATABASE_URL="postgresql+psycopg://postgres:c13-lite-local-only@host.docker.internal:5432/c13_lite" \
+            -e JWT_SIGNING_KEY="c13-lite-test-only-signing-key-32bytes" \
             -e GO_MEDIA_CACHE_DIR=/tmp/go-media-cache \
             -w /srv/application \
             --add-host=host.docker.internal:host-gateway \
             go-c13-machine:local \
-            bash -lc 'pip install -q pytest && cp -r /srv/application /tmp/candidate-application && pip install -q "/tmp/candidate-application[dev]" && python -m pytest "$@" -q --junitxml=/out/junit.xml' c13-tests "${test_paths[@]}" \
+            bash -lc 'pip install -q pytest && cp -r /srv/application /tmp/candidate-application && pip install -q "/tmp/candidate-application[dev]" && python -m pytest "$@" -q --junitxml=/out/junit.xml -p lite_database_observation' c13-tests "${test_paths[@]}" \
             2>&1 | tee "$RUNNER_TEMP/machine/stdout.txt"
           pipeline_status=("${PIPESTATUS[@]}")
           set -e
@@ -230,9 +277,32 @@ jobs:
           def sha(name):
               path = root / name
               return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+          def read_json(name):
+              path = root / name
+              if not path.is_file():
+                  return None
+              try:
+                  return json.loads(path.read_text())
+              except ValueError:
+                  return None
+          # WHICH DATABASE THIS MANIFEST MAY REPORT is the one the machine step OBSERVED, not
+          # one written here. This field used to be the literal "18.4": the reviewer, the
+          # sealed C13 record and the round decision all read it, while the suite may have
+          # run on SQLite - the workflow said PostgreSQL because the workflow always said
+          # PostgreSQL. It now carries the version `lite_database_observation.py` read from
+          # the server through the engine the inventory used, and it carries NOTHING when
+          # that observation did not show a PostgreSQL dialect on a real connection, so an
+          # unproven round cannot describe itself as a PostgreSQL test. The refusal is not
+          # enforced here: it is the pre-existing `c13_machine_job_postgres_missing` rule in
+          # `lite_bundle.validate_c13`, which rejects a C13 record whose machine job cannot
+          # name its database. The raw observation travels alongside it, so a reader can see
+          # what was measured rather than only what was concluded.
+          observation = read_json("database.json")
+          proven = isinstance(observation, dict) and observation.get("postgresql_actually_used") is True
           manifest = {
               "inventory": os.environ["MACHINE_INVENTORY"],
-              "postgres_version": "18.4",
+              "postgres_version": observation.get("postgres_version") if proven else None,
+              "database_observation": observation,
               "docker_used": (root / "exit_code.txt").is_file(),
               "exit_code": int((root / "exit_code.txt").read_text()) if (root / "exit_code.txt").is_file() else None,
               "step_outcome": os.environ["MACHINE_OUTCOME"],
@@ -255,6 +325,50 @@ jobs:
           path: ${{ runner.temp }}/machine
           if-no-files-found: error
           retention-days: 90
+
+      # EVIDENCE FIRST, REFUSAL SECOND. Everything this round measured - the manifest, the
+      # JUnit file, the raw stdout and the database observation - is already on disk and
+      # already uploaded by the step above, so an unproven round still leaves a complete
+      # record behind. What it must not leave behind is a C13 AI review.
+      #
+      # Until this step existed, a machine job that never reached PostgreSQL stayed GREEN.
+      # The round then ran the fresh AI review - a paid call - of a candidate whose "PostgreSQL
+      # 18.4" evidence had actually been produced on SQLite, and the only thing that objected
+      # was the seal, at the very end, after the money was spent. A measurement that is
+      # reported but not enforced is a measurement the next stage does not have to believe.
+      #
+      # So the job refuses here, where the fact was measured. `c13-ai-review` declares
+      # `needs: c13-machine-test` and no `if:`, so a failed machine job SKIPS it: no review is
+      # requested, no artifact is downloaded, and no credential is ever unsealed. Deleting
+      # this step restores the old shape silently, which is why the offline suite extracts
+      # this script from the shipped bytes and runs it against proven and unproven manifests.
+      - name: Refuse an unproven machine test (no PostgreSQL connection observed)
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, pathlib, sys
+          root = pathlib.Path(os.environ["RUNNER_TEMP"]) / "machine"
+          manifest_path = root / "manifest.json"
+          if not manifest_path.is_file():
+              sys.exit("C13_MACHINE_TEST_DID_NOT_PROVE_POSTGRESQL: no manifest was recorded")
+          manifest = json.loads(manifest_path.read_text())
+          observation = manifest.get("database_observation") or {}
+          # Both halves are required, and neither is read from the manifest's own summary:
+          # the observation is the measurement, the version is the name the record binds.
+          # A proven observation with no readable version is refused exactly like an unproven
+          # one, because the C13 record has nothing it may name.
+          proven = observation.get("postgresql_actually_used") is True
+          version = manifest.get("postgres_version")
+          named = isinstance(version, str) and version.strip() != ""
+          if not (proven and named):
+              sys.exit(
+                  "C13_MACHINE_TEST_DID_NOT_PROVE_POSTGRESQL: postgresql_actually_used=%r "
+                  "postgres_version=%r reason=%r dialects_used=%r observation_errors=%r"
+                  % (observation.get("postgresql_actually_used"), version,
+                     observation.get("reason"), observation.get("dialects_used"),
+                     observation.get("observation_errors")))
+          print("MACHINE_TEST_PROVED_POSTGRESQL", version)
+          PY
 
   c13-ai-review:
     name: C13 fresh AI quality review (no candidate execution, no Docker)

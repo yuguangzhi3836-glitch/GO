@@ -8,7 +8,10 @@ import pytest
 
 # tempfile is portable across the Windows review workstation and Linux Staging.
 DB = Path(os.getenv("GO_TEST_DB_PATH", str(Path(tempfile.gettempdir()) / f"go_hotel_test_{os.getpid()}_{uuid.uuid4().hex}.db")))
-os.environ["DATABASE_URL"] = f"sqlite+pysqlite:///{DB}"
+# An isolated evidence job (the C13 machine test) supplies GO_TEST_DATABASE_URL, and the
+# suite then runs against THAT database. Without it the default is exactly what it always
+# was - the private SQLite file above. Nothing else about the run changes.
+os.environ["DATABASE_URL"] = os.getenv("GO_TEST_DATABASE_URL") or f"sqlite+pysqlite:///{DB}"
 os.environ["SAGA_RETRY_SECONDS"] = "0"
 os.environ["OUTBOX_MAX_ATTEMPTS"] = "5"
 
