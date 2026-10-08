@@ -70,18 +70,19 @@ GO 是一个**酒店 / 机票 / 火车票 / 租车 / 用车 / 景点**多业态�
 
 ## 4. 老板现在怎么派活
 
-老板**只给意图**，不给做法。
+老板 GPT 只做一件事：**把老板的意图写成 GO-FORGE Task，提交到 `chenzhenxi1-sudo/go-control-tasks` 的 `main/tasks/`，然后停止。**
 
-### 派部署 / 查看（部署轴）
+GO Forge 收到 Task 后，自己负责查 PR、找候选、读真实运行状态、部署、检查、回滚、找对应文件和发布 Evidence。老板 GPT 不需要知道这些实现细节。
+
+### A. 要部署一个 PR
+
+老板说：
 
 ```text
-Deploy PR <number> to HK-STAGING.
-```
-```text
-Inspect HK-STAGING for the current runtime identity.
+Deploy PR 558 to HK-STAGING.
 ```
 
-这两句话会被转成 `chenzhenxi1-sudo/go-control-tasks` 的 `main` 上一份 JSON：
+老板 GPT 提交：
 
 ```json
 {
@@ -90,24 +91,70 @@ Inspect HK-STAGING for the current runtime identity.
   "environment": "HK-STAGING-01",
   "target_pr": 558,
   "schema_version": "1",
-  "task_id": "forge-deploy-pr558-20261008T000000Z",
-  "issued_at": "2026-10-08T00:00:00.000000Z",
-  "nonce": "<随机，至少 16 字符>",
+  "task_id": "forge-deploy-pr558-<unique>",
+  "issued_at": "<UTC ISO-8601>",
+  "nonce": "<unique random string>",
   "parameters": {}
 }
 ```
 
-| 字段 | 谁给 | 说明 |
-|---|---|---|
-| `authority` | 老板 | 必须**恰好**是 `GO-FORGE`，否则被忽略 |
-| `action_id` | 老板 | `FORGE_DEPLOY` 部署 / `FORGE_INSPECT` 只看 / `FORGE_STOP` 停一次运行 |
-| `environment` | 老板 | `HK-STAGING-01` |
-| `target_pr` | 老板 | PR 号。**这就是全部意图。** |
-| `schema_version` / `task_id` / `issued_at` / `nonce` / `parameters` | 信封 | 创建 Task 时生成；`parameters` 留 `{}` |
+然后结束。**你提部署 Task，GO Forge 就负责部署。**
 
-**不要**自己提供：源码 commit、候选 id、artifact/package 摘要、image id、migration head、compose 路径、TEST_PR 参数、deployctl argv。**全部由 Forge 从现场推导**；字段没有生产者时 Forge 会**按名字拒绝**，并指出它属于哪个组件。
+### B. 要检查某个 PR / 某次部署
 
-老板 GPT / 执行 AI 到这里就结束：生成最小 Task JSON，写入 `chenzhenxi1-sudo/go-control-tasks/tasks/`。后续候选解析、现场检查、部署、验证、回滚和 Evidence 全部由 GO Forge 自己处理。
+老板说：
+
+```text
+Inspect PR 558 on HK-STAGING.
+```
+
+提交同样的 Task，只把：
+
+```json
+"action_id": "FORGE_INSPECT",
+"target_pr": 558
+```
+
+`FORGE_INSPECT` 只检查、只报告，不授权部署。
+
+### C. 要看 HK 现在实际跑什么、对应什么文件
+
+老板可以直接说：
+
+```text
+看看 HK-STAGING-01 现在实际跑的是哪个版本，对应哪些 source / image / 关键文件，把结果给我。
+```
+
+这也是一个 `FORGE_INSPECT` Task；这种纯现场检查**不需要先指定 PR**。把要看的内容放进 `parameters`：
+
+```json
+{
+  "authority": "GO-FORGE",
+  "action_id": "FORGE_INSPECT",
+  "environment": "HK-STAGING-01",
+  "schema_version": "1",
+  "task_id": "forge-inspect-<unique>",
+  "issued_at": "<UTC ISO-8601>",
+  "nonce": "<unique random string>",
+  "parameters": {
+    "request": "查看 HK-STAGING-01 当前实际运行版本、对应 source/image/关键文件路径与 Evidence，并返回结果。"
+  }
+}
+```
+
+GO Forge 会去读真实现场和 Evidence，找到对应版本 / 文件 / 路径并把结果返回。**不要让老板 GPT 自己猜现场版本。**
+
+### Task 规则
+
+- Task 文件路径：`chenzhenxi1-sudo/go-control-tasks` → `main/tasks/<task_id>.json`
+- `authority` 必须是 `GO-FORGE`
+- 部署用 `FORGE_DEPLOY`
+- 检查 / 查版本 / 查文件用 `FORGE_INSPECT`
+- `environment` 是 `HK-STAGING-01`
+- `task_id`、`issued_at`、`nonce` 只需要唯一 / 当前即可
+- 不要自己提供 source commit、candidate id、artifact、image id、migration head、compose 路径、TEST_PR 参数、deployctl 命令；这些都是 GO Forge 的工作
+- 正常模式不要发 `HK_STAGING_TEST_PR / CANARY / VERIFY / DEPLOY`，也不要走 Old Command Center
+- 结果先看同仓 `receipts/<task_id>.json`，最终权威结果看签名 Evidence
 
 ### 派开发任务（开发轴）
 
