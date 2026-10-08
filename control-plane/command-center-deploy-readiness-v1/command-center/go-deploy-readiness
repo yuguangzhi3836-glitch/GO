@@ -119,8 +119,8 @@ CANDIDATE_SOURCE_AGREEMENT = (("source_commit", "source_commit"),
                               ("application_tree", "application_git_tree"),
                               ("source_fingerprint", "source_tree_sha256"))
 # The V1 Human Approval authority. It is the set of GitHub users this project
-# authorises, ported from the live Bridge so a test re-reads that file and fails
-# on drift. The authority is an authenticated identity, not a key: the 2026-09-16
+# authorises, ported verbatim from the retired Old Command Center gate and frozen
+# here as this component's own list. The authority is an authenticated identity, not a key: the 2026-09-16
 # scope reset cancelled the dedicated approval signing key, so an approval is
 # never signed and there is no approval public key to publish or to rotate.
 APPROVAL_IDENTITIES = ("yuguangzhi3836-glitch", "chenzhenxi1-sudo")
@@ -144,9 +144,10 @@ MANDATORY_GATES = ("APPROVED_CANDIDATE", "SOURCE_BINDING", "PACKAGE_BINDING",
                    "CANARY", "BRIDGE_ACCEPTANCE")
 ADVISORY_GATES = ()
 
-# --- ported from boss-deploy-request-v1/go_deploy_request.py ----------------
-# These are the live Bridge's own constants. A test re-reads that file and fails
-# if any of them drift, so this copy cannot silently diverge from the real gate.
+# --- the acceptance gate's own constants -----------------------------------
+# Ported verbatim from the Old Command Center deploy gate before that component
+# was retired on 2026-10-08. They are this component's only copy now; nothing
+# re-reads an external file, so they can only change by an edit here.
 PLAN_FIELDS = ("schema_version", "plan_id", "environment", "action_id", "candidate",
                "expected_current_image_id", "target_services", "protected_non_targets",
                "migration", "production", "automatic_rollback",
@@ -166,8 +167,8 @@ TEST_PR_PARAMETERS = ("builder_profile", "source")
 TEST_PR_SOURCE = ("repository", "pr_number", "commit_sha")
 APPROVAL_SCOPE = "HK_STAGING_DEPLOY_FIXED_EIGHT"
 # How a deployment is authorised, and the form of the one-time authorisation's id.
-# Ported from the live Bridge (`AUTHORIZATION_MODE`) and from go_deploy_request's
-# `approval_id_for`; the drift test re-reads both files.
+# The form the retired Old Command Center gate used (`AUTHORIZATION_MODE`, and the
+# derived `approval_id_for`), kept verbatim as this component's own rule.
 AUTHORIZATION_MODE = "request"
 APPROVAL_ID_PREFIX = "approval-"
 TASK_FIELDS = ("schema_version", "task_id", "nonce", "issued_at", "expires_at",
@@ -452,10 +453,10 @@ def verify_signature(key, value, encoding):
 
 
 # --------------------------------------------------------------------------- #
-# the live Bridge's own rules, ported read-only
+# the acceptance gate's own rules, frozen in this component
 # --------------------------------------------------------------------------- #
 def candidate_remote(value):
-    """Port of go_deploy_request.candidate_repository()."""
+    """The candidate repository rule, as the retired gate wrote it."""
     if not isinstance(value, str) or not value:
         return False
     trimmed = value[:-4] if value.endswith(".git") else value
@@ -464,7 +465,7 @@ def candidate_remote(value):
 
 
 def derived_plan_id(candidate, canary_task):
-    """Port of go_deploy_request.plan_id_for(): the name is a function, not a choice."""
+    """The plan name is a function, not a choice: the retired gate's own rule."""
     parameters = canary_task.get("parameters") if isinstance(canary_task, dict) else None
     release = parameters.get("release_id") if isinstance(parameters, dict) else None
     if not isinstance(release, str) or not release:
@@ -477,7 +478,7 @@ def derived_plan_id(candidate, canary_task):
 
 
 def bridge_test_pr_proof_problems(task, evidence, task_key, evidence_key):
-    """Port of go_deploy_request.test_pr_proof(): the sealed TEST_PR of this candidate.
+    """The retired gate's test_pr_proof rule: the sealed TEST_PR of this candidate.
 
     This is what replaced the retired `sealed_node = PASS`. sealed_node's name stood for
     one fact -- the artifact a deployment loads is the sealed product of this exact
@@ -573,7 +574,7 @@ def bridge_test_pr_proof_problems(task, evidence, task_key, evidence_key):
 
 
 def bridge_proof_problems(task, evidence, action, task_key, evidence_key, at, max_age):
-    """Port of go_deploy_request.proof(): every reason the Bridge would refuse."""
+    """Every reason the frozen acceptance rules would refuse."""
     problems = []
     for label, value, key, encoding in (("task", task, task_key, "hex"),
                                         ("evidence", evidence, evidence_key, "base64")):
@@ -652,7 +653,7 @@ def bridge_proof_problems(task, evidence, action, task_key, evidence_key, at, ma
 
 
 def bridge_bundle_problems(bundle, identities, at):
-    """Port of go_deploy_request.validate_bundle(). Returns (problems, detail)."""
+    """The bundle's field and binding rules. Returns (problems, detail)."""
     problems, detail = [], {}
     try:
         exact_set(bundle, ("plan", "approval") + PROOF_OBJECTS, "bundle_fields")

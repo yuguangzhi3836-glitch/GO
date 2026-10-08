@@ -60,13 +60,19 @@ record is written once because its id is the request identity.
 A later stage is still evaluated and reported even when an earlier one already
 refused, so **one run shows every problem** rather than the first one.
 
-## No new refusal vocabulary
+## Refusal vocabulary
 
-Every request-side reason is a token the Boss Request Bridge can itself raise, and
-the test suite extracts the Bridge's own vocabulary from its three sources — both
-call shapes, 96 tokens — and fails if this component can emit anything outside it.
-The check table lives in the contract, so a check cannot be declared in prose and
-forgotten in code, and every declared check is asserted to have a code path.
+Every request-side reason is declared by this component's own contract,
+`contracts/deploy_dry_run_v1.schema.json`. The check table lives there, so a check
+cannot be declared in prose and forgotten in code, and every declared check is
+asserted to have a code path.
+
+The subsection that used to sit here pinned that vocabulary against the Boss
+Request Bridge's own source and failed if this component could emit anything
+outside it. That cross-check was retired on 2026-10-08 together with
+`control-plane/boss-deploy-request-v1`: the vocabulary only ever existed inside
+the retired component, and re-anchoring it to the copy that survives would have
+meant either loosening the assertion or copying a retired implementation forward.
 
 Gate-derived refusals use the gate name as the reason code with
 `reason_origin = DEPLOY_READINESS_GATE`, so a refusal always names which of the two

@@ -87,13 +87,16 @@ BRIDGE_LEDGER_STATE    a terminal ledger state, e.g. dry_run_no_task_published
 
 The closed classes and the tokens that map to them live in
 `contracts/request_fact_v1.schema.json`, not in the exporter's code. The test
-suite extracts **every** refusing token the Bridge can emit from the four Bridge
-sources in this repository — 182 of them today, 23 of which exist only as a reason
-argument — and fails if the contract cannot classify any one of them. Both call
-shapes are scanned: `Reject("token")` raised directly, and the `reason` argument of
-`exact(...)` / `match(...)`. Scanning only the first shape leaves those 23
-unclassified, which is a blind spot this gate exists to catch — and did catch. Both
-counts are reported by the suite itself (`bridge_refusal_tokens_observed`,
+suite extracts every refusing token it can still see in this repository — from the
+single Bridge source that survives here, the signed copy
+`boss-test-pr-live-integration-v1` still installs, 27 of them today — and fails if
+the contract cannot classify any one of them. Both call shapes are scanned:
+`Reject("token")` raised directly, and the `reason` argument of `exact(...)` /
+`match(...)`. The scan used to cover four sources and 182 tokens; the other three
+lived in `control-plane/boss-deploy-request-v1`, which was retired on 2026-10-08
+with the rest of the Old Command Center request path, so the coverage narrowed
+with it instead of being re-created from a copy of the retired code. Both counts
+are reported by the suite itself (`bridge_refusal_tokens_observed`,
 `bridge_refusal_tokens_via_the_reason_argument`), so they can be re-measured rather
 than believed. A token nobody has seen yet is carried as
 `UNCLASSIFIED_REJECT` with the token intact.

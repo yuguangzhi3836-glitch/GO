@@ -1,9 +1,8 @@
 """Canonical JSON / digest helpers.
 
-Same convention as ``control-plane/boss-deploy-request-v1/go_deploy_request.py``
-(``canonical`` / ``digest``): sorted keys, no whitespace, no NaN, UTF-8.
-Reused rather than re-invented so C13/C14 roots are comparable with the rest of
-the control plane.
+The convention the rest of the control plane uses (``canonical`` / ``digest``):
+sorted keys, no whitespace, no NaN, UTF-8. Kept here rather than re-invented so
+C13/C14 roots stay comparable with the rest of the control plane.
 """
 from __future__ import annotations
 

@@ -6,9 +6,15 @@ subprocess, no runtime credential or state path, no private key anywhere, no
 live Control Plane or Hong Kong contact.
 
 The claims below are what the rehearsal says about itself, and the test suite is
-what makes them true. The three that matter most: a TASK_CANDIDATE is not a Task,
-DEPLOY_PERFORMED is false in every outcome, and no request-side refusal reason
-exists that the Boss Request Bridge cannot itself raise.
+what makes them true. The two that matter most: a TASK_CANDIDATE is not a Task,
+and DEPLOY_PERFORMED is false in every outcome.
+
+The rehearsal's request-check vocabulary used to be cross-checked against the
+Boss Request Bridge's own source. That component was retired on 2026-10-08
+together with the rest of the Old Command Center request path, so the
+cross-check was retired with it instead of being re-anchored to a copy of the
+retired implementation. The vocabulary the rehearsal uses is declared by its
+own published contract, contracts/deploy_dry_run_v1.schema.json.
 """
 import hashlib
 import io
@@ -51,8 +57,6 @@ result = unittest.TextTestRunner(stream=log, verbosity=2).run(suite)
 rehearsal = t.D
 contract = json.loads(t.CONTRACT.read_text(encoding="utf-8"))
 checks = rehearsal.Checks(t.CONTRACT)
-bridge = t.bridge_tokens()
-stray = sorted(entry["token"] for entry in checks.request_checks if entry["token"] not in bridge)
 
 summary = {
     "schema_version": "1",
@@ -69,9 +73,12 @@ summary = {
     "reason_origins": sorted(o for o in
                              contract["properties"]["checks"]["items"]
                              ["properties"]["reason_origin"]["enum"] if o),
-    "bridge_refusal_tokens_available": len(bridge),
-    "request_checks_outside_the_bridge_vocabulary": stray,
-    "no_new_refusal_vocabulary": stray == [],
+    # The rehearsal's refusal vocabulary used to be cross-checked against the Boss
+    # Request Bridge's own source. That component was retired on 2026-10-08, so the
+    # cross-check was retired with it rather than re-anchored to a copy of the
+    # retired implementation. The vocabulary is declared by the rehearsal's own
+    # published contract, which is what `checks.request_checks` is read from.
+    "refusal_vocabulary_source": "contracts/deploy_dry_run_v1.schema.json",
     "candidate_is_a_task": "NO",
     "candidate_executable": "NO",
     "candidate_signed": "NO",

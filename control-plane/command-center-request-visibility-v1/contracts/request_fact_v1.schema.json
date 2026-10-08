@@ -55,7 +55,7 @@
         "HK_STAGING_ROLLBACK",
         "CONTROL_PLANE_HEALTH"
       ],
-      "description": "Exactly the exporter's ACTION_IDS, which ActionRegistryTests pins to the Bridge's own channel config (control-plane/boss-deploy-request-v1/config.json -> allowed_actions). This enum was the one member of that contract left behind when ROLLBACK joined the channel, so a valid ROLLBACK fact failed the schema its own component publishes while the exporter and the tests already carried it."
+      "description": "Exactly the exporter's ACTION_IDS, which ActionRegistryTests pins to this enum. This enum was the one member of the contract left behind when ROLLBACK joined the channel, so a valid ROLLBACK fact failed the schema its own component publishes while the exporter and the tests already carried it. It used to be pinned instead to the Old Command Center Bridge's own channel config (`allowed_actions`), which was retired on 2026-10-08."
     },
     "environment": {
       "const": "HK-STAGING-01"

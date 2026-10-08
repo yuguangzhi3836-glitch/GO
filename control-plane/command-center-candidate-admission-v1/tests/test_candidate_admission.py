@@ -52,11 +52,6 @@ CURRENT_REAL_EVIDENCE_SHA256 = "b12537929f4a839a0715f98a9202481a20322b7cfb3c2377
 CURRENT_ARTIFACT = "sha256:6b92050ed42c115d29d2ff0b540c711b21747c7ed961384629a35571cf6b93a7"
 CURRENT_PACKAGE = "e70238c7c12a67fe6ebd54958237790f82aad39f602bcea3e11699aaa651f382"
 SUPERSEDED_ARTIFACT = "sha256:fe0d2c3670444716cf0a84515a4321de1347b6be4570829d3767fe189a6e87e1"
-DEPLOY_COMPONENT = GO / "control-plane" / "boss-deploy-request-v1"
-BRIDGE = DEPLOY_COMPONENT / "go-boss-request-bridge"
-# The deploy gate is where the candidate and service topology rules actually live;
-# the bridge carries the git@ form of the repository used to fetch a PR head.
-DEPLOY_GATE = DEPLOY_COMPONENT / "go_deploy_request.py"
 TEST_PR = (GO / "control-plane" / "boss-test-pr-live-integration-v1" / "hk-staging"
            / "hk_agent" / "test_pr.py")
 # Immutable historical recipe from main 4931fc3374b61e0fa03a1c98f0fae38bce4301ae.
@@ -595,33 +590,20 @@ class ContractTests(unittest.TestCase):
 
 
 class LiveConstantTests(unittest.TestCase):
-    """The ported constants must equal the live system's own, or this component lies."""
+    """The ported constants must equal the live executor's own, or this component lies.
+
+    The deploy gate and the Bridge these constants were once pinned to were retired
+    on 2026-10-08 with the Old Command Center request path; the port inside this
+    component is now the only copy. What survives here is the pin against the live
+    TEST_PR executor, which is still installed.
+    """
 
     def setUp(self):
-        self.bridge = BRIDGE.read_text(encoding="utf-8")
-        self.gate = DEPLOY_GATE.read_text(encoding="utf-8")
         self.test_pr = TEST_PR.read_text(encoding="utf-8")
-
-    def test_the_candidate_repository_matches_the_live_gate(self):
-        # The gate names the repository once, as a module constant, and compares the plan's
-        # candidate against it. The guard resolves the constant rather than the literal, so
-        # renaming the constant cannot silently retire the check.
-        declared = re.search(r"^REPOSITORY = '([^']+)'", self.gate, re.M)
-        self.assertIsNotNone(declared, "the live gate no longer declares REPOSITORY")
-        self.assertEqual(declared.group(1), A.CANDIDATE_REPOSITORY)
-        self.assertIn("if candidate['repository']!=REPOSITORY: raise Reject('candidate_repository')",
-                      self.gate)
-        self.assertIn("git@github.com:%s.git" % A.CANDIDATE_REPOSITORY, self.bridge)
-
-    def test_the_fixed_service_topology_matches_the_live_gate(self):
-        found = re.search(r"^SERVICES = \[(.*?)\]", self.gate, re.M | re.S)
-        self.assertIsNotNone(found)
-        self.assertEqual(re.findall(r"'([a-z-]+)'", found.group(1)), list(A.SERVICES))
 
     def test_the_test_pr_action_and_profile_match_the_live_executor(self):
         self.assertIn('ACTION = "%s"' % A.TEST_PR_ACTION, self.test_pr)
         self.assertIn('PROFILE = "%s"' % A.BUILDER_PROFILE, self.test_pr)
-        self.assertIn('"builder_profile":"%s"' % A.BUILDER_PROFILE, self.bridge)
 
     def test_the_executor_version_and_dockerfile_match_the_live_executor(self):
         self.assertIn('EXECUTOR_VERSION = "%s"' % A.BUILDER_EXECUTOR_VERSION, self.test_pr)

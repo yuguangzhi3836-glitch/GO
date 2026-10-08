@@ -64,7 +64,7 @@ package enforces that, and no template gate or preflight is implied.
 
 | File | Role |
 |---|---|
-| `lite_canonical.py` | canonical JSON + SHA256, same convention as `go_deploy_request.py` |
+| `lite_canonical.py` | canonical JSON + SHA256, the convention the rest of the control plane uses |
 | `lite_errors.py` | `Reject` / `Block` vocabulary and the six failure classes |
 | `lite_candidate.py` | frozen candidate contract, freshness, dispatch binding |
 | `lite_review_brief.py` | `REVIEW_BRIEF_V1`: the associated pull request's **declared** delivery brief, resolved read-only and matched uniquely (or refused) — task context, not an immutable original task |

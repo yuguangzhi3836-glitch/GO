@@ -304,16 +304,17 @@ jobs:
           assert document['candidate'] is None
           assert 'plan_not_already_consumed' in document['decision']['unproven']
 
-          # 7. no check outside the Bridge's own refusal vocabulary, and no Task anywhere
+          # 7. every declared request check belongs to the rehearsal's own published
+          # contract, and no Task appears anywhere. The "subset of the Bridge's own
+          # refusal vocabulary" assertion was retired on 2026-10-08 together with the
+          # Boss Request Bridge itself: that vocabulary only ever existed inside the
+          # retired component, and reconstructing it here would mean copying a retired
+          # implementation forward just to keep a check green.
           checks = json.loads((component / 'contracts/deploy_dry_run_v1.schema.json')
                               .read_text(encoding='utf-8'))
-          sys.path.insert(0, str(component / 'tests'))
-          import test_deploy_dry_run as t  # noqa: E402
-
-          vocabulary = t.bridge_tokens()
           declared = [entry['token'] for entry in checks['x-go-request-checks']['checks']]
-          assert not [token for token in declared if token not in vocabulary], declared
-          assert len(vocabulary) >= 96
+          assert declared, 'the contract declares no request checks'
+          assert len(set(declared)) == len(declared), declared
 
           for produced in sorted(work.glob('run-*/DEPLOY_DRY_RUN.json')):
               blob = json.dumps(json.loads(produced.read_text(encoding='utf-8')))
@@ -331,8 +332,6 @@ jobs:
               'outcomes': ['TASK_CANDIDATE', 'REJECTED', 'UNPROVEN'],
               'stages': 4,
               'request_checks': len(declared),
-              'bridge_refusal_tokens_available': len(vocabulary),
-              'request_checks_outside_the_bridge_vocabulary': 0,
               'legal_dry_run_produces_a_candidate': True,
               'a_candidate_is_not_a_task': True,
               'every_shape_fault_is_a_deterministic_reject': True,

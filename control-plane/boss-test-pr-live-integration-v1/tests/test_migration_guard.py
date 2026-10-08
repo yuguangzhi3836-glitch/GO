@@ -36,8 +36,6 @@ DEPLOY_RUNTIME_PATH = RUNTIME / "deploy_runtime.py"
 AGENT_ACTIONS_PATH = ROOT / "hk-staging" / "hk_agent" / "deployment_actions.py"
 ADMISSION_FACT_PATH = (REPO / "control-plane" / "command-center-candidate-admission-v1"
                        / "candidate_fact.py")
-PLAN_DERIVATION_PATH = (REPO / "control-plane" / "boss-deploy-request-v1"
-                        / "plan_derivation.py")
 
 SUPPORTED_HEAD = "0133_flight_change_plan"
 
@@ -282,7 +280,12 @@ class WiringStatusTests(unittest.TestCase):
 
 
 class CrossLayerAgreementTests(unittest.TestCase):
-    """One vocabulary, three components, no imports between them."""
+    """One vocabulary, two components, no imports between them.
+
+    The third layer this pinned was the Old Command Center plan derivation, retired
+    on 2026-10-08 with `control-plane/boss-deploy-request-v1`. The two that remain
+    are the ones the live TEST_PR path actually runs.
+    """
 
     def _constants(self, path, names):
         source = path.read_text(encoding="utf-8")
@@ -293,12 +296,11 @@ class CrossLayerAgreementTests(unittest.TestCase):
                 found[name] = match.group(1)
         return found
 
-    def test_all_three_layers_declare_the_same_two_codes(self):
+    def test_the_two_layers_declare_the_same_two_codes(self):
         names = ("E_DATABASE_MIGRATION_REQUIRED", "E_DATABASE_MIGRATION_GRAPH_MISMATCH")
         layers = {
             "executor": self._constants(GUARD_PATH, names),
             "admission": self._constants(ADMISSION_FACT_PATH, names),
-            "plan": self._constants(PLAN_DERIVATION_PATH, names),
         }
         for layer, found in layers.items():
             self.assertEqual(sorted(found), sorted(names),

@@ -439,9 +439,11 @@ Four properties are enforced by tests rather than asserted in prose:
   reason it failed, and records `REQUEST_BINDING_UNPROVEN` — never
   `REQUEST_VALIDATED`. Forging a positive fact would need the Task signing key.
 * **A refusal never loses its reason.** The Bridge's token is carried verbatim
-  with an `origin`; a token the contract cannot classify is
-  `UNCLASSIFIED_REJECT`, and the contract is checked against every refusing token
-  the Bridge sources can emit (96 today, zero unclassified).
+  with an `origin`, and a token the contract cannot classify is
+  `UNCLASSIFIED_REJECT`, so an unseen reason is surfaced rather than dropped. (The
+  cross-check that compared the classifier against every refusing token the
+  Bridge's own sources can emit was retired on 2026-10-08 with the Boss Deploy
+  Request component; this layer never read that component.)
 * **A duplicate or a replay is never a success.** Each is its own lifecycle and
   each is reported with `counted_as_success = false`.
 * **Nothing here is authority.** Every fact carries the same eight `false` values
@@ -536,7 +538,7 @@ Read from repository evidence, not from old notes.
 
 | Element | Where it really is |
 |---|---|
-| Request → Task Bridge | `control-plane/boss-deploy-request-v1/go-boss-request-bridge` (`1.10.0-post-action-verify`, sha256 `74336fd1…`), 22/22 self-tests — the six channel actions, DEPLOY included, and the same bytes the Command Center host runs |
+| Request → Task Bridge | **retired 2026-10-08** with the rest of the Old Command Center request path. It lived in `control-plane/boss-deploy-request-v1/go-boss-request-bridge` (`1.10.0-post-action-verify`) and carried the six channel actions, DEPLOY included. |
 | Archived Bridge snapshot | `control-plane/boss-test-pr-live-integration-v1/command-center/go-boss-request-bridge` (`1.2.0`, VERIFY-only) — historical. Never read it as the current capability inventory |
 | Task repository | `chenzhenxi1-sudo/go-control-tasks` → `tasks/<task_id>.json`, 170 Tasks (counted 2026-09-17) |
 | Evidence repository | `chenzhenxi1-sudo/go-control-evidence` → `evidence/<task_id>-<nonce>.json`, 145 records (counted 2026-09-17) |

@@ -160,7 +160,7 @@ SYNTHETIC_CANDIDATE_DIFF = (
 
 #: The machine evidence shape the first real C13 run produced, used to build the fixture that
 #: proves the reviewer is now given something structured. Synthetic, and it says so.
-SYNTHETIC_MACHINE_INVENTORY = "control-plane/boss-deploy-request-v1/tests/test_deploy_entry.py"
+SYNTHETIC_MACHINE_INVENTORY = "control-plane/c13-c14-lite/test_lite_contract.py"
 SYNTHETIC_JUNIT = (
     "<?xml version='1.0' encoding='utf-8'?>\n"
     "<testsuites name='pytest'>\n"
@@ -1095,7 +1095,7 @@ class ReviewContentInputTests(_RoundCliMixin, unittest.TestCase):
     clean because every digest recomputed. These tests are RED against that backend.
     """
 
-    CHANGED = ["application/a.py", "control-plane/boss-deploy-request-v1/go_deploy_request.py"]
+    CHANGED = ["application/a.py", "control-plane/c13-c14-lite/lite_canonical.py"]
 
     def _cli(self, argv, env):
         return subprocess.run([sys.executable, str(ROOT / "lite_cli.py"), *argv],
