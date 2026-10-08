@@ -5,6 +5,7 @@ on:
     branches:
       - chenzhenxi/hk-unified-pr365-registration-20261003
       - fix/registration-config-384
+      - release/hk-product-existing-fixes-20261007
   pull_request:
     branches: [main]
     paths:
@@ -97,4 +98,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pytest             tests/test_supplier_onboarding_hk_unified.py             tests/test_registration_verification.py             tests/test_registration_email_configuration.py             tests/test_registration_privacy.py             tests/test_sprint1y_consumer_identity.py             tests/test_sprint1u_production_bff.py             tests/test_current_rental_vault_guards.py
+          python -m pytest             tests/test_supplier_onboarding_hk_unified.py             tests/test_registration_verification.py             tests/test_registration_privacy.py             tests/test_sprint1y_consumer_identity.py             tests/test_sprint1u_production_bff.py             tests/test_current_rental_vault_guards.py             tests/test_registration_email_configuration.py             tests/test_sprint1h_onboarding.py             tests/workbench/test_onboarding_certification_binding.py             tests/hotel/test_hard_hold_release_recovery_v86.py             tests/test_agent_native_lifecycle_p03.py --junitxml=hk-product-integration.xml
+
+      - name: Preserve integration JUnit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hk-product-integration-${{ github.sha }}
+          path: application/hk-product-integration.xml
+          if-no-files-found: warn
