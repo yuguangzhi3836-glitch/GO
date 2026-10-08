@@ -134,7 +134,7 @@ and it becomes exactly one JSON document committed to `tasks/` in
 | `action_id` | requester | `FORGE_DEPLOY` \| `FORGE_INSPECT` \| `FORGE_STOP` |
 | `environment` | requester | `HK-STAGING-01` |
 | `target_pr` | requester | the PR number — **this is the entire intent** |
-| `schema_version`, `task_id`, `issued_at`, `nonce`, `parameters` | envelope | stamped by the publisher; leave `parameters` as `{}` |
+| `schema_version`, `task_id`, `issued_at`, `nonce`, `parameters` | envelope | generate them when creating the Task; leave `parameters` as `{}` |
 
 **Never supply** any of these — Forge derives every one of them from live state:
 
