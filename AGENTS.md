@@ -2,8 +2,15 @@
 
 > This file is the **only CURRENT AI entry point** for this repository.
 > The human entry point is [`README.md`](README.md) (Chinese).
-> Every other Markdown file in this repository is **HISTORY**: it may be read for audit,
-> provenance or break-glass reasoning, but it does not define normal operation.
+> Every other Markdown file in this repository is **HISTORY for current-routing purposes**:
+> it may still contain valid evidence, constraints, or component-local facts, but it does not
+> define the repository's normal operating path and cannot override this root `AGENTS.md`.
+>
+> **Byte-pinned historical exception:** `application/AGENTS.md` is retained unchanged because
+> existing source/evidence checks bind its exact bytes. Its old `HK_STAGING_*` / Old Command
+> Center routing is not CURRENT. For deployment, inspection, GO Forge, fallback selection, and
+> HK-STAGING routing, this root `/AGENTS.md` always wins unless the Owner explicitly authorizes
+> Old Command Center fallback mode.
 >
 > Version note: this file deliberately hard-codes no fast-changing value (commit SHA, image id,
 > migration head, service state). Read those live. Runtime identity comes from the newest
@@ -48,7 +55,9 @@ When two sources disagree, the higher one wins. Do not average them.
    Evidence is the only thing that says what HK-STAGING is actually running.
 3. **This file and `README.md`** — the current operating definition.
 4. **HISTORY** — everything else, including anything that calls itself CURRENT / FINAL / GUIDE /
-   HANDOFF / RUNBOOK. Useful for provenance, never for current truth.
+   HANDOFF / RUNBOOK. HISTORY means "not a CURRENT operating entry point"; it does **not** mean
+   every statement inside is invalid. Evidence, governance constraints, rollback material, and
+   byte-pinned component facts may still be valid when this root file explicitly relies on them.
 
 Two hard consequences:
 
@@ -215,9 +224,13 @@ ACTIVE: `application/` (business source) · `deploy/hk-staging/` (runtime defini
 (`forge-operator/source/`) · `tasks/` + `receipts/` · the evidence repo ·
 Persistent Runtime on rt01.
 
-RETIRED / NOT ON THE NORMAL PATH: Old Command Center (`command-center/`, `control-plane/`,
-`hk-staging/source/{agent,executor}`) — source retained as **break-glass history only**; its
-request bridge and web service are stopped and disabled and its periodic timers were retired.
+RETIRED / NOT ON THE NORMAL PATH: Old Command Center request / bridge / web lineage
+(`command-center/`, legacy Old-CC components under `control-plane/`,
+`hk-staging/source/{agent,executor}`) — retained only where history or break-glass value remains;
+its request bridge and web service are stopped and disabled and its periodic timers were retired.
+**Do not classify all of `control-plane/` as retired**: active Persistent Runtime source remains
+under `control-plane/runtime-host-channel-v1/`, and other deterministic capabilities may still
+have real consumers.
 
 HISTORY (bound to their original commit): `deliverables/`, `evidence/`, `hk-staging/`
 (2026-09-11 snapshot), all DEPTH parents, `docs/audits/**`, `docs/reviews/**`,
