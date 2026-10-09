@@ -1,5 +1,7 @@
 # GO — AI operating instructions
 
+> **Product first.** Engineering correctness, passing tests, CI green, or successful deployment does not by itself mean the product is complete. Product completion is judged by whether real users can complete the business flow.
+
 > This file is the **only CURRENT AI entry point** for this repository.
 > The human entry point is [`README.md`](README.md) (Chinese).
 > Every other Markdown file in this repository is **HISTORY for current-routing purposes**:
@@ -76,6 +78,16 @@ Two hard consequences:
   authority.
 - **Codex / WorkBuddy** — execution agents under Eason's control. Command capability is not
   deployment authority.
+
+**Ownership & interface rule:**
+
+Each active business workstream must have one designated implementation lead. Multiple contributors may collaborate within agreed boundaries.
+
+Before creating a Builder Issue, starting overlapping development, or merging a potentially conflicting PR, check the current implementation owner, interface boundaries, and existing work.
+
+Do not create competing implementations of the same business goal without coordination.
+
+An explicitly assigned implementation owner cannot be replaced or bypassed without Product Owner authorization.
 
 Rules:
 
