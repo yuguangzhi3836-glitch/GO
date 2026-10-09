@@ -68,7 +68,9 @@ class CompensationService:
         if not reference or not key or not actor:conflict('SCOPED_FAULT_RECOVERY_REQUIRED','A unique confirmed settlement receipt and actor are required')
         from go_hotel.services.catalog_fault_funding import recover
         result=recover(supplier_id,amount_minor,reference,key,actor)
-        return result|{'remaining_available_minor':self.get_supplier_finance(supplier_id)['settlement_available_minor']}
+        if 'remaining_available_minor' not in result:
+            conflict('RECOVERY_BALANCE_SNAPSHOT_REQUIRED','Historical receipt has no durable post-settlement balance; reconciliation is required')
+        return result
 
     def get_case(self, case_id: str) -> dict:
         from go_hotel.db.models import CatalogSupplierRemedyRow
