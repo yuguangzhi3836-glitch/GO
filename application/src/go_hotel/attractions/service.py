@@ -158,11 +158,18 @@ class AttractionService:
   production_truth_required('ATTRACTION','REFUND')
   return vertical_refund_recovery.refund('ATTRACTION',account,order_id,self._refund_quote_in,accepted_hash)
  def redeem(self,account,order_id,evidence_reference):
-  if not str(evidence_reference or '').strip(): raise ValueError('FULFILLMENT_EVIDENCE_REQUIRED')
+  evidence_reference=str(evidence_reference or '').strip()
+  if not evidence_reference: raise ValueError('FULFILLMENT_EVIDENCE_REQUIRED')
   production_truth_required("ATTRACTION", "REDEEM")
   with transaction(SessionLocal) as s:
    o=s.get(AttractionOrderRow,order_id,with_for_update=True)
    if not o or o.account_id!=account: raise ValueError("ATTRACTION_ORDER_NOT_FOUND")
+   if o.status=="FULFILLED":
+    for row in reversed(list_vertical_evidence(s,"ATTRACTION",order_id)):
+     payload=row.get("payload") or {}
+     if row.get("kind")=="VOUCHER_REDEEMED" and str(payload.get("evidence_reference") or '').strip()==evidence_reference:
+      return self.out(o)
+    raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
    if o.status!="CONFIRMED": raise ValueError("ATTRACTION_ILLEGAL_STATE_TRANSITION")
    window=validity.for_order(self._order_terms(s,order_id),o.visit_date,o.session_time);validity.guard(window,db_now_ms(s))
    voucher_code=o.voucher_code; supplier_reference=o.supplier_reference
