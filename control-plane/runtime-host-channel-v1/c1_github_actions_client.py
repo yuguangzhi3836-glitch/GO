@@ -1,7 +1,7 @@
 """The Runtime-side GitHub client for the C1 dispatch loop.
 
 This is the ONLY place the Runtime Host talks to the GitHub REST API. It implements the
-dispatch loop and the read-only candidate reads that feed a review round, and nothing else:
+dispatch loop, candidate reads, and one idempotent source-Issue failure receipt:
 
     dispatch_workflow()   POST .../actions/workflows/{id}/dispatches
     find_run_by_name()    GET  .../actions/runs            (resolve an unknown dispatch)
@@ -13,6 +13,9 @@ dispatch loop and the read-only candidate reads that feed a review round, and no
     read_pull_files()     GET  .../pulls/{n}/files
     read_commit_tree()    GET  .../commits/{sha}
     read_tree()           GET  .../git/trees/{sha}
+    list_run_jobs()       GET  .../actions/runs/{id}/attempts/{n}/jobs
+    download_job_log()    GET  .../actions/jobs/{id}/logs
+    issue_comment_contains()/post_issue_comment()  GET/POST source-Issue comments
 
 Credential contract. The four `read_*` methods were added when a Builder completion began
 naming its own review candidate: the Runtime has to read the pull request the Builder's run
@@ -22,11 +25,12 @@ at all. That needs two more fine-grained permissions than the dispatch loop did:
     Actions: Read and write     dispatch, run lookup, artifact download
     Pull requests: Read         the candidate and its changed files
     Contents: Read              the candidate commit's trees
+    Issues: Read and write      durable de-duplicated failure receipt on source Issue
 
 This was MEASURED on the Runtime host rather than assumed: the deployed token already
-carries all three (and more), no permission was granted for this change, and no write scope
-is used by any of the four reads. Nothing else was added - no Contents write, no Issues, no
-Admin - and the reads supersede nothing: every previously-proven operation is unchanged.
+carries the first three (and more). The failure receipt deliberately requires Issues write;
+if it is absent the hook records an explicit GITHUB_HTTP_403 blocker and stops retrying.
+Nothing asks for Contents write or Admin, and every previously-proven operation is unchanged.
 
 The token is never a literal and never a parameter of a task. It is read through an
 injected loader; the shipped loader reads a root-only file whose path is configured
@@ -68,6 +72,8 @@ DEFAULT_TOKEN_FILE = "/etc/go-runtime-host/c1-github-token"
 RESULT_ARTIFACT_FILE = "c1_result.json"
 HTTP_TIMEOUT_S = 30
 MAX_ARTIFACT_BYTES = 2 * 1024 * 1024
+MAX_JOB_LOG_BYTES = 2 * 1024 * 1024
+MAX_COMMENT_PAGES = 10
 # One page of a pull request's changed files. The bound is stated rather than implied: the
 # file list is a review's declared test scope, and a candidate with more changed files than
 # this is read as its first page rather than refused. Every Builder pull request this
@@ -286,7 +292,8 @@ class GitHubActionsClient:
             if run.get("name") == name:
                 return {"id": run.get("id"), "run_attempt": run.get("run_attempt", 1),
                         "status": run.get("status"), "conclusion": run.get("conclusion"),
-                        "head_sha": ((run.get("head_commit") or {}).get("id"))}
+                        "head_sha": (run.get("head_sha") or
+                                     (run.get("head_commit") or {}).get("id"))}
         return None
 
     def get_run(self, run_id: int):
@@ -294,7 +301,75 @@ class GitHubActionsClient:
         run = self._document(raw)
         return {"id": run.get("id"), "run_attempt": run.get("run_attempt", 1),
                 "status": run.get("status"), "conclusion": run.get("conclusion"),
-                "head_sha": ((run.get("head_commit") or {}).get("id"))}
+                "head_sha": (run.get("head_sha") or
+                             (run.get("head_commit") or {}).get("id"))}
+
+    # --------------------------------------------------- terminal failure closure
+    def list_run_jobs(self, run_id: int, run_attempt: int = 1) -> list:
+        """Jobs for the exact run attempt, retaining step and runner-allocation facts."""
+        path = ("/repos/%s/actions/runs/%d/attempts/%d/jobs?per_page=100"
+                % (self._repo_slug(), run_id, run_attempt))
+        status, raw = self._call("GET", path)
+        document = self._document(raw)
+        jobs = document.get("jobs") if isinstance(document, dict) else None
+        if not isinstance(jobs, list):
+            raise Refused("RUN_JOBS_NOT_A_LIST")
+        return jobs
+
+    def download_job_log(self, job_id: int) -> str:
+        """Read one job log as data. Signed URL receives no repository credential."""
+        status, raw = self._call(
+            "GET", "/repos/%s/actions/jobs/%d/logs" % (self._repo_slug(), job_id),
+            follow_redirect=False)
+        if len(raw) > MAX_JOB_LOG_BYTES:
+            raise Refused("JOB_LOG_TOO_LARGE")
+        # GitHub normally returns plain text, but tolerate its historical zip shape while
+        # retaining the same total byte bound. Nothing from the log is ever executed.
+        if raw.startswith(b"PK\x03\x04"):
+            try:
+                with zipfile.ZipFile(io.BytesIO(raw)) as bundle:
+                    chunks = []
+                    total = 0
+                    for name in sorted(bundle.namelist()):
+                        with bundle.open(name) as member:
+                            chunk = member.read(MAX_JOB_LOG_BYTES - total + 1)
+                        total += len(chunk)
+                        if total > MAX_JOB_LOG_BYTES:
+                            raise Refused("JOB_LOG_TOO_LARGE")
+                        chunks.append(chunk)
+                raw = b"\n".join(chunks)
+            except zipfile.BadZipFile:
+                raise Refused("JOB_LOG_NOT_READABLE") from None
+            if len(raw) > MAX_JOB_LOG_BYTES:
+                raise Refused("JOB_LOG_TOO_LARGE")
+        return raw.decode("utf-8", errors="replace")
+
+    def issue_comment_contains(self, issue_number: int, marker: str) -> bool:
+        """Bounded durable de-duplication before writing a failure receipt."""
+        for page in range(1, MAX_COMMENT_PAGES + 1):
+            path = ("/repos/%s/issues/%d/comments?per_page=100&page=%d"
+                    % (self._repo_slug(), issue_number, page))
+            status, raw = self._call("GET", path)
+            comments = self._document(raw)
+            if not isinstance(comments, list):
+                raise Refused("ISSUE_COMMENTS_NOT_A_LIST")
+            if any(marker in str(c.get("body") or "") for c in comments
+                   if isinstance(c, dict)):
+                return True
+            if len(comments) < 100:
+                return False
+        raise Refused("ISSUE_COMMENT_SCAN_TRUNCATED")
+
+    def post_issue_comment(self, issue_number: int, body: str) -> int:
+        """The only failure-closure write: one comment on the originating Issue."""
+        status, raw = self._call(
+            "POST", "/repos/%s/issues/%d/comments" % (self._repo_slug(), issue_number),
+            {"body": body})
+        document = self._document(raw)
+        comment_id = document.get("id") if isinstance(document, dict) else None
+        if not isinstance(comment_id, int) or comment_id <= 0:
+            raise Refused("ISSUE_COMMENT_ID_MISSING")
+        return comment_id
 
     # ------------------------------------------------- read-only candidate reads
     # Four GETs that are not about Actions at all, and they live here for one reason: this

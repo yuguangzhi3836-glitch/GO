@@ -211,6 +211,7 @@ def advance(outbox, runtime, claimed, *, worker_id: str, client,
             lease_s: int = DEFAULT_LEASE_S, clock=time.time,
             claimable_kinds=CLAIMABLE_KINDS, result_validator=None,
             artifact_loader=None, on_result_sealed=None,
+            on_run_failed=None,
             confirm_lease=False) -> dict:
     """One bounded tick for a task that was just claimed. Never dispatches twice.
 
@@ -236,13 +237,15 @@ def advance(outbox, runtime, claimed, *, worker_id: str, client,
                       task_spec(identity["kind"], identity["payload"])),
                   worker_id=worker_id, client=client, lease_s=lease_s, clock=clock,
                   result_validator=result_validator, artifact_loader=artifact_loader,
-                  on_result_sealed=on_result_sealed, confirm_lease=confirm_lease)
+                  on_result_sealed=on_result_sealed, on_run_failed=on_run_failed,
+                  confirm_lease=confirm_lease)
 
 
 def resume(outbox, runtime, runtime_task_id, attempt, *, worker_id: str, client,
            lease_s: int = DEFAULT_LEASE_S, clock=time.time,
            claimable_kinds=CLAIMABLE_KINDS, result_validator=None,
            artifact_loader=None, on_result_sealed=None,
+           on_run_failed=None,
            confirm_lease=False) -> dict:
     """One bounded tick for an execution identity this outbox already owns.
 
@@ -287,12 +290,13 @@ def resume(outbox, runtime, runtime_task_id, attempt, *, worker_id: str, client,
     return _drive(outbox, runtime, runtime_task_id, attempt, worker_id=worker_id,
                   client=client, lease_s=lease_s, clock=clock, request=request,
                   result_validator=result_validator, artifact_loader=artifact_loader,
-                  on_result_sealed=on_result_sealed, confirm_lease=confirm_lease)
+                  on_result_sealed=on_result_sealed, on_run_failed=on_run_failed,
+                  confirm_lease=confirm_lease)
 
 
 def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clock,
            request=None, result_validator=None, artifact_loader=None,
-           on_result_sealed=None, confirm_lease=False) -> dict:
+           on_result_sealed=None, on_run_failed=None, confirm_lease=False) -> dict:
     """The three legs, once, for one execution identity. Shared by claim and resume.
 
     It starts by registering the identity, which commits the intent durably before
@@ -343,7 +347,8 @@ def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clo
                        worker_id=worker_id, lease_s=lease_s, reused=False,
                        result_validator=result_validator,
                        artifact_loader=artifact_loader,
-                       on_result_sealed=on_result_sealed)
+                       on_result_sealed=on_result_sealed,
+                       on_run_failed=on_run_failed)
 
     # ---- never pay twice for one Runtime task ---------------------------------
     # A task that lost its lease mid-flight comes back as a new attempt, and a new
@@ -360,7 +365,8 @@ def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clo
                            source_attempt=earlier["attempt"],
                            result_validator=result_validator,
                            artifact_loader=artifact_loader,
-                           on_result_sealed=on_result_sealed)
+                           on_result_sealed=on_result_sealed,
+                           on_run_failed=on_run_failed)
         already_failed = outbox.failed_for_task(task_id, exclude_request_id=request_id)
         if already_failed is not None:
             # A run for this Runtime task already ended without succeeding, so there is
@@ -404,12 +410,13 @@ def _drive(outbox, runtime, task_id, attempt, *, worker_id, client, lease_s, clo
     return _complete(outbox, runtime, task_id, attempt, request=request, client=client,
                      worker_id=worker_id, lease_s=lease_s,
                      result_validator=result_validator, artifact_loader=artifact_loader,
-                     on_result_sealed=on_result_sealed)
+                     on_result_sealed=on_result_sealed,
+                     on_run_failed=on_run_failed)
 
 
 def _complete(outbox, runtime, task_id, attempt, *, client, worker_id, lease_s,
               request, result_validator=None, artifact_loader=None,
-              on_result_sealed=None) -> dict:
+              on_result_sealed=None, on_run_failed=None) -> dict:
     """Pull if one is still needed, then complete - and settle a refused identity.
 
     Every completion in this module goes through here, so the one unrecoverable outcome
@@ -421,7 +428,8 @@ def _complete(outbox, runtime, task_id, attempt, *, client, worker_id, lease_s,
         outcome = complete_after_pull(outbox, runtime, task_id, attempt,
                                       client=client, worker_id=worker_id, request=request,
                                       validator=result_validator, artifact=artifact_loader,
-                                      on_result_sealed=on_result_sealed)
+                                      on_result_sealed=on_result_sealed,
+                                      on_run_failed=on_run_failed)
     except Exception as exc:                                # noqa: BLE001 - re-raised below
         if not is_a_fenced_refusal(exc):
             # A transport failure, a defect of ours, anything else - NOT permanent.
@@ -464,11 +472,15 @@ def _fail(outbox, runtime, task_id, attempt, *, request, worker_id, conclusion,
 
 def _settled(request_id, task_id, attempt, outbox, outcome) -> dict:
     """The terminal report for an identity that was settled rather than completed."""
+    closure = outcome.get("failure_closure") or {}
+    diagnosis = closure.get("diagnosis") or {}
     return {"action": outcome["action"], "execution_request_id": request_id,
             "runtime_task_id": task_id, "attempt": attempt,
             "state": outbox.dispatch_status(request_id),
             "reason": outcome.get("conclusion") or outcome.get("reason"),
             "runtime_told": outcome.get("runtime_told"),
+            "failure_closure_status": closure.get("status"),
+            "failure_classification": diagnosis.get("classification"),
             "reused": False, "renewed": False}
 
 
@@ -492,13 +504,14 @@ def _abandon(outbox, task_id, attempt, *, request, reason) -> dict:
 
 def _finish(outbox, runtime, task_id, attempt, *, request, client, worker_id, lease_s,
             reused, source_request_id=None, source_attempt=None, result_validator=None,
-            artifact_loader=None, on_result_sealed=None) -> dict:
+            artifact_loader=None, on_result_sealed=None, on_run_failed=None) -> dict:
     """Complete an execution whose result is already sealed (own or adopted)."""
     result = _complete(outbox, runtime, task_id, attempt, request=request,
                        client=_NoPull(client), worker_id=worker_id, lease_s=lease_s,
                        result_validator=result_validator,
                        artifact_loader=artifact_loader,
-                       on_result_sealed=on_result_sealed)
+                       on_result_sealed=on_result_sealed,
+                       on_run_failed=on_run_failed)
     result["reused"] = reused
     if reused:
         result["reused_from_request_id"] = source_request_id

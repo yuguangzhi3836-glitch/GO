@@ -123,7 +123,9 @@ def pull_result(outbox: DispatchOutbox, runtime_task_id, attempt, *, client,
         # No artifact can be trusted from a run that did not finish successfully; this
         # is a refusal to complete, not an invitation to dispatch again.
         return {"action": "RUN_DID_NOT_SUCCEED", "execution_request_id": request_id,
-                "conclusion": run.get("conclusion")}
+                "conclusion": run.get("conclusion"), "github_run_id": run_id,
+                "github_run_attempt": run.get("run_attempt", 1),
+                "head_sha": run.get("head_sha")}
 
     # WHICH artifact carries this class's answer is a property of the class, not of the
     # task: the C1/C12 classes publish `c1-ai-execution-result-<identity>`, while the
@@ -167,7 +169,8 @@ def pull_result(outbox: DispatchOutbox, runtime_task_id, attempt, *, client,
 
 def complete_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attempt, *,
                         client, worker_id, request=None, validator=None,
-                        artifact=None, on_result_sealed=None) -> dict:
+                        artifact=None, on_result_sealed=None,
+                        on_run_failed=None) -> dict:
     """Pull, validate, and complete through the Runtime's own contract.
 
     `Runtime.complete()` is called with the exact attempt the outbox holds, so the
@@ -178,13 +181,27 @@ def complete_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attemp
     `fail_after_pull` - which reports the failure to the Runtime and settles the identity,
     rather than leaving it in flight to be retried forever.
     """
+    if request is None:
+        request = outbox.stored_request(runtime_task_id, attempt) or \
+            build_dispatch_request(runtime_task_id, attempt)
     pulled = pull_result(outbox, runtime_task_id, attempt, client=client, request=request,
                          validator=validator, artifact=artifact)
     if pulled["action"] == "RUN_DID_NOT_SUCCEED":
+        closure = None
+        if on_run_failed is not None:
+            closure = on_run_failed(
+                request,
+                {"id": pulled.get("github_run_id"),
+                 "run_attempt": pulled.get("github_run_attempt", 1),
+                 "head_sha": pulled.get("head_sha"),
+                 "conclusion": pulled.get("conclusion")},
+                outbox, client)
         return fail_after_pull(outbox, runtime, runtime_task_id, attempt,
                                worker_id=worker_id,
                                request_id=pulled["execution_request_id"],
-                               conclusion=pulled.get("conclusion"))
+                               conclusion=pulled.get("conclusion"),
+                               run_id=pulled.get("github_run_id"),
+                               failure_closure=closure)
     if pulled["action"] != "RESULT_SEALED":
         if pulled["action"] == "REUSE_TERMINAL":
             pass
@@ -240,7 +257,7 @@ def complete_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attemp
 
 
 def failure_record(*, runtime_task_id, attempt, execution_request_id_, github_run_id,
-                   conclusion) -> dict:
+                   conclusion, failure_closure=None) -> dict:
     """What the Runtime is told when the execution itself failed.
 
     Deliberately NOT a sealed result: it is not produced by a run, it carries no model
@@ -248,7 +265,7 @@ def failure_record(*, runtime_task_id, attempt, execution_request_id_, github_ru
     stores it nowhere near `result_json`. It exists so the Runtime's own Evidence says why
     the task failed, in the same vocabulary as everything else this channel records.
     """
-    return {
+    record = {
         "outcome": "RUN_FAILED",
         "runtime_task_id": runtime_task_id,
         "attempt": attempt,
@@ -257,10 +274,14 @@ def failure_record(*, runtime_task_id, attempt, execution_request_id_, github_ru
         "conclusion": conclusion,
         "authorizes_any_action": False,
     }
+    if failure_closure is not None:
+        record["failure_closure"] = failure_closure
+    return record
 
 
 def fail_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attempt, *,
-                    worker_id, request_id, conclusion, run_id=None) -> dict:
+                    worker_id, request_id, conclusion, run_id=None,
+                    failure_closure=None) -> dict:
     """Report a run that ended without succeeding, and settle its identity.
 
     Two things have to happen, in this order:
@@ -284,7 +305,7 @@ def fail_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attempt, *
     reason = "RUN_DID_NOT_SUCCEED:%s" % (conclusion or "unknown")
     record = failure_record(runtime_task_id=runtime_task_id, attempt=attempt,
                             execution_request_id_=request_id, github_run_id=run_id,
-                            conclusion=conclusion)
+                            conclusion=conclusion, failure_closure=failure_closure)
     # The owner comes from the same durable place the success path reads it from - the
     # identity's own stored request - and is resolved BEFORE the try, because a missing
     # owner is a defect of ours rather than a refusal by the Runtime's fence, and must
@@ -305,7 +326,8 @@ def fail_after_pull(outbox: DispatchOutbox, runtime, runtime_task_id, attempt, *
     return {"action": RUN_FAILED, "execution_request_id": request_id,
             "runtime_task_id": runtime_task_id, "attempt": attempt,
             "conclusion": conclusion, "github_run_id": run_id,
-            "runtime_told": runtime_told}
+            "runtime_told": runtime_told,
+            "failure_closure": failure_closure}
 
 
 def is_pending(outbox: DispatchOutbox, runtime_task_id, attempt) -> bool:

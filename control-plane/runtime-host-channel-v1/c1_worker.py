@@ -130,6 +130,7 @@ STATUS_FIELDS = (
     "status", "verb", "claimed", "resumed", "unfinished", "kind", "runtime_task_id",
     "attempt", "action", "dispatch_status", "reused", "renewed", "reason", "detail",
     "conclusion", "runtime_told", "failure_reason",
+    "failure_closure_status", "failure_classification",
     "claimed_kinds", "claimed_owners", "owner_c", "next_owner_cursor",
     "runtime_db", "outbox_db", "dispatch_target", "credential",
     "runtime_source", "lite_package", "lite_modules",
@@ -173,6 +174,12 @@ def build_client(*, workflow_file=None, workflow_files=None):
     return GitHubActionsClient(token_loader=configured_token_loader(),
                                workflow_file=workflow_file,
                                workflow_files=workflow_files)
+
+
+def failure_closure_hook(request, run, outbox, client):
+    """Shared terminal-failure hook; imported lazily so readiness stays side-effect free."""
+    from c1_failure_closure import close_failed_run
+    return close_failed_run(request, run, outbox, client)
 
 
 def credential_refusal(loader=None):
@@ -228,7 +235,7 @@ def claim_across_owners(runtime, *, worker_id, lease_s, claim_kinds, claim_owner
 def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_S,
          clock=time.time, claim_kinds=CLAIM_KINDS, claim_owner_cs=CLAIM_OWNER_CS,
          owner_cursor=0, resume_limit=DEFAULT_RESUME_LIMIT, result_validator=None,
-         artifact_loader=None, on_result_sealed=None,
+         artifact_loader=None, on_result_sealed=None, on_run_failed=None,
          confirm_lease=False) -> dict:
     """One bounded tick: resume what is in flight, and only then claim new work.
 
@@ -266,6 +273,7 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
                              result_validator=result_validator,
                              artifact_loader=artifact_loader,
                              on_result_sealed=on_result_sealed,
+                             on_run_failed=on_run_failed,
                              confirm_lease=confirm_lease)
         except Exception as exc:  # noqa: BLE001 -- one bad task must not stop the worker
             return {"status": "BLOCKED", "claimed": False, "resumed": True,
@@ -279,6 +287,8 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
                 "action": outcome.get("action"),
                 "dispatch_status": outcome.get("state"),
                 "reason": outcome.get("reason"),
+                "failure_closure_status": outcome.get("failure_closure_status"),
+                "failure_classification": outcome.get("failure_classification"),
                 "reused": bool(outcome.get("reused")),
                 "next_owner_cursor": owner_cursor,
                 "renewed": bool(outcome.get("renewed"))}
@@ -295,6 +305,7 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
                           result_validator=result_validator,
                           artifact_loader=artifact_loader,
                           on_result_sealed=on_result_sealed,
+                          on_run_failed=on_run_failed,
                           confirm_lease=confirm_lease)
     except Exception as exc:  # noqa: BLE001 -- one bad task must not stop the worker
         # Nothing is completed here. The outbox keeps its durable state, so the next
@@ -310,6 +321,9 @@ def tick(runtime, outbox, client, *, worker_id=WORKER_ID, lease_s=DEFAULT_LEASE_
             "next_owner_cursor": next_cursor,
             "action": outcome.get("action"),
             "dispatch_status": outcome.get("state"),
+            "reason": outcome.get("reason"),
+            "failure_closure_status": outcome.get("failure_closure_status"),
+            "failure_classification": outcome.get("failure_classification"),
             "reused": bool(outcome.get("reused")),
             "renewed": bool(outcome.get("renewed"))}
 
@@ -319,7 +333,8 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
          claim_owner_cs=CLAIM_OWNER_CS,
          runtime_db=RUNTIME_DB, outbox_db=OUTBOX_DB,
          workflow_file=WORKFLOW_FILE, workflow_files=None, result_validator=None,
-         artifact_loader=None, on_result_sealed=None, hooks_factory=None,
+         artifact_loader=None, on_result_sealed=None,
+         on_run_failed=failure_closure_hook, hooks_factory=None,
          confirm_lease=False, readiness=None) -> int:
     """The resident loop, parameterised by the executor's OWN boundary.
 
@@ -408,6 +423,7 @@ def main(argv, *, runtime=None, client=None, outbox=None, clock=time.time,
     transport_hooks = {"result_validator": result_validator,
                        "artifact_loader": artifact_loader,
                        "on_result_sealed": on_result_sealed,
+                       "on_run_failed": on_run_failed,
                        "confirm_lease": confirm_lease}
     if hooks_factory is not None:
         transport_hooks.update(hooks_factory(outbox))
