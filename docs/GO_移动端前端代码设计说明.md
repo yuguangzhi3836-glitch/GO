@@ -232,7 +232,7 @@ Unable to load script. Make sure you are either running Metro or that your bundl
 如果只需要构建/安装、不启动应用，可省略 `-Launch`；`-NoInstall` 只构建 APK，不检查设备、不安装。需要指定后端地址时使用 `-ApiBaseUrl <https-url>`。例如：
 
 ```powershell
-.\application\mobile\go-app\scripts\build-install-android.cmd -DeviceSerial 3508679531000JO -ApiBaseUrl https://api.example.com -Launch
+.\application\mobile\go-app\scripts\build-install-android.cmd -DeviceSerial YOUR_DEVICE_SERIAL -ApiBaseUrl https://api.example.com -Launch
 ```
 
 `-Logcat` 会在启动后采集默认 120 秒设备日志；可用 `-LogcatSeconds <秒数>` 调整时长。设备日志保存在系统临时目录的 `go-mobile-android-logs` 下。脚本自动启动的 Metro 日志也保存在该目录，文件为 `metro-8081.log` 和 `metro-8081-stderr.log`。Metro 进程需保持运行，Debug APK 才能继续加载/重载 JS；停止 Metro 后再次打开 Debug APK 会重新出现脚本加载错误。

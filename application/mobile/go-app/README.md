@@ -50,7 +50,7 @@ Common options:
 For example, select a specific USB-connected phone and API environment:
 
 ```powershell
-.\application\mobile\go-app\scripts\build-install-android.cmd -DeviceSerial 3508679531000JO -ApiBaseUrl https://api.example.com -Launch
+.\application\mobile\go-app\scripts\build-install-android.cmd -DeviceSerial YOUR_DEVICE_SERIAL -ApiBaseUrl https://api.example.com -Launch
 ```
 
 If the app shows `Unable to load script`, confirm Metro is listening at `http://127.0.0.1:8081/status`, then inspect the Metro terminal/log for bundle errors. A `packager-status:running` response confirms the server is listening; it does not confirm that JavaScript bundling succeeded. If Metro reports a missing dependency such as `caniuse-lite/dist/unpacker/agents`, restore the pinned dependencies from this directory with `npm ci`, then rerun the command. See [the mobile frontend implementation guide](../../../docs/GO_移动端前端代码设计说明.md#93-android-debug-apk-的-metro-加载流程) for the full diagnosis and manual recovery steps.
