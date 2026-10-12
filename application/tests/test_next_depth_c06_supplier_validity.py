@@ -156,3 +156,28 @@ def test_valid_window_does_not_bypass_inflight_refund_exclusion(monkeypatch):
     install(monkeypatch)
     monkeypatch.setattr(service, 'db_now_ms', lambda session: int(datetime(2026,9,15,8,0,tzinfo=UTC).timestamp()*1000))
     test_concurrent_refund_has_one_executor_and_blocks_change_or_redeem('ATTRACTION', monkeypatch)
+
+
+def test_duplicate_redeem_is_explainable_and_does_not_append_evidence(monkeypatch):
+    install(monkeypatch)
+    _, owner, oid = booked('ATTRACTION')
+    monkeypatch.setattr(service, 'db_now_ms', lambda session: int(datetime(2026,9,15,8,0,tzinfo=UTC).timestamp()*1000))
+    assert svc.redeem(owner, oid, 'isolated://first-scan')['status'] == 'FULFILLED'
+    before = svc.get(owner, oid)['evidence']
+    with pytest.raises(ValueError, match='ATTRACTION_REDEEM_ILLEGAL_STATE_ALREADY_REDEEMED'):
+        svc.redeem(owner, oid, 'isolated://duplicate-scan')
+    after = svc.get(owner, oid)['evidence']
+    assert svc.get(owner, oid)['status'] == 'FULFILLED'
+    assert after == before
+
+
+def test_supplier_closed_ticket_redeem_is_rejected_as_revoked(monkeypatch):
+    install(monkeypatch)
+    _, owner, oid = booked('ATTRACTION')
+    svc.admin_external_state(oid, 'CLOSED_BY_SUPPLIER', 'isolated://closure', 'ops')
+    before = svc.get(owner, oid)['evidence']
+    with pytest.raises(ValueError, match='ATTRACTION_REDEEM_ILLEGAL_STATE_REVOKED'):
+        svc.redeem(owner, oid, 'isolated://revoked-entry')
+    after = svc.get(owner, oid)
+    assert after['status'] == 'CLOSED_BY_SUPPLIER'
+    assert after['evidence'] == before
