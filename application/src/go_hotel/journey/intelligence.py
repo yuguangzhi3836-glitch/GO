@@ -86,6 +86,21 @@ class JourneyIntelligenceService:
             confidence_milli=int(confidence*1000),status='OPEN',recommended_action_json=action,
             created_at=now())
 
+    def _action(self,item,action,label,requires_user_confirmation,execution_route,auto_execute=False):
+        return {
+            'action':action,
+            'label':label,
+            'requires_user_confirmation':requires_user_confirmation,
+            'execution_route':execution_route,
+            'auto_execute':auto_execute,
+            'target':{
+                'entity_type':'JOURNEY_ITEM_ORDER',
+                'item_id':item.item_id,
+                'vertical':item.vertical,
+                'order_id':item.order_id,
+            },
+        }
+
     def _flight_impacts(self,sig,source,items,facts):
         old_arr=parse_dt(facts.get('original_arrival_at'))
         new_arr=parse_dt(facts.get('estimated_arrival_at')) or parse_dt(facts.get('new_arrival_at'))
@@ -101,24 +116,24 @@ class JourneyIntelligenceService:
                 if flight_match or (new_arr and start and abs(minutes(new_arr,start) or 9999)<=180):
                     impacts.append(self._impact(sig,item,'PICKUP_AT_RISK','HIGH',
                         f"航班预计延误 {delay} 分钟，接送机时间可能与实际到达冲突。",
-                        {'action':'REVIEW_RIDE_PICKUP','label':'检查并调整接送时间','requires_user_confirmation':True,'execution_route':item.detail_route,'auto_execute':False}))
+                        self._action(item,'REVIEW_RIDE_PICKUP','检查并调整接送时间',True,item.detail_route)))
             elif item.vertical=='HOTEL':
                 impacts.append(self._impact(sig,item,'CHECKIN_CONTEXT_CHANGED','LOW',
                     '到达时间变化，入住提醒与预计抵店时间应同步更新；不自动修改酒店订单。',
-                    {'action':'ADJUST_CHECKIN_REMINDER','label':'更新入住提醒','requires_user_confirmation':False,'execution_route':'Notifications','auto_execute':False},0.95))
+                    self._action(item,'ADJUST_CHECKIN_REMINDER','更新入住提醒',False,'Notifications'),0.95))
             elif item.vertical=='RAIL' and new_arr and start:
                 gap=minutes(new_arr,start)
                 if gap is not None and gap < 120:
                     sev='CRITICAL' if gap<45 else 'HIGH'
                     impacts.append(self._impact(sig,item,'CONNECTION_AT_RISK',sev,
                         f"新预计到达与铁路发车仅剩约 {max(gap,0)} 分钟，存在衔接风险。",
-                        {'action':'REVIEW_RAIL_CHANGE','label':'查看铁路改签方案','requires_user_confirmation':True,'execution_route':item.detail_route,'auto_execute':False}))
+                        self._action(item,'REVIEW_RAIL_CHANGE','查看铁路改签方案',True,item.detail_route)))
             elif item.vertical=='ATTRACTION' and new_arr and start:
                 gap=minutes(new_arr,start)
                 if gap is not None and gap < 180:
                     impacts.append(self._impact(sig,item,'ACTIVITY_AT_RISK','MEDIUM',
                         '航班延误可能影响已预约的场次或入场时间。',
-                        {'action':'REVIEW_ATTRACTION_CHANGE','label':'查看门票/体验改期规则','requires_user_confirmation':True,'execution_route':item.detail_route,'auto_execute':False},0.8))
+                        self._action(item,'REVIEW_ATTRACTION_CHANGE','查看门票/体验改期规则',True,item.detail_route),0.8))
         return impacts
 
     def _rail_impacts(self,sig,source,items,facts):
@@ -132,7 +147,7 @@ class JourneyIntelligenceService:
                 if gap is not None and gap<90:
                     impacts.append(self._impact(sig,item,'DOWNSTREAM_TIMING_AT_RISK','HIGH',
                         f"铁路到达变化后与下一项安排仅剩约 {max(gap,0)} 分钟。",
-                        {'action':'REVIEW_DOWNSTREAM_ORDER','label':'检查后续安排','requires_user_confirmation':True,'execution_route':item.detail_route,'auto_execute':False}))
+                        self._action(item,'REVIEW_DOWNSTREAM_ORDER','检查后续安排',True,item.detail_route)))
         return impacts
 
     def _generic_impacts(self,sig,source,items,facts):
