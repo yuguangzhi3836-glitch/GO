@@ -28,6 +28,10 @@ def test_each_workspace_has_independent_branch_and_worktree_prefix():
     assert len({w.branch_prefix for w in WORKSPACES}) == 14
     assert len({w.worktree_prefix for w in WORKSPACES}) == 14
 
+def test_only_c13_and_c14_are_control_only_workspaces():
+    assert {w.cell_id for w in WORKSPACES if w.control_only} == {"C13", "C14"}
+    assert {w.cell_id for w in WORKSPACES if not w.control_only} == {f"C{i:02d}" for i in range(1, 13)}
+
 def test_decomposition_builds_isolated_workitems():
     wb = ParallelWorkbench()
     items = wb.decompose(directive("C08","C09"), {
