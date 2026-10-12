@@ -218,10 +218,8 @@ class RentalService:
             else:
                 if o.status != "UNKNOWN_EXTERNAL_STATE":
                     raise ValueError("MOBILITY_RECONCILIATION_NOT_REQUIRED")
-                evidence=list_vertical_evidence(s, "RENTAL", order_id)
-                unknown=next((x for x in reversed(evidence) if x.get("kind")=="EXTERNAL_STATE_UNKNOWN"),None)
-                previous_status=((unknown or {}).get("payload") or {}).get("previous_status") or "CONFIRMED"
-                if previous_status not in {"CONFIRMED","IN_PROGRESS"}: previous_status="CONFIRMED"
+                from go_hotel.mobility.rental.recovery_evidence import previous_phase
+                previous_status=previous_phase(s,o)
                 o.status = previous_status; kind = "RECONCILED_TO_"+previous_status
                 payload={"evidence_reference": evidence_reference, "actor": actor, "supplier_reference": o.supplier_reference, "restored_status": previous_status}
             o.updated_at = now(); append_vertical_evidence(s, "RENTAL", order_id, kind, o.status, payload); project_vertical_lifecycle(s,"RENTAL",o,evidence_reference,facts={"actor":actor,"native_status":o.status})
