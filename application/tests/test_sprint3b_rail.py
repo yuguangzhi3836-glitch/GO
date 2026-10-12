@@ -31,10 +31,13 @@ def test_rail_search_to_ticket_and_trip(client):
 
 def test_rail_change_reissues_ticket(client):
     h=auth(client,'rail-change@example.com'); oid=create_ticketed(client,h)
+    original=client.get(f'/v1/rail/orders/{oid}',headers=h).json()['data']
     q=client.post(f'/v1/rail/orders/{oid}/change-quote',headers=h,json={'new_travel_date':'2026-09-03','new_seat_class':'SECOND_CLASS'}); assert q.status_code==200,q.text
     data=q.json()['data']; assert data['change_fee_minor']==500
     ex=client.post(f"/v1/rail/orders/{oid}/execute-change/{data['quote_id']}",headers=h); assert ex.status_code==200,ex.text
-    assert ex.json()['data']['status']=='UNKNOWN_EXTERNAL_STATE' and ex.json()['data']['ticket_numbers']==[]
+    assert ex.json()['data']['status']=='UNKNOWN_EXTERNAL_STATE'
+    assert ex.json()['data']['booking_reference']==original['booking_reference']
+    assert ex.json()['data']['ticket_numbers']==original['ticket_numbers']
     rec=rail_service.admin_external_state(oid,'TICKETED','supplier-change-proof','ops','RAIL-REISSUED',['R-TICKET-REISSUED'])
     assert rec['journey']['travel_date']=='2026-09-03' and rec['ticket_numbers']==['R-TICKET-REISSUED']
 
