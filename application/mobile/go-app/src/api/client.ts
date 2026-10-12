@@ -6,6 +6,7 @@ const API=String(Constants.expoConfig?.extra?.apiBaseUrl || 'http://localhost:80
 const transport=createTransport({baseUrl:API,fetch:(...args)=>fetch(...args),online,accessToken,refreshToken,saveTokens,clearTokens,newKey:()=>idempotencyKey('go')});
 export const api=transport.request;
 export const login=transport.login;
+export const register=transport.register;
 export const logout=transport.logout;
 export const sessionVersion=transport.version;
 export const onSessionChange=transport.subscribe;
