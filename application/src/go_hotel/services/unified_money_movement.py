@@ -1,6 +1,6 @@
 from datetime import datetime,timezone,timedelta
 import hashlib,json,uuid
-from sqlalchemy import select,text
+from sqlalchemy import select,text,union_all
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import (
  OmnichannelPaymentIntentRow as Intent,OmnichannelMoneyMovementRow as Movement,
@@ -27,7 +27,20 @@ class UnifiedMoneyMovementService:
   if not i:raise ValueError('ROOT_PAYMENT_INTENT_REQUIRED')
   amount=b.get('amount_minor',i.amount_minor)
   if type(amount) is not int:raise ValueError('INTEGER_MOVEMENT_AMOUNT_REQUIRED')
-  old=s.scalar(select(Movement).where(Movement.idempotency_key==key).with_for_update())
+  movements=None
+  if s.bind.dialect.name=='postgresql' and i.business_type=='RIDE_ORDER' and typ in {'AUTHORIZATION','CAPTURE'}:
+   # This MUST be a separate statement after acquiring the intent lock: a
+   # joined root/history read can retain a pre-wait MVCC snapshot. Materialize
+   # the global key lock once; history is read/locked ONLY on a key miss.
+   # A replay or cross-root conflict must not touch unrelated movement rows.
+   # Restrict earlier history locks to guards with no business row locks.
+   key_rows=select(Movement).where(Movement.idempotency_key==key).with_for_update().cte('money_key').prefix_with('MATERIALIZED')
+   history=select(Movement).where(Movement.root_payment_intent_id==intent_id,~select(1).select_from(key_rows).exists()).order_by(Movement.money_movement_id).with_for_update().cte('money_history').prefix_with('MATERIALIZED')
+   locked=s.scalars(select(Movement).from_statement(union_all(select(key_rows),select(history)))).all()
+   old=next((x for x in locked if x.idempotency_key==key),None)
+   movements=[x for x in locked if x.root_payment_intent_id==intent_id]
+  else:
+   old=s.scalar(select(Movement).where(Movement.idempotency_key==key).with_for_update())
   if old:
    if (old.root_payment_intent_id,old.movement_type,old.amount_minor,old.parent_movement_id)!=(intent_id,typ,amount,b.get('parent_movement_id')):
     raise ValueError('MONEY_MOVEMENT_IDEMPOTENCY_CONFLICT')
@@ -40,7 +53,8 @@ class UnifiedMoneyMovementService:
   assert_cash_fare_money_action(s,i,typ,amount,b.get('parent_movement_id'),key)
   if i.state!='SUCCEEDED':raise ValueError('ROOT_PAYMENT_SUCCESS_REQUIRED')
   if amount<=0:raise ValueError('POSITIVE_MOVEMENT_AMOUNT_REQUIRED')
-  movements=s.scalars(select(Movement).where(Movement.root_payment_intent_id==intent_id).with_for_update()).all()
+  if movements is None:
+   movements=s.scalars(select(Movement).where(Movement.root_payment_intent_id==intent_id).with_for_update()).all()
   auth=sum(x.amount_minor for x in movements if x.movement_type=='AUTHORIZATION' and x.state=='CONFIRMED')
   captured=sum(x.amount_minor for x in movements if x.movement_type=='CAPTURE' and x.state=='CONFIRMED')
   released=sum(x.amount_minor for x in movements if x.movement_type=='RELEASE' and x.state=='CONFIRMED')

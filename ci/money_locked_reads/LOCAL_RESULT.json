@@ -1,0 +1,37 @@
+{
+  "base_sha": "05b108cc63b008aad4da732ac97c7e453cf59220",
+  "source_sha256": {
+    "application/src/go_hotel/services/unified_money_movement.py": "ee2daad3d612c907c0c33a1182a4af430171ea2cf4fc70ecc192ae6cacf56547",
+    "ci/money_locked_reads/test_correctness.py": "6f7d7c286475c734b1868f81fd5ac6e07c5d21f9e0e0e60ce93307f0fd96234e"
+  },
+  "environment": {
+    "python": "3.12.14",
+    "postgresql": "16.2",
+    "sqlalchemy": "2.1.2",
+    "psycopg": "3.3.6",
+    "database": "disposable local Unix socket; per-test fresh schema"
+  },
+  "postgresql_correctness": {
+    "passed": 32,
+    "cases_per_implementation": 16,
+    "implementations": [
+      "exact base",
+      "candidate"
+    ],
+    "output": "SQL_SELECT_COUNTS False 4 5 2 REPLAY_MOVEMENT_ROWS 1\n.SQL_SELECT_COUNTS True 3 4 2 REPLAY_MOVEMENT_ROWS 2\n...............................\n32 passed in 14.30s\n"
+  },
+  "sqlite_regression": {
+    "passed": 6,
+    "files": [
+      "test_depth12_parent_money_budget.py",
+      "test_unified_money_movement_finance_close.py"
+    ],
+    "output": "......                                                                   [100%]\n"
+  },
+  "postgresql_18_4_validation": "NOT_RUN",
+  "external_load_test": "NOT_RUN",
+  "performance_pass": false,
+  "formal_abba_admission": "HOLD",
+  "merge": "NOT_AUTHORIZED",
+  "deployment": "NOT_AUTHORIZED"
+}
