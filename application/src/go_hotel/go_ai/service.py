@@ -291,30 +291,36 @@ class GOAIService:
             raise ValueError("GO_AI_ORCHESTRATION_TASK_FAILED") from exc
 
         model_check_completed = False
-        if assessment.requires_model_verification:
-            verify_instruction = (
-                "Independently check the candidate answer for contradictions, unsupported certainty, missing constraints, "
-                "or invented external facts. This is advisory verification only; do not alter GO transaction truth.\n\n"
-                f"Original request:\n{request.message}\n\nCandidate answer:\n{synthesis_text}"
-            )
-            try:
-                self._execute_compute_task(
-                    parent_request=request,
-                    task_id="task_verification",
-                    task_type="VERIFICATION",
-                    instruction=verify_instruction,
-                    attempt_base=9500,
-                    max_cost_tier=None,
-                    exclude_provider_ids={synthesis_provider},
+        try:
+            if assessment.requires_model_verification:
+                verify_instruction = (
+                    "Independently check the candidate answer for contradictions, unsupported certainty, missing constraints, "
+                    "or invented external facts. This is advisory verification only; do not alter GO transaction truth.\n\n"
+                    f"Original request:\n{request.message}\n\nCandidate answer:\n{synthesis_text}"
                 )
-                model_check_completed = True
-            except ValueError:
-                # Verification provider diversity is desirable but must not fabricate availability.
-                model_check_completed = False
+                try:
+                    self._execute_compute_task(
+                        parent_request=request,
+                        task_id="task_verification",
+                        task_type="VERIFICATION",
+                        instruction=verify_instruction,
+                        attempt_base=9500,
+                        max_cost_tier=None,
+                        exclude_provider_ids={synthesis_provider},
+                    )
+                    model_check_completed = True
+                except ValueError:
+                    # Verification provider diversity is desirable but must not fabricate availability.
+                    model_check_completed = False
 
-        verification = self.verification_gate.verify(
-            answer=synthesis_text, assessment=assessment, model_check_completed=model_check_completed
-        )
+            verification = self.verification_gate.verify(
+                answer=synthesis_text, assessment=assessment, model_check_completed=model_check_completed
+            )
+        except Exception as exc:
+            self._complete_request(request.request_id, failure_code="GO_AI_VERIFICATION_FAILED")
+            if isinstance(exc, ValueError):
+                raise
+            raise ValueError("GO_AI_VERIFICATION_FAILED") from exc
         if not verification.deterministic_checks_passed:
             self._complete_request(request.request_id, failure_code="GO_AI_VERIFICATION_BLOCKED")
             raise ValueError("GO_AI_VERIFICATION_BLOCKED")
