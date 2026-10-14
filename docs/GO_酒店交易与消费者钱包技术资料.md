@@ -79,24 +79,23 @@ sequenceDiagram
 
 ## 3. 消费者钱包的边界
 
-### 3.1 第一阶段：支付方式钱包
+### 3.1 GO 消费者钱包
 
-第一阶段做这些能力就足够形成可用闭环：
+当前产品路径使用 GO 钱包现金余额支付酒店订单，不在该流程里选择支付宝、微信或银行卡支付渠道：
 
-- 查看已保存的支付方式和当前默认方式。
-- 在测试环境增加模拟支付方式；生产环境不暴露该能力。
-- 设置默认方式、删除方式；删除默认方式后自动选取另一个有效方式。
-- 酒店结账时显式选择支付方式，并把支付方式 ID 传给后端。
-- 服务端按登录用户校验支付方式归属，只将解密后的 token 交给支付适配器，API 不回传 token。
-- 展示订单最新状态；不要只根据一次支付请求的 HTTP 响应推断预订最终结果。
+- 钱包页区分现金余额、返现余额和已保存银行卡数量。
+- 酒店结账只扣现金余额；返现单独显示，直到明确返现的发放、解锁和使用规则后再接入计算。
+- 已保存银行卡是支付凭证展示信息，不作为当前钱包支付的资金来源。
+- 服务端按登录用户、订单归属和订单金额校验钱包付款，并用原子余额变更、账本流水和幂等键防止超扣、重复扣款。
+- 酒店拒绝预订时退回已扣现金；酒店结果未知时保持待处理并进入恢复/对账，不根据客户端响应臆测成功。
 
-这不是余额钱包：暂不支持充值、提现、消费者之间转账、账户余额抵扣或酒店资金托管。酒店供应商结算和平台佣金属于后台资金结算域，应另行设计。
+当前实现没有充值或提现入口，钱包余额不代表真实银行存款或酒店托管资金。供应商结算和平台佣金仍属于独立的后台结算域。
 
 ### 3.2 真实支付凭证与 token 化
 
 真实卡号和 CVC 不应该通过 GO 自建表单进入业务后端。正式支付应接入支付服务商的客户端 SDK / Hosted Fields，由服务商采集凭证并返回 token 或 payment method reference；GO 保存引用及必要展示元数据。只保存 token 并不自动免除 PCI DSS 义务，实际范围取决于集成方式和服务商责任划分。参见 [PCI SSC Tokenization 指南](https://listings.pcisecuritystandards.org/documents/Tokenization_Guidelines_Info_Supplement.pdf)。
 
-开发模拟端点只收 `scenario`，不收 PAN/CVC。仓库目前另有一个 `tokenize` API 接收卡字段，因此移动端不要调用该端点，也不要用真实银行卡测试该接口；生产级接入前应由合规 PSP SDK 替换该路径，并复核 PCI DSS 范围。
+银行卡凭证仍须由合规 PSP SDK / Hosted Fields 采集。GO 钱包的内部现金余额扣款不采集银行卡号，也不会调用外部支付网络。仓库现有 tokenization API 仍需在接入真实 PSP SDK 前完成合规改造。
 
 ### 3.3 支付状态的可靠性
 
@@ -128,46 +127,53 @@ Stripe 文档可帮助理解 PaymentIntent 状态机、保存支付方式与幂�
 | 跨服务事务 | [AWS Saga Patterns](https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/saga-patterns.html)、[Saga Orchestration](https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/saga-orchestration.html) | 本地事务、补偿动作、编排与恢复 |
 | 支付卡数据保护 | [PCI SSC Tokenization Guidelines](https://listings.pcisecuritystandards.org/documents/Tokenization_Guidelines_Info_Supplement.pdf) | token 化的边界、敏感数据和合规责任 |
 
-## 6. GO 工程现状与本次实现
+## 6. GO 工程现状与酒店钱包支付实现
 
-### 6.1 现有后端能力
+### 6.1 用户路径
 
-- `application/src/go_hotel/consumer/service.py` 已有消费者钱包与支付方式持久化逻辑；支付 token 使用加密字段保存，钱包响应只返回展示信息。
-- `application/src/go_hotel/api/routes/consumer_identity.py` 暴露钱包读取、支付方式 tokenization 和删除 API。
-- `application/src/go_hotel/api/routes/consumer_checkout.py` 有隔离结账入口，按环境限制模拟交易，且对服务器订单金额、币种和订单所有权进行校验。
-- `application/src/go_hotel/services/booking.py` 的酒店支付链路是“支付授权 → 酒店确认 → 成功后 capture”；明确的酒店拒绝会走授权撤销补偿，未知结果进入恢复/对账路径。
-- `application/src/go_hotel/payments/mock.py` 已有模拟授权成功、授权拒绝和 capture 失败结果。
-- `application/src/go_hotel/db/models.py` 中 `ConsumerWalletRow` 与 `ConsumerPaymentMethodRow` 已存在，不需要新增表字段来保存模拟场景。
+```text
+酒店详情 → 房型与报价 → 比价并选择 → Prebook 价格/库存复核
+→ 核对入住人和酒店规则 → 创建待付款订单 → 钱包支付 → 酒店确认
+```
 
-### 6.2 本次移动端闭环
+“比价并选择”不会直接扣款。它先复核报价和库存，然后在后续步骤建立订单；只有用户在支付页确认钱包现金支付时才扣款。这样支付金额始终来自服务端订单，而不是客户端传来的展示价格。
 
-- `application/mobile/go-app/src/screens/WalletScreen.tsx` 展示方式列表，添加三种模拟场景，允许设置默认方式和删除方式。不会在 App 里输入或传输卡号/CVC。
-- `application/mobile/go-app/src/screens/CheckoutScreen.tsx` 在 HOTEL 且模拟能力开放时读取钱包、选择方式；钱包无方式时可跳转 GO Wallet。
-- `application/mobile/go-app/src/domain/orderActions.ts` 付款时将支付方式 ID 一并纳入请求与幂等键指纹，发起后仍读取原订单确认状态。
-- `application/src/go_hotel/api/routes/consumer_checkout.py` 对 HOTEL 要求提供方式 ID，再由后端校验当前登录人对该方式的所有权并解密 token；其他垂类不接受该字段。
-- `application/src/go_hotel/api/routes/consumer_identity.py` 增加模拟方式创建和默认方式设置接口。`local`、`test`、`demo` 环境开放；`staging` 的酒店模拟能力还必须显式配置 `SIMULATED_CHECKOUT_ENABLED_IN_STAGING=true`，默认关闭。此 staging 开关只允许 HOTEL 垂类，不会开放其他垂类模拟结账，也不会把 `APP_ENV` 改成 `local`。
-- staging 模拟结账另要求订单对应的供应商身份严格为 `conn_mock_hotel` / `sup_mock`；非 mock 酒店订单会被拒绝，避免模拟入口进入真实供应商履约。
+### 6.2 钱包组成
 
-### 6.3 模拟场景
+- `cash_balance_minor`：可用于酒店钱包支付的现金余额，按人民币分存储。
+- `cashback_balance_minor`：独立展示的返现余额。本实现不把返现折入现金余额，也不在没有明确返现规则时自动消费或发放返现。
+- `payment_methods` / `bank_card_count`：仅展示已保存的银行卡张数及脱敏卡面。银行卡不会在这条酒店钱包流程中被扣款。
+- `consumer_wallet_ledger`：追加式余额流水，记录酒店支付扣款与预订失败后的余额退回，并用唯一幂等键防止重复记账。
 
-| 场景 | 模拟器效果 | 预期用户观察 |
-|---|---|---|
-| `SUCCESS` | 授权成功；供应商确认后 capture 成功 | 酒店订单确认、支付完成 |
-| `DECLINED` | 授权被拒绝 | 订单不能确认，可选择另一种模拟方式重试 |
-| `CAPTURE_FAILED` | 授权成功，酒店确认后 capture 失败 | 进入支付恢复/对账语义，不应伪装为支付成功 |
+新注册钱包的现金和返现余额均从 0 开始。当前没有充值入口或返现发放规则；若现金余额不足，服务端会拒绝支付并保留订单，不会自动创建测试资金。
 
-这些结果只通过本地 mock payment provider 模拟，不会联系真实支付网络。staging 开启时还必须通过 mock 酒店身份校验；能力接口分别返回通用 `simulation_available` 和酒店专用 `hotel_simulation_available`。未开放时 App 隐藏模拟方式创建入口并禁用结账，不能通过前端改值绕过后端校验。**此仓库代码只定义了开关和隔离条件，不代表 staging 已开启或已部署。**
+### 6.3 后端执行顺序
+
+1. `POST /v1/consumer/wallet/checkout/{order_id}` 校验登录用户、订单归属、币种、服务端金额和订单状态。
+2. 在同一数据库事务中锁定订单与钱包；检查余额足够后扣减现金，追加 `HOTEL_PAYMENT_DEBIT` 流水，创建 `GO_WALLET` 授权支付记录并将订单推进到 `PAYMENT_AUTHORIZED`。
+3. 调用既有 `booking_service.confirm()` 完成酒店预订。酒店明确拒绝时退回已扣现金并追加 `HOTEL_PAYMENT_RELEASE`；酒店状态未知时保留待处理状态，等待原有恢复/对账流程。
+4. 酒店确认后将钱包支付记录 capture 并确认订单。此步骤只结清 GO 钱包内部余额扣款，不调用支付宝、微信或银行卡支付网络。
+
+钱包扣款接口使用 `Idempotency-Key`。相同请求重试会复用支付记录，不能再次扣款。每笔流水记录整数分金额、扣款后的余额、订单和唯一幂等键。
+
+### 6.4 移动端
+
+- `WalletScreen.tsx` 显示现金余额、返现余额、银行卡数量及脱敏卡片，不再提供“添加开发模拟方式”。
+- `CheckoutScreen.tsx` 的 HOTEL 分支显示钱包现金余额与应付金额，并调用钱包 checkout API；其他垂类沿用各自现有能力。
+- `HotelCompareScreen.tsx` 的比价选择仍先进入 Prebook 和订单核对；后续酒店付款页使用钱包现金余额。
+
+酒店通用模拟 checkout 入口已对 HOTEL 禁止，能力接口固定返回 `hotel_simulation_available=false`。真实 PSP、充值、提现、返现核算仍未实现。
 
 ## 7. 逐步学习和后续演进建议
 
-1. 先读本仓库 `booking.py`，沿着 `pay → confirm → capture/void` 跟踪订单状态和补偿动作。
-2. 再读 `consumer_checkout.py`、`consumer_identity.py` 和 `consumer/service.py`，理解 API 边界、身份归属与 token 读取。
-3. 对照 `payments/mock.py` 和数据库中的支付/订单模型，区分支付尝试与订单状态。
-4. 运行消费者完整流程时，依次观察：钱包方式创建 → 创建酒店待支付订单 → 选方式 → 支付授权 → 酒店模拟确认 → capture → 重读订单。
-5. 后续再独立设计真实 PSP SDK 接入、支付 webhook、酒店取消/退款、账本、供应商结算、对账后台和风控；不要把它们混成一个“钱包余额”字段。
+1. 读 `consumer_checkout.py` 与 `consumer/service.py`，理解余额检查、幂等键和钱包流水。
+2. 读 `booking.py`，跟踪钱包授权如何复用酒店确认 Saga，以及供应商拒绝和未知结果的处理方式。
+3. 读 `models.py` 与 Alembic migration `0136_consumer_wallet_cash_ledger.py`，检查钱包余额和流水表结构。
+4. 完整验收时，从房型选择开始，确认订单金额后用已有现金余额付款；再检查订单状态、钱包余额变化和 ledger entry。
+5. 后续再分别设计充值、返现规则、退款回钱包、真实 PSP 接入和银行卡管理，不要把它们混成一项“模拟支付”。
 
 ## 8. 当前范围之外
 
-- 没有真实银行卡绑定、真实支付、充值、提现、消费者余额、酒店托管资金或供应商结算。
-- 没有新增数据库 schema；模拟方式复用既有支付方式表和加密 token 字段。
-- 本文不证明远程服务器或手机上运行的后端已更新。本次仅记录架构资料并修改代码候选；需要后续单独构建/部署后才能在设备上体验。
+- 没有银行卡扣款、充值、提现或返现发放规则；已保存银行卡仅作卡片信息展示。
+- 钱包现金余额与支付流水已加入候选 schema；余额资金来源和充值业务尚未实现。
+- 本文描述的是当前工作区代码候选，不表示 APK 已重建、数据库 migration 已运行或远程服务已更新。

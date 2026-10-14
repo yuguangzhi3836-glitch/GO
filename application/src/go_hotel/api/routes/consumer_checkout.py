@@ -1,14 +1,11 @@
-"""Explicit checkout for isolated product acceptance, with authoritative amounts.
-
-This route does not activate any external supplier or payment provider.
-"""
+"""Consumer checkout: wallet-backed HOTEL payment and isolated non-hotel acceptance."""
 from typing import Literal
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 
 from go_hotel.api.idempotency import run_idempotent_async
-from go_hotel.core.config import settings
+from go_hotel.core.simulation import consumer_simulated_checkout_enabled
 from go_hotel.db.models import (OrderRow, FlightOrderRow, RailOrderRow,
     MobilityRentalOrderRow, MobilityRideOrderRow, AttractionOrderRow,
     OrderSupplierFulfillmentRow, OmnichannelPaymentIntentRow, OmnichannelMoneyMovementRow)
@@ -21,29 +18,65 @@ from go_hotel.services.order_supplier_fulfillment import order_supplier_fulfillm
 router = APIRouter(tags=['consumer-explicit-checkout'])
 MODELS = {'HOTEL': OrderRow, 'FLIGHT': FlightOrderRow, 'RAIL': RailOrderRow,
           'RENTAL': MobilityRentalOrderRow, 'RIDE': MobilityRideOrderRow, 'ATTRACTION': AttractionOrderRow}
-ACCEPTANCE_ENVS = {'local', 'test', 'demo'}
-
 class CheckoutConfirmation(BaseModel):
     model_config = ConfigDict(extra='forbid')
     mode: Literal['CONTRACT_SIMULATOR']
     expected_amount_minor: int = Field(strict=True, gt=0)
     currency: Literal['CNY']
 
+class WalletCheckoutConfirmation(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    expected_amount_minor: int = Field(strict=True, gt=0)
+    currency: Literal['CNY']
+
 @router.get('/v1/consumer/checkout-capabilities')
 def capabilities():
-    return {'data': {'simulation_available': settings.app_env.lower() in ACCEPTANCE_ENVS,
+    return {'data': {'simulation_available': consumer_simulated_checkout_enabled(),
+                     'hotel_simulation_available': False,
                      'live_payment_available': False, 'external_live': False}}
+
+@router.post('/v1/consumer/wallet/checkout/{order_id}')
+async def wallet_hotel_checkout(order_id: str, body: WalletCheckoutConfirmation,
+                   p: Principal = Depends(consumer_principal),
+                   idempotency_key: str = Header(alias='Idempotency-Key', min_length=1, max_length=160)):
+    """Pay a hotel order from wallet cash, then use the existing supplier booking saga."""
+    with SessionLocal() as s:
+        order = s.get(OrderRow, order_id)
+        if not order or order.account_id != p.user_id:
+            raise HTTPException(404, detail='ORDER_NOT_FOUND')
+        if order.total_amount_minor != body.expected_amount_minor or order.currency != body.currency:
+            raise HTTPException(409, detail='ORDER_AMOUNT_CHANGED_RECONFIRM_REQUIRED')
+        order_status = str(order.status)
+        if order_status not in {'PAYMENT_PENDING', 'PAYMENT_AUTHORIZED', 'BOOKING_PENDING',
+                                'CAPTURE_PENDING', 'CONFIRMED', 'RECONCILIATION_REQUIRED'}:
+            raise HTTPException(409, detail='ORDER_NOT_PAYABLE')
+    async def execute():
+        from go_hotel.consumer.service import consumer_service
+        from go_hotel.services.booking import booking_service
+        try:
+            payment = consumer_service.authorize_wallet_hotel_payment(
+                p, order_id, body.expected_amount_minor, body.currency, idempotency_key)
+            order = await booking_service.confirm(order_id)
+            return {'data': {'order_id': order_id, 'status': str(order.status),
+                'payment_id': payment['payment_id'], 'wallet_paid': True,
+                'data_mode': 'WALLET_BALANCE', 'external_live': False}}
+        except ValueError as exc:
+            raise HTTPException(409, detail=str(exc)) from exc
+    return await run_idempotent_async('CONSUMER_HOTEL_WALLET_CHECKOUT', idempotency_key,
+        {'account_id':p.user_id,'order_id':order_id,**body.model_dump()}, execute)
 
 @router.post('/v1/consumer/checkout/{vertical}/{order_id}')
 async def checkout(vertical: str, order_id: str, body: CheckoutConfirmation,
                    p: Principal = Depends(consumer_principal),
                    idempotency_key: str = Header(alias='Idempotency-Key', min_length=1, max_length=160)):
-    if settings.app_env.lower() not in ACCEPTANCE_ENVS:
-        raise HTTPException(403, detail='SIMULATED_CHECKOUT_FORBIDDEN_IN_THIS_ENVIRONMENT')
     vertical = vertical.upper()
     model = MODELS.get(vertical)
     if not model:
         raise HTTPException(404, detail='VERTICAL_NOT_FOUND')
+    if vertical == 'HOTEL':
+        raise HTTPException(403, detail='HOTEL_WALLET_CHECKOUT_REQUIRED')
+    if not consumer_simulated_checkout_enabled(vertical):
+        raise HTTPException(403, detail='SIMULATED_CHECKOUT_FORBIDDEN_IN_THIS_ENVIRONMENT')
     with SessionLocal() as s:
         order = s.get(model, order_id)
         if not order or order.account_id != p.user_id:
@@ -55,17 +88,6 @@ async def checkout(vertical: str, order_id: str, body: CheckoutConfirmation,
             raise HTTPException(409, detail='ORDER_NOT_PAYABLE')
     async def execute():
         try:
-            if vertical == 'HOTEL':
-                from go_hotel.services.booking import booking_service
-                from go_hotel.repositories.sql import repo
-                from go_hotel.domain.models import OrderStatus
-                current = repo.get_order(order_id)
-                if current.status != OrderStatus.CONFIRMED:
-                    await booking_service.pay(order_id, body.expected_amount_minor, body.currency, 'pm_success')
-                    current = await booking_service.confirm(order_id)
-                return {'data': {'order_id': order_id, 'status': str(current.status),
-                    'supplier_confirmation_reference': current.supplier_confirmation_no,
-                    'data_mode': 'SIMULATION', 'external_live': False}}
             with SessionLocal() as s:
                 fulfillment=s.scalar(select(OrderSupplierFulfillmentRow).where(
                     OrderSupplierFulfillmentRow.business_type==f'{vertical}_ORDER',

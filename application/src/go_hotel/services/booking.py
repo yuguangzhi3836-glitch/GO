@@ -86,11 +86,20 @@ class BookingService:
         order=repo.get_order(order_id)
         if not order or order.status!=OrderStatus.CONFIRMED:
             return order
-        iid=hotel_money_bridge.ensure_original_root(order_id)
+        from sqlalchemy import select
+        from go_hotel.db.models import PaymentRow
+        from go_hotel.db.session import SessionLocal
+        with SessionLocal() as s:
+            payment=s.scalar(select(PaymentRow).where(PaymentRow.order_id==order_id,
+                PaymentRow.status==PaymentStatus.CAPTURED.value).order_by(PaymentRow.created_at.desc()))
+            wallet_payment_id=payment.payment_id if payment and payment.payment_type=="GO_WALLET" else None
+        iid=None if wallet_payment_id else hotel_money_bridge.ensure_original_root(order_id)
         consumer_unified_lifecycle_service.project({
             'account_id':order.account_id,'vertical':'HOTEL','order_id':order.order_id,'supplier_id':order.supplier_id,
             'title':f'HOTEL {order.order_id}','lifecycle_state':'CONFIRMED','payment_state':'PAID','refund_state':'NOT_REQUESTED',
-            'change_allowed':True,'cancel_allowed':True,'facts':{'payment_intent_id':iid,'supplier_confirmation_no':order.supplier_confirmation_no},
+            'change_allowed':True,'cancel_allowed':True,'facts':{'payment_intent_id':iid,
+                'wallet_payment_id':wallet_payment_id,
+                'supplier_confirmation_no':order.supplier_confirmation_no},
             'evidence_reference':f'hotel-capture://{order_id}','source_updated_at':datetime.now(timezone.utc).isoformat()
         })
         return order
@@ -136,6 +145,10 @@ class BookingService:
         return payment
 
     async def _void_after_definitive_booking_failure(self, order_id: str, payment: Payment, reason: str):
+        from go_hotel.consumer.service import consumer_service
+        if consumer_service.is_wallet_payment(payment.payment_id):
+            consumer_service.release_wallet_hotel_payment(payment.payment_id)
+            return repo.fail_booking_and_void_authorization(order_id, payment.payment_id, reason)
         void_op, acquired = repo.begin_external_operation("PAYMENT_VOID", order_id, {"payment_id":payment.payment_id,"reason":reason})
         if acquired:
             result = await payment_provider.void(payment.payment_id, idempotency_key=void_op["operation_id"])
@@ -206,12 +219,17 @@ class BookingService:
             if capture_op.get("status") in ("EXTERNAL_SUCCEEDED","RECONCILE_REQUIRED"):
                 return await self.recover_capture(capture_op)
             conflict("PAYMENT_CAPTURE_IN_PROGRESS", "Payment capture is already in progress")
-        result = await payment_provider.capture(payment.payment_id, idempotency_key=capture_op["operation_id"])
+        from go_hotel.consumer.service import consumer_service
+        wallet_payment = consumer_service.is_wallet_payment(payment.payment_id)
+        result = (Payment(payment.payment_id, order_id, payment.amount_minor, payment.currency, PaymentStatus.CAPTURED)
+                  if wallet_payment else await payment_provider.capture(payment.payment_id, idempotency_key=capture_op["operation_id"]))
         if result.status != PaymentStatus.CAPTURED:
             repo.mark_external_failed(capture_op["operation_id"], "PAYMENT_CAPTURE_FAILED_AFTER_BOOKING")
             repo.mark_order_reconciliation_required(order_id, "SUPPLIER_BOOKED_CAPTURE_FAILED", "PAYMENT_CAPTURE_FAILED_AFTER_BOOKING", repo.get_order(order_id).supplier_confirmation_no)
             unavailable("PAYMENT_CAPTURE_RECONCILIATION_REQUIRED", "Hotel is booked but payment capture failed; case moved to reconciliation")
-        repo.mark_external_success(capture_op["operation_id"], result.payment_id, {"payment_id":result.payment_id,"status":"CAPTURED"})
+        repo.mark_external_success(capture_op["operation_id"], result.payment_id,
+            {"payment_id":result.payment_id,"status":"CAPTURED",
+             "settlement_source":"GO_WALLET" if wallet_payment else "EXTERNAL_PAYMENT_PROVIDER"})
         try:
             faults.hit("capture_after_external_success")
             order=repo.commit_capture_after_booking(result.payment_id, capture_op["operation_id"]); return self._finalize_hotel_truth(order.order_id)
@@ -246,7 +264,9 @@ class BookingService:
             captured=repo.get_captured_payment_for_order(order_id)
             if captured: return repo.get_order(order_id)
             raise RuntimeError("Missing payment during capture recovery")
-        status=await payment_provider.status(payment.payment_id)
+        from go_hotel.consumer.service import consumer_service
+        status=(PaymentStatus.CAPTURED if consumer_service.is_wallet_payment(payment.payment_id)
+                else await payment_provider.status(payment.payment_id))
         if status == PaymentStatus.CAPTURED:
             return repo.commit_capture_after_booking(payment.payment_id, op["operation_id"])
         raise RuntimeError(f"Payment capture status remains {status}")

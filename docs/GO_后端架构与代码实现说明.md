@@ -199,7 +199,7 @@ POST /v1/mobile/auth/login
 
 `application/mobile/go-app/app.json` 把 `extra.apiBaseUrl` 设为 `http://localhost:8000`。`app.config.js` 在没有 `EXPO_PUBLIC_API_URL` / `EXPO_PUBLIC_API_BASE_URL` 时保留该默认值，`src/api/client.ts` 再使用它初始化 transport。
 
-此前 Debug APK 构建命令没有传 `-ApiBaseUrl`，所以该 APK 使用默认 localhost。Android 真机里的 localhost 是手机自己，不是电脑、PostgreSQL 主机或 HK 后端；安装脚本目前自动转发的是 Metro `8081`，不会自动转发 API `8000`。
+此前 Debug APK 构建命令没有传 `-ApiBaseUrl`，所以该 APK 使用默认 localhost。Android 真机里的 localhost 是手机自己，不是电脑、PostgreSQL 主机或 HK 后端。构建安装脚本现已在 `-Launch` / `-Logcat` 时自动为 loopback API 转发其端口（默认 `8000`），并为 Metro 转发 `8081`。
 
 若后端在连接手机的开发电脑本机，并通过 USB 调试，可以选择明确的 USB loopback 配置：
 
@@ -265,7 +265,7 @@ adb -s YOUR_DEVICE_SERIAL reverse tcp:8000 tcp:8000
 ### 10.3 建议的演进顺序
 
 1. 先确认当前 APK 的 API base URL、手机能否请求健康 API、API 所部署版本和迁移状态；这直接决定登录属于网络、版本还是账号问题。
-2. 补全 Mobile 的 API 8000 调试路径：USB 调试时增加/记录 `adb reverse tcp:8000 tcp:8000`，并让构建时明确配置 API URL；发布构建继续强制 HTTPS。
+2. Mobile 的本机 API 调试路径已由构建安装脚本配置 USB reverse；使用 loopback API URL 时应确认转发端口与 API 端口一致，发布构建继续强制 HTTPS。
 3. 实现 native 注册接口的 token 语义和注册 UI；将 consumer identity/profile/wallet/terms 放入一个事务或设计可恢复的注册 Saga。
 4. 给身份登录增加/验证边缘与服务端速率限制、失败审计和账号恢复能力，并检查所有 `/internal/` path 的 ingress/service identity 防护。
 5. 小步拆分 router registry、route helper 和过大 ORM model；用已有 API/domain contract 固定可观察行为，再分别迁移单一领域。

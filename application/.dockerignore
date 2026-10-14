@@ -8,6 +8,8 @@
 **/*.pyo
 node_modules
 **/node_modules
+# The mobile client is built independently and is not part of the Python API image.
+mobile/go-app/
 # Runtime data: the application caches under var/ relative to its cwd
 # (e.g. GO_MEDIA_CACHE_DIR default `var/media_cache`). Never ship it.
 var

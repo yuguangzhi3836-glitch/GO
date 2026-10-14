@@ -26,7 +26,8 @@ function amount(order: any) {
 export async function checkoutView(ref: OrderRef, request: Request) {
   const result=await readOrder(ref,request);
   const capability=(await request('/v1/consumer/checkout-capabilities')).data;
-  return {...result,simulation:capability?.simulation_available===true&&capability?.external_live===false};
+  const available=ref.vertical==='HOTEL'?capability?.hotel_simulation_available===true:capability?.simulation_available===true;
+  return {...result,simulation:available&&capability?.external_live===false};
 }
 export function createOrderActions(request: Request, current: ()=>boolean = ()=>true) {
   let busy=false;
@@ -46,7 +47,7 @@ export function createOrderActions(request: Request, current: ()=>boolean = ()=>
       let uncertain=false;
       try {
         const response=await request(`/v1/consumer/checkout/${ref.vertical}/${ref.orderId}`,{method:'POST',
-          headers:{'Idempotency-Key':`mobile-pay:${ref.vertical}:${ref.orderId}:${fresh.amount}:${fresh.currency}`},
+          headers:{'Idempotency-Key':`mobile-pay:${requestFingerprint(JSON.stringify([ref.vertical,ref.orderId,fresh.amount,fresh.currency]))}`},
           body:JSON.stringify({mode:'CONTRACT_SIMULATOR',expected_amount_minor:fresh.amount,currency:fresh.currency})});check();
         if(response.data?.order_id!==ref.orderId||response.data?.external_live!==false)throw Error('PAYMENT_RESPONSE_UNVERIFIED');
       }catch(error:any){check();if(error?.status&&error.status<500)throw error;uncertain=true;}

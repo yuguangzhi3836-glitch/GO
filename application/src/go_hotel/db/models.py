@@ -1268,8 +1268,23 @@ class ConsumerWalletRow(Base):
     wallet_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     user_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
     status: Mapped[str] = mapped_column(String(24), nullable=False, default="ACTIVE")
+    cash_balance_minor: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    cashback_balance_minor: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+class ConsumerWalletLedgerRow(Base):
+    __tablename__ = "consumer_wallet_ledger"
+    wallet_ledger_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    wallet_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    order_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    entry_type: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    amount_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    balance_after_minor: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="CNY")
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False, unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
 
 Index("ix_consumer_traveler_user_status", TravelerProfileRow.user_id, TravelerProfileRow.status)
 Index("ix_consumer_payment_user_status", ConsumerPaymentMethodRow.user_id, ConsumerPaymentMethodRow.status)

@@ -4,10 +4,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from go_hotel.core.config import settings
 from go_hotel.security.service import identity_service, Principal
-from go_hotel.security.deps import consumer_principal, assert_consumer_order
+from go_hotel.security.deps import consumer_principal
 from go_hotel.consumer.service import consumer_service
 from go_hotel.db.session import SessionLocal
-from go_hotel.db.models import OrderRow, AuditEventRow
+from go_hotel.db.models import (OrderRow, AuditEventRow, ConsumerWalletLedgerRow)
 from go_hotel.services.booking import booking_service
 from go_hotel.services.booking_data_release import release_booking_data
 from go_hotel.services.rc20_vertical_evidence import append_vertical_evidence
@@ -35,7 +35,6 @@ class ConsumerOrderBody(BaseModel):
     traveler_id:str|None=None
     expected_fare_rule_hash:str|None=Field(default=None,pattern=r'^[a-f0-9]{64}$')
     fare_confirmed:bool=Field(default=False,strict=True)
-class ConsumerCheckoutBody(BaseModel): payment_method_id:str
 
 def _cookie_kwargs(http_only=True): return dict(secure=settings.cookie_secure,httponly=http_only,samesite=settings.session_cookie_samesite,domain=settings.cookie_domain,path="/")
 def _set(response,t):
@@ -102,6 +101,21 @@ def tokenize(body:TokenizeBody,p:Principal=Depends(consumer_principal)):
     except ValueError as e: raise HTTPException(422,detail=str(e))
 @router.get("/v1/consumer/wallet")
 def wallet(p:Principal=Depends(consumer_principal)): return {"data":consumer_service.wallet(p)}
+@router.get("/v1/consumer/wallet/ledger")
+def wallet_ledger(p:Principal=Depends(consumer_principal)):
+    with SessionLocal() as s:
+        rows=s.scalars(select(ConsumerWalletLedgerRow).where(
+            ConsumerWalletLedgerRow.user_id==p.user_id
+        ).order_by(ConsumerWalletLedgerRow.created_at.desc()).limit(50)).all()
+        items=[{"wallet_ledger_id":r.wallet_ledger_id,"order_id":r.order_id,
+            "entry_type":r.entry_type,"amount_minor":int(r.amount_minor),
+            "balance_after_minor":int(r.balance_after_minor),"currency":r.currency,
+            "created_at":r.created_at.isoformat()} for r in rows]
+    return {"data":{"items":items}}
+@router.post("/v1/consumer/wallet/payment-methods/{payment_method_id}/default")
+def set_default_payment(payment_method_id:str,p:Principal=Depends(consumer_principal)):
+    try: return {"data":consumer_service.set_default_payment_method(p,payment_method_id)}
+    except ValueError as e: raise HTTPException(404,detail=str(e))
 @router.delete("/v1/consumer/wallet/payment-methods/{payment_method_id}")
 def delete_payment(payment_method_id:str,p:Principal=Depends(consumer_principal)):
     try: consumer_service.delete_payment_method(p,payment_method_id); return {"data":{"status":"DELETED"}}
@@ -120,15 +134,6 @@ async def create_consumer_order(body:ConsumerOrderBody,p:Principal=Depends(consu
                 append_vertical_evidence(s,'HOTEL',o.order_id,'VAULT_BOOKING_DATA_RELEASED',o.status,{'release_ids':released['release_ids'],'minimum_necessary':True,'fields':['LEGAL_NAME','MOBILE']})
         return {"data":{"order_id":o.order_id,"status":o.status,"total_amount_minor":o.total_amount_minor,"currency":o.currency,"vault_release_ids":released['release_ids']}}
     return await run_idempotent_async('CONSUMER_HOTEL_CREATE',idempotency_key,{'account_id':p.user_id,**body.model_dump()},execute)
-
-@router.post("/v1/consumer/orders/{order_id}/secure-checkout")
-async def secure_checkout(order_id:str,body:ConsumerCheckoutBody,p:Principal=Depends(consumer_principal)):
-    o=assert_consumer_order(p,order_id)
-    try: token=consumer_service.payment_token(p,body.payment_method_id)
-    except ValueError as e: raise HTTPException(404,detail=str(e))
-    payment=await booking_service.pay(order_id,o.total_amount_minor,o.currency,token)
-    confirmed=await booking_service.confirm(order_id)
-    return {"data":{"order_id":confirmed.order_id,"status":confirmed.status,"payment_id":payment.payment_id,"supplier_confirmation_no":confirmed.supplier_confirmation_no}}
 
 from go_hotel.truth.service import truth_service
 from go_hotel.db.models import ReviewSessionRow

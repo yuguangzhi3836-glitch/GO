@@ -1,0 +1,45 @@
+# Local-only overrides for running GO backend on the Docker Desktop WSL2 engine.
+# Keep this file out of shared staging/production deployment commands.
+services:
+  migrate:
+    environment:
+      APP_ENV: local
+
+  api:
+    environment:
+      APP_ENV: local
+      MFA_REQUIRED_FOR_ADMIN: "false"
+      LOCAL_WALLET_INITIAL_CASH_MINOR: "5000000"
+
+  outbox-worker:
+    environment:
+      APP_ENV: local
+
+  recovery-worker:
+    environment:
+      APP_ENV: local
+
+  reconciliation-worker:
+    environment:
+      APP_ENV: local
+
+  judgment-worker:
+    environment:
+      APP_ENV: local
+
+  mobile-engagement-worker:
+    environment:
+      APP_ENV: local
+
+  mobile-push-worker:
+    environment:
+      APP_ENV: local
+
+  mobile-push-receipt-worker:
+    environment:
+      APP_ENV: local
+
+  regional-hotel-build-worker:
+    environment:
+      APP_ENV: local
+      GO_HOTEL_REGION_DISCOVERY_BOOTSTRAP_OSM: "false"

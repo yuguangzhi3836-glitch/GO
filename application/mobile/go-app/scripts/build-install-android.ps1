@@ -24,6 +24,7 @@ $gradleWrapper = Join-Path $androidRoot 'gradlew.bat'
 $apkPath = Join-Path $androidRoot 'app\build\outputs\apk\debug\app-debug.apk'
 $applicationId = 'travel.go.consumer'
 $localPropertiesPath = Join-Path $androidRoot 'local.properties'
+$effectiveApiBaseUrl = if ($ApiBaseUrl) { $ApiBaseUrl.TrimEnd('/') } else { 'http://localhost:8000' }
 
 $sdkRootFromLocalProperties = $null
 if (Test-Path -LiteralPath $localPropertiesPath -PathType Leaf) {
@@ -84,14 +85,87 @@ function Invoke-NativeCommand {
     }
 }
 
+function Get-LocalHttpContent {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Uri,
+        [Parameter(Mandatory = $true)]
+        [int]$TimeoutSeconds
+    )
+
+    # Metro is a loopback service. HttpClientHandler.UseProxy = false is important
+    # on machines that set HTTP_PROXY/HTTPS_PROXY/ALL_PROXY for external traffic.
+    Add-Type -AssemblyName System.Net.Http
+    $handler = New-Object System.Net.Http.HttpClientHandler
+    $handler.UseProxy = $false
+    $client = [System.Net.Http.HttpClient]::new($handler)
+    $client.Timeout = [TimeSpan]::FromSeconds($TimeoutSeconds)
+    $response = $null
+    try {
+        $response = $client.GetAsync($Uri).GetAwaiter().GetResult()
+        $content = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+        if (-not $response.IsSuccessStatusCode) {
+            $responseExcerpt = $content
+            if ($responseExcerpt.Length -gt 800) {
+                $responseExcerpt = $responseExcerpt.Substring(0, 800)
+            }
+            throw "Local HTTP request failed with status $([int]$response.StatusCode): $responseExcerpt"
+        }
+        return $content
+    }
+    finally {
+        if ($response) { $response.Dispose() }
+        $client.Dispose()
+        $handler.Dispose()
+    }
+}
+
 if (-not (Test-Path -LiteralPath $gradleWrapper -PathType Leaf)) {
     throw "Gradle wrapper not found: $gradleWrapper"
 }
-if (-not (Test-Path -LiteralPath (Join-Path $mobileRoot 'node_modules\expo\package.json') -PathType Leaf)) {
-    throw "Mobile dependencies are missing. Run 'npm ci' in $mobileRoot first."
-}
 if (-not (Get-Command 'node.exe' -ErrorAction SilentlyContinue)) {
     throw 'Node.js was not found on PATH. Install Node.js and reopen PowerShell.'
+}
+
+# Repair the known Metro dependency failure automatically, but only when the
+# locked install is incomplete. Running npm ci on every build would slow down
+# the normal build/install loop.
+$requiredMobileFiles = @(
+    (Join-Path $mobileRoot 'node_modules\expo\package.json'),
+    (Join-Path $mobileRoot 'node_modules\caniuse-lite\dist\unpacker\agents.js')
+)
+$missingMobileFiles = @($requiredMobileFiles | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) })
+if ($missingMobileFiles.Count -gt 0) {
+    $npmCommand = Get-Command 'npm.cmd' -ErrorAction SilentlyContinue
+    if (-not $npmCommand) {
+        throw "Mobile dependencies are incomplete and npm.cmd was not found. Run 'npm ci' in $mobileRoot after installing Node.js."
+    }
+
+    Write-Host 'Mobile dependencies are incomplete; restoring the locked dependencies with npm ci...'
+    Push-Location $mobileRoot
+    try {
+        $nativeErrorPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            & $npmCommand.Source 'ci' '--no-audit' '--no-fund' 2>&1 |
+                ForEach-Object { Write-Host $_ }
+            $npmExitCode = $LASTEXITCODE
+        }
+        finally {
+            $ErrorActionPreference = $nativeErrorPreference
+        }
+        if ($npmExitCode -ne 0) {
+            throw "npm ci failed with exit code $npmExitCode."
+        }
+    }
+    finally {
+        Pop-Location
+    }
+
+    $missingMobileFiles = @($requiredMobileFiles | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) })
+    if ($missingMobileFiles.Count -gt 0) {
+        throw "npm ci completed, but required mobile dependencies are still missing: $($missingMobileFiles -join ', ')"
+    }
 }
 
 $environmentNames = @('EXPO_PUBLIC_API_URL', 'EXPO_NO_TYPESCRIPT_SETUP', 'JAVA_HOME', 'GRADLE_USER_HOME', 'GRADLE_OPTS', 'JAVA_TOOL_OPTIONS', 'TEMP', 'TMP')
@@ -142,10 +216,18 @@ try {
     Write-Host 'Building Android Debug APK...'
     Push-Location $androidRoot
     try {
-        $buildResult = Invoke-NativeCommand -FilePath $gradleWrapper -Arguments @(':app:assembleDebug')
-        $buildOutput = $buildResult.Output
-        $buildExitCode = $buildResult.ExitCode
-        $buildOutput | ForEach-Object { Write-Host $_ }
+        # Keep Gradle output flowing to the console while the build runs. The
+        # plain console mode also keeps task progress readable in PowerShell.
+        $nativeErrorPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            & $gradleWrapper ':app:assembleDebug' '--console=plain' 2>&1 |
+                ForEach-Object { Write-Host $_ }
+            $buildExitCode = $LASTEXITCODE
+        }
+        finally {
+            $ErrorActionPreference = $nativeErrorPreference
+        }
         if ($buildExitCode -ne 0) {
             throw "Gradle build failed with exit code $buildExitCode."
         }
@@ -157,6 +239,7 @@ try {
     if (-not (Test-Path -LiteralPath $apkPath -PathType Leaf)) {
         throw "Gradle completed but the expected APK was not found: $apkPath"
     }
+
     Write-Host "APK ready: $apkPath"
 
     if ($NoInstall) {
@@ -204,6 +287,20 @@ then rerun this script. The SDK path can be supplied through ANDROID_SDK_ROOT or
         throw "ADB device is $($Matches[1]). Unlock the phone and accept the USB debugging prompt, or reconnect it if offline."
     }
     $selectedSerial = ($selectedRow -split '\s+')[0]
+
+    if ($Launch -or $Logcat) {
+        $apiUri = [System.Uri]$effectiveApiBaseUrl
+        if ($apiUri.IsLoopback) {
+            $apiPort = $apiUri.Port
+            Write-Host "Forwarding local API port $apiPort to device $selectedSerial..."
+            $apiReverseResult = Invoke-NativeCommand -FilePath $adbPath -Arguments @('-s', $selectedSerial, 'reverse', "tcp:$apiPort", "tcp:$apiPort")
+            $apiReverseResult.Output | ForEach-Object { Write-Host $_ }
+            if ($apiReverseResult.ExitCode -ne 0) {
+                throw "Could not configure adb reverse for local API port $apiPort."
+            }
+        }
+    }
+
     Write-Host "Installing on device: $selectedSerial"
     $installResult = Invoke-NativeCommand -FilePath $adbPath -Arguments @('-s', $selectedSerial, 'install', '-r', $apkPath)
     $installOutput = $installResult.Output
@@ -236,8 +333,8 @@ then rerun this script. The SDK path can be supplied through ANDROID_SDK_ROOT or
         $metroStatusUrl = 'http://127.0.0.1:8081/status'
         $metroReady = $false
         try {
-            $metroStatus = Invoke-WebRequest -UseBasicParsing -Uri $metroStatusUrl -TimeoutSec 2
-            $metroReady = $metroStatus.Content -match 'packager-status:running'
+            $metroStatus = Get-LocalHttpContent -Uri $metroStatusUrl -TimeoutSeconds 2
+            $metroReady = $metroStatus -match 'packager-status:running'
         }
         catch {
             $metroReady = $false
@@ -262,8 +359,8 @@ then rerun this script. The SDK path can be supplied through ANDROID_SDK_ROOT or
             while ((Get-Date) -lt $metroDeadline) {
                 Start-Sleep -Seconds 2
                 try {
-                    $metroStatus = Invoke-WebRequest -UseBasicParsing -Uri $metroStatusUrl -TimeoutSec 2
-                    if ($metroStatus.Content -match 'packager-status:running') {
+                    $metroStatus = Get-LocalHttpContent -Uri $metroStatusUrl -TimeoutSeconds 2
+                    if ($metroStatus -match 'packager-status:running') {
                         $metroReady = $true
                         break
                     }
@@ -276,6 +373,22 @@ then rerun this script. The SDK path can be supplied through ANDROID_SDK_ROOT or
                 throw "Metro did not become ready at $metroStatusUrl within 60 seconds. See $metroLog and $metroErrorLog"
             }
             Write-Host "Metro started. Log: $metroLog"
+        }
+
+        Write-Host 'Requesting the Android JavaScript bundle from Metro...'
+        try {
+            # Expo's configured entry point is expo/AppEntry.js (package.json "main"),
+            # so Metro serves this path instead of a root-level /index.bundle.
+            $bundleUrl = 'http://127.0.0.1:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&minify=false'
+            $bundleContent = Get-LocalHttpContent -Uri $bundleUrl -TimeoutSeconds 180
+            if ([string]::IsNullOrWhiteSpace($bundleContent)) {
+                throw 'Metro returned an empty JavaScript bundle.'
+            }
+            Write-Host "Metro JavaScript bundle verified ($($bundleContent.Length) characters)."
+            $bundleContent = $null
+        }
+        catch {
+            throw "Metro is listening, but the Android JavaScript bundle failed to build. Check $metroLog and $metroErrorLog. $($_.Exception.Message)"
         }
 
         $reverseResult = Invoke-NativeCommand -FilePath $adbPath -Arguments @('-s', $selectedSerial, 'reverse', 'tcp:8081', 'tcp:8081')

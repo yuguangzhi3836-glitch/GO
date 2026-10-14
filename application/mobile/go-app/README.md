@@ -34,7 +34,7 @@ From the repository root, run:
 .\application\mobile\go-app\scripts\build-install-android.cmd -Launch
 ```
 
-The script builds the Debug APK, installs it on the connected Android device, and launches the app. On launch it also starts Metro when needed and configures `adb reverse` for port 8081, which Debug builds need to load the JavaScript bundle. Keep the Metro process running while using this Debug APK.
+The script builds the Debug APK, installs it on the connected Android device, and launches the app. On launch it starts Metro when needed and configures `adb reverse` for port 8081. When the API URL is loopback (the default is `http://localhost:8000`), it also forwards that API port to the phone. Keep the Metro process running while using this Debug APK.
 
 Common options:
 
@@ -53,4 +53,4 @@ For example, select a specific USB-connected phone and API environment:
 .\application\mobile\go-app\scripts\build-install-android.cmd -DeviceSerial YOUR_DEVICE_SERIAL -ApiBaseUrl https://api.example.com -Launch
 ```
 
-If the app shows `Unable to load script`, confirm Metro is listening at `http://127.0.0.1:8081/status`, then inspect the Metro terminal/log for bundle errors. A `packager-status:running` response confirms the server is listening; it does not confirm that JavaScript bundling succeeded. If Metro reports a missing dependency such as `caniuse-lite/dist/unpacker/agents`, restore the pinned dependencies from this directory with `npm ci`, then rerun the command. See [the mobile frontend implementation guide](../../../docs/GO_移动端前端代码设计说明.md#93-android-debug-apk-的-metro-加载流程) for the full diagnosis and manual recovery steps.
+If the app shows `Unable to load script`, run the build/install script with `-Launch`; it starts Metro when needed and configures the phone's 8081 reverse. If the error remains, inspect the Metro log for bundle errors. A `packager-status:running` response confirms only that Metro is listening. See [the mobile frontend implementation guide](../../../docs/GO_移动端前端代码设计说明.md#93-android-debug-apk-的-metro-加载流程) for recovery steps.

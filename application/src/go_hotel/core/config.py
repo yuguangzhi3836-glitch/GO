@@ -57,6 +57,7 @@ class Settings(BaseSettings):
     readiness_require_postgres: bool = True
     hosted_reservation_expiry_worker_enabled: bool = False
     vertical_reservation_expiry_worker_enabled: bool = True
+    local_wallet_initial_cash_minor: int = 0
 
     # GO AI - GO-owned multi-model orchestration. Product name remains "GO AI".
     # Provider secrets are referenced by environment-variable name inside GO_AI_PROVIDERS_JSON.

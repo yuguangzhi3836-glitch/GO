@@ -227,7 +227,7 @@ Unable to load script. Make sure you are either running Metro or that your bundl
 2. 通过 `adb devices -l` 检查设备状态；唯一设备会自动选择，多台设备时要求显式传 `-DeviceSerial <serial>`。
 3. 用 `adb install -r` 安装 APK。
 4. 当传入 `-Launch`（或 `-Logcat`）时，检查电脑 `127.0.0.1:8081/status`。Metro 未运行就从移动端目录启动 `npm run start -- --localhost --port 8081`。
-5. 调用 `adb -s <serial> reverse tcp:8081 tcp:8081`，将手机访问的本机 8081 转到开发机 Metro，然后启动 `travel.go.consumer`。
+5. `-Launch` / `-Logcat` 会调用 `adb reverse` 转发 Metro `8081`；当 API URL 是 loopback 时，也会转发 API 端口（默认 `8000`），然后启动 `travel.go.consumer`。
 
 如果只需要构建/安装、不启动应用，可省略 `-Launch`；`-NoInstall` 只构建 APK，不检查设备、不安装。需要指定后端地址时使用 `-ApiBaseUrl <https-url>`。例如：
 
@@ -328,15 +328,15 @@ adb -s <serial> reverse tcp:8081 tcp:8081
 
 如果创建请求发生网络异常且 transport 标记 `uncertain`，`CheckoutScreen` 会把 `creationUnknown` 锁住并提示去 GO Trips 查原订单，不允许用户在当前页面盲目再创建一次。这处理的是“服务端可能已完成但客户端没收到响应”的情况。
 
-支付是另一个明确动作：`createOrderActions(api, current).pay(...)` 会重读订单，验证订单身份、状态和模拟支付能力；金额必须仍与用户所见一致。随后 POST `/v1/consumer/checkout/{vertical}/{orderId}`，传递 `CONTRACT_SIMULATOR` 和确定性幂等键。请求后无论成功或结果不确定，都会重读同一个订单；UI展示重读后的事实和核对提示。这里代码标明的是合同模拟器闭环，不等于真实扣款或出票。
+酒店支付使用钱包余额专属动作：`CheckoutScreen` 重读服务端订单和钱包余额，显示应付金额、现金余额、返现余额及银行卡数量；余额足够时 POST `/v1/consumer/wallet/checkout/{orderId}`，提交服务器订单金额和幂等键。服务端扣除现金后进入既有酒店预订 Saga，明确预订失败会退回现金，结果未知时保留待核对状态。其他垂直域继续按各自能力检查合同模拟 checkout；酒店不使用模拟支付渠道。
 
 ### 10.3 订单 helper 如何集中支付、退款和详情规则
 
-`src/domain/orderActions.ts` 把垂直域映射集中起来：订单引用校验、详情 API 路径、详情屏目标、可支付/可退款状态判断、CNY 最小货币单位金额校验。`checkoutView()` 把订单详情与 `/v1/consumer/checkout-capabilities` 的能力响应合并，只有响应明确是模拟器且 `external_live` 为 false 时才把当前动作呈现为模拟支付。
+`src/domain/orderActions.ts` 把垂直域映射集中起来：订单引用校验、详情 API 路径、详情屏目标、可支付/可退款状态判断、CNY 最小货币单位金额校验。`checkoutView()` 把订单详情与 `/v1/consumer/checkout-capabilities` 的能力响应合并；酒店专用模拟能力关闭，酒店付款页读取钱包余额。其他垂直域只有在响应明确允许模拟且 `external_live` 为 false 时才显示模拟支付。
 
 `createOrderActions()` 再提供页面可调用的操作：
 
-1. **支付**：重新读取订单 → 确认订单 ID/垂直域 → 确认仍可支付且金额未变化 → 提交带幂等键的模拟支付 → 重新读取订单。写请求若超时，返回“结果待核对”，而不是直接再发一笔。
+1. **酒店支付**：重新读取订单和现金余额 → 校验订单金额与余额 → 带幂等键提交钱包付款 → 重新读取订单和余额。其他垂直域按受控能力执行合同模拟支付。写请求结果未知时先核对同一订单，不盲目重复付款。
 2. **退款**：先取退款 quote；验证 quote 的订单、币种、退款金额、费用、hash、有效期和条款；酒店还读取不可变 quote 并校验 hash/过期时间；用户接受的 quote 与提交时参数必须一致。之后用基于 quote/请求身份的幂等键提交，并重新读取订单。
 3. **详情**：按垂直域解析 endpoint，读取服务端订单详情，再核对响应中的订单 ID 和垂直域，避免把错误订单数据渲染到当前页面。
 
