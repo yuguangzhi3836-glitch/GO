@@ -258,6 +258,27 @@ class CompletionTests(PullCase):
         self.assertEqual(result["action"], "COMPLETED")
         self.assertFalse(runtime.calls[0][2]["success"])
 
+    def test_a_failed_run_publishes_closure_before_runtime_failure_completion(self):
+        self._bound()
+        runtime = FakeRuntime()
+        observed = []
+
+        def close(request, run, outbox, client):
+            observed.append((request["execution_request_id"], run["id"],
+                             outbox is self.outbox, isinstance(client, FakeGitHub)))
+            return {"status": "PUBLISHED", "fingerprint": "f" * 64}
+
+        result = pull_mod.complete_after_pull(
+            self.outbox, runtime, TASK, 1,
+            client=FakeGitHub(run_conclusion="failure"), worker_id="w1",
+            on_run_failed=close)
+        self.assertEqual(result["action"], outbox_mod.RUN_FAILED)
+        self.assertEqual(observed, [(contract.execution_request_id(TASK, 1), RUN_ID,
+                                     True, True)])
+        record = runtime.calls[0][2]["result"]
+        self.assertEqual(record["failure_closure"]["status"], "PUBLISHED")
+        self.assertFalse(runtime.calls[0][2]["success"])
+
 
 class BoundaryTests(PullCase):
     def test_the_puller_opens_no_listener_and_holds_no_model_credential(self):
