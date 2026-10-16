@@ -6,9 +6,12 @@
 > 配套 Evidence → `docs/handoff/SUPPLIER_ONBOARDING_V1_HK_DEPLOY_ACCEPTANCE_20261016.md`
 >
 > ⚠ **所有会变化的数字（SHA / 镜像 id / 迁移 head / 服务状态）请现场重读，不要引用本文的历史值。**
-> 本文的香港事实采集于 2026-10-16T09:16Z–09:19Z，采集方式为现场只读复核（容器 `docker inspect`、`alembic current/heads`、环图与 install fact 的 `sha256sum`、产品端点回读）。
+> 本文的香港事实采集于 2026-10-16T09:16Z–10:57Z（两轮），采集方式为现场只读复核（容器 `docker inspect`、
+> `alembic current/heads`、环图 / install fact / env 文件的 `sha256sum`、产品端点回读）。
 >
-> 📌 **本文已更新为「部署后」版本**。2026-10-16 早些时候的「部署前」版本曾判定香港部署 BLOCKED、香港仍运行基线 `22df468b` —— **该判断已被本轮实际部署推翻**，本版为准。
+> 📌 **本文已更新为「部署后 + 注册通道实装后」版本**。历史上两个判定已被推翻，别再引用它们：
+> ① 2026-10-16 早间的「部署前」版曾判定香港部署 BLOCKED、香港仍运行基线 `22df468b` —— 已被实际部署推翻；
+> ② 同日更早的版本曾把「注册邮箱验证码通道未配置」记为**未闭合缺口** —— 已于当日实装并端到端跑通（§7.3）。
 
 ---
 
@@ -21,7 +24,8 @@
 | 数据库迁移 | ✅ HK 测试库 `go_hotel_stg`：`0145_source_latest_index` → `0151_legal_entity_document_blob`（current == heads） |
 | 证件持久化 | ✅ 走迁移 `0151` 的数据库表；**不依赖宿主机挂载**；容器重建后字节不变 |
 | 香港业务验收 | ✅ 企业资料 → 执照上传 → 酒店认领 → 提交 → 退回 → 重提 → 通过 → 合同 → 经营后台（双身份） |
-| **仍未闭合** | ⚠ **注册邮箱验证码通道**在香港**未配置**（门是关的，503 fail-closed）——环境侧、需 owner 授权注入真实 SMTP 凭据 |
+| 注册邮箱验证码通道 | ✅ **已持久实装进香港环境锁**（当日第二次世代推进）；门 `READY`、`verification_channels=["email"]`、真实发信 —— **端到端真实收码注册已跑通**（§7.3） |
+| **仍未闭合** | ⚠ 正式商业合同模板未接入（现为测试夹具，§7.4） |
 | main 整合 | ⛔ **仍 BLOCKED**（两线无共同祖先、`0135` 迁移链冲突），见 §7.2 |
 
 ---
@@ -33,8 +37,8 @@
 | 能力 | 关键实现 | 本地验证 | 香港验收 |
 |---|---|---|---|
 | 三合一登录（用户名 / 邮箱 / 手机同一账号） | `security/login_identity.py`、`security/service.py`、迁移 `0150` | `test_login_identifiers_and_recovery.py` 25/25 | ✅ 申请人 + 审核员双身份真实登录 |
-| 注册通道按环境可送达能力推导 | `services/registration_verification.py::required_channels()` | `test_registration_verification.py` 20/20 | ⚠ 门未配置（§7.3） |
-| 邮箱验证码（真 SMTP 通道） | `services/registration_email.py`（基线已有，本轮未改） | 通道矩阵 `MATRIX=PASS` | ⛔ 未配置，503 |
+| 注册通道按环境可送达能力推导 | `services/registration_verification.py::required_channels()` | `test_registration_verification.py` 20/20 | ✅ 门 `READY`、`verification_channels=["email"]`（§7.3） |
+| 邮箱验证码（真 SMTP 通道） | `services/registration_email.py`（本轮**未改代码**，只注入环境配置） | 通道矩阵 `MATRIX=PASS` | ✅ 真实发信 `SENT`、真实收码完成注册（§5.6） |
 | 账号找回 | `api/routes/account_recovery.py` | `test_login_identifiers_and_recovery.py` | — （未在香港实演） |
 | 企业主体资料（法人 / USCC 校验位） | `services/legal_entity.py`、`services/uscc.py`、迁移 `0146` | `test_legal_entity.py` 28/28 | ✅ `PUT/GET /bff/supplier/legal-entity` 200，存储值与输入一致 |
 | 营业执照 / 资质证件上传（私有、内容寻址） | `services/legal_entity_document.py`、`services/document_store.py`、迁移 `0147`/`0151` | `test_legal_entity_document.py` 30/30 | ✅ raw octet-stream 上传 201、下载字节 sha256 一致、审核员跨角色读取一致 |
@@ -55,7 +59,7 @@
 
 ```
 注册账号（用户名/邮箱/手机任一为登录标识）
-   → 邮箱验证码（真 SMTP；演示模式为替身码）      ⛔ 香港未配置，门是关的（§7.3）
+   → 邮箱验证码（真 SMTP；演示模式为替身码）      ✅ 香港已实装，真实发信 + 真实收码已跑通（§7.3）
    → 登录
    → 填写企业主体资料（legal entity）
    → 上传营业执照 / 资质证明（私有存证，见 §6.2）
@@ -108,8 +112,12 @@
 | `HK_PREVIOUS_KNOWN_GOOD` | `sha256:d093c89ec550f2540c3da8456fb8f9111c6e0ed86b6d688fa4679ab834089e8e` | 候选事实 `rollback_relation` |
 | `HK_DATABASE_REVISION` | **`0151_legal_entity_document_blob`**（current == heads） | `alembic current` / `alembic heads` 现场 |
 | `HK_CANDIDATE_CONTRACT` | `fcbca9471dbb9fc98156b192827c0bbbbf4e833e958a7fc8a012961581ce5973` | /etc 只读 |
-| `HK_INSTALLATION_ID` | `20261016T090041Z-b-end-g0151` | install fact |
-| `HK_ENVIRONMENT_GRAPH` | `ae2bc9dc2ba9696c16cd77269447f419fd7ff58386f1a904795d17c15026ba8e` | `sha256sum` 现场 |
+| `HK_INSTALLATION_ID` | **`20261016T104322Z-registration-email`**（`installer_identity=registration-email-channel-v1`）。⚠ 部署当时的 `20261016T090041Z-b-end-g0151` **已被本次环境锁推进取代**，别再引用它。 | install fact |
+| `HK_ENVIRONMENT_GRAPH` | `ae2bc9dc2ba9696c16cd77269447f419fd7ff58386f1a904795d17c15026ba8e`（**两次推进后仍未变**） | `sha256sum` 现场 |
+| `HK_INSTALL_FACT` | `15a6b27745a8a73119f8349812dcc09a2cf0b19835563410cd5fa77201f6f42b` | `sha256sum` 现场 |
+| `HK_LAUNCHER` | `9e152dd18d951cc73f0b54222ebfb8d9fc24eceb70fbc57a6b57e99a17ab1b4f`（`VERSION=0.7.0-environment-lock`） | `sha256sum` 现场 |
+| `HK_RUNTIME_ENV` | `7e89dcb16cf87212fb6daf9c6e16d383590fc7c229655248b6cf717e358277f8`（1 410 字节，`600`） | `sha256sum` 现场 |
+| `HK_SIGNATURE_IDENTITY` | `hk-evidence-signer:SHA256:U/67Pyj6g18vLYjPNKWu/KEkqpWkMzXlaIFXyJ9CAMc=`（**两次推进均未变**） | install fact |
 
 ### 4.1 分支拓扑
 
@@ -131,6 +139,18 @@ HK 旧运行基线 22df468b                ← 本轮之前香港实际运行（
    └─ 3a8c43a5  fix(upload): carry applicant evidence as an octet-stream body             （我方）
                  ▲ 本轮香港部署的 source commit
 ```
+
+> ⚠ **上面是「代码提交」拓扑。香港的「环境锁」另有一条独立演进线，两者不要混为一谈。**
+> 当日对香港环境锁做了**两次**推进，**都只改环境侧文件、不改 `application/**`**：
+>
+> | 推进 | `installation_id` | 改了什么 |
+> |---|---|---|
+> | 第 1 次（为部署） | `20261016T090041Z-b-end-g0151` | 环图 `migration_head` `0145`→`0151`；发布收敛候选事实；重签 install fact |
+> | 第 2 次（为注册通道） | `20261016T104322Z-registration-email` | `runtime.env` 追加 2 个键（1 281→1 410 B）；`deploy_runtime` 与 `collector_runtime` 各 1 个常量；launcher 2 个 pin；重签 install fact |
+>
+> 第 1 次改了环图（`3dbbb6d7…` → `ae2bc9dc…`）；第 2 次**没有再动环图**。
+> 第 2 次只让 **2 个**模块摘要移动（`deploy_runtime` / `collector_runtime`），其余 **8 个逐字节未变**。
+> **两次推进的签名身份完全相同**（`hk-evidence-signer:SHA256:U/67…CAMc=`），两次后 `load_installation()` 均 `PASS`。
 
 **基线口径**：本分支以 **HK 上一版实际运行代码 `22df468b`** 为已验证业务基础，再叠 #558 三个提交与我方七个提交。
 **不是**以 `main` 为基线 —— `main` 与 HK 线是两条**无共同祖先**的历史（§7.2）。
@@ -204,6 +224,27 @@ HK 旧运行基线 22df468b                ← 本轮之前香港实际运行（
   `saved_at=2026-10-16T09:10:48Z`；此后 `PUT /bff/supplier/hotel/claim` 正确返回 **409 `HOTEL_CLAIM_NOT_EDITABLE`**。
 - **文档持久化（决定性）**：同镜像**重建 api 容器**（`09:12:34Z`）后，两份文档仍可读且 **sha256 完全不变**；
   容器内 `find / -name "led_*"` 为 **0** ⇒ 字节不在容器可写层，走的是数据库表（§6.2）。
+
+### 5.6 注册邮箱验证码端到端（本轮新增，**真实邮件**）
+
+> 原始证据 → 香港 `/root/onb/evidence/reg-e2e-20261016/`
+
+- **前置**：注册门 `READY`、`verification_channels=["email"]`、`verification_test_code=null` ⇒ **真实投递**（非演示固定码）。
+- **发码**：`POST /v1/registration/challenges` → `status=SENT`、`challenge_id=VBmNk0bfNUgo20yXky899-LyMazRC3go`、有效期 600 s。
+  服务端未抛 `REGISTRATION_EMAIL_SEND_FAILED` ⇒ 香港用**真实凭据**完成了 `smtpdm.aliyun.com:465` 的 TLS 登录，且服务商**接受了投递**。
+- **收码 → 建号**：用真实收件箱取到的 6 位码完成 `POST /bff/auth/supplier/register` ⇒ 账号建成（`state=PROFILE_DRAFT`）。
+- **三合一登录**：新账号以 **username / email / phone** 三种标识各登录一次，**全部成功**。
+- **单次性**：同一验证码**二次使用被拒**（正确行为）。
+- **落库**：挑战与账号记录均已落库并可回读。
+- **新账号继续走前段链路**：企业资料 → 法人（USCC 校验位）→ 执照上传 → 酒店搜索 → 认领 → 提交 ⇒ `UNDER_REVIEW`。
+- **审核段**：合计 **16 PASS / 0 FAIL**。「退回 → 重提」正常；
+  ⚠ 关键负例：该酒店**已由前一个验收供应商持有**（`CONTRACT_ACTIVE`），故对新案件执行 `APPROVE` 被归属守卫
+  **按设计拒绝** → `409 CLAIM_CONFLICT`、转入冲突队列等待人工裁定，**在位持有人未被改动**，酒店归属仍只有 1 行。
+  ⇒ 该场景下「通过」**正确地不会**建立第二条归属；这是**守卫生效**的证据，不是缺陷。
+
+> ⚠ 与前一轮（§5.5）的区别：**§5.5 的验收账号是用产品自身的写边界创建的**（当时注册门未开）；
+> **§5.6 的账号是经真实邮箱验证码自助注册出来的**。两者不是同一个账号，也**不能互相替代**：§5.5 覆盖全链（含合同段），
+> §5.6 覆盖「真实注册 → 提交 → 审核段（退回/重提 + 归属守卫负例）」。
 
 ---
 
@@ -289,33 +330,62 @@ HK 旧运行基线 22df468b                ← 本轮之前香港实际运行（
 ⇒ 任务明令「不允许通过简单覆盖某个目录来消除差异」「不允许让 main 的旧迁移链覆盖香港现有迁移链」。
 正确的对账方式是一次**刻意设计的 source-composite**，属 owner 决策。**故本轮不创建 main-target PR。**
 
-### 7.3 ⚠ 注册邮箱验证码通道在香港未配置（本轮唯一未闭合的产品可见缺口）
+### 7.3 ✅ 注册邮箱验证码通道 — 已实装到香港并端到端跑通（本轮闭合）
 
-**这是环境配置问题，不是代码缺陷。** 现场只读证据：
+此前记为「未闭合缺口」，**已于 2026-10-16 当日闭合**。闭合方式为**环境注入**，**产品代码零改动**（`application/**` 未动）。
+
+**变更前（历史值，勿再引用）**：`status=NOT_READY`、`reason=REGISTRATION_VERIFICATION_NOT_CONFIGURED`、
+`verification_channels=[]`、`POST /v1/registration/challenges` → **503 `REGISTRATION_VERIFICATION_NOT_READY`**。
+
+**变更后（现场实测）**：
 
 | 检查 | 结果 |
 |---|---|
-| `/bff/auth/supplier/registration-terms` → `release_gate.registration_verification` | `{required: true, implemented: false, status: NOT_READY, reason: REGISTRATION_VERIFICATION_NOT_CONFIGURED}` |
-| 同响应 `verification_channels` | `[]` |
-| 同响应 `status` / `enabled` | `DRAFT` / `false`（但 `acceptance_enabled=true`、`account_stage=true`） |
-| `POST /v1/registration/challenges`（完整字段、真实条款版本） | **503 `REGISTRATION_VERIFICATION_NOT_READY`** |
+| `release_gate.registration_verification.status` | **`READY`**（原 `NOT_READY`） |
+| 同响应 `reason` | `null`（原 `REGISTRATION_VERIFICATION_NOT_CONFIGURED`） |
+| `verification_channels` | **`["email"]`**（原 `[]`） |
+| `verification_test_code` | **`null`** ⇒ 真实投递，**不是**演示固定码 |
+| `enabled` | `true` |
+| 条款 `status` | `DRAFT`（但 `acceptance_enabled=true`、`account_stage=true`） |
 
-**根因**：香港冻结的 `runtime.env` **没有**任何 `REGISTRATION_VERIFICATION_*` / `REGISTRATION_EMAIL_CONFIG_PATH` 键
-⇒ `settings.registration_verification_enabled` 默认 `False`、`registration_email_config_path` 默认 `""`
-⇒ `registration_verification.ready()` 恒 `False` ⇒ 产品按设计 **fail-closed**（这是正确行为，不是 bug）。
+**为什么不是「放个文件重启一下」**：`runtime.env` 的字节被环境锁钉死
+（`deploy_runtime.py` 与 `collector_runtime.py` 各含一份它的 sha 常量，两个模块又被 launcher 钉住）
+⇒ 注入 env 必须**沿签名链推进**：改 `runtime.env` → 重算两个模块常量 → 重钉 launcher → 重签 install fact → 重建 8 个业务容器。
 
-**本地实验室已验证「通道可用 + 配置正确」**（`evidence/REGISTRATION-EMAIL-CHANNEL-VERIFY-20261016.md`）：
-`smtpdm.aliyun.com:465` SSL、发信地址 `postmaster@goaidirect.com`、四层证据（SMTP 会话 / 提交 / 产品函数 / 真人收件箱）全部对齐。
+| 对象 | 变更前 | 变更后 |
+|---|---|---|
+| `runtime.env` | `6682ff61…`（1 281 B） | `7e89dcb1…`（1 410 B） |
+| `deploy_runtime.py` | `06a3eebc…` | `66b94aab…` |
+| `collector_runtime.py` | `a7f55a7c…` | `3516384d…` |
+| launcher | `75cb1166…` | `9e152dd1…` |
+| install fact | `0a4b83cb…` | `15a6b277…` |
 
-**HK 上线需要（属 owner 决策，超出本次授权）**：同时注入 `REGISTRATION_VERIFICATION_ENABLED=true` 与该 JSON 配置
-（`password_file` 必须**绝对路径**；**不得同时**打开演示固定码开关）。
-⚠ 这意味着**改冻结 env + 注入真实 SMTP 凭据** ⇒ 必须 owner 当次明确授权。
-⚠ 两个已知坑：发信走「邮件推送」`smtpdm.aliyun.com`，**不是**「企业邮」`smtp.qiye.aliyun.com`（同一密码不通用）；
-发信地址**不能自投递**（服务商永久拒收 `502 Mailfrom account is a local account`）。
+**新增的 2 个键**：`REGISTRATION_VERIFICATION_ENABLED=true`、
+`REGISTRATION_EMAIL_CONFIG_PATH=/var/lib/go-hotel/media-cache/.go-registration/config.json`。
 
-**本轮香港验收如何绕过这一步（明确标注为替代前置，非产品门通过）**：
-验收账号由**产品自身的写边界**创建（`supplier_onboarding_service.register_account(...)` + `registration_privacy.required_decisions(policy)`），
-**没有**绕过任何产品校验、**没有**直接 INSERT 数据库。这一点必须在任何对外陈述中一并说明。
+**配置与密码放哪**：base compose 的 8 个服务**没有任何 volumes**，唯一挂载是媒体缓存且为 **same-path bind**
+⇒ 秘密放进它的隐藏子目录 `/var/lib/go-hotel/media-cache/.go-registration/`（目录 `700`、文件 `600`），
+宿主与容器**同一绝对路径**成立，**无需新增挂载、不改 compose**。
+已核对媒体逻辑只操作 `files/` 子目录（`_delete_file` 有 `parent != files_dir` 守卫），且该目录不在任何静态挂载下。
+
+| 文件 | 内容 |
+|---|---|
+| `config.json`（257 B） | `host=smtpdm.aliyun.com`、`port=465`、`tls=SSL`、`username=/sender=postmaster@goaidirect.com`、`credential_reference=hk-staging-registration-email`、`password_file=<同目录绝对路径>` |
+| `password`（13 B，`600`） | 由本地实验室凭据文件经**管道**送抵香港（字节不进模型上下文），两端 sha256 一致 |
+
+⚠ **两个已知坑**：发信走「邮件推送」`smtpdm.aliyun.com`，**不是**「企业邮」`smtp.qiye.aliyun.com`（同一密码不通用）；
+发信地址**不能自投递**（服务商永久拒收 `502 Mailfrom account is a local account`）⇒ 端到端验收必须用**外部收件箱**。
+
+🔴 **副作用**：本开关是**总开关**，**同时**打开 C 端注册与账号找回的邮箱验证（`consumer` / `supplier` 共用同一 `registration_verification` 服务）。
+
+⚠ **持久性**：这是**持久**注入（写进被签名锁定的 env 与模块），**不是**临时 overlay ⇒ 后续任何一次正式 Forge 部署都会**保留**它。
+
+**回滚**：`/var/backups/HK-CHANGE-20261016T104322Z-registration-email-lock/`（含 `SHA256SUMS`）= 6 个文件原样 `cp -a` 回去 → 重建容器。
+⚠ 回滚会把 `runtime.env`、两个模块、launcher、install fact 一并退回推进前字节。
+
+**§5.5 那批验收账号的口径（保留说明，避免被误读）**：它是在注册门**尚未开启**时由**产品自身的写边界**
+（`supplier_onboarding_service.register_account(...)` + `registration_privacy.required_decisions(policy)`）创建的，
+**没有**绕过任何产品校验、**没有**直接 INSERT 数据库。§5.6 的账号才是经真实邮箱验证码自助注册的。
 
 ### 7.4 ⚠ 合同是测试夹具，不是正式商业合同
 
@@ -337,9 +407,9 @@ HK 旧运行基线 22df468b                ← 本轮之前香港实际运行（
 
 ## 8. 下一步（按用户可见价值排序）
 
-1. **把注册邮箱验证码通道接上香港**（§7.3）——这是唯一还挡在「新供应商能自己注册」前面的东西。
-   需要 owner 授权：注入 `REGISTRATION_VERIFICATION_ENABLED=true` + email JSON + SMTP 凭据，然后重跑「注册 → 验证邮箱 → 登录」段验收。
+1. ✅ ~~把注册邮箱验证码通道接上香港~~ —— **已完成**（§7.3 实装、§5.6 端到端验收）。新供应商现在可以**自助注册并收邮箱验证码**。
 2. **接入正式商业合同模板**（§7.4），替换 `LOCAL_TEST_CONTRACT_FIXTURE`，重跑合同段验收。
+   ⚠ **这是当前最主要的未闭合项**：在它接入之前，合同段**不能算真实商业验收**。
 3. **`main` 与 HK 线的合流方式**（§7.2）——需一次刻意的 source-composite，属 owner 决策。
 4. 给 `/internal/v1/onboarding-review/*` 加真实鉴权（§7.5；今天审核台靠的是无鉴权路径）。
 5. 工程债（非立即）：查重并发原子性、登录限流、SEC-01 全局鉴权中间件。
@@ -396,7 +466,8 @@ print(d['migration_head'], d['source_commit'])"
 
 ## 10. 尚需产品负责人决定的事项
 
-1. **香港注册邮箱验证通道是否配置**（§7.3）——决定「新供应商能否自助注册」。
-2. **正式商业合同模板何时接入**（§7.4）——决定合同段能否算真实商业验收。
+1. ~~香港注册邮箱验证通道是否配置~~ —— **已由 owner 当次授权，并于 2026-10-16 实装 + 端到端验收**（§7.3 / §5.6）。
+   ⚠ 注意该开关是总开关，**同时**打开 C 端注册与账号找回的邮箱验证；若不希望如此，需 owner 另作决策。
+2. **正式商业合同模板何时接入**（§7.4）——决定合同段能否算真实商业验收。**当前首要未决项。**
 3. `main` 与 HK 线的合流方式（是否需要一次刻意的 source-composite）。
 4. `/internal/*` 鉴权、短信通道、OIDC 的启用时机与优先级。

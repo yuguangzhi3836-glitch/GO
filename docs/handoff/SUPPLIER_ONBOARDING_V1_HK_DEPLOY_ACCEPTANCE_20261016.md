@@ -5,8 +5,11 @@
 > 配套交接文档 → `docs/handoff/SUPPLIER_ONBOARDING_V1_HANDOFF_20261016.md`
 >
 > **本文是 Evidence**：只记录本轮在 HK-STAGING-01 上**实际做过**的变更与**实测到的**结果。
-> 采集窗口：2026-10-16T08:30Z – 09:19Z（香港主机本地时间 +08:00，17:30 – 17:19）。
+> 采集窗口：2026-10-16T08:30Z – 10:57Z（香港主机本地时间 +08:00）。含两段：**部署 + 现场验收**，以及当日稍后补做的
+> **注册邮箱验证码通道实装与端到端真实收码验收**。
 > ⚠ 所有 SHA / 镜像 id / 计数均为**当时现场值**，复现时请重读。
+> 📌 因当日又做了**第二次环境锁推进**（注册通道），§4 / §6 / §8.5 里部分身份值已被**后续**推进取代。
+> 本文一律保留**当时值**并就地标注；**最新值以 §6.2 / §8.6 与交接文档 §4 为准**。
 
 ---
 
@@ -31,6 +34,10 @@
 `/etc/go-hk-deployctl/environment-graph-v1.json` 的 `migration_head`、用主机密钥重签 install fact、
 并在已备份 / 已验证恢复的 HK 测试库上执行 `0145 → 0151` 迁移。
 
+当日稍后，Eason **再次当次明确授权**：把**注册邮箱验证码通道持久写进香港环境锁**
+（提供真实 SMTP 凭据与一个外部收码邮箱；并明确选择「**持久写进环境锁**」这条落地方式，而非临时 overlay）。
+其代价是**第二次环境锁推进**：改 `runtime.env` → 重算两个模块常量 → 重钉 launcher → 重签 install fact → 重建 8 个业务容器（见 §6.2）。
+
 **未使用**：修改 / 合并老板的 PR 或分支；修改 Production；绕过 Forge；伪造候选或 Evidence；
 强行合并互不兼容的历史；丢弃香港现有业务数据；在恢复不可用的情况下迁移。
 
@@ -50,6 +57,12 @@
 | 8 | 香港现场业务验收 | `/root/onb/evidence/acceptance-*`、`acceptance2-*`、`claim-readback-*`、`final-*`（见 §8） |
 | 9 | 持久化补证：同镜像重建 api 容器 | 重建后文档 sha256 不变（见 §7） |
 | 10 | 交接文档 + 本文 | 本提交 |
+| 11 | （当日稍后）注册通道：**只增**备份 | `/var/backups/HK-CHANGE-20261016T104054Z-registration-email/`、`…T104322Z-registration-email-lock/`（含 `SHA256SUMS`） |
+| 12 | 邮件配置与密码落到 same-path 隐藏目录 | `/var/lib/go-hotel/media-cache/.go-registration/{config.json,password}`（`700`/`600`） |
+| 13 | **第二次环境锁推进**：`runtime.env` + 2 模块常量 + launcher + 重签 install fact | 见 §6.2 |
+| 14 | 经部署缝合线重建 8 个业务容器 | api `85d44683efa4` → `3ed6aae14bd8`（healthy，镜像未变）；`redis`/`caddy` 未动 |
+| 15 | 注册门复核 + 真实发码 + 真实收码注册 | `/root/onb/evidence/reg-e2e-20261016/`（见 §8.6） |
+| 16 | 新账号继续走前段链路 + 审核段与归属守卫探针 | 16 PASS / 0 FAIL（见 §8.6） |
 
 ---
 
@@ -243,6 +256,42 @@ candidate-contracts-v1/              （全量副本）
 签名自检：脚本内 `assert IF.key_id(priv.public_key()) == IF.key_id(IF.load_public_key(VERIFY_KEY))`，
 并三次独立调用 `IF.load_installation()` 全部 PASS。
 
+### 6.2 第二次世代推进（注册邮箱验证码通道，当日稍后）
+
+**备份目录**：`/var/backups/HK-CHANGE-20261016T104322Z-registration-email-lock/`（含 `SHA256SUMS`）。
+
+| 对象 | 推进前 | 推进后 |
+|---|---|---|
+| `runtime.env` | `6682ff61f336fb8ff95a6585e9133c88c52a4eaa440a7aea6a6e06f771e607fc`（1 281 B） | **`7e89dcb16cf87212fb6daf9c6e16d383590fc7c229655248b6cf717e358277f8`**（1 410 B） |
+| └ 新增键（2） | — | `REGISTRATION_VERIFICATION_ENABLED=true`、`REGISTRATION_EMAIL_CONFIG_PATH=/var/lib/go-hotel/media-cache/.go-registration/config.json` |
+| `deploy_runtime.py` | `06a3eebc…` | `66b94aabfeb182669c38b895869ba687350e092aebcf0f0a319895c17be6af84` |
+| `collector_runtime.py` | `a7f55a7c…` | `3516384dd7465152202a4fa2831e99d19d59f0bcaa836accd158650c543e5293` |
+| launcher | `75cb1166…` | `9e152dd18d951cc73f0b54222ebfb8d9fc24eceb70fbc57a6b57e99a17ab1b4f` |
+| `install-fact-v1.json` | `0a4b83cb…` | `15a6b27745a8a73119f8349812dcc09a2cf0b19835563410cd5fa77201f6f42b`（3 673 B） |
+| └ `installation_id` | — | `20261016T104322Z-registration-email` |
+| └ `installer_identity` | — | `registration-email-channel-v1` |
+| └ `runtime_digest` | `a864d56f…` | `c0ccb5af070bb198e1aa20276c9db1cbe9870bd5b1ac91efbdf95ed50f66d947` |
+| `environment-graph-v1.json` | `ae2bc9dc…` | `ae2bc9dc…`（**未变**） |
+| `signature_identity` | — | `hk-evidence-signer:SHA256:U/67Pyj6g18vLYjPNKWu/KEkqpWkMzXlaIFXyJ9CAMc=`（**未变**） |
+
+**模块摘要**：10 个中**恰好 2 个**移动（`deploy_runtime` / `collector_runtime`），其余 8 个**逐字节未变**：
+`canary 50284e00…`、`rollback 8467c240…`、`artifact 736b5571…`、`migration_guard 89a0cc30…`、
+`media_mount 92af6bfc…`、`candidate_source f9855b4c…`、`install_fact 86cf09ba…`、`candidate_fact b378a472…`。
+`load_installation()` = **PASS**。
+
+**重建**：走**部署缝合线** `media_mount.recreate(runner, lambda a: runtime._run(runner, a, 300), extra_files=[runtime._override(image)])`，
+8 个业务容器全部换新；**`redis` `0a52d62367bd` / `caddy` `958524e18dca` 的容器 ID 未变**。
+
+> ⚠ **踩坑记录（假 PASS）**：首次重建**漏了 `runtime._override(image)`** ⇒ compose 回退到本地不存在的镜像名
+> `go-hotel:aoluguya-direct-r3-1-20260906`，`up` 失败；但 `ProductionRunner.run` 用 `check=False` **不抛异常**，
+> `media_mount.verify()` 又只检查**运行中容器**的挂载（旧容器本来就有）⇒ 报 `MEDIA_MOUNT: SUCCESS` 而**容器 ID 一个未变**。
+> ⇒ **判据必须是「容器 ID 是否变化」，不能只看 `MEDIA_MOUNT` 字样。**
+
+**配置与密码落点**：base compose 的 8 个服务**无 volumes**，唯一挂载是媒体缓存且为 **same-path bind**
+⇒ 秘密放进 `/var/lib/go-hotel/media-cache/.go-registration/`（目录 `700`、文件 `600`），宿主与容器**同一绝对路径**成立，
+**无需新增挂载、不改 compose**。密码由本地实验室凭据文件经**管道**送抵香港（**字节不进模型上下文**），两端 sha256 一致
+（`2c1c81b2da4175d407720b804cf006adc29e1ef0b16e5cb34cfa3b3a999aeeee`，13 B）。
+
 ---
 
 ## 7. 文档持久化证据（决定性）
@@ -385,6 +434,35 @@ alembic              current == heads == 0151_legal_entity_document_blob
                       hotel_registration_go_direct 1 (APPROVED, hotel_ac72aa53…)
 ```
 
+### 8.6 注册邮箱验证码端到端（当日稍后，`/root/onb/evidence/reg-e2e-20261016`）
+
+```text
+前置（现场回读）：release_gate.registration_verification.status   NOT_READY -> READY
+                  reason                                           REGISTRATION_…_NOT_CONFIGURED -> null
+                  verification_channels                            []          -> ["email"]
+                  verification_test_code                           —           -> null（真实投递）
+
+发码  POST /v1/registration/challenges
+      -> status=SENT  challenge_id=VBmNk0bfNUgo20yXky899-LyMazRC3go  ttl=600s
+      （服务端未抛 REGISTRATION_EMAIL_SEND_FAILED
+        ⇒ 香港用真实凭据完成 smtpdm.aliyun.com:465 的 TLS 登录，且服务商接受了对外投递）
+
+收码 -> POST /bff/auth/supplier/register（带真实收件箱取到的 6 位码）
+      -> 账号建成，state=PROFILE_DRAFT
+三合一登录：新账号以 username / email / phone 各登录一次                    全 PASS
+单次性：同一验证码二次使用                                                 被拒 PASS
+前段链路：企业资料 -> 法人(USCC) -> 执照上传 -> 酒店搜索 -> 认领 -> 提交 -> UNDER_REVIEW   PASS
+审核段：退回 -> 重提                                                        PASS
+        对「已被前一验收供应商持有」的酒店执行 APPROVE
+        -> 409 CLAIM_CONFLICT（归属守卫按设计拒绝）                          PASS
+        在位持有人未被改动；hotel_registration_go_direct 仍为 1 行           PASS
+合计 16 PASS / 0 FAIL
+```
+
+> ⚠ §8.2 / §8.3 的验收账号（`sup_edaab1be…`）是在注册门**尚未开启**时由**产品自身写边界**创建的；
+> §8.6 才是**经真实邮箱验证码自助注册**出来的账号。**两者不是同一账号，也不可互相替代**：
+> §8.2/§8.3 覆盖全链（含合同段），§8.6 覆盖「真实注册 → 提交 → 审核段（退回/重提 + 归属守卫负例）」。
+
 ---
 
 ## 9. 边界自证（本轮在 HK 上**只**做了这些）
@@ -394,15 +472,20 @@ alembic              current == heads == 0151_legal_entity_document_blob
 3. `/home/go-forge/forge-b-end-drivers/forge-b-end-driver.py`（`root:root 700`）；
 4. `/srv/onb-0151`（迁移源码只读暂存）；
 5. **已授权的一次实库迁移**（`0145 → 0151`：3 表 + 4 索引 + 1 列族 + 1 约束 + 1 002 行 email 回填）；
-6. **已授权的世代推进**（环图 + 候选事实 + install fact + `/var/backups/HK-CHANGE-20261016T090041Z-b-end-generation-0151/`）；
+6. **已授权的两次世代推进**：
+   ① 环图 + 候选事实 + install fact + `/var/backups/HK-CHANGE-20261016T090041Z-b-end-generation-0151/`；
+   ② 注册通道 `/var/backups/HK-CHANGE-20261016T104322Z-registration-email-lock/`（含 `runtime.env`、两个模块副本、launcher、install fact）；
 7. `docker load`（materialise 候选镜像）；
-8. **通过 Forge 通道两次 `recreate`**（部署 + 持久化验证）；
-9. 验收产生的普通业务行：1 账号 / 1 案件 / 1 法人 / 2 文档 / 1 blob / 1 酒店注册，以及验收期间新增的审计事件行。
+8. **通过部署缝合线三次 `recreate`**（部署 + 持久化验证 + 注册通道生效）；
+9. 邮件配置与密码：`/var/lib/go-hotel/media-cache/.go-registration/{config.json,password}`（`700`/`600`，**只增**）；
+10. 验收产生的普通业务行：2 账号 / 2 案件 / 1 法人 / 2 文档 / 1 blob / 1 酒店注册 / 1 挑战，以及验收期间新增的审计事件行。
 
-**未做**：未碰老板的 PR；未动 `main`；未改任何被钉住的运行时模块或 launcher；
-未改 `runtime.env`；未重启 / 停止 `redis` 与 `caddy`（保护容器清单哈希前后相同）；
+**未做**：未碰老板的 PR；未动 `main`；未重启 / 停止 `redis` 与 `caddy`（保护容器清单哈希前后相同）；
 未绕过 Forge；未伪造候选事实 / Evidence；未伪造 Command-Center deploy 记录；
-未直接 INSERT 数据库创建验收账号（走的是产品自身写边界）。
+未直接 INSERT 数据库创建验收账号（走的是**产品自身写边界**或**真实注册门**）。
+
+⚠ **本轮确实改了** `runtime.env`、两个被钉住的运行时模块、launcher 与 install fact —— 但这是**当次已获授权的第二次世代推进**，
+且**同步重签了 install fact**（`load_installation()` PASS），**不是**绕过签名链。此处如实记录，不作淡化。
 
 ---
 
@@ -410,7 +493,7 @@ alembic              current == heads == 0151_legal_entity_document_blob
 
 | 事项 | 性质 | 为什么停在这里 | 由谁处理 |
 |---|---|---|---|
-| **香港注册邮箱验证码通道未配置** | 环境配置缺口（**非代码缺陷**） | 需要注入 `REGISTRATION_VERIFICATION_ENABLED=true` + email JSON + **真实 SMTP 凭据** ⇒ 属「改冻结 env + 长期基础设施」，**超出本次授权**；产品 fail-closed 行为正确 | 产品负责人（owner）授权后注入，见交接文档 §7.3 |
+| ~~香港注册邮箱验证码通道未配置~~ | ✅ **已闭合**（当日） | 经 owner **当次授权**完成**第二次环境锁推进**（§6.2）并端到端**真实收码**跑通（§8.6） | — |
 | **合同为测试夹具** | 资产缺口 | `PRODUCTION_CONTRACT_TEMPLATE_REQUIRED`，正式商业合同模板尚未接入 ⇒ **不是正式商业验收** | owner 提供正式模板 |
 | **`main` 整合** | 结构性阻塞 | 两线无共同祖先 + `0135` 迁移链冲突 + 118 个 main-only 路径 ⇒ 需刻意设计的 source-composite | owner 决策 |
 | **真实浏览器双身份回归（HK）** | 验证手段差异 | 本轮香港以 HTTPS + 真实 cookie（含 CSRF 双提交）的 **HTTP 端到端**完成，覆盖同一流程；真浏览器载体只在本机实验室跑过（48/48 + 21/21） | 可随时补（不阻塞） |
