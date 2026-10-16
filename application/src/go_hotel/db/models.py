@@ -1,6 +1,6 @@
 from __future__ import annotations
-from datetime import datetime
-from sqlalchemy import BigInteger, Boolean, DateTime, Integer, String, Text, JSON, UniqueConstraint, Index, Float, ForeignKey, CheckConstraint, Uuid
+from datetime import date, datetime
+from sqlalchemy import BigInteger, Boolean, Date, DateTime, Integer, LargeBinary, String, Text, JSON, UniqueConstraint, Index, Float, ForeignKey, CheckConstraint, Uuid, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
@@ -1110,7 +1110,12 @@ Index("ix_judgment_status_created", JudgmentRuntimeRow.status, JudgmentRuntimeRo
 class IdentityUserRow(Base):
     __tablename__ = "identity_user"
     user_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    # username / email / phone are the three accepted login identifiers of one
+    # account (three-in-one login). All three are unique; email and phone are
+    # nullable so bootstrap handles such as ``go_admin`` stay username-only.
     username: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True)
+    email: Mapped[str | None] = mapped_column(String(255), unique=True, index=True)
+    phone: Mapped[str | None] = mapped_column(String(32), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
     actor_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)  # SUPPLIER_USER / GO_ADMIN / SERVICE_ACCOUNT
     supplier_id: Mapped[str | None] = mapped_column(String(64), index=True)
@@ -5729,6 +5734,18 @@ class CommercialCaseRow(Base):
     evidence_json: Mapped[list]=mapped_column(JSON,nullable=False)
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
     updated_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
+    __table_args__=(
+        # One hotel cannot be simultaneously onboarded by two suppliers. This is
+        # the database-level half of CLAIM_CONFLICT: SUBMITTED/UNDER_REVIEW claims
+        # may race, but a hotel that has actually been granted (VERIFIED and every
+        # later contract state) may only belong to one onboarding case.
+        # CLAIM_CONFLICT is deliberately absent: the losing case does NOT own the
+        # hotel, so it must not carry property_id (that would collide with the
+        # legitimate owner's own live row).
+        Index('uq_commercial_case_live_onboarding_hotel','property_id',unique=True,
+              postgresql_where=text("case_type = 'SUPPLIER_ONBOARDING' AND property_id IS NOT NULL AND state IN ('VERIFIED','CONTRACT_PENDING','CONTRACT_NEEDS_CHANGES','CONTRACT_UNDER_REVIEW','CONTRACT_ACTIVE','BUSINESS_ENABLED')"),
+              sqlite_where=text("case_type = 'SUPPLIER_ONBOARDING' AND property_id IS NOT NULL AND state IN ('VERIFIED','CONTRACT_PENDING','CONTRACT_NEEDS_CHANGES','CONTRACT_UNDER_REVIEW','CONTRACT_ACTIVE','BUSINESS_ENABLED')")),
+    )
 
 # Mother Plan Production Build 3 — GO Good Hotel Standard governance.
 class GoodHotelStandardVersionRow(Base):
@@ -7311,12 +7328,23 @@ class HotelRegistrationDirectRow(Base):
     hotel_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     supplier_id: Mapped[str]=mapped_column(String(64),nullable=False,index=True)
     state: Mapped[str]=mapped_column(String(32),nullable=False,index=True)
+    relationship_type: Mapped[str|None]=mapped_column(String(32))
     evidence_json: Mapped[list]=mapped_column(JSON,nullable=False,default=list)
     official_supplement_json: Mapped[dict]=mapped_column(JSON,nullable=False,default=dict)
     requested_by: Mapped[str]=mapped_column(String(64),nullable=False)
     reviewed_by: Mapped[str|None]=mapped_column(String(64))
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False)
     reviewed_at: Mapped[datetime|None]=mapped_column(DateTime(timezone=True))
+    __table_args__=(
+        CheckConstraint("relationship_type IS NULL OR relationship_type IN ('OWNER','OPERATOR','MANAGEMENT_COMPANY','AUTHORIZED_AGENT')",name='ck_hreg_relationship_type'),
+        # The single arbiter of "who owns this hotel on GO". Application code
+        # checks first (to produce a good error), but two concurrent approvals can
+        # both pass that check: only the database can guarantee that a canonical
+        # hotel ends up with exactly one APPROVED relation.
+        Index('uq_hreg_approved_hotel','hotel_id',unique=True,
+              postgresql_where=text("state = 'APPROVED'"),
+              sqlite_where=text("state = 'APPROVED'")),
+    )
 
 class HotelAutoPageEventRow(Base):
     __tablename__='hotel_auto_page_event'
@@ -8193,3 +8221,107 @@ class PrivacyRequestRow(Base):
     due_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
     updated_ms: Mapped[int] = mapped_column(BigInteger, nullable=False)
     resolution: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+
+# ── Supplier / hotel onboarding V1 (2026-10-06) ────────────────────────────────
+# The legal person behind a supplier tenant, and the private evidence that proves
+# it. Neither is a property-scoped object: an applicant has no hotel_partner_
+# property yet, and enterprise credentials must never reach the public media path.
+
+class LegalEntityRow(Base):
+    """The legal person behind one supplier tenant.
+
+    One supplier tenant owns exactly one legal entity (frozen decision D-02):
+    the tenant is the business unit; the identity account is merely the operator
+    holding credentials for it today.
+    """
+    __tablename__ = 'legal_entity'
+    legal_entity_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    supplier_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    legal_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    unified_social_credit_code: Mapped[str] = mapped_column(String(18), nullable=False, unique=True, index=True)
+    legal_representative_name: Mapped[str] = mapped_column(String(80), nullable=False)
+    registered_address: Mapped[str] = mapped_column(String(300), nullable=False)
+    license_valid_from: Mapped[date | None] = mapped_column(Date)
+    license_valid_until: Mapped[date | None] = mapped_column(Date)
+    license_long_term: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    verification_state: Mapped[str] = mapped_column(String(24), nullable=False, default='PENDING', index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    __table_args__ = (
+        CheckConstraint("verification_state IN ('UNVERIFIED','PENDING','VERIFIED','REJECTED')", name='ck_legal_entity_verification_state'),
+        CheckConstraint('license_long_term OR license_valid_from IS NULL OR license_valid_until IS NULL OR license_valid_until >= license_valid_from', name='ck_legal_entity_license_window'),
+    )
+
+
+class LegalEntityDocumentRow(Base):
+    """Private applicant evidence: business licence, operation proof, signed contract.
+
+    Two scopes live in one table (frozen decision CHANGE 2):
+      * entity level     -> ``onboarding_case_id IS NULL``
+      * onboarding level -> ``onboarding_case_id`` of the case it belongs to
+    A generic polymorphic scope column was explicitly rejected: it would add a
+    concept without removing a real failure.
+    """
+    __tablename__ = 'legal_entity_document'
+    document_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    legal_entity_id: Mapped[str] = mapped_column(String(64), ForeignKey('legal_entity.legal_entity_id'), nullable=False, index=True)
+    onboarding_case_id: Mapped[str | None] = mapped_column(String(64), ForeignKey('commercial_case.commercial_case_id'), index=True)
+    document_type: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    storage_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    mime_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default='UPLOADED', index=True)
+    uploaded_by: Mapped[str] = mapped_column(String(64), nullable=False)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    replaced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (
+        CheckConstraint("document_type IN ('BUSINESS_LICENSE','LEGAL_REP_ID','AGENT_ID','STOREFRONT_PHOTO','HOTEL_OPERATION_PROOF','FRANCHISE_OR_MANAGEMENT_CONTRACT','SIGNED_CONTRACT')", name='ck_legal_entity_document_type'),
+        CheckConstraint("status IN ('UPLOADED','ACCEPTED','REJECTED','SUPERSEDED')", name='ck_legal_entity_document_status'),
+        CheckConstraint('size_bytes > 0 AND revision >= 1', name='ck_legal_entity_document_bounds'),
+        Index('uq_led_entity_current', 'legal_entity_id', 'document_type', unique=True,
+              postgresql_where=text("onboarding_case_id IS NULL AND status <> 'SUPERSEDED'"),
+              sqlite_where=text("onboarding_case_id IS NULL AND status <> 'SUPERSEDED'")),
+        Index('uq_led_case_current', 'legal_entity_id', 'onboarding_case_id', 'document_type', unique=True,
+              postgresql_where=text("onboarding_case_id IS NOT NULL AND status <> 'SUPERSEDED'"),
+              sqlite_where=text("onboarding_case_id IS NOT NULL AND status <> 'SUPERSEDED'")),
+        Index('uq_led_entity_revision', 'legal_entity_id', 'document_type', 'revision', unique=True,
+              postgresql_where=text('onboarding_case_id IS NULL'),
+              sqlite_where=text('onboarding_case_id IS NULL')),
+        Index('uq_led_case_revision', 'legal_entity_id', 'onboarding_case_id', 'document_type', 'revision', unique=True,
+              postgresql_where=text('onboarding_case_id IS NOT NULL'),
+              sqlite_where=text('onboarding_case_id IS NOT NULL')),
+    )
+
+
+class LegalEntityDocumentBlobRow(Base):
+    """The durable bytes of a private applicant document, keyed by content address.
+
+    ``legal_entity_document`` stores the metadata (type, revision, sha256, owner);
+    this table stores the bytes themselves. It exists because the Hong Kong
+    deployment path recreates the eight business containers from a digest-pinned
+    Compose file and environment file, so a document volume inside the container
+    filesystem does not survive a deployment, and no private host directory can be
+    mounted without editing the host's sealed deployment runtime. The database is
+    the one store the environment already has, is already backed up, and is already
+    restored as a unit — a document therefore survives container recreation and
+    stays consistent with the metadata row that describes it.
+
+    The key is the same content address the filesystem store uses
+    (``led_<sha256[:48]><ext>``), so the two backends are interchangeable and a row
+    can never be reached by a caller-supplied path. Bytes are read back and
+    re-hashed by the caller before being served.
+    """
+    __tablename__ = 'legal_entity_document_blob'
+    storage_key: Mapped[str] = mapped_column(String(255), primary_key=True)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    mime_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    content: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    __table_args__ = (
+        CheckConstraint('size_bytes > 0', name='ck_legal_entity_document_blob_bounds'),
+    )

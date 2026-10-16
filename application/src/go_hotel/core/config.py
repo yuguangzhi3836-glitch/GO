@@ -61,6 +61,12 @@ class Settings(BaseSettings):
     registration_privacy_evidence_path: str = ""
     registration_verification_enabled: bool = False
     registration_email_config_path: str = ""
+    # Sends nothing: stands in for *both* delivery channels (email and SMS) while
+    # neither is connected in this environment. Empty means "off", and off is the
+    # fail-closed default — sign-up and account recovery then refuse to run at all
+    # rather than accept a code nobody could have received. It must never be set
+    # in a deployment that also has a real transport configured.
+    registration_verification_test_code: str = ""
     registration_terms_version: str = "2026-09-19-draft-v2"
     mobile_push_mode: str = "mock"
     expo_push_url: str = "https://exp.host/--/api/v2/push/send"

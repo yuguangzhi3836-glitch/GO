@@ -55,6 +55,17 @@ def admin_principal(p:Principal=Depends(current_principal)):
     if p.actor_type!='GO_ADMIN': raise HTTPException(403,detail='GO_ADMIN_REQUIRED')
     return p
 
+def onboarding_reviewer_principal(p:Principal=Depends(admin_principal)):
+    """Only GO_GOVERNANCE carries ``admin:onboarding_review`` (frozen decision D-10).
+
+    Every other admin role still has ``admin:read`` and can see the console shell,
+    but must NOT be able to open applicant private evidence. This is the boundary
+    that keeps an ordinary operator out of legal documents.
+    """
+    if 'admin:onboarding_review' not in p.permissions:
+        raise HTTPException(403,detail='ONBOARDING_REVIEWER_REQUIRED')
+    return p
+
 def order_admin_principal(p:Principal=Depends(admin_principal)):
     if 'admin:orders' not in p.permissions:
         raise HTTPException(403,detail='TICKET_ORDER_OPERATOR_REQUIRED')

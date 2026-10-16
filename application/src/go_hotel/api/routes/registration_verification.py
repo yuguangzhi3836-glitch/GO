@@ -9,9 +9,13 @@ router = APIRouter(tags=['registration-verification'])
 
 
 class ChallengeBody(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra='forbid', populate_by_name=True)
     audience: Literal['consumer', 'supplier']
-    email: str = Field(min_length=3, max_length=128)
+    # `identifier` is the address a code is sent to: an email address on the
+    # `email` channel, a mobile number on the `sms` channel. The wire field keeps
+    # its historical name `email` so existing callers are unaffected.
+    identifier: str = Field(min_length=3, max_length=128, alias='email')
+    channel: Literal['email', 'sms'] = 'email'
     accepted_terms: bool = Field(strict=True)
     registration_decisions: dict[str, str] = Field(default_factory=dict)
     term_versions: dict[str, str]
@@ -28,10 +32,10 @@ def send_registration_code(body: ChallengeBody, request: Request, response: Resp
         if body.term_versions != policy['versions'] or body.term_hashes != policy['term_hashes']:
             raise ValueError('REGISTRATION_TERMS_VERSION_MISMATCH')
         registration_privacy.validate_decisions(policy,body.registration_decisions)
-        return {'data': verification.issue(body.audience, body.email, request.client.host if request.client else None, policy)}
+        return {'data': verification.issue(body.audience, body.identifier, request.client.host if request.client else None, policy, body.channel)}
     except ValueError as exc:
         error = str(exc)
-        status = 429 if error == 'REGISTRATION_CODE_RATE_LIMITED' else 503 if error in ('REGISTRATION_TERMS_NOT_READY', 'REGISTRATION_VERIFICATION_NOT_READY', 'REGISTRATION_EMAIL_SEND_FAILED') else 422
+        status = 429 if error == 'REGISTRATION_CODE_RATE_LIMITED' else 503 if error in ('REGISTRATION_TERMS_NOT_READY', 'REGISTRATION_VERIFICATION_NOT_READY', 'REGISTRATION_EMAIL_SEND_FAILED', 'REGISTRATION_SMS_NOT_READY') else 422
         raise HTTPException(status, detail=error, headers={'Retry-After': '60'} if status == 429 else None) from None
     except (OSError, KeyError, TypeError):
         raise HTTPException(503, detail='REGISTRATION_TERMS_UNAVAILABLE') from None

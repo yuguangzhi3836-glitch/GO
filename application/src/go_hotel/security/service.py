@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import time, uuid, hmac, json
-from sqlalchemy import select
+from sqlalchemy import select, update, or_
 from sqlalchemy.exc import IntegrityError
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import IdentityUserRow, AuthSessionRow, RefreshTokenRow, ApprovalRequestRow, AuditEventRow
@@ -10,6 +10,7 @@ from go_hotel.core.config import settings
 from .crypto import hash_password, verify_password, encode_jwt, decode_jwt, random_token, token_hash
 from .mfa import verify_totp, new_secret, provisioning_uri, seal, unseal
 from .rbac import permissions_for, HIGH_RISK_OPERATIONS
+from .login_identity import normalize_login_id, normalize_login_identifier, normalize_phone, is_email_login_id, is_phone_login_id
 
 UTC=timezone.utc
 def now(): return datetime.now(UTC)
@@ -17,6 +18,118 @@ def aware(dt):
     if dt is None: return None
     return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 def uid(prefix): return f"{prefix}_{uuid.uuid4().hex}"
+
+
+def identifier_column_clauses(value):
+    """Every column that could already hold ``value``, in the form each column stores.
+
+    Username, email and phone are one namespace, so a value typed into *any* of
+    the three boxes has to be checked against *all three* columns — that is what
+    makes the namespace singular instead of merely nominal. The two canonical
+    forms below are exactly what the write boundary persists: the text columns
+    (``username`` / ``email``) hold the NFC-normalised, lower-cased value, the
+    ``phone`` column holds bare digits. A phone-shaped handle such as
+    ``13354147708`` is stored verbatim in ``username``, which is precisely why it
+    must also be matched against ``phone``.
+    """
+    text=normalize_login_id(value)
+    digits=normalize_phone(value)
+    clauses=[]
+    if text:
+        clauses.append(IdentityUserRow.username==text)
+        clauses.append(IdentityUserRow.email==text)
+    if is_phone_login_id(digits):
+        clauses.append(IdentityUserRow.phone==digits)
+    return clauses
+
+
+def conflicting_identifier(session, *, username=None, email=None, phone=None, exclude_user_id=None):
+    """Which of the caller's own identifiers another account already owns.
+
+    One namespace, not three: a value that appears in *any* column of another
+    account blocks it at *every* box the applicant could type it into. Each value
+    is therefore compared against all three columns (3x3, in each column's stored
+    form) rather than only against the column of the same name. Without that, a
+    handle which is already somebody's phone number is accepted, and the login
+    lookup afterwards has two rows to choose from.
+
+    ``exclude_user_id`` keeps an account out of its own collision check — what a
+    *rebind* needs, since a person changing their own phone must not be told that
+    their own current phone is taken.
+
+    Returns the name of the *supplied* box that is blocked (``'username'`` /
+    ``'email'`` / ``'phone'``) so the form can mark that one field, or ``None``.
+    """
+    pairs=(('username',username),('email',email),('phone',phone))
+    for name,value in pairs:
+        if not value: continue
+        clauses=identifier_column_clauses(value)
+        if not clauses: continue
+        query=select(IdentityUserRow.user_id).where(or_(*clauses))
+        if exclude_user_id: query=query.where(IdentityUserRow.user_id!=exclude_user_id)
+        if session.scalar(query) is not None: return name
+    return None
+
+
+def identifier_owner_id(session, value, *, exclude_user_id=None):
+    """The ``user_id`` of the account that owns ``value`` in any column, or ``None``.
+
+    The rebind path needs the *owner* rather than just a yes/no, so it can refuse
+    a value that is already somebody else's while allowing the account to keep its
+    own. Kept next to ``conflicting_identifier`` so both read the same clauses.
+    """
+    clauses=identifier_column_clauses(value)
+    if not clauses: return None
+    query=select(IdentityUserRow.user_id).where(or_(*clauses))
+    if exclude_user_id: query=query.where(IdentityUserRow.user_id!=exclude_user_id)
+    return session.scalar(query)
+
+
+def _preferred_column_by_shape(identifier):
+    """The column an identifier names *as itself*: phone / email / username."""
+    if is_phone_login_id(identifier): return 'phone'
+    if is_email_login_id(identifier): return 'email'
+    return 'username'
+
+
+def _identifier_rows(session, identifier):
+    """Every account whose username, email or phone is exactly ``identifier``.
+
+    At most three rows can come back: each of the three columns is uniquely
+    indexed, so each column contributes at most one account. More than one row is
+    possible only for a value written *before* the one-namespace rule took effect
+    (a phone-shaped string used as a handle by one account and as a phone by
+    another); the callers below then decide deterministically rather than letting
+    the database's row order pick the account.
+    """
+    if not identifier: return []
+    return list(session.scalars(select(IdentityUserRow).where(or_(
+        IdentityUserRow.username==identifier,
+        IdentityUserRow.email==identifier,
+        IdentityUserRow.phone==identifier,
+    ))))
+
+
+def pick_identifier_row(rows, identifier, password=None):
+    """Choose exactly one account from ``rows``, or ``None``.
+
+    With a password, the row whose hash it matches wins: the caller must know that
+    password anyway, so letting it disambiguate cannot grant access anybody did
+    not already have — and it keeps a legacy account reachable by its own handle.
+    Without one (account recovery), the identifier's own shape decides: the
+    account that owns the value *as* this kind of identifier wins.
+    """
+    if not rows: return None
+    if password is not None:
+        rows=[r for r in rows if r.status=='ACTIVE' and verify_password(password,r.password_hash)]
+    else:
+        rows=[r for r in rows if r.status=='ACTIVE']
+    if not rows: return None
+    preferred=_preferred_column_by_shape(identifier)
+    for r in rows:
+        if getattr(r,preferred)==identifier: return r
+    return rows[0]
+
 
 @dataclass(frozen=True)
 class Principal:
@@ -27,10 +140,18 @@ class IdentityService:
         self.ensure_user(settings.bootstrap_admin_username, settings.bootstrap_admin_password, "GO_ADMIN", None, ["GO_GOVERNANCE"])
         self.ensure_user(settings.bootstrap_supplier_username, settings.bootstrap_supplier_password, "SUPPLIER_USER", settings.bootstrap_supplier_id, ["SUPPLIER_OWNER"])
     def ensure_user(self, username,password,actor_type,supplier_id,roles):
+        # Identity write boundary: the canonical form is what gets persisted, so
+        # every later login lookup (also normalised) can find it.
+        username=normalize_login_id(username)
+        # `username` is one of three login identifiers. When the handle *is* an
+        # email address the email column is filled as well, so the account can
+        # also be reached by email; a bootstrap handle such as `go_admin` keeps
+        # `email = NULL`.
+        email=username if is_email_login_id(username) else None
         with SessionLocal() as s:
             row=s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==username))
             if row: return row.user_id
-            t=now(); row=IdentityUserRow(user_id=uid('usr'),username=username,password_hash=hash_password(password),actor_type=actor_type,supplier_id=supplier_id,roles=roles,status='ACTIVE',token_version=1,created_at=t,updated_at=t)
+            t=now(); row=IdentityUserRow(user_id=uid('usr'),username=username,email=email,password_hash=hash_password(password),actor_type=actor_type,supplier_id=supplier_id,roles=roles,status='ACTIVE',token_version=1,created_at=t,updated_at=t)
             s.add(row)
             try:
                 s.commit()
@@ -53,9 +174,20 @@ class IdentityService:
         return self._tokens(u,sid,refresh,csrf)
 
     def login(self, username,password,client_ip=None,user_agent=None,totp_code=None,auth_method="PASSWORD",expected_actor_type=None):
+        # Identity read boundary: registration and login normalise identically,
+        # and any of the three identifiers (username / email / phone) may be
+        # typed. Registering with a display-cased or space-padded email used to
+        # make the account permanently unreachable.
+        identifier=normalize_login_identifier(username)
         with SessionLocal() as s:
-            u=s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==username))
-            if not u or u.status!='ACTIVE' or not verify_password(password,u.password_hash): raise ValueError('INVALID_CREDENTIALS')
+            # More than one row can match a value that predates the one-namespace
+            # rule, and `scalar()` used to let the database's row order decide who
+            # got logged in: one account became silently unreachable, and the
+            # automatic login at the end of sign-up answered 500 on an account it
+            # had just created. The password — which the caller must already know —
+            # picks the row; `pick_identifier_row` explains why that is safe.
+            u=pick_identifier_row(_identifier_rows(s,identifier),identifier,password)
+            if not u: raise ValueError('INVALID_CREDENTIALS')
             if expected_actor_type and u.actor_type != expected_actor_type: raise ValueError('ACCOUNT_TYPE_MISMATCH')
             must_mfa = bool(u.mfa_enabled_at) or (settings.mfa_required_for_admin and u.actor_type=='GO_ADMIN')
             if must_mfa and not u.mfa_enabled_at: raise ValueError('MFA_ENROLLMENT_REQUIRED')
@@ -69,6 +201,7 @@ class IdentityService:
         """Password-gated, least-privilege bootstrap for an admin's first MFA binding.
         The returned token is purpose-bound and cannot be used as an application session.
         """
+        username=normalize_login_id(username)
         with SessionLocal() as s:
             u=s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==username))
             if not u or u.status!='ACTIVE' or not verify_password(password,u.password_hash): raise ValueError('INVALID_CREDENTIALS')
@@ -117,8 +250,40 @@ class IdentityService:
             rt.status='REVOKED'; rt.revoked_at=now(); new_refresh=random_token(); nrt=RefreshTokenRow(token_id=uid('rt'),session_id=ses.session_id,user_id=u.user_id,token_hash=token_hash(new_refresh),status='ACTIVE',expires_at=now()+timedelta(days=settings.refresh_token_days),created_at=now())
             csrf=random_token(); ses.csrf_token_hash=token_hash(csrf); s.add(nrt); s.commit(); return self._tokens(u,ses.session_id,new_refresh,csrf)
 
+    def resolve_identifier(self, identifier):
+        """Map any of the three login identifiers to its account, or ``None``.
+
+        Account recovery cannot assume the applicant remembers *which* of the
+        three they signed up with, so the lookup accepts all of them. Returns a
+        plain dict, never a live ORM row, so a caller cannot trip over a detached
+        instance once the session has closed. There is no password here to break
+        a tie, so an ambiguous value resolves by its own shape.
+        """
+        canonical=normalize_login_identifier(identifier)
+        if not canonical: return None
+        with SessionLocal() as s:
+            u=pick_identifier_row(_identifier_rows(s,canonical),canonical)
+            if not u: return None
+            return {'user_id':u.user_id,'username':u.username,'email':u.email,'phone':u.phone,'actor_type':u.actor_type}
+
+    def set_password(self, session, user_id, new_password):
+        """Replace a password and revoke every existing session, inside `session`.
+
+        Account recovery calls this *in the same transaction* that consumes the
+        verification challenge, so "challenge spent" and "password changed"
+        commit together or roll back together. Bumping ``token_version``
+        invalidates every outstanding access token, and the sessions themselves
+        are marked REVOKED so a stolen refresh token cannot mint a new one either.
+        """
+        if not isinstance(new_password,str) or len(new_password)<10 or len(new_password)>128:
+            raise ValueError('PASSWORD_LENGTH_INVALID')
+        changed=session.execute(update(IdentityUserRow).where(IdentityUserRow.user_id==user_id).values(password_hash=hash_password(new_password),token_version=IdentityUserRow.token_version+1,updated_at=now()))
+        if changed.rowcount!=1: raise ValueError('IDENTITY_NOT_FOUND')
+        session.execute(update(AuthSessionRow).where(AuthSessionRow.user_id==user_id,AuthSessionRow.status=='ACTIVE').values(status='REVOKED',revoked_at=now()))
+
 
     def login_sso(self, provider:str, subject:str, username:str, client_ip=None, user_agent=None):
+        username=normalize_login_id(username)
         with SessionLocal() as s:
             u=s.scalar(select(IdentityUserRow).where(IdentityUserRow.sso_provider==provider, IdentityUserRow.sso_subject==subject))
             if not u:
@@ -127,7 +292,7 @@ class IdentityService:
                     u=existing; u.sso_provider=provider; u.sso_subject=subject
                 else:
                     roles=[r.strip() for r in settings.oidc_default_roles.split(',') if r.strip()]
-                    u=IdentityUserRow(user_id=uid('usr'),username=username,password_hash=hash_password(random_token()),actor_type=settings.oidc_default_actor_type,supplier_id=None,roles=roles,status='ACTIVE',token_version=1,sso_provider=provider,sso_subject=subject,created_at=now(),updated_at=now())
+                    u=IdentityUserRow(user_id=uid('usr'),username=username,email=username if is_email_login_id(username) else None,password_hash=hash_password(random_token()),actor_type=settings.oidc_default_actor_type,supplier_id=None,roles=roles,status='ACTIVE',token_version=1,sso_provider=provider,sso_subject=subject,created_at=now(),updated_at=now())
                     s.add(u)
             if u.status!='ACTIVE': raise ValueError('USER_INACTIVE')
             t=now(); sid=uid('ses'); csrf=random_token(); session=AuthSessionRow(session_id=sid,user_id=u.user_id,status='ACTIVE',client_ip=client_ip,user_agent=user_agent,created_at=t,last_seen_at=t,expires_at=t+timedelta(days=settings.refresh_token_days),auth_method='OIDC',mfa_verified_at=t,csrf_token_hash=token_hash(csrf))
