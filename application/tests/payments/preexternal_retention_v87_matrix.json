@@ -1,0 +1,560 @@
+{
+  "schema_version": 1,
+  "source_main": "00dcf6007fee0513b9ef6184209782d67cad7c0c",
+  "historical_baseline": {
+    "pr": 264,
+    "gate": "4d08a4c9393ca14e97c6ba2a8740a9ade1a77559",
+    "matrix_denominator": 18,
+    "pass_transferred": false,
+    "report_url": "https://github.com/yuguangzhi3836-glitch/GO/pull/264",
+    "report_sha256": "772cb8e811c917c70e7ffa79f5353c326249a6eb1e452288638b3deee464a553"
+  },
+  "scope_groups": [
+    "R8-06",
+    "R8-08",
+    "R8-12",
+    "R8-13",
+    "R8-14",
+    "R8-15",
+    "R8-16",
+    "R8-17",
+    "BUSINESS_DAY_CHAIN"
+  ],
+  "groups": [
+    {
+      "id": "R8-01",
+      "in_scope": false,
+      "historical_nodes": [
+        "tests/test_c13_aoluguya_independent_day.py::test_confirmed_six_prices_share_only_two_of_five_physical_pools",
+        "tests/test_c01_aoluguya_business_day.py::test_missing_pool_calendar_blocks_whole_day"
+      ],
+      "missing_nodes": [
+        "tests/test_c13_aoluguya_independent_day.py::test_confirmed_six_prices_share_only_two_of_five_physical_pools",
+        "tests/test_c01_aoluguya_business_day.py::test_missing_pool_calendar_blocks_whole_day"
+      ],
+      "retention": "OUT_OF_SCOPE",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-02",
+      "in_scope": false,
+      "historical_nodes": [
+        "tests/test_c01_hosted_operating_journey.py::test_gate_blocks_every_sale_entry_then_independent_review_opens_full_journey",
+        "tests/test_c01_hosted_operating_journey.py::test_approved_version_invalidates_across_public_page_availability_and_reservation",
+        "tests/test_c01_hosted_operating_journey.py::test_media_submitter_cannot_self_review_or_claim_another_identity"
+      ],
+      "missing_nodes": [
+        "tests/test_c01_hosted_operating_journey.py::test_gate_blocks_every_sale_entry_then_independent_review_opens_full_journey",
+        "tests/test_c01_hosted_operating_journey.py::test_approved_version_invalidates_across_public_page_availability_and_reservation",
+        "tests/test_c01_hosted_operating_journey.py::test_media_submitter_cannot_self_review_or_claim_another_identity"
+      ],
+      "retention": "OUT_OF_SCOPE",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-03",
+      "in_scope": false,
+      "historical_nodes": [
+        "tests/test_c01_money_authority_matrix.py::test_executable_operation_rejects_invalid_authority_without_business_writes"
+      ],
+      "missing_nodes": [
+        "tests/test_c01_money_authority_matrix.py::test_executable_operation_rejects_invalid_authority_without_business_writes"
+      ],
+      "retention": "OUT_OF_SCOPE",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-04",
+      "in_scope": false,
+      "historical_nodes": [
+        "tests/test_c01_room_registry_journey.py::test_fifty_room_pool_is_consumed_by_orders_before_cross_rate_last_room_race",
+        "tests/test_depth07_hosted_money.py::test_cancel_reject_expiry_release_graph_and_nightly_inventory_without_cash_refund",
+        "tests/test_depth07_hosted_money.py::test_release_and_inventory_rollback_if_projection_fails_then_retry_once"
+      ],
+      "missing_nodes": [
+        "tests/test_c01_room_registry_journey.py::test_fifty_room_pool_is_consumed_by_orders_before_cross_rate_last_room_race"
+      ],
+      "retention": "OUT_OF_SCOPE",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-05",
+      "in_scope": false,
+      "historical_nodes": [
+        "tests/test_hosted_direct_reservation_operations.py::test_go_page_and_phone_orders_share_inbox_notifications_and_audit_chain",
+        "tests/test_c01_aoluguya_business_day.py::test_complete_business_day_with_cancel_refund_difference_repair_and_replay",
+        "tests/test_c13_currency_day_scope.py::test_availability_truthful_currency_and_unsupported_sale_is_zero_write",
+        "tests/test_c01_booking_replay_matrix.py::test_same_booking_key_replays_without_new_nights_events_or_notifications_and_changed_body_fails"
+      ],
+      "missing_nodes": [
+        "tests/test_c01_aoluguya_business_day.py::test_complete_business_day_with_cancel_refund_difference_repair_and_replay",
+        "tests/test_c13_currency_day_scope.py::test_availability_truthful_currency_and_unsupported_sale_is_zero_write",
+        "tests/test_c01_booking_replay_matrix.py::test_same_booking_key_replays_without_new_nights_events_or_notifications_and_changed_body_fails"
+      ],
+      "retention": "OUT_OF_SCOPE",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-06",
+      "in_scope": true,
+      "historical_nodes": [
+        "tests/test_depth06_direct_checkout.py::test_checkout_binds_owner_amount_currency_and_requires_explicit_mode",
+        "tests/test_depth07_hosted_money.py::test_authorization_binds_selected_room_owner_hotel_and_has_no_cash_posting",
+        "tests/test_depth06_direct_checkout.py::test_simultaneous_checkout_retries_have_one_authorization"
+      ],
+      "missing_nodes": [],
+      "retention": "NODES_PRESENT_NOT_BUSINESS_PROOF",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-07",
+      "in_scope": false,
+      "historical_nodes": [
+        "tests/test_hotel_cancellation_clock.py::CancellationClockTests::test_confirmed_anchor_29_30_31_minutes",
+        "tests/test_hotel_cancellation_clock.py::CancellationClockTests::test_exact_local_deadline_second_boundary",
+        "tests/test_hotel_cancellation_clock.py::CancellationClockTests::test_exact_cutoff_quote_expiry_is_not_ten_minutes_late",
+        "tests/test_c01_aoluguya_business_day.py::test_confirmed_cooling_period_survives_nominal_checkin_boundary",
+        "tests/test_c01_cancellation_second_boundary.py::test_confirmed_anchor_second_boundaries_display_quote_execution",
+        "tests/test_c01_cancellation_second_boundary.py::test_quote_from_last_free_second_expires_at_exact_confirmed_cutoff"
+      ],
+      "missing_nodes": [
+        "tests/test_hotel_cancellation_clock.py::CancellationClockTests::test_confirmed_anchor_29_30_31_minutes",
+        "tests/test_hotel_cancellation_clock.py::CancellationClockTests::test_exact_local_deadline_second_boundary",
+        "tests/test_hotel_cancellation_clock.py::CancellationClockTests::test_exact_cutoff_quote_expiry_is_not_ten_minutes_late",
+        "tests/test_c01_aoluguya_business_day.py::test_confirmed_cooling_period_survives_nominal_checkin_boundary",
+        "tests/test_c01_cancellation_second_boundary.py::test_confirmed_anchor_second_boundaries_display_quote_execution",
+        "tests/test_c01_cancellation_second_boundary.py::test_quote_from_last_free_second_expires_at_exact_confirmed_cutoff"
+      ],
+      "retention": "OUT_OF_SCOPE",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-08",
+      "in_scope": true,
+      "historical_nodes": [
+        "tests/test_depth07_hosted_money.py::test_cancel_reject_expiry_release_graph_and_nightly_inventory_without_cash_refund",
+        "tests/test_depth06_direct_checkout.py::test_unknown_funds_keep_inventory_and_block_cancel_and_timeout",
+        "tests/test_c01_hosted_operating_journey.py::test_confirmed_uncharged_request_can_withdraw_and_updates_trips",
+        "tests/test_c01_hosted_operating_journey.py::test_uncharged_exit_does_not_bypass_unknown_or_fulfilled_stay"
+      ],
+      "missing_nodes": [
+        "tests/test_c01_hosted_operating_journey.py::test_confirmed_uncharged_request_can_withdraw_and_updates_trips",
+        "tests/test_c01_hosted_operating_journey.py::test_uncharged_exit_does_not_bypass_unknown_or_fulfilled_stay"
+      ],
+      "retention": "INTEGRATION_REQUIRED",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-09",
+      "in_scope": false,
+      "historical_nodes": [
+        "tests/test_c01_hosted_operating_journey.py::test_approval_failure_and_retry_are_truthful_atomic_and_idempotent",
+        "tests/test_depth08_hosted_change.py::test_change_high_supplement_low_no_refund_and_immutable_original_authorization",
+        "tests/test_depth08_hosted_change.py::test_stale_quote_price_change_last_night_sold_out_and_ledger_fault_keep_old_stay",
+        "tests/test_depth08_hosted_change.py::test_multiple_changes_keep_prior_roots_and_refund_final_original_capture",
+        "tests/test_depth08_hosted_change.py::test_parallel_changes_owner_and_currency_never_double_release"
+      ],
+      "missing_nodes": [
+        "tests/test_c01_hosted_operating_journey.py::test_approval_failure_and_retry_are_truthful_atomic_and_idempotent"
+      ],
+      "retention": "OUT_OF_SCOPE",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-10",
+      "in_scope": false,
+      "historical_nodes": [
+        "tests/test_c01_aoluguya_business_day.py::test_same_hotel_room_cannot_be_assigned_to_two_overlapping_stays",
+        "tests/test_c01_room_registry_journey.py::test_wrong_pool_room_rejected_without_assignment_or_event",
+        "tests/test_c01_room_registry_journey.py::test_room_registry_revocation_between_assignment_and_checkin_blocks_entry",
+        "tests/test_c13_room_registry_authority.py::test_occupied_room_registry_rejection_has_zero_business_writes",
+        "tests/test_c01_room_registry_journey.py::test_equivalent_registry_spelling_cannot_assign_an_occupied_room"
+      ],
+      "missing_nodes": [
+        "tests/test_c01_aoluguya_business_day.py::test_same_hotel_room_cannot_be_assigned_to_two_overlapping_stays",
+        "tests/test_c01_room_registry_journey.py::test_wrong_pool_room_rejected_without_assignment_or_event",
+        "tests/test_c01_room_registry_journey.py::test_room_registry_revocation_between_assignment_and_checkin_blocks_entry",
+        "tests/test_c13_room_registry_authority.py::test_occupied_room_registry_rejection_has_zero_business_writes",
+        "tests/test_c01_room_registry_journey.py::test_equivalent_registry_spelling_cannot_assign_an_occupied_room"
+      ],
+      "retention": "OUT_OF_SCOPE",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-11",
+      "in_scope": false,
+      "historical_nodes": [
+        "tests/test_c01_aoluguya_business_day.py::test_overnight_checkout_next_day_preserves_prior_close_and_opening_balance",
+        "tests/test_depth07_hosted_money.py::test_capture_only_dual_confirmed_fulfillment_and_release_unused_amount",
+        "tests/test_depth07_hosted_money.py::test_pending_hotel_has_no_guest_stay_and_graph_extension_cannot_fake_inventory"
+      ],
+      "missing_nodes": [
+        "tests/test_c01_aoluguya_business_day.py::test_overnight_checkout_next_day_preserves_prior_close_and_opening_balance"
+      ],
+      "retention": "OUT_OF_SCOPE",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-12",
+      "in_scope": true,
+      "historical_nodes": [
+        "tests/test_depth07_hosted_money.py::test_fulfillment_cannot_bypass_stay_or_change_proof_and_dispute_rechecks_at_capture",
+        "tests/test_depth07_hosted_money.py::test_capture_ledger_fault_rolls_back_cash_release_and_order_then_retries",
+        "tests/test_depth07_hosted_money.py::test_simultaneous_capture_retries_post_once"
+      ],
+      "missing_nodes": [],
+      "retention": "NODES_PRESENT_NOT_BUSINESS_PROOF",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-13",
+      "in_scope": true,
+      "historical_nodes": [
+        "tests/test_depth07_hosted_money.py::test_partial_refund_is_durable_original_capture_and_only_closes_its_case",
+        "tests/test_depth07_hosted_money.py::test_parallel_refund_approvals_cannot_overcommit_actual_capture",
+        "tests/test_depth07_hosted_money.py::test_approval_checks_independent_actor_actual_cash_full_amount_and_closed_case",
+        "tests/test_depth07_hosted_money.py::test_owner_after_sales_api_idempotency_and_refund_permissions"
+      ],
+      "missing_nodes": [],
+      "retention": "NODES_PRESENT_NOT_BUSINESS_PROOF",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-14",
+      "in_scope": true,
+      "historical_nodes": [
+        "tests/test_depth07_hosted_money.py::test_partial_refund_is_durable_original_capture_and_only_closes_its_case",
+        "tests/test_depth07_hosted_money.py::test_two_partial_refunds_start_distinct_cycles_without_resetting_trip_completion"
+      ],
+      "missing_nodes": [],
+      "retention": "NODES_PRESENT_NOT_BUSINESS_PROOF",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-15",
+      "in_scope": true,
+      "historical_nodes": [
+        "tests/test_v70_r4_c01_unknown_episode.py::test_episode_digest_fences_resolution_and_mixed_settlement",
+        "tests/test_v70_r4_c01_unknown_episode.py::test_unknown_movement_without_open_episode_fails_closed_without_writes",
+        "tests/test_v70_r4_c01_unknown_episode.py::test_episode_and_movement_rollback_when_audit_write_fails",
+        "tests/test_c01_aoluguya_business_day.py::test_complete_business_day_with_cancel_refund_difference_repair_and_replay"
+      ],
+      "missing_nodes": [
+        "tests/test_v70_r4_c01_unknown_episode.py::test_episode_digest_fences_resolution_and_mixed_settlement",
+        "tests/test_v70_r4_c01_unknown_episode.py::test_unknown_movement_without_open_episode_fails_closed_without_writes",
+        "tests/test_v70_r4_c01_unknown_episode.py::test_episode_and_movement_rollback_when_audit_write_fails",
+        "tests/test_c01_aoluguya_business_day.py::test_complete_business_day_with_cancel_refund_difference_repair_and_replay"
+      ],
+      "retention": "INTEGRATION_REQUIRED",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-16",
+      "in_scope": true,
+      "historical_nodes": [
+        "tests/test_c13_aoluguya_independent_day.py::test_economic_date_uses_movement_across_midnight",
+        "tests/test_c01_aoluguya_business_day.py::test_overnight_checkout_next_day_preserves_prior_close_and_opening_balance",
+        "tests/test_c13_currency_day_scope.py::test_daily_close_separates_currency_foreign_hotel_and_old_order",
+        "tests/test_c13_currency_day_scope.py::test_today_booking_for_future_stay_moves_only_future_inventory",
+        "tests/test_c13_currency_day_scope.py::test_prior_day_capture_refunded_today_keeps_prior_close_and_opening_balance"
+      ],
+      "missing_nodes": [
+        "tests/test_c13_aoluguya_independent_day.py::test_economic_date_uses_movement_across_midnight",
+        "tests/test_c01_aoluguya_business_day.py::test_overnight_checkout_next_day_preserves_prior_close_and_opening_balance",
+        "tests/test_c13_currency_day_scope.py::test_daily_close_separates_currency_foreign_hotel_and_old_order",
+        "tests/test_c13_currency_day_scope.py::test_today_booking_for_future_stay_moves_only_future_inventory",
+        "tests/test_c13_currency_day_scope.py::test_prior_day_capture_refunded_today_keeps_prior_close_and_opening_balance"
+      ],
+      "retention": "INTEGRATION_REQUIRED",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-17",
+      "in_scope": true,
+      "historical_nodes": [
+        "tests/test_c01_aoluguya_business_day.py::test_concurrent_day_close_has_one_durable_result",
+        "tests/test_c13_aoluguya_independent_day.py::test_archived_order_source_tamper_rejected",
+        "tests/test_c13_aoluguya_independent_day.py::test_archive_payload_hash_is_rechecked",
+        "tests/test_c13_aoluguya_independent_day.py::test_independent_normal_overnight_funds_inventory_replay"
+      ],
+      "missing_nodes": [
+        "tests/test_c01_aoluguya_business_day.py::test_concurrent_day_close_has_one_durable_result",
+        "tests/test_c13_aoluguya_independent_day.py::test_archived_order_source_tamper_rejected",
+        "tests/test_c13_aoluguya_independent_day.py::test_archive_payload_hash_is_rechecked",
+        "tests/test_c13_aoluguya_independent_day.py::test_independent_normal_overnight_funds_inventory_replay"
+      ],
+      "retention": "INTEGRATION_REQUIRED",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "R8-18",
+      "in_scope": false,
+      "historical_nodes": [
+        "tests/test_c13_aoluguya_independent_day.py::test_independent_short_stay_refund_and_free_cancel",
+        "tests/test_c13_aoluguya_independent_day.py::test_captured_arrival_voucher_truthful",
+        "tests/test_depth07_hosted_money.py::test_owner_after_sales_api_idempotency_and_refund_permissions",
+        "tests/test_hosted_direct_reservation_operations.py::test_go_page_and_phone_orders_share_inbox_notifications_and_audit_chain",
+        "tests/test_hosted_frontdesk_uat_daily_close.py::test_shift_handover_captures_unresolved_inbox",
+        "tests/test_hosted_frontdesk_uat_daily_close.py::test_guest_data_is_masked_and_unmask_is_manager_audited"
+      ],
+      "missing_nodes": [
+        "tests/test_c13_aoluguya_independent_day.py::test_independent_short_stay_refund_and_free_cancel",
+        "tests/test_c13_aoluguya_independent_day.py::test_captured_arrival_voucher_truthful"
+      ],
+      "retention": "OUT_OF_SCOPE",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    },
+    {
+      "id": "BUSINESS_DAY_CHAIN",
+      "in_scope": true,
+      "historical_nodes": [
+        "tests/test_c01_aoluguya_business_day.py::test_complete_business_day_with_cancel_refund_difference_repair_and_replay"
+      ],
+      "missing_nodes": [
+        "tests/test_c01_aoluguya_business_day.py::test_complete_business_day_with_cancel_refund_difference_repair_and_replay"
+      ],
+      "retention": "INTEGRATION_REQUIRED",
+      "execution": "NOT_RUN",
+      "independent_review": "UNPROVEN_FOR_CURRENT_MAIN"
+    }
+  ],
+  "historical_test_blobs": [
+    {
+      "path": "application/tests/test_c01_aoluguya_business_day.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "eeac7775d936e98a429568702c58160a2172abcf",
+      "size": 20103,
+      "url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/git/blobs/eeac7775d936e98a429568702c58160a2172abcf",
+      "current_blob": null
+    },
+    {
+      "path": "application/tests/test_c01_hosted_operating_journey.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "580c039ed4ea6c461d2a59cb433b2ea771a73c55",
+      "size": 16799,
+      "url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/git/blobs/580c039ed4ea6c461d2a59cb433b2ea771a73c55",
+      "current_blob": null
+    },
+    {
+      "path": "application/tests/test_c13_aoluguya_independent_day.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7bfeb8c67aab3b6f0d1140a2e96fb6a735966a14",
+      "size": 15178,
+      "url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/git/blobs/7bfeb8c67aab3b6f0d1140a2e96fb6a735966a14",
+      "current_blob": null
+    },
+    {
+      "path": "application/tests/test_c13_currency_day_scope.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "242a63b33aee2445c332372ba96fb741ebab6466",
+      "size": 20393,
+      "url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/git/blobs/242a63b33aee2445c332372ba96fb741ebab6466",
+      "current_blob": null
+    },
+    {
+      "path": "application/tests/test_depth06_direct_checkout.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "34278fcf354b375ccab05e8f323f1c27e01e69da",
+      "size": 10059,
+      "url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/git/blobs/34278fcf354b375ccab05e8f323f1c27e01e69da",
+      "current_blob": "3b79251654d8030e8190737f11865ae416da6781"
+    },
+    {
+      "path": "application/tests/test_depth07_hosted_money.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "07fdec1eb6c822127bef2d2f6c3c6b3780ac217b",
+      "size": 16871,
+      "url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/git/blobs/07fdec1eb6c822127bef2d2f6c3c6b3780ac217b",
+      "current_blob": "07fdec1eb6c822127bef2d2f6c3c6b3780ac217b"
+    },
+    {
+      "path": "application/tests/test_v70_r4_c01_unknown_episode.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6e4e0019c2cd36bfadd8b3012dcbfc1713c169ab",
+      "size": 8300,
+      "url": "https://api.github.com/repos/yuguangzhi3836-glitch/GO/git/blobs/6e4e0019c2cd36bfadd8b3012dcbfc1713c169ab",
+      "current_blob": null
+    }
+  ],
+  "source_files": [
+    {
+      "path": "application/src/go_hotel/api/routes/omnichannel_payment.py",
+      "historical_blob": "afd5f9f8c598d0e021473e11d1c3dc5b716f84c5",
+      "current_blob": "0652c1eec170bedb141db804ab03b57ded0b7cbf",
+      "status": "PRESENT_NOT_SEMANTIC_EQUIVALENCE"
+    },
+    {
+      "path": "application/src/go_hotel/api/routes/unified_money_movement.py",
+      "historical_blob": "b9c9faeda7622c75cb835887fc520a3b87fe41bc",
+      "current_blob": "b9c9faeda7622c75cb835887fc520a3b87fe41bc",
+      "status": "PRESENT_NOT_SEMANTIC_EQUIVALENCE"
+    },
+    {
+      "path": "application/src/go_hotel/services/guest_stay_fulfillment.py",
+      "historical_blob": "a292636390a46bb9745890dc6cf39f189bbd8666",
+      "current_blob": "e7f4a9a3b906a6072d6d4454679d0b9881a02440",
+      "status": "PRESENT_NOT_SEMANTIC_EQUIVALENCE"
+    },
+    {
+      "path": "application/src/go_hotel/services/hosted_after_sales.py",
+      "historical_blob": "a3745c2e42356e722d4042c7d703038498ae7732",
+      "current_blob": "a3745c2e42356e722d4042c7d703038498ae7732",
+      "status": "PRESENT_NOT_SEMANTIC_EQUIVALENCE"
+    },
+    {
+      "path": "application/src/go_hotel/services/hosted_checkout.py",
+      "historical_blob": "816eb007742fbc6a440055db813c2aa7d68f5597",
+      "current_blob": "816eb007742fbc6a440055db813c2aa7d68f5597",
+      "status": "PRESENT_NOT_SEMANTIC_EQUIVALENCE"
+    },
+    {
+      "path": "application/src/go_hotel/services/hosted_frontdesk_uat.py",
+      "historical_blob": "f0c87b74776f2b8dcbfea1565b1dd5be7d792833",
+      "current_blob": "f59366c76383bdac2f470372d7a59ac86b4d337e",
+      "status": "PRESENT_NOT_SEMANTIC_EQUIVALENCE"
+    },
+    {
+      "path": "application/src/go_hotel/services/hosted_money.py",
+      "historical_blob": "dcd0a0c2dd78256dd48395622f98cfa619119dbf",
+      "current_blob": "da6b63f3fee5ec50363368f20a190e35eb4ed7a8",
+      "status": "PRESENT_NOT_SEMANTIC_EQUIVALENCE"
+    },
+    {
+      "path": "application/src/go_hotel/services/hosted_reservation_operations.py",
+      "historical_blob": "ce2bc54bed3889df17bf3947c2323cf75684e2d8",
+      "current_blob": "f09dc743a13d54bfd92684fe085a416f2bdc8e76",
+      "status": "PRESENT_NOT_SEMANTIC_EQUIVALENCE"
+    },
+    {
+      "path": "application/src/go_hotel/services/omnichannel_payment.py",
+      "historical_blob": "6b497194729b7c1744c5e42ba02588a36516e5aa",
+      "current_blob": "097e4e726ea909441bb34ee8eaaa05ab53e7e44e",
+      "status": "PRESENT_NOT_SEMANTIC_EQUIVALENCE"
+    },
+    {
+      "path": "application/src/go_hotel/services/unified_money_movement.py",
+      "historical_blob": "7ed0fc16094ff777231b0643b6854fb9f1d7cc0a",
+      "current_blob": "60816d79f4ad8235d70cb6d5a88748d386d7d82b",
+      "status": "PRESENT_NOT_SEMANTIC_EQUIVALENCE"
+    }
+  ],
+  "integration_dependencies": [
+    {
+      "pr": 264,
+      "sha": "4d08a4c9393ca14e97c6ba2a8740a9ade1a77559",
+      "status": "CLOSED_UNMERGED_HISTORY_NOT_AUTO_IMPORT"
+    },
+    {
+      "pr": 320,
+      "sha": "eeafca1b15a4754ba36a0f138a27347cbbd12c73",
+      "status": "SEPARATE_BUSINESS_TREE_NOT_MAIN"
+    },
+    {
+      "pr": 476,
+      "sha": "9c47804b297648bf24decec95f6172df44b931e5",
+      "status": "UNMERGED_CANDIDATE_NOT_TESTED_HERE"
+    },
+    {
+      "pr": 527,
+      "sha": "c5bc126a1d93befc6cf4c427d82b7fc37cbde9b7",
+      "status": "UNMERGED_CANDIDATE_NOT_TESTED_HERE"
+    }
+  ],
+  "full_acceptance": "BLOCKED_INTEGRATION_REQUIRED",
+  "database": "SQLite imposed by application/tests/conftest.py; PostgreSQL UNPROVEN",
+  "recovery": {
+    "run": 37459644426,
+    "attempt": 1,
+    "agent_job": 112255891314,
+    "artifact": 11411237781,
+    "archive_sha256": "8509af7c2cd8d1619f50b8485c3bc12f2d4c82dc2838ff28ac306b5f792db9e1",
+    "method": "Partial test readback recovered; full matrix and final edits absent. Rebuilt from exact historical node table, reusing existing tests rather than duplicating helpers or transferring PASS."
+  },
+  "local_validation": {
+    "status": "PASS_SCOPED_RETENTION_RUNNER_ONLY",
+    "command": "cd application && GO_MEDIA_CACHE_DIR=/tmp/pay528-media /tmp/pay528-venv/bin/python -m pytest tests/payments/test_preexternal_retention_v87.py -q --junitxml=/tmp/pay528-final.xml",
+    "exit_code": 0,
+    "counts": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "12",
+      "time": "11.910",
+      "timestamp": "2026-10-06T20:26:59.778569+07:00",
+      "hostname": "7800e7ff0094"
+    },
+    "database": "SQLite",
+    "retained_groups_executed": [
+      "R8-06",
+      "R8-12",
+      "R8-13",
+      "R8-14"
+    ],
+    "business_cases": 11,
+    "matrix_checks": 1,
+    "junit": "<?xml version=\"1.0\" encoding=\"utf-8\"?><testsuites name=\"pytest tests\"><testsuite name=\"pytest\" errors=\"0\" failures=\"0\" skipped=\"0\" tests=\"12\" time=\"11.910\" timestamp=\"2026-10-06T20:26:59.778569+07:00\" hostname=\"7800e7ff0094\"><testcase classname=\"tests.payments.test_preexternal_retention_v87\" name=\"test_matrix_preserves_full_denominator_and_missing_evidence\" time=\"0.041\" /><testcase classname=\"tests.payments.test_preexternal_retention_v87\" name=\"test_v87_R8_06_checkout_binds_owner_amount_currency_and_requires_explicit_mode\" time=\"4.268\" /><testcase classname=\"tests.payments.test_preexternal_retention_v87\" name=\"test_v87_R8_06_authorization_binds_selected_room_owner_hotel_and_has_no_cash_posting\" time=\"0.536\" /><testcase classname=\"tests.payments.test_preexternal_retention_v87\" name=\"test_v87_R8_06_simultaneous_checkout_retries_have_one_authorization\" time=\"0.493\" /><testcase classname=\"tests.payments.test_preexternal_retention_v87\" name=\"test_v87_R8_12_fulfillment_cannot_bypass_stay_or_change_proof_and_dispute_rechecks_at_capture\" time=\"0.577\" /><testcase classname=\"tests.payments.test_preexternal_retention_v87\" name=\"test_v87_R8_12_capture_ledger_fault_rolls_back_cash_release_and_order_then_retries\" time=\"0.560\" /><testcase classname=\"tests.payments.test_preexternal_retention_v87\" name=\"test_v87_R8_12_simultaneous_capture_retries_post_once\" time=\"0.583\" /><testcase classname=\"tests.payments.test_preexternal_retention_v87\" name=\"test_v87_R8_13_partial_refund_is_durable_original_capture_and_only_closes_its_case\" time=\"0.642\" /><testcase classname=\"tests.payments.test_preexternal_retention_v87\" name=\"test_v87_R8_13_parallel_refund_approvals_cannot_overcommit_actual_capture\" time=\"0.565\" /><testcase classname=\"tests.payments.test_preexternal_retention_v87\" name=\"test_v87_R8_13_approval_checks_independent_actor_actual_cash_full_amount_and_closed_case\" time=\"0.548\" /><testcase classname=\"tests.payments.test_preexternal_retention_v87\" name=\"test_v87_R8_13_owner_after_sales_api_idempotency_and_refund_permissions\" time=\"0.785\" /><testcase classname=\"tests.payments.test_preexternal_retention_v87\" name=\"test_v87_R8_14_two_partial_refunds_start_distinct_cycles_without_resetting_trip_completion\" time=\"0.636\" /></testsuite></testsuites>",
+    "stdout": "............                                                             [100%]\n=============================== warnings summary ===============================\ntests/payments/test_preexternal_retention_v87.py::test_v87_R8_06_checkout_binds_owner_amount_currency_and_requires_explicit_mode\n  /tmp/pay528-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n",
+    "test_source_sha256": "eba6f556b941b99dc951c41435a15c71d37280bdb3bc9e144c60bfc4564af2a0",
+    "full_readiness_exit_code": 2,
+    "full_readiness": {
+      "status": "BLOCKED",
+      "historical_denominator": 18,
+      "missing_groups": {
+        "R8-08": [
+          "tests/test_c01_hosted_operating_journey.py::test_confirmed_uncharged_request_can_withdraw_and_updates_trips",
+          "tests/test_c01_hosted_operating_journey.py::test_uncharged_exit_does_not_bypass_unknown_or_fulfilled_stay"
+        ],
+        "R8-15": [
+          "tests/test_v70_r4_c01_unknown_episode.py::test_episode_digest_fences_resolution_and_mixed_settlement",
+          "tests/test_v70_r4_c01_unknown_episode.py::test_unknown_movement_without_open_episode_fails_closed_without_writes",
+          "tests/test_v70_r4_c01_unknown_episode.py::test_episode_and_movement_rollback_when_audit_write_fails",
+          "tests/test_c01_aoluguya_business_day.py::test_complete_business_day_with_cancel_refund_difference_repair_and_replay"
+        ],
+        "R8-16": [
+          "tests/test_c13_aoluguya_independent_day.py::test_economic_date_uses_movement_across_midnight",
+          "tests/test_c01_aoluguya_business_day.py::test_overnight_checkout_next_day_preserves_prior_close_and_opening_balance",
+          "tests/test_c13_currency_day_scope.py::test_daily_close_separates_currency_foreign_hotel_and_old_order",
+          "tests/test_c13_currency_day_scope.py::test_today_booking_for_future_stay_moves_only_future_inventory",
+          "tests/test_c13_currency_day_scope.py::test_prior_day_capture_refunded_today_keeps_prior_close_and_opening_balance"
+        ],
+        "R8-17": [
+          "tests/test_c01_aoluguya_business_day.py::test_concurrent_day_close_has_one_durable_result",
+          "tests/test_c13_aoluguya_independent_day.py::test_archived_order_source_tamper_rejected",
+          "tests/test_c13_aoluguya_independent_day.py::test_archive_payload_hash_is_rechecked",
+          "tests/test_c13_aoluguya_independent_day.py::test_independent_normal_overnight_funds_inventory_replay"
+        ],
+        "BUSINESS_DAY_CHAIN": [
+          "tests/test_c01_aoluguya_business_day.py::test_complete_business_day_with_cancel_refund_difference_repair_and_replay"
+        ]
+      },
+      "remaining": "PostgreSQL, omitted groups, unmerged fixes and independent full-scope review remain UNPROVEN"
+    },
+    "note": "groups.execution is the frozen pre-run inventory, not current result; this bound JUnit is local execution evidence only. No PostgreSQL, whole-18-group or independent review claim."
+  }
+}
