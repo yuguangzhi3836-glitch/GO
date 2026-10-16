@@ -1,0 +1,110 @@
+{
+  "archive_commit": "3173cd94e0a1377c6dcde5442d27f56517d51c65",
+  "baseline_medians_seconds": {
+    "money_family_exclusive_cpu": 1.5251957965000003,
+    "orm_first_configuration_cpu": 2.8014661695000003,
+    "ride.create_exclusive_cpu": 3.8217916345000003
+  },
+  "diagnostic_only": true,
+  "limitations": [
+    "Instrumented CPU includes observer cost; not an adoption budget.",
+    "Mapper CPU overlaps service CPU; do not add these numbers.",
+    "Existing mapper records do not identify active service/lease.",
+    "Historical R3 application is not the deployed PR320 application."
+  ],
+  "raw_zip_sha256": "1be3458c68a141050454bd1708878efa9d4921f364f1e58c1e8c57aa1e2ba5cb",
+  "rounds": [
+    {
+      "exclusive_service_cpu_seconds": {
+        "bridge._confirm_contract_payment": 0.12274744000000026,
+        "bridge.checkout_contract": 0.8026017409999996,
+        "idempotency.claim_idempotency": 0.335475666,
+        "idempotency.complete_idempotency": 0.128276188,
+        "money.create": 0.12868327800000023,
+        "money.create_in_session": 1.256702711,
+        "payment.create_intent": 1.215631778,
+        "payment.execute": 0.36031954999999993,
+        "payment.select_channel": 0.17919546699999994,
+        "payment.simulate_result": 0.47310072299999983,
+        "ride.create": 3.6817382530000002,
+        "ride.fulfill": 1.3518434169999998,
+        "route.run_idempotent": 0.009074672999999972,
+        "source.decide_in": 0.18394857800000003,
+        "supplier.record_supplier_fact": 1.319003822
+      },
+      "mapper_cpu_seconds": 2.800369399,
+      "money_family_exclusive_cpu_seconds": 1.3853859890000002,
+      "round": "1-baseline",
+      "workers": 4
+    },
+    {
+      "exclusive_service_cpu_seconds": {
+        "bridge._confirm_contract_payment": 0.12394676600000001,
+        "bridge.checkout_contract": 0.8061844530000004,
+        "idempotency.claim_idempotency": 0.34416181600000006,
+        "idempotency.complete_idempotency": 0.13089364300000014,
+        "money.create": 0.131901486,
+        "money.create_in_session": 1.2752351759999996,
+        "payment.create_intent": 0.7771629889999998,
+        "payment.execute": 0.36458868099999986,
+        "payment.select_channel": 0.17943549599999994,
+        "payment.simulate_result": 0.4776621000000001,
+        "ride.create": 3.738944344,
+        "ride.fulfill": 1.3720721899999997,
+        "route.run_idempotent": 0.009145976000000139,
+        "source.decide_in": 0.6863811970000001,
+        "supplier.record_supplier_fact": 1.3412664159999996
+      },
+      "mapper_cpu_seconds": 2.853020283,
+      "money_family_exclusive_cpu_seconds": 1.4071366619999996,
+      "round": "2-candidate",
+      "workers": 4
+    },
+    {
+      "exclusive_service_cpu_seconds": {
+        "bridge._confirm_contract_payment": 0.12501333299999978,
+        "bridge.checkout_contract": 0.8225021740000004,
+        "idempotency.claim_idempotency": 0.35556414700000005,
+        "idempotency.complete_idempotency": 0.1347481249999999,
+        "money.create": 0.13758182200000038,
+        "money.create_in_session": 2.0513829679999995,
+        "payment.create_intent": 0.805806183,
+        "payment.execute": 0.36935578299999994,
+        "payment.select_channel": 0.18114546200000006,
+        "payment.simulate_result": 0.740138602,
+        "ride.create": 3.7903780189999994,
+        "ride.fulfill": 1.460864655,
+        "route.run_idempotent": 0.00934101700000004,
+        "source.decide_in": 0.19156380100000006,
+        "supplier.record_supplier_fact": 0.897252538
+      },
+      "mapper_cpu_seconds": 2.8929924100000006,
+      "money_family_exclusive_cpu_seconds": 2.18896479,
+      "round": "3-candidate",
+      "workers": 4
+    },
+    {
+      "exclusive_service_cpu_seconds": {
+        "bridge._confirm_contract_payment": 0.12425384700000028,
+        "bridge.checkout_contract": 0.8271075899999998,
+        "idempotency.claim_idempotency": 0.34505494000000014,
+        "idempotency.complete_idempotency": 0.13121791500000018,
+        "money.create": 0.13283241000000012,
+        "money.create_in_session": 1.5321731940000003,
+        "payment.create_intent": 1.0244125080000002,
+        "payment.execute": 0.36571345099999997,
+        "payment.select_channel": 0.17956993299999996,
+        "payment.simulate_result": 0.4935712399999998,
+        "ride.create": 3.961845016,
+        "ride.fulfill": 1.365224332,
+        "route.run_idempotent": 0.009272371999999597,
+        "source.decide_in": 0.19332046800000008,
+        "supplier.record_supplier_fact": 0.8499212229999997
+      },
+      "mapper_cpu_seconds": 2.80256294,
+      "money_family_exclusive_cpu_seconds": 1.6650056040000005,
+      "round": "4-baseline",
+      "workers": 4
+    }
+  ]
+}

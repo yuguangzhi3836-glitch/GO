@@ -1,0 +1,5661 @@
+{
+  "scope": "isolated rebuilt serial RIDE_ORDER fixture, historical application; not ABBA/load/release evidence",
+  "time_utc": "2026-10-03T10:16:40.579706+00:00",
+  "app_head": "13a08ec261cc1618b7cada5a2b64bd438b848621",
+  "app_tree": "6570b66bc977f89c0311d67bdc6b721cd70d4e09",
+  "probe_head": "bbe7be96bcb1f0a1c14f950a34efdce102114cb7",
+  "python": "3.12.3",
+  "sqlalchemy": "2.1.1",
+  "psycopg": "3.3.6",
+  "postgres": "18.4 (Debian 18.4-1.pgdg13+1)",
+  "cpus": 4,
+  "schema": "money_sample_957213153d134f948bf2c7880e22dddb",
+  "table_counts": {
+    "omnichannel_payment_intent": 23,
+    "omnichannel_money_movement": 46,
+    "omnichannel_ledger_entry": 46,
+    "catalog_credit_source": 0,
+    "order_supplier_fulfillment": 23,
+    "order_supplier_fulfillment_event": 23
+  },
+  "indexes": [
+    {
+      "tablename": "catalog_credit_source",
+      "indexname": "catalog_credit_source_pkey",
+      "indexdef": "CREATE UNIQUE INDEX catalog_credit_source_pkey ON money_sample_957213153d134f948bf2c7880e22dddb.catalog_credit_source USING btree (capture_id)"
+    },
+    {
+      "tablename": "catalog_credit_source",
+      "indexname": "ix_catalog_credit_source_credit_id",
+      "indexdef": "CREATE INDEX ix_catalog_credit_source_credit_id ON money_sample_957213153d134f948bf2c7880e22dddb.catalog_credit_source USING btree (credit_id)"
+    },
+    {
+      "tablename": "catalog_credit_source",
+      "indexname": "ix_catalog_credit_source_payment_intent_id",
+      "indexdef": "CREATE INDEX ix_catalog_credit_source_payment_intent_id ON money_sample_957213153d134f948bf2c7880e22dddb.catalog_credit_source USING btree (payment_intent_id)"
+    },
+    {
+      "tablename": "omnichannel_ledger_entry",
+      "indexname": "ix_omnichannel_ledger_entry_account_code",
+      "indexdef": "CREATE INDEX ix_omnichannel_ledger_entry_account_code ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_ledger_entry USING btree (account_code)"
+    },
+    {
+      "tablename": "omnichannel_ledger_entry",
+      "indexname": "ix_omnichannel_ledger_entry_entry_type",
+      "indexdef": "CREATE INDEX ix_omnichannel_ledger_entry_entry_type ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_ledger_entry USING btree (entry_type)"
+    },
+    {
+      "tablename": "omnichannel_ledger_entry",
+      "indexname": "ix_omnichannel_ledger_entry_payment_intent_id",
+      "indexdef": "CREATE INDEX ix_omnichannel_ledger_entry_payment_intent_id ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_ledger_entry USING btree (payment_intent_id)"
+    },
+    {
+      "tablename": "omnichannel_ledger_entry",
+      "indexname": "ix_omnichannel_ledger_entry_transaction_id",
+      "indexdef": "CREATE INDEX ix_omnichannel_ledger_entry_transaction_id ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_ledger_entry USING btree (transaction_id)"
+    },
+    {
+      "tablename": "omnichannel_ledger_entry",
+      "indexname": "omnichannel_ledger_entry_pkey",
+      "indexdef": "CREATE UNIQUE INDEX omnichannel_ledger_entry_pkey ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_ledger_entry USING btree (ledger_entry_id)"
+    },
+    {
+      "tablename": "omnichannel_money_movement",
+      "indexname": "ix_omnichannel_money_movement_business_id",
+      "indexdef": "CREATE INDEX ix_omnichannel_money_movement_business_id ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_money_movement USING btree (business_id)"
+    },
+    {
+      "tablename": "omnichannel_money_movement",
+      "indexname": "ix_omnichannel_money_movement_business_type",
+      "indexdef": "CREATE INDEX ix_omnichannel_money_movement_business_type ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_money_movement USING btree (business_type)"
+    },
+    {
+      "tablename": "omnichannel_money_movement",
+      "indexname": "ix_omnichannel_money_movement_movement_type",
+      "indexdef": "CREATE INDEX ix_omnichannel_money_movement_movement_type ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_money_movement USING btree (movement_type)"
+    },
+    {
+      "tablename": "omnichannel_money_movement",
+      "indexname": "ix_omnichannel_money_movement_parent_movement_id",
+      "indexdef": "CREATE INDEX ix_omnichannel_money_movement_parent_movement_id ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_money_movement USING btree (parent_movement_id)"
+    },
+    {
+      "tablename": "omnichannel_money_movement",
+      "indexname": "ix_omnichannel_money_movement_root_payment_intent_id",
+      "indexdef": "CREATE INDEX ix_omnichannel_money_movement_root_payment_intent_id ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_money_movement USING btree (root_payment_intent_id)"
+    },
+    {
+      "tablename": "omnichannel_money_movement",
+      "indexname": "ix_omnichannel_money_movement_state",
+      "indexdef": "CREATE INDEX ix_omnichannel_money_movement_state ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_money_movement USING btree (state)"
+    },
+    {
+      "tablename": "omnichannel_money_movement",
+      "indexname": "omnichannel_money_movement_idempotency_key_key",
+      "indexdef": "CREATE UNIQUE INDEX omnichannel_money_movement_idempotency_key_key ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_money_movement USING btree (idempotency_key)"
+    },
+    {
+      "tablename": "omnichannel_money_movement",
+      "indexname": "omnichannel_money_movement_pkey",
+      "indexdef": "CREATE UNIQUE INDEX omnichannel_money_movement_pkey ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_money_movement USING btree (money_movement_id)"
+    },
+    {
+      "tablename": "omnichannel_payment_intent",
+      "indexname": "ix_omnichannel_payment_intent_business_id",
+      "indexdef": "CREATE INDEX ix_omnichannel_payment_intent_business_id ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_payment_intent USING btree (business_id)"
+    },
+    {
+      "tablename": "omnichannel_payment_intent",
+      "indexname": "ix_omnichannel_payment_intent_business_type",
+      "indexdef": "CREATE INDEX ix_omnichannel_payment_intent_business_type ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_payment_intent USING btree (business_type)"
+    },
+    {
+      "tablename": "omnichannel_payment_intent",
+      "indexname": "ix_omnichannel_payment_intent_payee_id",
+      "indexdef": "CREATE INDEX ix_omnichannel_payment_intent_payee_id ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_payment_intent USING btree (payee_id)"
+    },
+    {
+      "tablename": "omnichannel_payment_intent",
+      "indexname": "ix_omnichannel_payment_intent_payer_id",
+      "indexdef": "CREATE INDEX ix_omnichannel_payment_intent_payer_id ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_payment_intent USING btree (payer_id)"
+    },
+    {
+      "tablename": "omnichannel_payment_intent",
+      "indexname": "ix_omnichannel_payment_intent_selected_channel",
+      "indexdef": "CREATE INDEX ix_omnichannel_payment_intent_selected_channel ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_payment_intent USING btree (selected_channel)"
+    },
+    {
+      "tablename": "omnichannel_payment_intent",
+      "indexname": "ix_omnichannel_payment_intent_state",
+      "indexdef": "CREATE INDEX ix_omnichannel_payment_intent_state ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_payment_intent USING btree (state)"
+    },
+    {
+      "tablename": "omnichannel_payment_intent",
+      "indexname": "omnichannel_payment_intent_idempotency_key_key",
+      "indexdef": "CREATE UNIQUE INDEX omnichannel_payment_intent_idempotency_key_key ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_payment_intent USING btree (idempotency_key)"
+    },
+    {
+      "tablename": "omnichannel_payment_intent",
+      "indexname": "omnichannel_payment_intent_pkey",
+      "indexdef": "CREATE UNIQUE INDEX omnichannel_payment_intent_pkey ON money_sample_957213153d134f948bf2c7880e22dddb.omnichannel_payment_intent USING btree (payment_intent_id)"
+    },
+    {
+      "tablename": "order_supplier_fulfillment",
+      "indexname": "ix_order_supplier_fulfillment_business_id",
+      "indexdef": "CREATE INDEX ix_order_supplier_fulfillment_business_id ON money_sample_957213153d134f948bf2c7880e22dddb.order_supplier_fulfillment USING btree (business_id)"
+    },
+    {
+      "tablename": "order_supplier_fulfillment",
+      "indexname": "ix_order_supplier_fulfillment_business_type",
+      "indexdef": "CREATE INDEX ix_order_supplier_fulfillment_business_type ON money_sample_957213153d134f948bf2c7880e22dddb.order_supplier_fulfillment USING btree (business_type)"
+    },
+    {
+      "tablename": "order_supplier_fulfillment",
+      "indexname": "ix_order_supplier_fulfillment_external_operation_id",
+      "indexdef": "CREATE UNIQUE INDEX ix_order_supplier_fulfillment_external_operation_id ON money_sample_957213153d134f948bf2c7880e22dddb.order_supplier_fulfillment USING btree (external_operation_id)"
+    },
+    {
+      "tablename": "order_supplier_fulfillment",
+      "indexname": "ix_order_supplier_fulfillment_payment_intent_id",
+      "indexdef": "CREATE UNIQUE INDEX ix_order_supplier_fulfillment_payment_intent_id ON money_sample_957213153d134f948bf2c7880e22dddb.order_supplier_fulfillment USING btree (payment_intent_id)"
+    },
+    {
+      "tablename": "order_supplier_fulfillment",
+      "indexname": "ix_order_supplier_fulfillment_state",
+      "indexdef": "CREATE INDEX ix_order_supplier_fulfillment_state ON money_sample_957213153d134f948bf2c7880e22dddb.order_supplier_fulfillment USING btree (state)"
+    },
+    {
+      "tablename": "order_supplier_fulfillment",
+      "indexname": "ix_order_supplier_fulfillment_supplier_id",
+      "indexdef": "CREATE INDEX ix_order_supplier_fulfillment_supplier_id ON money_sample_957213153d134f948bf2c7880e22dddb.order_supplier_fulfillment USING btree (supplier_id)"
+    },
+    {
+      "tablename": "order_supplier_fulfillment",
+      "indexname": "order_supplier_fulfillment_pkey",
+      "indexdef": "CREATE UNIQUE INDEX order_supplier_fulfillment_pkey ON money_sample_957213153d134f948bf2c7880e22dddb.order_supplier_fulfillment USING btree (order_supplier_fulfillment_id)"
+    },
+    {
+      "tablename": "order_supplier_fulfillment",
+      "indexname": "order_supplier_fulfillment_supplier_idempotency_key_key",
+      "indexdef": "CREATE UNIQUE INDEX order_supplier_fulfillment_supplier_idempotency_key_key ON money_sample_957213153d134f948bf2c7880e22dddb.order_supplier_fulfillment USING btree (supplier_idempotency_key)"
+    },
+    {
+      "tablename": "order_supplier_fulfillment",
+      "indexname": "uq_order_single_supplier_fulfillment",
+      "indexdef": "CREATE UNIQUE INDEX uq_order_single_supplier_fulfillment ON money_sample_957213153d134f948bf2c7880e22dddb.order_supplier_fulfillment USING btree (business_type, business_id)"
+    },
+    {
+      "tablename": "order_supplier_fulfillment_event",
+      "indexname": "ix_order_supplier_fulfillment_event_event_type",
+      "indexdef": "CREATE INDEX ix_order_supplier_fulfillment_event_event_type ON money_sample_957213153d134f948bf2c7880e22dddb.order_supplier_fulfillment_event USING btree (event_type)"
+    },
+    {
+      "tablename": "order_supplier_fulfillment_event",
+      "indexname": "ix_order_supplier_fulfillment_event_order_supplier_fulf_c81f",
+      "indexdef": "CREATE INDEX ix_order_supplier_fulfillment_event_order_supplier_fulf_c81f ON money_sample_957213153d134f948bf2c7880e22dddb.order_supplier_fulfillment_event USING btree (order_supplier_fulfillment_id)"
+    },
+    {
+      "tablename": "order_supplier_fulfillment_event",
+      "indexname": "ix_order_supplier_fulfillment_event_state",
+      "indexdef": "CREATE INDEX ix_order_supplier_fulfillment_event_state ON money_sample_957213153d134f948bf2c7880e22dddb.order_supplier_fulfillment_event USING btree (state)"
+    },
+    {
+      "tablename": "order_supplier_fulfillment_event",
+      "indexname": "order_supplier_fulfillment_event_pkey",
+      "indexdef": "CREATE UNIQUE INDEX order_supplier_fulfillment_event_pkey ON money_sample_957213153d134f948bf2c7880e22dddb.order_supplier_fulfillment_event USING btree (order_supplier_fulfillment_event_id)"
+    }
+  ],
+  "source_guard_explain": [
+    {
+      "Plan": {
+        "Node Type": "Index Scan",
+        "Parallel Aware": false,
+        "Async Capable": false,
+        "Scan Direction": "Forward",
+        "Index Name": "ix_catalog_credit_source_payment_intent_id",
+        "Relation Name": "catalog_credit_source",
+        "Alias": "catalog_credit_source",
+        "Startup Cost": 0.14,
+        "Total Cost": 8.16,
+        "Plan Rows": 1,
+        "Plan Width": 462,
+        "Actual Startup Time": 0.003,
+        "Actual Total Time": 0.003,
+        "Actual Rows": 0.0,
+        "Actual Loops": 1,
+        "Disabled": false,
+        "Index Cond": "((payment_intent_id)::text = 'sample-22'::text)",
+        "Rows Removed by Index Recheck": 0,
+        "Index Searches": 1,
+        "Shared Hit Blocks": 2,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      },
+      "Planning": {
+        "Shared Hit Blocks": 3,
+        "Shared Read Blocks": 0,
+        "Shared Dirtied Blocks": 0,
+        "Shared Written Blocks": 0,
+        "Local Hit Blocks": 0,
+        "Local Read Blocks": 0,
+        "Local Dirtied Blocks": 0,
+        "Local Written Blocks": 0,
+        "Temp Read Blocks": 0,
+        "Temp Written Blocks": 0
+      },
+      "Planning Time": 0.038,
+      "Triggers": [],
+      "Execution Time": 0.01
+    }
+  ],
+  "warmup_calls": [
+    {
+      "scenario": "fresh_AUTH",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.0012600400000337686,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.001072476999979699,
+          "failed": false
+        },
+        {
+          "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+          "seconds": 0.0008007439998891641,
+          "failed": false
+        },
+        {
+          "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+          "seconds": 0.0004762150001624832,
+          "failed": false
+        },
+        {
+          "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+          "seconds": 0.0009158140001090942,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "commit",
+          "seconds": 0.0011564280000584404,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 9.977999980037566e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.19810736199997336
+      ],
+      "acquisition_seconds": [],
+      "outcome": "returned",
+      "call_id": 1,
+      "wall_seconds": 0.19854914500001541
+    },
+    {
+      "scenario": "fresh_CAPTURE",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.0006004699998811702,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.000383535000082702,
+          "failed": false
+        },
+        {
+          "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+          "seconds": 0.00029617299992423796,
+          "failed": false
+        },
+        {
+          "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+          "seconds": 0.0003707109999595559,
+          "failed": false
+        },
+        {
+          "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+          "seconds": 0.0004286299999876064,
+          "failed": false
+        },
+        {
+          "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+          "seconds": 0.06953077100001792,
+          "failed": false
+        },
+        {
+          "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+          "seconds": 0.0005142990000877035,
+          "failed": false
+        },
+        {
+          "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+          "seconds": 0.0008409580000261485,
+          "failed": false
+        },
+        {
+          "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+          "seconds": 0.01020179600004667,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "commit",
+          "seconds": 0.0009871259999272297,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 7.192999873950612e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.0898935719999372
+      ],
+      "acquisition_seconds": [],
+      "outcome": "returned",
+      "call_id": 2,
+      "wall_seconds": 0.09033939299979465
+    },
+    {
+      "scenario": "replay_AUTH",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.0006598509999093949,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.00039607799999430426,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "commit",
+          "seconds": 0.0016562989999329147,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 6.161000101201353e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.0033856249999644206
+      ],
+      "acquisition_seconds": [],
+      "outcome": "returned",
+      "call_id": 3,
+      "wall_seconds": 0.003807892000168067
+    },
+    {
+      "scenario": "replay_CAPTURE",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.000617691999877934,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.00044259500009502517,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "commit",
+          "seconds": 0.0008751990001201193,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 5.660999931933475e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.0026215660000161733
+      ],
+      "acquisition_seconds": [],
+      "outcome": "returned",
+      "call_id": 4,
+      "wall_seconds": 0.0030107820000466745
+    },
+    {
+      "scenario": "conflict",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.0005672479999248026,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.00040696900009606907,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "rollback",
+          "seconds": 0.00041061900014938146,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 1.1180000001331791e-05,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.001864138999962961
+      ],
+      "acquisition_seconds": [],
+      "outcome": "error",
+      "call_id": 5,
+      "wall_seconds": 0.0021992940000927774
+    },
+    {
+      "scenario": "fresh_AUTH",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.0006011739999394194,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.0003957349999836879,
+          "failed": false
+        },
+        {
+          "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+          "seconds": 0.0003691789997901651,
+          "failed": false
+        },
+        {
+          "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+          "seconds": 0.0004570149999381101,
+          "failed": false
+        },
+        {
+          "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+          "seconds": 0.0005292470000313187,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "commit",
+          "seconds": 0.0009951459999228973,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 7.384000127785839e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.004909949000193592
+      ],
+      "acquisition_seconds": [],
+      "outcome": "returned",
+      "call_id": 6,
+      "wall_seconds": 0.005285400000047957
+    },
+    {
+      "scenario": "fresh_CAPTURE",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.000604397999950379,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.0004307629999402707,
+          "failed": false
+        },
+        {
+          "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+          "seconds": 0.0003768130000025849,
+          "failed": false
+        },
+        {
+          "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+          "seconds": 0.0004617080001025897,
+          "failed": false
+        },
+        {
+          "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+          "seconds": 0.00045733299998573784,
+          "failed": false
+        },
+        {
+          "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+          "seconds": 0.0006292430000485183,
+          "failed": false
+        },
+        {
+          "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+          "seconds": 0.00041749900015020103,
+          "failed": false
+        },
+        {
+          "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+          "seconds": 0.00036870700000690704,
+          "failed": false
+        },
+        {
+          "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+          "seconds": 0.00038408599993999815,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "commit",
+          "seconds": 0.0011392250000881177,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 6.050999900253373e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.007831453000108013
+      ],
+      "acquisition_seconds": [],
+      "outcome": "returned",
+      "call_id": 7,
+      "wall_seconds": 0.008269008000070244
+    },
+    {
+      "scenario": "replay_AUTH",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.0005856120001226373,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.00043614300011540763,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "commit",
+          "seconds": 0.0008959610001966212,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 7.885000059104641e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.0025387349999164144
+      ],
+      "acquisition_seconds": [],
+      "outcome": "returned",
+      "call_id": 8,
+      "wall_seconds": 0.002858611999954519
+    },
+    {
+      "scenario": "replay_CAPTURE",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.0006581879999885132,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.00041296000017609913,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "commit",
+          "seconds": 0.0009064759999546368,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 6.300999984887312e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.002562944999908723
+      ],
+      "acquisition_seconds": [],
+      "outcome": "returned",
+      "call_id": 9,
+      "wall_seconds": 0.002904874000023483
+    },
+    {
+      "scenario": "conflict",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.0005616810001356498,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.0003547419998994883,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "rollback",
+          "seconds": 0.0003729360000761517,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 5.6999999742402e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.001716173999966486
+      ],
+      "acquisition_seconds": [],
+      "outcome": "error",
+      "call_id": 10,
+      "wall_seconds": 0.0019933610001316993
+    },
+    {
+      "scenario": "fresh_AUTH",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.0005531019999125419,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.00035148500001014327,
+          "failed": false
+        },
+        {
+          "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+          "seconds": 0.0003462359998138709,
+          "failed": false
+        },
+        {
+          "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+          "seconds": 0.0003346940000028553,
+          "failed": false
+        },
+        {
+          "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+          "seconds": 0.00035785700015367183,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "commit",
+          "seconds": 0.0007908850000148959,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 5.740999995396123e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.003961447999927259
+      ],
+      "acquisition_seconds": [],
+      "outcome": "returned",
+      "call_id": 11,
+      "wall_seconds": 0.004249044000061986
+    },
+    {
+      "scenario": "fresh_CAPTURE",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.0005291869999837218,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.0003366780001670122,
+          "failed": false
+        },
+        {
+          "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+          "seconds": 0.0003251170001021819,
+          "failed": false
+        },
+        {
+          "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+          "seconds": 0.00036611299992728163,
+          "failed": false
+        },
+        {
+          "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+          "seconds": 0.00036343700003271806,
+          "failed": false
+        },
+        {
+          "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+          "seconds": 0.00047952999989320233,
+          "failed": false
+        },
+        {
+          "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+          "seconds": 0.0003624160001436394,
+          "failed": false
+        },
+        {
+          "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+          "seconds": 0.0003033150001101603,
+          "failed": false
+        },
+        {
+          "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+          "seconds": 0.00034086499999830266,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "commit",
+          "seconds": 0.000988142000096559,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 5.820999831485096e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.006533269999863478
+      ],
+      "acquisition_seconds": [],
+      "outcome": "returned",
+      "call_id": 12,
+      "wall_seconds": 0.0068243639998399885
+    },
+    {
+      "scenario": "replay_AUTH",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.0005394259999320639,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.0003593700000692479,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "commit",
+          "seconds": 0.0007905439999831287,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 5.529999953068909e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.00220435100004579
+      ],
+      "acquisition_seconds": [],
+      "outcome": "returned",
+      "call_id": 13,
+      "wall_seconds": 0.0025259149999783403
+    },
+    {
+      "scenario": "replay_CAPTURE",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.0005055729998275638,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.00038441700007751933,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "commit",
+          "seconds": 0.0008199100000183535,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 5.2990001222497085e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.0021873499999855994
+      ],
+      "acquisition_seconds": [],
+      "outcome": "returned",
+      "call_id": 14,
+      "wall_seconds": 0.002509199000087392
+    },
+    {
+      "scenario": "conflict",
+      "sql": [
+        {
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "seconds": 0.0005222239999511658,
+          "failed": false
+        },
+        {
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "seconds": 0.00034634600001481886,
+          "failed": false
+        }
+      ],
+      "transactions": [
+        {
+          "operation": "rollback",
+          "seconds": 0.0003589390000797721,
+          "failed": false
+        },
+        {
+          "operation": "rollback",
+          "seconds": 5.389999842009274e-06,
+          "failed": false
+        }
+      ],
+      "leases": [
+        0.0016482640000958781
+      ],
+      "acquisition_seconds": [],
+      "outcome": "error",
+      "call_id": 15,
+      "wall_seconds": 0.0019318229999498726
+    }
+  ],
+  "measurement": {
+    "diagnostic_only": true,
+    "valid": true,
+    "errors": [],
+    "calls": [
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005008939999697759,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00032466499988004216,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0002832580000813323,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00031996699999581324,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003414069999507774,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007737930000075721,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.660999931933475e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.003917585999943185
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 16,
+        "wall_seconds": 0.004201474999945276
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005165739999029029,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003504839999095566,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0002810440000757808,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003770630000872188,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.0003203680000751774,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0004416939998463931,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.00036920899992765044,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.000266557000031753,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.0003377900000032241,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0009716020001633296,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.639999926643213e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.006451691999927789
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 17,
+        "wall_seconds": 0.006738146000088818
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005093199999919307,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.000313555000047927,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007739539998965483,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.549999968934571e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0021088230000714248
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 18,
+        "wall_seconds": 0.0023884339998403448
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004910959999051556,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00035022300016862573,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007843230000617041,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.740999995396123e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002099735999991026
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 19,
+        "wall_seconds": 0.0023941050001212716
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004535360001227673,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003258080000705377,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0003010620000623021,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 7.92499986346229e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0015981700000793353
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 20,
+        "wall_seconds": 0.0018613810000260855
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.000515481000093132,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0002988979999827279,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0002878969999073888,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003331010000238166,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.00033816999984992435,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007928180000362772,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.660999931933475e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0037784170001486928
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 21,
+        "wall_seconds": 0.004061464999949749
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005132270000558492,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003313780000553379,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00026597599980959785,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00034049500004584843,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.0003225210000437073,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0005888079999749607,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.00036487000011220516,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.00027232799993726076,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.00036045199999534816,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0009590780000507948,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.9710000641644e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.006482710000000225
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 22,
+        "wall_seconds": 0.006761439999991126
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004989000001387467,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00031049900007928954,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007704770000600547,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.550999958359171e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002117839999982607
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 23,
+        "wall_seconds": 0.0023953569998411695
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.000454316999821458,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003506340001422359,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008041389999107196,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.540000074688578e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0020849380000527162
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 24,
+        "wall_seconds": 0.0024060880000433826
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.000496354999995674,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00031227199997374555,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.00035370899990994076,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.300000111674308e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0016195800001241878
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 25,
+        "wall_seconds": 0.001884795000023587
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005143490000136808,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003778550001243275,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0002898400000503898,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003225810000913043,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003823429999556538,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008691710002040054,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 6.130999963716022e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.004115935999834619
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 26,
+        "wall_seconds": 0.004480927000031443
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.000543264000043564,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003097080000316055,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00029377700002442,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00030960799995227717,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.00034440200010976696,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.001340048999963983,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.00033406300008209655,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.0002889390000291314,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.0003389720000086527,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0009465650000493042,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 6.661999805146479e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.007588692999888735
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 27,
+        "wall_seconds": 0.007913478000091345
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0006262679999053944,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003485900001578557,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.000821161999965625,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 6.3019999743119115e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002375139000150739
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 28,
+        "wall_seconds": 0.002710555000021486
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005221139999775914,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00038501800008816645,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008419110001796071,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.800999815619434e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0022795209999912913
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 29,
+        "wall_seconds": 0.002631216000054337
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.000533915000005436,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00036652400012826547,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0016188790000342124,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.690000079994206e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002956964000077278
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 30,
+        "wall_seconds": 0.0032572749998962536
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005513179999070417,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00034589500000947737,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00034481299985600344,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003336920001402177,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003953770001317025,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0009122610001668363,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 6.321999990177574e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.004235999000002266
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 31,
+        "wall_seconds": 0.004528434999883757
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005302880001636368,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0004392189998725371,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0003172320000430773,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003659129999959987,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.00040355300006922334,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0005102919999444566,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003460949999407603,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.0003201679999165208,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.000353780000068582,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.000912803000119311,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 6.401999826266547e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0067767889997867314
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 32,
+        "wall_seconds": 0.007078550999949584
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004971470000327827,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00035756700003730657,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008147089999965829,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.550999958359171e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0021657390000200394
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 33,
+        "wall_seconds": 0.002496715999996013
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005160020000403165,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00033455400011916936,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007995710000159306,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.399999963628943e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0020965500000329484
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 34,
+        "wall_seconds": 0.0023712830000022223
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005388849999690137,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00035188599986213376,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0003176819998316205,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.199000042921398e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.001616113999943991
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 35,
+        "wall_seconds": 0.0018786240000281396
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005344369999420451,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00033047700003407954,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00031055899989951286,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00031663000004300557,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003612440000324568,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008478810000269732,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.770999905507779e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0039377240000249
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 36,
+        "wall_seconds": 0.004217545000074097
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.000499592000096527,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00031883400015431107,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00029330699999263743,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00032090800004880293,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.0003463660000306845,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0004922380001062265,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.00033605699991312576,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.00028681499998128857,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.0003515149999202549,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007975779999469523,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.7810000271274475e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.006196696999950291
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 37,
+        "wall_seconds": 0.006473242000083701
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004728320000140229,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003999959999418934,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008094390000223939,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.479999799717916e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0021372859998791682
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 38,
+        "wall_seconds": 0.002463153999997303
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005009139999856416,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003280119999544695,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007709270000759716,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.389999842009274e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002045074000079694
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 39,
+        "wall_seconds": 0.0023187039998902037
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004924279999158898,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00036415899990061007,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0003062109999518725,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.1500001063686796e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0015849659998821153
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 40,
+        "wall_seconds": 0.001868544999979349
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005626689999189693,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00034707699978753226,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0003564950000054523,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003343739999763784,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003739170001608727,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008473799998682807,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.650000048262882e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.004040014000111114
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 41,
+        "wall_seconds": 0.004335905999823808
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005473200001233636,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003195559997948294,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0002947000000403932,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00034708699990915193,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.00034612500007824565,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.00046695099990756717,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003538900000421563,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.00027603500006989634,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.00033125799996014393,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0009860990001016035,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.640999916067813e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.00637347600013527
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 42,
+        "wall_seconds": 0.006651133999866943
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005307290000473586,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003322089999073796,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008222639999075909,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.289999990054639e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0021384179999586195
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 43,
+        "wall_seconds": 0.002419563000103153
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004915170000003855,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00035421000006863324,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.000775145000034172,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 7.0429998686449835e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0021168379998925957
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 44,
+        "wall_seconds": 0.0023838959998556675
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004700070001035783,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003351450000081968,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0003057600001739047,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.3500000376516255e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0015622640000856336
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 45,
+        "wall_seconds": 0.0018389300000762887
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005215029998453247,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003223720000278263,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00028952000002391287,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00031054900000526686,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003472769999461889,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008145500000864558,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.559999863180565e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0037935039999865694
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 46,
+        "wall_seconds": 0.004064310000103433
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005018859999381675,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003190149998317793,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0002896699998018448,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00031968700000106764,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.0003370280001036008,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0004503899999690475,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003264789997956541,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.00028937899992342864,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.0003288539999175555,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0009502030000021477,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.631000021821819e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.006258060999925874
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 47,
+        "wall_seconds": 0.006532814000138387
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004731730000457901,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00034203800009890983,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007888420000199403,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.378999958338682e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0020928029998685815
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 48,
+        "wall_seconds": 0.0023740970000289963
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005188069999348954,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00032908299999689916,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007801750000453467,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.109000085212756e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0021092640001825202
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 49,
+        "wall_seconds": 0.002375110000002678
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004815479999251693,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00033953400020436675,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0003099680000104854,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.419999979494605e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0015493299999889132
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 50,
+        "wall_seconds": 0.0018367249999755586
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005122550001033233,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003246950000175275,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0003037260000837705,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00032604800003355194,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.00036903799991705455,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008382930000152555,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.6710000535531435e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.003850801999988107
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 51,
+        "wall_seconds": 0.004120824999972683
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005241080000359943,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003202069999588275,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00029186499978095526,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003587690000586008,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.00035149599989381386,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0004950029999690742,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0004029020001325989,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.00028130499981671164,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.0003686269999434444,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0010592349999569706,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 6.923000000824686e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.006629783999869687
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 52,
+        "wall_seconds": 0.006918452000036268
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005474609999964741,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003575969999474182,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008337040001151763,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 8.84699989001092e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002348970999946687
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 53,
+        "wall_seconds": 0.0026648799998838513
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005421910000222852,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003709919999437261,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008526000001438661,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.619999910777551e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0022931270000299264
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 54,
+        "wall_seconds": 0.0025980060001984384
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005105119998916052,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00037433900001815346,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.00031889500019133266,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.3500000376516255e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0016666579999764508
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 55,
+        "wall_seconds": 0.0019414299999880313
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005331740001111029,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00032730100019762176,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0003065609998884611,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003514750001158973,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003682770000068558,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008067040000696579,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.590999990090495e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0039190780000808445
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 56,
+        "wall_seconds": 0.004203309000104127
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005024170000069716,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00038080000012996607,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00028804699991269445,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00036095299992666696,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.0003386420000879298,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0004865070000050764,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.00039025800015224377,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.00029097199990246736,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.00039753100008965703,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.00102321800000027,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.550999958359171e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.006535628000165161
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 57,
+        "wall_seconds": 0.006846468999810895
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005541030000131286,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00037606099999720755,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008265720000508736,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.489999921337585e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002232352999953946
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 58,
+        "wall_seconds": 0.0025242980000257376
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005498049999914656,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003530889998728526,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008712950000244746,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.3199999001662945e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002232853999885265
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 59,
+        "wall_seconds": 0.002528775999962818
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005033889999594976,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.000360863000196332,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.00031402500007970957,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.088999841973418e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0016302599999562517
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 60,
+        "wall_seconds": 0.0019061850000525737
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005347369999526563,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00032483599989063805,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0002991280000514962,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00031321300002673524,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003710020000653458,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008556559998851299,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.400999953053542e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0039388560001043516
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 61,
+        "wall_seconds": 0.004222604999995383
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005358590001378616,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003268099999331753,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0002934770000138087,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00034978299981958116,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.00034879100007856323,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.00046037799984333105,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.000377414000013232,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.0002947099999346392,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.00038138099989737384,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008810230001472519,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 6.020999990141718e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.006380710000030376
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 62,
+        "wall_seconds": 0.006666732999974556
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005289769999308191,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00033716799998728675,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008128760000545299,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.861000090590096e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002155109000113953
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 63,
+        "wall_seconds": 0.0024654979999922944
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005011350001495884,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00036482099994827877,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008147789999384258,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.219999820837984e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002135482999847227
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 64,
+        "wall_seconds": 0.002442675000111194
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005313809999734076,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00033831100017778226,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0003681769999275275,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.680999947799137e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0016903219998312125
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 65,
+        "wall_seconds": 0.0019814110000879737
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005280149998725392,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003454440000041359,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00033948300006159116,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003221409999696334,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.00036333799994281435,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008115739999539073,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.590000000665896e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.003974121000055675
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 66,
+        "wall_seconds": 0.004254284999888114
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.000506815000107963,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00032412399991699203,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0003063320000364911,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00034517300014158536,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.00035592399990491685,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0004867370000738447,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003814409999449708,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.00030176299992490385,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.00037092200000188313,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008648729999549687,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.820999831485096e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0064463720000276226
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 67,
+        "wall_seconds": 0.006724070000018401
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005219929998929729,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00033978399983425334,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008047900000747177,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.6999999742402e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002146242999970127
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 68,
+        "wall_seconds": 0.0024295919999985927
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005037390001234598,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00037189400018178276,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008078270000169141,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 6.020999990141718e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002183753000053912
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 69,
+        "wall_seconds": 0.0024550089999593183
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.00048288099992532807,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003475880000678444,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0003121920001376566,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.200000032345997e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0016037509999478061
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 70,
+        "wall_seconds": 0.0019248700000389363
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005048919999808277,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0004010680002011213,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0002950609998606524,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003463759999249305,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0004063470000801317,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0009760610000739689,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.920999910813407e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.004214138999941497
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 71,
+        "wall_seconds": 0.004544414999827495
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005298980001953169,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00033389300006092526,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00031278399978873495,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003351049999764655,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.0003522869999414979,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0004794840001522971,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.00036187500018058927,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.0003003599999829021,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.00034358100015197124,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008330139999088715,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.850999968970427e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.00646108999990247
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 72,
+        "wall_seconds": 0.0067393580000043585
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004904350000742852,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00035603300011644023,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.000820269999849188,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.56000009055424e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0022045309999612073
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 73,
+        "wall_seconds": 0.002489743000069211
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005121250001138833,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003674549998322618,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007723809999333753,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.469999905471923e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0021307040001374844
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 74,
+        "wall_seconds": 0.0024087120000331197
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.00048128699995686475,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003501130001950514,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0003310470001451904,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.410000085248612e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0016134490001604718
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 75,
+        "wall_seconds": 0.0018946140000934975
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005175759999929141,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0004057870000906405,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00030630199989900575,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.000351314999988972,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0004049750000376662,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008555049998903996,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.720999979530461e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.004158035000045857
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 76,
+        "wall_seconds": 0.004482811000116271
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005411490001279162,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00033252000002903515,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00031768200005899416,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00033384199991814967,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.0003587690000586008,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0004964360000485613,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003587990001960861,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.0003276800000548974,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.0003775339998810523,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0012760619999880873,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 7.0930000219959766e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.006986920999906943
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 77,
+        "wall_seconds": 0.007318339999983436
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005528909998702147,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003874519998134929,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0009224949999406817,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 6.011000095895724e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0023684919999595877
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 78,
+        "wall_seconds": 0.0026708970001436683
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005254299999251089,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003454239999882702,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.000830939000024955,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.841000074724434e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002182420000053753
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 79,
+        "wall_seconds": 0.0024789740000414895
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.000492768999947657,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00036898799999107723,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.00031502800015914545,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.169999894860666e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0016011159998470248
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 80,
+        "wall_seconds": 0.001920592000033139
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005446160000701639,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003938539998671331,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0003164600000218343,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00035215699995205796,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0004274870000244846,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008502450000378303,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.761000011261785e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.004174194999905012
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 81,
+        "wall_seconds": 0.004500012000107745
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005613360001461842,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003568859999631968,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00031902599994282355,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003462659999513562,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.0003776240000661346,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0006763019998743403,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0004226579999340174,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.00031277299990506435,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.0004054460000588733,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0011369910000667005,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 6.62200000078883e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.007183587000099578
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 82,
+        "wall_seconds": 0.007497070999988864
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005169450000721554,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00042452200000298035,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008608850000655366,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.76099978388811e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002347027000041635
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 83,
+        "wall_seconds": 0.0026828239999758807
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005278189998989546,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00034500300012041407,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008050009998896712,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 3.44640000093932e-05,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0022358339999755117
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 84,
+        "wall_seconds": 0.0025283299999045994
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.00047317199982899183,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003395229998659488,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0003033359998880769,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.39000006938295e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0015786439998919377
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 85,
+        "wall_seconds": 0.001856372000020201
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005659649998506211,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003591090001009434,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0003498620001209929,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00033898200013027235,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003826039999239583,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.000836981000020387,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.8820000958803575e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.004118601000072886
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 86,
+        "wall_seconds": 0.004424120999829029
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005496539999967354,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003622050001013122,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00030799400019532186,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003751499998543295,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.0003555030000370607,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.00047038699995027855,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.00036703499995383027,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.0002825369999754912,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.00037076099988553324,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0010111660001257405,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.680999947799137e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0066019329999562615
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 87,
+        "wall_seconds": 0.006898745999933453
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005649639999774081,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00035486199999468226,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007968459999574407,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.419999979494605e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0022331849997954123
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 88,
+        "wall_seconds": 0.0025325439999051014
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005106019998493139,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003691080000862712,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.000839665999819772,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.450000116979936e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0022180959999786865
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 89,
+        "wall_seconds": 0.0025594729997919785
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005435830000806163,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00035287900004732364,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0003584479998153256,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.469999905471923e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.001720007999892914
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 90,
+        "wall_seconds": 0.002006442000038078
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005373120000058407,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00034640600006241584,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0003256269999383221,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0004002480000053765,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003861679999772605,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008209309999074321,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.770000143456855e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.004171680000126798
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 91,
+        "wall_seconds": 0.004463845000145739
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005112040000767593,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00035547400011637365,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0003366880000612582,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00034603499989316333,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.0003792479999447096,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0005229250000411412,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003466670000307204,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.00033517600013510673,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.0003469270000096003,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0009839950000696263,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.9809999584103934e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.006553621999955794
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 92,
+        "wall_seconds": 0.006869199999982811
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004871080000157235,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.000379949000034685,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008352170000307524,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.8709999848360894e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0021954439998808084
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 93,
+        "wall_seconds": 0.002522534000036103
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005110730000978947,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00033425299989175983,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007955830001264985,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.549999968934571e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.00210939400017196
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 94,
+        "wall_seconds": 0.0023951569999098865
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004985800001122698,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003726549998646078,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0003069919998779369,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.2099999265919905e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0016065259999322734
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 95,
+        "wall_seconds": 0.001920452000149453
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005741109998780303,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00037340599988056056,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0003230130000702047,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00037782399999741756,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0005532220000077359,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0010351000000810018,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.770999905507779e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.004449278000038248
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 96,
+        "wall_seconds": 0.004727676999891628
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005567279999922903,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003673649998745532,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00031205100003717234,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00034168800016232126,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.00037162300009185856,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0004916770001273107,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003900379999777215,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.0002914430001510482,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.0003381399999398127,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008962510000856128,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.8409998473507585e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.00657266799998979
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 97,
+        "wall_seconds": 0.006874790999972902
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005160930002148234,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003476890001365973,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008081969999693683,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.6799999583745375e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0021530449998863332
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 98,
+        "wall_seconds": 0.0024562209998748585
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005334640000000945,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003524580001794675,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0009403730000485666,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.4600000112259295e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002310688999841659
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 99,
+        "wall_seconds": 0.0026061400001253787
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.000599498000156018,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00035918999992645695,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.00037633099987033347,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.499999815583578e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.001797913000018525
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 100,
+        "wall_seconds": 0.002110765999987052
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0013560689999394526,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00039935499989951495,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0003144459999475657,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.000340695999966556,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.00042629499989743636,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.000879741000062495,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 6.292000080065918e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0051480009999522736
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 101,
+        "wall_seconds": 0.005517659999895841
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005613969999558321,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003436209999563289,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0003149980000216601,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00034252799991918437,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.00036973999999645457,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0004825389999041363,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003821830000561022,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.0002845310000338941,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.00037001999999120017,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008660150001560396,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.8110001646127785e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.006561095999813915
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 102,
+        "wall_seconds": 0.006873990000030972
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005135070000505948,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00035663500011651195,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008165829999597918,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.601000111710164e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0021578450000561133
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 103,
+        "wall_seconds": 0.002443137000000206
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005522799999653216,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00037832500015611004,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007866070000090986,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.539999847314903e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0021731630001795565
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 104,
+        "wall_seconds": 0.0024497090000750177
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.00046772200016675924,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00033715900008246535,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.00030418799997278256,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.330000021785963e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0015659010000490525
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 105,
+        "wall_seconds": 0.0018448099999659462
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004949230001329852,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003513060000841506,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00028045299995937967,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00034799900004145456,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003528069998992578,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007904639999196661,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.751000117015792e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.003832486999954199
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 106,
+        "wall_seconds": 0.004136464999874079
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004926490000798367,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00034430200003043865,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.00027958100008618203,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00037180300000727584,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.00042711600008260575,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.0005032980000123644,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.0003444019998823933,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.0003170010002122581,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.0003715029999966646,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.000957675999870844,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 6.823000148870051e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.007562043000007179
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 107,
+        "wall_seconds": 0.007891207000056966
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.000511123000023872,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003670050000437186,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008326029999352613,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.400999953053542e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002210681999940789
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 108,
+        "wall_seconds": 0.002558992000103899
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005261419998987549,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003465360000518558,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008432429999629676,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.529999953068909e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.002186737999863908
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 109,
+        "wall_seconds": 0.0024603580000075453
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004694050001035066,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003588090000903321,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0003075439999520313,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.078999947727425e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0015671319999910338
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 110,
+        "wall_seconds": 0.0018649379999260418
+      },
+      {
+        "scenario": "fresh_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005382339998050156,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003256269999383221,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0003004609998242813,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.0003216499999325606,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.00036262599996916833,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0009916290000546724,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.740999995396123e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0040867510001589835
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 111,
+        "wall_seconds": 0.004357846999937465
+      },
+      {
+        "scenario": "fresh_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0004624320001767046,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003418880000936042,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+            "seconds": 0.0002688720001060574,
+            "failed": false
+          },
+          {
+            "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+            "seconds": 0.00036344699992696405,
+            "failed": false
+          },
+          {
+            "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+            "seconds": 0.00035302900005262927,
+            "failed": false
+          },
+          {
+            "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+            "seconds": 0.000467432000050394,
+            "failed": false
+          },
+          {
+            "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+            "seconds": 0.00035347900006854616,
+            "failed": false
+          },
+          {
+            "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+            "seconds": 0.00026485300008971535,
+            "failed": false
+          },
+          {
+            "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+            "seconds": 0.00037585099994430493,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0008315910001783777,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 6.392000159394229e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.00627034400008597
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 112,
+        "wall_seconds": 0.006601270999908593
+      },
+      {
+        "scenario": "replay_AUTH",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005487829998855887,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003182030000061786,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007851150000988127,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 7.72400017012842e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0022482330000457296
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 113,
+        "wall_seconds": 0.0025848499999483465
+      },
+      {
+        "scenario": "replay_CAPTURE",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.00047237100011443545,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.0003298849999282538,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "commit",
+            "seconds": 0.0007884300000569056,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.6200001381512266e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0021297010000580485
+        ],
+        "acquisition_seconds": [],
+        "outcome": "returned",
+        "call_id": 114,
+        "wall_seconds": 0.002440019999994547
+      },
+      {
+        "scenario": "conflict",
+        "sql": [
+          {
+            "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+            "seconds": 0.0005217349998929421,
+            "failed": false
+          },
+          {
+            "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+            "seconds": 0.00035665499990500393,
+            "failed": false
+          }
+        ],
+        "transactions": [
+          {
+            "operation": "rollback",
+            "seconds": 0.0003603319999001542,
+            "failed": false
+          },
+          {
+            "operation": "rollback",
+            "seconds": 5.639999926643213e-06,
+            "failed": false
+          }
+        ],
+        "leases": [
+          0.0017291970000314905
+        ],
+        "acquisition_seconds": [],
+        "outcome": "error",
+        "call_id": 115,
+        "wall_seconds": 0.001996815999973478
+      }
+    ],
+    "pool_queue_seconds": null,
+    "note": "Client cursor time excludes fetch/materialization; lease includes commit/rollback through checkin. Acquisition is not pure queue. Scenario labels must be fixture-asserted. No SQL/binds/results/exception text retained. Observer overhead included."
+  },
+  "sql_catalog": {
+    "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587": "SELECT omnichannel_payment_intent.payment_intent_id, omnichannel_payment_intent.business_type, omnichannel_payment_intent.business_id, omnichannel_payment_intent.payer_id, omnichannel_payment_intent.payee_id, omnichannel_payment_intent.operation, omnichannel_payment_intent.amount_minor, omnichannel_payment_intent.currency, omnichannel_payment_intent.channel_priority_json, omnichannel_payment_intent.selected_channel, omnichannel_payment_intent.state, omnichannel_payment_intent.idempotency_key, omnichannel_payment_intent.automatic_fallback_allowed, omnichannel_payment_intent.user_channel_consent_at, omnichannel_payment_intent.created_at, omnichannel_payment_intent.updated_at FROM omnichannel_payment_intent WHERE omnichannel_payment_intent.payment_intent_id = %(intent_id)s::VARCHAR FOR UPDATE",
+    "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802": "SELECT omnichannel_money_movement.money_movement_id, omnichannel_money_movement.root_payment_intent_id, omnichannel_money_movement.parent_movement_id, omnichannel_money_movement.movement_type, omnichannel_money_movement.business_type, omnichannel_money_movement.business_id, omnichannel_money_movement.amount_minor, omnichannel_money_movement.currency, omnichannel_money_movement.state, omnichannel_money_movement.idempotency_key, omnichannel_money_movement.external_reference, omnichannel_money_movement.evidence_json, omnichannel_money_movement.created_at, omnichannel_money_movement.updated_at FROM omnichannel_money_movement WHERE omnichannel_money_movement.idempotency_key = %(movement_key)s::VARCHAR FOR UPDATE",
+    "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79": "SELECT catalog_credit_source.capture_id, catalog_credit_source.credit_id, catalog_credit_source.payment_intent_id, catalog_credit_source.funded_minor, catalog_credit_source.prior_refund_minor, catalog_credit_source.excluded_minor FROM catalog_credit_source WHERE catalog_credit_source.payment_intent_id = %(payment_intent_id_1)s::VARCHAR",
+    "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee": "SELECT omnichannel_money_movement.money_movement_id, omnichannel_money_movement.root_payment_intent_id, omnichannel_money_movement.parent_movement_id, omnichannel_money_movement.movement_type, omnichannel_money_movement.business_type, omnichannel_money_movement.business_id, omnichannel_money_movement.amount_minor, omnichannel_money_movement.currency, omnichannel_money_movement.state, omnichannel_money_movement.idempotency_key, omnichannel_money_movement.external_reference, omnichannel_money_movement.evidence_json, omnichannel_money_movement.created_at, omnichannel_money_movement.updated_at FROM omnichannel_money_movement WHERE omnichannel_money_movement.root_payment_intent_id = %(intent_id)s::VARCHAR FOR UPDATE",
+    "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67": "INSERT INTO omnichannel_money_movement (money_movement_id, root_payment_intent_id, parent_movement_id, movement_type, business_type, business_id, amount_minor, currency, state, idempotency_key, external_reference, evidence_json, created_at, updated_at) VALUES (%(money_movement_id)s::VARCHAR, %(root_payment_intent_id)s::VARCHAR, %(parent_movement_id)s::VARCHAR, %(movement_type)s::VARCHAR, %(business_type)s::VARCHAR, %(business_id)s::VARCHAR, %(amount_minor)s::BIGINT, %(currency)s::VARCHAR, %(state)s::VARCHAR, %(idempotency_key)s::VARCHAR, %(external_reference)s::VARCHAR, %(evidence_json)s::JSON, %(created_at)s::TIMESTAMP WITH TIME ZONE, %(updated_at)s::TIMESTAMP WITH TIME ZONE)",
+    "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b": "SELECT order_supplier_fulfillment.order_supplier_fulfillment_id, order_supplier_fulfillment.payment_intent_id, order_supplier_fulfillment.business_type, order_supplier_fulfillment.business_id, order_supplier_fulfillment.supplier_id, order_supplier_fulfillment.supplier_idempotency_key, order_supplier_fulfillment.state, order_supplier_fulfillment.external_operation_id, order_supplier_fulfillment.supplier_confirmation_reference, order_supplier_fulfillment.evidence_reference, order_supplier_fulfillment.created_at, order_supplier_fulfillment.updated_at FROM order_supplier_fulfillment WHERE order_supplier_fulfillment.payment_intent_id = %(intent_id)s::VARCHAR FOR UPDATE",
+    "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884": "INSERT INTO omnichannel_ledger_entry (ledger_entry_id, transaction_id, payment_intent_id, account_code, direction, amount_minor, currency, entry_type, evidence_hash, created_at) VALUES (%(ledger_entry_id)s::VARCHAR, %(transaction_id)s::VARCHAR, %(payment_intent_id)s::VARCHAR, %(account_code)s::VARCHAR, %(direction)s::VARCHAR, %(amount_minor)s::BIGINT, %(currency)s::VARCHAR, %(entry_type)s::VARCHAR, %(evidence_hash)s::VARCHAR, %(created_at)s::TIMESTAMP WITH TIME ZONE)",
+    "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7": "INSERT INTO order_supplier_fulfillment_event (order_supplier_fulfillment_event_id, order_supplier_fulfillment_id, event_type, state, evidence_reference, payload_hash, occurred_at) VALUES (%(order_supplier_fulfillment_event_id)s::VARCHAR, %(order_supplier_fulfillment_id)s::VARCHAR, %(event_type)s::VARCHAR, %(state)s::VARCHAR, %(evidence_reference)s::VARCHAR, %(payload_hash)s::VARCHAR, %(occurred_at)s::TIMESTAMP WITH TIME ZONE)",
+    "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641": "UPDATE order_supplier_fulfillment SET state=%(state)s::VARCHAR, updated_at=%(updated_at)s::TIMESTAMP WITH TIME ZONE WHERE order_supplier_fulfillment.order_supplier_fulfillment_id = %(order_supplier_fulfillment_order_supplier_fulfillment_id)s::VARCHAR"
+  },
+  "summary": {
+    "fresh_AUTH": {
+      "calls": 20,
+      "sql_per_call": 5,
+      "wall": {
+        "mean_ms": 4.392296999969858,
+        "p50_ms": 4.346876499880636,
+        "p95_ms": 4.727676999891628,
+        "max_ms": 5.517659999895841
+      },
+      "lease": {
+        "mean_ms": 4.092760200023804,
+        "p50_ms": 4.063382500135049,
+        "p95_ms": 4.449278000038248,
+        "max_ms": 5.148000999952274
+      },
+      "sql_total": {
+        "mean_ms": 1.9582933499577848,
+        "p50_ms": 1.892694500043035,
+        "p95_ms": 2.201575999833949,
+        "max_ms": 2.8368609996505256
+      },
+      "transaction_total": {
+        "mean_ms": 0.8661178500119604,
+        "p50_ms": 0.8533409999245123,
+        "p95_ms": 0.9973700000500685,
+        "max_ms": 1.0408709999865096
+      },
+      "ordered_sql": [
+        {
+          "ordinal": 1,
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "mean_ms": 0.5721264999692721,
+          "p50_ms": 0.533805500026574,
+          "p95_ms": 0.5741109998780303,
+          "max_ms": 1.3560689999394526
+        },
+        {
+          "ordinal": 2,
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "mean_ms": 0.35127165000403693,
+          "p50_ms": 0.3461505000359466,
+          "p95_ms": 0.4010680002011213,
+          "max_ms": 0.4057870000906405
+        },
+        {
+          "ordinal": 3,
+          "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+          "mean_ms": 0.3111482499775775,
+          "p50_ms": 0.3064314998937334,
+          "p95_ms": 0.3498620001209929,
+          "max_ms": 0.3564950000054523
+        },
+        {
+          "ordinal": 4,
+          "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+          "mean_ms": 0.33805090001806093,
+          "p50_ms": 0.33403300005829806,
+          "p95_ms": 0.37782399999741756,
+          "max_ms": 0.4002480000053765
+        },
+        {
+          "ordinal": 5,
+          "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+          "mean_ms": 0.38569604998883733,
+          "p50_ms": 0.37245950011310924,
+          "p95_ms": 0.4274870000244846,
+          "max_ms": 0.5532220000077359
+        }
+      ]
+    },
+    "fresh_CAPTURE": {
+      "calls": 20,
+      "sql_per_call": 9,
+      "wall": {
+        "mean_ms": 6.943425149995619,
+        "p50_ms": 6.857834499896853,
+        "p95_ms": 7.891207000056966,
+        "max_ms": 7.913478000091345
+      },
+      "lease": {
+        "mean_ms": 6.643695799971283,
+        "p50_ms": 6.544625000060478,
+        "p95_ms": 7.562043000007179,
+        "max_ms": 7.588692999888735
+      },
+      "sql_total": {
+        "mean_ms": 3.434407900056158,
+        "p50_ms": 3.415204499901847,
+        "p95_ms": 3.7783169998419908,
+        "max_ms": 4.102782000245497
+      },
+      "transaction_total": {
+        "mean_ms": 0.9633588500264523,
+        "p50_ms": 0.9601665000218418,
+        "p95_ms": 1.1436130000674893,
+        "max_ms": 1.2831550000100833
+      },
+      "ordered_sql": [
+        {
+          "ordinal": 1,
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "mean_ms": 0.5243898500680189,
+          "p50_ms": 0.5270030001156556,
+          "p95_ms": 0.5613360001461842,
+          "max_ms": 0.5613969999558321
+        },
+        {
+          "ordinal": 2,
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "mean_ms": 0.3439144499907343,
+          "p50_ms": 0.33789050007726473,
+          "p95_ms": 0.38080000012996607,
+          "max_ms": 0.4392189998725371
+        },
+        {
+          "ordinal": 3,
+          "fingerprint": "fe2bd82b1cfb7d506484db06a6884b988f5ace68f43bbf8f3490a2d1cacf5d79",
+          "mean_ms": 0.2992551499914953,
+          "p50_ms": 0.2942385000324066,
+          "p95_ms": 0.31902599994282355,
+          "max_ms": 0.3366880000612582
+        },
+        {
+          "ordinal": 4,
+          "fingerprint": "aabf51292b44cda8fad030d3665eb7e9ec55d29b33307daa2a331308db07a7ee",
+          "mean_ms": 0.3475651499798005,
+          "p50_ms": 0.34615049992225977,
+          "p95_ms": 0.3751499998543295,
+          "max_ms": 0.3770630000872188
+        },
+        {
+          "ordinal": 5,
+          "fingerprint": "479fe6ff69bf324bd06152b1e052a91ee386512c66fbdef397db9546f316820b",
+          "mean_ms": 0.3580077500373591,
+          "p50_ms": 0.3526579999970636,
+          "p95_ms": 0.40355300006922334,
+          "max_ms": 0.42711600008260575
+        },
+        {
+          "ordinal": 6,
+          "fingerprint": "cfdf660d6e6454dab88f0af36cb2ba07564ba5def500a3ee1dc57ead3d673884",
+          "mean_ms": 0.5404763499882392,
+          "p50_ms": 0.4892070001005777,
+          "p95_ms": 0.6763019998743403,
+          "max_ms": 1.340048999963983
+        },
+        {
+          "ordinal": 7,
+          "fingerprint": "c4a2f3d5c0d4632f3765e3c318a1457fe12bf2ec7f2ea2fd51d5cc99bfbf1b67",
+          "mean_ms": 0.36549070001683504,
+          "p50_ms": 0.3633725001463972,
+          "p95_ms": 0.4029020001325989,
+          "max_ms": 0.4226579999340174
+        },
+        {
+          "ordinal": 8,
+          "fingerprint": "fe1b159e8a38023ff3df348fd48714bbcbc4f079260318d97e2c4cd85a0bcfc7",
+          "mean_ms": 0.29426625000041895,
+          "p50_ms": 0.290175499912948,
+          "p95_ms": 0.3276800000548974,
+          "max_ms": 0.33517600013510673
+        },
+        {
+          "ordinal": 9,
+          "fingerprint": "3c756db0d8cc92eb2120b49628bd45cbac62b702f9448ca43923e964c7a2c641",
+          "mean_ms": 0.3610422499832566,
+          "p50_ms": 0.3645394999693963,
+          "p95_ms": 0.397531000089657,
+          "max_ms": 0.4054460000588733
+        }
+      ]
+    },
+    "replay_AUTH": {
+      "calls": 20,
+      "sql_per_call": 2,
+      "wall": {
+        "mean_ms": 2.513694299989311,
+        "p50_ms": 2.493229500032612,
+        "p95_ms": 2.6828239999758807,
+        "max_ms": 2.710555000021486
+      },
+      "lease": {
+        "mean_ms": 2.2068603999741754,
+        "p50_ms": 2.180591499950424,
+        "p95_ms": 2.3684919999595877,
+        "max_ms": 2.375139000150739
+      },
+      "sql_total": {
+        "mean_ms": 0.8785083000248051,
+        "p50_ms": 0.8670214999710879,
+        "p95_ms": 0.9414670000751357,
+        "max_ms": 0.9748580000632501
+      },
+      "transaction_total": {
+        "mean_ms": 0.8237514999791529,
+        "p50_ms": 0.821222000013222,
+        "p95_ms": 0.8666459998494247,
+        "max_ms": 0.9285060000365775
+      },
+      "ordered_sql": [
+        {
+          "ordinal": 1,
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "mean_ms": 0.5231376000097043,
+          "p50_ms": 0.5165190001434894,
+          "p95_ms": 0.5649639999774081,
+          "max_ms": 0.6262679999053944
+        },
+        {
+          "ordinal": 2,
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "mean_ms": 0.35537070001510074,
+          "p50_ms": 0.35544750005556125,
+          "p95_ms": 0.3999959999418934,
+          "max_ms": 0.42452200000298035
+        }
+      ]
+    },
+    "replay_CAPTURE": {
+      "calls": 20,
+      "sql_per_call": 2,
+      "wall": {
+        "mean_ms": 2.4615870500042547,
+        "p50_ms": 2.446192000093106,
+        "p95_ms": 2.6061400001253787,
+        "max_ms": 2.631216000054337
+      },
+      "lease": {
+        "mean_ms": 2.1676938500149845,
+        "p50_ms": 2.1543230000133917,
+        "p95_ms": 2.2931270000299264,
+        "max_ms": 2.310688999841659
+      },
+      "sql_total": {
+        "mean_ms": 0.8661960000267754,
+        "p50_ms": 0.8717659999319949,
+        "p95_ms": 0.9131829999660113,
+        "max_ms": 0.9306050001214317
+      },
+      "transaction_total": {
+        "mean_ms": 0.8223022499805666,
+        "p50_ms": 0.811763499996232,
+        "p95_ms": 0.8766149999246409,
+        "max_ms": 0.9458330000597925
+      },
+      "ordered_sql": [
+        {
+          "ordinal": 1,
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "mean_ms": 0.5131471499908002,
+          "p50_ms": 0.5140635000770999,
+          "p95_ms": 0.5498049999914656,
+          "max_ms": 0.5522799999653216
+        },
+        {
+          "ordinal": 2,
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "mean_ms": 0.3530488500359752,
+          "p50_ms": 0.3515460001608517,
+          "p95_ms": 0.37832500015611004,
+          "max_ms": 0.38501800008816645
+        }
+      ]
+    },
+    "conflict": {
+      "calls": 20,
+      "sql_per_call": 2,
+      "wall": {
+        "mean_ms": 1.9797986500179832,
+        "p50_ms": 1.9003995000730356,
+        "p95_ms": 2.110765999987052,
+        "max_ms": 3.2572749998962536
+      },
+      "lease": {
+        "mean_ms": 1.692913249985395,
+        "p50_ms": 1.6099875000463726,
+        "p95_ms": 1.797913000018525,
+        "max_ms": 2.956964000077278
+      },
+      "sql_total": {
+        "mean_ms": 0.8527494000304614,
+        "p50_ms": 0.859171999877617,
+        "p95_ms": 0.9004390001337015,
+        "max_ms": 0.9586880000824749
+      },
+      "transaction_total": {
+        "mean_ms": 0.39496794997830875,
+        "p50_ms": 0.31965599998784455,
+        "p95_ms": 0.38183099968591705,
+        "max_ms": 1.6245690001142066
+      },
+      "ordered_sql": [
+        {
+          "ordinal": 1,
+          "fingerprint": "ba18dcdfa270b9440737879ec3cf7b10844882b32f2700ba7bfefe0c08833587",
+          "mean_ms": 0.5021294000016496,
+          "p50_ms": 0.4945619999716655,
+          "p95_ms": 0.5435830000806163,
+          "max_ms": 0.599498000156018
+        },
+        {
+          "ordinal": 2,
+          "fingerprint": "03639411c9292a8da81e5ee5ac8f40ff5f13f9aed150544d7fb5cc7d38abb802",
+          "mean_ms": 0.3506200000288118,
+          "p50_ms": 0.3523824999547287,
+          "p95_ms": 0.3726549998646078,
+          "max_ms": 0.37433900001815346
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "3 warmup pairs then 20 measured pairs; initial warmup retained separately",
+    "No historical data restored; source table empty; no table-scale or contention conclusion",
+    "Client cursor timer excludes fetch/materialization and includes observer overhead",
+    "Lease spans checkout through checkin, includes commit/rollback; pure pool queue unmeasured",
+    "pre_ping before checkout excluded from cursor/lease; wall includes entire create wrapper",
+    "Six model-created tables, not full Alembic schema; no product code or locks changed"
+  ],
+  "runner_sha256": "baccb6e45205b2b3fcb8eb455d5c1beb667b1c58d6754c499b5684bfb99e74df"
+}

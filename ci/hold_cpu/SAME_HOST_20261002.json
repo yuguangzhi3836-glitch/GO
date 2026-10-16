@@ -1,0 +1,619 @@
+{
+  "evidence_commit": "13a08ec261cc1618b7cada5a2b64bd438b848621",
+  "sha256": {
+    "summary.json": "021454f20e3e5af9f5cd289db4d8509914fff0345e7e40cd0b6a408b0be6e135",
+    "raw.zip": "a720dd9adfbddeb90c19a16ef862a56f156237d4616405e4dbfa893f67cc8c88"
+  },
+  "summary": {
+    "diagnostic_only": true,
+    "source": {
+      "application_head": "a6361b9376ab59f05616338b8245ac4e2976dec3",
+      "application_tree": "6570b66bc977f89c0311d67bdc6b721cd70d4e09",
+      "harness_source": "afb6c469d518bd2386846fe3c9c7a2d6548f9aca",
+      "observer_source": "8a474830f47e93d8059522917c26d9e23e75c176",
+      "sha256": {
+        "ci/multi_instance/thread_switch_experiment.py": "17b34678343a6b54126465f55260ebb3984b4721648437fea51d6c02351bfc92",
+        "ci/multi_instance/test_thread_switch.py": "0cebc421f969cc88b55e42d92f8de816df0bf6f688b4ec02bed8d843a6ceb965",
+        "ci/multi_instance/admission_experiment.py": "e39e233afeabdfb7d13ba2d619572d1ffb477051bda1fc6d0b3f32447911cd3e",
+        "ci/multi_instance/pool_experiment.py": "b2ba0205b0dfc2fa19a2560333aea58caee3ad6a2b70ebf02588ba6e67729e2d",
+        "ci/multi_instance/profiling.py": "fae2c1cc9e8cf7a5098299dbabd413ef557b199bfdc8c95779dcbff189ca39c8",
+        "ci/multi_instance/test_profiling_cost.py": "a6eef375ffa22d398c001ba458818fcad59963dec6eb26fe7cbf1e14a4daee64",
+        "ci/multi_instance/ride_workload.py": "b5a97b55cd6815534b1844c99ba9073dafe1c534be57d00d2e10d0520e665d32",
+        "ci/multi_instance/run.py": "e274bc3cb2b114cd2ed9e024c30a5ebb71d1b3a4e26ba27a5c521b7d56889a5c",
+        "ci/process_pool/bootstrap.py": "5217dc19ed87c5ba20730d066eac2685e3eb1bb55259d967c605613f0dc9ebaa",
+        "ci/process_pool/experiment.py": "c802f669e7abdbe09f442db8716a06b22302c1182e1d3836842a71dbeaa8da91",
+        "ci/process_pool/test_run.py": "06f71850aa5ff6fe579a948839aa6cd2895292108dd8597d44e55e9da62a4955",
+        "ci/process_pool/run.py": "91f751abd1e2ccd75d93b1f8f8dee0c0a0d0b4c87748584294a840317f9dd384",
+        "ci/hold_cpu/adapter.py": "5a364ea5627f9476de3f1326013556e08f4cca1a0abd534dcfd68c2615acfae0",
+        "ci/hold_cpu/recompute_r3.py": "cbe131e0fa9d13164d1840596ac9d2db4ff7e5c86c2f47419665338de2e6cba2",
+        "ci/hold_cpu/observe.py": "8a2f1f834c3f5c9a723b36854dc7032466c12933ef541c9633abb1c8cfa07359",
+        "ci/hold_cpu/test_observe.py": "c128e2ad688aca507f02af514c85f337ceb309e5c280ad51f272346c6ec66465",
+        "ci/hold_cpu/run.py": "eecdd41849066bd4e68522e3b8778c02fff06c1a40372d2103feec0b0dd08d1d"
+      },
+      "diagnostic_only": true
+    },
+    "result": {
+      "admission_active_per_instance": 0,
+      "coordinator_switch_interval_ms": 5,
+      "correctness": "PASS",
+      "mode": "PROCESS_POOL_ATTRIBUTION_NOT_ACCEPTANCE",
+      "scope": "Isolated synthetic cold service actors; factorial attribution only, not HTTP or capacity acceptance",
+      "stages": [
+        {
+          "admission_wait_p95_ms": 0,
+          "completed_per_second": 9.449543915754878,
+          "concurrent_transactions": 20,
+          "errors": 0,
+          "observed_peak_executing": 20,
+          "observed_peak_inflight": 20,
+          "p95_ms": 2092.265572,
+          "p99_ms": 2113.625683,
+          "pass": true,
+          "process_ids": [
+            6630,
+            6631,
+            6632,
+            6633
+          ],
+          "sql": "PASS",
+          "transactions": 20
+        },
+        {
+          "admission_wait_p95_ms": 0,
+          "completed_per_second": 12.522407826664278,
+          "concurrent_transactions": 100,
+          "errors": 0,
+          "observed_peak_executing": 100,
+          "observed_peak_inflight": 100,
+          "p95_ms": 7845.096848,
+          "p99_ms": 7914.881919,
+          "pass": false,
+          "process_ids": [
+            6781,
+            6782,
+            6783,
+            6784
+          ],
+          "sql": "PASS",
+          "transactions": 100
+        }
+      ],
+      "status": "STOPPED_AT_FAILED_TIER"
+    },
+    "tiers": {
+      "20": {
+        "profiles": [
+          "group-60.json.profile.json",
+          "group-59.json.profile.json",
+          "group-57.json.profile.json",
+          "group-58.json.profile.json"
+        ],
+        "checkouts": 420,
+        "checkins": 420,
+        "held_phase_totals": {
+          "dbapi.execute": {
+            "wall_seconds": 10.490832967002461,
+            "cpu_seconds": 0.5078314160000017
+          },
+          "money.create_in_session": {
+            "wall_seconds": 0.6395238209992158,
+            "cpu_seconds": 0.24954335699999977
+          },
+          "ride.fulfill": {
+            "wall_seconds": 0.3919818039983056,
+            "cpu_seconds": 0.23665816199999937
+          },
+          "ride.create": {
+            "wall_seconds": 0.2562958020004089,
+            "cpu_seconds": 0.17308667599999922
+          },
+          "supplier.record_supplier_fact": {
+            "wall_seconds": 0.2764868219998107,
+            "cpu_seconds": 0.17186498499999966
+          },
+          "payment.create_intent": {
+            "wall_seconds": 0.261063466999758,
+            "cpu_seconds": 0.15317817700000005
+          },
+          "bridge.checkout_contract": {
+            "wall_seconds": 0.21013380099941514,
+            "cpu_seconds": 0.13592870999999954
+          },
+          "payment.simulate_result": {
+            "wall_seconds": 0.15367526100033047,
+            "cpu_seconds": 0.09493920899999986
+          },
+          "payment.execute": {
+            "wall_seconds": 0.1150970879992883,
+            "cpu_seconds": 0.07285814000000025
+          },
+          "source.decide_in": {
+            "wall_seconds": 0.08436270499976217,
+            "cpu_seconds": 0.04770780099999984
+          },
+          "idempotency.claim_idempotency": {
+            "wall_seconds": 0.06418365499939682,
+            "cpu_seconds": 0.043151260000000136
+          },
+          "dbapi.commit": {
+            "wall_seconds": 1.8182914430002484,
+            "cpu_seconds": 0.04089535800000016
+          },
+          "payment.select_channel": {
+            "wall_seconds": 0.03502186800017171,
+            "cpu_seconds": 0.026908389000000067
+          },
+          "dbapi.rollback": {
+            "wall_seconds": 0.3273972690003575,
+            "cpu_seconds": 0.018808426000000322
+          },
+          "bridge._confirm_contract_payment": {
+            "wall_seconds": 0.022053476000905903,
+            "cpu_seconds": 0.015157312000000048
+          },
+          "idempotency.complete_idempotency": {
+            "wall_seconds": 0.014849665000042478,
+            "cpu_seconds": 0.01170538900000024
+          },
+          "money.create": {
+            "wall_seconds": 0.01627900800099269,
+            "cpu_seconds": 0.011067113999999826
+          },
+          "other_while_held": {
+            "wall_seconds": 0.01677897199920153,
+            "cpu_seconds": 0.010553892000000006
+          }
+        }
+      },
+      "100": {
+        "profiles": [
+          "group-61.json.profile.json",
+          "group-64.json.profile.json",
+          "group-62.json.profile.json",
+          "group-63.json.profile.json"
+        ],
+        "checkouts": 2100,
+        "checkins": 2100,
+        "held_phase_totals": {
+          "dbapi.execute": {
+            "wall_seconds": 60.99931706200448,
+            "cpu_seconds": 2.6929667880000006
+          },
+          "supplier.record_supplier_fact": {
+            "wall_seconds": 1.9174776809991272,
+            "cpu_seconds": 1.187108552
+          },
+          "ride.fulfill": {
+            "wall_seconds": 1.8454092729956528,
+            "cpu_seconds": 1.1458177559999996
+          },
+          "money.create_in_session": {
+            "wall_seconds": 1.8577844250023645,
+            "cpu_seconds": 0.9212492219999999
+          },
+          "payment.create_intent": {
+            "wall_seconds": 1.5261589180017836,
+            "cpu_seconds": 0.8602645269999998
+          },
+          "ride.create": {
+            "wall_seconds": 1.3563750459984476,
+            "cpu_seconds": 0.6831556479999997
+          },
+          "bridge.checkout_contract": {
+            "wall_seconds": 0.9558235209954091,
+            "cpu_seconds": 0.5723683200000003
+          },
+          "payment.simulate_result": {
+            "wall_seconds": 0.7087107440008822,
+            "cpu_seconds": 0.36898308499999966
+          },
+          "payment.execute": {
+            "wall_seconds": 0.5378506089990651,
+            "cpu_seconds": 0.2846050059999999
+          },
+          "dbapi.commit": {
+            "wall_seconds": 11.499673187998837,
+            "cpu_seconds": 0.2053327789999986
+          },
+          "source.decide_in": {
+            "wall_seconds": 0.47394901999905414,
+            "cpu_seconds": 0.18233374299999985
+          },
+          "idempotency.claim_idempotency": {
+            "wall_seconds": 0.2623602250006343,
+            "cpu_seconds": 0.17964701900000035
+          },
+          "payment.select_channel": {
+            "wall_seconds": 0.18577271799904338,
+            "cpu_seconds": 0.11170448500000013
+          },
+          "dbapi.rollback": {
+            "wall_seconds": 2.6143148490033354,
+            "cpu_seconds": 0.093879571
+          },
+          "bridge._confirm_contract_payment": {
+            "wall_seconds": 0.10154405600076188,
+            "cpu_seconds": 0.06192597700000011
+          },
+          "money.create": {
+            "wall_seconds": 0.08669328599989967,
+            "cpu_seconds": 0.05788326300000023
+          },
+          "idempotency.complete_idempotency": {
+            "wall_seconds": 0.08888629000148285,
+            "cpu_seconds": 0.04904048800000001
+          },
+          "other_while_held": {
+            "wall_seconds": 0.04270850199986853,
+            "cpu_seconds": 0.03912217300000003
+          }
+        }
+      }
+    }
+  },
+  "details": {
+    "tiers_100": {
+      "sql_by_service": {
+        "bridge._confirm_contract_payment": {
+          "calling_thread_cpu_seconds": 0.02453616100000003,
+          "count": 100,
+          "sum_seconds": 0.5584310779998987
+        },
+        "bridge.checkout_contract": {
+          "calling_thread_cpu_seconds": 0.21055301800000026,
+          "count": 1100,
+          "sum_seconds": 5.680987737999885
+        },
+        "idempotency.claim_idempotency": {
+          "calling_thread_cpu_seconds": 0.32457796600000016,
+          "count": 300,
+          "sum_seconds": 3.9013361319998694
+        },
+        "idempotency.complete_idempotency": {
+          "calling_thread_cpu_seconds": 0.030136013000000073,
+          "count": 100,
+          "sum_seconds": 0.801585133999879
+        },
+        "money.create_in_session": {
+          "calling_thread_cpu_seconds": 0.4091145650000001,
+          "count": 2000,
+          "sum_seconds": 9.309649022998542
+        },
+        "payment.create_intent": {
+          "calling_thread_cpu_seconds": 0.21560835500000022,
+          "count": 1200,
+          "sum_seconds": 6.142175848000079
+        },
+        "payment.execute": {
+          "calling_thread_cpu_seconds": 0.09961401400000028,
+          "count": 500,
+          "sum_seconds": 3.315463165001347
+        },
+        "payment.select_channel": {
+          "calling_thread_cpu_seconds": 0.042024411000000136,
+          "count": 200,
+          "sum_seconds": 1.0358970569992607
+        },
+        "payment.simulate_result": {
+          "calling_thread_cpu_seconds": 0.1394543800000004,
+          "count": 800,
+          "sum_seconds": 4.316787899998872
+        },
+        "ride.create": {
+          "calling_thread_cpu_seconds": 0.2718702860000002,
+          "count": 1500,
+          "sum_seconds": 8.703241973001695
+        },
+        "ride.fulfill": {
+          "calling_thread_cpu_seconds": 0.37078576599999946,
+          "count": 2000,
+          "sum_seconds": 8.131515827997305
+        },
+        "source.decide_in": {
+          "calling_thread_cpu_seconds": 0.04138771500000017,
+          "count": 200,
+          "sum_seconds": 1.5951230870003883
+        },
+        "supplier.record_supplier_fact": {
+          "calling_thread_cpu_seconds": 0.23588070799999988,
+          "count": 1300,
+          "sum_seconds": 5.372427429001618
+        },
+        "unattributed": {
+          "calling_thread_cpu_seconds": 0.024977124,
+          "count": 100,
+          "sum_seconds": 1.831179632000044
+        }
+      },
+      "connection_by_service": {
+        "bridge._confirm_contract_payment": {
+          "acquisition_sum_seconds": 0.3630599969994819,
+          "acquisitions": 100,
+          "hold_count": 100,
+          "hold_sum_seconds": 1.2214905159991076,
+          "queue_gets": 100,
+          "queue_sum_seconds": 0.000667568999915602
+        },
+        "bridge.checkout_contract": {
+          "acquisition_sum_seconds": 2.022242488999268,
+          "acquisitions": 300,
+          "hold_count": 300,
+          "hold_sum_seconds": 8.570363171999588,
+          "queue_gets": 300,
+          "queue_sum_seconds": 0.8048554310009877
+        },
+        "idempotency.claim_idempotency": {
+          "acquisition_sum_seconds": 12.541084068998885,
+          "acquisitions": 200,
+          "hold_count": 200,
+          "hold_sum_seconds": 6.134033467999984,
+          "queue_gets": 200,
+          "queue_sum_seconds": 10.013737679999736
+        },
+        "idempotency.complete_idempotency": {
+          "acquisition_sum_seconds": 3.452758522000522,
+          "acquisitions": 100,
+          "hold_count": 100,
+          "hold_sum_seconds": 1.6542246979993251,
+          "queue_gets": 100,
+          "queue_sum_seconds": 2.9794997170005217
+        },
+        "money.create_in_session": {
+          "acquisition_sum_seconds": 230.274727971002,
+          "acquisitions": 500,
+          "hold_count": 500,
+          "hold_sum_seconds": 14.063154191999502,
+          "queue_gets": 500,
+          "queue_sum_seconds": 228.7267022730008
+        },
+        "payment.create_intent": {
+          "acquisition_sum_seconds": 0.44123088300057134,
+          "acquisitions": 100,
+          "hold_count": 100,
+          "hold_sum_seconds": 8.313541990999283,
+          "queue_gets": 100,
+          "queue_sum_seconds": 0.0041830389995993755
+        },
+        "payment.execute": {
+          "acquisition_sum_seconds": 0.43726123099963843,
+          "acquisitions": 100,
+          "hold_count": 100,
+          "hold_sum_seconds": 4.550510216000134,
+          "queue_gets": 100,
+          "queue_sum_seconds": 0.001090991999376456
+        },
+        "payment.select_channel": {
+          "acquisition_sum_seconds": 0.41578399000002264,
+          "acquisitions": 100,
+          "hold_count": 100,
+          "hold_sum_seconds": 2.062996481000255,
+          "queue_gets": 100,
+          "queue_sum_seconds": 0.0006732180000881272
+        },
+        "payment.simulate_result": {
+          "acquisition_sum_seconds": 1.8711651860000984,
+          "acquisitions": 100,
+          "hold_count": 100,
+          "hold_sum_seconds": 5.706529028000432,
+          "queue_gets": 100,
+          "queue_sum_seconds": 1.0817097850001574
+        },
+        "ride.create": {
+          "acquisition_sum_seconds": 210.9818016929995,
+          "acquisitions": 100,
+          "hold_count": 100,
+          "hold_sum_seconds": 13.01508317400021,
+          "queue_gets": 100,
+          "queue_sum_seconds": 210.50943353200057
+        },
+        "ride.fulfill": {
+          "acquisition_sum_seconds": 0.6111338140001408,
+          "acquisitions": 200,
+          "hold_count": 200,
+          "hold_sum_seconds": 10.990581138999687,
+          "queue_gets": 200,
+          "queue_sum_seconds": 0.002304354999637326
+        },
+        "supplier.record_supplier_fact": {
+          "acquisition_sum_seconds": 0.2927602759991714,
+          "acquisitions": 100,
+          "hold_count": 100,
+          "hold_sum_seconds": 7.784901285999354,
+          "queue_gets": 100,
+          "queue_sum_seconds": 0.0006765250001308232
+        },
+        "unattributed": {
+          "acquisition_sum_seconds": 35.19359380900039,
+          "acquisitions": 100,
+          "hold_count": 100,
+          "hold_sum_seconds": 2.9991988349997882,
+          "queue_gets": 84,
+          "queue_sum_seconds": 32.46582266099949
+        }
+      },
+      "dbapi_commits_by_service": {
+        "bridge.checkout_contract": {
+          "calling_thread_cpu_seconds": 0.019630965000000222,
+          "calls": 200,
+          "wall_sum_seconds": 1.3373107409984186
+        },
+        "idempotency.claim_idempotency": {
+          "calling_thread_cpu_seconds": 0.020886304000000036,
+          "calls": 200,
+          "wall_sum_seconds": 1.9456229759995267
+        },
+        "idempotency.complete_idempotency": {
+          "calling_thread_cpu_seconds": 0.010044428000000025,
+          "calls": 100,
+          "wall_sum_seconds": 0.7534954370001969
+        },
+        "money.create": {
+          "calling_thread_cpu_seconds": 0.04276977900000003,
+          "calls": 400,
+          "wall_sum_seconds": 2.4095178080003734
+        },
+        "payment.create_intent": {
+          "calling_thread_cpu_seconds": 0.009860640999999962,
+          "calls": 100,
+          "wall_sum_seconds": 0.6109443720001764
+        },
+        "payment.execute": {
+          "calling_thread_cpu_seconds": 0.010537267000000058,
+          "calls": 100,
+          "wall_sum_seconds": 0.6870088460001398
+        },
+        "payment.select_channel": {
+          "calling_thread_cpu_seconds": 0.009789581000000123,
+          "calls": 100,
+          "wall_sum_seconds": 0.8292040739995628
+        },
+        "payment.simulate_result": {
+          "calling_thread_cpu_seconds": 0.010930849000000152,
+          "calls": 100,
+          "wall_sum_seconds": 0.6520415270006197
+        },
+        "ride.create": {
+          "calling_thread_cpu_seconds": 0.010011817999999912,
+          "calls": 100,
+          "wall_sum_seconds": 0.8515308559993855
+        },
+        "ride.fulfill": {
+          "calling_thread_cpu_seconds": 0.02154472300000003,
+          "calls": 200,
+          "wall_sum_seconds": 0.9450874280001926
+        },
+        "supplier.record_supplier_fact": {
+          "calling_thread_cpu_seconds": 0.010630753999999895,
+          "calls": 100,
+          "wall_sum_seconds": 0.4336123120000366
+        }
+      }
+    },
+    "mapper_configuration": [
+      {
+        "configuring_thread_cpu_seconds": 0.66439225,
+        "wall_seconds": 1.6621743749999496
+      },
+      {
+        "configuring_thread_cpu_seconds": 0.716345688,
+        "wall_seconds": 1.8823992090000274
+      },
+      {
+        "configuring_thread_cpu_seconds": 0.705961654,
+        "wall_seconds": 1.5540276460000086
+      },
+      {
+        "configuring_thread_cpu_seconds": 0.761420135,
+        "wall_seconds": 2.0758369950000315
+      }
+    ]
+  },
+  "validation": {
+    "instances": 4,
+    "pool_per_instance": 4,
+    "diagnostic": true,
+    "schema": "mi_f40f49b59bed459b9819ea67c77bf234",
+    "stages": [
+      {
+        "admission_wait_p95_ms": 0,
+        "completed_per_second": 9.449543915754878,
+        "concurrent_transactions": 20,
+        "errors": 0,
+        "observed_peak_executing": 20,
+        "observed_peak_inflight": 20,
+        "p95_ms": 2092.265572,
+        "p99_ms": 2113.625683,
+        "pass": true,
+        "process_ids": [
+          6630,
+          6631,
+          6632,
+          6633
+        ],
+        "sql": "PASS",
+        "transactions": 20,
+        "application_cpu_seconds": 5.574458999999999,
+        "sum_worker_max_rss_kib": 733328,
+        "lifetime_cpu_seconds": 24.65643299999998
+      },
+      {
+        "admission_wait_p95_ms": 0,
+        "completed_per_second": 12.522407826664278,
+        "concurrent_transactions": 100,
+        "errors": 0,
+        "observed_peak_executing": 100,
+        "observed_peak_inflight": 100,
+        "p95_ms": 7845.096848,
+        "p99_ms": 7914.881919,
+        "pass": false,
+        "process_ids": [
+          6781,
+          6782,
+          6783,
+          6784
+        ],
+        "sql": "PASS",
+        "transactions": 100,
+        "application_cpu_seconds": 14.610175,
+        "sum_worker_max_rss_kib": 735376,
+        "lifetime_cpu_seconds": 33.91823900000004
+      }
+    ],
+    "environment": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "cpu_count": 4,
+      "database_version": "PostgreSQL 18.4 (Debian 18.4-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+      "packages": {
+        "Mako": "1.4.3",
+        "MarkupSafe": "3.0.3",
+        "PyJWT": "2.15.1",
+        "PyYAML": "6.0.3",
+        "Pygments": "2.21.0",
+        "SQLAlchemy": "2.1.1",
+        "alembic": "1.20.0",
+        "annotated-doc": "0.0.5",
+        "annotated-types": "0.8.0",
+        "anyio": "4.15.1",
+        "certifi": "2026.7.22",
+        "cffi": "2.1.1",
+        "click": "8.5.0",
+        "cryptography": "50.0.1",
+        "fastapi": "0.142.1",
+        "h11": "0.16.0",
+        "httpcore": "1.0.9",
+        "httptools": "0.8.0",
+        "httpx": "0.28.1",
+        "idna": "3.20",
+        "iniconfig": "2.3.0",
+        "opentelemetry-api": "1.45.0",
+        "packaging": "26.3",
+        "pillow": "12.3.0",
+        "pip": "24.0",
+        "pluggy": "1.6.0",
+        "psycopg": "3.3.6",
+        "psycopg-binary": "3.3.6",
+        "pycparser": "3.0",
+        "pydantic": "2.13.5",
+        "pydantic-settings": "2.15.0",
+        "pydantic_core": "2.46.5",
+        "pytest": "9.1.1",
+        "pytest-asyncio": "1.4.0",
+        "python-dotenv": "1.2.3",
+        "redis": "8.1.0",
+        "starlette": "1.7.0",
+        "typing-inspection": "0.4.4",
+        "typing_extensions": "4.16.0",
+        "uvicorn": "0.54.0",
+        "uvloop": "0.22.1",
+        "watchfiles": "1.3.0",
+        "websockets": "17.1"
+      },
+      "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]"
+    }
+  }
+}
