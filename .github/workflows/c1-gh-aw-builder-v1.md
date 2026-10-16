@@ -55,12 +55,12 @@ strict: true
 run-name: "${{ inputs.owner_c }} ${{ inputs.runtime_task_id }} ${{ inputs.attempt }} ${{ inputs.execution_request_id }}"
 # An engineering turn is longer than an answering turn: investigate, edit, test, commit,
 # request the Draft PR. The old answering-executor budget (60 AIC) terminated C1,
-# C10 and C12 before safe-output delivery on 2026-10-04. Keep a finite 180 AIC
+# C10 and C12 before safe-output delivery on 2026-10-04. Keep a finite 1500 AIC
 # engineering budget; validate one Formal Task end to end before resuming the batch.
 # This is a canary ceiling, not a measured cost requirement or a completed cost model.
 timeout-minutes: 15
 max-turns: 16
-max-ai-credits: 180
+max-ai-credits: 1500
 
 tools:
   edit:
