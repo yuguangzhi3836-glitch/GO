@@ -64,8 +64,68 @@ def send(client,sent,audience='consumer',email='new@example.test'):
     return body|{'challenge_id':issued['email'][0],'verification_code':issued['email'][1]}
 
 
+def test_sign_up_demands_only_the_channels_that_can_reach_a_human(client,delivery,monkeypatch):
+    """An environment with no SMS transport asks for the email code and no other.
+
+    This is HK's shape exactly: a real email transport, and no SMS provider. Asking
+    for an SMS code there is not a stricter door, it is a barred one — the challenge
+    can never be issued, so no account could ever be created. The phone number is
+    still collected at sign-up; it is one of the three login identifiers, not a
+    delivery channel.
+    """
+    from go_hotel.services import registration_verification as verify, registration_sms
+    monkeypatch.setattr(settings,'registration_verification_test_code','')
+    monkeypatch.setattr(registration_sms,'ready',lambda:False)
+
+    assert verify.required_channels()==('email',),verify.required_channels()
+    assert verify.ready() is True
+
+    b=send(client,delivery,'supplier')
+    # The form does not carry an SMS challenge it was never able to obtain.
+    b.pop('sms_challenge_id');b.pop('sms_verification_code')
+    b.update(organization_name='单通道测试企业',contact_name='测试联系人')
+    result=client.post('/bff/auth/supplier/register',json=b)
+    assert result.status_code==201,result.text
+    with SessionLocal() as s:
+        audit=s.scalar(select(AuditEventRow).where(AuditEventRow.action=='SUPPLIER_REGISTRATION_TERMS_ACCEPTED'))
+        assert audit.metadata_json['verification_mode']=='EMAIL',audit.metadata_json['verification_mode']
+        assert audit.metadata_json['email_verified'] is True
+        assert audit.metadata_json['sms_verified'] is False
+
+
+def test_the_stand_in_code_still_exercises_both_channels(delivery,monkeypatch):
+    """Test mode delivers on both channels by construction, so the pair stays tested.
+
+    The stand-in code *is* the delivery on either channel, so neither transport
+    being connected is not an argument for dropping the second challenge in test
+    mode — the point of the mode is to exercise the full pair.
+    """
+    from go_hotel.services import registration_verification as verify
+    monkeypatch.setattr(settings,'registration_verification_test_code','8888')
+    assert verify.required_channels()==('email','sms'),verify.required_channels()
+    assert verify.ready() is True
+
+
+def test_a_door_with_no_transport_at_all_stays_shut(monkeypatch):
+    """Neither transport connected: the door refuses rather than falling open."""
+    from go_hotel.services import registration_verification as verify, registration_sms
+    monkeypatch.setattr(settings,'registration_verification_test_code','')
+    monkeypatch.setattr(settings,'registration_email_config_path','')
+    monkeypatch.setattr(settings,'registration_verification_enabled',False)
+    monkeypatch.setattr(registration_sms,'ready',lambda:False)
+    assert verify.required_channels()==(),verify.required_channels()
+    assert verify.ready() is False
+
+
 @pytest.mark.parametrize('audience',['consumer','supplier'])
-def test_signup_requires_actual_code_and_audits_consumption(client,delivery,audience):
+def test_signup_requires_actual_code_and_audits_consumption(client,delivery,audience,monkeypatch):
+    if audience=='supplier':
+        # This is the *two-channel* door: both codes must be proved. The environment
+        # has to be able to reach a phone for that to be a fair test — with no SMS
+        # transport the door correctly asks for email alone, which is what
+        # `test_sign_up_demands_only_the_channels_that_can_reach_a_human` pins down.
+        from go_hotel.services import registration_sms
+        monkeypatch.setattr(registration_sms,'ready',lambda:True)
     b=send(client,delivery,audience)
     endpoint='/v1/consumer/auth/register' if audience=='consumer' else '/bff/auth/supplier/register'
     if audience=='supplier':

@@ -675,7 +675,7 @@ SCREENS.register = () => {
     <section class="auth-panel">
       <div class="auth-form">
         <h1>创建合作伙伴账号</h1>
-        <p class="lead">带 <span class="req">*</span> 的为必填项。邮箱和手机号各会收到一条验证码，用来确认这两个联系方式确实是你本人的。</p>
+        <p class="lead" id="rgLead">带 <span class="req">*</span> 的为必填项。邮箱和手机号各会收到一条验证码，用来确认这两个联系方式确实是你本人的。</p>
         <div id="rgGate"></div>
         <form id="onbRegister" class="stack" novalidate>
           <div class="field">
@@ -774,6 +774,14 @@ SCREENS.register = () => {
   const ORDER = [FIELDS.username, FIELDS.email, FIELDS.emailCode, FIELDS.phone,
     FIELDS.phoneCode, FIELDS.pass, FIELDS.pass2, FIELDS.terms];
 
+  /* A code box is only required once the environment can actually send one. The
+     server publishes which channels are live; the form mirrors that instead of
+     demanding a code the server would refuse to issue. */
+  const requiredFields = () => {
+    const channels = (policy && policy.verification_channels) || ['email'];
+    return channels.includes('sms') ? ORDER : ORDER.filter((f) => f !== FIELDS.phoneCode);
+  };
+
   /* When the server refuses, it names the field; the form marks that one. */
   const SERVER_FIELD = {
     VALID_USERNAME_REQUIRED: 'rgUsername', USERNAME_ALREADY_REGISTERED: 'rgUsername',
@@ -866,7 +874,7 @@ SCREENS.register = () => {
     e.preventDefault();
     const errBox = document.getElementById('rgErr');
     errBox.innerHTML = '';
-    if (reportIssues('rgIssues', checkFields(ORDER))) return;
+    if (reportIssues('rgIssues', checkFields(requiredFields()))) return;
     const submit = document.getElementById('rgSubmit');
     submit.disabled = true;
     submit.textContent = '正在创建…';
@@ -875,12 +883,14 @@ SCREENS.register = () => {
       if (!p.enabled) { gateNotice('当前环境还没有接通验证码通道，暂时不能注册。请联系 GO。'); return; }
       const email = fieldValue('rgEmail');
       const phone = digitsOnly(fieldValue('rgPhone'));
+      // Only ask the server for the challenges it can actually serve.
+      const needSms = ((p.verification_channels) || ['email']).includes('sms');
       const emailId = await ensureChallenge('email', email, p);
-      const smsId = await ensureChallenge('sms', phone, p);
+      const smsId = needSms ? await ensureChallenge('sms', phone, p) : '';
       const { registration } = await api.supplierRegister({
         username: fieldValue('rgUsername'), email, phone, password: fieldValue('rgPass'),
         email_challenge_id: emailId, email_verification_code: fieldValue('rgEmailCode'),
-        sms_challenge_id: smsId, sms_verification_code: fieldValue('rgPhoneCode'),
+        sms_challenge_id: smsId, sms_verification_code: needSms ? fieldValue('rgPhoneCode') : '',
         accepted_terms: true, term_versions: p.versions, term_hashes: p.term_hashes,
         registration_decisions: p.required_decisions,
       });
@@ -908,6 +918,18 @@ SCREENS.register = () => {
       submit.textContent = '创建账号并继续';
     }
   };
+
+  /* Hide what this environment cannot deliver. A visible-but-unusable code box is
+     worse than no box: the person fills it, the server refuses to issue a code,
+     and the form has no way to explain why. The phone number itself stays — it is
+     one of the three login identifiers, not a verification channel. */
+  loadPolicy().then((p) => {
+    if (((p.verification_channels) || ['email']).includes('sms')) return;
+    document.getElementById('rgPhoneCode').closest('.field').hidden = true;
+    document.getElementById('rgPhoneSend').hidden = true;
+    const lead = document.getElementById('rgLead');
+    if (lead) lead.textContent = '带 * 的为必填项。邮箱会收到一条验证码，用来确认这个联系方式确实是你本人的。';
+  }).catch(() => {});
 };
 
 /* Account recovery. Two questions, one screen: "which account is mine?" and "how
@@ -1137,6 +1159,13 @@ SCREENS.recovery = () => {
       const p = unwrap(await api.supplierRegistrationTerms());
       if (!p.enabled) {
         gate.innerHTML = '<div class="notice warn">当前环境还没有接通验证码通道，找回功能暂时不可用。请联系 GO。</div>';
+        return;
+      }
+      // Same rule as sign-up: offer only the channels this environment can really
+      // deliver on, so nobody is sent down a channel that cannot answer.
+      if (!((p.verification_channels) || ['email']).includes('sms')) {
+        const opt = channelSel.querySelector('option[value="sms"]');
+        if (opt) opt.remove();
       }
     } catch {}
   })();

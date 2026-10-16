@@ -1,0 +1,25 @@
+# Line-ending policy. Without this file `core.autocrlf` decides, and a binary
+# asset that happens to contain no NUL byte (a small uncompressed PDF, for
+# instance) is classified as *text* and rewritten on checkout: on Windows every
+# LF became CRLF, the file grew from 1431 to 1505 bytes, and the contract service
+# — which re-hashes the template on every read — refused it as
+# CONTRACT_TEMPLATE_UNAVAILABLE. Byte-exact assets must never go through a
+# line-ending filter.
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.eot   binary
+*.zip   binary
+*.gz    binary
+*.tar   binary
+*.xlsx  binary
+*.docx  binary
+*.pptx  binary

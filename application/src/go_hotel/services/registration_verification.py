@@ -62,22 +62,38 @@ def digest(value):
     return hmac.new(key.encode(), value.encode(), hashlib.sha256).hexdigest()
 
 
+def required_channels():
+    """The channels this environment can actually get a code to a human on.
+
+    Sign-up demands a code on every channel named here and on no others. A channel
+    whose transport is not connected is not a weaker check, it is an impossible
+    one: demanding it would bar the door behind a code nobody can ever receive.
+    The operator's stand-in code is delivered on both channels by construction, so
+    test mode keeps the full pair under test.
+    """
+    if settings.registration_verification_test_code:
+        return ('email', 'sms')
+    channels = []
+    if registration_email.ready():
+        channels.append('email')
+    from go_hotel.services import registration_sms
+    if registration_sms.ready():
+        channels.append('sms')
+    return tuple(channels)
+
+
 def ready():
     """Whether an account-creation / recovery round can actually run here.
 
-    Either a real email transport is configured, or the operator has switched on
-    ``registration_verification_test_code`` — the explicit stand-in for *both*
-    channels while neither email nor SMS delivery is connected. ``False`` is the
-    fail-closed default: sign-up and recovery then refuse to run at all rather
-    than accept a code nobody could possibly have received.
+    True as soon as one channel can really deliver; the door then asks for exactly
+    that channel. ``False`` is the fail-closed default: sign-up and recovery refuse
+    to run at all rather than accept a code nobody could possibly have received.
     """
     try:
         digest('readiness')
     except ValueError:
         return False
-    if settings.registration_verification_test_code:
-        return True
-    return registration_email.ready()
+    return bool(required_channels())
 
 
 def policy_digest(policy):

@@ -156,7 +156,7 @@ def supplier_registration_terms():
     return {'data':{**policy,'required':True,'enabled':bool(policy['acceptance_enabled']) and verification_ready,
         'required_decisions':registration_privacy.required_decisions(policy),
         'registration_scope':'NATIONWIDE','publication_requires_verification':True,
-        'login_identifiers':['username','email','phone'],'verification_channels':['email','sms'],
+        'login_identifiers':['username','email','phone'],'verification_channels':list(registration_verification_service.required_channels()),
         # Published on purpose so the sign-up form can pre-fill the stand-in code
         # in an environment where delivery is not connected. `None` means real
         # delivery, and the form then asks the human for the code they received.
@@ -181,27 +181,32 @@ def supplier_register(body:SupplierRegisterBody,request:Request,response:Respons
     # ignores the page must not be able to get further than the page says it can.
     if not registration_verification_service.ready():
         raise HTTPException(503,detail='REGISTRATION_VERIFICATION_NOT_READY')
-    # Owner decision, superseding frozen decision D-01: sign-up now sits *behind*
-    # both challenges. Nothing is created and no code is spent until the email code
-    # and the SMS code have each been proved; `register_account` then consumes both
-    # in one transaction with the account and the consent record, so a failure at
-    # any point leaves no half-made account and no spent code.
+    # Owner decision, superseding frozen decision D-01: sign-up sits *behind* the
+    # challenges. Nothing is created and no code is spent until the codes have been
+    # proved; `register_account` then consumes them in one transaction with the
+    # account and the consent record, so a failure at any point leaves no half-made
+    # account and no spent code. Which challenges that means is a property of the
+    # environment, not a constant — see `required_channels()` below.
     if body.term_versions != policy['versions']:
         raise HTTPException(409,detail='SUPPLIER_TERMS_VERSION_MISMATCH')
     if body.term_hashes != policy['term_hashes']:
         raise HTTPException(409,detail='SUPPLIER_TERMS_CONTENT_MISMATCH')
-    # The two channels are checked one at a time and the refusal carries the
-    # channel as a prefix, so the form can mark the one code box that is wrong
-    # instead of showing a message that fits neither.
-    try:
-        email_proof=registration_verification_service.check('supplier',email,body.email_challenge_id,body.email_verification_code,policy)
-    except ValueError as exc:
-        raise HTTPException(409,detail=f'EMAIL_{exc}') from exc
-    try:
-        phone_proof=registration_verification_service.check('supplier',phone,body.sms_challenge_id,body.sms_verification_code,policy,'sms')
-    except ValueError as exc:
-        raise HTTPException(409,detail=f'SMS_{exc}') from exc
-    proofs=[email_proof,phone_proof]
+    # The channels are checked one at a time and the refusal carries the channel as
+    # a prefix, so the form can mark the one code box that is wrong instead of
+    # showing a message that fits neither. Only the channels this environment can
+    # really deliver on are demanded, so the form never advertises one channel and
+    # then hides an unobtainable second one behind it.
+    required_channels=registration_verification_service.required_channels()
+    proofs=[]
+    for channel,identifier,challenge_id,code in (
+        ('email',email,body.email_challenge_id,body.email_verification_code),
+        ('sms',phone,body.sms_challenge_id,body.sms_verification_code),
+    ):
+        if channel not in required_channels: continue
+        try:
+            proofs.append(registration_verification_service.check('supplier',identifier,challenge_id,code,policy,channel))
+        except ValueError as exc:
+            raise HTTPException(409,detail=f'{channel.upper()}_{exc}') from exc
     def registration_audit(user_id,supplier_id):
         t=now()
         return AuditEventRow(
@@ -211,7 +216,8 @@ def supplier_register(body:SupplierRegisterBody,request:Request,response:Respons
             after_state={'registration_state':'REGISTERED','next_step':'COMPLETE_PROFILE'},decision_id=None,evidence_id=None,approval_id=None,
             metadata_json={'organization_name':body.organization_name,'contact_name':body.contact_name,'phone_provided':True,
                 'term_versions':policy['versions'],'term_hashes':policy['term_hashes'],'deferred_terms':policy.get('deferred',[]),
-                'accepted_once':True,'email_verified':True,'sms_verified':True,'verification_mode':'EMAIL_AND_SMS',
+                'accepted_once':True,'email_verified':'email' in required_channels,'sms_verified':'sms' in required_channels,
+                'verification_mode':'_AND_'.join(channel.upper() for channel in required_channels),
                 'verification_challenge_id':body.email_challenge_id,'sms_verification_challenge_id':body.sms_challenge_id},created_at=t,
         )
     try:
