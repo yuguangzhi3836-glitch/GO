@@ -98,7 +98,7 @@
 | `REPO` | `yuguangzhi3836-glitch/GO` | GitHub live |
 | `HANDOFF_PR` | **#592**（Draft / open / base = `release/hk-product-existing-fixes-20261007`） | GitHub live |
 | `HANDOFF_BRANCH` | `chenzhenxi/supplier-onboarding-v1-20261016` | 本地 / 远端 |
-| `BRANCH_HEAD_AT_HANDOFF` | `dd7eb4dd6fb6bcfb8f0527ae326c848d1540808e`（= PR #592 `head.sha`；**仅文档**，`application/**` 未动） | GitHub live |
+| 分支 HEAD | **不声明 sha** —— 每加一个文档提交它就会变 ⇒ 它有漂移性，**不能当身份**。判「产品代码有没有变」请用 `git rev-parse <sha>:application`。 | — |
 | `HK_DEPLOYED_SOURCE_COMMIT` | **`3a8c43a56af742d48ca6b03b3eb6a3915d66caf2`** | 香港环图 `source_commit` + 候选事实 |
 | `SOURCE_FINGERPRINT` | `76e19275992c31f8e44cfd80bd350bad3f94cd7db51b5f7b8dcd47f6245a825a` | 候选事实 |
 | `APPLICATION_TREE` | **`af37d1837a54ed7f568138638c923027a318aab5`** | 候选事实；**等于 `git rev-parse HEAD:application`** |
@@ -142,9 +142,9 @@ HK 旧运行基线 22df468b                ← 本轮之前香港实际运行（
 | vs HK 旧基线 `22df468b` | **67**（36 新增 / 31 修改） | +12 378 / −249 |
 | vs #558 tip `3fda010a`（我方净贡献） | **63**（36 新增 / 27 修改） | +12 309 / −228 |
 
-> ⚠ 上表由本地 `git diff --shortstat` 于 `3a8c43a5` 采集。分支 HEAD 在部署后多了一个**仅文档**提交
-> （`dd7eb4dd`，即本文与配套 Evidence），故对 `22df468b` 现为 68 文件、对 `3fda010a` 现为 64 文件；
-> GitHub PR #592 亦自报 `changed_files = 64`。**产品代码树 `application/**` 未变**（`af37d183…`）。
+> ⚠ 上表由本地 `git diff --shortstat` 于 `3a8c43a5` 采集。在部署源提交之上每增加一个**仅文档**提交，
+> 文件数就 `+1`（本文与配套 Evidence 已经在里面）。**产品代码树 `application/**` 未变**（`af37d183…`）；
+> 验证方法：`git diff --stat 3a8c43a5 <HEAD> -- application` 应当为空。
 > **判「有无回退」不要用这些总数**，要逐套对照 `rc/failed`（§5.1）。
 
 ---
