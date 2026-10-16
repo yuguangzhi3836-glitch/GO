@@ -15,6 +15,7 @@ from go_hotel.services.document_store import document_store
 from go_hotel.services.onboarding_hotel import onboarding_hotel_service
 from go_hotel.services.supplier_onboarding_state import supplier_onboarding_state_service
 from test_registration_verification import send, delivery
+from supplier_document_upload import upload_document
 
 
 USCC = "91350100M000100Y43"
@@ -75,9 +76,8 @@ def complete_draft(client):
         "legal_representative_name":"测试法人","registered_address":"黑龙江省哈尔滨市测试街道 1 号",
     })
     assert saved.status_code==200,saved.text
-    uploaded=client.post("/bff/supplier/legal-entity/documents",headers=csrf(client),
-        data={"document_type":"BUSINESS_LICENSE","scope":"ENTITY"},
-        files={"file":("licence.png",_licence_png(),"image/png")})
+    uploaded=upload_document(client,_licence_png(),filename="licence.png",mime="image/png",
+        headers=csrf(client),document_type="BUSINESS_LICENSE",scope="ENTITY")
     assert uploaded.status_code==201,uploaded.text
     claim=client.put("/bff/supplier/hotel/claim",headers=csrf(client),json={
         "mode":"EXISTING","relationship_type":"OWNER","hotel_id":HOTEL_ID})
@@ -176,9 +176,8 @@ def test_supplier_onboarding_requires_existing_hotel_truth_and_contract(client,d
     assert stale.json()["detail"]=="CONTRACT_TEMPLATE_CHANGED"
     assert client.get("/bff/auth/me").json()["data"]["onboarding"]["state"]=="VERIFIED"
 
-    signed = client.post("/bff/supplier/legal-entity/documents",headers=csrf(client),
-        data={"document_type":"SIGNED_CONTRACT","scope":"ONBOARDING"},
-        files={"file":("signed.pdf",_signed_pdf(),"application/pdf")})
+    signed=upload_document(client,_signed_pdf(),filename="signed.pdf",mime="application/pdf",
+        headers=csrf(client),document_type="SIGNED_CONTRACT",scope="ONBOARDING")
     assert signed.status_code==201,signed.text
     assert signed.json()["data"]["scope"]=="ONBOARDING"
 

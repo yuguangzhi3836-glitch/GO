@@ -37,6 +37,7 @@ from go_hotel.services.document_store import document_store
 from go_hotel.services.onboarding_hotel import onboarding_hotel_service
 from go_hotel.services.supplier_onboarding_state import supplier_onboarding_state_service
 from registration_terms_test_support import approved_terms_fixture, with_verification
+from supplier_document_upload import upload_document
 
 HOTEL = "HOTEL_OPERATION_PROOF"
 FRANCHISE = "FRANCHISE_OR_MANAGEMENT_CONTRACT"
@@ -118,14 +119,9 @@ def _applicant(client, monkeypatch, email="claim.applicant@example.test", seed="
 
 
 def _upload(client, document_type, scope="ONBOARDING"):
-    form = {"document_type": document_type}
-    if scope is not None:
-        form["scope"] = scope
-    return client.post(
-        "/bff/supplier/legal-entity/documents",
-        headers=_csrf(client),
-        data=form,
-        files={"file": ("proof.png", _png(), "image/png")},
+    return upload_document(
+        client, _png(), filename="proof.png", mime="image/png", headers=_csrf(client),
+        document_type=document_type, scope=scope,
     )
 
 

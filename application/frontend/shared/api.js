@@ -27,15 +27,23 @@ export class ApiClient{
   async hotelSearch(q,city=null,limit=10){const p=new URLSearchParams();if(q)p.set('q',q);if(city)p.set('city',city);p.set('limit',String(limit));return this.request('/bff/supplier/hotel/search?'+p.toString())}
   async supplierHotelClaim(){return this.request('/bff/supplier/hotel/claim')}
   async saveSupplierHotelClaim(body){return this.request('/bff/supplier/hotel/claim',{method:'PUT',body})}
-  // multipart/form-data: the browser owns the boundary, so Content-Type must NOT
-  // be set, and the file must NOT be JSON-stringified.
-  async uploadSupplierDocument(fields,file){const fd=new FormData();fd.append('file',file);for(const [k,v] of Object.entries(fields||{})){if(v!==null&&v!==undefined&&v!=='')fd.append(k,String(v))}return this.uploadForm('/bff/supplier/legal-entity/documents',fd)}
-  async uploadForm(path,formData){
+  // Raw octet-stream body: the browser sends the file bytes verbatim, so a 10 MB
+  // licence is never inflated into base64, and the runtime image needs no
+  // multipart parser. Metadata rides in the query string and one header; the
+  // filename is percent-encoded because headers are latin-1 on the wire.
+  async uploadSupplierDocument(fields,file){
+    const q=new URLSearchParams();
+    for(const [k,v] of Object.entries(fields||{})){if(v!==null&&v!==undefined&&v!=='')q.set(k,String(v))}
+    return this.uploadRaw('/bff/supplier/legal-entity/documents'+(q.toString()?'?'+q.toString():''),file)
+  }
+  async uploadRaw(path,file){
     const csrfAtStart=this.csrf();
-    const send=async()=>{const headers={'X-Request-ID':requestId(),'X-GO-Session':'console'};
+    const send=async()=>{const headers={'X-Request-ID':requestId(),'X-GO-Session':'console',
+        'X-Document-Filename':encodeURIComponent(file.name||'document')};
+      if(file.type)headers['Content-Type']=file.type;
       if(this.expectedActor)headers['X-GO-Actor']=this.expectedActor;
       const c=this.csrf();if(c)headers['X-CSRF-Token']=c;
-      const res=await fetch(this.base+path,{method:'POST',headers,credentials:'same-origin',body:formData});
+      const res=await fetch(this.base+path,{method:'POST',headers,credentials:'same-origin',body:file});
       let data={};try{data=await res.json()}catch{}
       if(!res.ok){const e=new Error(data.detail||data.error?.code||`HTTP_${res.status}`);e.status=res.status;e.payload=data;if(data.detail==='ACTOR_CONTEXT_CHANGED')this.onSessionChanged?.();throw e}
       return data};

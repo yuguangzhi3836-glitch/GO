@@ -43,6 +43,7 @@ from go_hotel.services.document_store import document_store
 from go_hotel.services.onboarding_hotel import LIVE_CASE_STATES
 from go_hotel.services.supplier_onboarding_state import _next_step
 from test_registration_verification import send, delivery  # noqa: F401  (fixtures)
+from supplier_document_upload import upload_document
 
 HOTEL_ID = "hotel_contract_seed"
 CONTRACT = "/bff/supplier/onboarding/contract"
@@ -128,9 +129,8 @@ def register_and_fill(client, body) -> str:
         "legal_representative_name": "合同法人", "registered_address": "黑龙江省哈尔滨市测试街道 1 号",
     })
     assert saved.status_code == 200, saved.text
-    uploaded = client.post("/bff/supplier/legal-entity/documents", headers=csrf(client),
-                           data={"document_type": "BUSINESS_LICENSE", "scope": "ENTITY"},
-                           files={"file": ("licence.png", _licence_png(), "image/png")})
+    uploaded = upload_document(client, _licence_png(), filename="licence.png", mime="image/png",
+                               headers=csrf(client), document_type="BUSINESS_LICENSE", scope="ENTITY")
     assert uploaded.status_code == 201, uploaded.text
     claim = client.put("/bff/supplier/hotel/claim", headers=csrf(client), json={
         "mode": "EXISTING", "relationship_type": "OWNER", "hotel_id": HOTEL_ID})
@@ -183,9 +183,9 @@ def confirmations(supplier_id: str) -> list[AuditEventRow]:
 
 
 def upload_signed(client, payload: bytes | None = None):
-    return client.post("/bff/supplier/legal-entity/documents", headers=csrf(client),
-                       data={"document_type": "SIGNED_CONTRACT", "scope": "ONBOARDING"},
-                       files={"file": ("signed.pdf", payload or _signed_pdf(), "application/pdf")})
+    return upload_document(client, payload or _signed_pdf(), filename="signed.pdf",
+                           mime="application/pdf", headers=csrf(client),
+                           document_type="SIGNED_CONTRACT", scope="ONBOARDING")
 
 
 def current_template_sha(client) -> str:

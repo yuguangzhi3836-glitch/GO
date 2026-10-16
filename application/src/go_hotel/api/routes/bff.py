@@ -1,7 +1,8 @@
 from __future__ import annotations
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 from go_hotel.services import registration_privacy
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from go_hotel.core.config import settings
 from go_hotel.services import registration_verification as registration_verification_service
@@ -317,9 +318,12 @@ def supplier_legal_entity_put(body:SupplierLegalEntityBody,p:Principal=Depends(s
     except ValueError as e:raise HTTPException(409,detail=str(e))
 
 # --- applicant private evidence (frozen decisions CHANGE 2 / CHANGE 10 / D-03) ---
-# Transport is multipart/form-data, never base64: a 10 MB licence must not be
-# inflated into a JSON string. The bytes are stored on a private volume and the
-# response body never carries the internal storage key.
+# Transport is a raw octet-stream body, never base64 and never multipart: a 10 MB
+# licence must not be inflated into a JSON string, and the frozen runtime image
+# ships no multipart parser, so declaring one would make this endpoint refuse to
+# load. The metadata travels in the query string and one percent-encoded header;
+# the bytes are stored on a private volume or in the database, and the response
+# body never carries the internal storage key.
 def _document_response(raw:bytes,mime:str,filename:str,disposition:str)->Response:
     """Serve private evidence with the headers a private file needs."""
     ascii_fallback=''.join(c if 32<=ord(c)<127 and c not in '"\\' else '_' for c in filename) or 'document'
@@ -331,19 +335,33 @@ def _document_response(raw:bytes,mime:str,filename:str,disposition:str)->Respons
         'Content-Disposition':f"{disposition}; filename=\"{ascii_fallback}\"; filename*=UTF-8''{quote(filename)}",
     })
 
+def _uploaded_filename(request:Request)->str:
+    """The applicant's own filename, carried as a percent-encoded header.
+
+    Headers are latin-1 on the wire, so a Chinese filename arrives exactly as
+    the browser produced it. The value is reduced to its last path segment so a
+    caller cannot smuggle a directory into the stored name.
+    """
+    raw=unquote(request.headers.get('x-document-filename') or '')
+    return (raw.replace('\\','/').rsplit('/',1)[-1].strip()[:255]) or 'document'
+
 @router.post('/bff/supplier/legal-entity/documents',status_code=201)
-def supplier_document_upload(file:UploadFile=File(...),document_type:str=Form(...),
-        expected_revision:str|None=Form(default=None),scope:str|None=Form(default=None),
+async def supplier_document_upload(request:Request,document_type:str=Query(...),
+        expected_revision:str|None=Query(default=None),scope:str|None=Query(default=None),
         p:Principal=Depends(supplier_account_principal)):
     try:
         revision=int(expected_revision) if expected_revision not in (None,'') else None
     except ValueError:
         raise HTTPException(409,detail='DOCUMENT_REVISION_STALE') from None
-    data=file.file.read()
+    data=await request.body()
     try:
-        saved=legal_entity_document_service.upload(
+        # The service is synchronous, so it keeps running on a worker thread
+        # exactly as it did when this endpoint was declared ``def``.
+        saved=await run_in_threadpool(
+            legal_entity_document_service.upload,
             supplier_id=p.supplier_id,uploaded_by=p.user_id,document_type=document_type,
-            data=data,filename=file.filename,declared_mime=file.content_type,
+            data=data,filename=_uploaded_filename(request),
+            declared_mime=request.headers.get('content-type'),
             scope=scope or None,expected_revision=revision)
     except ValueError as e:raise HTTPException(409,detail=str(e)) from e
     return {'data':saved}

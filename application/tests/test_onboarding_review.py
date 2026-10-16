@@ -37,6 +37,7 @@ from go_hotel.services.onboarding_hotel import onboarding_hotel_service
 from go_hotel.services.onboarding_review import onboarding_review_service
 from go_hotel.services.supplier_onboarding_state import supplier_onboarding_state_service
 from test_registration_verification import send, delivery  # noqa: F401  (fixtures)
+from supplier_document_upload import upload_document
 
 HOTEL_ID = "hotel_review_seed"
 REVIEW = "/internal/v1/onboarding-review"
@@ -128,9 +129,8 @@ def draft(client, delivery, email: str, *, hotel_id: str = HOTEL_ID,
         "legal_representative_name": "复核法人", "registered_address": "黑龙江省哈尔滨市测试街道 1 号",
     })
     assert saved.status_code == 200, saved.text
-    uploaded = client.post("/bff/supplier/legal-entity/documents", headers=csrf(client),
-                           data={"document_type": "BUSINESS_LICENSE", "scope": "ENTITY"},
-                           files={"file": ("licence.png", _licence_png(), "image/png")})
+    uploaded = upload_document(client, _licence_png(), filename="licence.png", mime="image/png",
+                               headers=csrf(client), document_type="BUSINESS_LICENSE", scope="ENTITY")
     assert uploaded.status_code == 201, uploaded.text
     claim = client.put("/bff/supplier/hotel/claim", headers=csrf(client), json={
         "mode": "EXISTING", "relationship_type": relationship_type, "hotel_id": hotel_id})
@@ -569,9 +569,8 @@ def test_approving_a_proposed_hotel_creates_exactly_one_canonical_hotel(client, 
     client.put("/bff/supplier/legal-entity", headers=csrf(client), json={
         "legal_name": "新酒店管理有限公司", "unified_social_credit_code": _uscc("proposed@example.test"),
         "legal_representative_name": "新法人", "registered_address": "黑龙江省哈尔滨市新街 9 号"})
-    client.post("/bff/supplier/legal-entity/documents", headers=csrf(client),
-                data={"document_type": "BUSINESS_LICENSE", "scope": "ENTITY"},
-                files={"file": ("licence.png", _licence_png(), "image/png")})
+    upload_document(client, _licence_png(), filename="licence.png", mime="image/png",
+                    headers=csrf(client), document_type="BUSINESS_LICENSE", scope="ENTITY")
     claim = client.put("/bff/supplier/hotel/claim", headers=csrf(client), json={
         "mode": "PROPOSED", "relationship_type": "OWNER",
         "proposed_hotel": {"name": "复核全新酒店", "city": "哈尔滨市", "address": "新街 9 号"}})

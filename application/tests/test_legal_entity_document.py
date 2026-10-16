@@ -2,7 +2,7 @@
 
 Covers the frozen decisions that make documents safe to accept from a stranger:
 
-  * CHANGE 10 — ``multipart/form-data`` transport, private storage, content
+  * CHANGE 10 — octet-stream transport, private storage, content
     addressing, de-duplication, revision, ``expected_revision`` staleness guard,
     preview vs download, ``no-store``;
   * CHANGE 2  — two scopes in one table (entity level and onboarding level) with
@@ -19,8 +19,10 @@ appear in any response body.
 """
 from __future__ import annotations
 
+import importlib.abc
 import io
 import secrets
+import sys
 
 import pytest
 from sqlalchemy import select
@@ -37,6 +39,7 @@ from go_hotel.security.mfa import totp
 from go_hotel.security.service import identity_service
 from go_hotel.services.document_store import document_store
 from registration_terms_test_support import approved_terms_fixture, with_verification
+from supplier_document_upload import upload_document
 
 USCC = "91350100M000100Y43"
 LICENCE = "BUSINESS_LICENSE"
@@ -116,12 +119,11 @@ def _applicant(client, monkeypatch, email="doc.applicant@example.test") -> str:
 
 
 def _upload(client, data: bytes, filename="licence.png", mime="image/png", **fields):
-    form = {"document_type": LICENCE, **{k: str(v) for k, v in fields.items() if v is not None}}
-    return client.post(
-        "/bff/supplier/legal-entity/documents",
-        headers=_csrf(client),
-        data=form,
-        files={"file": (filename, data, mime)},
+    # A caller-supplied document_type wins, so the case-insensitivity and
+    # unknown-type tests can override the default without a second helper.
+    fields.setdefault("document_type", LICENCE)
+    return upload_document(
+        client, data, filename=filename, mime=mime, headers=_csrf(client), **fields
     )
 
 
@@ -659,3 +661,53 @@ def test_an_explicit_volume_still_selects_the_filesystem_backend(tmp_path, monke
     stored = document_store.persist(licence, "licence.png", "image/png")
     assert any(p.is_file() for p in volume.rglob("*"))
     assert document_store.read_verified(stored.storage_key, stored.sha256) == licence
+
+
+# --------------------------------------------------------------------------- #
+# the transport must not need a wheel the deployable image does not ship
+# --------------------------------------------------------------------------- #
+class _NoMultipart(importlib.abc.MetaPathFinder):
+    """Simulate the frozen Hong Kong image, which has no multipart parser."""
+
+    def find_spec(self, name, path=None, target=None):
+        if name == "multipart" or name.startswith("multipart."):
+            raise ModuleNotFoundError("No module named %r" % name, name=name)
+        return None
+
+
+@pytest.fixture
+def without_multipart(monkeypatch):
+    """Make ``import multipart`` fail, and undo every trace of it afterwards.
+
+    The cache has to be cleared as well as the import blocked: FastAPI imports the
+    parser *lazily*, inside the request handler, so a ``sys.modules`` entry left
+    behind by an earlier test would hide exactly the defect this fixture exists for.
+    """
+    for name in [n for n in list(sys.modules) if n == "multipart" or n.startswith("multipart.")]:
+        monkeypatch.delitem(sys.modules, name)
+    monkeypatch.setattr(sys, "meta_path", [_NoMultipart(), *sys.meta_path])
+
+
+def test_the_upload_needs_no_multipart_parser(client, monkeypatch, without_multipart):
+    """The image we can actually deploy to is built with the network off and ships
+    no multipart parser, so a ``Form``/``File`` parameter turns a missing wheel into
+    a body the server cannot read.
+
+    Every other test in this file passes on a machine that happens to have the
+    wheel installed, which is precisely how this reached a candidate build -- so the
+    block above is the whole point of the test, not a detail of it.
+    """
+    _applicant(client, monkeypatch)
+    licence = _png(color=(9, 9, 9))
+
+    # Proof the block is real before trusting anything below it.
+    with pytest.raises(ModuleNotFoundError):
+        __import__("multipart")
+
+    uploaded = _upload(client, licence)
+    assert uploaded.status_code == 201, uploaded.text
+    document = uploaded.json()["data"]
+
+    served = client.get(f"/bff/supplier/legal-entity/documents/{document['document_id']}/content")
+    assert served.status_code == 200, served.text
+    assert served.content == licence
