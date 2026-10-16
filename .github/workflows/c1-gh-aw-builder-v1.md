@@ -46,6 +46,8 @@ permissions:
 
 engine:
   id: codex
+  env:
+    GH_AW_CODEX_MAX_REBUILD_FACTOR: "100"
 
 strict: true
 
