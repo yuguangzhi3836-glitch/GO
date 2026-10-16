@@ -31,5 +31,6 @@ jobs:
           chmod 700 "$bin"
           "$bin" compile c1-gh-aw-builder-v1 --strict --no-check-update --action-mode action --action-tag 924af5fdc64061cfbf66fb584c8b07e2ac230c60
           git diff --exit-code -- .github/workflows/c1-gh-aw-builder-v1.lock.yml
-          grep -F 'GH_AW_CODEX_MAX_REBUILD_FACTOR: "100"' .github/workflows/c1-gh-aw-builder-v1.lock.yml
+          grep -F 'GH_AW_CODEX_MAX_REBUILD_FACTOR: 100' .github/workflows/c1-gh-aw-builder-v1.lock.yml
+          test "$(grep -c GH_AW_CODEX_MAX_REBUILD_FACTOR .github/workflows/c1-gh-aw-builder-v1.lock.yml)" -eq 2
           printf 'PR597_OFFICIAL_COMPILE_AND_LOCK=PASS\n'
