@@ -1,0 +1,42 @@
+{
+  "prior_pg_candidate": "7874d72376e4b3da31ec51e35776fab5ab267e03",
+  "prior_pg_run": 37478157832,
+  "attempt": 1,
+  "job": 112318971593,
+  "artifact": 11420066555,
+  "zip_sha256": "44ec895326777ea96ca55c274d0dfdc8cc29702cf2c4fe83664ddc4ddd3b7342",
+  "actual_server_version_num": 180004,
+  "prior_migration_exit": 0,
+  "prior_pytest_exit": 1,
+  "prior_counts": {
+    "tests": 15,
+    "failures": 13,
+    "passed": 2,
+    "errors": 0,
+    "skipped": 0
+  },
+  "first_failure": "DataError StringDataRightTruncation: reservation_state VARCHAR(40) cannot store HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING (42 chars)",
+  "fix": "reservation_state64 plus source-proven ledger BUSINESS:type:id maximum106→account_code128; additive migration0137 over0136, refuse lossy downgrade before DDL",
+  "source_proven_dependency": "unified_money_movement._post constructs BUSINESS:{business_type}:{business_id}; model max32+64 plus10 separators=106. Historical #264 migration0140 already fixed this; selectively retain its width, not its migration chain.",
+  "local_exit": 0,
+  "local_counts": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "24",
+    "time": "21.959",
+    "timestamp": "2026-10-06T21:25:58.793289+07:00",
+    "hostname": "7800e7ff0094"
+  },
+  "local_database": "SQLite",
+  "new_pg_status": "NOT_RUN",
+  "file_sha256": {
+    "application/src/go_hotel/db/models.py": "34faf1249bf6ecede9890fafd3343484014e28deef52ad7d06e2447ddb069339",
+    "application/alembic/versions/0137_hosted_funding_width.py": "b8c4662523e8b8b08d6c041df7202c2e8bb14417572bd01fff58114e9fb687f7",
+    "application/tests/test_depth25_migration_history.py": "a72171e5c55433652e242b9b79a147de007bda517be494df1e47ba230feb8d7e",
+    ".github/workflows/unknown-recovery-postgres.yml": "aa763db4d62722c131f1a5fc44685e6ddc89ebc323204022a853b83a523c1864"
+  },
+  "raw_junit": "<?xml version=\"1.0\" encoding=\"utf-8\"?><testsuites name=\"pytest tests\"><testsuite name=\"pytest\" errors=\"0\" failures=\"0\" skipped=\"0\" tests=\"24\" time=\"21.959\" timestamp=\"2026-10-06T21:25:58.793289+07:00\" hostname=\"7800e7ff0094\"><testcase classname=\"tests.test_v70_r4_c01_unknown_episode\" name=\"test_episode_digest_fences_resolution_and_mixed_settlement[cash_authorization]\" time=\"5.118\" /><testcase classname=\"tests.test_v70_r4_c01_unknown_episode\" name=\"test_episode_digest_fences_resolution_and_mixed_settlement[credit_capture]\" time=\"0.801\" /><testcase classname=\"tests.test_v70_r4_c01_unknown_episode\" name=\"test_unknown_movement_without_open_episode_fails_closed_without_writes\" time=\"0.762\" /><testcase classname=\"tests.test_v70_r4_c01_unknown_episode\" name=\"test_episode_and_movement_rollback_when_audit_write_fails\" time=\"0.770\" /><testcase classname=\"tests.test_unknown_episode_retention\" name=\"test_old_episode_cannot_resolve_new_generation\" time=\"0.769\" /><testcase classname=\"tests.test_unknown_episode_retention\" name=\"test_lost_open_response_after_resolution_does_not_reopen\" time=\"0.721\" /><testcase classname=\"tests.test_unknown_episode_retention\" name=\"test_resolved_replay_refuses_untracked_movement_drift\" time=\"0.733\" /><testcase classname=\"tests.test_unknown_episode_retention\" name=\"test_conflicting_open_and_resolution_audit_failure_are_zero_write\" time=\"0.722\" /><testcase classname=\"tests.test_unknown_episode_retention\" name=\"test_recovery_forbidden_outside_isolation_and_for_external_authorization\" time=\"0.726\" /><testcase classname=\"tests.test_unknown_episode_retention\" name=\"test_http_requires_reserved_hotel_scope_and_rechecks_revocation\" time=\"0.919\" /><testcase classname=\"tests.test_unknown_episode_retention\" name=\"test_staff_form_cannot_mint_reserved_recovery_scope\" time=\"0.101\" /><testcase classname=\"tests.test_v70_next_c01_unknown_funding\" name=\"test_unknown_source_blocks_both_funding_legs_until_test_fixture_reconciles[cash_authorization]\" time=\"0.776\" /><testcase classname=\"tests.test_v70_next_c01_unknown_funding\" name=\"test_unknown_source_blocks_both_funding_legs_until_test_fixture_reconciles[credit_capture]\" time=\"0.933\" /><testcase classname=\"tests.test_v70_next_c01_unknown_funding\" name=\"test_lost_response_after_mixed_settlement_replays_without_second_charge\" time=\"1.234\" /><testcase classname=\"tests.test_depth06_direct_checkout\" name=\"test_unknown_funds_keep_inventory_and_block_cancel_and_timeout\" time=\"0.871\" /><testcase classname=\"tests.test_depth25_migration_history\" name=\"test_hosted_funding_width_preserves_history_and_refuses_narrowing[hosted_direct_reservation-reservation_state-HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING]\" time=\"0.015\" /><testcase classname=\"tests.test_depth25_migration_history\" name=\"test_hosted_funding_width_preserves_history_and_refuses_narrowing[omnichannel_ledger_entry-account_code-BUSINESS:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY]\" time=\"0.011\" /><testcase classname=\"tests.test_depth25_migration_history\" name=\"test_fresh_database_can_apply_entire_chain_without_stamp\" time=\"2.855\" /><testcase classname=\"tests.test_depth25_migration_history\" name=\"test_0076_contains_only_its_historical_columns_and_constraints\" time=\"0.266\" /><testcase classname=\"tests.test_depth25_migration_history\" name=\"test_migration_does_not_depend_on_current_business_metadata\" time=\"0.102\" /><testcase classname=\"tests.test_depth25_migration_history\" name=\"test_rail_response_timestamps_survive_database_timezone_roundtrip\" time=\"0.001\" /><testcase classname=\"tests.test_depth25_migration_history\" name=\"test_rail_width_upgrade_preserves_history_and_refuses_lossy_downgrade\" time=\"0.193\" /><testcase classname=\"tests.test_depth25_migration_history\" name=\"test_flight_width_absent_sqlite_table_is_not_fabricated\" time=\"0.102\" /><testcase classname=\"tests.test_depth25_migration_history\" name=\"test_flight_width_preserves_sqlite_history_and_blocks_lossy_downgrade\" time=\"0.151\" /></testsuite></testsuites>",
+  "raw_stdout": "........................                                                 [100%]\n=============================== warnings summary ===============================\ntests/test_v70_r4_c01_unknown_episode.py::test_episode_digest_fences_resolution_and_mixed_settlement[cash_authorization]\n  /tmp/pay528-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa\n\ntests/test_depth25_migration_history.py: 19 warnings\n  /tmp/pay528-venv/lib/python3.12/site-packages/alembic/config.py:604: DeprecationWarning: No path_separator found in configuration; falling back to legacy splitting on spaces, commas, and colons for prepend_sys_path.  Consider adding path_separator=os to Alembic config.\n    util.warn_deprecated(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n"
+}

@@ -8,6 +8,38 @@ from go_hotel.core.config import settings
 pytestmark = pytest.mark.no_db
 
 
+@pytest.mark.parametrize('table,name,value', [
+    ('hosted_direct_reservation', 'reservation_state', 'HOTEL_CONFIRMED_AWAITING_ALIPAY_ONBOARDING'),
+    ('omnichannel_ledger_entry', 'account_code', 'BUSINESS:' + 'X' * 32 + ':' + 'Y' * 64),
+])
+def test_hosted_funding_width_preserves_history_and_refuses_narrowing(table, name, value):
+    import importlib.util
+    import sqlalchemy as sa
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    spec = importlib.util.spec_from_file_location('funding_width', 'alembic/versions/0137_hosted_funding_width.py')
+    migration = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(migration)
+    engine = sa.create_engine('sqlite:///:memory:')
+    with engine.begin() as connection:
+        for t, n, old, _ in migration.WIDTHS:
+            connection.execute(sa.text(f'CREATE TABLE {t} (id VARCHAR(64) PRIMARY KEY, {n} VARCHAR({old}) NOT NULL)'))
+            connection.execute(sa.text(f'CREATE INDEX ix_{t}_{n} ON {t} ({n})'))
+            connection.execute(sa.text(f'INSERT INTO {t} VALUES (:id, :value)'), {'id': 'history', 'value': 'PENDING'})
+        with Operations.context(MigrationContext.configure(connection)):
+            migration.upgrade()
+            migration.upgrade()
+            for t, n, _, width in migration.WIDTHS:
+                assert next(c for c in sa.inspect(connection).get_columns(t) if c['name'] == n)['type'].length == width
+                assert connection.execute(sa.text(f'SELECT {n} FROM {t}')).scalar_one() == 'PENDING'
+                assert sa.inspect(connection).get_indexes(t)[0]['column_names'] == [n]
+            connection.execute(sa.text(f'UPDATE {table} SET {name}=:value'), {'value': value})
+            with pytest.raises(RuntimeError, match='WOULD_TRUNCATE_HISTORY'):
+                migration.downgrade()
+            assert connection.execute(sa.text(f'SELECT {name} FROM {table}')).scalar_one() == value
+    engine.dispose()
+
+
 def config(tmp_path, monkeypatch):
     db = tmp_path / 'history.db'
     url = 'sqlite+pysqlite:///' + str(db)
@@ -20,7 +52,7 @@ def test_fresh_database_can_apply_entire_chain_without_stamp(tmp_path, monkeypat
     db, cfg = config(tmp_path, monkeypatch)
     command.upgrade(cfg, 'head')
     with sqlite3.connect(db) as s:
-        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0135_supplier_onboarding'
+        assert s.execute('SELECT version_num FROM alembic_version').fetchone()[0] == '0137_hosted_funding_width'
         columns = {r[1] for r in s.execute('PRAGMA table_info(connector_runtime_reconciliation)')}
         assert {'claimed_by', 'lease_expires_at', 'resolution_payload_json', 'superseded_reason'} <= columns
         assert s.execute("SELECT name FROM sqlite_master WHERE name='vertical_payment_deadline'").fetchone()
