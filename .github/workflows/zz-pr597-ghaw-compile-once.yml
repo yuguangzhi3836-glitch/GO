@@ -1,0 +1,35 @@
+# Temporary, PR-597-only verification; remove after evidence is collected.
+# Never merge this workflow into main.
+name: PR597 pinned gh-aw compile (temporary)
+on:
+  pull_request:
+    types: [synchronize]
+    branches: [main]
+    paths:
+      - '.github/workflows/c1-gh-aw-builder-v1.md'
+      - '.github/workflows/c1-gh-aw-builder-v1.lock.yml'
+      - '.github/workflows/zz-pr597-ghaw-compile-once.yml'
+permissions:
+  contents: read
+jobs:
+  pinned-compile:
+    if: github.event.pull_request.number == 597 && github.event.pull_request.head.repo.full_name == 'yuguangzhi3836-glitch/GO'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Verify official gh-aw v0.89.21 compiler and generated lock
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          bin="$RUNNER_TEMP/gh-aw-v0.89.21-linux-amd64"
+          curl --fail --location --silent --show-error --retry 3 --connect-timeout 20 --max-time 240 "https://github.com/github/gh-aw/releases/download/v0.89.21/linux-amd64" --output "$bin"
+          printf '%s  %s\n' '1c74ff5fc28b1891d32b67f4348a9b7f750946b6d4a721e909187a848868016b' "$bin" | sha256sum --check
+          chmod 700 "$bin"
+          "$bin" compile c1-gh-aw-builder-v1 --strict --no-check-update --action-mode action --action-tag 924af5fdc64061cfbf66fb584c8b07e2ac230c60
+          git diff --exit-code -- .github/workflows/c1-gh-aw-builder-v1.lock.yml
+          grep -F 'GH_AW_CODEX_MAX_REBUILD_FACTOR: "100"' .github/workflows/c1-gh-aw-builder-v1.lock.yml
+          printf 'PR597_OFFICIAL_COMPILE_AND_LOCK=PASS\n'
