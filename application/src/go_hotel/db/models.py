@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import date, datetime
-from sqlalchemy import BigInteger, Boolean, Date, DateTime, Integer, String, Text, JSON, UniqueConstraint, Index, Float, ForeignKey, CheckConstraint, Uuid, text
+from sqlalchemy import BigInteger, Boolean, Date, DateTime, Integer, LargeBinary, String, Text, JSON, UniqueConstraint, Index, Float, ForeignKey, CheckConstraint, Uuid, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
@@ -8294,4 +8294,34 @@ class LegalEntityDocumentRow(Base):
         Index('uq_led_case_revision', 'legal_entity_id', 'onboarding_case_id', 'document_type', 'revision', unique=True,
               postgresql_where=text('onboarding_case_id IS NOT NULL'),
               sqlite_where=text('onboarding_case_id IS NOT NULL')),
+    )
+
+
+class LegalEntityDocumentBlobRow(Base):
+    """The durable bytes of a private applicant document, keyed by content address.
+
+    ``legal_entity_document`` stores the metadata (type, revision, sha256, owner);
+    this table stores the bytes themselves. It exists because the Hong Kong
+    deployment path recreates the eight business containers from a digest-pinned
+    Compose file and environment file, so a document volume inside the container
+    filesystem does not survive a deployment, and no private host directory can be
+    mounted without editing the host's sealed deployment runtime. The database is
+    the one store the environment already has, is already backed up, and is already
+    restored as a unit — a document therefore survives container recreation and
+    stays consistent with the metadata row that describes it.
+
+    The key is the same content address the filesystem store uses
+    (``led_<sha256[:48]><ext>``), so the two backends are interchangeable and a row
+    can never be reached by a caller-supplied path. Bytes are read back and
+    re-hashed by the caller before being served.
+    """
+    __tablename__ = 'legal_entity_document_blob'
+    storage_key: Mapped[str] = mapped_column(String(255), primary_key=True)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    mime_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    content: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    __table_args__ = (
+        CheckConstraint('size_bytes > 0', name='ck_legal_entity_document_blob_bounds'),
     )

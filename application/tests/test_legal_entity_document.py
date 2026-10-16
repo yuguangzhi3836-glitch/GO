@@ -29,6 +29,7 @@ from sqlalchemy.exc import IntegrityError
 from go_hotel.core.config import settings
 from go_hotel.db.models import (
     AuditEventRow,
+    LegalEntityDocumentBlobRow,
     LegalEntityDocumentRow,
 )
 from go_hotel.db.session import SessionLocal
@@ -536,3 +537,125 @@ def test_every_revision_is_audited_with_its_hash(client, monkeypatch):
     assert hashes == {first["sha256"], second["sha256"]}
     superseding = [e for e in events if e.metadata_json.get("superseded_document_id")]
     assert superseding and superseding[0].metadata_json["superseded_document_id"] == first["document_id"]
+
+
+# --------------------------------------------------------------------------- #
+# durability: the bytes must survive the container being recreated
+# --------------------------------------------------------------------------- #
+def test_document_bytes_live_in_the_database_when_no_volume_is_configured(
+    tmp_path, client, monkeypatch
+):
+    """The Hong Kong deployment recreates the eight business containers from a
+    digest-pinned Compose file and environment file, and mounts no private
+    directory. A file written inside a container is discarded on every deployment,
+    so with nothing configured the bytes have to live in the one store that
+    environment already backs up and restores as a unit: the database.
+
+    This test selects that backend the way the deployment does -- by configuring
+    nothing -- and then asserts the *bytes themselves* are a row, not a path.
+    """
+    # Undo the module's autouse volume so the store is reached with no root and no
+    # override, which is the deployment's configuration exactly.
+    monkeypatch.setattr(document_store, "root", None)
+    monkeypatch.delenv("GO_SUPPLIER_DOCUMENT_DIR", raising=False)
+    assert document_store._uses_database() is True
+
+    _applicant(client, monkeypatch)
+    licence = _png(color=(7, 77, 7))
+    uploaded = _upload(client, licence)
+    assert uploaded.status_code == 201, uploaded.text
+    document = uploaded.json()["data"]
+
+    with SessionLocal() as session:
+        row = session.scalar(select(LegalEntityDocumentRow))
+        assert row is not None and row.storage_key.startswith("led_")
+        blob = session.get(LegalEntityDocumentBlobRow, row.storage_key)
+
+    assert blob is not None, "the bytes must be a row, not a file in the container"
+    assert blob.sha256 == row.sha256
+    assert blob.mime_type == "image/png"
+    assert blob.size_bytes == len(licence)
+    assert bytes(blob.content) == licence
+    # The volume is not a fallback that happened to be empty: nothing was written.
+    assert not (tmp_path / "supplier_documents").exists()
+
+
+def test_document_bytes_are_readable_after_the_container_is_rebuilt(
+    tmp_path, client, monkeypatch
+):
+    """The proof the deployment actually needs: write, throw the runtime away, read.
+
+    Every pooled connection is dropped and the store is rebuilt as a brand new
+    instance, which is what a container recreation does to this process. A file
+    on the container filesystem would be gone at this point; a database row cannot
+    help but be there. Both the store API and the applicant's HTTP read path are
+    then checked, so a failure would show as a real user seeing a broken preview.
+    """
+    from go_hotel.db.session import engine
+
+    monkeypatch.setattr(document_store, "root", None)
+    monkeypatch.delenv("GO_SUPPLIER_DOCUMENT_DIR", raising=False)
+
+    _applicant(client, monkeypatch)
+    licence = _png(color=(9, 40, 90))
+    document = _upload(client, licence).json()["data"]
+
+    with SessionLocal() as session:
+        row = session.scalar(select(LegalEntityDocumentRow))
+        storage_key, sha256 = row.storage_key, row.sha256
+
+    # Rebuild: no live connections, no store instance state, no cached handle.
+    engine.dispose(close=True)
+    rebuilt = type(document_store)()
+    assert rebuilt._uses_database() is True
+    assert rebuilt.exists(storage_key) is True
+    assert rebuilt.read_verified(storage_key, sha256) == licence
+
+    # The applicant's own route agrees, which is what the acceptance run checks.
+    resumed = client.get(
+        f"/bff/supplier/legal-entity/documents/{document['document_id']}/content",
+        params={"disposition": "inline"},
+    )
+    assert resumed.status_code == 200, resumed.text
+    assert resumed.content == licence
+
+    # And a corrupted read is still refused: durability must not have traded away
+    # the hash check that makes the stored bytes evidence rather than a blob.
+    with pytest.raises(ValueError) as corrupted:
+        rebuilt.read_verified(storage_key, "0" * 64)
+    assert str(corrupted.value) == "DOCUMENT_INTEGRITY_FAILED"
+
+    # The falsification that makes the reads above mean something: the bytes come
+    # from that row and from nowhere else. Remove the row and the document is gone.
+    # If the read were quietly falling back to a file still lying in the container,
+    # this is the assertion that would catch it -- and it is exactly the file the
+    # next deployment would have deleted.
+    with SessionLocal() as session:
+        session.delete(session.get(LegalEntityDocumentBlobRow, storage_key))
+        session.commit()
+    engine.dispose(close=True)
+    assert rebuilt.exists(storage_key) is False
+    with pytest.raises(ValueError) as vanished:
+        rebuilt.read_verified(storage_key, sha256)
+    assert str(vanished.value) == "DOCUMENT_BYTES_MISSING"
+    gone = client.get(f"/bff/supplier/legal-entity/documents/{document['document_id']}/content")
+    assert gone.status_code == 404
+    assert gone.json()["detail"] == "DOCUMENT_BYTES_MISSING"
+
+
+def test_an_explicit_volume_still_selects_the_filesystem_backend(tmp_path, monkeypatch):
+    """The database must be the default, never the only option.
+
+    The local acceptance lab and any deployment that really does mount a private
+    volume keep the filesystem backend; forcing private bytes into the database
+    everywhere would be a change nobody asked for.
+    """
+    volume = tmp_path / "mounted_volume"
+    monkeypatch.setattr(document_store, "root", None)
+    monkeypatch.setenv("GO_SUPPLIER_DOCUMENT_DIR", str(volume))
+    assert document_store._uses_database() is False
+
+    licence = _png(color=(3, 3, 200))
+    stored = document_store.persist(licence, "licence.png", "image/png")
+    assert any(p.is_file() for p in volume.rglob("*"))
+    assert document_store.read_verified(stored.storage_key, stored.sha256) == licence
