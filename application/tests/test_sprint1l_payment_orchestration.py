@@ -3,6 +3,7 @@ from go_hotel.db.models import PaymentRow, PaymentOrchestrationRow, EventRow
 from go_hotel.db.session import SessionLocal
 from go_hotel.connectors.mock_hotel import connector
 from go_hotel.payments.mock import payment_provider
+from go_hotel.repositories.sql import repo
 
 
 def seed(client, token="pm_success"):
@@ -59,6 +60,33 @@ def test_ambiguous_supplier_booking_does_not_void_authorization(client):
     with SessionLocal() as s:
         p=s.scalar(select(PaymentRow).where(PaymentRow.order_id==order["order_id"]))
         assert p.status=="AUTHORIZED"
+
+
+def test_rejected_supplier_lookup_after_unknown_result_voids_original_authorization(client):
+    order,pay=seed(client)
+    connector.ambiguous_book=True
+    first=client.post(f"/internal/v1/orders/{order['order_id']}/confirm")
+    assert first.status_code==503
+    op=next(x for x in repo.recoverable_operations() if x["operation_type"]=="SUPPLIER_BOOK" and x["aggregate_id"]==order["order_id"])
+    original_book_calls=connector.book_calls
+
+    connector.ambiguous_book=False
+    connector._rejected_bookings.add(op["operation_id"])
+
+    retried=client.post(f"/internal/v1/orders/{order['order_id']}/confirm")
+    assert retried.status_code==200
+    assert retried.json()["data"]["status"]=="FAILED"
+    assert payment_provider.capture_calls==0
+    assert payment_provider.void_calls==1
+    assert connector.book_calls==original_book_calls
+
+    current=client.get(f"/v1/orders/{order['order_id']}").json()["data"]
+    assert current["status"]=="FAILED"
+    with SessionLocal() as s:
+        p=s.scalar(select(PaymentRow).where(PaymentRow.order_id==order["order_id"]))
+        assert p.status=="VOIDED"
+        events=[e.event_type for e in s.scalars(select(EventRow).where(EventRow.aggregate_id==order["order_id"]).order_by(EventRow.occurred_at)).all()]
+        assert events.count("BOOKING_FAILED_NO_CHARGE")==1
 
 
 def test_capture_failure_after_supplier_booking_moves_to_reconciliation(client):
