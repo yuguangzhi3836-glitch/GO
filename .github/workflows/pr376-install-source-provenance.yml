@@ -1,0 +1,37 @@
+name: PR376 install source provenance
+
+on:
+  push:
+    branches:
+      - chenzhenxi/pr376-candidate-admission-20261003
+
+permissions:
+  contents: read
+
+jobs:
+  install-source-proof:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Ensure canonical main ref is present
+        run: git fetch --no-tags --filter=blob:none origin "+refs/heads/main:refs/remotes/origin/main"
+      - name: Prove installer runtime source is canonical
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/pr376-install-source-proof"
+          python control-plane/command-center-canonical-provenance-v1/command-center/go-canonical-provenance             install-source             --repository "$GITHUB_WORKSPACE"             --source-commit 7e7aedd556eac986210f1a5474c7b31e04d37a29             --source-tree 4a24e552f82d699a8e9cab555087e4c1db23f561             --runtime-dir "$GITHUB_WORKSPACE/hk-staging/source/executor/runtime"             --expect PASS             --out "$out"
+          cat "$out/CANONICAL_PROVENANCE.json"
+          python - "$out/CANONICAL_PROVENANCE.json" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          assert d["verdict"]=="PASS",d["refusal"]
+          assert d["phase"]=="INSTALL_SOURCE"
+          assert d["canonical_commit"]=="7e7aedd556eac986210f1a5474c7b31e04d37a29"
+          assert d["authorized_deploy_commit"]=="7e7aedd556eac986210f1a5474c7b31e04d37a29"
+          assert d["source_tree"]=="4a24e552f82d699a8e9cab555087e4c1db23f561"
+          print("INSTALL_SOURCE_PROOF=PASS")
+          PY
