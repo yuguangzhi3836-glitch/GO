@@ -33,6 +33,8 @@ class GoodHotelStandardService:
    row=s.get(GoodHotelStandardVersionRow,version_id)
    if not row:raise ValueError('GOOD_HOTEL_STANDARD_NOT_FOUND')
    if row.requested_by==actor:raise ValueError('GOOD_HOTEL_STANDARD_MAKER_CHECKER_REQUIRED')
+   if row.state=='SUPERSEDED':raise ValueError('GOOD_HOTEL_STANDARD_SUPERSEDED_VERSION_REACTIVATION_FORBIDDEN')
+   if row.state=='ACTIVE':return out(row)
    for old in s.scalars(select(GoodHotelStandardVersionRow).where(GoodHotelStandardVersionRow.state=='ACTIVE')).all():old.state='SUPERSEDED';old.retired_at=now();self._event(s,old,'STANDARD_SUPERSEDED',actor,{'replacement_id':version_id})
    row.state='ACTIVE';row.approved_by=actor;row.effective_at=now();self._event(s,row,'STANDARD_ACTIVATED',actor,{});s.commit();return out(row)
  def status(self):
