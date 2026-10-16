@@ -7,7 +7,7 @@ from test_hotel_direct_submission_full_app import full_application
 from test_hotel_direct_submission_publication import publishing
 from test_hotel_direct_submission_review import ready
 from test_hotel_direct_submission_verification import setup
-from registration_terms_test_support import approved_terms_fixture, synthetic_mail_runtime, with_verification
+from registration_terms_test_support import approved_terms_fixture, synthetic_mail_runtime, supplier_identifiers, with_verification
 
 @pytest.mark.parametrize('audience',['consumer','supplier'])
 def test_shipped_unapproved_bodies_cannot_register(full_application,audience):
@@ -18,7 +18,7 @@ def test_shipped_unapproved_bodies_cannot_register(full_application,audience):
     assert policy['documents']
     payload={'email':'blocked@example.test','password':secrets.token_urlsafe(24),'accepted_terms':True,
              'term_versions':policy.get('terms',policy['versions']),'term_hashes':policy['term_hashes']}
-    if audience=='supplier':payload.update(organization_name='测试主体',contact_name='测试联系人')
+    if audience=='supplier':payload.update(organization_name='测试主体',**supplier_identifiers(payload))
     endpoint='/v1/consumer/auth/register' if audience=='consumer' else '/bff/auth/supplier/register'
     with factory() as session:before=session.scalar(select(func.count()).select_from(IdentityUserRow))
     response=client.post(endpoint,json=payload)
@@ -33,7 +33,7 @@ def test_changed_body_hash_cannot_create_account(full_application,monkeypatch,au
     policy=client.get(route).json()['data']
     payload={'email':'changed@example.test','password':secrets.token_urlsafe(24),'accepted_terms':True,
              'term_versions':policy['versions'],'term_hashes':{k:'0'*64 for k in policy['term_hashes']}}
-    if audience=='supplier':payload.update(organization_name='测试主体',contact_name='测试联系人')
+    if audience=='supplier':payload.update(organization_name='测试主体',**supplier_identifiers(payload))
     endpoint='/v1/consumer/auth/register' if audience=='consumer' else '/bff/auth/supplier/register'
     response=client.post(endpoint,json=payload)
     assert response.status_code==409 and 'CONTENT_MISMATCH' in response.json()['detail']
@@ -80,15 +80,27 @@ def test_approved_terms_cannot_open_registration_without_verified_delivery_runti
     route='/v1/consumer/auth/registration' if audience=='consumer' else '/bff/auth/supplier/registration-terms'
     policy=client.get(route).json()['data']
     assert policy['acceptance_enabled'] is True
+    if audience=='supplier':
+        # Owner decision, superseding frozen decision D-01: supplier sign-up is now
+        # gated on exactly the same delivery runtime the consumer door is, because
+        # it collects an email code *and* an SMS code before the account exists.
+        assert policy['enabled'] is False
+        gate=policy['release_gate']['registration_verification']
+        assert gate['required'] is True and gate['status']=='NOT_READY'
+        assert gate['reason']=='REGISTRATION_VERIFICATION_NOT_CONFIGURED'
+        payload={'email':'verification-blocked@example.test','password':secrets.token_urlsafe(24),
+                 'accepted_terms':True,'term_versions':policy['versions'],'term_hashes':policy['term_hashes'],
+                 'organization_name':'测试主体',**supplier_identifiers({'email':'verification-blocked@example.test'})}
+        response=client.post('/bff/auth/supplier/register',json=payload)
+        assert response.status_code==503,response.text
+        assert response.json()['detail']=='REGISTRATION_VERIFICATION_NOT_READY'
+        return
     assert policy['enabled'] is False
     verification=policy['release_gate']['registration_verification']
     assert verification == {'required':True,'implemented':False,'status':'BLOCKED',
                             'reason':'LIVE_EMAIL_OR_PHONE_VERIFICATION_EVIDENCE_REQUIRED'}
     payload={'email':'verification-blocked@example.test','password':secrets.token_urlsafe(24),
              'accepted_terms':True,'term_versions':policy['versions'],'term_hashes':policy['term_hashes']}
-    if audience=='supplier':
-        payload.update(organization_name='测试主体',contact_name='测试联系人')
-    endpoint='/v1/consumer/auth/register' if audience=='consumer' else '/bff/auth/supplier/register'
-    response=client.post(endpoint,json=payload)
+    response=client.post('/v1/consumer/auth/register',json=payload)
     assert response.status_code==503
     assert response.json()['detail']=='REGISTRATION_VERIFICATION_NOT_READY'

@@ -58,7 +58,7 @@ def test_separate_decisions_required_before_mail_and_atomic_registration(client,
     body=payload(client,'consumer','consent@example.test')
     bad={k:v for k,v in body.items() if k not in ('password','registration_decisions')}|{'audience':'consumer'}
     assert client.post('/v1/registration/challenges',json=bad).status_code==422
-    assert delivery==[]
+    assert delivery['email']==[] and delivery['sms']==[]
     b=send(client,delivery,email='consent@example.test')
     assert client.post('/v1/consumer/auth/register',json=b|{'registration_decisions':{}}).status_code==409
     with SessionLocal() as s:assert s.scalar(select(func.count()).select_from(Decision))==0

@@ -5,7 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from go_hotel.db.session import SessionLocal
 from go_hotel.db.models import IdentityUserRow, ConsumerProfileRow, TravelerProfileRow, ConsumerPaymentMethodRow, ConsumerWalletRow, AuditEventRow
-from go_hotel.security.service import identity_service, Principal
+from go_hotel.security.service import identity_service, Principal, conflicting_identifier
 from go_hotel.security.crypto import encrypt_secret, decrypt_secret, hash_password
 from go_hotel.domain.models import new_id
 
@@ -22,9 +22,14 @@ class ConsumerService:
                 if verification_proof is not None:
                     from go_hotel.services.registration_verification import consume
                     consume(s, verification_proof, user_id)
-                if s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==email)):
+                # The consumer's address is also its username, exactly as the
+                # migration that added the `email` column backfilled it, so both
+                # columns are checked and both are written. The three login
+                # identifiers share one namespace, so a supplier who already took
+                # this address by username is refused here too.
+                if conflicting_identifier(s, username=email, email=email):
                     raise ValueError("EMAIL_ALREADY_REGISTERED")
-                s.add(IdentityUserRow(user_id=user_id,username=email,password_hash=hash_password(password),actor_type="CONSUMER",supplier_id=None,roles=["CONSUMER"],status="ACTIVE",token_version=1,created_at=t,updated_at=t))
+                s.add(IdentityUserRow(user_id=user_id,username=email,email=email,password_hash=hash_password(password),actor_type="CONSUMER",supplier_id=None,roles=["CONSUMER"],status="ACTIVE",token_version=1,created_at=t,updated_at=t))
                 s.flush()
                 s.add_all([
                     ConsumerProfileRow(user_id=user_id,go_id=go_id_for(user_id),email=email,display_name=display_name,phone_ciphertext=encrypt_secret(phone) if phone else None,locale="zh-CN",status="ACTIVE",created_at=t,updated_at=t),
@@ -34,7 +39,7 @@ class ConsumerService:
                     s.add(AuditEventRow(audit_id=new_id("aud"),actor_id=user_id,actor_type="CONSUMER",supplier_id=None,roles=["CONSUMER"],session_id=None,action="CONSUMER_REGISTRATION_TERMS_ACCEPTED",resource_type="CONSUMER_REGISTRATION",resource_id=user_id,request_id=registration_audit.get("request_id"),client_ip=registration_audit.get("client_ip"),http_method="POST",path="/v1/consumer/auth/register",before_state=None,after_state={"registration_state":"ACCOUNT_CREATED"},decision_id=None,evidence_id=None,approval_id=None,metadata_json={"term_versions":registration_audit["term_versions"],"term_hashes":registration_audit.get("term_hashes",{}),"accepted_once":True,"personal_vault_opt_in":False,"email_verified":verification_proof is not None,"verification_challenge_id":verification_proof["challenge_id"] if verification_proof else None},created_at=t))
         except IntegrityError:
             with SessionLocal() as s:
-                if s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==email)):
+                if conflicting_identifier(s, username=email, email=email):
                     raise ValueError("EMAIL_ALREADY_REGISTERED") from None
             raise
         return self.profile_by_user(user_id)

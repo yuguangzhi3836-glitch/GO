@@ -15,7 +15,7 @@ PERMISSIONS = {
     "FINANCE": {"supplier:read","supplier:finance"},
     "REVIEW_MANAGER": {"supplier:read","supplier:risk","supplier:review"},
     "READ_ONLY": {"supplier:read"},
-    "GO_GOVERNANCE": {"admin:read","admin:orders","admin:trust","admin:finance","admin:connector","admin:rules","admin:approve"},
+    "GO_GOVERNANCE": {"admin:read","admin:orders","admin:trust","admin:finance","admin:connector","admin:rules","admin:approve","admin:onboarding_review"},
     "GO_ORDER_OPS": {"admin:read","admin:orders"},
     "GO_TRUST": {"admin:read","admin:trust"},
     "GO_FINANCE": {"admin:read","admin:finance"},

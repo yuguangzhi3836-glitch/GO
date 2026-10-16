@@ -11,11 +11,77 @@ export class ApiClient{
   async authPolicy(){return this.raw('/bff/auth/policy',{},false)}
   async login(username,password,totp_code=null){await this.raw('/bff/auth/login',{method:'POST',body:{username,password,totp_code,expected_actor_type:this.expectedActor}},false);return this.me()}
   async supplierRegistrationTerms(){return this.raw('/bff/auth/supplier/registration-terms',{},false)}
-  async supplierRegister(body){const registration=unwrap(await this.raw('/bff/auth/supplier/register',{method:'POST',body},false));const profile=unwrap(await this.me());return {data:{...profile,registration}}}
+  // One challenge per channel; the sign-up form issues both, then spends both.
+  async registrationChallenge(body){return this.raw('/v1/registration/challenges',{method:'POST',body},false)}
+  async recoveryChallenge(body){return this.raw('/bff/auth/recovery/challenge',{method:'POST',body},false)}
+  async recoveryUsername(body){return this.raw('/bff/auth/recovery/username',{method:'POST',body},false)}
+  async recoveryPassword(body){return this.raw('/bff/auth/recovery/password',{method:'POST',body},false)}
+  async supplierRegister(body){const registration=unwrap(await this.raw('/bff/auth/supplier/register',{method:'POST',body},false));let profile=null;try{profile=unwrap(await this.me())}catch{}return {data:{...profile,registration}}}
   async supplierOnboarding(){return this.request('/bff/supplier/onboarding')}
+  async supplierLegalEntity(){return this.request('/bff/supplier/legal-entity')}
+  async saveSupplierLegalEntity(body){return this.request('/bff/supplier/legal-entity',{method:'PUT',body})}
+  async supplierDocuments(scope=null){return this.request('/bff/supplier/legal-entity/documents'+(scope?'?scope='+encodeURIComponent(scope):''))}
+  async supplierDocumentHistory(documentType,scope=null){return this.request('/bff/supplier/legal-entity/document-history?document_type='+encodeURIComponent(documentType)+(scope?'&scope='+encodeURIComponent(scope):''))}
+  // Hotel claim: search, read the saved claim, save it. The hotel id is an opaque
+  // option value produced by search; no screen ever asks a human to type one.
+  async hotelSearch(q,city=null,limit=10){const p=new URLSearchParams();if(q)p.set('q',q);if(city)p.set('city',city);p.set('limit',String(limit));return this.request('/bff/supplier/hotel/search?'+p.toString())}
+  async supplierHotelClaim(){return this.request('/bff/supplier/hotel/claim')}
+  async saveSupplierHotelClaim(body){return this.request('/bff/supplier/hotel/claim',{method:'PUT',body})}
+  // multipart/form-data: the browser owns the boundary, so Content-Type must NOT
+  // be set, and the file must NOT be JSON-stringified.
+  async uploadSupplierDocument(fields,file){const fd=new FormData();fd.append('file',file);for(const [k,v] of Object.entries(fields||{})){if(v!==null&&v!==undefined&&v!=='')fd.append(k,String(v))}return this.uploadForm('/bff/supplier/legal-entity/documents',fd)}
+  async uploadForm(path,formData){
+    const csrfAtStart=this.csrf();
+    const send=async()=>{const headers={'X-Request-ID':requestId(),'X-GO-Session':'console'};
+      if(this.expectedActor)headers['X-GO-Actor']=this.expectedActor;
+      const c=this.csrf();if(c)headers['X-CSRF-Token']=c;
+      const res=await fetch(this.base+path,{method:'POST',headers,credentials:'same-origin',body:formData});
+      let data={};try{data=await res.json()}catch{}
+      if(!res.ok){const e=new Error(data.detail||data.error?.code||`HTTP_${res.status}`);e.status=res.status;e.payload=data;if(data.detail==='ACTOR_CONTEXT_CHANGED')this.onSessionChanged?.();throw e}
+      return data};
+    try{return await send()}catch(e){
+      if(e.status!==401||!csrfAtStart)throw e;
+      // A 401 may be an expired access token: renew and retry the upload once.
+      if(this.csrf()===csrfAtStart)await this.refresh();
+      return send();
+    }
+  }
+  // Applicant private evidence is image OR PDF, so this cannot reuse requestBlob
+  // (which deliberately accepts only public image types).
+  async supplierDocumentBlob(documentId,disposition='attachment'){
+    const csrfAtStart=this.csrf();
+    const send=async()=>{const headers={'X-Request-ID':requestId(),'X-GO-Session':'console'};
+      if(this.expectedActor)headers['X-GO-Actor']=this.expectedActor;
+      const res=await fetch(this.base+`/bff/supplier/legal-entity/documents/${encodeURIComponent(documentId)}/content?disposition=${encodeURIComponent(disposition)}`,{headers,credentials:'same-origin'});
+      if(res.ok){const type=res.headers.get('Content-Type')||'';
+        if(!/^(application\/pdf|image\/(jpeg|png))(?:;|$)/i.test(type))throw new Error('DOCUMENT_TYPE_UNSUPPORTED');
+        return {blob:await res.blob(),type}}
+      let data={};try{data=await res.json()}catch{}
+      const e=new Error(data.detail||`HTTP_${res.status}`);e.status=res.status;throw e};
+    try{return await send()}catch(e){if(e.status!==401||!csrfAtStart)throw e;
+      if(this.csrf()===csrfAtStart)await this.refresh();return send()}
+  }
   async saveSupplierOnboardingProfile(body){return this.request('/bff/supplier/onboarding/profile',{method:'PUT',body})}
   async submitSupplierOnboardingProfile(){return this.request('/bff/supplier/onboarding/profile/submit',{method:'POST',body:{}})}
-  async submitSupplierOnboardingContract(body){return this.request('/bff/supplier/onboarding/contract',{method:'POST',body})}
+  // The contract step (Batch 6). Reading the template is a blob fetch because the
+  // browser has to *display* the PDF the applicant is agreeing to; the sha256 in the
+  // state call is the hash of exactly these bytes, and it is sent back on confirm.
+  async supplierContract(){return this.request('/bff/supplier/onboarding/contract')}
+  async confirmSupplierContract(body){return this.request('/bff/supplier/onboarding/contract/confirm',{method:'POST',body})}
+  async supplierContractTemplateBlob(disposition='inline'){
+    const csrfAtStart=this.csrf();
+    const send=async()=>{const headers={'X-Request-ID':requestId(),'X-GO-Session':'console'};
+      if(this.expectedActor)headers['X-GO-Actor']=this.expectedActor;
+      const res=await fetch(this.base+`/bff/supplier/onboarding/contract/template?disposition=${encodeURIComponent(disposition)}`,{headers,credentials:'same-origin'});
+      if(res.ok){const type=res.headers.get('Content-Type')||'';
+        if(!/^application\/pdf(?:;|$)/i.test(type))throw new Error('CONTRACT_TEMPLATE_UNAVAILABLE');
+        return {blob:await res.blob(),type}}
+      let data={};try{data=await res.json()}catch{}
+      const e=new Error(data.detail||`HTTP_${res.status}`);e.status=res.status;throw e};
+    try{return await send()}catch(e){if(e.status!==401||!csrfAtStart)throw e;
+      if(this.csrf()===csrfAtStart)await this.refresh();return send()}
+  }
+  async supplierMyHotel(){return this.request('/bff/supplier/my-hotel')}
   async startMfaEnrollment(username,password){return this.raw('/bff/auth/mfa/enroll/start',{method:'POST',body:{username,password}},false)}
   async confirmMfaEnrollment(enrollment_token,code){await this.raw('/bff/auth/mfa/enroll/confirm',{method:'POST',body:{enrollment_token,code}},false);return this.me()}
   async refresh(){this.refreshPending ||= this.raw('/bff/auth/refresh',{method:'POST'},false).finally(()=>{this.refreshPending=null});return this.refreshPending}

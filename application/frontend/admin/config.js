@@ -23,3 +23,7 @@ window.GO_CONSOLE.nav.splice(1,0,{route:'/r8-readiness',label:'R8 预发布就�
 window.GO_CONSOLE.nav.splice(2,0,{route:'/hotel-page-factory',label:'酒店数字基础设施',custom:'adminHotelPageFactory'});
 
 window.GO_CONSOLE.nav.push({route:"/ride-policy-operations",label:"用车取消政策",custom:"adminRidePolicyOperations"});
+
+// Batch 5: the reviewer console for supplier onboarding. It sits next to the
+// supplier registry, because the two answer the same question from two sides.
+window.GO_CONSOLE.nav.push({route:"/onboarding-review",label:"入驻审核",custom:"adminOnboardingReview"});

@@ -348,6 +348,75 @@ class HotelAutoPageFactoryService:
             return {'hotel_id':hotel_id,'go_direct_state':p.go_direct_state,'contacts':[out(x) for x in cs],
                     'outreach_readiness':{'email_candidates':sum(1 for x in cs if x.channel=='EMAIL' and not x.do_not_contact and x.marketing_eligibility=='ELIGIBLE_FOR_POLICY_CHECK'),'phone_candidates':sum(1 for x in cs if x.channel=='PHONE' and not x.do_not_contact),'automatic_send_allowed':False,'reason':'JURISDICTION_POLICY_GATE_REQUIRED'}}
 
+    def claim_name_lock(self,s,name):
+        """Serialize "does this hotel already exist" decisions across claims.
+
+        Two reviewers approving two different suppliers' claims for the same new
+        hotel name must not both conclude "not in the catalogue yet" and each mint
+        a canonical hotel. Same mechanism as ``_ingest_locks``: a
+        transaction-scoped advisory lock, released by commit or rollback.
+        """
+        if s.bind.dialect.name=='postgresql':
+            key=int.from_bytes(hashlib.sha256(('go.hotel.catalog:name:'+_norm_text(name)).encode()).digest()[:8],'big',signed=True)
+            s.execute(select(func.pg_advisory_xact_lock(key)))
+
+    def publish_hotel_state(self,s,profile,actor):
+        """Recompose the page after a caller changed hotel state in this transaction.
+
+        GO Direct state is part of the page payload and the trust block, so a
+        caller that flips it without republishing leaves a page that contradicts
+        the database.
+        """
+        return self._publish_version(s,profile,actor)
+
+    def materialize_claim_hotel(self,s,*,hotel_id,supplier_id,payload,actor):
+        """Create-or-find the canonical hotel for an APPROVED onboarding claim.
+
+        Runs inside the caller's transaction on purpose: the applicant's case, the
+        canonical hotel, the source snapshot and the GO Direct relation must all
+        become true together or not at all. A hotel only ever materializes from a
+        human reviewer's explicit approval in the supplier onboarding service,
+        never from an applicant submitting a claim.
+
+        Idempotent by construction: ``hotel_id`` is derived from the case, and the
+        source snapshot is keyed by (source_key, external_hotel_id, payload_hash),
+        so a retry after a partial failure finds what it already wrote.
+
+        The page is NOT published here: the caller sets the hotel's GO Direct state
+        and calls :meth:`publish_hotel_state`, so one approval produces one page
+        version that already tells the truth.
+        """
+        catalog_scope.require_hotel(s,hotel_id)
+        p=s.get(HotelCanonicalProfileRow,hotel_id)
+        name=str(payload.get('name') or hotel_id)
+        if p is None:
+            t=now()
+            p=HotelCanonicalProfileRow(hotel_id=hotel_id,slug=self._unique_slug(s,name,hotel_id),
+                canonical_json={},field_provenance_json={},source_snapshot_ids_json=[],
+                completeness_bps=0,go_direct_state='NOT_REGISTERED',page_state='DRAFT',version=0,
+                created_at=t,updated_at=t)
+            s.add(p);s.flush()
+        source_key=f'onboarding:{supplier_id}'
+        external_hotel_id=f'claim:{hotel_id}'
+        payload_hash=sha(payload)
+        existing=s.scalar(select(HotelContentSourceSnapshotRow).where(
+            HotelContentSourceSnapshotRow.source_key==source_key,
+            HotelContentSourceSnapshotRow.external_hotel_id==external_hotel_id,
+            HotelContentSourceSnapshotRow.payload_hash==payload_hash))
+        if existing is None:
+            t=now()
+            snapshot=HotelContentSourceSnapshotRow(content_source_snapshot_id=ident('hcss'),
+                source_key=source_key,source_type='HOTEL_OFFICIAL_SUBMISSION',external_hotel_id=external_hotel_id,
+                source_url=None,rights_status='HOTEL_SUBMITTED',confidence_bps=10000,payload_json=payload,
+                payload_hash=payload_hash,canonical_hotel_id=p.hotel_id,observed_at=t,created_at=t)
+            s.add(snapshot);s.flush()
+            self._upsert_contacts(s,p.hotel_id,snapshot,
+                {'source_type':'HOTEL_OFFICIAL_SUBMISSION','source_url':None,'payload':payload,'confidence_bps':10000})
+            self._merge(s,p)
+            self._event(s,p.hotel_id,'HOTEL_ONBOARDING_CLAIM_MATERIALIZED',
+                {'supplier_id':supplier_id,'snapshot_id':snapshot.content_source_snapshot_id},actor)
+        return p
+
     def register_for_go_direct(self,hotel_id,supplier_id,actor,b):
         with transaction(SessionLocal) as s:
             catalog_scope.scope_lock(s)
@@ -369,7 +438,7 @@ class HotelAutoPageFactoryService:
             if b.get('decision') not in {'APPROVE','REJECT'}:raise ValueError('INVALID_REGISTRATION_DECISION')
             p=s.get(HotelCanonicalProfileRow,r.hotel_id);r.reviewed_by=actor;r.reviewed_at=now()
             if b['decision']=='REJECT':
-                r.state='REJECTED';p.go_go_direct_state='NOT_REGISTERED';self._event(s,p.hotel_id,'HOTEL_REGISTRATION_REJECTED',{'registration_direct_id':registration_direct_id,'reason':b.get('reason')},actor)
+                r.state='REJECTED';p.go_direct_state='NOT_REGISTERED';self._event(s,p.hotel_id,'HOTEL_REGISTRATION_REJECTED',{'registration_direct_id':registration_direct_id,'reason':b.get('reason')},actor)
             else:
                 r.state='APPROVED';p.go_direct_state='GO_DIRECT_VERIFIED'
                 supplement=r.official_supplement_json or {}

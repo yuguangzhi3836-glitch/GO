@@ -1,0 +1,450 @@
+/* GO 合作伙伴平台 · 酒店入驻工作区
+ * ---------------------------------------------------------------------------
+ * Independent full-width workspace. This surface deliberately does NOT reuse
+ * the 420px supplier login card: the login card is for authentication only.
+ *
+ * Layout follows SUPPLIER_WEB_UX_CONTRACT_V1 (§2/§3/§4/§5/§13):
+ *   >=1200px  sidebar 264px + topbar 68px + content(max 1560) + main/aside grid
+ *   900-1199  sidebar folds into a horizontal step rail; content single column
+ *   <900px    one column, 390px is the anchor; primary action takes the full row
+ *
+ * The page CSP is `style-src 'self'`, so every gap/visibility toggle MUST be a
+ * real class. An inline style="..." attribute is silently dropped by the browser.
+ * ------------------------------------------------------------------------- */
+
+:root{
+  /* Same tokens the supplier console and admin console already use, so the
+     onboarding surface reads as the same product rather than a separate app. */
+  --nav:#071a3a; --nav-2:#0d2547; --nav-active:#15315c; --nav-ink:#b7c2d1;
+  --accent:#ff4a3d;
+  --bg:#f7f8fa; --panel:#ffffff; --ink:#111827; --muted:#6b7686;
+  --line:#e8edf3; --soft:#f2f4f7; --line-strong:#d0d5dd;
+  --info:#2563eb; --ok:#138565; --warn:#f59e0b; --bad:#ef4444;
+  --ok-bg:#edf8f4; --warn-bg:#fff8e6; --bad-bg:#fff0f0; --info-bg:#eff4ff;
+  --radius:12px; --radius-sm:8px; --field-h:44px; --shell-side:264px;
+  --content-max:1560px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font:15px/1.55 Inter,"PingFang SC",ui-sans-serif,system-ui,-apple-system,
+  "Segoe UI","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--info);text-decoration:none}
+a:hover{text-decoration:underline}
+.root{min-height:100vh}
+
+/* =========================================================================
+ * 1. Shell — sidebar / main / topbar / content
+ * ======================================================================= */
+.shell{min-height:100vh;display:grid;grid-template-columns:var(--shell-side) minmax(0,1fr)}
+.main{min-width:0;display:flex;flex-direction:column}
+
+/* ---------- 1.1 Sidebar: brand area + step navigation + account ---------- */
+.side{background:var(--nav);color:#fff;display:flex;flex-direction:column;
+  gap:20px;padding:20px 14px 16px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.side-brand{display:flex;align-items:center;gap:11px;padding:2px 8px 16px;
+  border-bottom:1px solid rgba(255,255,255,.12)}
+.side-brand .brandmark{font-size:23px;font-weight:900;letter-spacing:-.02em;color:#fff;
+  line-height:1;display:flex;align-items:center}
+.side-brand .brandmark i{display:inline-block;width:7px;height:5px;margin:0 2px 3px;
+  background:var(--accent);border-radius:1px}
+.side-brand .brandtext{display:flex;flex-direction:column;gap:1px;min-width:0}
+.side-brand .brandtext b{font-size:13.5px;font-weight:700;letter-spacing:.01em;white-space:nowrap}
+.side-brand .brandtext span{font-size:11px;color:var(--nav-ink);white-space:nowrap}
+
+.side-nav{display:flex;flex-direction:column;gap:8px;flex:1}
+.side-nav-title{margin:0 0 2px;padding:0 8px;font-size:11px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:#7f8ea6}
+.step-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.step-item a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);
+  color:var(--nav-ink);font-size:13.5px;text-decoration:none;line-height:1.35}
+.step-item a:hover{background:var(--nav-2);color:#fff;text-decoration:none}
+.step-item.is-current a{background:var(--nav-active);color:#fff;font-weight:650}
+.step-item.is-done a{color:#dfe6ee}
+.step-item.is-locked a{color:#66748c;cursor:default}
+.step-item.is-locked a:hover{background:transparent;color:#66748c}
+.step-dot{flex:0 0 22px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+  font-size:11.5px;font-weight:700;border:1.5px solid rgba(255,255,255,.28);color:#cfd8e3}
+.step-item.is-current .step-dot{background:#fff;border-color:#fff;color:var(--nav)}
+.step-item.is-done .step-dot{background:transparent;border-color:#4f9d7c;color:#7fd0aa}
+
+.side-foot{border-top:1px solid rgba(255,255,255,.12);padding-top:14px;display:flex;
+  flex-direction:column;gap:10px}
+.side-user{display:flex;flex-direction:column;gap:2px;padding:0 8px;min-width:0}
+.side-user b{font-size:12.5px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+.side-user span{font-size:11px;color:var(--nav-ink)}
+
+/* ---------- 1.2 Topbar: breadcrumb + page title + status + context ---------- */
+.topbar{height:68px;background:var(--panel);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  padding:0 32px;position:sticky;top:0;z-index:10}
+.topbar-title{min-width:0;display:flex;flex-direction:column;gap:1px}
+.topbar-title h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.crumb b{font-weight:600;color:var(--muted)}
+.topbar-side{display:flex;align-items:center;gap:12px;flex:0 0 auto}
+.topbar-side .account{font-size:12.5px;color:var(--muted);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:260px}
+.spacer{flex:1}
+
+/* ---------- 1.3 Content workspace ---------- */
+.content{flex:1;width:100%;max-width:var(--content-max);padding:24px 32px 40px;
+  display:flex;flex-direction:column;gap:20px}
+.page-lede{margin:0;color:var(--muted);font-size:13.5px;line-height:1.6;max-width:960px}
+.work-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:26px;align-items:start}
+/* The main column owns its own rhythm, so the screens never have to hand-place
+   `.mt-20` between siblings. The `> *` reset is declared at the END of this file
+   on purpose: at equal specificity the later rule wins, so a stray `.mt-20` on a
+   direct child cannot double the gap. */
+.work-main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.work-aside{display:flex;flex-direction:column;gap:14px;min-width:0;position:sticky;top:88px}
+
+/* =========================================================================
+ * 2. Cards and sections
+ * ======================================================================= */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px 22px;box-shadow:0 1px 2px rgba(16,24,40,.03)}
+.card h1{margin:0 0 6px;font-size:22px;letter-spacing:-.01em}
+.card h2{margin:0 0 12px;font-size:16px;font-weight:700;letter-spacing:-.01em}
+.card h3{margin:0 0 8px;font-size:14.5px;font-weight:700;color:var(--ink)}
+.card > p.lead{margin:0 0 14px;color:var(--muted);font-size:13.5px;line-height:1.6}
+.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  margin:0 0 4px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.section-head h2{margin:0}
+.section-head .section-note{font-size:12.5px;color:var(--muted)}
+.stack{display:grid;gap:14px}
+.stack.tight{gap:9px}
+.grid{display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
+.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:1000px){.grid.three{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){.grid.two,.grid.three{grid-template-columns:minmax(0,1fr)}}
+
+/* Sidebar card: used inside .work-aside only. Never a business container. */
+.aside-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 16px 17px}
+.aside-card h3{margin:0 0 10px;font-size:13.5px;font-weight:700}
+.aside-card p{margin:0 0 8px;font-size:12.5px;color:var(--muted);line-height:1.6}
+.aside-card p:last-child{margin-bottom:0}
+.aside-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.aside-list li{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--ink);
+  line-height:1.5}
+.aside-list .mark{flex:0 0 16px;width:16px;text-align:center;font-weight:700}
+.aside-list .done{color:var(--ok)}
+.aside-list .todo{color:var(--muted)}
+/* Segmented progress. A percentage-width fill would need an inline style
+   attribute, which the page CSP (`style-src 'self'`) silently drops. */
+.progress-segs{display:flex;gap:4px;margin:0 0 12px;max-width:420px}
+.progress-segs span{flex:1;height:6px;border-radius:999px;background:var(--soft)}
+.progress-segs span.on{background:var(--nav)}
+
+/* =========================================================================
+ * 3. Typography helpers
+ * ======================================================================= */
+.lead{color:var(--muted);font-size:13.5px;line-height:1.6}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+h1{letter-spacing:-.01em}
+
+/* =========================================================================
+ * 4. Form controls — ONE system for every input on this surface
+ * ======================================================================= */
+.field{display:grid;gap:7px;min-width:0}
+.field > label,.field-label{font-size:12.5px;font-weight:650;color:#475467;line-height:1.3}
+.field .req{color:var(--bad);margin-left:3px}
+.field .hint{font-size:12px;color:var(--muted);line-height:1.45}
+.field .err,.field-error{font-size:12px;color:var(--bad);line-height:1.45}
+
+/* Anything that behaves like a text field gets the same box. The selector used to
+   enumerate types (`input[type=text]`, `input[type=email]`, ...), and an attribute
+   selector does not match an input whose `type` attribute is simply absent — even
+   though the browser renders it as text. Six fields in this module are written
+   without a type attribute (the contact name, the hotel search query and city, and
+   the three new-hotel fields), so all six were falling through to the raw browser
+   default: 21px tall, 2px inset, no radius, 13.3px. Default IN, and opt out only
+   the three controls that genuinely need a different box. */
+input:not([type=checkbox]):not([type=radio]):not([type=file]),
+select,textarea{
+  width:100%;min-height:var(--field-h);padding:9px 12px;border:1px solid var(--line-strong);
+  border-radius:var(--radius-sm);background:#fff;color:var(--ink);font:inherit;
+  font-size:14px;line-height:1.4;appearance:none}
+textarea{min-height:96px;padding:11px 12px;resize:vertical}
+select{background-image:none;padding-right:32px}
+input::placeholder,textarea::placeholder{color:#9aa4b2}
+input:focus,select:focus,textarea:focus{outline:3px solid rgba(37,99,235,.28);
+  outline-offset:1px;border-color:var(--info)}
+input[aria-invalid=true],select[aria-invalid=true],textarea[aria-invalid=true]{
+  border-color:var(--bad);background:var(--bad-bg)}
+input:disabled,select:disabled,textarea:disabled{background:var(--soft);color:var(--muted);
+  cursor:not-allowed}
+input[type=file]{font-size:13px;min-height:var(--field-h);padding:9px 12px;border:1px dashed var(--line-strong);
+  border-radius:var(--radius-sm);background:#fcfdff;width:100%}
+/* Checkboxes and radios stay native — a custom control would need JavaScript to
+   remain accessible, which is a bad trade for a checkbox. They are pinned to the
+   design system instead: `accent-color` so the checked fill is the brand navy
+   rather than the browser's default blue, and an explicit `color` because Chrome
+   derives the *unchecked* border from `color`, which meant the same control
+   measured rgb(0,0,0) on two screens and rgb(107,118,134) on the third — it was
+   silently picking up whatever text colour happened to be inherited around it. */
+input[type=checkbox],input[type=radio]{accent-color:var(--nav);color:var(--ink);
+  flex:0 0 auto;width:auto;margin-top:3px}
+
+/* Two-column field grid. Short fields sit side by side; address and long text
+   take the whole row (SUPPLIER_WEB_UX_CONTRACT §5). */
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 22px;align-items:start}
+.form-grid > .span-2{grid-column:1 / -1}
+/* Inside a field grid the row gap already separates; the action row only needs
+   its own top border to sit a little closer. */
+.form-grid > .actionbar{margin-top:6px}
+@media(max-width:860px){.form-grid{grid-template-columns:minmax(0,1fr)}}
+
+fieldset.relations{border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;
+  margin:0;min-width:0}
+fieldset.relations legend{font-size:12.5px;font-weight:650;color:#475467;padding:0 6px}
+.rel{display:flex;gap:10px;align-items:flex-start;padding:9px 0;font-size:13.5px}
+.rel:not(:last-child){border-bottom:1px solid var(--soft)}
+.rel input{margin-top:3px;flex:0 0 auto}
+.rel small{display:block;color:var(--muted);font-size:12.5px;line-height:1.45}
+.checkline{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.5;
+  cursor:pointer}
+.checkline input{margin-top:3px;flex:0 0 auto;width:auto}
+
+/* =========================================================================
+ * 5. Buttons — one primary action per screen
+ * ======================================================================= */
+.btns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:var(--field-h);padding:9px 18px;border:1px solid var(--line-strong);
+  border-radius:var(--radius-sm);background:#fff;color:#344054;font:inherit;font-size:14px;
+  font-weight:600;cursor:pointer;white-space:nowrap;text-decoration:none}
+.btn:hover{border-color:#b3bccb;background:#fbfcfd;text-decoration:none}
+.btn.primary{background:var(--nav);border-color:var(--nav);color:#fff}
+.btn.primary:hover{background:#0e2a58;border-color:#0e2a58}
+.btn.danger{background:#fff;border-color:#f3c6c2;color:#b42318}
+.btn.danger:hover{background:var(--bad-bg);border-color:#f0b4ae}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--info);padding:8px 10px}
+.btn.ghost:hover{background:var(--soft);border-color:transparent}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{min-height:34px;padding:6px 13px;font-size:13px}
+.btn.block{width:100%}
+/* Inside the navy sidebar the default button is unreadable; give the sidebar its
+   own quiet treatment rather than restyling the global .btn. */
+.side .btn{background:transparent;border-color:rgba(255,255,255,.24);color:#dbe3ee;width:100%}
+.side .btn:hover{background:var(--nav-2);border-color:rgba(255,255,255,.34);color:#fff}
+.btn:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,
+textarea:focus-visible{outline:3px solid rgba(37,99,235,.28);outline-offset:2px}
+
+/* ---------- Action row: the single primary CTA lives here ----------
+   Deliberately NOT position:fixed. A fixed bar over a scrolling form hides the
+   very fields the person is filling in, and on 390px it would cover the whole
+   viewport once the keyboard is up. The row sits at the end of the form with a
+   real separator, so the primary action is unambiguous without overlaying. */
+.actionbar{display:flex;align-items:center;gap:12px;margin-top:24px;padding-top:18px;
+  border-top:1px solid var(--line)}
+/* The action row is normally preceded by fields, so its separator is doing real
+   work. When it is the first thing in a card there is nothing above it to separate
+   from, and the rule reads as a stray divider. */
+.card > .actionbar:first-child{margin-top:0;padding-top:0;border-top:0}
+.actionbar .actionbar-note{flex:1;min-width:0;font-size:12.5px;color:var(--muted);line-height:1.5}
+.actionbar .btns{flex:0 0 auto}
+@media(max-width:720px){
+  .actionbar{flex-direction:column;align-items:stretch;gap:10px}
+  .actionbar .actionbar-note{order:2}
+  .actionbar .btns{display:grid;grid-template-columns:minmax(0,1fr);width:100%}
+  .actionbar .btn{width:100%}
+}
+
+/* =========================================================================
+ * 6. Notices, pills, status
+ * ======================================================================= */
+.notice{border-radius:var(--radius-sm);padding:11px 13px;font-size:13px;line-height:1.55;
+  border:1px solid transparent;margin:0}
+.notice + .notice{margin-top:10px}
+.notice.info{background:var(--info-bg);border-color:#cddcf6;color:#20365e}
+.notice.error{background:var(--bad-bg);border-color:#f3c6c2;color:#7d1a15}
+.notice.ok{background:var(--ok-bg);border-color:#c3e5d2;color:#0e5b39}
+.notice.warn{background:var(--warn-bg);border-color:#f0dcb4;color:#6d4700}
+
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:650;
+  background:#eef1f6;color:var(--muted);white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:#9a6700}
+.pill.bad{background:var(--bad-bg);color:#c52a2a}
+.pill.neutral{background:#eef1f6;color:var(--muted)}
+.status{display:inline-flex;align-items:center;font-size:11.5px;font-weight:650;padding:4px 10px;
+  border-radius:999px;background:var(--soft);color:#475467;white-space:nowrap}
+.status.ok{background:var(--ok-bg);color:var(--ok)}
+.status.warn{background:var(--warn-bg);color:#9a6700}
+.status.bad{background:var(--bad-bg);color:#c52a2a}
+
+/* =========================================================================
+ * 7. Key/value facts, checklist, findings, upload
+ * ======================================================================= */
+.kv{display:grid;grid-template-columns:170px minmax(0,1fr);gap:8px 16px;font-size:13.5px;
+  margin:0;padding:0;border:0}
+.kv dt{color:var(--muted);font-size:12.5px;font-weight:600}
+.kv dd{margin:0;overflow-wrap:anywhere}
+@media(max-width:560px){.kv{grid-template-columns:minmax(0,1fr);gap:2px}
+  .kv dd{margin:0 0 8px}}
+
+.checklist{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.checklist li{display:flex;gap:10px;align-items:center;font-size:13.5px;min-height:32px}
+.checklist .mark{flex:0 0 18px;width:18px;text-align:center;font-weight:700}
+
+.finding{border:1px solid #f0dcb4;background:var(--warn-bg);border-radius:var(--radius-sm);
+  padding:12px 14px}
+.finding h4{margin:0 0 4px;font-size:13.5px;font-weight:700}
+.finding p{margin:0 0 9px;font-size:13px;line-height:1.5}
+.finding p:last-child{margin-bottom:0}
+
+.preview{background:#fcfdff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;display:grid;gap:10px}
+.preview img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:var(--radius-sm);
+  background:#fff}
+/* Sized by a class on purpose: an inline style attribute is dropped by the page
+   CSP (`style-src 'self'`), which would leave the frame with no height at all. */
+.contract-frame{width:100%;height:70vh;min-height:460px;border:1px solid var(--line);
+  border-radius:var(--radius-sm);background:#fff;display:block}
+.filefield{display:grid;gap:8px}
+.filefield .file-name{font-size:13px;color:var(--ink);overflow-wrap:anywhere}
+.filefield .file-meta{font-size:12px;color:var(--muted)}
+
+/* =========================================================================
+ * 8. Authentication screens (login / register)
+ * These two ARE allowed to be narrow: they are pure authentication.
+ * ======================================================================= */
+.auth{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) 520px;
+  background:var(--panel)}
+.auth-brand{background:var(--nav);color:#fff;padding:56px 56px 48px;display:flex;
+  flex-direction:column;gap:26px;position:relative;overflow:hidden}
+.auth-brand .brandmark{font-size:30px;font-weight:900;letter-spacing:-.02em;color:#fff;
+  display:flex;align-items:center}
+.auth-brand .brandmark i{display:inline-block;width:9px;height:6px;margin:0 3px 4px;
+  background:var(--accent);border-radius:1px}
+.auth-brand h2{margin:0;font-size:27px;font-weight:750;letter-spacing:-.02em;line-height:1.3}
+.auth-brand p{margin:0;color:var(--nav-ink);font-size:14px;line-height:1.75;max-width:430px}
+.auth-points{list-style:none;margin:auto 0 0;padding:0;display:grid;gap:14px;max-width:430px}
+.auth-points li{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;color:#dfe6ee;
+  line-height:1.55}
+.auth-points .mark{flex:0 0 20px;width:20px;height:20px;border-radius:50%;display:grid;
+  place-items:center;border:1.5px solid rgba(255,255,255,.3);font-size:11px;font-weight:700;
+  color:#dfe6ee}
+.auth-panel{display:flex;align-items:center;justify-content:center;padding:48px 40px;
+  overflow-y:auto}
+.auth-form{width:min(400px,100%);display:flex;flex-direction:column;gap:18px}
+.auth-form h1{margin:0;font-size:23px;font-weight:750;letter-spacing:-.01em}
+.auth-form .lead{margin:0}
+.auth-form .stack{gap:16px}
+@media(max-width:900px){
+  .auth{grid-template-columns:minmax(0,1fr)}
+  .auth-brand{padding:30px 22px 26px;gap:14px}
+  .auth-brand h2{font-size:21px}
+  .auth-brand p{font-size:13px}
+  .auth-points{display:none}
+  .auth-panel{padding:26px 20px 48px;align-items:flex-start}
+  .auth-form{width:100%}
+}
+/* Legacy centred shell kept for the single "wrong account type" refusal, which
+   is authentication-adjacent and has no workspace to render. */
+.center-screen{max-width:460px;margin:12vh auto;padding:0 20px}
+
+/* ---------- 8.1 Auth controls shared by login / register / recovery ----------
+   Every rule here is a real class: the page CSP is `style-src 'self'`, so an
+   inline style attribute would be dropped by the browser without a word. */
+.code-row,.pw-row{display:flex;gap:10px;align-items:stretch}
+.code-row > input,.pw-row > input{flex:1 1 auto;min-width:0}
+.code-row > .btn,.pw-row > .btn{flex:0 0 auto}
+
+/* The eye that reveals a password. `is-on` draws the slash across the same icon
+   element, so the button never reflows when it toggles. */
+.eye{position:relative;padding:9px 12px;min-width:60px;color:#475467}
+.eye.is-on::after{content:"";position:absolute;left:9px;right:9px;top:50%;height:2px;
+  border-radius:2px;background:currentColor;transform:rotate(-18deg)}
+
+.linkrow{display:flex;justify-content:flex-end}
+.btn.link{background:none;border:0;color:var(--info);font-weight:600;padding:4px 2px;
+  min-height:auto;cursor:pointer}
+.btn.link:hover{background:none;border:0;text-decoration:underline}
+
+/* The red list of everything still missing. It is clickable on purpose: each line
+   takes the person to the field it names, so the message and the fix are in the
+   same place. */
+.issues{border:1px solid #f3c6c2;background:var(--bad-bg);border-radius:var(--radius-sm);
+  padding:11px 13px;font-size:13px;line-height:1.6;color:#7d1a15}
+.issues b{display:block;margin-bottom:6px;font-weight:700}
+.issues ul{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+.issues li{display:flex;gap:8px}
+.issues li::before{content:"•";color:var(--bad);flex:0 0 auto}
+.issues .link{padding:0;font-size:13px;color:#7d1a15;font-weight:600;text-align:left;line-height:1.5}
+.issues .link:hover{color:#b42318}
+
+@media(max-width:560px){
+  .code-row,.pw-row{flex-wrap:wrap}
+  .code-row > input,.pw-row > input{flex:1 1 100%}
+  .code-row > .btn,.pw-row > .btn{width:100%}
+}
+
+/* =========================================================================
+ * 9. Spacing helpers (CSP forbids inline styles, so these are real classes)
+ * ======================================================================= */
+.mt-12{margin-top:12px} .mt-16{margin-top:16px} .mt-20{margin-top:20px} .mt-22{margin-top:22px}
+.mb-10{margin-bottom:10px} .mb-12{margin-bottom:12px}
+.hidden{display:none !important}
+.hr{height:1px;background:var(--line);margin:16px 0;border:0}
+/* Declared after the helpers so it wins at equal specificity (see §1.3). */
+.work-main > *{margin-top:0;margin-bottom:0}
+
+/* =========================================================================
+ * 10. Responsive — the three tiers (SUPPLIER_WEB_UX_CONTRACT §13)
+ * ======================================================================= */
+@media(max-width:1199px){
+  /* The sidebar becomes a horizontal rail above the content. Branding, the step
+     navigation and the account action all stay reachable; nothing is hidden
+     behind a hamburger, because a 5-step onboarding has no room for one. */
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .side{position:static;height:auto;flex-direction:row;align-items:center;gap:14px;
+    padding:10px 16px;overflow-x:auto;border-bottom:1px solid rgba(255,255,255,.12)}
+  .side-brand{border-bottom:0;padding:0 14px 0 0;flex:0 0 auto;
+    border-right:1px solid rgba(255,255,255,.14)}
+  .side-nav{flex-direction:row;align-items:center;gap:8px;flex:1 1 auto;min-width:0}
+  .side-nav-title{display:none}
+  .step-list{flex-direction:row;gap:6px;overflow-x:auto;scroll-snap-type:x proximity;
+    padding-bottom:2px}
+  .step-item{flex:0 0 auto;scroll-snap-align:start}
+  .step-item a{padding:7px 11px;background:rgba(255,255,255,.06);white-space:nowrap}
+  .step-item.is-current a{background:var(--nav-active)}
+  .step-item.is-locked a{background:transparent}
+  .side-foot{border-top:0;border-left:1px solid rgba(255,255,255,.14);padding:0 0 0 14px;
+    flex-direction:row;align-items:center;gap:12px;flex:0 0 auto}
+  .side-user{display:none}
+  .side .btn{width:auto}
+  .content{padding:22px 24px 36px}
+  .work-grid{grid-template-columns:minmax(0,1fr)}
+  /* Once the aside drops below the main column it is full-bleed, and a stack of
+     full-width 976px cards reads as a second page. Two up keeps it a sidebar. */
+  .work-aside{position:static;order:2;display:grid;align-items:start;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .topbar{padding:0 24px}
+}
+@media(max-width:720px){
+  .side{padding:9px 12px;gap:10px}
+  .side-brand{padding-right:10px}
+  .side-brand .brandtext span{display:none}
+  .side-brand .brandtext b{font-size:12.5px}
+  .side-brand .brandmark{font-size:20px}
+  .side-foot{padding-left:10px}
+  .topbar{height:auto;min-height:60px;padding:10px 14px;flex-wrap:wrap;gap:10px;
+    align-items:flex-start}
+  .topbar-title h1{font-size:17.5px;white-space:normal}
+  .topbar-side .account{max-width:38vw}
+  .content{padding:16px 14px 28px;gap:14px}
+  .card{padding:16px 14px;border-radius:14px}
+  .card h2{font-size:15px}
+  /* On a 390px column the section note and the heading cannot share a baseline
+     without both wrapping into two cramped lines. */
+  .section-head{flex-direction:column;align-items:flex-start;gap:5px}
+  .aside-card{padding:14px;border-radius:14px}
+  .page-lede{font-size:13px}
+}

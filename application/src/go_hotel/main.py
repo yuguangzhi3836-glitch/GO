@@ -115,6 +115,8 @@ from go_hotel.api.routes.personal_travel_vault import router as personal_travel_
 from go_hotel.api.routes.consumer_growth_direct_value import router as consumer_growth_direct_value_router
 from go_hotel.api.routes.ai_travel_infrastructure import router as ai_travel_infrastructure_router
 from go_hotel.api.routes.operations_console import router as operations_console_router
+from go_hotel.api.routes.onboarding_review import router as onboarding_review_router
+from go_hotel.api.routes.onboarding_contract import router as onboarding_contract_router
 from go_hotel.api.routes.rc20_module_depth import router as rc20_module_depth_router
 from go_hotel.api.routes.supplier_operations import router as supplier_operations_router
 from go_hotel.api.routes.r8_release import router as r8_release_router
@@ -207,6 +209,8 @@ app.include_router(personal_travel_vault_router)
 app.include_router(consumer_growth_direct_value_router)
 app.include_router(ai_travel_infrastructure_router)
 app.include_router(operations_console_router)
+app.include_router(onboarding_review_router)
+app.include_router(onboarding_contract_router)
 app.include_router(rc20_module_depth_router)
 app.include_router(supplier_operations_router)
 app.include_router(r8_release_router)
@@ -232,7 +236,7 @@ app.add_middleware(Sprint1RAuditMiddleware)
 
 class Sprint1USecurityMiddleware(BaseHTTPMiddleware):
     SAFE={"GET","HEAD","OPTIONS"}
-    EXEMPT={"/v1/registration/challenges","/bff/auth/login","/bff/auth/supplier/register","/bff/auth/sso/start","/bff/auth/sso/callback","/v1/consumer/auth/register","/v1/consumer/auth/login","/v1/mobile/auth/login","/v1/mobile/auth/refresh"}
+    EXEMPT={"/v1/registration/challenges","/bff/auth/login","/bff/auth/supplier/register","/bff/auth/sso/start","/bff/auth/sso/callback","/v1/consumer/auth/register","/v1/consumer/auth/login","/v1/mobile/auth/login","/v1/mobile/auth/refresh","/bff/auth/recovery/challenge","/bff/auth/recovery/username","/bff/auth/recovery/password"}
     async def dispatch(self, request, call_next):
         if request.method not in self.SAFE and request.url.path not in self.EXEMPT:
             # Bearer/service clients preserve API compatibility. Browser cookie sessions require CSRF.
@@ -343,9 +347,16 @@ if _frontend_root.exists():
     app.mount("/go-admin", StaticFiles(directory=str(_frontend_root / "admin"), html=True), name="go-admin")
     app.mount("/console-assets", StaticFiles(directory=str(_frontend_root / "shared")), name="console-assets")
     app.mount("/go-app", StaticFiles(directory=str(_frontend_root / "consumer"), html=True), name="go-consumer-app")
+    # Partner onboarding workspace: an independent full-width surface. Onboarding
+    # used to be squeezed into the 420px supplier login card; the applicant flow
+    # now has its own console with its own shell and step navigation.
+    app.mount("/partner", StaticFiles(directory=str(_frontend_root / "onboarding"), html=True), name="partner-onboarding")
 
 from go_hotel.api.routes.registration_verification import router as registration_verification_router
 app.include_router(registration_verification_router)
+
+from go_hotel.api.routes.account_recovery import router as account_recovery_router
+app.include_router(account_recovery_router)
 
 from go_hotel.api.routes.registration_privacy import router as registration_privacy_router
 app.include_router(registration_privacy_router)

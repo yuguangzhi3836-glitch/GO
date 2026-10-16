@@ -50,6 +50,33 @@ def _restore_sqlite_snapshot(Base, engine, identity_service):
         shutil.copy2(snapshot, live_db)
 
 
+#: One unusable-by-design placeholder ships in `core.config`; every test that needs
+#: a working runtime must replace it, and they must all replace it with the *same*
+#: bytes. Kept in one place because a key that differs between two fixtures is
+#: indistinguishable from a session bug: the token was minted under one key and is
+#: verified under another.
+SYNTHETIC_SIGNING_KEY = "synthetic-identity-flow-test-key-32b"
+
+
+@pytest.fixture(autouse=True, scope="session")
+def signing_key_that_can_actually_digest():
+    """A usable signing key for the whole session, at *session* scope on purpose.
+
+    Two shipped doors refuse to work under the placeholder key (under 32 bytes, or
+    starting with ``dev-``): ``registration_verification.digest()``, so every code
+    and recovery endpoint answers 503, and JWT verification, so every session
+    cookie answers 401. Scoping the key to a single *test* is not enough: a fixture
+    that sets it inside a ``MonkeyPatch.context()`` reverts on exit, and a token
+    minted inside that context then fails to verify outside it with
+    ``INVALID_SIGNATURE`` — a failure that reads like a session or cookie defect and
+    is really a key that moved underneath a live cookie. Set it once here; the
+    fixtures that patch it patch the same value, so their reversion is a no-op.
+    """
+    from go_hotel.core.config import settings
+
+    settings.jwt_signing_key = SYNTHETIC_SIGNING_KEY
+
+
 @pytest.fixture(autouse=True)
 def reset_db(request):
     if request.node.get_closest_marker("no_db"):

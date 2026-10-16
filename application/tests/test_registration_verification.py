@@ -19,8 +19,10 @@ def delivery(tmp_path, monkeypatch):
     secret=tmp_path/'existing-password';secret.write_text('isolated-only-password')
     cfg=tmp_path/'mail.json';cfg.write_text(json.dumps({'sender':mail.SENDER,'credential_reference':'hk-staging-registration-email','host':'smtp.test.invalid','port':465,'tls':'SSL','username':mail.SENDER,'password_file':str(secret)}))
     monkeypatch.setattr(settings,'registration_email_config_path',str(cfg))
-    sent=[]
-    monkeypatch.setattr(mail,'send_code',lambda address,code:sent.append((address,code)))
+    from go_hotel.services import registration_sms
+    sent={'email':[],'sms':[]}
+    monkeypatch.setattr(mail,'send_code',lambda address,code:sent['email'].append((address,code)))
+    monkeypatch.setattr(registration_sms,'send_code',lambda address,code:sent['sms'].append((address,code)))
     return sent
 
 
@@ -31,19 +33,75 @@ def payload(client,audience,email):
     return dict(registration_decisions=required_decisions(p),email=email,password='Isolated-test-pass-123',accepted_terms=True,term_versions=p['versions'],term_hashes=p['term_hashes'])
 
 
+# The challenge endpoint takes only these plus audience/channel/identifier, and it
+# forbids extra fields, so a sign-up payload cannot simply be forwarded whole.
+CHALLENGE_FIELDS=('accepted_terms','registration_decisions','term_versions','term_hashes')
+
+
 def send(client,sent,audience='consumer',email='new@example.test'):
+    """Issue the live challenge(s) and return a payload carrying the codes.
+
+    Consumer sign-up proves one address. Supplier sign-up proves email *and*
+    mobile, each through its own challenge, so both codes are issued here.
+    """
+    from registration_terms_test_support import supplier_identifiers
     body=payload(client,audience,email)
-    r=client.post('/v1/registration/challenges',json={k:v for k,v in body.items() if k!='password'}|{'audience':audience})
-    assert r.status_code==200,r.text
-    assert 'code' not in r.json()['data']
-    return body|{'challenge_id':r.json()['data']['challenge_id'],'verification_code':sent[-1][1]}
+    if audience=='supplier':
+        body.update(supplier_identifiers(body))
+        wanted=(('email',body['email']),('sms',body['phone']))
+    else:
+        wanted=(('email',body['email']),)
+    issued={}
+    for channel,identifier in wanted:
+        request={k:body[k] for k in CHALLENGE_FIELDS}|{'audience':audience,'channel':channel,'email':identifier}
+        r=client.post('/v1/registration/challenges',json=request)
+        assert r.status_code==200,r.text
+        assert 'code' not in r.json()['data']
+        issued[channel]=(r.json()['data']['challenge_id'],sent[channel][-1][1])
+    if audience=='supplier':
+        return body|{'email_challenge_id':issued['email'][0],'email_verification_code':issued['email'][1],
+                     'sms_challenge_id':issued['sms'][0],'sms_verification_code':issued['sms'][1]}
+    return body|{'challenge_id':issued['email'][0],'verification_code':issued['email'][1]}
 
 
 @pytest.mark.parametrize('audience',['consumer','supplier'])
 def test_signup_requires_actual_code_and_audits_consumption(client,delivery,audience):
     b=send(client,delivery,audience)
     endpoint='/v1/consumer/auth/register' if audience=='consumer' else '/bff/auth/supplier/register'
-    if audience=='supplier':b.update(organization_name='隔离测试企业',contact_name='测试联系人')
+    if audience=='supplier':
+        # Owner decision, superseding frozen decision D-01: supplier sign-up now
+        # sits behind *both* channels. A wrong email code must create nothing and
+        # spend nothing; a right email code with a wrong SMS code must still
+        # create nothing; only two proved channels make the account.
+        b.update(organization_name='隔离测试企业',contact_name='测试联系人')
+        wrong_email=client.post(endpoint,json=b|{'email_verification_code':'wrong'})
+        assert wrong_email.status_code==409,wrong_email.text
+        assert wrong_email.json()['detail'].startswith('EMAIL_'),wrong_email.text
+        with SessionLocal() as s:
+            rows={row.challenge_id:row for row in s.scalars(select(Challenge)).all()}
+            assert rows[b['email_challenge_id']].state=='SENT'
+            assert rows[b['sms_challenge_id']].state=='SENT'
+            assert all(row.consumed_by is None for row in rows.values())
+            assert s.scalar(select(IdentityUserRow).where(IdentityUserRow.email==b['email'])) is None
+        wrong_sms=client.post(endpoint,json=b|{'sms_verification_code':'wrong'})
+        assert wrong_sms.status_code==409 and wrong_sms.json()['detail'].startswith('SMS_'),wrong_sms.text
+        result=client.post(endpoint,json=b)
+        assert result.status_code in (200,201),result.text
+        with SessionLocal() as s:
+            rows={row.challenge_id:row for row in s.scalars(select(Challenge)).all()}
+            assert rows[b['email_challenge_id']].state=='CONSUMED'
+            assert rows[b['sms_challenge_id']].state=='CONSUMED'
+            assert all(row.consumed_by for row in rows.values())
+            assert rows[b['email_challenge_id']].code_digest!=b['email_verification_code']
+            assert rows[b['sms_challenge_id']].code_digest!=b['sms_verification_code']
+            audit=s.scalar(select(AuditEventRow).where(AuditEventRow.action=='SUPPLIER_REGISTRATION_TERMS_ACCEPTED'))
+            assert audit.metadata_json['email_verified'] is True
+            assert audit.metadata_json['sms_verified'] is True
+            assert audit.metadata_json['verification_mode']=='EMAIL_AND_SMS'
+            assert audit.metadata_json['verification_challenge_id']==b['email_challenge_id']
+            assert audit.metadata_json['sms_verification_challenge_id']==b['sms_challenge_id']
+        assert client.post(endpoint,json=b).status_code==409
+        return
     assert client.post(endpoint,json=b|{'verification_code':'wrong'}).status_code==409
     result=client.post(endpoint,json=b)
     assert result.status_code in (200,201),result.text
@@ -74,8 +132,17 @@ def test_proof_boundaries(client,delivery,monkeypatch,mutation):
     b=send(client,delivery)
     if mutation=='email': b['email']='other@example.test'
     elif mutation=='purpose':
-        b.update(organization_name='测试企业',contact_name='联系人')
-        assert client.post('/bff/auth/supplier/register',json=b|{'term_versions':terms.registration_terms_status('supplier')['versions'],'term_hashes':terms.registration_terms_status('supplier')['term_hashes']}).status_code==409
+        # A consumer-issued challenge can never be replayed into a supplier
+        # account: supplier sign-up proves its own email *and* SMS challenge, and
+        # the consumer one is bound to a different audience, decision set and
+        # policy digest. It must also be left untouched by the refusal.
+        supplier=send(client,delivery,'supplier','purpose-supplier@example.test')
+        supplier['email_challenge_id']=b['challenge_id']
+        supplier['email_verification_code']=b['verification_code']
+        assert client.post('/bff/auth/supplier/register',json=supplier).status_code==409
+        with SessionLocal() as s:
+            assert s.scalar(select(Challenge).where(Challenge.challenge_id==b['challenge_id'])).state=='SENT'
+            assert s.scalar(select(IdentityUserRow).where(IdentityUserRow.email=='purpose-supplier@example.test')) is None
         return
     elif mutation=='expired':
         t=verify.now_ms();monkeypatch.setattr(verify,'now_ms',lambda:t+600_001)
@@ -87,7 +154,7 @@ def test_proof_boundaries(client,delivery,monkeypatch,mutation):
         wrong='000000' if b['verification_code']!='000000' else '111111'
         for _ in range(5):assert client.post('/v1/consumer/auth/register',json=b|{'verification_code':wrong}).status_code==409
     assert client.post('/v1/consumer/auth/register',json=b).status_code==409
-    with SessionLocal() as s:assert s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==b['email'])) is None
+    with SessionLocal() as s:assert s.scalar(select(IdentityUserRow).where(IdentityUserRow.email==b['email'])) is None
 
 
 def test_resend_replaces_old_code_and_limits_persist(client,delivery,monkeypatch):
@@ -119,7 +186,7 @@ def test_wallet_failure_rolls_back_code_and_account(client,delivery):
     finally:event.remove(ConsumerWalletRow,'before_insert',fail)
     with SessionLocal() as s:
         assert s.scalar(select(Challenge)).state=='SENT'
-        assert s.scalar(select(IdentityUserRow).where(IdentityUserRow.username==b['email'])) is None
+        assert s.scalar(select(IdentityUserRow).where(IdentityUserRow.email==b['email'])) is None
     assert client.post('/v1/consumer/auth/register',json=b).status_code==200
 
 
@@ -139,13 +206,13 @@ def test_no_email_until_terms_and_consent_ready(client,delivery,monkeypatch):
     b=payload(client,'consumer','nobody@example.test')
     args={k:v for k,v in b.items() if k!='password'}|{'audience':'consumer'}
     assert client.post('/v1/registration/challenges',json=args|{'accepted_terms':False}).status_code==422
-    assert not delivery
+    assert not delivery['email'] and not delivery['sms']
     monkeypatch.setattr(terms,'_unused',None,raising=False)
     import go_hotel.api.routes.registration_verification as routes
     def blocked(audience):raise ValueError('REGISTRATION_TERMS_NOT_READY')
     monkeypatch.setattr(routes,'require_account_registration_terms_ready',blocked)
     assert client.post('/v1/registration/challenges',json=args).status_code==503
-    assert not delivery
+    assert not delivery['email'] and not delivery['sms']
 
 
 def test_smtp_uses_existing_secret_tls_and_fixed_sender(tmp_path,monkeypatch):
@@ -170,11 +237,14 @@ def test_smtp_uses_existing_secret_tls_and_fixed_sender(tmp_path,monkeypatch):
 
 
 def test_transport_peer_limit_shared_between_audiences(client,delivery):
-    for n in range(20):
-        send(client,delivery,'consumer' if n%2 else 'supplier',f'user{n}@example.test')
+    # One hourly budget per transport peer, spent by every channel of every
+    # audience: 10 consumer sign-ups (one channel each) plus 5 supplier sign-ups
+    # (two channels each) use it up exactly, so the 21st issue is refused.
+    for n in range(10):send(client,delivery,'consumer',f'consumer{n}@example.test')
+    for n in range(5):send(client,delivery,'supplier',f'supplier{n}@example.test')
     b=payload(client,'consumer','last@example.test')
     r=client.post('/v1/registration/challenges',json={k:v for k,v in b.items() if k!='password'}|{'audience':'consumer'})
-    assert r.status_code==429 and len(delivery)==20
+    assert r.status_code==429 and len(delivery['email'])+len(delivery['sms'])==20
 
 
 def test_concurrent_send_one_message(client,delivery):
@@ -184,4 +254,4 @@ def test_concurrent_send_one_message(client,delivery):
         except ValueError as exc:return str(exc)
     with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(issue,[1,2]))
     assert sorted(results)==['REGISTRATION_CODE_RATE_LIMITED','sent']
-    assert len(delivery)==1
+    assert len(delivery['email'])==1

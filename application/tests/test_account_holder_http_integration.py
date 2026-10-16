@@ -67,7 +67,7 @@ def test_supplier_bff_registration_creates_account_before_hotel_and_keeps_busine
     rejected = client.post('/bff/auth/supplier/register', json=body)
     assert rejected.status_code == 422, rejected.text
     with SessionLocal() as session:
-        assert session.scalar(select(IdentityUserRow).where(IdentityUserRow.username == body['email'])) is None
+        assert session.scalar(select(IdentityUserRow).where(IdentityUserRow.email == body['email'])) is None
     response = client.post('/bff/auth/supplier/register', json=with_verification(body | {'accepted_terms': True}, 'supplier'))
     assert response.status_code == 201, response.text
     data = response.json()['data']

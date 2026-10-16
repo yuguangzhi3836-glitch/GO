@@ -12,13 +12,14 @@ def test_registration_scope_and_free_text_locations():
     policy = supplier_registration_terms()['data']
     assert policy['registration_scope'] == 'NATIONWIDE'
     assert policy['publication_requires_verification'] is True
+    identifiers = {'username': 'owner-hotel', 'phone': '13800138000'}
     for city in ['哈尔滨', '拉萨', '喀什', '三亚', '县级自定义地区']:
         body = SupplierRegisterBody(email='owner@example.test', password='strong-pass-123',
-            organization_name='酒店主体', contact_name='联系人', hotel_name='测试酒店', city=city)
+            organization_name='酒店主体', contact_name='联系人', hotel_name='测试酒店', city=city, **identifiers)
         assert body.city == city
     with pytest.raises(ValidationError):
         SupplierRegisterBody(email='owner@example.test', password='strong-pass-123',
-            organization_name='   ', contact_name='联系人')
+            organization_name='   ', contact_name='联系人', **identifiers)
 
 
 def test_registration_audit_failure_rolls_back_account_and_hotel():
@@ -47,4 +48,4 @@ def test_invalid_email_never_creates_supplier(email):
 
 def test_client_cannot_request_admin_roles():
     with pytest.raises(ValidationError):
-        SupplierRegisterBody(email='owner@example.test',password='strong-pass-123',organization_name='主体',contact_name='联系人',roles=['GO_ADMIN'])
+        SupplierRegisterBody(email='owner@example.test',password='strong-pass-123',organization_name='主体',contact_name='联系人',roles=['GO_ADMIN'],username='owner-hotel',phone='13800138000')
