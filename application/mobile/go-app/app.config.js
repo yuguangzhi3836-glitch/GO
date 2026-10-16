@@ -1,4 +1,4 @@
-// Build-time API binding. Local development retains the existing loopback API.
+// Build-time API binding. Tester APKs default to staging; local WSL builds can override it.
 module.exports = ({ config }) => {
   const profile = process.env.EAS_BUILD_PROFILE || '';
   const environment = process.env.EXPO_PUBLIC_ENV || '';
@@ -6,7 +6,7 @@ module.exports = ({ config }) => {
     ['staging', 'production'].includes(environment);
   const supplied = process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_API_BASE_URL;
   if (externalBuild && !supplied) throw new Error('GO_BUILD_API_BASE_URL_REQUIRED');
-  const apiBaseUrl = supplied || config.extra?.apiBaseUrl || 'http://localhost:8000';
+  const apiBaseUrl = supplied || config.extra?.apiBaseUrl || 'https://staging-api.goaidirect.com';
   let url;
   try { url = new URL(apiBaseUrl); } catch { throw new Error('GO_BUILD_API_BASE_URL_INVALID'); }
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash)

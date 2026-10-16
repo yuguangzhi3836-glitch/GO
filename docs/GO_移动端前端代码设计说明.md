@@ -115,7 +115,15 @@ flowchart TD
 
 登录流程调用 API 层完成服务端登录和令牌保存，然后再次 `reload()` 以拉取 profile。退出时调用传输层 logout；即使服务端登出请求失败，本地令牌仍会先被清掉，防止 UI 继续保留旧账户。
 
-### 5.2 `secureSession.ts`
+### 5.2 注册流程：动态条款与邮箱验证
+
+注册 UI 位于 `src/screens/LoginScreen.tsx`。切换到注册模式后，客户端读取 `GET /v1/consumer/auth/registration`，从响应中取 `versions`、`term_hashes`、`documents` 和 `deferred`；不再把条款版本固定在 APK 里。点击条款标题后，客户端请求对应的 `content_url` 并在弹层内显示正文。
+
+用户勾选接受后，客户端用同一份版本、哈希和逐项决定请求 `POST /v1/registration/challenges`。这个请求会发送邮件验证码，所以只由用户主动点击“发送邮箱验证码”触发。注册提交时把这些条款字段与 `challenge_id`、六位验证码一起发送到 `POST /v1/consumer/auth/register`。邮箱输入变化会清除旧 challenge，避免把发给旧地址的验证码用于新地址。
+
+当前策略下，服务条款使用 `CONTRACT_ACCEPTED`、隐私政策使用 `NOTICE_ACKNOWLEDGED`，延期的 `personal_vault_terms` 使用 `DEFERRED`。延期项不在账号注册的 `versions` / `term_hashes` 中，注册也不会打开个人信息库。预发当前策略返回 `DRAFT` 和 `formal_approval_pending=true`，注册页面会显式显示该状态。
+
+### 5.3 `secureSession.ts`
 
 Access Token 和 Refresh Token 通过 `expo-secure-store` 保存，不放在普通 AsyncStorage。Android 的原生备份规则也排除了 SecureStore 对应数据。
 
@@ -199,65 +207,31 @@ Access Token 和 Refresh Token 通过 `expo-secure-store` 保存，不放在普�
 ### 9.2 配置如何合并
 
 - `app.json` 提供 Expo 静态配置：App 名称、slug、scheme、iOS Bundle ID、Android package、通知/SecureStore 插件和深链声明。
-- `app.config.js` 在构建时绑定 API 地址。`preview` / `production` profile，或 `staging` / `production` 环境，必须提供 `EXPO_PUBLIC_API_URL` 或 `EXPO_PUBLIC_API_BASE_URL`；外部环境必须是 HTTPS 且不能指向 localhost、环回或无效域名。
+- `app.config.js` 在构建时绑定 API 地址。普通 Android Debug 构建默认指向 `https://staging-api.goaidirect.com`；本机开发可由 `EXPO_PUBLIC_API_URL` 或构建脚本的 `-ApiBaseUrl` 覆盖。EAS `preview` / `production` profile，或 `staging` / `production` 环境，仍必须显式提供 `EXPO_PUBLIC_API_URL` 或 `EXPO_PUBLIC_API_BASE_URL`；外部环境必须是 HTTPS 且不能指向 localhost、环回或无效域名。
 - `eas.json` 定义 development、preview、production 三个 EAS profile。Preview 是 internal distribution 并指定 Android APK；Production 的 submit 配置当前仍有应用商店占位信息。
-- `android/settings.gradle` 使用 Expo/RN Gradle 插件和 autolinking；`android/app/build.gradle` 将 Expo CLI `export:embed` 配置为打包命令。实际是否生成内置 JS bundle 还取决于 variant：该工程默认 `debug` 是 debuggable variant，会跳过 JS bundle 打包；release variant 才会在构建时导出 JS bundle 和静态资源。
+- `android/settings.gradle` 使用 Expo/RN Gradle 插件和 autolinking；`android/app/build.gradle` 将 Expo CLI `export:embed` 配置为打包命令，并把 `debuggableVariants` 设为空数组，使 Debug APK 也在构建期间生成 JS bundle。脚本还会检查 APK 是否包含 `assets/index.android.bundle`。
 
-### 9.3 Android Debug APK 的 Metro 加载流程
+### 9.3 Android APK 的内置 Bundle、构建与分发
 
-该工程用 `:app:assembleDebug` 生成的 APK 是调试包。React Native Gradle 插件默认把 `debug` 视为 debuggable variant，因此 Debug APK 不包含可独立运行的 `index.android.bundle`。启动时 Native React Native DevSupport 会请求开发机上的 Metro；如果 Metro 没运行、手机访问不到开发机，或 Metro 打包失败，应用就会显示：
+Android 工程通过 `react { debuggableVariants = [] }` 将 Expo CLI `export:embed` 用于 Debug APK，因此 `:app:assembleDebug` 的产物也包含 `assets/index.android.bundle`。`scripts/build-install-android.ps1` 会检查 APK zip 内确实存在该文件；缺失时拒绝安装。普通安装和分享不依赖 Metro，也不需要转发 8081。
 
-```text
-Unable to load script. Make sure you are either running Metro or that your bundle 'index.android.bundle' is packaged correctly for release.
-```
-
-本次真机问题包含两个环节：最初 Debug APK 没有连接可用的 Metro；启动 Metro 后，打包又因本地 `node_modules` 缺少 `caniuse-lite/dist/unpacker/agents` 失败。按 `package-lock.json` 执行 `npm ci` 后 Metro 成功打包。判断问题时应区分“Metro 服务不可达”和“Metro 可达但 bundle 构建失败”：`http://127.0.0.1:8081/status` 返回 `packager-status:running` 只能证明服务在监听，不代表 JS bundle 已构建成功。
-
-#### 推荐的构建、安装、启动方式
-
-在仓库根目录执行：
+从仓库根目录安装到一台已授权的 Android 设备：
 
 ```powershell
 .\application\mobile\go-app\scripts\build-install-android.cmd -Launch
 ```
 
-脚本的执行顺序如下：
-
-1. 调用 Gradle `:app:assembleDebug` 生成 `android/app/build/outputs/apk/debug/app-debug.apk`。
-2. 通过 `adb devices -l` 检查设备状态；唯一设备会自动选择，多台设备时要求显式传 `-DeviceSerial <serial>`。
-3. 用 `adb install -r` 安装 APK。
-4. 当传入 `-Launch`（或 `-Logcat`）时，检查电脑 `127.0.0.1:8081/status`。Metro 未运行就从移动端目录启动 `npm run start -- --localhost --port 8081`。
-5. `-Launch` / `-Logcat` 会调用 `adb reverse` 转发 Metro `8081`；当 API URL 是 loopback 时，也会转发 API 端口（默认 `8000`），然后启动 `travel.go.consumer`。
-
-如果只需要构建/安装、不启动应用，可省略 `-Launch`；`-NoInstall` 只构建 APK，不检查设备、不安装。需要指定后端地址时使用 `-ApiBaseUrl <https-url>`。例如：
+构建给测试者安装的 APK，不要求电脑连接手机：
 
 ```powershell
-.\application\mobile\go-app\scripts\build-install-android.cmd -DeviceSerial YOUR_DEVICE_SERIAL -ApiBaseUrl https://api.example.com -Launch
+.\application\mobile\go-app\scripts\build-install-android.cmd -NoInstall -OutputPath .\application\mobile\go-app\artifacts\GO-consumer-staging.apk
 ```
 
-`-Logcat` 会在启动后采集默认 120 秒设备日志；可用 `-LogcatSeconds <秒数>` 调整时长。设备日志保存在系统临时目录的 `go-mobile-android-logs` 下。脚本自动启动的 Metro 日志也保存在该目录，文件为 `metro-8081.log` 和 `metro-8081-stderr.log`。Metro 进程需保持运行，Debug APK 才能继续加载/重载 JS；停止 Metro 后再次打开 Debug APK 会重新出现脚本加载错误。
+脚本默认把 `https://staging-api.goaidirect.com` 编进 APK；也可显式指定 `-ApiBaseUrl <url>`。本机 WSL 后端联调时传 `-ApiBaseUrl http://127.0.0.1:8000` 并安装到 USB 设备，脚本会转发 loopback API 端口。分享给别人时不要使用 localhost 地址。
 
-#### 手动排查
+脚本选项：`-DeviceSerial <serial>` 选择多台设备中的目标；`-NoInstall` 只构建；`-OutputPath <file.apk>` 复制产物并打印 SHA-256；`-Launch` 安装后启动；`-Logcat` 启动后采集默认 120 秒日志，`-LogcatSeconds <10–3600>` 调整时长。日志位于系统临时目录的 `go-mobile-android-logs`。
 
-从移动端工程目录启动 Metro：
-
-```powershell
-cd application/mobile/go-app
-npm ci
-npm run start -- --localhost --port 8081
-```
-
-另开终端确认 Metro 状态并配置设备端口转发：
-
-```powershell
-Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8081/status
-adb devices -l
-adb -s <serial> reverse tcp:8081 tcp:8081
-```
-
-如果状态是 `packager-status:running` 但仍不能加载，观察 Metro 终端的首次 `Android Bundling` 输出。若出现 `Cannot find module 'caniuse-lite/dist/unpacker/agents'`，在 `application/mobile/go-app` 执行 `npm ci` 恢复 lockfile 中的依赖，再重启 Metro。`npm ci` 会按锁文件重建 `node_modules`；不要用 `npm audit fix` 代替依赖恢复，因为它可能改变依赖版本。
-
-脚本启动 Expo CLI 时设置 `EXPO_NO_TYPESCRIPT_SETUP=1`，避免 Expo 启动时自动改写仓库的 `tsconfig.json`。Debug APK 与 Release APK 的 JS 加载方式不同：Debug 依赖开发机 Metro；Release 应验证最终 APK 内含 bundle，并按正式签名与发布流程验收。
+该脚本生成的是 Debug 签名测试 APK。接收者无需输入 API URL或构建参数；安装时按 Android 提示允许当前文件管理器/浏览器安装未知应用，安装后联网使用即可。Release build type 当前也使用 Debug 签名配置，因此这个包仅用于开发/封闭测试分发，不能据此宣称已准备好上架。完整本机后端、动态注册和 APK 分发步骤见 [本地后端与 Android 测试 APK](GO_LOCAL_BACKEND_AND_ANDROID_APK.md)。
 
 ### 9.4 当前代码中需要知道的发布配置事实
 
@@ -417,4 +391,4 @@ adb -s <serial> reverse tcp:8081 tcp:8081
 
 ## 13. 事实边界
 
-本文描述仓库可见的前端源码和配置，不声称本次已成功构建 APK，也不声称已在 Android 真机执行所有 P0 流程。移动端页面展示、模拟交易闭环、Staging 验收、正式支付渠道、应用商店发布是不同事实，需要各自的证据。
+本文描述仓库可见的前端源码和配置，不代替对指定 APK、真机业务流程、Staging 验收、正式支付渠道或应用商店发布的逐项验证。每个构建产物和业务流程仍需各自的测试证据。

@@ -26,7 +26,7 @@ The native Android project is generated in `android/` from this Expo app configu
 
 For command-line development, run `npm run android` from this directory. The app uses the configured development API URL by default; set `EXPO_PUBLIC_API_URL` when targeting another API environment.
 
-## Build, install, and launch a debug APK
+## Build, install, and share a debug APK
 
 From the repository root, run:
 
@@ -34,7 +34,7 @@ From the repository root, run:
 .\application\mobile\go-app\scripts\build-install-android.cmd -Launch
 ```
 
-The script builds the Debug APK, installs it on the connected Android device, and launches the app. On launch it starts Metro when needed and configures `adb reverse` for port 8081. When the API URL is loopback (the default is `http://localhost:8000`), it also forwards that API port to the phone. Keep the Metro process running while using this Debug APK.
+The script builds a Debug APK with the JavaScript bundle embedded, verifies that bundle, installs it on the connected Android device, and optionally launches the app. The installed APK does not need Metro. The script and app configuration default to `https://staging-api.goaidirect.com`; pass `-ApiBaseUrl http://127.0.0.1:8000` for local WSL testing.
 
 Common options:
 
@@ -42,15 +42,16 @@ Common options:
 |---|---|
 | `-DeviceSerial <serial>` | Select a device when more than one ADB device is connected. |
 | `-ApiBaseUrl <url>` | Build with the specified `EXPO_PUBLIC_API_URL`. |
+| `-OutputPath <file.apk>` | Copy the built APK to this path and print its SHA-256 hash. |
 | `-NoInstall` | Build the APK without installing it. |
-| `-Launch` | After installation, ensure Metro is running, configure USB port forwarding, and open the app. |
+| `-Launch` | After installation, open the app. For a loopback API URL, configure API port forwarding to the connected device. |
 | `-Logcat` | Launch the app and save device logs for 120 seconds. |
 | `-LogcatSeconds <seconds>` | Change the log capture duration (10–3600 seconds). |
 
-For example, select a specific USB-connected phone and API environment:
+To build an APK for another tester, bind the publicly reachable HTTPS API URL and skip local installation:
 
 ```powershell
-.\application\mobile\go-app\scripts\build-install-android.cmd -DeviceSerial YOUR_DEVICE_SERIAL -ApiBaseUrl https://api.example.com -Launch
+.\application\mobile\go-app\scripts\build-install-android.cmd -NoInstall -OutputPath .\application\mobile\go-app\artifacts\GO-consumer-staging.apk
 ```
 
-If the app shows `Unable to load script`, run the build/install script with `-Launch`; it starts Metro when needed and configures the phone's 8081 reverse. If the error remains, inspect the Metro log for bundle errors. A `packager-status:running` response confirms only that Metro is listening. See [the mobile frontend implementation guide](../../../docs/GO_移动端前端代码设计说明.md#93-android-debug-apk-的-metro-加载流程) for recovery steps.
+The API URL is embedded at build time. The recipient does not enter a URL or build parameter; they install the APK, allow installation from the app they used to open it if Android prompts, and connect to the internet. Do not distribute an APK built with `localhost` as its API URL. This Debug APK is for tester distribution, not app-store release; the Android `release` variant still uses the debug signing configuration. See [the local backend and APK guide](../../../docs/GO_LOCAL_BACKEND_AND_ANDROID_APK.md) for the complete registration and sharing flow.

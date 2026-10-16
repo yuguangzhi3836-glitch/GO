@@ -79,7 +79,7 @@ export function createTransport(d: Dependencies) {
   async function request(path: string, init: RequestInit = {}, retry = true) {
     if (!path.startsWith('/v1/') || /[\\\s#]/.test(path) || path.includes('://')) throw new RequestError('INVALID_API_PATH');
     const g = generation, method = String(init.method || 'GET').toUpperCase();
-    const authFlow = path.startsWith('/v1/mobile/auth/') || path === '/v1/consumer/auth/register';
+    const authFlow = path.startsWith('/v1/mobile/auth/') || path === '/v1/consumer/auth/register' || path === '/v1/registration/challenges';
     // Token reads must follow pending writes, and cleared/transitioning sessions
     // must not fall back to credentials still being removed from secure storage.
     await writes; current(g);
@@ -115,7 +115,11 @@ export function createTransport(d: Dependencies) {
       throw new RequestError('INVALID_TOKEN_RESPONSE');
     await save(g, pair.access_token, pair.refresh_token);current(g);blocked = false;return pair;
   }
-  async function register(input: {email:string;password:string;display_name?:string;accepted_terms:true;term_versions:{consumer_service_terms:string;privacy_policy:string}}) {
+  async function register(input: {
+    email:string;password:string;display_name?:string;accepted_terms:true;
+    term_versions:Record<string,string>;term_hashes:Record<string,string>;
+    registration_decisions:Record<string,string>;challenge_id:string;verification_code:string;
+  }) {
     const result = await request('/v1/consumer/auth/register', {
       method: 'POST', body: JSON.stringify(input),
     }, false);
@@ -123,6 +127,14 @@ export function createTransport(d: Dependencies) {
     if (data?.authenticated !== true || typeof data?.profile?.user_id !== 'string')
       throw new RequestError('INVALID_REGISTRATION_RESPONSE');
     return data;
+  }
+  async function requestRegistrationCode(input: {
+    email:string;accepted_terms:true;term_versions:Record<string,string>;
+    term_hashes:Record<string,string>;registration_decisions:Record<string,string>;
+  }) {
+    return request('/v1/registration/challenges', {
+      method:'POST', body:JSON.stringify({audience:'consumer',channel:'email',...input}),
+    }, false);
   }
   async function logout() {
     // Hide the account synchronously. Snapshot and delete the old credential in
@@ -139,5 +151,5 @@ export function createTransport(d: Dependencies) {
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}});
     if(!response.ok || body?.data?.status !== 'REVOKED')throw new RequestError('REMOTE_LOGOUT_UNCONFIRMED',response.status);
   }
-  return {request, login, register, logout, clear, version, subscribe};
+  return {request, login, register, requestRegistrationCode, logout, clear, version, subscribe};
 }

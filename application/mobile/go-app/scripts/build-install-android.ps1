@@ -1,5 +1,6 @@
 # From the repository root:
 #   .\application\mobile\go-app\scripts\build-install-android.cmd -Launch
+#   .\application\mobile\go-app\scripts\build-install-android.cmd -NoInstall -OutputPath .\application\mobile\go-app\artifacts\GO-consumer-staging.apk
 # From the mobile app root:
 #   .\scripts\build-install-android.cmd -Launch
 #   .\scripts\build-install-android.cmd -ApiBaseUrl https://api.example.com -Launch -Logcat
@@ -8,6 +9,7 @@
 param(
     [string]$DeviceSerial,
     [string]$ApiBaseUrl,
+    [string]$OutputPath,
     [switch]$NoInstall,
     [switch]$Launch,
     [switch]$Logcat,
@@ -24,7 +26,7 @@ $gradleWrapper = Join-Path $androidRoot 'gradlew.bat'
 $apkPath = Join-Path $androidRoot 'app\build\outputs\apk\debug\app-debug.apk'
 $applicationId = 'travel.go.consumer'
 $localPropertiesPath = Join-Path $androidRoot 'local.properties'
-$effectiveApiBaseUrl = if ($ApiBaseUrl) { $ApiBaseUrl.TrimEnd('/') } else { 'http://localhost:8000' }
+$effectiveApiBaseUrl = if ($ApiBaseUrl) { $ApiBaseUrl.TrimEnd('/') } else { 'https://staging-api.goaidirect.com' }
 
 $sdkRootFromLocalProperties = $null
 if (Test-Path -LiteralPath $localPropertiesPath -PathType Leaf) {
@@ -208,9 +210,12 @@ try {
     $env:JAVA_TOOL_OPTIONS = $null
     $env:GRADLE_OPTS = "-Djava.io.tmpdir=$asciiTemp -Dfile.encoding=UTF-8"
 
+    $env:EXPO_PUBLIC_API_URL = $effectiveApiBaseUrl
     if ($ApiBaseUrl) {
-        $env:EXPO_PUBLIC_API_URL = $ApiBaseUrl.TrimEnd('/')
         Write-Host "Using API base URL from -ApiBaseUrl: $env:EXPO_PUBLIC_API_URL"
+    }
+    else {
+        Write-Host "Using default API base URL: $env:EXPO_PUBLIC_API_URL"
     }
 
     Write-Host 'Building Android Debug APK...'
@@ -240,7 +245,37 @@ try {
         throw "Gradle completed but the expected APK was not found: $apkPath"
     }
 
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $apkArchive = [System.IO.Compression.ZipFile]::OpenRead($apkPath)
+    try {
+        $hasEmbeddedJsBundle = @($apkArchive.Entries | Where-Object { $_.FullName -eq 'assets/index.android.bundle' }).Count -gt 0
+    }
+    finally {
+        $apkArchive.Dispose()
+    }
+    if (-not $hasEmbeddedJsBundle) {
+        throw 'The APK is missing assets/index.android.bundle. Refusing to install an APK that requires Metro.'
+    }
+    Write-Host 'Embedded JavaScript bundle verified; this APK does not require Metro.'
+
     Write-Host "APK ready: $apkPath"
+
+    if ($OutputPath) {
+        $resolvedOutputPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPath)
+        if ([System.IO.Path]::GetExtension($resolvedOutputPath) -ine '.apk') {
+            throw '-OutputPath must name an .apk file.'
+        }
+        $outputDirectory = Split-Path -Parent $resolvedOutputPath
+        if ($outputDirectory -and -not (Test-Path -LiteralPath $outputDirectory -PathType Container)) {
+            New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
+        }
+        Copy-Item -LiteralPath $apkPath -Destination $resolvedOutputPath -Force
+        $artifact = Get-Item -LiteralPath $resolvedOutputPath
+        $sha256 = (Get-FileHash -LiteralPath $resolvedOutputPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        Write-Host "Shareable APK copy: $($artifact.FullName)"
+        Write-Host "APK size: $($artifact.Length) bytes"
+        Write-Host "APK SHA-256: $sha256"
+    }
 
     if ($NoInstall) {
         return
@@ -330,75 +365,7 @@ then rerun this script. The SDK path can be supplied through ANDROID_SDK_ROOT or
     }
 
     if ($Launch -or $Logcat) {
-        $metroStatusUrl = 'http://127.0.0.1:8081/status'
-        $metroReady = $false
-        try {
-            $metroStatus = Get-LocalHttpContent -Uri $metroStatusUrl -TimeoutSeconds 2
-            $metroReady = $metroStatus -match 'packager-status:running'
-        }
-        catch {
-            $metroReady = $false
-        }
-
-        if (-not $metroReady) {
-            $npmCommand = Get-Command 'npm.cmd' -ErrorAction SilentlyContinue
-            if (-not $npmCommand) {
-                throw 'Metro is not running and npm.cmd was not found on PATH. Start Metro manually from the mobile app directory.'
-            }
-            $metroLogDirectory = Join-Path ([System.IO.Path]::GetTempPath()) 'go-mobile-android-logs'
-            New-Item -ItemType Directory -Path $metroLogDirectory -Force | Out-Null
-            $metroLog = Join-Path $metroLogDirectory 'metro-8081.log'
-            $metroErrorLog = Join-Path $metroLogDirectory 'metro-8081-stderr.log'
-            $env:EXPO_NO_TYPESCRIPT_SETUP = '1'
-            Start-Process -FilePath $npmCommand.Source `
-                -ArgumentList @('run', 'start', '--', '--localhost', '--port', '8081') `
-                -WorkingDirectory $mobileRoot -WindowStyle Hidden `
-                -RedirectStandardOutput $metroLog -RedirectStandardError $metroErrorLog | Out-Null
-
-            $metroDeadline = (Get-Date).AddSeconds(60)
-            while ((Get-Date) -lt $metroDeadline) {
-                Start-Sleep -Seconds 2
-                try {
-                    $metroStatus = Get-LocalHttpContent -Uri $metroStatusUrl -TimeoutSeconds 2
-                    if ($metroStatus -match 'packager-status:running') {
-                        $metroReady = $true
-                        break
-                    }
-                }
-                catch {
-                    # Metro can take several seconds to initialize its Expo config.
-                }
-            }
-            if (-not $metroReady) {
-                throw "Metro did not become ready at $metroStatusUrl within 60 seconds. See $metroLog and $metroErrorLog"
-            }
-            Write-Host "Metro started. Log: $metroLog"
-        }
-
-        Write-Host 'Requesting the Android JavaScript bundle from Metro...'
-        try {
-            # Expo's configured entry point is expo/AppEntry.js (package.json "main"),
-            # so Metro serves this path instead of a root-level /index.bundle.
-            $bundleUrl = 'http://127.0.0.1:8081/node_modules/expo/AppEntry.bundle?platform=android&dev=true&minify=false'
-            $bundleContent = Get-LocalHttpContent -Uri $bundleUrl -TimeoutSeconds 180
-            if ([string]::IsNullOrWhiteSpace($bundleContent)) {
-                throw 'Metro returned an empty JavaScript bundle.'
-            }
-            Write-Host "Metro JavaScript bundle verified ($($bundleContent.Length) characters)."
-            $bundleContent = $null
-        }
-        catch {
-            throw "Metro is listening, but the Android JavaScript bundle failed to build. Check $metroLog and $metroErrorLog. $($_.Exception.Message)"
-        }
-
-        $reverseResult = Invoke-NativeCommand -FilePath $adbPath -Arguments @('-s', $selectedSerial, 'reverse', 'tcp:8081', 'tcp:8081')
-        $reverseOutput = $reverseResult.Output
-        $reverseExitCode = $reverseResult.ExitCode
-        $reverseOutput | ForEach-Object { Write-Host $_ }
-        if ($reverseExitCode -ne 0) {
-            throw 'Metro is running, but adb reverse for tcp:8081 failed.'
-        }
-
+        Write-Host 'Launching APK with its embedded JavaScript bundle; Metro and adb reverse are not required.'
         Write-Host "Launching $applicationId..."
         $launchResult = Invoke-NativeCommand -FilePath $adbPath -Arguments @('-s', $selectedSerial, 'shell', 'monkey', '-p', $applicationId, '1')
         $launchOutput = $launchResult.Output
