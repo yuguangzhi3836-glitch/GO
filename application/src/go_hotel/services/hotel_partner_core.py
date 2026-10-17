@@ -19,12 +19,63 @@ def out(row):
 class HotelPartnerCoreService:
     HIGH_RISK={'LEGAL','ADDRESS','BRAND','QUALIFICATION'}
     FOUR_STATE={'YES','NO','UNKNOWN','NOT_APPLICABLE'}
+    ROOM_TYPE_STATES={'ACTIVE','INACTIVE'}
     def _property(self,s,pid,supplier_id):
         r=s.get(HotelPartnerPropertyRow,pid)
         if not r or r.supplier_id!=supplier_id: raise ValueError('PROPERTY_NOT_FOUND')
         return r
+    def _room_type(self,s,pid,supplier_id,room_type_id):
+        self._property(s,pid,supplier_id)
+        r=s.get(HotelPartnerRoomTypeRow,room_type_id)
+        if not r or r.property_id!=pid: raise ValueError('ROOM_TYPE_NOT_FOUND')
+        return r
     def _audit(self,s,pid,event,typ,aid,payload,actor):
         s.add(HotelPartnerAuditEventRow(audit_event_id=ident('hpa'),property_id=pid,event_type=event,aggregate_type=typ,aggregate_id=aid,payload_json=payload,actor_id=actor,created_at=now()))
+    def _validate_occupancy(self,occ):
+        m=int(occ.get('max_occupancy',0));a=int(occ.get('max_adults',0));c=int(occ.get('max_children',0))
+        if min(m,a,c)<0 or m==0 or a>m or c>m or a+c<m: raise ValueError('INVALID_OCCUPANCY_CONSTRAINT')
+        return {'max_occupancy':m,'max_adults':a,'max_children':c}
+    def _validate_room_type_update(self,current,b):
+        values={
+            'name_zh':current.name_zh,
+            'name_en':current.name_en,
+            'sale_unit':current.sale_unit,
+            'physical_room_count':current.physical_room_count,
+            'occupancy_json':dict(current.occupancy_json or {}),
+            'bed_configurations_json':list(current.bed_configurations_json or []),
+            'attributes_json':dict(current.attributes_json or {}),
+            'media_json':list(current.media_json or []),
+        }
+        if 'name_zh' in b:
+            name=str(b['name_zh']).strip()
+            if not name: raise ValueError('ROOM_TYPE_NAME_REQUIRED')
+            values['name_zh']=name
+        if 'name_en' in b:
+            raw=b.get('name_en')
+            values['name_en']=None if raw is None else str(raw).strip() or None
+        if 'sale_unit' in b:
+            sale_unit=str(b['sale_unit']).strip()
+            if not sale_unit: raise ValueError('ROOM_TYPE_SALE_UNIT_REQUIRED')
+            values['sale_unit']=sale_unit
+        if 'physical_room_count' in b:
+            count=int(b['physical_room_count'])
+            if count < 1: raise ValueError('INVALID_PHYSICAL_ROOM_COUNT')
+            values['physical_room_count']=count
+        if 'occupancy' in b:
+            values['occupancy_json']=self._validate_occupancy(b['occupancy'])
+        if 'bed_configurations' in b:
+            beds=b['bed_configurations']
+            if not isinstance(beds,list): raise ValueError('INVALID_BED_CONFIGURATIONS')
+            values['bed_configurations_json']=beds
+        if 'attributes' in b:
+            attrs=b['attributes']
+            if not isinstance(attrs,dict): raise ValueError('INVALID_ROOM_ATTRIBUTES')
+            values['attributes_json']=attrs
+        if 'media' in b:
+            media=b['media']
+            if not isinstance(media,list): raise ValueError('INVALID_ROOM_MEDIA')
+            values['media_json']=media
+        return values
     def create_property(self,supplier_id,actor,b):
         t=now(); r=HotelPartnerPropertyRow(property_id=ident('prop'),supplier_id=supplier_id,name_zh=b['name_zh'],name_en=b.get('name_en'),property_type=b['property_type'],group_name=b.get('group_name'),brand_name=b.get('brand_name'),address_json=b.get('address',{}),latitude=b.get('latitude'),longitude=b.get('longitude'),contacts_json=b.get('contacts',{}),legal_json=b.get('legal',{}),operations_json=b.get('operations',{}),poi_json=b.get('poi',[]),publication_state='DRAFT',version=1,created_at=t,updated_at=t)
         with SessionLocal() as s:s.add(r);self._audit(s,r.property_id,'PROPERTY_CREATED','PROPERTY',r.property_id,{},actor);s.commit();return out(r)
@@ -42,20 +93,48 @@ class HotelPartnerCoreService:
                 if k in mapping:setattr(r,mapping[k],v)
             r.version+=1;r.updated_at=now();self._audit(s,pid,'LOW_RISK_PROPERTY_UPDATED','PROPERTY',pid,{'fields':list(b)},actor);s.commit();return {'mode':'IMMEDIATE','property':out(r)}
     def create_room_type(self,supplier_id,actor,pid,b):
-        occ=b['occupancy'];m=int(occ.get('max_occupancy',0));a=int(occ.get('max_adults',0));c=int(occ.get('max_children',0))
-        if min(m,a,c)<0 or m==0 or a>m or c>m or a+c<m: raise ValueError('INVALID_OCCUPANCY_CONSTRAINT')
+        occ=self._validate_occupancy(b['occupancy'])
+        count=int(b['physical_room_count'])
+        if count < 1: raise ValueError('INVALID_PHYSICAL_ROOM_COUNT')
         with SessionLocal() as s:
-            self._property(s,pid,supplier_id);t=now();r=HotelPartnerRoomTypeRow(room_type_id=ident('room'),property_id=pid,name_zh=b['name_zh'],name_en=b.get('name_en'),sale_unit=b.get('sale_unit','WHOLE_ROOM'),physical_room_count=b['physical_room_count'],occupancy_json=occ,bed_configurations_json=b.get('bed_configurations',[]),attributes_json=b.get('attributes',{}),media_json=b.get('media',[]),state='ACTIVE',created_at=t,updated_at=t)
+            self._property(s,pid,supplier_id);t=now();r=HotelPartnerRoomTypeRow(room_type_id=ident('room'),property_id=pid,name_zh=b['name_zh'],name_en=b.get('name_en'),sale_unit=b.get('sale_unit','WHOLE_ROOM'),physical_room_count=count,occupancy_json=occ,bed_configurations_json=b.get('bed_configurations',[]),attributes_json=b.get('attributes',{}),media_json=b.get('media',[]),state='ACTIVE',created_at=t,updated_at=t)
             s.add(r);self._audit(s,pid,'ROOM_TYPE_CREATED','ROOM_TYPE',r.room_type_id,{},actor);s.commit();return out(r)
+    def update_room_type(self,supplier_id,actor,pid,room_type_id,b):
+        with SessionLocal() as s:
+            r=self._room_type(s,pid,supplier_id,room_type_id)
+            values=self._validate_room_type_update(r,b)
+            for k,v in values.items():setattr(r,k,v)
+            r.updated_at=now()
+            self._audit(s,pid,'ROOM_TYPE_UPDATED','ROOM_TYPE',r.room_type_id,{'fields':sorted(set(b)&{'name_zh','name_en','sale_unit','physical_room_count','occupancy','bed_configurations','attributes','media'})},actor)
+            s.commit()
+            return out(r)
+    def set_room_type_state(self,supplier_id,actor,pid,room_type_id,state):
+        target=str(state).upper()
+        if target not in self.ROOM_TYPE_STATES: raise ValueError('INVALID_ROOM_TYPE_STATE')
+        with SessionLocal() as s:
+            room=self._room_type(s,pid,supplier_id,room_type_id)
+            room.state=target;room.updated_at=now()
+            products=s.scalars(select(HotelPartnerSellableProductRow).where(HotelPartnerSellableProductRow.property_id==pid,HotelPartnerSellableProductRow.room_type_id==room_type_id)).all()
+            product_ids=[x.sellable_product_id for x in products]
+            for product in products: product.state=target
+            rates=s.scalars(select(HotelPartnerRatePlanRow).where(HotelPartnerRatePlanRow.property_id==pid,HotelPartnerRatePlanRow.sellable_product_id.in_(product_ids))).all() if product_ids else []
+            for rate in rates:
+                rate.state=target
+                rate.updated_at=now()
+            self._audit(s,pid,'ROOM_TYPE_STATE_CHANGED','ROOM_TYPE',room.room_type_id,{'state':target,'sellable_product_count':len(products),'rate_plan_count':len(rates)},actor)
+            s.commit()
+            return {'room_type':out(room),'sellable_products':[out(x) for x in products],'rate_plans':[out(x) for x in rates]}
     def create_product(self,supplier_id,actor,pid,b):
         with SessionLocal() as s:
             self._property(s,pid,supplier_id);rt=s.get(HotelPartnerRoomTypeRow,b['room_type_id'])
             if not rt or rt.property_id!=pid:raise ValueError('ROOM_TYPE_NOT_FOUND')
+            if rt.state!='ACTIVE':raise ValueError('ROOM_TYPE_NOT_ACTIVE')
             r=HotelPartnerSellableProductRow(sellable_product_id=ident('product'),property_id=pid,room_type_id=rt.room_type_id,name=b['name'],occupancy_offer_json=b.get('occupancy_offer',{}),state='ACTIVE');s.add(r);self._audit(s,pid,'SELLABLE_PRODUCT_CREATED','SELLABLE_PRODUCT',r.sellable_product_id,{},actor);s.commit();return out(r)
     def create_rate_plan(self,supplier_id,actor,pid,b):
         with SessionLocal() as s:
             self._property(s,pid,supplier_id);p=s.get(HotelPartnerSellableProductRow,b['sellable_product_id'])
             if not p or p.property_id!=pid:raise ValueError('SELLABLE_PRODUCT_NOT_FOUND')
+            if p.state!='ACTIVE':raise ValueError('SELLABLE_PRODUCT_NOT_ACTIVE')
             tiers=b.get('cancellation_tiers',[])
             if any('before_arrival_hours' not in x or 'charge_percent' not in x for x in tiers):raise ValueError('INVALID_CANCELLATION_TIERS')
             t=now();r=HotelPartnerRatePlanRow(rate_plan_id=ident('rate'),property_id=pid,sellable_product_id=p.sellable_product_id,name=b['name'],payment_type=b['payment_type'],meal_plan_json=b.get('meal_plan',{}),cancellation_tiers_json=tiers,restrictions_json=b.get('restrictions',{}),default_ari_json=b.get('default_ari',{}),state='ACTIVE',created_at=t,updated_at=t);s.add(r);self._audit(s,pid,'RATE_PLAN_CREATED','RATE_PLAN',r.rate_plan_id,{},actor);s.commit();return out(r)
