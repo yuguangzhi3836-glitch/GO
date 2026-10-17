@@ -104,27 +104,35 @@ def compensate(s,c,mandate_model,supplier_column,clock):
 
 def recover_in_session(s,supplier_id,amount,reference,key,actor,recovery_model,supplier_field):
     """Serialize declared receipts and restore only verified, scoped advances."""
-    from sqlalchemy import union
+    from sqlalchemy import union, text
     from go_hotel.db.models import (HostedFaultRecoveryRow,CatalogFaultRecoveryRow,
         HostedSupplierDisruptionRow,CatalogSupplierRemedyRow)
     if type(amount) is not int or not 1<=amount<=2**63-1 or not isinstance(reference,str) or not 1<=len(reference.strip())<=512 or not isinstance(key,str) or not 1<=len(key)<=128:raise ValueError('VALID_SCOPED_RECOVERY_RECEIPT_REQUIRED')
+    # Serialize the receipt before account locks, across both source families and
+    # suppliers. SQLite callers already hold BEGIN IMMEDIATE. Keep legacy stored
+    # receipt identities unchanged; the transaction lock is independent of them.
+    if s.bind.dialect.name=='postgresql':
+        lock_key=int(digest(['GO_FAULT_SETTLEMENT_RECEIPT',reference,'CNY'])[:16],16)
+        if lock_key>=2**63:lock_key-=2**64
+        s.execute(text('SELECT pg_advisory_xact_lock(:receipt_key)'),{'receipt_key':lock_key})
     acct,protection=locked_accounts(s,supplier_id)
     if not acct:raise ValueError('SUPPLIER_FINANCIAL_ACCOUNT_REQUIRED')
     payload={supplier_field:supplier_id,'amount_minor':amount,'currency':'CNY','settlement_reference':reference,'data_mode':'SIMULATION'}
     source_hash=digest([supplier_id,reference,'CNY']);rid=('hfr_' if supplier_field=='hosted_hotel_id' else 'cfr_')+digest([supplier_id,key])[:32]
     # Preserve the DEPTH10 hosted receipt identity and request payload.
     if supplier_field=='hosted_hotel_id':payload['hotel_id']=payload.pop('hosted_hotel_id')
-    old=s.get(recovery_model,rid)
-    if not old:
-        for model in [HostedFaultRecoveryRow,CatalogFaultRecoveryRow]:
-            old=s.scalar(select(model).where(model.source_reference_hash==source_hash))
-            if old:break
-    if old:
+    matches=[]
+    for model in [HostedFaultRecoveryRow,CatalogFaultRecoveryRow]:
+        matches.extend(s.scalars(select(model).where(model.request_json['settlement_reference'].as_string()==reference)).all())
+    keyed=s.get(recovery_model,rid)
+    if keyed is not None and keyed not in matches:matches.append(keyed)
+    for old in matches:
         if digest(old.request_json)!=old.request_hash:raise ValueError('RECOVERY_RECEIPT_INTEGRITY_MISMATCH')
         before=old.request_json
         same=(before.get('hotel_id',before.get('supplier_id')),before['amount_minor'],before['currency'],before['settlement_reference'])==(supplier_id,amount,'CNY',reference)
         if not same:raise ValueError('RECOVERY_RECEIPT_IDEMPOTENCY_CONFLICT')
-        return old.result_json.copy()
+    if len(matches)>1:raise ValueError('RECOVERY_RECEIPT_AMBIGUOUS_RECONCILIATION_REQUIRED')
+    if matches:return matches[0].result_json.copy()
     known=union(select(HostedSupplierDisruptionRow.case_id),select(CatalogSupplierRemedyRow.case_id))
     liabilities=s.scalars(select(Liability).where(Liability.case_id.in_(known),Liability.supplier_id==supplier_id,Liability.negative_balance_minor>0)
         .order_by(Liability.created_at,Liability.liability_id).with_for_update()).all()
@@ -141,6 +149,7 @@ def recover_in_session(s,supplier_id,amount,reference,key,actor,recovery_model,s
         allocations.append({'liability_id':li.liability_id,'amount_minor':take})
     acct.settlement_available_minor+=remaining;acct.updated_at=now()
     result={'recovery_id':rid,'incoming_settlement_minor':amount,'recovered_minor':amount-remaining,'new_available_minor':remaining,
+        'remaining_available_minor':acct.settlement_available_minor,
         'negative_balance_minor':acct.negative_balance_minor,'allocations':allocations,'data_mode':'SIMULATION','external_live':False}
     s.add(recovery_model(recovery_id=rid,**{supplier_field:supplier_id},source_reference_hash=source_hash,request_hash=digest(payload),
         request_json=payload,result_json=result,actor_id=actor,created_at=now()))
