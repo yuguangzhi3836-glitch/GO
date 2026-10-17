@@ -19,10 +19,59 @@ def out(row):
 class HotelPartnerCoreService:
     HIGH_RISK={'LEGAL','ADDRESS','BRAND','QUALIFICATION'}
     FOUR_STATE={'YES','NO','UNKNOWN','NOT_APPLICABLE'}
+    ACTIVE_STATES={'ACTIVE','INACTIVE'}
     def _property(self,s,pid,supplier_id):
         r=s.get(HotelPartnerPropertyRow,pid)
         if not r or r.supplier_id!=supplier_id: raise ValueError('PROPERTY_NOT_FOUND')
         return r
+    def _room_type(self,s,pid,room_type_id):
+        r=s.get(HotelPartnerRoomTypeRow,room_type_id)
+        if not r or r.property_id!=pid: raise ValueError('ROOM_TYPE_NOT_FOUND')
+        return r
+    def _sellable_product(self,s,pid,sellable_product_id):
+        r=s.get(HotelPartnerSellableProductRow,sellable_product_id)
+        if not r or r.property_id!=pid: raise ValueError('SELLABLE_PRODUCT_NOT_FOUND')
+        return r
+    def _rate_plan(self,s,pid,rate_plan_id):
+        r=s.get(HotelPartnerRatePlanRow,rate_plan_id)
+        if not r or r.property_id!=pid: raise ValueError('RATE_PLAN_NOT_FOUND')
+        return r
+    def _state_change(self,target_id,state,*,id_key):
+        if isinstance(target_id,dict):
+            state=target_id.get('state')
+            target_id=target_id.get(id_key)
+        if not target_id: raise ValueError(f'{id_key.upper()}_REQUIRED')
+        if state not in self.ACTIVE_STATES: raise ValueError('INVALID_STATE')
+        return target_id,state
+    def _effective_state(self,*states):
+        return 'ACTIVE' if all(state=='ACTIVE' for state in states) else 'INACTIVE'
+    def _room_type_view(self,row):
+        payload=out(row)
+        payload['effective_state']=self._effective_state(row.state)
+        payload['blocked_by']=[] if row.state=='ACTIVE' else ['ROOM_TYPE_STATE']
+        return payload
+    def _sellable_product_view(self,row,room_state):
+        payload=out(row)
+        blocked=[]
+        if room_state!='ACTIVE': blocked.append('ROOM_TYPE_STATE')
+        if row.state!='ACTIVE': blocked.append('SELLABLE_PRODUCT_STATE')
+        payload['room_type_state']=room_state
+        payload['effective_state']=self._effective_state(room_state,row.state)
+        payload['blocked_by']=blocked
+        return payload
+    def _rate_plan_view(self,row,product,room_state):
+        payload=out(row)
+        product_state=product.state if product else 'INACTIVE'
+        blocked=[]
+        if room_state!='ACTIVE': blocked.append('ROOM_TYPE_STATE')
+        if product_state!='ACTIVE': blocked.append('SELLABLE_PRODUCT_STATE')
+        if row.state!='ACTIVE': blocked.append('RATE_PLAN_STATE')
+        payload['room_type_id']=product.room_type_id if product else None
+        payload['room_type_state']=room_state
+        payload['sellable_product_state']=product_state
+        payload['effective_state']=self._effective_state(room_state,product_state,row.state)
+        payload['blocked_by']=blocked
+        return payload
     def _audit(self,s,pid,event,typ,aid,payload,actor):
         s.add(HotelPartnerAuditEventRow(audit_event_id=ident('hpa'),property_id=pid,event_type=event,aggregate_type=typ,aggregate_id=aid,payload_json=payload,actor_id=actor,created_at=now()))
     def create_property(self,supplier_id,actor,b):
@@ -59,6 +108,26 @@ class HotelPartnerCoreService:
             tiers=b.get('cancellation_tiers',[])
             if any('before_arrival_hours' not in x or 'charge_percent' not in x for x in tiers):raise ValueError('INVALID_CANCELLATION_TIERS')
             t=now();r=HotelPartnerRatePlanRow(rate_plan_id=ident('rate'),property_id=pid,sellable_product_id=p.sellable_product_id,name=b['name'],payment_type=b['payment_type'],meal_plan_json=b.get('meal_plan',{}),cancellation_tiers_json=tiers,restrictions_json=b.get('restrictions',{}),default_ari_json=b.get('default_ari',{}),state='ACTIVE',created_at=t,updated_at=t);s.add(r);self._audit(s,pid,'RATE_PLAN_CREATED','RATE_PLAN',r.rate_plan_id,{},actor);s.commit();return out(r)
+    def set_room_type_state(self,supplier_id,actor,pid,room_type_id,state=None):
+        room_type_id,state=self._state_change(room_type_id,state,id_key='room_type_id')
+        with SessionLocal() as s:
+            self._property(s,pid,supplier_id);r=self._room_type(s,pid,room_type_id)
+            if r.state==state:return self._room_type_view(r)
+            r.state=state;r.updated_at=now();self._audit(s,pid,'ROOM_TYPE_STATE_CHANGED','ROOM_TYPE',r.room_type_id,{'state':state},actor);s.commit();return self._room_type_view(r)
+    def set_sellable_product_state(self,supplier_id,actor,pid,sellable_product_id,state=None):
+        sellable_product_id,state=self._state_change(sellable_product_id,state,id_key='sellable_product_id')
+        with SessionLocal() as s:
+            self._property(s,pid,supplier_id);r=self._sellable_product(s,pid,sellable_product_id)
+            if r.state==state:
+                room=self._room_type(s,pid,r.room_type_id)
+                return self._sellable_product_view(r,room.state)
+            r.state=state;room=self._room_type(s,pid,r.room_type_id);self._audit(s,pid,'SELLABLE_PRODUCT_STATE_CHANGED','SELLABLE_PRODUCT',r.sellable_product_id,{'state':state},actor);s.commit();return self._sellable_product_view(r,room.state)
+    def set_rate_plan_state(self,supplier_id,actor,pid,rate_plan_id,state=None):
+        rate_plan_id,state=self._state_change(rate_plan_id,state,id_key='rate_plan_id')
+        with SessionLocal() as s:
+            self._property(s,pid,supplier_id);r=self._rate_plan(s,pid,rate_plan_id);product=self._sellable_product(s,pid,r.sellable_product_id);room=self._room_type(s,pid,product.room_type_id)
+            if r.state==state:return self._rate_plan_view(r,product,room.state)
+            r.state=state;r.updated_at=now();self._audit(s,pid,'RATE_PLAN_STATE_CHANGED','RATE_PLAN',r.rate_plan_id,{'state':state},actor);s.commit();return self._rate_plan_view(r,product,room.state)
     def upsert_facility(self,supplier_id,actor,pid,b):
         if b['status'] not in self.FOUR_STATE:raise ValueError('INVALID_FACILITY_STATUS')
         with SessionLocal() as s:
@@ -116,11 +185,12 @@ class HotelPartnerCoreService:
         with SessionLocal() as s:
             p=self._property(s,pid,supplier_id)
             rooms=s.scalars(select(HotelPartnerRoomTypeRow).where(HotelPartnerRoomTypeRow.property_id==pid)).all();products=s.scalars(select(HotelPartnerSellableProductRow).where(HotelPartnerSellableProductRow.property_id==pid)).all();rates=s.scalars(select(HotelPartnerRatePlanRow).where(HotelPartnerRatePlanRow.property_id==pid)).all();assignments=s.scalars(select(HotelPartnerFacilityAssignmentRow).where(HotelPartnerFacilityAssignmentRow.property_id==pid)).all();policies=s.scalars(select(HotelPartnerPolicyRow).where(HotelPartnerPolicyRow.property_id==pid,HotelPartnerPolicyRow.state=='ACTIVE')).all()
+            room_by_id={x.room_type_id:x for x in rooms};product_by_id={x.sellable_product_id:x for x in products}
             facilities=[]
             for a in assignments:
                 d=s.get(HotelPartnerFacilityDefinitionRow,a.facility_definition_id)
                 facilities.append({'房型编号':a.room_type_id,'分类':getattr(d,'category',None),'设施':getattr(d,'name_zh',None) or getattr(d,'code',None),'状态':a.status,'继承酒店默认':bool(a.inherited),'详情':a.attributes_json or {}})
-            return {'property':out(p),'room_types':[out(x) for x in rooms],'sellable_products':[out(x) for x in products],'rate_plans':[out(x) for x in rates],'facilities':facilities,'policies':[out(x) for x in policies]}
+            return {'property':out(p),'room_types':[self._room_type_view(x) for x in rooms],'sellable_products':[self._sellable_product_view(x,(room_by_id.get(x.room_type_id).state if room_by_id.get(x.room_type_id) else 'INACTIVE')) for x in products],'rate_plans':[self._rate_plan_view(x,product_by_id.get(x.sellable_product_id),(room_by_id.get(product_by_id[x.sellable_product_id].room_type_id).state if product_by_id.get(x.sellable_product_id) and room_by_id.get(product_by_id[x.sellable_product_id].room_type_id) else 'INACTIVE')) for x in rates],'facilities':facilities,'policies':[out(x) for x in policies]}
     def operating_snapshot(self,supplier_id,pid):
         with SessionLocal() as s:
             self._property(s,pid,supplier_id)
